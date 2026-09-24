@@ -17,7 +17,7 @@ export interface Scope {
 }
 
 // Better Auth stores several roles as a comma-separated list; the strongest one wins.
-function strongestRole(role: string): OrgRole {
+export function strongestRole(role: string): OrgRole {
   const roles = role.split(',').map((r) => r.trim())
   if (roles.includes('owner')) return 'owner'
   if (roles.includes('admin')) return 'admin'

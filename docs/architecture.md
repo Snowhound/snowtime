@@ -103,6 +103,12 @@
   no team roles and (as of Better Auth 1.7) no additional fields on team
   members, so `team_member.role` is an extra column Better Auth never reads or
   writes; its inserts get the default `member`, and the app sets leads.
+- The UI calls Better Auth's organization client directly for organizations, teams, team
+  membership, invitations, and org roles. The plugin's default access control limits
+  those writes to admins and owners, and removing a member deletes their team rows,
+  lead role included. Server functions cover only what involves `team_member.role`:
+  `setTeamRole` (admins and owners) and `listMembers`/`listTeams`, which return team
+  roles. Wrapping the plugin's endpoints would duplicate its checks for no new rule.
 - Teams group people for access and reporting; data is owned by the
   organization, not the team.
 

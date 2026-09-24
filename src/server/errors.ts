@@ -20,6 +20,8 @@ export const errorMessages = {
   not_organization_member: 'You are not a member of this organization.',
   member_not_found: 'Member not found.',
   team_not_found: 'Team not found.',
+  team_member_not_found: 'This member is not on the team.',
+  teams_forbidden: 'Only admins can manage teams.',
   entry_not_found: 'Entry not found.',
   entry_id_taken: 'An entry with this id already exists.',
   entry_forbidden: "Only admins can change other members' entries.",
