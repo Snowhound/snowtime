@@ -1,7 +1,7 @@
 // The Table layout's entries (prototypes/timer.html): one dense table with a subtotal row
-// per day, newest first. It scrolls horizontally inside its border on narrow screens.
+// per day, newest first, and the entry fields (entry-fields.tsx) in the cells. It scrolls
+// horizontally inside its border on narrow screens.
 import { For, Show } from 'solid-js'
-import { ProjectDot } from '~/components/project-dot'
 import {
   Table,
   TableBody,
@@ -10,36 +10,36 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import { formatClock, formatHours, formatTime } from '~/lib/format'
-import type { Project } from '~/lib/projects'
+import { formatHours } from '~/lib/format'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'
 import {
-  EntryActions,
-  EntryDescription,
-  EntryTimeButton,
-  dayLabel,
-  entryProject,
-} from './entry-list'
+  DateField,
+  DescriptionField,
+  EntryDuration,
+  NextDayMark,
+  ProjectField,
+  RowError,
+  TimeField,
+  createEntryEditor,
+} from './entry-fields'
+import { EntryActions, type EntryRowProps, dayLabel, groupDates, groupIds } from './entry-list'
 import type { Entry } from './queries'
 
-export function EntryTable(props: {
-  groups: readonly DayGroup<Entry>[]
-  projects: readonly Project[]
-  zone: string
-  now: number
-  onEdit: (entry: Entry) => void
-  onContinue: (entry: Entry) => void
-  onDelete: (entry: Entry) => void
-}) {
+export function EntryTable(
+  props: EntryRowProps & {
+    groups: readonly DayGroup<Entry>[]
+    now: number
+  },
+) {
   return (
     <div class="bg-card overflow-hidden rounded-lg border">
-      <Table class="min-w-[40rem] table-fixed">
+      <Table class="min-w-[44rem] table-fixed">
         <colgroup>
           <col />
-          <col class="w-44" />
-          <col class="w-20" />
-          <col class="w-20" />
+          <col class="w-40" />
+          <col class="w-28" />
+          <col class="w-28" />
           <col class="w-24" />
           <col class="w-24" />
         </colgroup>
@@ -56,74 +56,87 @@ export function EntryTable(props: {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <For each={props.groups}>
-            {(group) => (
-              <>
-                <TableRow class="bg-muted/50">
-                  <th
-                    colspan={4}
-                    scope="rowgroup"
-                    class="p-2 text-left align-middle text-xs font-medium"
-                  >
-                    {dayLabel(group.date, props.zone, props.now)}
-                  </th>
-                  <TableCell class="text-right font-mono text-xs tabular-nums">
-                    {formatHours(group.total)}
-                  </TableCell>
-                  <TableCell />
-                </TableRow>
-                <For each={group.entries}>
-                  {(entry) => (
-                    <TableRow class="group">
-                      <TableCell class="max-w-0">
-                        <div class="truncate">
-                          <EntryDescription entry={entry} />
-                        </div>
-                      </TableCell>
-                      <TableCell class="max-w-0">
-                        <div class="text-muted-foreground flex items-center gap-1.5">
-                          <Show
-                            when={entryProject(props.projects, entry.projectId)}
-                            fallback={<span class="truncate">—</span>}
-                          >
-                            {(p) => (
-                              <>
-                                <ProjectDot color={p().color} />
-                                <span class="truncate">{p().name}</span>
-                              </>
-                            )}
-                          </Show>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <EntryTimeButton entry={entry} onEdit={props.onEdit}>
-                          {formatTime(entry.startedAt, props.zone)}
-                        </EntryTimeButton>
-                      </TableCell>
-                      <TableCell>
-                        <EntryTimeButton entry={entry} onEdit={props.onEdit}>
-                          {formatTime(entry.stoppedAt!, props.zone)}
-                        </EntryTimeButton>
-                      </TableCell>
-                      <TableCell class="text-right font-mono tabular-nums">
-                        {formatClock(entry.stoppedAt!.getTime() - entry.startedAt.getTime())}
-                      </TableCell>
-                      <TableCell>
-                        <EntryActions
-                          entry={entry}
-                          onEdit={props.onEdit}
-                          onContinue={props.onContinue}
-                          onDelete={props.onDelete}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </For>
-              </>
-            )}
+          <For each={groupDates(props.groups)}>
+            {(date) => {
+              function group() {
+                return props.groups.find((g) => g.date === date)
+              }
+              return (
+                <>
+                  <TableRow class="bg-muted/50">
+                    <th
+                      colspan={4}
+                      scope="rowgroup"
+                      class="p-2 text-left align-middle text-xs font-medium"
+                    >
+                      {dayLabel(date, props.zone, props.now)}
+                    </th>
+                    <TableCell class="text-right font-mono text-xs tabular-nums">
+                      {formatHours(group()?.total ?? 0)}
+                    </TableCell>
+                    <TableCell />
+                  </TableRow>
+                  <For each={groupIds(group())}>
+                    {(id) => (
+                      <EntryTableRow
+                        {...props}
+                        entry={group()!.entries.find((e) => e.id === id)!}
+                      />
+                    )}
+                  </For>
+                </>
+              )
+            }}
           </For>
         </TableBody>
       </Table>
     </div>
+  )
+}
+
+function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
+  const editor = createEntryEditor(props)
+  return (
+    <>
+      <TableRow class="group">
+        <TableCell class="max-w-0">
+          <div class="-ml-2">
+            <DescriptionField editor={editor} />
+          </div>
+        </TableCell>
+        <TableCell class="max-w-0">
+          <ProjectField editor={editor} entry={props.entry} projects={props.projects} />
+        </TableCell>
+        <TableCell>
+          <div class="flex items-center gap-1">
+            <DateField editor={editor} zone={props.zone} />
+            <TimeField editor={editor} field="start" />
+          </div>
+        </TableCell>
+        <TableCell>
+          <div class="flex items-center gap-1">
+            <TimeField editor={editor} field="end" />
+            <NextDayMark editor={editor} />
+          </div>
+        </TableCell>
+        <TableCell class="text-right font-mono tabular-nums">
+          <EntryDuration editor={editor} />
+        </TableCell>
+        <TableCell>
+          <EntryActions
+            entry={props.entry}
+            onContinue={props.onContinue}
+            onDelete={props.onDelete}
+          />
+        </TableCell>
+      </TableRow>
+      <Show when={editor.error()}>
+        <TableRow class="hover:bg-transparent">
+          <TableCell colspan={6} class="pt-0">
+            <RowError editor={editor} />
+          </TableCell>
+        </TableRow>
+      </Show>
+    </>
   )
 }

@@ -20,6 +20,7 @@
       --color-accent-foreground: var(--accent-foreground);
       --color-destructive: var(--destructive);
       --color-destructive-foreground: var(--destructive-foreground);
+      --color-error-foreground: var(--destructive);
       --color-border: var(--border);
       --color-input: var(--input);
       --color-ring: var(--ring);

@@ -1,21 +1,31 @@
 // The day cards of the Bar and Focus layouts (prototypes/timer.html): a card per day,
-// newest first, with the day's total, and per entry its description, project, time range,
-// duration, and the edit, continue, and delete actions. Focus shows them compact. The
-// parts the Table layout shares are exported.
+// newest first, with the day's total, and per entry its fields (entry-fields.tsx) and the
+// continue and delete actions. Rows are one line from 768 px and three below it. Focus
+// shows them compact. The parts the Table layout shares are exported.
 import ClockIcon from 'lucide-solid/icons/clock'
-import PencilIcon from 'lucide-solid/icons/pencil'
 import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
-import { For, type JSX, Show } from 'solid-js'
-import { ProjectDot } from '~/components/project-dot'
+import { For } from 'solid-js'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import { addDays, localDate } from '~/lib/calendar'
-import { formatClock, formatHours, formatIsoDate, formatTime } from '~/lib/format'
+import { formatHours, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'
+import {
+  DateField,
+  DescriptionField,
+  EntryDuration,
+  NextDayMark,
+  ProjectField,
+  REVEAL,
+  RowError,
+  type SaveEntry,
+  TimeField,
+  createEntryEditor,
+} from './entry-fields'
 import type { Entry } from './queries'
 
 export function dayLabel(date: string, zone: string, now: number) {
@@ -25,115 +35,100 @@ export function dayLabel(date: string, zone: string, now: number) {
   return formatIsoDate(date, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
-// The entry's project, or a stand-in for one the user can no longer see; null for none.
-export function entryProject(projects: readonly Project[], id: string | null) {
-  if (!id) return null
-  return projects.find((p) => p.id === id) ?? { name: m.timer_unavailable_project(), color: null }
-}
-
-export function EntryList(props: {
-  groups: readonly DayGroup<Entry>[]
+export interface EntryRowProps {
   projects: readonly Project[]
   zone: string
-  now: number
-  compact?: boolean
-  onEdit: (entry: Entry) => void
+  onSave: SaveEntry
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
-}) {
+}
+
+// Rows are keyed by date and id, not by object: every save replaces the entry objects,
+// and a new row would lose the focus of the field being tabbed to.
+export function groupDates(groups: readonly DayGroup<Entry>[]) {
+  return groups.map((g) => g.date)
+}
+
+export function groupIds(group: DayGroup<Entry> | undefined) {
+  return group?.entries.map((e) => e.id) ?? []
+}
+
+export function EntryList(
+  props: EntryRowProps & {
+    groups: readonly DayGroup<Entry>[]
+    now: number
+    compact?: boolean
+  },
+) {
   return (
-    <For each={props.groups}>
-      {(group) => (
-        <Card class="overflow-hidden">
-          <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
-            <h2 class="font-medium">{dayLabel(group.date, props.zone, props.now)}</h2>
-            <span class="text-muted-foreground font-mono tabular-nums">
-              {formatHours(group.total)}
-            </span>
-          </header>
-          <ul class="divide-y">
-            <For each={group.entries}>
-              {(entry) => (
-                <li
-                  class={cn(
-                    'group flex flex-col gap-1 px-4 sm:flex-row sm:items-center sm:gap-4',
-                    props.compact ? 'py-2' : 'py-3',
-                  )}
-                >
-                  <div class="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
-                    <span class="truncate text-sm">
-                      <EntryDescription entry={entry} />
-                    </span>
-                    <Show when={entryProject(props.projects, entry.projectId)}>
-                      {(p) => (
-                        <span class="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs sm:max-w-56">
-                          <ProjectDot color={p().color} />
-                          <span class="truncate">{p().name}</span>
-                        </span>
-                      )}
-                    </Show>
-                  </div>
-                  <div class="flex items-center justify-between gap-3 sm:justify-end">
-                    <EntryTimeButton entry={entry} onEdit={props.onEdit}>
-                      {formatTime(entry.startedAt, props.zone)} –{' '}
-                      {formatTime(entry.stoppedAt!, props.zone)}
-                    </EntryTimeButton>
-                    <span class="w-16 text-right font-mono text-sm tabular-nums">
-                      {formatClock(entry.stoppedAt!.getTime() - entry.startedAt.getTime())}
-                    </span>
-                    <EntryActions
-                      entry={entry}
-                      onEdit={props.onEdit}
-                      onContinue={props.onContinue}
-                      onDelete={props.onDelete}
-                    />
-                  </div>
-                </li>
-              )}
-            </For>
-          </ul>
-        </Card>
-      )}
+    <For each={groupDates(props.groups)}>
+      {(date) => {
+        function group() {
+          return props.groups.find((g) => g.date === date)
+        }
+        return (
+          <Card class="overflow-hidden">
+            <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
+              <h2 class="font-medium">{dayLabel(date, props.zone, props.now)}</h2>
+              <span class="text-muted-foreground font-mono tabular-nums">
+                {formatHours(group()?.total ?? 0)}
+              </span>
+            </header>
+            <ul class="divide-y">
+              <For each={groupIds(group())}>
+                {(id) => (
+                  <EntryRow
+                    {...props}
+                    entry={group()!.entries.find((e) => e.id === id)!}
+                    compact={props.compact}
+                  />
+                )}
+              </For>
+            </ul>
+          </Card>
+        )
+      }}
     </For>
   )
 }
 
-export function EntryDescription(props: { entry: Entry }) {
+function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
+  const editor = createEntryEditor(props)
   return (
-    <Show
-      when={props.entry.description}
-      fallback={<span class="text-muted-foreground italic">{m.timer_no_description()}</span>}
-    >
-      {props.entry.description}
-    </Show>
-  )
-}
-
-// A time of the entry, which opens it in the entry dialog.
-export function EntryTimeButton(props: {
-  entry: Entry
-  onEdit: (entry: Entry) => void
-  children: JSX.Element
-}) {
-  return (
-    <button
-      type="button"
-      class="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded-sm text-xs whitespace-nowrap tabular-nums underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
-      aria-label={
-        props.entry.description
-          ? m.timer_edit_time({ description: props.entry.description })
-          : m.timer_edit_time_unnamed()
-      }
-      onClick={() => props.onEdit(props.entry)}
-    >
-      {props.children}
-    </button>
+    <li class={cn('group px-4', props.compact ? 'py-2' : 'py-3')}>
+      <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 md:flex">
+        <div class="col-span-2 -ml-2 min-w-0 md:flex-1">
+          <DescriptionField editor={editor} />
+        </div>
+        <div class="-ml-2 min-w-0 md:ml-0 md:w-36 md:shrink-0">
+          <ProjectField editor={editor} entry={props.entry} projects={props.projects} />
+        </div>
+        <div class="text-muted-foreground row-start-3 -ml-2 flex shrink-0 items-center gap-1 md:ml-0">
+          <DateField editor={editor} zone={props.zone} />
+          <TimeField editor={editor} field="start" />
+          <span aria-hidden="true">–</span>
+          <TimeField editor={editor} field="end" />
+          <NextDayMark editor={editor} />
+        </div>
+        <EntryDuration
+          editor={editor}
+          class="row-start-3 w-16 shrink-0 text-right font-mono text-sm tabular-nums"
+        />
+        <div class="col-start-2 row-start-2 justify-self-end">
+          <EntryActions
+            entry={props.entry}
+            onContinue={props.onContinue}
+            onDelete={props.onDelete}
+          />
+        </div>
+      </div>
+      <RowError editor={editor} />
+    </li>
   )
 }
 
 export function EntryActions(props: {
   entry: Entry
-  onEdit: (entry: Entry) => void
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
 }) {
@@ -141,17 +136,7 @@ export function EntryActions(props: {
     return props.entry.description
   }
   return (
-    <div class="flex items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label={
-          description() ? m.timer_edit({ description: description() }) : m.timer_edit_unnamed()
-        }
-        onClick={() => props.onEdit(props.entry)}
-      >
-        <PencilIcon aria-hidden="true" />
-      </Button>
+    <div class={cn('flex items-center gap-1', REVEAL)}>
       <Button
         variant="ghost"
         size="icon"

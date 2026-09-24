@@ -9,7 +9,7 @@ import { formatHours } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 import type { Summary } from './entries'
-import { entryProject } from './entry-list'
+import { entryProject } from './entry-fields'
 
 export function SummaryPanel(props: { summary: Summary; projects: readonly Project[] }) {
   return (

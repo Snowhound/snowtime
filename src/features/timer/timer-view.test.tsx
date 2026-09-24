@@ -131,8 +131,9 @@ beforeEach(() => {
   server.entries = [entry(1, '09:00', '10:30', 'Invoice export review')]
   server.settings = defaultSettings()
   fn.getAppSession.mockImplementation(async () => session())
-  fn.getRunningTimer.mockImplementation(async () => server.running)
-  fn.listEntries.mockImplementation(async () => server.entries)
+  // Copies, as the real server sends: the query cache writes into the objects it holds.
+  fn.getRunningTimer.mockImplementation(async () => server.running && { ...server.running })
+  fn.listEntries.mockImplementation(async () => server.entries.map((e) => ({ ...e })))
   fn.getFirstEntryStart.mockImplementation(async () => {
     const starts = [...server.entries, ...(server.running ? [server.running] : [])].map((e) =>
       e.startedAt.getTime(),
@@ -155,7 +156,7 @@ async function openView() {
 describe('TimerView', () => {
   test('starts on Enter and stops, showing each at once', async () => {
     renderView()
-    await screen.findByText('Invoice export review')
+    await screen.findByDisplayValue('Invoice export review')
     const started = deferred<unknown>()
     fn.startTimer.mockReturnValue(started.promise)
 
@@ -188,13 +189,13 @@ describe('TimerView', () => {
     expect(fn.stopTimer).toHaveBeenCalledWith({ data: { id } })
     expect(await within(timer()).findByRole('button', { name: 'Start' })).toBeInTheDocument()
     expect(within(timer()).getByPlaceholderText('What are you working on?')).toHaveValue('')
-    expect(await screen.findByText('Timer view')).toBeInTheDocument()
+    expect(await screen.findByDisplayValue('Timer view')).toBeInTheDocument()
     expect(screen.getByText('Today')).toBeInTheDocument()
   })
 
   test('rolls back a failed start and says why', async () => {
     renderView()
-    await screen.findByText('Invoice export review')
+    await screen.findByDisplayValue('Invoice export review')
     const started = deferred<unknown>()
     fn.startTimer.mockReturnValue(started.promise)
 
@@ -208,45 +209,133 @@ describe('TimerView', () => {
 
   test('deletes an entry at once', async () => {
     renderView()
-    await screen.findByText('Invoice export review')
+    await screen.findByDisplayValue('Invoice export review')
     fn.deleteEntry.mockImplementation(async () => {
       server.entries = []
     })
 
     await userEvent.click(screen.getByRole('button', { name: 'Delete Invoice export review' }))
     expect(fn.deleteEntry).toHaveBeenCalledWith({ data: { id: expect.any(String) } })
-    expect(screen.queryByText('Invoice export review')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('Invoice export review')).not.toBeInTheDocument()
     expect(await screen.findByText('No time tracked yet')).toBeInTheDocument()
   })
 
-  test('edits an entry, with an end before the start on the next day', async () => {
+  test('saves an edited description on Enter, and Escape restores it', async () => {
     renderView()
-    await screen.findByText('Invoice export review')
+    const input = await screen.findByDisplayValue('Invoice export review')
+    const { id } = server.entries[0]
+    fn.updateEntry.mockImplementation(async ({ data }: { data: Partial<Entry> }) => {
+      Object.assign(server.entries[0], data)
+    })
+
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Invoice export{Enter}')
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith({ data: { id, description: 'Invoice export' } }),
+    )
+
+    await waitFor(() => expect(fn.listEntries).toHaveBeenCalledTimes(2))
+    await userEvent.type(input, ' draft{Escape}')
+    expect(input).toHaveValue('Invoice export')
+    await userEvent.tab()
+    expect(fn.updateEntry).toHaveBeenCalledTimes(1)
+  })
+
+  test('reads an end before the start as the next day, and saves what that changes', async () => {
+    server.entries = [entry(2, '09:00', '10:30', 'Invoice export review')]
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const { id } = server.entries[0]
     fn.updateEntry.mockResolvedValue({})
 
-    await userEvent.click(screen.getByRole('button', { name: 'Edit Invoice export review' }))
-    const dialog = await screen.findByRole('dialog')
-    expect(within(dialog).getByLabelText('Start')).toHaveValue('09:00')
-    expect(within(dialog).getByText('Duration 1:30')).toBeInTheDocument()
+    const start = screen.getByLabelText('Start')
+    fireEvent.input(start, { target: { value: '23:00' } })
+    expect(screen.getByText('11:30:00')).toBeInTheDocument()
+    expect(screen.getByText('Ends the next day', { selector: '.sr-only' })).toBeInTheDocument()
+    fireEvent.blur(start)
 
-    fireEvent.input(within(dialog).getByLabelText('Start'), { target: { value: '22:00' } })
-    fireEvent.input(within(dialog).getByLabelText('End'), { target: { value: '01:00' } })
-    expect(within(dialog).getByText('Duration 3:00 · ends the next day')).toBeInTheDocument()
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
-
-    const yesterday = addDays(localDate(Date.now(), zone), -1)
-    expect(fn.updateEntry).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        startedAt: new Date(atLocalTime(yesterday, '22:00', zone)),
-        stoppedAt: new Date(atLocalTime(addDays(yesterday, 1), '01:00', zone)),
+    const date = addDays(localDate(Date.now(), zone), -2)
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith({
+        data: {
+          id,
+          startedAt: new Date(atLocalTime(date, '23:00', zone)),
+          stoppedAt: new Date(atLocalTime(addDays(date, 1), '10:30', zone)),
+        },
       }),
-    })
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    )
+  })
+
+  test('keeps an end in the future on the field without saving, until Escape', async () => {
+    server.entries = [entry(0, '00:00', '00:01', 'Invoice export review')]
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+
+    const end = screen.getByLabelText('End')
+    fireEvent.input(end, { target: { value: '23:59' } })
+    fireEvent.keyDown(end, { key: 'Enter' })
+    expect(await screen.findByRole('alert')).toHaveTextContent("An entry can't end in the future.")
+    expect(end).toHaveAttribute('aria-invalid', 'true')
+    expect(end).toHaveValue('23:59')
+    expect(fn.updateEntry).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(end, { key: 'Escape' })
+    expect(end).toHaveValue('00:01')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  test('rolls back a failed save and says why under the row', async () => {
+    renderView()
+    const input = await screen.findByDisplayValue('Invoice export review')
+    fn.updateEntry.mockRejectedValue(new AppError('NOT_FOUND', 'project_archived'))
+
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Renamed{Enter}')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The project is archived. The change was undone.',
+    )
+    await waitFor(() => expect(input).toHaveValue('Invoice export review'))
+  })
+
+  test('picks the project from the row menu', async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const { id } = server.entries[0]
+    fn.updateEntry.mockResolvedValue({})
+
+    await userEvent.click(screen.getByRole('button', { name: 'Project: Snowtime' }))
+    await userEvent.click(await screen.findByRole('menuitemradio', { name: 'No project' }))
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith({ data: { id, projectId: null } }),
+    )
+  })
+
+  test('moves an entry to another day from the date popover, keeping its times', async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const { id } = server.entries[0]
+    fn.updateEntry.mockResolvedValue({})
+
+    await userEvent.click(screen.getByRole('button', { name: /^Date: / }))
+    const date = addDays(localDate(Date.now(), zone), -3)
+    const input = await screen.findByLabelText('Date')
+    fireEvent.input(input, { target: { value: date } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith({
+        data: {
+          id,
+          startedAt: new Date(atLocalTime(date, '09:00', zone)),
+          stoppedAt: new Date(atLocalTime(date, '10:30', zone)),
+        },
+      }),
+    )
   })
 
   test('adds a past entry by hand once its times are valid', async () => {
     renderView()
-    await screen.findByText('Invoice export review')
+    await screen.findByDisplayValue('Invoice export review')
     fn.createEntry.mockImplementation(async ({ data }: { data: Entry }) => {
       server.entries = [...server.entries, { ...data, organizationId, userId }]
     })
@@ -273,12 +362,12 @@ describe('TimerView', () => {
         stoppedAt: new Date(atLocalTime(date, '14:15', zone)),
       }),
     })
-    expect(await screen.findByText('Planning')).toBeInTheDocument()
+    expect(await screen.findByDisplayValue('Planning')).toBeInTheDocument()
   })
 
   test('saves a layout from the View popover and shows it at once', async () => {
     renderView()
-    await screen.findByText('Invoice export review')
+    await screen.findByDisplayValue('Invoice export review')
     const saved = deferred<unknown>()
     fn.updateSettings.mockReturnValue(saved.promise)
 
@@ -302,7 +391,7 @@ describe('TimerView', () => {
 
   test('rolls back a failed layout change and says why', async () => {
     renderView()
-    await screen.findByText('Invoice export review')
+    await screen.findByDisplayValue('Invoice export review')
     fn.updateSettings.mockRejectedValue(new AppError('NOT_FOUND', 'settings_not_found'))
 
     await userEvent.click(within(await openView()).getByRole('button', { name: 'Focus' }))
@@ -374,10 +463,10 @@ describe('TimerView', () => {
       server.entries.filter((e) => e.startedAt >= data.from),
     )
     renderView()
-    await screen.findByText('Invoice export review')
+    await screen.findByDisplayValue('Invoice export review')
 
     await userEvent.click(await screen.findByRole('button', { name: 'Show earlier entries' }))
-    expect(await screen.findByText('Kickoff')).toBeInTheDocument()
+    expect(await screen.findByDisplayValue('Kickoff')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Show earlier entries' })).not.toBeInTheDocument()
     expect(screen.getByText(/^That's everything since .+: 2:30 in total\.$/)).toBeInTheDocument()
   })

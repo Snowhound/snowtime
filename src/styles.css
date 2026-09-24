@@ -133,6 +133,8 @@ code {
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  /* Solid-UI's invalid inputs use error-foreground; here it is the destructive color. */
+  --color-error-foreground: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

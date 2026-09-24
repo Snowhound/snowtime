@@ -346,7 +346,7 @@
         const invalid = err?.kind === 'invalid' && err.key === key
         const value = draft(e.id, key) ?? toTimeValue(key === 'start' ? e.startedAt : e.stoppedAt)
         return `<input data-ui="input" type="time" required data-entry="${e.id}" data-key="${key}" aria-label="${key === 'start' ? 'Start' : 'End'}" value="${value}"
-          aria-describedby="error-${e.id}"${invalid ? ' data-invalid aria-invalid="true"' : ''} class="inline-time h-8 w-auto px-1.5 text-xs tabular-nums [field-sizing:content] ${QUIET} data-[invalid]:border-destructive data-[invalid]:text-destructive" />`
+          aria-describedby="error-${e.id}"${invalid ? ' data-invalid aria-invalid="true"' : ''} class="inline-time h-8 w-auto px-1.5 text-xs tabular-nums [field-sizing:content] ${QUIET}" />`
       }
 
       function nextDayMark(e) {
@@ -367,7 +367,7 @@
           <div id="${pop}" popover data-ui="popover" data-align="start" role="dialog" aria-label="Date" class="grid w-60 gap-2">
             <label data-ui="label" for="date-input-${e.id}">Date</label>
             <input id="date-input-${e.id}" data-ui="input" type="date" required data-date-entry="${e.id}" value="${toDateValue(e.startedAt)}" max="${toDateValue(Date.now())}"
-              aria-describedby="date-error-${e.id}" class="data-[invalid]:border-destructive" />
+              aria-describedby="date-error-${e.id}" />
             <p id="date-error-${e.id}" data-ui="error-message" role="alert" hidden></p>
             <p class="text-xs text-muted-foreground">Start and end times stay the same.</p>
           </div>`

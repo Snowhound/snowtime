@@ -1,8 +1,10 @@
 // The timer view (prototypes/timer.html): the timer, the user's recent entries by day, the
 // summary, and the entry dialog, in the layout of the user's settings. Bar lists day
 // cards; Focus has a large clock, "continue recent" chips, and the last three days
-// compact; Table has one table with day subtotals. Every write is optimistic and rolls
-// back on error (queries.ts), with the error shown above the timer.
+// compact; Table has one table with day subtotals. Entries are edited in their rows; the
+// dialog adds an entry or edits the running one's start. Every write is optimistic and
+// rolls back on error (queries.ts), with the error shown under the edited row or above
+// the timer.
 import { keepPreviousData, useQuery } from '@tanstack/solid-query'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import PlusIcon from 'lucide-solid/icons/plus'
@@ -18,6 +20,7 @@ import type { Settings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
 import { groupByDay, recentRange, recentWork, summarize } from './entries'
 import { EntryDialog, type EntryDialogTarget, type EntryDialogValues } from './entry-dialog'
+import type { EntryPatch } from './entry-fields'
 import { EmptyState, EntryList } from './entry-list'
 import { EntryTable } from './entry-table'
 import {
@@ -176,11 +179,9 @@ export function TimerView(props: {
     if (!target) return
     if (target.kind === 'new') {
       createEntry.mutate({ id: newId(), ...values, stoppedAt: values.stoppedAt! }, options)
-    } else if (target.kind === 'running') {
+    } else {
       const { stoppedAt: _, ...patch } = values
       updateEntry.mutate({ id: target.entry.id, ...patch }, options)
-    } else {
-      updateEntry.mutate({ id: target.entry.id, ...values, stoppedAt: values.stoppedAt! }, options)
     }
   }
 
@@ -194,7 +195,11 @@ export function TimerView(props: {
     get now() {
       return now()
     },
-    onEdit: (entry: Entry) => setDialog({ kind: 'edit', entry }),
+    // A row shows its own error, so this one resolves or rejects instead of using the alert.
+    onSave: (entry: Entry, patch: EntryPatch) => {
+      setError(null)
+      return updateEntry.mutateAsync({ id: entry.id, ...patch })
+    },
     onContinue: (entry: Entry) => start(entry.description, entry.projectId),
     onDelete: remove,
   }

@@ -1,26 +1,49 @@
-// The project picker of the timer bar and the entry dialog.
-import { For, Show } from 'solid-js'
+// The project picker of the timer bar and the entry dialog, and the choices it and the
+// entry rows' project menu list.
+import { For } from 'solid-js'
 import { NativeSelect } from '~/components/ui/native-select'
 import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 
-// Lists "No project" and the active projects. An entry's archived project stays listed, so
+export interface ProjectChoice {
+  // The project id, or '' for none.
+  value: string
+  label: string
+  color: string | null
+}
+
+// "No project" and the active projects. An entry's archived project stays listed, so
 // saving other fields keeps it; one the user can no longer see shows as unavailable.
+export function projectChoices(
+  projects: readonly Pick<Project, 'id' | 'name' | 'archivedAt' | 'color'>[],
+  value: string,
+): ProjectChoice[] {
+  const choices: ProjectChoice[] = [{ value: '', label: m.timer_no_project(), color: null }]
+  for (const p of projects) {
+    if (!p.archivedAt) choices.push({ value: p.id, label: p.name, color: p.color })
+  }
+  const current = projects.find((p) => p.id === value)
+  if (current?.archivedAt) {
+    choices.push({
+      value: current.id,
+      label: m.timer_archived_project({ name: current.name }),
+      color: current.color,
+    })
+  } else if (value && !current) {
+    choices.push({ value, label: m.timer_unavailable_project(), color: null })
+  }
+  return choices
+}
+
 export function ProjectSelect(props: {
   id: string
   class?: string
-  projects: readonly Pick<Project, 'id' | 'name' | 'archivedAt'>[]
+  projects: readonly Pick<Project, 'id' | 'name' | 'archivedAt' | 'color'>[]
   // The project id, or '' for none.
   value: string
   disabled?: boolean
   onChange: (projectId: string) => void
 }) {
-  function current() {
-    return props.projects.find((p) => p.id === props.value)
-  }
-  function active() {
-    return props.projects.filter((p) => !p.archivedAt)
-  }
   return (
     <NativeSelect
       id={props.id}
@@ -29,26 +52,13 @@ export function ProjectSelect(props: {
       disabled={props.disabled}
       onChange={(event) => props.onChange(event.currentTarget.value)}
     >
-      <option value="">{m.timer_no_project()}</option>
-      <For each={active()}>
-        {(project) => (
-          <option value={project.id} selected={project.id === props.value}>
-            {project.name}
+      <For each={projectChoices(props.projects, props.value)}>
+        {(choice) => (
+          <option value={choice.value} selected={choice.value === props.value}>
+            {choice.label}
           </option>
         )}
       </For>
-      <Show when={current()?.archivedAt && current()}>
-        {(archived) => (
-          <option value={archived().id} selected>
-            {m.timer_archived_project({ name: archived().name })}
-          </option>
-        )}
-      </Show>
-      <Show when={props.value && !current()}>
-        <option value={props.value} selected>
-          {m.timer_unavailable_project()}
-        </option>
-      </Show>
     </NativeSelect>
   )
 }

@@ -388,10 +388,11 @@ Decisions:
 - **Add entry: the dialog.** A new entry needs a start and an end before it exists, so it can't
   save one field at a time.
 
-Inline fields restyle `input` and `select` with `border-transparent shadow-none` plus a
-border on hover and focus; the port makes that a variant. An inline time out of range
-turns the field `destructive`, because the `error-foreground` token that `input` uses for
-`data-invalid` isn't in `src/styles.css`, in the app either.
+Inline fields add `border-transparent shadow-none` to `input` and `button`, with the border
+back on hover and focus; the app passes the same classes at the call site
+(`src/features/timer/entry-fields.tsx`), keeping `src/components/ui/` as the registry has
+it. Invalid inputs use Solid-UI's `error-foreground`, which `src/styles.css` and
+[prototype-theme.js](prototype-theme.js) map to `destructive`.
 
 Simulated: start/stop, Enter to start, editing the running entry inline or in the dialog,
 continue (stops any running timer first), delete, inline edits, and Add entry. Fixtures: running,

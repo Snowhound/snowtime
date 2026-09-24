@@ -1,5 +1,5 @@
-// The entry dialog (prototypes/timer.html): edits a stopped entry, the running entry's
-// start, or logs a past entry by hand. Times are read in the user's zone; an end at or
+// The entry dialog (prototypes/timer.html): edits the running entry's start, or logs a
+// past entry by hand. Stopped entries are edited in their rows (entry-fields.tsx). Times are read in the user's zone; an end at or
 // before the start means the next day, and a live line shows the resulting duration.
 import { createForm } from '@tanstack/solid-form'
 import { Show, createMemo } from 'solid-js'
@@ -22,10 +22,7 @@ import { type EntryFormError, readEntryTimes } from './entries'
 import { ProjectSelect } from './project-select'
 import type { Entry } from './queries'
 
-export type EntryDialogTarget =
-  | { kind: 'new' }
-  | { kind: 'edit'; entry: Entry }
-  | { kind: 'running'; entry: Entry }
+export type EntryDialogTarget = { kind: 'new' } | { kind: 'running'; entry: Entry }
 
 export interface EntryDialogValues {
   description: string
@@ -44,7 +41,6 @@ const ERRORS: Record<EntryFormError, () => string> = {
 
 const TITLES = {
   new: m.entry_dialog_new,
-  edit: m.entry_dialog_edit,
   running: m.entry_dialog_edit_running,
 } as const
 
