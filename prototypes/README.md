@@ -204,12 +204,19 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
 
 - A dashed **prototype bar** with the page title, the page's own controls (move them in with a
   `<div id="prototype-controls">`), and a role switcher (member, team lead, admin, owner).
-- The **app header**: the app icon and name, a button that opens the
-  [app icon picker](#app-icon), the organization switcher (a dropdown menu of the user's
-  organizations), navigation (Timer, Reports, Projects, and Organization for admins and owners
-  only), and a user menu (Profile, Settings, theme, Sign out). Below 768 px the navigation moves
-  to a second header row of four equal-width links, so every page stays one tap away without a
-  hamburger menu.
+- The **app header**: the app icon and name, linking to the timer; the organization switcher (a
+  dropdown menu of the user's organizations); navigation (Timer, Reports, Projects, and
+  Organization for admins and owners only); the **Appearance** button; and a user menu
+  (Profile, Settings, Sign out). Below 768 px the navigation moves to a second header row of four
+  equal-width links, so every page stays one tap away without a hamburger menu. Between 768 and
+  1024 px the header drops the "Snowtime" name beside the mark, so the organization name fits.
+- The **Appearance** popover, from the palette button left of the avatar, on every page: Theme
+  (light, dark, system), the app icon with **Change** (opens the [app icon picker](#app-icon)),
+  and the scenery settings: Season, Background with Strength and Surfaces under it, and Weather,
+  whose hint names the season's effect or why it's off. Then "All settings". Hints are left out
+  where the label says enough, so it fits a 390 × 844 screen. Theme used to be in the user menu
+  and the timer's View popover too; it's only here and in Settings now. The intro's switch and
+  Replay stay on the sign-in page and in Settings, since the intro only plays there.
 - The season's **tagline** in the page's title row, after the `h1`: beside the title after a
   divider from 1024 px, on its own line under it below that. It's two-toned like the intro: the
   first line in the season's headline color, the second in its second line's color (see
@@ -223,7 +230,7 @@ It also provides:
 
 | API                                  | Use                                                            |
 | ------------------------------------ | -------------------------------------------------------------- |
-| `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`, `appIcon`. The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
+| `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`, `appIcon`, and the scene's (`sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`, `sceneWeather`, `sceneIntro`). The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
 | `appFrame.on('settings' \| 'role' \| 'org', fn)` | Re-render when settings, the prototype role, or the organization change |
 | `appFrame.role`, `appFrame.isAdmin()`, `appFrame.org`, `appFrame.user` | Prototype session |
 | `appFrame.openIconPicker()`, `appFrame.appIconImg(size, cls)` | Open the app icon dialog; an `<img>` of the chosen bare mark that follows changes |
@@ -244,12 +251,9 @@ to the signed-in pages, starting with the timer. A page opts in with
 puts the scene in a fixed layer behind the page, from the same user settings as the sign-in page:
 the season's image in light and dark, the tint, and the weather.
 
-- **Scenery button**: the mountain button in the header, left of the avatar, opens the Scenery
-  popover: Season, Background with Strength and Surfaces under it, and Weather, as on the sign-in
-  page, plus "All scenery settings". The intro only plays on the sign-in page, so its switch and
-  Replay stay there and in Settings. Settings > Preferences groups all of them under
-  **Scenery**, for the sign-in page and the app. Between 768 and 1024 px the header drops the
-  "Snowtime" wordmark beside the mark, so the organization name still fits next to the button.
+- **Settings**: the header's Appearance popover holds the scene settings (see
+  [App frame](#app-frame)). Settings > Preferences groups them under **Scenery**, for the
+  sign-in page and the app. Defaults: system theme, glass surfaces, and dimmed strength.
 - **Surfaces**: the frame sets `data-scene`, `data-scene-bg`, and `data-surfaces` on the body, and
   [prototype.css](prototype.css) styles every `card` and every element with the `surface` class
   (the timer bar, the timesheet's wrapper, the empty state) from them. Glass is `bg-card/70` with
@@ -277,8 +281,8 @@ with the weather off. The weather stopped when the tab was hidden and restarted 
 
 The header shows the user's app icon, one of the 12 concepts in `design/brand-assets/`
 (task 029), and "Snowtime" in the brand font. Concept `02`, Hound Hour, is the default. The
-mark is a button that opens the app icon dialog; the Timer link is the way home. Settings >
-Preferences > Appearance opens the same dialog from its **Change** button.
+mark links to the timer. The header's Appearance popover and Settings > Preferences >
+Appearance open the app icon dialog from their **Change** buttons.
 
 Inside the app, every place shows the concept's bare mark, with no tile, in its light-page or
 dark-page version: the header, the dialog, the Settings preview, and the sign-in card. Only the
@@ -514,9 +518,10 @@ in a dialog). Disconnect is disabled on the last linked method. Passkeys show as
 offset, plus a button for the device's zone; a preview shows the current time and this week's
 range in the chosen zone and week start.
 
-The timer's gear popover stays as a shortcut to the appearance fields, with an "All settings"
-link. It, this page, and the user menu's theme items write through `appFrame.settings`, so they
-never disagree; other open tabs follow through the `storage` event.
+The timer's gear popover stays as a shortcut to the timer's view fields, and the header's
+Appearance popover to the theme, app icon, and scenery, each with an "All settings" link. They
+and this page write through `appFrame.settings`, so they never disagree; other open tabs follow
+through the `storage` event.
 
 Fixtures: populated (Google and GitHub), new account (one provider; resets preferences to the
 defaults with the browser's zone), long content (long name and email), and local dev password
@@ -540,8 +545,9 @@ user-selectable options.
 - **Table**: dense table with day subtotal rows; scrolls horizontally inside its container on
   narrow screens.
 
-The settings button opens a **View** popover: layout, theme (light / dark / system), and whether
-the summary panel (today / this week, per-project bars) is shown, plus a link to Settings.
+The settings button opens a **View** popover: layout and whether the summary panel (today / this
+week, per-project bars) is shown, plus a link to Settings. The theme is in the header's
+Appearance popover.
 These are user settings, saved through the app frame (`user_settings` in the app).
 
 Stopped entries are edited in their row, with no dialog or edit action (task 027). Each

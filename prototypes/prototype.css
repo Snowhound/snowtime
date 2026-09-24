@@ -192,16 +192,16 @@ body[data-scene-bg='on'] :is([data-ui='card'], .surface) {
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
 }
 /* Text and controls that sit on the image itself: page titles and the tagline get a glow in the
-   page color, and outline buttons a page-colored fill. */
+   page color, and outline buttons outside popovers and dialogs a page-colored fill. */
 body[data-scene-bg='on'] :is(h1, .season-tagline) {
   text-shadow:
     0 0 6px var(--background),
     0 0 16px var(--background),
     0 0 32px var(--background);
 }
-body[data-scene-bg='on'] [data-ui='button'][data-variant='outline'] {
+body[data-scene-bg='on'] [data-ui='button'][data-variant='outline']:not([popover] *, dialog *) {
   background-color: color-mix(in srgb, var(--background) 70%, transparent);
 }
-body[data-scene-bg='on'] [data-ui='button'][data-variant='outline']:hover {
+body[data-scene-bg='on'] [data-ui='button'][data-variant='outline']:not([popover] *, dialog *):hover {
   background-color: var(--accent);
 }

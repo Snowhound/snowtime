@@ -40,3 +40,6 @@ Surfaces was named for every card so it can apply app-wide.
   pages come next.
 - 2026-09-25: The tagline moved from the foot of the page into the title row, in the intro's
   colors, and above the card on the sign-in page. Scenery defaults to dimmed.
+- 2026-09-25: The header's Scenery button became an Appearance popover on every page, with the
+  theme, app icon, and scenery. Theme left the user menu and the timer's View popover, and the
+  header mark links to the timer.

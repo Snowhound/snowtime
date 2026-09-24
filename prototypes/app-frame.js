@@ -32,7 +32,7 @@
     'log-out': '<path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />',
     'mail': '<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" /><rect x="2" y="4" width="20" height="16" rx="2" />',
     'monitor': '<rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" />',
-    'mountain-snow': '<path d="m8 3 4 8 5-5 5 15H2L8 3z" /><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19" />',
+    'palette': '<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />',
     'moon': '<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />',
     'pencil': '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" />',
     'play': '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />',
@@ -112,7 +112,10 @@
   }
   function applyTheme() {
     document.documentElement.classList.toggle('dark', settings.theme === 'dark' || (settings.theme === 'system' && darkQuery.matches))
-    document.querySelectorAll('[data-frame-theme]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.frameTheme === settings.theme)))
+    document.querySelectorAll('[data-frame-theme]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.frameTheme === settings.theme))
+      b.toggleAttribute('data-pressed', b.dataset.frameTheme === settings.theme)
+    })
     appIcon.apply(settings.appIcon) // the marks follow the theme
   }
   const settingsStore = {
@@ -288,10 +291,10 @@
     const header = document.getElementById('app-header')
     header.innerHTML = `
       <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
-        <button type="button" data-frame-app-icon class="mr-1 flex shrink-0 items-center gap-2 rounded-md text-base font-bold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          aria-haspopup="dialog" aria-label="Snowtime: change app icon" title="Change app icon">
+        <a href="${link('timer.html')}" data-frame-link="timer.html" class="mr-1 flex shrink-0 items-center gap-2 rounded-md text-base font-bold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label="Snowtime home">
           ${appIconImg('small', 'size-7')}<span class="hidden sm:inline md:hidden lg:inline">Snowtime</span>
-        </button>
+        </a>
         <span class="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden="true"></span>
         <button type="button" data-ui="button" data-variant="ghost" data-size="sm" class="min-w-0 max-w-[13rem] justify-start gap-2 px-2 lg:max-w-[16rem]"
           popovertarget="org-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Organization: ${escapeHtml(org.name)}">
@@ -309,12 +312,8 @@
           <button type="button" role="menuitem" data-ui="menu-item" disabled>${icon('plus')}Create organization</button>
         </div>
         <nav class="ml-2 hidden items-center gap-1 md:flex" aria-label="Main">${navLinks(false)}</nav>
-        ${
-          sceneCtl
-            ? `<button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="ml-auto size-9 shrink-0" popovertarget="scene-menu" aria-haspopup="dialog" aria-expanded="false" aria-label="Scenery" title="Scenery">${icon('mountain-snow')}</button>`
-            : ''
-        }
-        <button type="button" class="${sceneCtl ? 'ml-1' : 'ml-auto'} shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        <button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="ml-auto size-9 shrink-0" popovertarget="appearance-menu" aria-haspopup="dialog" aria-expanded="false" aria-label="Appearance" title="Appearance">${icon('palette')}</button>
+        <button type="button" class="ml-1 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           popovertarget="user-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Account menu for ${escapeHtml(user.name)}">
           <span data-ui="avatar" class="size-8"><span data-ui="avatar-fallback" class="text-xs font-medium">${escapeHtml(initials(user.name))}</span></span>
         </button>
@@ -326,20 +325,6 @@
           <div data-ui="menu-separator" role="separator"></div>
           <a href="${link('settings.html#profile')}" data-frame-link="settings.html#profile" role="menuitem" data-ui="menu-item">${icon('user')}Profile</a>
           <a href="${link('settings.html')}" data-frame-link="settings.html" role="menuitem" data-ui="menu-item">${icon('settings')}Settings</a>
-          <div data-ui="menu-separator" role="separator"></div>
-          <div data-ui="menu-label" class="text-xs font-medium text-muted-foreground" id="user-menu-theme">Theme</div>
-          <div role="group" aria-labelledby="user-menu-theme">
-            ${[
-              ['light', 'Light', 'sun'],
-              ['dark', 'Dark', 'moon'],
-              ['system', 'System', 'monitor'],
-            ]
-              .map(
-                ([value, label, i]) =>
-                  `<button type="button" role="menuitemradio" data-ui="menu-radio-item" data-frame-theme="${value}" aria-checked="${settings.theme === value}" class="gap-2">${icon(i)}${label}</button>`
-              )
-              .join('')}
-          </div>
           <div data-ui="menu-separator" role="separator"></div>
           <a href="auth.html" role="menuitem" data-ui="menu-item">${icon('log-out')}Sign out</a>
         </div>
@@ -371,7 +356,6 @@
   }
 
   document.addEventListener('click', (event) => {
-    if (event.target.closest('[data-frame-app-icon]')) return openIconPicker()
     const orgItem = event.target.closest('[data-frame-org]')
     const themeItem = event.target.closest('[data-frame-theme]')
     if (orgItem && orgItem.dataset.frameOrg !== orgId) {
@@ -382,7 +366,7 @@
     } else if (themeItem) settingsStore.set({ theme: themeItem.dataset.frameTheme })
   })
 
-  // `scene: true` puts the seasonal scene behind the page and a Scenery button in the header.
+  // `scene: true` puts the seasonal scene behind the page.
   function mount({ page, title, scene: withScene = false }) {
     currentPage = page
     if (withScene && window.scene) mountScene()
@@ -397,7 +381,7 @@
     renderHeader()
     renderIconDialog()
     renderTagline()
-    if (sceneCtl) renderSceneMenu()
+    renderAppearanceMenu()
     // The page's own prototype controls (fixtures, variants) move into the bar, before the role.
     const controls = document.getElementById('prototype-controls')
     if (controls) document.getElementById('prototype-bar-controls').prepend(...controls.children)
@@ -439,16 +423,18 @@
     document.body.dataset.scene = 'on'
     applyScene()
     listeners.settings.push(applyScene)
-    // The weather switch and hint say when reduced motion keeps the weather off.
-    scene.reducedMotion.addEventListener('change', applyScene)
   }
 
   function applyScene() {
     sceneCtl.set({ season: seasons.current(), strength: settings.sceneStrength, background: settings.sceneBackground, weather: settings.sceneWeather })
     document.body.dataset.sceneBg = settings.sceneBackground ? 'on' : 'off'
     document.body.dataset.surfaces = settings.surfaces
-    const menu = document.getElementById('scene-menu')
-    if (!menu) return
+  }
+
+  // Keeps the Appearance popover's controls in step with the settings. The theme toggles follow
+  // through applyTheme.
+  function applyAppearanceMenu() {
+    const menu = document.getElementById('appearance-menu')
     ui.setSwitch(document.getElementById('scene-bg-switch'), settings.sceneBackground)
     menu.querySelectorAll('[data-scene-option]').forEach((b) => {
       const pressed = b.dataset.value === settings[b.dataset.sceneOption]
@@ -456,56 +442,75 @@
       b.toggleAttribute('data-pressed', pressed)
       b.disabled = !settings.sceneBackground
     })
-    const blocked = sceneCtl.weatherBlocked()
+    const blocked = sceneCtl?.weatherBlocked() ?? (window.scene?.reducedMotion.matches ? 'Off while your device reduces motion.' : null)
     const weatherSwitch = document.getElementById('scene-weather-switch')
     ui.setSwitch(weatherSwitch, settings.sceneWeather)
     weatherSwitch.disabled = !!blocked
-    document.getElementById('scene-weather-hint').textContent = blocked ?? scene.SEASONS[seasons.current()].hint
+    document.getElementById('scene-weather-hint').textContent = blocked ?? window.scene?.SEASONS[seasons.current()].hint ?? ''
     const seasonSelect = document.getElementById('scene-season')
     seasonSelect.value = seasons.chosen()
     seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
   }
 
-  // The Scenery popover, opened from the header's mountain button: the sign-in page's menu without
-  // the intro, which only plays there. It sits outside the header, which re-renders.
-  function renderSceneMenu() {
-    const row = (label, hint, control, indent = false) => `<div class="flex items-center justify-between gap-4${indent ? ' pl-3' : ''}">
-        <div class="grid gap-0.5">${label}<span class="text-xs text-muted-foreground"${hint.id ? ` id="${hint.id}"` : ''}>${hint.text ?? ''}</span></div>
-        ${control}
-      </div>`
+  // The Appearance popover, opened from the header's palette button on every page: theme, app icon,
+  // and the scenery settings, compact, with hints only where they say something the label can't.
+  // The intro's switch and Replay stay on the sign-in page and in Settings. The popover sits
+  // outside the header, which re-renders.
+  function renderAppearanceMenu() {
+    const row = (label, control, indent = false) =>
+      `<div class="flex min-h-8 items-center justify-between gap-3${indent ? ' pl-3' : ''}">${label}${control}</div>`
     const toggles = (key, labelId, options) => `<div data-ui="toggle-group" class="shrink-0" role="group" aria-labelledby="${labelId}">
-        ${options.map(([value, label]) => `<button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="${key}" data-value="${value}">${label}</button>`).join('')}
+        ${options.map(([value, label]) => `<button type="button" data-ui="toggle" data-variant="outline" data-size="sm" class="h-8" data-scene-option="${key}" data-value="${value}">${label}</button>`).join('')}
       </div>`
+    const switchButton = (id, labelId, extra = '') =>
+      `<button type="button" id="${id}" role="switch" aria-checked="true" aria-labelledby="${labelId}"${extra} data-ui="switch"><span data-ui="switch-thumb"></span></button>`
     document.body.insertAdjacentHTML(
       'beforeend',
-      `<div id="scene-menu" popover data-ui="popover" class="grid w-80 gap-4" role="dialog" aria-labelledby="scene-menu-title">
-        <h2 id="scene-menu-title" class="text-sm font-semibold">Scenery</h2>
+      `<div id="appearance-menu" popover data-ui="popover" class="grid w-80 gap-3" role="dialog" aria-labelledby="appearance-menu-title">
+        <h2 id="appearance-menu-title" class="text-sm font-semibold">Appearance</h2>
+        <div class="grid gap-1.5">
+          <span data-ui="label" id="appearance-theme-label">Theme</span>
+          <div data-ui="toggle-group" class="grid grid-cols-3" role="group" aria-labelledby="appearance-theme-label">
+            ${[
+              ['light', 'Light', 'sun'],
+              ['dark', 'Dark', 'moon'],
+              ['system', 'System', 'monitor'],
+            ]
+              .map(([value, label, i]) => `<button type="button" data-ui="toggle" data-variant="outline" data-size="sm" class="h-8 gap-1.5" data-frame-theme="${value}">${icon(i)}${label}</button>`)
+              .join('')}
+          </div>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-2.5">
+            ${appIconImg('large', 'size-8')}
+            <div class="grid min-w-0 gap-0.5">
+              <span data-ui="label" id="appearance-icon-label">App icon</span>
+              <span class="truncate text-xs text-muted-foreground" data-app-icon-name></span>
+            </div>
+          </div>
+          <button type="button" data-ui="button" data-variant="outline" data-size="sm" class="h-8" data-appearance-icon aria-describedby="appearance-icon-label">Change</button>
+        </div>
+        <div data-ui="separator"></div>
+        <h3 class="text-xs font-medium text-muted-foreground">Scenery</h3>
         ${row(
           '<label data-ui="label" for="scene-season">Season</label>',
-          { text: 'The landscape, weather, and taglines.' },
-          `<div class="shrink-0"><select id="scene-season" data-ui="select" class="h-9 w-36">
+          `<div class="shrink-0"><select id="scene-season" data-ui="select" class="h-8 w-36 py-1">
             <option value="auto">Auto</option>${Object.entries(seasons.SEASONS)
               .map(([id, s]) => `<option value="${id}">${s.label}</option>`)
               .join('')}
           </select></div>`
         )}
-        ${row(
-          '<span data-ui="label" id="scene-bg-label">Background</span>',
-          { text: 'A landscape for the season.' },
-          '<button type="button" id="scene-bg-switch" role="switch" aria-checked="true" aria-labelledby="scene-bg-label" data-ui="switch"><span data-ui="switch-thumb"></span></button>'
-        )}
+        ${row('<span data-ui="label" id="scene-bg-label">Background</span>', switchButton('scene-bg-switch', 'scene-bg-label'))}
         ${row(
           '<span data-ui="label" id="scene-strength-label">Strength</span>',
-          { text: 'How much the page color covers it.' },
           toggles('sceneStrength', 'scene-strength-label', [
-            ['full', 'Full'],
             ['dimmed', 'Dimmed'],
+            ['full', 'Full'],
           ]),
           true
         )}
         ${row(
           '<span data-ui="label" id="surfaces-label">Surfaces</span>',
-          { text: 'Glass lets it show through cards.' },
           toggles('surfaces', 'surfaces-label', [
             ['glass', 'Glass'],
             ['solid', 'Solid'],
@@ -513,19 +518,31 @@
           true
         )}
         ${row(
-          '<span data-ui="label" id="scene-weather-label">Weather</span>',
-          { id: 'scene-weather-hint' },
-          '<button type="button" id="scene-weather-switch" role="switch" aria-checked="true" aria-labelledby="scene-weather-label" aria-describedby="scene-weather-hint" data-ui="switch"><span data-ui="switch-thumb"></span></button>'
+          '<div class="grid gap-0.5"><span data-ui="label" id="scene-weather-label">Weather</span><span class="text-xs text-muted-foreground" id="scene-weather-hint"></span></div>',
+          switchButton('scene-weather-switch', 'scene-weather-label', ' aria-describedby="scene-weather-hint"')
         )}
         <div data-ui="separator"></div>
-        <a href="${link('settings.html#scenery')}" data-frame-link="settings.html#scenery" data-ui="button" data-variant="link" data-size="sm" class="h-auto justify-start p-0">All scenery settings</a>
+        <a href="${link('settings.html#preferences')}" data-frame-link="settings.html#preferences" data-ui="button" data-variant="link" data-size="sm" class="h-auto justify-start p-0">All settings</a>
       </div>`
     )
-    const menu = document.getElementById('scene-menu')
+    const menu = document.getElementById('appearance-menu')
     menu.querySelector('#scene-season').addEventListener('change', (event) => settingsStore.set({ sceneSeason: event.currentTarget.value }))
     menu.querySelector('#scene-bg-switch').addEventListener('change', (event) => settingsStore.set({ sceneBackground: event.currentTarget.getAttribute('aria-checked') === 'true' }))
     menu.querySelector('#scene-weather-switch').addEventListener('change', (event) => settingsStore.set({ sceneWeather: event.currentTarget.getAttribute('aria-checked') === 'true' }))
     menu.querySelectorAll('[data-scene-option]').forEach((b) => b.addEventListener('click', () => settingsStore.set({ [b.dataset.sceneOption]: b.dataset.value })))
+    // The picker returns focus to the palette button, since the popover closes behind it.
+    menu.querySelector('[data-appearance-icon]').addEventListener('click', () => {
+      menu.hidePopover()
+      document.querySelector('[popovertarget="appearance-menu"]').focus()
+      openIconPicker()
+    })
+    applyTheme()
+    applyAppIcon()
+    applyAppearanceMenu()
+    listeners.settings.push(applyAppearanceMenu)
+    // The weather switch and hint say when reduced motion keeps the weather off.
+    window.scene?.reducedMotion.addEventListener('change', applyAppearanceMenu)
+    if (!sceneCtl) return
 
     // Prototype variant: the weather's pace on app pages. Changing it reloads the scene.
     document.getElementById('prototype-bar-controls').insertAdjacentHTML(
@@ -544,7 +561,6 @@
       const { density, speed } = PACES[event.currentTarget.value]
       sceneCtl.set({ pace: { density, speed } })
     })
-    applyScene()
   }
 
   // The season's tagline (seasons.js) in the page's title row, after the h1, in the intro's colors.
