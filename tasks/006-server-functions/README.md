@@ -10,5 +10,5 @@ One subtask per area.
 
 - [x] `01-timer.md`
 - [x] `02-entries.md`
-- [ ] `03-projects.md`
+- [x] `03-projects.md`
 - [ ] `04-settings.md`
