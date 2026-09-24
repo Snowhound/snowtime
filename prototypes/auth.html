@@ -700,6 +700,8 @@
       addEventListener('storage', (event) => event.key === appIcon.SETTINGS_KEY && applyScene())
 
       intro.reducedMotion.addEventListener('change', applyScene)
+      // Prototype only: whether the intro plays on the first visit, beside Replay intro.
+      document.querySelector('[title="Prototype variants for the seasonal scene"] [data-replay-intro]').before(intro.prototypeSwitch())
       function playIntro() {
         document.getElementById('scene-menu').hidePopover?.()
         introPlayer.play({ focus: document.getElementById('scene-button') })

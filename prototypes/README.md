@@ -278,7 +278,8 @@ the season's image in light and dark, the tint, and the weather.
   It plays once at the change of season: on the first page opened in a season by month it hasn't
   played in (`snowtime.introSeason` in `localStorage`, which the sign-in page's intro sets too),
   under the Intro switch. It keys on the calendar season, not the Season setting, so changing
-  that setting doesn't queue an intro. Replay intro in the Appearance popover and "Replay it" in
+  that setting doesn't queue an intro. The app keeps this; the prototypes don't play it on their
+  own, since it got in the way of checking the pages (see the Intro switch below). Replay intro in the Appearance popover and "Replay it" in
   Settings play it any time; focus returns to the Appearance button or the link. The page's
   theme and scene settings return after it, and the page stays mounted under it, so a running
   timer keeps counting and unsaved input stays. With reduced motion it doesn't play and Replay is
@@ -292,6 +293,11 @@ the season's image in light and dark, the tint, and the weather.
   pages use the saved choice. As on the sign-in
   page, it stops in hidden tabs and stays off with reduced motion; the popover's switch then says
   why.
+- **Intro switch** (prototype only): the prototype bar's "Intro" select on every signed-in page
+  and on `auth.html`, kept in `snowtime.prototypeIntro` by [intro.js](intro.js). "Replay only",
+  the default, plays the intro only from Replay intro. "As in the app" turns the once-a-season and
+  first-visit intros back on from the next page load. To check the change of season, choose it and
+  set `snowtime.introSeason` in `localStorage` to another season.
 
 The timer page checked on 2026-09-24 in Chrome at 1440, 850, and 390 px, light and dark, every
 season, every layout, glass and solid, full and dimmed, background off, and the running, long,
@@ -724,7 +730,9 @@ from navigation:
   theme. When the intro is due, a small script in `<head>` paints the page black until it starts,
   so a light-mode visitor sees no flash of the light page first. It plays on the first visit to
   this browser (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay
-  intro plays it any time. **Skip intro** or Escape ends it, and focus returns to the Scenery
+  intro plays it any time. The app keeps the first-visit intro; the prototype plays it only with
+  the prototype bar's "Intro: as in the app" (see
+  [Seasonal scene in the app](#seasonal-scene-in-the-app)). **Skip intro** or Escape ends it, and focus returns to the Scenery
   button; the rest of the page is `inert` while it plays. With reduced motion it doesn't play,
   the snow stays off, and the Intro switch and Replay are disabled, the switch's hint saying why.
 - **Scenery menu** (the mountain button, top right): Season (Auto, which follows the month and
@@ -754,6 +762,7 @@ The prototype bar's second row holds variants to compare, kept in `snowtime.prot
 | -------- | -------------------------------------------------------------------------------- |
 | Tagline  | Above the card (chosen: in the intro's two colors, as on the signed-in pages), bottom fade (at the foot of the page over a fade, in the page flow so it never covers the card), halo (a glow in the page color), in the card (a footer line), or pill |
 | Tone     | Deeper (`#060c14` dark with card `#0d1929`, `#fbfdff` light) or the app's tokens |
+| Intro    | Replay only (the default) or as in the app, which plays it on the first visit; kept in `snowtime.prototypeIntro`, not with the other variants |
 
 Over the images, contrast depends on the picture, so axe's color-contrast results don't apply to
 the scene; the card and the tagline's pill keep text on a page-colored surface.

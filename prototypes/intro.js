@@ -8,12 +8,17 @@
 // play it once when that changes). Both follow the `sceneIntro` setting, and it never plays with
 // reduced motion.
 //
+// In the prototypes it doesn't play on its own, so it doesn't get in the way of checking the pages:
+// a prototype switch (`snowtime.prototypeIntro`, from `intro.prototypeSwitch()`) turns the
+// first-visit and once-a-season intros back on. Replay intro always works. The app keeps both.
+//
 // `intro.create({ scene, page, signedIn, onChange, restoreTheme })` returns a player. While it
 // plays, the page applies its scene through `player.scene(patch)`, which shows the weather and the
 // intro's background whatever the user's switches say, and re-applies it on `onChange`.
 ;(() => {
   const SEEN_KEY = 'snowtime.introSeen'
   const SEASON_KEY = 'snowtime.introSeason'
+  const PROTOTYPE_KEY = 'snowtime.prototypeIntro'
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
 
   function read(key) {
@@ -38,8 +43,21 @@
   // Whether it plays on this visit: 'sign-in' on the first visit to this browser, 'app' on the
   // first page opened in a season it hasn't played in.
   function due(where) {
-    if (!allowed()) return false
+    if (!allowed() || read(PROTOTYPE_KEY) !== 'app') return false
     return where === 'app' ? read(SEASON_KEY) !== seasons.byMonth() : read(SEEN_KEY) !== '1'
+  }
+  // Prototype only: a select for a prototype bar, between replay only (the default) and playing on
+  // its own as in the app. It applies from the next page load.
+  function prototypeSwitch() {
+    const mode = read(PROTOTYPE_KEY) === 'app' ? 'app' : 'replay'
+    const tpl = document.createElement('template')
+    tpl.innerHTML = `<label for="prototype-intro" class="sr-only">Intro (prototype)</label>
+      <select id="prototype-intro" data-ui="select" class="h-9 w-44" title="Prototype only: whether the intro plays on its own, from the next page load">
+        <option value="replay"${mode === 'replay' ? ' selected' : ''}>Intro: replay only</option>
+        <option value="app"${mode === 'app' ? ' selected' : ''}>Intro: as in the app</option>
+      </select>`
+    tpl.content.querySelector('select').addEventListener('change', (event) => write(PROTOTYPE_KEY, event.currentTarget.value))
+    return tpl.content
   }
   // Paints the page black until the intro starts, so a light page doesn't flash first. Call it from
   // <head> or before the body renders.
@@ -209,5 +227,5 @@
     }
   }
 
-  window.intro = { create, due, hold, markSeen, reducedMotion }
+  window.intro = { create, due, hold, markSeen, prototypeSwitch, reducedMotion }
 })()

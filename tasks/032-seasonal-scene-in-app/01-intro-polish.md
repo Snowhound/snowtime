@@ -25,7 +25,7 @@ that hasn't been done yet. The intro lives in `prototypes/intro.js`.
 
 - [ ] Replay intro opens on the weather alone with no frame of the image, in light and dark, with
       the Tone variants on `auth.html`, and on the signed-in pages
-- [ ] Opening a prototype page doesn't play the intro unless the prototype switch asks for it;
+- [x] Opening a prototype page doesn't play the intro unless the prototype switch asks for it;
       the change-of-season trigger can still be checked (fake it by setting
       `snowtime.introSeason` to another season)
 - [ ] Checked with `docs/skills/ui-review/SKILL.md` at 1440, 850, and 390 px, light and dark, on

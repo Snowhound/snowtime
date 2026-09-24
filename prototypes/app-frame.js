@@ -391,6 +391,8 @@
     renderAppearanceMenu()
     if (introPlayer && intro.due('app')) introPlayer.play()
     else document.documentElement.classList.remove('intro-pending')
+    // Prototype only: whether the intro plays on its own, before the role.
+    if (introPlayer) document.querySelector('label[for="frame-role"]').before(intro.prototypeSwitch())
     // The page's own prototype controls (fixtures, variants) move into the bar, before the role.
     const controls = document.getElementById('prototype-controls')
     if (controls) document.getElementById('prototype-bar-controls').prepend(...controls.children)
