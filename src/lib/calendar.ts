@@ -81,6 +81,15 @@ export function startOfWeek(date: IsoDate, weekStart: WeekStart): IsoDate {
   return addDays(date, -((weekday(date) - first + 7) % 7))
 }
 
+// The first day of the date's month and of the next one, the bounds of a report on it.
+export function monthDates(date: IsoDate): { from: IsoDate; to: IsoDate } {
+  const d = new Date(dayNumber(date))
+  return {
+    from: toIsoDate(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)),
+    to: toIsoDate(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)),
+  }
+}
+
 // The first instant of the day in the zone. That is local midnight, or its first
 // occurrence when clocks fell back at midnight, or the moment clocks sprang forward when
 // the zone skipped midnight (as Chile and formerly Brazil do).

@@ -10,6 +10,7 @@ import {
   daysBetween,
   localDate,
   localTime,
+  monthDates,
   offsetAt,
   splitByDay,
   startOfWeek,
@@ -55,6 +56,12 @@ describe('dates', () => {
     expect(startOfWeek('2026-09-20', 'mon')).toBe('2026-09-14')
     expect(startOfWeek('2026-09-20', 'sun')).toBe('2026-09-20')
     expect(startOfWeek('2027-01-02', 'mon')).toBe('2026-12-28')
+  })
+
+  test('monthDates spans the month, across a year end', () => {
+    expect(monthDates('2026-09-24')).toEqual({ from: '2026-09-01', to: '2026-10-01' })
+    expect(monthDates('2026-12-31')).toEqual({ from: '2026-12-01', to: '2027-01-01' })
+    expect(monthDates('2028-02-01')).toEqual({ from: '2028-02-01', to: '2028-03-01' })
   })
 
   test('localDate reads the day in the zone', () => {
