@@ -19,6 +19,7 @@ const errorText: Record<AppErrorKey, () => string> = {
   entry_end_before_start: m.error_entry_end_before_start,
   timer_not_running: m.error_timer_not_running,
   timer_started_elsewhere: m.error_timer_started_elsewhere,
+  timer_running_in_left_organization: m.error_timer_running_in_left_organization,
   project_not_found: m.error_project_not_found,
   project_id_taken: m.error_project_id_taken,
   project_name_taken: m.error_project_name_taken,

@@ -144,7 +144,11 @@
 | Team lead   | read/write  | read, reports          | —               |
 | Admin/owner | read/write  | read/write, reports    | read/write      |
 
-- One running timer per user, across all organizations.
+- One running timer per user, across all organizations. The timer functions see only
+  entries in organizations the user still belongs to. Removing a member, or a member
+  leaving, stops their running timer in that organization at that moment: a Better Auth
+  `after` hook on `/organization/remove-member` and `/organization/leave` does it, since
+  the plugin's `afterRemoveMember` hook does not fire on leave.
 
 ## Deployment model
 

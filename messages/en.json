@@ -15,6 +15,7 @@
   "error_entry_end_before_start": "The end must be after the start.",
   "error_timer_not_running": "This timer is not running.",
   "error_timer_started_elsewhere": "Another timer was started at the same time.",
+  "error_timer_running_in_left_organization": "Your timer is still running in an organization you left. Ask an admin there to delete it.",
   "error_project_not_found": "Project not found.",
   "error_project_id_taken": "A project with this id already exists.",
   "error_project_name_taken": "A project with this name already exists.",

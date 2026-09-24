@@ -15,6 +15,7 @@
   "error_entry_end_before_start": "Lõpp peab olema pärast algust.",
   "error_timer_not_running": "See taimer ei käi.",
   "error_timer_started_elsewhere": "Samal ajal käivitati teine taimer.",
+  "error_timer_running_in_left_organization": "Sinu taimer käib endiselt organisatsioonis, kust sa lahkusid. Palu sealsel administraatoril see kustutada.",
   "error_project_not_found": "Projekti ei leitud.",
   "error_project_id_taken": "Selle ID-ga projekt on juba olemas.",
   "error_project_name_taken": "Selle nimega projekt on juba olemas.",

@@ -30,6 +30,8 @@ export const errorMessages = {
   entry_end_before_start: 'The end must be after the start.',
   timer_not_running: 'This timer is not running.',
   timer_started_elsewhere: 'Another timer was started at the same time.',
+  timer_running_in_left_organization:
+    'Your timer is still running in an organization you left. Ask an admin there to delete it.',
   project_not_found: 'Project not found.',
   project_id_taken: 'A project with this id already exists.',
   project_name_taken: 'A project with this name already exists.',

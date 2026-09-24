@@ -1,13 +1,16 @@
 import { passkey } from '@better-auth/passkey'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { betterAuth } from 'better-auth'
+import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { organization } from 'better-auth/plugins'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { v7 as uuidv7 } from 'uuid'
 import { db } from '../db'
+import { withActor } from '../db/actor'
 import * as schema from '../db/schema'
 import { env } from '../env'
 import { passwordEnabled, socialProviders } from '../server/sign-in.server'
+import { stopTimerOfRemovedMember } from '../server/timer.server'
 
 // Passkeys are bound to the app's domain, so each environment's relying party follows its
 // BETTER_AUTH_URL; the plugin would otherwise default to localhost.
@@ -26,6 +29,25 @@ export const auth = betterAuth({
     enabled: passwordEnabled(env),
   },
   socialProviders: socialProviders(env),
+  hooks: {
+    // A member removed from an organization, or leaving it, loses access to its entries, so
+    // their running timer there stops now (docs/architecture.md, "Tenancy"). The plugin's
+    // afterRemoveMember hook misses /organization/leave, so this hook watches both.
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== '/organization/remove-member' && ctx.path !== '/organization/leave') return
+      const returned = ctx.context.returned
+      if (typeof returned !== 'object' || !returned || returned instanceof APIError) return
+      // remove-member returns { member }, leave returns the member itself.
+      const removed = ('member' in returned ? returned.member : returned) as {
+        userId: string
+        organizationId: string
+      }
+      const actor = ctx.context.session?.user.id ?? removed.userId
+      await withActor(actor, () =>
+        stopTimerOfRemovedMember(db, removed.userId, removed.organizationId),
+      )
+    }),
+  },
   plugins: [
     organization({
       teams: {
