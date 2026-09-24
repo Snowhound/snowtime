@@ -17,6 +17,7 @@ prototype, include its full absolute `file:///` URL so it can be opened directly
 | tailwind-merge 3.7.0 (loaded by `ui.js`) | Class merging, same as the app's `cn()`                     |
 | [prototype-theme.js](prototype-theme.js) | Dark variant, semantic color/radius mappings, base layer    |
 | [prototype.css](prototype.css)           | Snowtime theme tokens from `src/styles.css`, shared styles  |
+| [app-frame.js](app-frame.js)             | App frame, view settings, icons, and markup helpers         |
 | Inline Lucide SVG paths                  | Icons, copied from `lucide-static` (pinned)                 |
 
 Dependency order in `<head>`:
@@ -25,6 +26,7 @@ Dependency order in `<head>`:
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
 <script src="prototype-theme.js"></script>
 <script src="ui.js"></script>
+<script src="app-frame.js"></script> <!-- signed-in pages only -->
 <!-- view-specific <style type="text/tailwindcss"> -->
 <link rel="stylesheet" href="prototype.css" />
 ```
@@ -59,8 +61,13 @@ class strings as Solid-UI, so the look matches and markup ports directly, but Ko
 | `alert`, `alert-title`, `alert-description`   | `Alert*`                       | default, destructive                                          |
 | `separator`                                   | `Separator`                    | horizontal only                                               |
 | `avatar`, `avatar-fallback`                   | `Avatar`, `AvatarFallback`     | —                                                             |
+| `tabs-list`, `tabs-trigger`, `tabs-content`   | `TabsList`, `TabsTrigger`, `TabsContent` | `role="tab"` buttons with `aria-controls`; `ui.js` sets `data-selected`, arrow keys |
+| `menu`, `menu-item`, `menu-radio-item`, `menu-label`, `menu-separator` | `DropdownMenu*` | native `[popover]` with `role="menu"`; `data-align="start"`; radio dot shows on `aria-checked="true"` |
+| `checkbox`                                    | `CheckboxControl`              | native `<input type="checkbox">`; `ui.js` adds the check icon |
+| `progress`, `progress-fill`                   | `ProgressTrack`, `ProgressFill` | set the fill width inline                                    |
 
-Kobalte's enter/exit animations are not reproduced. Classes are applied on load and to any
+Solid-UI has no date range picker; prototypes use two native `<input type="date">` fields
+with `input` classes. Kobalte's enter/exit animations are not reproduced. Classes are applied on load and to any
 later-inserted or changed `data-ui` element. Change a
 variant by setting `data-variant`; don't toggle classes on `data-ui` elements from JS, since the
 original `class` is what gets re-merged. Start page scripts from `ui.ready`.
@@ -107,6 +114,37 @@ functions. Do not port prototype JS.
   files.
 - Only add to `prototype.css` / `prototype-theme.js` what is useful across prototypes; keep
   feature styles in the HTML. When `src/styles.css` tokens change, update `prototype.css`.
+- Keep each view in its own HTML file. The app frame is the shared exception, so every
+  signed-in page has the same header; see [App frame](#app-frame).
+
+## App frame
+
+[app-frame.js](app-frame.js) renders the signed-in chrome. Call
+`appFrame.mount({ page, title })` first in the page script. It inserts:
+
+- A dashed **prototype bar** with the page title, the page's own controls (move them in with a
+  `<div id="prototype-controls">`), and a role switcher (member, team lead, admin, owner).
+- The **app header**: the clock mark, the organization switcher (a dropdown menu of the user's
+  organizations), navigation (Timer, Reports, Projects, and Organization for admins and owners
+  only), and a user menu (Profile, Settings, theme, Sign out). Below 768 px the navigation moves
+  to a second header row of four equal-width links, so every page stays one tap away without a
+  hamburger menu.
+
+It also provides:
+
+| API                                  | Use                                                            |
+| ------------------------------------ | -------------------------------------------------------------- |
+| `appFrame.viewSettings.get()` / `.set(patch)` | Per-device settings in `localStorage` under `snowtime.viewSettings`: `design`, `theme`, `showSummary`. `set` saves, applies the theme, and notifies. |
+| `appFrame.on('settings' \| 'role' \| 'org', fn)` | Re-render when settings, the prototype role, or the organization change |
+| `appFrame.role`, `appFrame.isAdmin()`, `appFrame.org`, `appFrame.user` | Prototype session |
+| `appFrame.setUser(patch)`            | Swap the header's user, for long-content fixtures              |
+| `appFrame.link(href)`                | A link that keeps `?role=` and `?org=`                         |
+| `appFrame.escapeHtml`, `appFrame.icon(name)`, `appFrame.initials` | Markup helpers; `icon` uses the Lucide sprite the frame injects |
+
+The role and organization live in the URL (`?role=admin&org=snowhound`) so they survive moving
+between prototypes. Frame links with `data-frame-link="<href>"` keep them. Switching the
+organization changes the header only; page data stays the same fictional Snowhound data. The
+signed-in user is Anna Kask (`anna@snowhound.eu`), matching the invitation in `auth.html`.
 
 ## Checks before handoff
 
@@ -120,10 +158,48 @@ functions. Do not port prototype JS.
 Gotchas:
 
 - Use `grid-cols-[minmax(0,1fr)]` / `min-w-0` so long content cannot widen grid or flex tracks.
+- `ui.js` styles inserted markup in a `MutationObserver` callback. Measure overflow in a
+  separate step after a fixture change, not in the same script, or unstyled elements are measured.
 - Absolutely positioned elements (e.g. `sr-only`) inside an `overflow-x-auto` wrapper escape it
   unless the wrapper is `relative`, causing page-level horizontal scroll.
 
 ## Prototypes
+
+### [settings.html](settings.html) — Settings
+
+Decision: one settings page for account-wide and per-device settings, and how it relates to the
+timer's View popover.
+
+Three cards, with section links beside them from 1024 px:
+
+| Card        | Stored in                        | Saves                                   |
+| ----------- | -------------------------------- | --------------------------------------- |
+| Profile     | `user`, `account`                | Name with "Save profile"                |
+| Preferences | `user_settings`                  | Time zone and week start with "Save preferences" |
+| This device | `localStorage` (`snowtime.viewSettings`) | Timer layout, theme, show summary, immediately |
+
+The email is read-only because invitations are matched to the verified address and changing it
+would need email verification (task 016). Sign-in methods list Google, GitHub, and Microsoft with
+Connect (Better Auth `linkSocial`, simulated redirect) and Disconnect (`unlinkAccount`, confirmed
+in a dialog). Disconnect is disabled on the last linked method. Passkeys show as planned (task
+015). The time zone select lists `Intl.supportedValuesOf('timeZone')` with the current UTC
+offset, plus a button for the device's zone; a preview shows the current time and this week's
+range in the chosen zone and week start.
+
+The timer's gear popover stays as a shortcut to This device, with an "All settings" link. Both
+and the user menu's theme items write the same key through `appFrame.viewSettings`, so they never
+disagree; other open tabs follow through the `storage` event.
+
+Fixtures: populated (Google and GitHub), new account (one provider, preferences from the
+browser), long content (long name, email, and zone), and local dev password (only the seeded
+credential account).
+
+Omitted: avatar upload, email change, account deletion (users are anonymized, not deleted), and
+active sessions.
+
+Checked in Chromium at 1440, 850, and 390 px, light and dark, every fixture, as member and owner:
+no horizontal page overflow, settings shared with the timer across pages, menu focus and Escape,
+and no browser errors.
 
 ### [timer.html](timer.html) — Timer and entries
 
@@ -136,8 +212,9 @@ are kept as user-selectable options.
   narrow screens.
 
 The settings button opens a **View** popover: layout, theme (light / dark / system), and whether
-the summary panel (today / this week, per-project bars) is shown. Settings persist per device in
-`localStorage` under `snowtime.viewSettings`, as planned for the app.
+the summary panel (today / this week, per-project bars) is shown, plus a link to Settings.
+Settings persist per device in `localStorage` under `snowtime.viewSettings`, as planned for the
+app, through the app frame.
 
 Entries are edited in a dialog opened from the pencil action or the time range: description,
 project, date, start, and end. An end time at or before the start means the next day. Clicking the
@@ -150,8 +227,7 @@ Simulated: start/stop, Enter to start, editing the running entry inline or in th
 totals count stopped entries only; the summary includes the running timer. Entries are grouped by
 their start day; splitting at midnight belongs to reports.
 
-Omitted: overlap checks between entries, manual entry, reports, org/team switching, persistence of
-entries.
+Omitted: overlap checks between entries, manual entry, reports, persistence of entries.
 
 Checked in Chromium at 1440, 850, and 390 px, light and dark, all layouts with summary on and off:
 no horizontal page overflow, settings survive reload, dialog validation and saving work, no browser

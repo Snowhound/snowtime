@@ -93,3 +93,8 @@ body {
     animation: none !important;
   }
 }
+
+/* Dropdown radio items show their dot only when checked. */
+[data-ui='menu-radio-item']:not([aria-checked='true']) > [data-ui-indicator] {
+  visibility: hidden;
+}

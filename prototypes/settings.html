@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="app-frame.js"></script>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body class="bg-muted/40">
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden">
+      <defs>
+        <!-- Brand marks: Google and Microsoft from gilbarbara/logos, GitHub from simple-icons (both CC0). -->
+        <symbol id="logo-google" viewBox="0 0 256 262">
+          <path fill="#4285f4" d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622l38.755 30.023l2.685.268c24.659-22.774 38.875-56.282 38.875-96.027" />
+          <path fill="#34a853" d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055c-34.523 0-63.824-22.773-74.269-54.25l-1.531.13l-40.298 31.187l-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1" />
+          <path fill="#fbbc05" d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82c0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602z" />
+          <path fill="#eb4335" d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0C79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251" />
+        </symbol>
+        <symbol id="logo-microsoft" viewBox="0 0 256 256">
+          <path fill="#f1511b" d="M121.666 121.666H0V0h121.666z" />
+          <path fill="#80cc28" d="M256 121.666H134.335V0H256z" />
+          <path fill="#00adef" d="M121.663 256.002H0V134.336h121.663z" />
+          <path fill="#fbbc09" d="M256 256.002H134.335V134.336H256z" />
+        </symbol>
+        <symbol id="logo-github" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div id="prototype-controls">
+      <label for="fixture" class="sr-only">Fixture</label>
+      <select id="fixture" data-ui="select" class="h-9 w-44">
+        <option value="populated">Populated</option>
+        <option value="new">New account</option>
+        <option value="long">Long content</option>
+        <option value="local">Local dev password</option>
+      </select>
+    </div>
+
+    <div class="mx-auto max-w-6xl px-4 pt-6 sm:px-8">
+      <h1 class="text-2xl font-semibold tracking-tight">Settings</h1>
+    </div>
+
+    <main class="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-4 pb-10 pt-4 sm:px-8 lg:grid-cols-[12rem_minmax(0,1fr)]">
+      <nav class="hidden lg:block" aria-label="Settings sections">
+        <ul class="sticky top-6 flex flex-col gap-1">
+          <li><a href="#profile" data-ui="button" data-variant="ghost" class="w-full justify-start">Profile</a></li>
+          <li><a href="#preferences" data-ui="button" data-variant="ghost" class="w-full justify-start">Preferences</a></li>
+          <li><a href="#device" data-ui="button" data-variant="ghost" class="w-full justify-start">This device</a></li>
+        </ul>
+      </nav>
+
+      <div class="flex min-w-0 max-w-3xl flex-col gap-6">
+        <section id="profile" data-ui="card" class="scroll-mt-6" aria-labelledby="profile-title">
+          <div data-ui="card-header">
+            <h2 id="profile-title" data-ui="card-title">Profile</h2>
+            <p data-ui="card-description">Your name and sign-in methods, the same in every organization.</p>
+          </div>
+          <form id="profile-form" data-ui="card-content" class="grid grid-cols-[minmax(0,1fr)] gap-4" novalidate>
+            <div class="flex min-w-0 items-center gap-4">
+              <span data-ui="avatar" class="size-12"><span id="profile-initials" data-ui="avatar-fallback" class="text-sm font-medium"></span></span>
+              <div class="min-w-0">
+                <p id="profile-heading" class="truncate font-medium"></p>
+                <p class="text-sm text-muted-foreground">The picture comes from your sign-in provider.</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+              <div class="grid content-start gap-2">
+                <label data-ui="label" for="profile-name">Name</label>
+                <input id="profile-name" data-ui="input" type="text" autocomplete="name" aria-describedby="profile-name-error" />
+                <p id="profile-name-error" data-ui="error-message" class="empty:hidden"></p>
+              </div>
+              <div class="grid content-start gap-2">
+                <label data-ui="label" for="profile-email">Email</label>
+                <input id="profile-email" data-ui="input" type="email" readonly aria-describedby="profile-email-hint" class="bg-muted/50 text-muted-foreground" />
+                <p id="profile-email-hint" class="text-xs text-muted-foreground">Can't be changed: invitations are matched to this verified address.</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-end gap-3">
+              <p id="profile-status" class="text-sm text-muted-foreground" aria-live="polite"></p>
+              <button type="submit" data-ui="button" id="profile-save" disabled>Save profile</button>
+            </div>
+          </form>
+          <div data-ui="separator"></div>
+          <div data-ui="card-content" class="grid grid-cols-[minmax(0,1fr)] gap-3 pt-6">
+            <div>
+              <h3 class="text-sm font-medium">Sign-in methods</h3>
+              <p class="text-sm text-muted-foreground">Any linked method signs you in to this account. Keep at least one.</p>
+            </div>
+            <ul id="providers" class="divide-y rounded-md border"></ul>
+          </div>
+        </section>
+
+        <section id="preferences" data-ui="card" class="scroll-mt-6" aria-labelledby="preferences-title">
+          <div data-ui="card-header">
+            <h2 id="preferences-title" data-ui="card-title">Preferences</h2>
+            <p data-ui="card-description">Saved to your account and used on every device, for times, days, and reports.</p>
+          </div>
+          <form id="preferences-form" data-ui="card-content" class="grid gap-5" novalidate>
+            <div class="grid gap-2">
+              <label data-ui="label" for="time-zone">Time zone</label>
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <select id="time-zone" data-ui="select" class="sm:w-80"></select>
+                <button type="button" id="use-browser-zone" data-ui="button" data-variant="outline" data-size="sm" class="self-start sm:self-auto"></button>
+              </div>
+            </div>
+            <div class="grid gap-2">
+              <span data-ui="label" id="week-start-label">Week starts on</span>
+              <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="week-start-label">
+                <button type="button" data-ui="toggle" data-variant="outline" data-week-start="mon">Monday</button>
+                <button type="button" data-ui="toggle" data-variant="outline" data-week-start="sun">Sunday</button>
+              </div>
+            </div>
+            <div id="preferences-preview" class="grid gap-1 rounded-md bg-muted/60 px-3 py-2.5 text-sm" aria-live="polite"></div>
+            <div class="flex items-center justify-end gap-3">
+              <p id="preferences-status" class="text-sm text-muted-foreground" aria-live="polite"></p>
+              <button type="submit" data-ui="button" id="preferences-save" disabled>Save preferences</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="device" data-ui="card" class="scroll-mt-6" aria-labelledby="device-title">
+          <div data-ui="card-header">
+            <h2 id="device-title" data-ui="card-title">This device</h2>
+            <p data-ui="card-description">How Snowtime looks in this browser. Changes apply right away and aren't synced to other devices.</p>
+          </div>
+          <div data-ui="card-content" class="grid gap-5">
+            <div class="grid gap-2">
+              <span data-ui="label" id="device-layout-label">Timer layout</span>
+              <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="device-layout-label">
+                <button type="button" data-ui="toggle" data-variant="outline" data-setting="design" data-value="bar">Bar</button>
+                <button type="button" data-ui="toggle" data-variant="outline" data-setting="design" data-value="focus">Focus</button>
+                <button type="button" data-ui="toggle" data-variant="outline" data-setting="design" data-value="table">Table</button>
+              </div>
+            </div>
+            <div class="grid gap-2">
+              <span data-ui="label" id="device-theme-label">Theme</span>
+              <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="device-theme-label">
+                <button type="button" data-ui="toggle" data-variant="outline" data-setting="theme" data-value="light">Light</button>
+                <button type="button" data-ui="toggle" data-variant="outline" data-setting="theme" data-value="dark">Dark</button>
+                <button type="button" data-ui="toggle" data-variant="outline" data-setting="theme" data-value="system">System</button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <div class="grid gap-1">
+                <span data-ui="label" id="device-summary-label">Show summary</span>
+                <span class="text-sm text-muted-foreground">Today and this week beside the timer.</span>
+              </div>
+              <button id="device-summary" type="button" role="switch" aria-checked="true" aria-labelledby="device-summary-label" data-ui="switch">
+                <span data-ui="switch-thumb"></span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <dialog id="unlink-dialog" data-ui="dialog" aria-labelledby="unlink-title" aria-describedby="unlink-description">
+      <div data-ui="dialog-header">
+        <h2 id="unlink-title" data-ui="dialog-title"></h2>
+        <p id="unlink-description" data-ui="dialog-description"></p>
+      </div>
+      <div data-ui="dialog-footer">
+        <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
+        <button type="button" data-ui="button" data-variant="destructive" id="unlink-confirm">Disconnect</button>
+      </div>
+    </dialog>
+
+    <script>
+      appFrame.mount({ page: 'settings', title: 'Settings' })
+      const { escapeHtml, icon, initials } = appFrame
+
+      const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const zones = Intl.supportedValuesOf('timeZone')
+      if (!zones.includes(browserZone)) zones.unshift(browserZone)
+
+      // Linked accounts (Better Auth `account` rows) by provider id.
+      const PROVIDERS = [
+        { id: 'google', name: 'Google', logo: 'google' },
+        { id: 'github', name: 'GitHub', logo: 'github' },
+        { id: 'microsoft', name: 'Microsoft', logo: 'microsoft' },
+      ]
+      const day = (iso) => new Date(`${iso}T12:00:00`).getTime()
+
+      const fixtures = {
+        populated: () => ({
+          user: { name: 'Anna Kask', email: 'anna@snowhound.eu' },
+          accounts: { google: { detail: 'anna@snowhound.eu', linkedAt: day('2026-09-01') }, github: { detail: 'annakask', linkedAt: day('2026-09-03') } },
+          prefs: { timeZone: 'Europe/Tallinn', weekStart: 'mon' },
+          password: false,
+        }),
+        // First sign-in: user_settings was created with the browser's zone and the default week start.
+        new: () => ({
+          user: { name: 'Anna Kask', email: 'anna@snowhound.eu' },
+          accounts: { google: { detail: 'anna@snowhound.eu', linkedAt: Date.now() - 5 * 60_000 } },
+          prefs: { timeZone: browserZone, weekStart: 'mon' },
+          password: false,
+        }),
+        long: () => ({
+          user: {
+            name: 'Annabel-Katariina von Löwenstein-Wertheim-Rosenberg Kask',
+            email: 'annabel-katariina.von.loewenstein-wertheim-rosenberg@pohjamaade-logistika-konsortsium.eu',
+          },
+          accounts: {
+            google: { detail: 'annabel-katariina.von.loewenstein-wertheim-rosenberg@pohjamaade-logistika-konsortsium.eu', linkedAt: day('2025-11-12') },
+            github: { detail: 'annabel-katariina-von-loewenstein-wertheim', linkedAt: day('2026-01-20') },
+            microsoft: { detail: 'annabel-katariina.von.loewenstein@pohjamaadelogistika.onmicrosoft.com', linkedAt: day('2026-04-02') },
+          },
+          prefs: { timeZone: 'America/Argentina/Buenos_Aires', weekStart: 'sun' },
+          password: false,
+        }),
+        // Local development: seeded users also have a credential account (email and password).
+        local: () => ({
+          user: { name: 'Anna Kask', email: 'anna@snowhound.eu' },
+          accounts: {},
+          prefs: { timeZone: 'Europe/Tallinn', weekStart: 'mon' },
+          password: true,
+        }),
+      }
+
+      const state = { user: null, accounts: {}, prefs: null, saved: null, password: false }
+      const linkedCount = () => Object.keys(state.accounts).length + (state.password ? 1 : 0)
+      const dateFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+      const logo = (name) => `<svg class="size-5 shrink-0" aria-hidden="true"><use href="#logo-${name}" /></svg>`
+
+      // --- Profile ------------------------------------------------------------------------------
+      function renderProfile() {
+        document.getElementById('profile-initials').textContent = initials(state.user.name)
+        document.getElementById('profile-heading').textContent = state.user.name
+        document.getElementById('profile-name').value = state.user.name
+        document.getElementById('profile-email').value = state.user.email
+        document.getElementById('profile-save').disabled = true
+        document.getElementById('profile-status').textContent = ''
+      }
+
+      function providerRow({ key, logoHtml, name, detail, action, badge }) {
+        return `<li class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center">
+          <div class="flex min-w-0 flex-1 items-center gap-3">
+            ${logoHtml}
+            <div class="min-w-0">
+              <p class="flex flex-wrap items-center gap-2 text-sm font-medium">${name}${badge ?? ''}</p>
+              <p class="truncate text-sm text-muted-foreground">${detail}</p>
+            </div>
+          </div>
+          <div class="flex shrink-0 items-center gap-2" data-provider-row="${key}">${action}</div>
+        </li>`
+      }
+
+      function renderProviders() {
+        const onlyOne = linkedCount() === 1
+        const rows = PROVIDERS.map((p) => {
+          const a = state.accounts[p.id]
+          if (!a)
+            return providerRow({
+              key: p.id,
+              logoHtml: logo(p.logo),
+              name: p.name,
+              detail: 'Not connected',
+              action: `<button type="button" data-ui="button" data-variant="outline" data-size="sm" data-link="${p.id}">Connect</button>`,
+            })
+          return providerRow({
+            key: p.id,
+            logoHtml: logo(p.logo),
+            name: p.name,
+            badge: '<span data-ui="badge" data-variant="secondary">Connected</span>',
+            detail: `${escapeHtml(a.detail)} · since ${dateFmt.format(a.linkedAt)}`,
+            action: `<button type="button" data-ui="button" data-variant="ghost" data-size="sm" data-unlink="${p.id}" ${onlyOne ? 'disabled title="Connect another method first."' : ''}>Disconnect</button>`,
+          })
+        })
+        if (state.password)
+          rows.push(
+            providerRow({
+              key: 'credential',
+              logoHtml: icon('key-round', 'size-5'),
+              name: 'Email and password',
+              badge: '<span data-ui="badge" data-variant="outline">Local development</span>',
+              detail: 'Seeded users only. Deployed environments sign in with a provider.',
+              action: '',
+            })
+          )
+        rows.push(
+          providerRow({
+            key: 'passkey',
+            logoHtml: icon('key-round', 'size-5 text-muted-foreground'),
+            name: 'Passkey',
+            badge: '<span data-ui="badge" data-variant="outline">Planned</span>',
+            detail: 'Sign in with your device (task 015).',
+            action: '<button type="button" data-ui="button" data-variant="outline" data-size="sm" disabled>Add passkey</button>',
+          })
+        )
+        document.getElementById('providers').innerHTML = rows.join('')
+      }
+
+      document.getElementById('profile-name').addEventListener('input', (event) => {
+        document.getElementById('profile-save').disabled = event.currentTarget.value.trim() === state.user.name
+        document.getElementById('profile-status').textContent = ''
+      })
+      document.getElementById('profile-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const input = document.getElementById('profile-name')
+        const error = document.getElementById('profile-name-error')
+        const name = input.value.trim()
+        error.textContent = name ? '' : 'Enter your name.'
+        input.toggleAttribute('data-invalid', !name)
+        if (!name) return input.focus()
+        state.user.name = name // updateUser
+        appFrame.setUser({ name })
+        renderProfile()
+        document.getElementById('profile-status').textContent = 'Saved.'
+      })
+
+      // Connect: Better Auth `linkSocial` redirects to the provider and back. Simulated.
+      document.getElementById('providers').addEventListener('click', async (event) => {
+        const linkBtn = event.target.closest('[data-link]')
+        const unlinkBtn = event.target.closest('[data-unlink]')
+        if (linkBtn) {
+          const id = linkBtn.dataset.link
+          linkBtn.disabled = true
+          linkBtn.textContent = `Redirecting to ${PROVIDERS.find((p) => p.id === id).name}…`
+          await new Promise((r) => setTimeout(r, 700))
+          state.accounts[id] = { detail: id === 'github' ? 'annakask' : state.user.email, linkedAt: Date.now() }
+          renderProviders()
+        } else if (unlinkBtn) openUnlink(unlinkBtn.dataset.unlink)
+      })
+
+      const unlinkDialog = document.getElementById('unlink-dialog')
+      let unlinking = null
+      function openUnlink(id) {
+        unlinking = id
+        const name = PROVIDERS.find((p) => p.id === id).name
+        document.getElementById('unlink-title').textContent = `Disconnect ${name}?`
+        document.getElementById('unlink-description').textContent = `You won't be able to sign in with ${name} until you connect it again.`
+        unlinkDialog.showModal()
+      }
+      document.getElementById('unlink-confirm').addEventListener('click', () => {
+        delete state.accounts[unlinking] // unlinkAccount
+        renderProviders()
+        unlinkDialog.close()
+      })
+      unlinkDialog.querySelectorAll('[data-dialog-cancel]').forEach((b) => b.addEventListener('click', () => unlinkDialog.close()))
+
+      // --- Preferences (user_settings) ----------------------------------------------------------
+      const zoneSelect = document.getElementById('time-zone')
+      function zoneLabel(zone) {
+        const offset = new Intl.DateTimeFormat('en', { timeZone: zone, timeZoneName: 'shortOffset' }).formatToParts(Date.now()).find((p) => p.type === 'timeZoneName').value
+        return `${zone.replaceAll('_', ' ')} (${offset})`
+      }
+      zoneSelect.innerHTML = zones.map((z) => `<option value="${escapeHtml(z)}">${escapeHtml(zoneLabel(z))}</option>`).join('')
+
+      function weekRange(zone, weekStart) {
+        // Weekday and date in the chosen zone; the week runs from the start day for seven days.
+        const parts = Object.fromEntries(
+          new Intl.DateTimeFormat('en', { timeZone: zone, weekday: 'short', year: 'numeric', month: 'numeric', day: 'numeric' })
+            .formatToParts(Date.now())
+            .map((p) => [p.type, p.value])
+        )
+        const weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(parts.weekday)
+        const back = weekStart === 'mon' ? (weekday + 6) % 7 : weekday
+        const start = new Date(Date.UTC(+parts.year, +parts.month - 1, +parts.day - back))
+        const end = new Date(start.getTime() + 6 * 86_400_000)
+        const f = new Intl.DateTimeFormat(undefined, { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' })
+        return `${f.format(start)} – ${f.format(end)}`
+      }
+
+      function renderPreferences() {
+        const { timeZone, weekStart } = state.prefs
+        // A saved zone the browser doesn't list (an alias, or newer tz data) still shows.
+        if (![...zoneSelect.options].some((o) => o.value === timeZone))
+          zoneSelect.insertAdjacentHTML('afterbegin', `<option value="${escapeHtml(timeZone)}">${escapeHtml(zoneLabel(timeZone))}</option>`)
+        zoneSelect.value = timeZone
+        document.querySelectorAll('[data-week-start]').forEach((b) => {
+          const pressed = b.dataset.weekStart === weekStart
+          b.setAttribute('aria-pressed', String(pressed))
+          b.toggleAttribute('data-pressed', pressed)
+        })
+        const browserBtn = document.getElementById('use-browser-zone')
+        browserBtn.innerHTML = `${icon('globe')}Use this device's zone`
+        browserBtn.disabled = timeZone === browserZone
+        browserBtn.title = browserZone
+        const now = new Intl.DateTimeFormat(undefined, { timeZone, weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).format(Date.now())
+        document.getElementById('preferences-preview').innerHTML = `
+          <p><span class="text-muted-foreground">Now:</span> ${escapeHtml(now)}</p>
+          <p><span class="text-muted-foreground">This week:</span> ${escapeHtml(weekRange(timeZone, weekStart))}</p>
+          ${timeZone !== browserZone ? `<p class="text-muted-foreground">This device is in ${escapeHtml(browserZone.replaceAll('_', ' '))}. Times show in your saved zone.</p>` : ''}`
+        const dirty = timeZone !== state.saved.timeZone || weekStart !== state.saved.weekStart
+        document.getElementById('preferences-save').disabled = !dirty
+      }
+
+      zoneSelect.addEventListener('change', () => {
+        state.prefs.timeZone = zoneSelect.value
+        document.getElementById('preferences-status').textContent = ''
+        renderPreferences()
+      })
+      document.getElementById('use-browser-zone').addEventListener('click', () => {
+        state.prefs.timeZone = browserZone
+        document.getElementById('preferences-status').textContent = ''
+        renderPreferences()
+      })
+      document.querySelectorAll('[data-week-start]').forEach((b) =>
+        b.addEventListener('click', () => {
+          state.prefs.weekStart = b.dataset.weekStart
+          document.getElementById('preferences-status').textContent = ''
+          renderPreferences()
+        })
+      )
+      document.getElementById('preferences-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        state.saved = { ...state.prefs } // updateUserSettings
+        renderPreferences()
+        document.getElementById('preferences-status').textContent = 'Saved.'
+      })
+
+      // --- This device (snowtime.viewSettings, shared with the timer's View popover) -------------
+      function renderDevice() {
+        const settings = appFrame.viewSettings.get()
+        document.querySelectorAll('[data-setting]').forEach((b) => {
+          const pressed = settings[b.dataset.setting] === b.dataset.value
+          b.setAttribute('aria-pressed', String(pressed))
+          b.toggleAttribute('data-pressed', pressed)
+        })
+        ui.setSwitch(document.getElementById('device-summary'), settings.showSummary)
+      }
+      document.querySelectorAll('[data-setting]').forEach((b) =>
+        b.addEventListener('click', () => appFrame.viewSettings.set({ [b.dataset.setting]: b.dataset.value }))
+      )
+      document.getElementById('device-summary').addEventListener('change', (event) =>
+        appFrame.viewSettings.set({ showSummary: event.currentTarget.getAttribute('aria-checked') === 'true' })
+      )
+      appFrame.on('settings', renderDevice)
+
+      function loadFixture(name) {
+        const f = fixtures[name]()
+        Object.assign(state, { user: f.user, accounts: f.accounts, prefs: { ...f.prefs }, saved: { ...f.prefs }, password: f.password })
+        document.getElementById('preferences-status').textContent = ''
+        appFrame.setUser({ ...f.user })
+        renderProfile()
+        renderProviders()
+        renderPreferences()
+      }
+      document.getElementById('fixture').addEventListener('change', (event) => loadFixture(event.currentTarget.value))
+
+      ui.ready.then(() => {
+        loadFixture('populated')
+        renderDevice()
+        if (location.hash) document.querySelector(location.hash)?.scrollIntoView()
+      })
+    </script>
+  </body>
+</html>

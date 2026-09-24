@@ -10,7 +10,8 @@ workflow and checks.
 
 - [x] Sign-in flows (`prototypes/auth.html`): sign in, sign up, forgot and reset password, accept
       invitation, and create organization for a user with no organization or invitation
-- [ ] App frame: header with organization switcher, navigation, and user menu
+- [x] App frame: header with organization switcher, navigation, and user menu, plus the
+      settings page (`prototypes/settings.html`)
 - [ ] Reports: day and week totals by project, team, and member over a date range, including the
       team lead's view of their teams
 - [ ] Organization admin: members with invitations and roles, teams with members and the lead
