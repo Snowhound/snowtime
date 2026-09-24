@@ -124,7 +124,7 @@ functions. Do not port prototype JS.
   files.
 - Only add to `prototype.css` / `prototype-theme.js` what is useful across prototypes; keep
   feature styles in the HTML. The tokens in `prototype.css` are a proposal ahead of
-  `src/styles.css`, so don't copy `src/styles.css` over them; task 017 ports them to the app.
+  `src/styles.css`, so don't copy `src/styles.css` over them; task 033 ports them to the app.
   See [Brand font and colors](#brand-font-and-colors).
 - Keep each view in its own HTML file. The app frame is the shared exception, so every
   signed-in page has the same header; see [App frame](#app-frame).
@@ -132,7 +132,7 @@ functions. Do not port prototype JS.
 ## Brand font and colors
 
 The prototypes try the draft brand from `design/brand-assets/` (task 029). `src/styles.css`
-still has the neutral Solid-UI theme until task 017 ports these values.
+still has the neutral Solid-UI theme until task 033 ports these values.
 
 UI text uses Plus Jakarta Sans (SIL OFL 1.1), the font the wordmark was outlined from.
 `prototype.css` loads the variable font from `design/brand-assets/fonts/` with `@font-face`

@@ -5,7 +5,7 @@ Status: in-progress
 Try the draft brand from `design/brand-assets/` in the prototypes: first the font and
 color scheme on every page, then the app icon and a picker for the 12 concepts. The font
 and colors come first because the icon picker, charts, and the header mark are judged
-against them. Production integration stays in task 017.
+against them. Task 033 ports them to the app.
 
 The prototypes then lead `src/styles.css` instead of copying it. `prototypes/README.md`
 must say so, so the "when `src/styles.css` tokens change, update `prototype.css`"
