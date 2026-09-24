@@ -18,12 +18,15 @@
     "db:drift": "bun scripts/db-drift.ts",
     "db:seed": "bun scripts/db-seed.ts",
     "i18n:compile": "paraglide-js compile --project ./project.inlang --silent",
-    "test": "bun run i18n:compile && bun test",
+    "test": "bun run i18n:compile && bun test && vitest run",
+    "test:server": "bun test",
+    "test:components": "vitest run",
     "postinstall": "bun run i18n:compile"
   },
   "dependencies": {
     "@better-auth/passkey": "1.7.5",
     "@fontsource/inter": "^5.1.1",
+    "@kobalte/core": "^0.13.14",
     "@libsql/client": "0.18.0",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.3.3",
@@ -32,6 +35,7 @@
     "@tanstack/solid-query-devtools": "latest",
     "@tanstack/solid-router": "latest",
     "@tanstack/solid-router-devtools": "latest",
+    "@tanstack/solid-router-ssr-query": "1.167.3",
     "@tanstack/solid-start": "latest",
     "better-auth": "^1.5.3",
     "class-variance-authority": "^0.7.1",
@@ -48,13 +52,18 @@
   },
   "devDependencies": {
     "@inlang/paraglide-js": "2.25.4",
+    "@solidjs/testing-library": "0.8.10",
     "@tanstack/devtools-vite": "latest",
     "@tanstack/router-cli": "^1.133.21",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/user-event": "^14.6.7",
     "@types/bun": "1.4.2",
     "drizzle-kit": "1.0.0-rc.4",
+    "jsdom": "^30.1.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
-    "vite-plugin-solid": "^2.11.12"
+    "vite-plugin-solid": "^2.11.12",
+    "vitest": "5.0.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

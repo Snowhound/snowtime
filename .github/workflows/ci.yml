@@ -34,6 +34,9 @@ jobs:
       - name: Test
         run: bun test
 
+      - name: Component tests
+        run: bunx vitest run
+
       # Drift is a warning by decision (docs/architecture.md, "Schema and migrations"): the
       # script exits 0 on drift and fails only when the migrations fail on an empty database.
       - name: Schema drift

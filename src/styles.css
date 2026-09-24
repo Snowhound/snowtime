@@ -54,6 +54,21 @@ code {
   --sidebar-ring: oklch(0.871 0.006 286.286);
 }
 
+/* Project colors: eight categorical slots validated for lightness, chroma, and color-vision
+   separation on the light (#ffffff) and dark (#09090b) surfaces. project.color stores the light
+   hex; dark mode uses the slot's dark step (src/lib/colors.ts). Light mode's yellow, aqua, and
+   magenta are below 3:1 against the surface, so charts always carry labels or a table. */
+:root {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+}
+
 .dark {
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);
@@ -87,6 +102,19 @@ code {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.274 0.006 286.033);
   --sidebar-ring: oklch(0.442 0.017 285.786);
+}
+
+.dark {
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  /* Native controls, such as <select> popups and date pickers, follow the theme. */
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -126,6 +154,40 @@ code {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
+  --color-series-7: var(--series-7);
+  --color-series-8: var(--series-8);
+
+  /* Used by Solid-UI's dropdown menu; the registry defines the keyframes but not the utility. */
+  --animate-content-show: content-show 0.15s ease-out;
+  --animate-content-hide: content-hide 0.15s ease-in;
+
+  @keyframes content-show {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes content-hide {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
 }
 
 @layer base {
@@ -134,5 +196,14 @@ code {
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
   }
 }

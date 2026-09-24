@@ -1,18 +1,25 @@
 import { createRouter as createTanStackRouter } from '@tanstack/solid-router'
+import { setupRouterSsrQueryIntegration } from '@tanstack/solid-router-ssr-query'
 import { routeTree } from './routeTree.gen'
 
 import { getContext } from './integrations/tanstack-query/provider'
 
 export function getRouter() {
+  const context = getContext()
+
   const router = createTanStackRouter({
     routeTree,
 
-    context: getContext(),
+    context,
 
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
   })
+
+  // Provides the query client to components and hands queries loaded on the server to the
+  // client, so it doesn't fetch them again.
+  setupRouterSsrQueryIntegration({ router, queryClient: context.queryClient })
 
   return router
 }

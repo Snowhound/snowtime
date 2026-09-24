@@ -13,8 +13,9 @@
 | Data fetching   | TanStack Query with optimistic updates                    |
 | Forms           | TanStack Form                                             |
 | Validation      | Valibot, shared by forms and server functions             |
-| UI              | Solid-UI + Tailwind                                       |
+| UI              | Solid-UI + Tailwind; components in `src/components/ui/`, copied from the Solid-UI registry at the commit the prototypes use (`21ba4fa`) |
 | i18n            | English and Estonian; Paraglide JS                        |
+| Testing         | `bun test` for server and database code (`*.test.ts`); Vitest with Solid Testing Library in jsdom for components (`*.test.tsx`); `bunfig.toml` and `vitest.config.ts` keep each runner off the other's files |
 | Client state    | No library; Solid signals/stores and URL search params; user settings on the server (see "User settings") |
 
 ## Data conventions

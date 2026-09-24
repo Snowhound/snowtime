@@ -1,0 +1,3 @@
+[test]
+# Component tests (*.test.tsx) run on Vitest; see vitest.config.ts.
+pathIgnorePatterns = ["**/*.test.tsx", "node_modules/**"]
