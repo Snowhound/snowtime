@@ -21,9 +21,9 @@ Estonian can follow in one pass before this task is done.
 - [x] `05-timer-layouts.md`
 - [x] `06-projects.md`
 - [x] `07-reports.md`
-- [ ] `08-organization.md`
-- [ ] Every message has an `en` and an `et` translation
-- [ ] Component tests (task 014) cover the interactions that carry rules, added in the
+- [x] `08-organization.md`
+- [x] Every message has an `en` and an `et` translation
+- [x] Component tests (task 014) cover the interactions that carry rules, added in the
       subtask that builds them: for example the timer's start and stop, the entry dialog's
       validation, and role-dependent actions
 - [ ] Each view passes the prototype checks in `prototypes/README.md`: 1440, 850, and

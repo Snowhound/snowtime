@@ -52,9 +52,14 @@ export const auth = betterAuth({
     organization({
       teams: {
         enabled: true,
-        // Teams are optional in Snowtime; an organization starts without one.
+        // Teams are optional in Snowtime; an organization starts without one, and admins
+        // may delete its last one.
         defaultTeam: { enabled: false },
+        allowRemovingAllTeams: true,
       },
+      // Admins share invitation links themselves; a link works for 48 hours
+      // (docs/architecture.md, "Sign-in methods").
+      invitationExpiresIn: 48 * 60 * 60,
       // Organizations own time entries and are never hard-deleted (docs/architecture.md).
       disableOrganizationDeletion: true,
     }),

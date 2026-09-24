@@ -23,4 +23,12 @@ describe('error messages', () => {
     expect(errorMessage(new AppError('NOT_FOUND', 'entry_not_found'))).toBe('Entry not found.')
     expect(errorMessage(new Error('SQLITE_BUSY'))).toBe(en.error_unexpected)
   })
+
+  test("a Better Auth refusal shows its code's message, an unknown code a generic one", () => {
+    const refusal = { code: 'YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER', status: 400 }
+    expect(errorMessage(refusal)).toBe(en.error_last_owner)
+    expect(errorMessage({ code: 'SQLITE_BUSY', message: 'database is locked' })).toBe(
+      en.error_unexpected,
+    )
+  })
 })

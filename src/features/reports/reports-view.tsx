@@ -10,6 +10,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '~/components/ui/ca
 import { type WeekStart, addDays, localDate } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
 import { formatIsoDate, formatIsoDateRange } from '~/lib/format'
+import { membersQuery } from '~/lib/members'
 import { projectsQuery } from '~/lib/projects'
 import { teamsQuery } from '~/lib/teams'
 import { m } from '~/paraglide/messages.js'
@@ -17,7 +18,7 @@ import { getLocale } from '~/paraglide/runtime.js'
 import { MAX_REPORT_DAYS } from '~/server/reports/reports.schemas'
 import { type FilterActions, ReportFilterBar } from './filter-bar'
 import { type Group, type ReportSearch, type Unit, reportFilters } from './filters'
-import { membersQuery, reportQuery } from './queries'
+import { reportQuery } from './queries'
 import {
   type Range,
   type RangePreset,

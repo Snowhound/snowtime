@@ -1,6 +1,6 @@
-// Inputs of the signed-out screens, of creating an organization, and of the profile. Sign-in and
-// organizations go through the Better Auth client, so these validate the forms only;
-// Better Auth checks again on its side.
+// Inputs of the signed-out screens, of creating and managing an organization, and of the
+// profile. Sign-in and organizations go through the Better Auth client, so these validate
+// the forms only; Better Auth checks again on its side.
 import * as v from 'valibot'
 import { m } from '~/paraglide/messages.js'
 import { Uuidv7 } from '../schemas'
@@ -39,6 +39,14 @@ export const Name = v.pipe(
 
 export const CreateOrganizationForm = v.object({ name: Name, slug: Slug })
 export type CreateOrganizationForm = v.InferOutput<typeof CreateOrganizationForm>
+
+// An invitation's address. Better Auth stores and compares addresses in lowercase.
+export const InvitationEmail = v.pipe(
+  v.string(),
+  v.trim(),
+  v.toLowerCase(),
+  v.email(() => m.validation_email()),
+)
 
 // The profile's name, saved through Better Auth's updateUser. The email can't change:
 // invitations are matched to the verified address.

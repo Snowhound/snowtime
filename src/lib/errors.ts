@@ -30,10 +30,46 @@ const errorText: Record<AppErrorKey, () => string> = {
   settings_not_found: m.error_settings_not_found,
 }
 
-// The text to show for an error from a server function. An AppError from a newer server
-// than this client falls back to the server's English message; anything else is
-// unexpected and gets a generic message instead of internals.
+// Refusals from Better Auth's client calls, by the code its error carries (unwrap in
+// src/lib/auth-client.ts throws it). The organization plugin checks roles, owners and
+// invitations itself (docs/architecture.md, "Tenancy"); these are the refusals the
+// Organization view can meet.
+const authErrorText: Record<string, () => string> = {
+  YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER: m.error_last_owner,
+  YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER: m.error_last_owner,
+  YOU_ARE_NOT_ALLOWED_TO_UPDATE_THIS_MEMBER: m.error_member_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_DELETE_THIS_MEMBER: m.error_member_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_INVITE_USER_WITH_THIS_ROLE: m.error_invite_role_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_INVITE_USERS_TO_THIS_ORGANIZATION: m.error_organization_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_CANCEL_THIS_INVITATION: m.error_organization_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_UPDATE_THIS_ORGANIZATION: m.error_organization_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_CREATE_TEAMS_IN_THIS_ORGANIZATION: m.error_teams_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_UPDATE_THIS_TEAM: m.error_teams_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_DELETE_TEAMS_IN_THIS_ORGANIZATION: m.error_teams_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_DELETE_THIS_TEAM: m.error_teams_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_CREATE_A_NEW_TEAM_MEMBER: m.error_teams_forbidden,
+  YOU_ARE_NOT_ALLOWED_TO_REMOVE_A_TEAM_MEMBER: m.error_teams_forbidden,
+  USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION: m.error_already_member,
+  USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION: m.error_already_invited,
+  INVITATION_LIMIT_REACHED: m.error_invitation_limit,
+  INVALID_EMAIL: m.error_invalid_email,
+  MEMBER_NOT_FOUND: m.error_member_not_found,
+  USER_IS_NOT_A_MEMBER_OF_THE_ORGANIZATION: m.error_member_not_found,
+  TEAM_NOT_FOUND: m.error_team_not_found,
+  USER_IS_NOT_A_MEMBER_OF_THE_TEAM: m.error_team_member_not_found,
+  INVITATION_NOT_FOUND: m.error_invitation_not_found,
+}
+
+function authErrorCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null || !('code' in error)) return undefined
+  return typeof error.code === 'string' ? error.code : undefined
+}
+
+// The text to show for an error from a server function or a Better Auth client call. An
+// AppError from a newer server than this client falls back to the server's English
+// message; anything else is unexpected and gets a generic message instead of internals.
 export function errorMessage(error: unknown): string {
   if (error instanceof AppError) return errorText[error.key]?.() ?? error.message
-  return m.error_unexpected()
+  const code = authErrorCode(error)
+  return (code && authErrorText[code]?.()) || m.error_unexpected()
 }

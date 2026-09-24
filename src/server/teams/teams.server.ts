@@ -36,15 +36,18 @@ async function teamMemberships(db: Database, teamIds: string[]) {
 }
 
 // The organization's members by name, each with their organization role and their teams.
-// Any member may list them, as with the plugin's own member list.
+// Any member may list them, as with the plugin's own member list. `memberId` is what the
+// plugin's member calls take (updateMemberRole, removeMember).
 export async function listMembers(db: Database, scope: Scope) {
   const rows = await db
     .select({
+      memberId: member.id,
       userId: user.id,
       name: user.name,
       email: user.email,
       image: user.image,
       role: member.role,
+      joinedAt: member.createdAt,
     })
     .from(member)
     .innerJoin(user, eq(user.id, member.userId))

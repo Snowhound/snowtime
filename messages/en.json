@@ -266,7 +266,6 @@
   "projects_create": "Create project",
   "projects_save": "Save",
   "projects_cancel": "Cancel",
-  "projects_ok": "OK",
   "projects_archive_title": "Archive {name}?",
   "projects_archive_description": "Nobody can track new time on it. Its time stays in reports, and you can restore it from Archived.",
   "projects_delete_title": "Delete {name}?",
@@ -347,5 +346,164 @@
   ],
   "reports_zone_monday": "Days and weeks in {zone}, starting Monday",
   "reports_zone_sunday": "Days and weeks in {zone}, starting Sunday",
-  "reports_change_settings": "change"
+  "reports_change_settings": "change",
+  "confirm_cancel": "Cancel",
+  "confirm_ok": "OK",
+  "error_already_invited": "This address already has an open invitation.",
+  "error_already_member": "This person is already a member.",
+  "error_invalid_email": "Enter a valid email address.",
+  "error_invitation_limit": "This organization has too many open invitations. Cancel some first.",
+  "error_invitation_not_found": "Invitation not found.",
+  "error_invite_role_forbidden": "Only owners can invite owners.",
+  "error_last_owner": "An organization needs at least one owner. Make someone else an owner first.",
+  "error_member_forbidden": "Only owners can change or remove an owner.",
+  "error_organization_forbidden": "Only admins and owners manage the organization.",
+  "organization_no_access_title": "Only admins and owners manage the organization",
+  "organization_no_access_description": "Ask an admin to change roles, teams, or invitations.",
+  "organization_subtitle": [
+    {
+      "declarations": ["input organization", "input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{organization} · {count} member",
+        "countPlural=*": "{organization} · {count} members"
+      }
+    }
+  ],
+  "organization_sections": "Organization sections",
+  "organization_tab_members": "Members",
+  "organization_tab_invitations": "Invitations",
+  "organization_tab_teams": "Teams",
+  "organization_tab_general": "General",
+  "organization_role_owner": "Owner",
+  "organization_role_admin": "Admin",
+  "organization_role_member": "Member",
+  "organization_lock_last_owner": "The only owner. Make someone else an owner first.",
+  "organization_lock_self": "You can't change your own role.",
+  "organization_lock_owner": "Only owners can change an owner.",
+  "organization_members_search": "Search members",
+  "organization_members_search_placeholder": "Search by name or email",
+  "organization_members_no_match": "No members match “{query}”.",
+  "organization_members_no_team": "No team",
+  "organization_members_footnote": "Owners can change any role. Admins manage members and admins but not owners. An organization always keeps at least one owner.",
+  "organization_you": "(you)",
+  "organization_member_role_label": "Role of {name}",
+  "organization_member_remove_label": "Remove {name}",
+  "organization_invite": "Invite member",
+  "organization_remove_member_title": "Remove {name}?",
+  "organization_remove_member_description": "They lose access to {organization} and leave all its teams. Their tracked time stays in reports.",
+  "organization_remove_member_confirm": "Remove member",
+  "organization_invitations_intro": "Snowtime sends no email. Copy an invitation link and send it yourself. A link works for 48 hours, for whoever signs in with the invited address.",
+  "organization_invitations_empty_title": "No open invitations",
+  "organization_invitations_empty_description": "Invite someone to get a link you can send them.",
+  "organization_invitation_expired": "Expired",
+  "organization_invitation_expired_on": "Expired {date}",
+  "organization_invitation_expires_in": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Expires in {count} hour",
+        "countPlural=*": "Expires in {count} hours"
+      }
+    }
+  ],
+  "organization_invitation_expires_soon": "Expires in less than an hour",
+  "organization_invitation_invited_by": "invited by {name}",
+  "organization_invitation_invited_by_former": "invited by a former member",
+  "organization_invitation_copy": "Copy link",
+  "organization_invitation_copy_label": "Copy the link for {email}",
+  "organization_invitation_renew": "New link",
+  "organization_invitation_renew_label": "New link for {email}",
+  "organization_invitation_cancel": "Cancel",
+  "organization_invitation_cancel_label": "Cancel the invitation for {email}",
+  "organization_copy": "Copy",
+  "organization_copied": "Copied",
+  "organization_done": "Done",
+  "organization_cancel_invitation_title": "Cancel invitation?",
+  "organization_cancel_invitation_description": "The link for {email} stops working.",
+  "organization_cancel_invitation_keep": "Keep",
+  "organization_cancel_invitation_confirm": "Cancel invitation",
+  "organization_invite_description": "You get a link to send. It works for 48 hours.",
+  "organization_invite_email": "Email",
+  "organization_invite_email_hint": "They must sign in with this address to accept.",
+  "organization_invite_role": "Role",
+  "organization_invite_team": "Team",
+  "organization_invite_submit": "Create link",
+  "organization_invite_already_member": "{email} is already a member.",
+  "organization_invite_already_invited": "{email} already has an open invitation. Copy its link from the list.",
+  "organization_invite_link_title": "Invitation link ready",
+  "organization_invite_link_description": "Send this link to {email}. It works until {until}.",
+  "organization_invite_link_creating": "Creating the link…",
+  "organization_invite_link": "Invitation link",
+  "organization_teams_intro": "Teams group people for access and reports. Leads see and report on their team's time. Projects stay with the organization when a team is deleted.",
+  "organization_team_create": "Create team",
+  "organization_teams_empty_title": "No teams yet",
+  "organization_teams_empty_description": "Everyone tracks time on the organization's projects without teams. Create a team to give it a lead and its own projects.",
+  "organization_team_actions": "Actions for {name}",
+  "organization_team_rename": "Rename",
+  "organization_team_rename_title": "Rename team",
+  "organization_team_delete": "Delete team",
+  "organization_team_members": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} member",
+        "countPlural=*": "{count} members"
+      }
+    }
+  ],
+  "organization_team_led_by": "Led by {names}",
+  "organization_team_no_lead": "No lead yet",
+  "organization_team_no_members": "No members yet.",
+  "organization_team_role_label": "Team role of {name}",
+  "organization_team_role_lead": "Lead",
+  "organization_team_role_member": "Member",
+  "organization_team_remove_member": "Remove {name} from {team}",
+  "organization_team_add_label": "Add a member to {team}",
+  "organization_team_add_placeholder": "Add a member…",
+  "organization_team_everyone_added": "Everyone is on this team",
+  "organization_team_add": "Add",
+  "organization_team_name_taken": "A team called {name} already exists.",
+  "organization_delete_team_title": "Delete {name}?",
+  "organization_delete_team_empty": "The team has no members.",
+  "organization_delete_team_members": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} member leaves the team but stays in the organization, and their time stays in reports.",
+        "countPlural=*": "{count} members leave the team but stay in the organization, and their time stays in reports."
+      }
+    }
+  ],
+  "organization_delete_team_projects": [
+    {
+      "declarations": ["input count", "input projects", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{projects} loses this team.",
+        "countPlural=*": "{projects} lose this team."
+      }
+    }
+  ],
+  "organization_delete_team_opened": [
+    {
+      "declarations": ["input count", "input projects", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{projects} then becomes available to the whole organization.",
+        "countPlural=*": "{projects} then become available to the whole organization."
+      }
+    }
+  ],
+  "organization_general": "General",
+  "organization_general_description": "The organization's name, shown in the switcher and in invitations.",
+  "organization_name": "Name",
+  "organization_slug": "Short name",
+  "organization_slug_hint": "Set when the organization was created. It can't change.",
+  "organization_no_delete": "Organizations can't be deleted, so their time history and audit trail stay intact.",
+  "organization_save": "Save",
+  "organization_saved": "Saved."
 }

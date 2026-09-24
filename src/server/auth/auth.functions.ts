@@ -62,6 +62,13 @@ export type AppSession = NonNullable<Awaited<ReturnType<typeof getAppSession>>>
 // Named here so client code imports the type from this file, not from sign-in.server.ts.
 export type { SignInMethod } from './sign-in.server'
 
+// The app's public origin, from BETTER_AUTH_URL, for the links admins copy: an invitation
+// link is <BETTER_AUTH_URL>/invitation/<id>. The Better Auth client only knows the page's
+// origin, which a proxy or a second domain can change.
+export const getAppUrl = createServerFn({ method: 'GET' }).handler(
+  () => new URL(env.BETTER_AUTH_URL).origin,
+)
+
 // An invitation link's details, shown before sign-in; null when the id is unknown.
 export const getInvitation = createServerFn({ method: 'GET' })
   .validator(GetInvitationInput)

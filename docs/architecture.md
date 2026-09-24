@@ -126,6 +126,11 @@
   which account to use. `getInvitation` returns those details signed out. The id is
   the link's only secret, as in Better Auth, and accepting still goes through Better
   Auth, which checks the address.
+- Links last 48 hours (`invitationExpiresIn`). Better Auth ignores expired invitations
+  when it checks for an open one, so a new link for an expired invitation is a new
+  invitation; the Organization view then cancels the expired one. The view builds the
+  link from `getAppUrl`, which returns the origin of `BETTER_AUTH_URL`: the Better Auth
+  client only knows the page's origin, which a proxy or a second domain can change.
 
 ## Tenancy
 
@@ -153,6 +158,12 @@
   lead role included. Server functions cover only what involves `team_member.role`:
   `setTeamRole` (admins and owners) and `listMembers`/`listTeams`, which return team
   roles. Wrapping the plugin's endpoints would duplicate its checks for no new rule.
+  `listMembers` also returns each member's `memberId`, which the plugin's
+  `updateMemberRole` and `removeMember` take.
+- Teams are optional, so the plugin runs with `allowRemovingAllTeams`: by default it
+  refuses to delete an organization's last team. Deleting a team deletes its
+  `team_member` rows (the plugin) and its `project_team` rows (a cascade), so a project
+  left without teams opens to the whole organization.
 - Teams group people for access and reporting; data is owned by the
   organization, not the team.
 
@@ -238,6 +249,10 @@
     `src/server/errors.ts`. The catalog's English text is the error message, for logs and
     as the client's fallback; `errorMessage` in `src/lib/errors.ts` looks the key up as
     the Paraglide message `error_<key>`.
+  - Better Auth's client calls return an error with a code instead, such as
+    `YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER`. `errorMessage` maps the codes
+    the Organization view can meet to Paraglide messages; any other code gets the generic
+    message.
   - Valibot issues need no server translation: forms run the same schemas in the browser
     first, so only a faulty or hostile client reaches the server's validation. Custom
     messages in the `*.schemas.ts` files are Paraglide calls, evaluated when validation runs.

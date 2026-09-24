@@ -4,11 +4,11 @@
 // the same rules, so options outside them are dropped here rather than sent and refused.
 import * as v from 'valibot'
 import type { IsoDate, WeekStart } from '~/lib/calendar'
+import type { Member } from '~/lib/members'
 import type { Team } from '~/lib/teams'
 import { IsoDate as IsoDateSchema, REPORT_UNITS } from '~/server/reports/reports.schemas'
 import type { ReportInput } from '~/server/reports/reports.schemas'
 import { Uuidv7 } from '~/server/schemas'
-import type { listMembers } from '~/server/teams/teams.functions'
 import {
   MAX_DAY_COLUMNS,
   PRESETS,
@@ -17,8 +17,6 @@ import {
   rangeDays,
   resolveRange,
 } from './range'
-
-export type Member = Awaited<ReturnType<typeof listMembers>>[number]
 
 export const GROUPS = ['project', 'team', 'member'] as const
 export type Group = (typeof GROUPS)[number]

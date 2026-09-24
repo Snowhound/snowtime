@@ -266,7 +266,6 @@
   "projects_create": "Loo projekt",
   "projects_save": "Salvesta",
   "projects_cancel": "Tühista",
-  "projects_ok": "Selge",
   "projects_archive_title": "Kas arhiveerida {name}?",
   "projects_archive_description": "Uut aega ei saa sellele enam keegi arvestada. Selle aeg jääb aruannetesse ja projekti saab arhiivist taastada.",
   "projects_delete_title": "Kas kustutada {name}?",
@@ -347,5 +346,164 @@
   ],
   "reports_zone_monday": "Päevad ja nädalad ajavööndis {zone}, nädal algab esmaspäeval",
   "reports_zone_sunday": "Päevad ja nädalad ajavööndis {zone}, nädal algab pühapäeval",
-  "reports_change_settings": "muuda"
+  "reports_change_settings": "muuda",
+  "confirm_cancel": "Tühista",
+  "confirm_ok": "Selge",
+  "error_already_invited": "Sellel aadressil on juba avatud kutse.",
+  "error_already_member": "See inimene on juba liige.",
+  "error_invalid_email": "Sisesta kehtiv e-posti aadress.",
+  "error_invitation_limit": "Organisatsioonil on liiga palju avatud kutseid. Tühista esmalt mõni.",
+  "error_invitation_not_found": "Kutset ei leitud.",
+  "error_invite_role_forbidden": "Omanikke saavad kutsuda ainult omanikud.",
+  "error_last_owner": "Organisatsioonil peab olema vähemalt üks omanik. Tee esmalt keegi teine omanikuks.",
+  "error_member_forbidden": "Omanikku saavad muuta või eemaldada ainult omanikud.",
+  "error_organization_forbidden": "Organisatsiooni haldavad ainult administraatorid ja omanikud.",
+  "organization_no_access_title": "Organisatsiooni haldavad ainult administraatorid ja omanikud",
+  "organization_no_access_description": "Rollide, meeskondade või kutsete muutmiseks pöördu administraatori poole.",
+  "organization_subtitle": [
+    {
+      "declarations": ["input organization", "input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{organization} · {count} liige",
+        "countPlural=*": "{organization} · {count} liiget"
+      }
+    }
+  ],
+  "organization_sections": "Organisatsiooni jaotised",
+  "organization_tab_members": "Liikmed",
+  "organization_tab_invitations": "Kutsed",
+  "organization_tab_teams": "Meeskonnad",
+  "organization_tab_general": "Üldine",
+  "organization_role_owner": "Omanik",
+  "organization_role_admin": "Administraator",
+  "organization_role_member": "Liige",
+  "organization_lock_last_owner": "Ainus omanik. Tee esmalt keegi teine omanikuks.",
+  "organization_lock_self": "Oma rolli ei saa muuta.",
+  "organization_lock_owner": "Omanikku saavad muuta ainult omanikud.",
+  "organization_members_search": "Otsi liikmeid",
+  "organization_members_search_placeholder": "Otsi nime või e-posti järgi",
+  "organization_members_no_match": "Päringule „{query}” ei vasta ükski liige.",
+  "organization_members_no_team": "Meeskonnata",
+  "organization_members_footnote": "Omanikud saavad muuta iga rolli. Administraatorid haldavad liikmeid ja administraatoreid, kuid mitte omanikke. Organisatsioonil on alati vähemalt üks omanik.",
+  "organization_you": "(sina)",
+  "organization_member_role_label": "Kasutaja {name} roll",
+  "organization_member_remove_label": "Eemalda {name}",
+  "organization_invite": "Kutsu liige",
+  "organization_remove_member_title": "Kas eemaldada {name}?",
+  "organization_remove_member_description": "Ta kaotab ligipääsu organisatsioonile {organization} ja lahkub kõigist selle meeskondadest. Tema arvestatud aeg jääb aruannetesse.",
+  "organization_remove_member_confirm": "Eemalda liige",
+  "organization_invitations_intro": "Snowtime ei saada e-kirju. Kopeeri kutse link ja saada see ise. Link kehtib 48 tundi sellele, kes logib sisse kutsutud aadressiga.",
+  "organization_invitations_empty_title": "Avatud kutseid pole",
+  "organization_invitations_empty_description": "Kutsu kedagi, et saada link, mille saad talle saata.",
+  "organization_invitation_expired": "Aegunud",
+  "organization_invitation_expired_on": "Aegus {date}",
+  "organization_invitation_expires_in": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Aegub {count} tunni pärast",
+        "countPlural=*": "Aegub {count} tunni pärast"
+      }
+    }
+  ],
+  "organization_invitation_expires_soon": "Aegub vähem kui tunni pärast",
+  "organization_invitation_invited_by": "kutsus {name}",
+  "organization_invitation_invited_by_former": "kutsus endine liige",
+  "organization_invitation_copy": "Kopeeri link",
+  "organization_invitation_copy_label": "Kopeeri aadressi {email} link",
+  "organization_invitation_renew": "Uus link",
+  "organization_invitation_renew_label": "Uus link aadressile {email}",
+  "organization_invitation_cancel": "Tühista",
+  "organization_invitation_cancel_label": "Tühista aadressi {email} kutse",
+  "organization_copy": "Kopeeri",
+  "organization_copied": "Kopeeritud",
+  "organization_done": "Valmis",
+  "organization_cancel_invitation_title": "Kas tühistada kutse?",
+  "organization_cancel_invitation_description": "Aadressi {email} link lakkab töötamast.",
+  "organization_cancel_invitation_keep": "Jäta alles",
+  "organization_cancel_invitation_confirm": "Tühista kutse",
+  "organization_invite_description": "Saad lingi, mille ise saadad. See kehtib 48 tundi.",
+  "organization_invite_email": "E-post",
+  "organization_invite_email_hint": "Kutse vastuvõtmiseks peab ta sisse logima selle aadressiga.",
+  "organization_invite_role": "Roll",
+  "organization_invite_team": "Meeskond",
+  "organization_invite_submit": "Loo link",
+  "organization_invite_already_member": "{email} on juba liige.",
+  "organization_invite_already_invited": "Aadressil {email} on juba avatud kutse. Kopeeri selle link nimekirjast.",
+  "organization_invite_link_title": "Kutse link on valmis",
+  "organization_invite_link_description": "Saada see link aadressile {email}. See kehtib kuni {until}.",
+  "organization_invite_link_creating": "Loon linki…",
+  "organization_invite_link": "Kutse link",
+  "organization_teams_intro": "Meeskonnad rühmitavad inimesi ligipääsu ja aruannete jaoks. Juhid näevad oma meeskonna aega ja teevad selle kohta aruandeid. Meeskonna kustutamisel jäävad projektid organisatsioonile.",
+  "organization_team_create": "Loo meeskond",
+  "organization_teams_empty_title": "Meeskondi veel pole",
+  "organization_teams_empty_description": "Ilma meeskondadeta arvestavad kõik aega organisatsiooni projektidele. Loo meeskond, et anda sellele juht ja oma projektid.",
+  "organization_team_actions": "Toimingud: {name}",
+  "organization_team_rename": "Nimeta ümber",
+  "organization_team_rename_title": "Nimeta meeskond ümber",
+  "organization_team_delete": "Kustuta meeskond",
+  "organization_team_members": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} liige",
+        "countPlural=*": "{count} liiget"
+      }
+    }
+  ],
+  "organization_team_led_by": "Juht: {names}",
+  "organization_team_no_lead": "Juhti veel pole",
+  "organization_team_no_members": "Liikmeid veel pole.",
+  "organization_team_role_label": "Kasutaja {name} roll meeskonnas",
+  "organization_team_role_lead": "Juht",
+  "organization_team_role_member": "Liige",
+  "organization_team_remove_member": "Eemalda {name} meeskonnast {team}",
+  "organization_team_add_label": "Lisa liige meeskonda {team}",
+  "organization_team_add_placeholder": "Lisa liige…",
+  "organization_team_everyone_added": "Kõik on selles meeskonnas",
+  "organization_team_add": "Lisa",
+  "organization_team_name_taken": "Meeskond nimega {name} on juba olemas.",
+  "organization_delete_team_title": "Kas kustutada {name}?",
+  "organization_delete_team_empty": "Meeskonnas pole liikmeid.",
+  "organization_delete_team_members": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} liige lahkub meeskonnast, kuid jääb organisatsiooni ja tema aeg jääb aruannetesse.",
+        "countPlural=*": "{count} liiget lahkuvad meeskonnast, kuid jäävad organisatsiooni ja nende aeg jääb aruannetesse."
+      }
+    }
+  ],
+  "organization_delete_team_projects": [
+    {
+      "declarations": ["input count", "input projects", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Projekt {projects} kaotab selle meeskonna.",
+        "countPlural=*": "Projektid {projects} kaotavad selle meeskonna."
+      }
+    }
+  ],
+  "organization_delete_team_opened": [
+    {
+      "declarations": ["input count", "input projects", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Seejärel on {projects} avatud kogu organisatsioonile.",
+        "countPlural=*": "Seejärel on {projects} avatud kogu organisatsioonile."
+      }
+    }
+  ],
+  "organization_general": "Üldine",
+  "organization_general_description": "Organisatsiooni nimi, mida näidatakse organisatsiooni valikus ja kutsetes.",
+  "organization_name": "Nimi",
+  "organization_slug": "Lühinimi",
+  "organization_slug_hint": "Määratud organisatsiooni loomisel. Seda ei saa muuta.",
+  "organization_no_delete": "Organisatsioone ei saa kustutada, et nende ajalugu ja muudatuste logi säiliksid.",
+  "organization_save": "Salvesta",
+  "organization_saved": "Salvestatud."
 }

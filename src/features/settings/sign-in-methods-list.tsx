@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
-import { authClient } from '~/lib/auth-client'
+import { authClient, unwrap } from '~/lib/auth-client'
 import { formatDateTime } from '~/lib/format'
 import { m } from '~/paraglide/messages.js'
 import type { SignInMethod } from '~/server/auth/auth.functions'
@@ -33,13 +33,6 @@ const PROVIDERS: { id: SocialProvider; name: string; Icon: Component }[] = [
   { id: 'github', name: 'GitHub', Icon: GitHubIcon },
   { id: 'microsoft', name: 'Microsoft', Icon: MicrosoftIcon },
 ]
-
-// Better Auth's client calls resolve to { data, error }; queries want a throw.
-async function unwrap<T>(call: Promise<{ data: T | null; error: unknown }>): Promise<T> {
-  const { data, error } = await call
-  if (error || data === null) throw error ?? new Error('No data')
-  return data
-}
 
 // Both lists come from the browser: the Better Auth client can't call itself during
 // server rendering.

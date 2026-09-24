@@ -1,10 +1,11 @@
 // The timesheet's rows: getReport's totals per project, team or member, named from the
 // cached lists. Time without a project gets a "No project" row; for admins, members in no
 // team get a "No team" row.
+import type { Member } from '~/lib/members'
 import type { Project } from '~/lib/projects'
 import type { Team } from '~/lib/teams'
 import { m } from '~/paraglide/messages.js'
-import type { Group, Member } from './filters'
+import type { Group } from './filters'
 import type { Report } from './queries'
 
 export interface Row {

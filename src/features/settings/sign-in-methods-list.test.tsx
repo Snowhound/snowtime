@@ -13,7 +13,10 @@ const client = vi.hoisted(() => ({
   linkSocial: vi.fn(),
   passkey: { listUserPasskeys: vi.fn(), addPasskey: vi.fn(), deletePasskey: vi.fn() },
 }))
-vi.mock('~/lib/auth-client', () => ({ authClient: client }))
+vi.mock('~/lib/auth-client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('~/lib/auth-client')>()),
+  authClient: client,
+}))
 
 function account(id: string, providerId: string) {
   return {

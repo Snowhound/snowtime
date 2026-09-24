@@ -1,17 +1,10 @@
-// The Reports view's queries. Projects and teams come from the shared caches in src/lib/.
+// The Reports view's queries. Projects, teams and members come from the shared caches in
+// src/lib/.
 import { keepPreviousData, queryOptions } from '@tanstack/solid-query'
 import { getReport } from '~/server/reports/reports.functions'
 import type { ReportInput } from '~/server/reports/reports.schemas'
-import { listMembers } from '~/server/teams/teams.functions'
 
 export type Report = Awaited<ReturnType<typeof getReport>>
-
-export function membersQuery(organizationId: string) {
-  return queryOptions({
-    queryKey: ['members', organizationId],
-    queryFn: () => listMembers(),
-  })
-}
 
 // The previous report stays on screen while the next filters load, so the grid doesn't
 // flash empty between them.
