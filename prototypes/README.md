@@ -597,14 +597,14 @@ each, from the 2 to 2.5 MB PNGs).
   (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay intro plays it any
   time. **Skip intro** or Escape ends it; the rest of the page
   is `inert` while it plays. With reduced motion it doesn't play, and the snow stays off.
-- **Scenery menu** (the mountain button, top right): the Background switch with its strength
-  (full or dimmed: how much page color covers the image, 30 or 55% dark, 20 or 50% light,
-  stronger toward the bottom), the Weather switch, the Intro switch, and Replay intro. These are
-  the user settings `sceneBackground`, `sceneStrength`, `sceneWeather`, and `sceneIntro`, shared
-  with Settings > Preferences > Sign-in page. Signed out, the app would keep them on the device.
-- **Surfaces** (`surfaces`): glass (`bg-card/70` with a backdrop blur) or solid cards. It's an
-  app-wide appearance setting, so Settings shows it under Appearance, and the Scenery menu lists it
-  apart from the scene. Only the sign-in card uses it so far.
+- **Scenery menu** (the mountain button, top right): the Background switch, with two options
+  under it that apply only while it's on: Strength (full or dimmed: how much page color covers
+  the image, 30 or 55% dark, 20 or 50% light, stronger toward the bottom) and Surfaces (glass,
+  `bg-card/70` with a backdrop blur, or solid cards). Then the Weather switch, the Intro switch,
+  and Replay intro. These are the user settings `sceneBackground`, `sceneStrength`, `surfaces`,
+  `sceneWeather`, and `sceneIntro`, shared with Settings > Preferences > Sign-in page, which lays
+  them out the same way. Signed out, the app would keep them on the device. Surfaces is named for
+  every card, so it can apply app-wide once other pages get a background.
 - **Snow colors**: white in dark mode and over the light image; blue-grey on the plain light page,
   where white flakes would vanish. The canvas blends with premultiplied alpha, so flake edges don't
   darken.

@@ -356,9 +356,25 @@
             </div>
             <button type="button" id="scene-bg-switch" role="switch" aria-checked="true" aria-labelledby="scene-bg-label" data-ui="switch"><span data-ui="switch-thumb"></span></button>
           </div>
-          <div data-ui="toggle-group" class="-mt-2 justify-start" role="group" aria-label="Background strength">
-            <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="sceneStrength" data-value="full">Full</button>
-            <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="sceneStrength" data-value="dimmed">Dimmed</button>
+          <div class="flex items-center justify-between gap-4 pl-3">
+            <div class="grid gap-0.5">
+              <span data-ui="label" id="scene-strength-label">Strength</span>
+              <span class="text-xs text-muted-foreground">How much the page color covers it.</span>
+            </div>
+            <div data-ui="toggle-group" class="shrink-0" role="group" aria-labelledby="scene-strength-label">
+              <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="sceneStrength" data-value="full">Full</button>
+              <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="sceneStrength" data-value="dimmed">Dimmed</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-4 pl-3">
+            <div class="grid gap-0.5">
+              <span data-ui="label" id="surfaces-label">Surfaces</span>
+              <span class="text-xs text-muted-foreground">Glass lets it show through cards.</span>
+            </div>
+            <div data-ui="toggle-group" class="shrink-0" role="group" aria-labelledby="surfaces-label">
+              <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="surfaces" data-value="glass">Glass</button>
+              <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="surfaces" data-value="solid">Solid</button>
+            </div>
           </div>
           <div class="flex items-center justify-between gap-4">
             <div class="grid gap-0.5">
@@ -373,17 +389,6 @@
               <span class="text-xs text-muted-foreground">Plays on your first visit.</span>
             </div>
             <button type="button" id="scene-intro-switch" role="switch" aria-checked="true" aria-labelledby="scene-intro-label" data-ui="switch"><span data-ui="switch-thumb"></span></button>
-          </div>
-          <div data-ui="separator"></div>
-          <div class="flex items-center justify-between gap-4">
-            <div class="grid gap-0.5">
-              <span data-ui="label" id="surfaces-label">Surfaces</span>
-              <span class="text-xs text-muted-foreground">Glass lets the background show through cards.</span>
-            </div>
-            <div data-ui="toggle-group" role="group" aria-labelledby="surfaces-label">
-              <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="surfaces" data-value="glass">Glass</button>
-              <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="surfaces" data-value="solid">Solid</button>
-            </div>
           </div>
           <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-replay-intro>
             <svg class="prototype-icon" aria-hidden="true"><use href="#icon-rotate-ccw" /></svg>Replay intro
@@ -768,7 +773,7 @@
           const pressed = b.dataset.value === user[b.dataset.sceneOption]
           b.setAttribute('aria-pressed', String(pressed))
           b.toggleAttribute('data-pressed', pressed)
-          b.disabled = b.dataset.sceneOption === 'sceneStrength' && !user.sceneBackground
+          b.disabled = !user.sceneBackground
         })
         const blocked = sceneCtl.weatherBlocked()
         const weatherSwitch = document.getElementById('scene-weather-switch')

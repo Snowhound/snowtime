@@ -114,14 +114,7 @@
                   <button type="button" data-ui="toggle" data-variant="outline" data-setting="theme" data-value="system">System</button>
                 </div>
               </div>
-              <div class="grid gap-2">
-                <span data-ui="label" id="surfaces-label">Surfaces</span>
-                <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="surfaces-label" aria-describedby="surfaces-hint">
-                  <button type="button" data-ui="toggle" data-variant="outline" data-setting="surfaces" data-value="glass">Glass</button>
-                  <button type="button" data-ui="toggle" data-variant="outline" data-setting="surfaces" data-value="solid">Solid</button>
-                </div>
-                <p id="surfaces-hint" class="text-xs text-muted-foreground">Glass lets a background show through cards. Only the sign-in page has one so far.</p>
-              </div>
+
               <div class="grid gap-2">
                 <span data-ui="label" id="layout-label">Timer layout</span>
                 <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="layout-label">
@@ -155,9 +148,25 @@
                   <span data-ui="switch-thumb"></span>
                 </button>
               </div>
-              <div data-ui="toggle-group" class="-mt-2 justify-start" role="group" aria-label="Background strength">
-                <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-setting="sceneStrength" data-value="full">Full</button>
-                <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-setting="sceneStrength" data-value="dimmed">Dimmed</button>
+              <div class="flex items-center justify-between gap-4 pl-3">
+                <div class="grid gap-0.5">
+                  <span data-ui="label" id="scene-strength-label">Strength</span>
+                  <span class="text-sm text-muted-foreground">How much the page color covers the landscape.</span>
+                </div>
+                <div data-ui="toggle-group" class="shrink-0" role="group" aria-labelledby="scene-strength-label">
+                  <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-setting="sceneStrength" data-value="full">Full</button>
+                  <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-setting="sceneStrength" data-value="dimmed">Dimmed</button>
+                </div>
+              </div>
+              <div class="flex items-center justify-between gap-4 pl-3">
+                <div class="grid gap-0.5">
+                  <span data-ui="label" id="surfaces-label">Surfaces</span>
+                  <span class="text-sm text-muted-foreground">Glass lets the landscape show through cards.</span>
+                </div>
+                <div data-ui="toggle-group" class="shrink-0" role="group" aria-labelledby="surfaces-label">
+                  <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-setting="surfaces" data-value="glass">Glass</button>
+                  <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-setting="surfaces" data-value="solid">Solid</button>
+                </div>
               </div>
               <div class="flex items-center justify-between gap-4">
                 <div class="grid gap-1">
@@ -442,7 +451,7 @@
         })
         ui.setSwitch(document.getElementById('summary-switch'), settings.showSummary)
         document.querySelectorAll('[data-scene-setting]').forEach((sw) => ui.setSwitch(sw, settings[sw.dataset.sceneSetting]))
-        document.querySelectorAll('[data-setting="sceneStrength"]').forEach((b) => (b.disabled = !settings.sceneBackground))
+        document.querySelectorAll('[data-setting="sceneStrength"], [data-setting="surfaces"]').forEach((b) => (b.disabled = !settings.sceneBackground))
         const browserBtn = document.getElementById('use-browser-zone')
         browserBtn.innerHTML = `${icon('globe')}Use this device's zone`
         browserBtn.disabled = timeZone === browserZone

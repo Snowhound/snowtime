@@ -16,5 +16,6 @@ turn the parts off.
 - [x] Users can turn the background, the weather, and the first-visit intro off, and choose the
       background's strength (full or dimmed), in the sign-in page's Scenery menu and in
       Settings. The choices are shared settings.
-- [x] An app-wide Surfaces setting chooses glass or solid cards.
+- [x] Under the Background switch, Strength (full or dimmed) and Surfaces (glass or solid cards)
+      are two separate choices, disabled while the background is off.
 - [x] The prototype bar compares seasons, tagline treatments, and page tone.
