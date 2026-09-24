@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Projects</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="app-frame.js"></script>
+    <script src="app-data.js"></script>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body class="bg-muted/40">
+    <div id="prototype-controls">
+      <label for="fixture" class="sr-only">Fixture</label>
+      <select id="fixture" data-ui="select" class="h-9 w-40">
+        <option value="populated">Populated</option>
+        <option value="empty">New organization</option>
+        <option value="long">Long content</option>
+      </select>
+    </div>
+
+    <div class="mx-auto flex max-w-6xl flex-col gap-1 px-4 pt-6 sm:px-8">
+      <h1 class="text-2xl font-semibold tracking-tight">Projects</h1>
+      <p id="subtitle" class="min-w-0 truncate text-sm text-muted-foreground"></p>
+    </div>
+
+    <main class="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-10 pt-4 sm:px-8">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <div data-ui="tabs-list" role="tablist" aria-label="Project status" id="status-tabs">
+            <button type="button" role="tab" data-ui="tabs-trigger" id="tab-active" aria-controls="panel-active" aria-selected="true">Active <span class="ml-1.5 text-xs text-muted-foreground" data-count="active"></span></button>
+            <button type="button" role="tab" data-ui="tabs-trigger" id="tab-archived" aria-controls="panel-archived">Archived <span class="ml-1.5 text-xs text-muted-foreground" data-count="archived"></span></button>
+          </div>
+        </div>
+        <div class="flex min-w-0 gap-2">
+          <div class="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
+            <label for="search" class="sr-only">Search projects</label>
+            <svg class="prototype-icon pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true"><use href="#icon-search" /></svg>
+            <input id="search" data-ui="input" type="search" placeholder="Search projects" class="h-9 pl-9" autocomplete="off" />
+          </div>
+          <button type="button" data-ui="button" data-size="sm" class="h-9 shrink-0" id="open-create" data-admin-only>
+            <svg class="prototype-icon" aria-hidden="true"><use href="#icon-plus" /></svg>New project
+          </button>
+        </div>
+      </div>
+
+      <section id="panel-active" role="tabpanel" aria-labelledby="tab-active" data-ui="tabs-content" class="mt-0">
+        <div data-ui="card" class="min-w-0">
+          <div class="hidden border-b px-6 py-2 text-xs font-medium text-muted-foreground md:grid" data-list-head></div>
+          <ul id="list-active" class="divide-y"></ul>
+        </div>
+      </section>
+      <section id="panel-archived" role="tabpanel" aria-labelledby="tab-archived" data-ui="tabs-content" class="mt-0" hidden>
+        <div data-ui="card" class="min-w-0">
+          <div class="hidden border-b px-6 py-2 text-xs font-medium text-muted-foreground md:grid" data-list-head></div>
+          <ul id="list-archived" class="divide-y"></ul>
+        </div>
+      </section>
+
+      <p id="footnote" class="text-sm text-muted-foreground"></p>
+    </main>
+
+    <!-- Create or edit a project. -->
+    <dialog id="project-dialog" data-ui="dialog" aria-labelledby="project-dialog-title">
+      <form id="project-form" class="grid min-w-0 gap-5" novalidate>
+        <div data-ui="dialog-header">
+          <h2 id="project-dialog-title" data-ui="dialog-title">New project</h2>
+          <p id="project-dialog-description" data-ui="dialog-description"></p>
+        </div>
+        <div class="grid gap-2">
+          <label data-ui="label" for="project-name">Name</label>
+          <input id="project-name" data-ui="input" type="text" maxlength="100" autocomplete="off" aria-describedby="project-name-error" />
+          <p id="project-name-error" data-ui="error-message" class="empty:hidden"></p>
+        </div>
+        <fieldset class="grid gap-2">
+          <legend data-ui="label" class="mb-2">Color</legend>
+          <div id="project-colors" class="flex flex-wrap gap-2"></div>
+        </fieldset>
+        <fieldset class="grid min-w-0 gap-2">
+          <legend data-ui="label" class="mb-2">Teams</legend>
+          <div id="project-teams" class="grid max-h-56 min-w-0 gap-1 overflow-y-auto rounded-md border p-1"></div>
+          <p id="project-teams-hint" class="text-xs text-muted-foreground" aria-live="polite"></p>
+        </fieldset>
+        <div data-ui="dialog-footer">
+          <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
+          <button type="submit" data-ui="button" id="project-submit">Create project</button>
+        </div>
+      </form>
+      <button type="button" data-ui="dialog-close" data-dialog-cancel>
+        <svg class="prototype-icon" aria-hidden="true"><use href="#icon-x" /></svg>
+        <span class="sr-only">Close</span>
+      </button>
+    </dialog>
+
+    <!-- Confirm archive and delete, and explain refusals. -->
+    <dialog id="confirm-dialog" data-ui="dialog" aria-labelledby="confirm-title" aria-describedby="confirm-description">
+      <div data-ui="dialog-header">
+        <h2 id="confirm-title" data-ui="dialog-title" class="break-words"></h2>
+        <p id="confirm-description" data-ui="dialog-description" class="break-words"></p>
+      </div>
+      <div data-ui="dialog-footer">
+        <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
+        <button type="button" data-ui="button" data-variant="destructive" id="confirm-ok"></button>
+      </div>
+    </dialog>
+
+    <script>
+      appFrame.mount({ page: 'projects', title: 'Projects' })
+      const { escapeHtml, icon } = appFrame
+      const { PALETTE, colorVar, tz: Z } = appData
+      const ME = appData.currentUserId
+      const COLOR_NAMES = { blue: 'Blue', orange: 'Orange', aqua: 'Aqua', yellow: 'Yellow', magenta: 'Magenta', green: 'Green', violet: 'Violet', red: 'Red' }
+
+      const state = { fixture: 'populated', org: null, entries: [], tab: 'active', search: '' }
+      let nextId = 1
+
+      // --- Fixtures -----------------------------------------------------------------------------
+      function loadFixture(name) {
+        state.fixture = name
+        const role = appFrame.role
+        const org = appData.organization({ role, long: name === 'long' })
+        if (name === 'empty') {
+          // A new organization: no projects, no teams, no time yet.
+          org.projects = []
+          org.teams = []
+          state.entries = []
+        } else {
+          // Client services only, so members and team leads outside it don't see it.
+          org.projects.push({ id: 'p-support', name: 'Client support', color: '#eb6834', teams: ['t-client'], archivedAt: null })
+          state.entries = appData.generateEntries(org)
+          // Created by mistake last week: no time, so it can be deleted.
+          org.projects.push({ id: 'p-new', name: 'Q4 planning', color: '#008300', teams: [], archivedAt: null })
+        }
+        state.org = org
+        render()
+      }
+
+      // --- Rules (src/server/projects.server.ts) ------------------------------------------------
+      const admin = () => appFrame.isAdmin()
+      const team = (id) => state.org.teams.find((t) => t.id === id)
+      const myTeams = () => state.org.teams.filter((t) => t.members.some(([u]) => u === ME)).map((t) => t.id)
+      // visibleProjects: admins and owners see all; everyone else unassigned projects and their teams'.
+      const visible = (p) => admin() || !p.teams.length || p.teams.some((t) => myTeams().includes(t))
+      const hasEntries = (p) => state.entries.some((e) => e.projectId === p.id)
+
+      // Time this month in the user's zone. Admins and owners see the organization's time;
+      // members and team leads their own (leads get their team's time in Reports).
+      function monthTotals() {
+        const zone = appFrame.settings.get().timeZone
+        const now = Date.now()
+        const p = Z.zonedParts(now, zone)
+        const from = Z.zonedTime(p.y, p.m, 1, 0, 0, zone)
+        const to = Z.zonedTime(p.y, p.m + 1, 1, 0, 0, zone)
+        const totals = new Map()
+        for (const e of state.entries) {
+          if (!admin() && e.userId !== ME) continue
+          const start = Math.max(e.startedAt, from)
+          const stop = Math.min(e.stoppedAt ?? now, to)
+          if (stop > start) totals.set(e.projectId, (totals.get(e.projectId) ?? 0) + stop - start)
+        }
+        return totals
+      }
+      const hm = (ms) => {
+        const m = Math.round(ms / 60_000)
+        return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
+      }
+      const dateFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+      const byName = (a, b) => a.name.localeCompare(b.name)
+      const listNames = (names) => new Intl.ListFormat('en', { type: 'conjunction' }).format(names)
+
+      // --- List ---------------------------------------------------------------------------------
+      const GRID = 'md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_6.5rem_2.25rem]'
+      const GRID_READONLY = 'md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_8rem]'
+
+      function teamBadges(p) {
+        if (!p.teams.length) return `<span class="inline-flex items-center gap-1.5 text-sm text-muted-foreground">${icon('globe', 'size-3.5')}Whole organization</span>`
+        return p.teams
+          .map(team)
+          .filter(Boolean)
+          .sort(byName)
+          .map((t) => `<span data-ui="badge" data-variant="outline" class="max-w-full font-normal"><span class="truncate">${escapeHtml(t.name)}</span></span>`)
+          .join('')
+      }
+
+      function row(p, totals) {
+        const ms = totals.get(p.id) ?? 0
+        const menu = admin()
+          ? `<div class="col-start-3 row-start-1 flex justify-end md:col-start-auto md:row-start-auto">
+              <button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="size-9" popovertarget="menu-${p.id}" aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${escapeHtml(p.name)}">${icon('ellipsis')}</button>
+              <div id="menu-${p.id}" popover data-ui="menu" class="w-44" role="menu" aria-label="${escapeHtml(p.name)}">
+                <button type="button" role="menuitem" data-ui="menu-item" data-edit="${p.id}">${icon('pencil')}Edit</button>
+                ${
+                  p.archivedAt
+                    ? `<button type="button" role="menuitem" data-ui="menu-item" data-restore="${p.id}">${icon('archive-restore')}Restore</button>`
+                    : `<button type="button" role="menuitem" data-ui="menu-item" data-archive="${p.id}">${icon('archive')}Archive</button>`
+                }
+                <div data-ui="menu-separator" role="separator"></div>
+                <button type="button" role="menuitem" data-ui="menu-item" data-delete="${p.id}" class="text-destructive focus:text-destructive">${icon('trash-2')}Delete</button>
+              </div>
+            </div>`
+          : ''
+        return `<li class="grid grid-cols-[minmax(0,1fr)_auto${admin() ? '_auto' : ''}] items-center gap-x-3 gap-y-1.5 px-4 py-3 sm:px-6 md:gap-x-4 ${admin() ? GRID : GRID_READONLY}">
+          <div class="flex min-w-0 items-start gap-3">
+            <span class="mt-1 size-3 shrink-0 rounded-full" style="background: ${colorVar(p.color)}" aria-hidden="true"></span>
+            <div class="min-w-0">
+              <p class="line-clamp-2 break-words text-sm font-medium" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</p>
+              ${p.archivedAt ? `<p class="text-xs text-muted-foreground">Archived ${dateFmt.format(p.archivedAt)}</p>` : ''}
+            </div>
+          </div>
+          <div class="col-span-full row-start-2 flex min-w-0 flex-wrap items-center gap-1.5 pl-6 md:col-span-1 md:row-start-auto md:pl-0">${teamBadges(p)}</div>
+          <div class="col-start-2 row-start-1 text-right text-sm tabular-nums md:col-start-auto md:row-start-auto ${ms ? '' : 'text-muted-foreground'}">
+            <span class="sr-only">${admin() ? 'This month:' : 'Your time this month:'}</span>${ms ? hm(ms) : '–'}
+          </div>
+          ${menu}
+        </li>`
+      }
+
+      function empty(archived) {
+        const q = state.search.trim()
+        if (q) return `<li class="px-6 py-10 text-center text-sm text-muted-foreground">No ${archived ? 'archived ' : ''}projects match “${escapeHtml(q)}”.</li>`
+        if (archived)
+          return `<li class="flex flex-col items-center gap-2 px-6 py-10 text-center">
+            ${icon('archive', 'size-6 text-muted-foreground')}
+            <p class="font-medium">No archived projects</p>
+            <p class="max-w-md text-sm text-muted-foreground">Archive a finished project to keep its time in reports while nobody can track new time on it.</p>
+          </li>`
+        return `<li class="flex flex-col items-center gap-2 px-6 py-12 text-center">
+          ${icon('folder-kanban', 'size-6 text-muted-foreground')}
+          <p class="font-medium">No projects yet</p>
+          ${
+            admin()
+              ? `<p class="max-w-md text-sm text-muted-foreground">Projects group time for reports. Create one for the whole organization, or limit it to teams.</p>
+                 <button type="button" data-ui="button" data-size="sm" class="mt-2" data-create>${icon('plus')}New project</button>`
+              : '<p class="max-w-md text-sm text-muted-foreground">Time can still be tracked without a project. Ask an admin to create projects.</p>'
+          }
+        </li>`
+      }
+
+      function renderList(archived, totals) {
+        const q = state.search.trim().toLowerCase()
+        const list = state.org.projects
+          .filter((p) => visible(p) && Boolean(p.archivedAt) === archived && (!q || p.name.toLowerCase().includes(q)))
+          .sort(byName)
+        document.getElementById(archived ? 'list-archived' : 'list-active').innerHTML = list.length ? list.map((p) => row(p, totals)).join('') : empty(archived)
+      }
+
+      // --- Dialog: create and edit --------------------------------------------------------------
+      const dialog = document.getElementById('project-dialog')
+      let editing = null
+
+      function teamsHint() {
+        const checked = [...document.querySelectorAll('#project-teams input:checked')].map((i) => team(i.value).name)
+        document.getElementById('project-teams-hint').textContent = !state.org.teams.length
+          ? ''
+          : checked.length
+            ? `Only members of ${listNames(checked)} can track time on it, plus admins and owners.`
+            : 'No teams: the whole organization can track time on it.'
+      }
+
+      function openDialog(id = null) {
+        editing = id
+        const p = id && state.org.projects.find((x) => x.id === id)
+        document.getElementById('project-dialog-title').textContent = p ? 'Edit project' : 'New project'
+        document.getElementById('project-dialog-description').textContent = p
+          ? p.archivedAt
+            ? 'This project is archived. You can still rename it or change its teams.'
+            : 'Changes apply to its existing time too.'
+          : 'Projects group time for reports.'
+        document.getElementById('project-submit').textContent = p ? 'Save' : 'Create project'
+        const input = document.getElementById('project-name')
+        input.value = p ? p.name : ''
+        input.removeAttribute('data-invalid')
+        document.getElementById('project-name-error').textContent = ''
+
+        // A new project gets the palette's least used color.
+        const used = (c) => state.org.projects.filter((x) => !x.archivedAt && x.color === c.light).length
+        const color = p ? p.color : [...PALETTE].sort((a, b) => used(a) - used(b))[0].light
+        document.getElementById('project-colors').innerHTML = PALETTE.map(
+          (c, i) => `<label class="relative cursor-pointer">
+            <input type="radio" name="color" value="${c.light}" class="peer sr-only"${c.light === color ? ' checked' : ''} />
+            <span class="block size-8 rounded-full ring-offset-2 ring-offset-background peer-checked:ring-2 peer-checked:ring-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring" style="background: var(--series-${i + 1})" aria-hidden="true"></span>
+            ${icon('check', 'pointer-events-none absolute left-2 top-2 hidden text-white peer-checked:block')}
+            <span class="sr-only">${COLOR_NAMES[c.id]}</span>
+          </label>`
+        ).join('')
+
+        const teamsEl = document.getElementById('project-teams')
+        teamsEl.innerHTML = state.org.teams.length
+          ? [...state.org.teams]
+              .sort(byName)
+              .map(
+                (t) => `<label class="flex min-w-0 cursor-pointer items-center gap-3 rounded-sm px-2 py-2 hover:bg-accent">
+                  <input type="checkbox" data-ui="checkbox" value="${t.id}"${p && p.teams.includes(t.id) ? ' checked' : ''} />
+                  <span class="min-w-0 flex-1 truncate text-sm">${escapeHtml(t.name)}</span>
+                  <span class="shrink-0 text-xs text-muted-foreground">${t.members.length} ${t.members.length === 1 ? 'member' : 'members'}</span>
+                </label>`
+              )
+              .join('')
+          : `<p class="px-2 py-2 text-sm text-muted-foreground">No teams yet, so the whole organization can track time on it. Create teams in <a class="underline underline-offset-4" href="${appFrame.link('organization.html')}" data-frame-link="organization.html">Organization</a>.</p>`
+        teamsHint()
+        dialog.showModal()
+      }
+
+      document.getElementById('project-teams').addEventListener('change', teamsHint)
+      document.getElementById('open-create').addEventListener('click', () => openDialog())
+      document.getElementById('project-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const input = document.getElementById('project-name')
+        const name = input.value.trim()
+        // project_organization_id_name_unique covers archived projects but not deleted ones.
+        const clash = state.org.projects.find((p) => p.id !== editing && p.name === name)
+        let error = ''
+        if (!name) error = 'Enter a name.'
+        else if (clash) error = clash.archivedAt ? `An archived project is called ${name}. Restore it, or pick another name.` : `A project called ${name} already exists.`
+        document.getElementById('project-name-error').textContent = error
+        input.toggleAttribute('data-invalid', !!error)
+        if (error) return input.focus()
+
+        const color = document.querySelector('#project-colors input:checked').value
+        const teams = [...document.querySelectorAll('#project-teams input:checked')].map((i) => i.value)
+        if (editing) {
+          // updateProject, then assignProjectToTeam / unassignProjectFromTeam for the difference.
+          Object.assign(state.org.projects.find((p) => p.id === editing), { name, color, teams })
+        } else {
+          // createProject with a client UUIDv7, then assignProjectToTeam per team.
+          state.org.projects.push({ id: `p-created-${nextId++}`, name, color, teams, archivedAt: null })
+          if (state.tab !== 'active') ui.selectTab(document.getElementById('tab-active'))
+        }
+        dialog.close()
+        render()
+      })
+
+      // --- Archive, restore, delete -------------------------------------------------------------
+      const confirmEl = document.getElementById('confirm-dialog')
+      let confirmRun = null
+      function confirmDialog({ title, description, ok, variant = 'destructive', cancel = 'Cancel', run }) {
+        document.getElementById('confirm-title').textContent = title
+        document.getElementById('confirm-description').textContent = description
+        const okBtn = document.getElementById('confirm-ok')
+        okBtn.textContent = ok
+        okBtn.dataset.variant = variant
+        okBtn.hidden = !run
+        confirmEl.querySelector('[data-dialog-cancel]').textContent = cancel
+        confirmRun = run
+        if (!confirmEl.open) confirmEl.showModal()
+      }
+      document.getElementById('confirm-ok').addEventListener('click', () => {
+        const run = confirmRun
+        confirmEl.close()
+        run?.()
+      })
+
+      function archive(p) {
+        confirmDialog({
+          title: `Archive ${p.name}?`,
+          description: 'Nobody can track new time on it. Its time stays in reports, and you can restore it from Archived.',
+          ok: 'Archive',
+          variant: 'default',
+          run: () => {
+            p.archivedAt = Date.now() // archiveProject
+            render()
+          },
+        })
+      }
+
+      function del(p) {
+        confirmDialog({
+          title: `Delete ${p.name}?`,
+          description: 'Delete is for projects created by mistake. Its name becomes free to use again.',
+          ok: 'Delete project',
+          run: () => {
+            // deleteProject refuses projects with time (CONFLICT project_has_entries).
+            if (hasEntries(p)) {
+              requestAnimationFrame(() =>
+                confirmDialog(
+                  p.archivedAt
+                    ? { title: `${p.name} has tracked time`, description: 'Projects with time entries can’t be deleted, so their time keeps its project. It stays archived.', cancel: 'OK' }
+                    : {
+                        title: `${p.name} has tracked time`,
+                        description: 'Projects with time entries can’t be deleted, so their time keeps its project. Archive it instead: nobody can track new time on it, and its time stays in reports.',
+                        ok: 'Archive instead',
+                        variant: 'default',
+                        run: () => {
+                          p.archivedAt = Date.now() // archiveProject
+                          render()
+                        },
+                      }
+                )
+              )
+              return
+            }
+            state.org.projects = state.org.projects.filter((x) => x.id !== p.id)
+            render()
+          },
+        })
+      }
+
+      document.querySelector('main').addEventListener('click', (event) => {
+        const find = (attr) => {
+          const el = event.target.closest(`[${attr}]`)
+          return el && state.org.projects.find((p) => p.id === el.getAttribute(attr))
+        }
+        let p
+        if (event.target.closest('[data-create]')) openDialog()
+        else if ((p = find('data-edit'))) openDialog(p.id)
+        else if ((p = find('data-archive'))) archive(p)
+        else if ((p = find('data-restore'))) {
+          p.archivedAt = null // unarchiveProject
+          render()
+        } else if ((p = find('data-delete'))) del(p)
+      })
+
+      for (const d of [dialog, confirmEl]) {
+        d.querySelectorAll('[data-dialog-cancel]').forEach((b) => b.addEventListener('click', () => d.close()))
+        d.addEventListener('click', (event) => {
+          if (event.target !== d) return
+          const r = d.getBoundingClientRect()
+          if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) d.close()
+        })
+      }
+
+      // --- Render -------------------------------------------------------------------------------
+      function render() {
+        const isAdmin = admin()
+        const shown = state.org.projects.filter(visible)
+        const active = shown.filter((p) => !p.archivedAt).length
+        const archived = shown.length - active
+        const orgName = appFrame.org.name
+        document.getElementById('subtitle').textContent = isAdmin
+          ? `${orgName} · ${active} active, ${archived} archived`
+          : `The projects you can track time on in ${orgName}`
+        document.querySelector('[data-count="active"]').textContent = active || ''
+        document.querySelector('[data-count="archived"]').textContent = archived || ''
+        document.querySelectorAll('[data-admin-only]').forEach((el) => (el.hidden = !isAdmin))
+        document.querySelectorAll('[data-list-head]').forEach((el) => {
+          el.className = `hidden gap-x-4 border-b px-6 py-2 text-xs font-medium text-muted-foreground md:grid ${isAdmin ? GRID : GRID_READONLY}`
+          el.innerHTML = `<span class="pl-6">Project</span><span>Teams</span><span class="text-right">${isAdmin ? 'This month' : 'You, this month'}</span>${isAdmin ? '<span class="sr-only">Actions</span>' : ''}`
+        })
+        const totals = monthTotals()
+        renderList(false, totals)
+        renderList(true, totals)
+        document.getElementById('footnote').textContent = isAdmin
+          ? 'Projects without teams are open to the whole organization. Projects with teams are open to their members, and always to admins and owners.'
+          : 'Admins and owners create and change projects. You see the ones open to the whole organization and to your teams.'
+      }
+
+      document.getElementById('status-tabs').addEventListener('change', (event) => (state.tab = event.detail.id === 'tab-archived' ? 'archived' : 'active'))
+      document.getElementById('search').addEventListener('input', (event) => {
+        state.search = event.currentTarget.value
+        render()
+      })
+      document.getElementById('fixture').addEventListener('change', (event) => loadFixture(event.currentTarget.value))
+      appFrame.on('role', () => loadFixture(state.fixture))
+      appFrame.on('org', render)
+      appFrame.on('settings', render)
+
+      ui.ready.then(() => loadFixture('populated'))
+    </script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
 # 013: UI prototypes for the MVP pages
 
-Status: in-progress
+Status: done
 
 Prototype the MVP pages in `prototypes/` before building them in Solid, in the order below. The
 timer and entries view is done (`prototypes/timer.html`). Follow `prototypes/README.md` for the
@@ -16,5 +16,5 @@ workflow and checks.
       team lead's view of their teams (`prototypes/reports.html`, timesheet selected)
 - [x] Organization admin: members with invitations and roles, teams with members and the lead
       (`prototypes/organization.html`)
-- [ ] Projects: list, create and edit, and assignment to teams
-- [ ] Each prototype has a reference entry in `prototypes/README.md` and passes its checks
+- [x] Projects: list, create and edit, and assignment to teams (`prototypes/projects.html`)
+- [x] Each prototype has a reference entry in `prototypes/README.md` and passes its checks

@@ -180,6 +180,52 @@ Gotchas:
 
 ## Prototypes
 
+### [projects.html](projects.html) — Projects
+
+Decision: how admins and owners create, edit, assign, archive, and delete projects, and what
+members and team leads see of them.
+
+The list shows each project's color, name, teams, and time this month, sorted by name, with
+Active and Archived tabs and a name search. A project with no teams shows "Whole organization".
+
+| Role         | Sees                                                     | Time column         | Actions |
+| ------------ | -------------------------------------------------------- | ------------------- | ------- |
+| Admin, owner | Every project                                            | The organization's  | New project; per project: edit, archive or restore, delete |
+| Member, team lead | Projects with no teams, and those assigned to their teams | Their own         | None; a note says admins and owners manage projects |
+
+Visibility follows `visibleProjects` in `src/server/projects.server.ts`: a team lead sees the
+same projects as a member. The time column would come from `getReport` over this month in the
+user's time zone; leads get their team's time in Reports. The Client support project is
+assigned to Client services only, so members and leads don't see it.
+
+- **Create and edit**: one dialog with the name, eight color swatches from `appData.PALETTE`
+  (radio inputs), and a checkbox per team. A hint names who can track time on the project: the
+  whole organization with no teams checked, otherwise the checked teams plus admins and owners.
+  A new project gets the least used color. Names are trimmed, 1 to 100 characters, and unique
+  among projects that aren't deleted, archived ones included, matching
+  `project_organization_id_name_unique`. A clash with an archived project suggests restoring
+  it. Archived projects can still be edited. Saving maps to `createProject` or `updateProject`,
+  then `assignProjectToTeam` and `unassignProjectFromTeam` for the changed teams.
+- **Archive and restore**: archive asks first, because nobody can then track new time on the
+  project; its time stays in reports. Restore acts at once (`archiveProject`,
+  `unarchiveProject`).
+- **Delete**: for projects created by mistake (task 020). The prototype mirrors
+  `deleteProject`: after confirming, a project with time entries gets the `CONFLICT` message
+  and an "Archive instead" button, or only an explanation when it's already archived. Q4
+  planning and the archived Website 2025 have no time and can be deleted.
+
+Fixtures: populated, new organization (no projects, no teams, so the dialog links to
+Organization), and long content (long project and team names, fourteen projects).
+
+Omitted: project details or per-project reports, custom colors, bulk actions, and moving time
+between projects.
+
+Checked in Chromium at 1440, 850, and 390 px, light and dark, both tabs and every fixture, as
+member, team lead, and admin: no horizontal page overflow, dialog validation and keyboard use of
+the swatches, and no browser errors. axe reports color contrast on the page title and muted
+text in dark mode; `organization.html` reports the same, because axe composites the body's
+translucent `bg-muted/40` over white.
+
 ### [organization.html](organization.html) — Organization admin
 
 Decision: how admins and owners manage members, invitations, and teams without email.
