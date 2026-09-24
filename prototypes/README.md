@@ -134,6 +134,4 @@ Omitted: editing past entries, manual entry, reports, org/team switching, persis
 selected yet.
 
 Checked in Chromium at 1440, 850, and 390 px, light and dark, all fixtures: no horizontal page
-overflow and no browser errors. Stop uses the `secondary` button with a destructive icon: the
-app's tokens set `--destructive-foreground` equal to `--destructive` in light mode (shadcn v4
-tokens), which makes Solid-UI's `destructive` button text invisible until the tokens are fixed.
+overflow and no browser errors.

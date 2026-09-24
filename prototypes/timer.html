@@ -359,8 +359,8 @@
         const running = state.running
         const toggle = document.getElementById('toggle')
         document.getElementById('timer').classList.toggle('running', !!running)
-        toggle.dataset.variant = running ? 'secondary' : 'default'
-        toggle.innerHTML = running ? `${icon('square', 'text-destructive')}Stop` : `${icon('play')}Start`
+        toggle.dataset.variant = running ? 'destructive' : 'default'
+        toggle.innerHTML = running ? `${icon('square')}Stop` : `${icon('play')}Start`
         tick()
       }
 
