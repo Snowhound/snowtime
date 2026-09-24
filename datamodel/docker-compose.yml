@@ -1,4 +1,4 @@
-# ChartDB, for viewing docs/data-model/snowtime.chartdb.json. Start with `bun run datamodel`.
+# ChartDB, for viewing datamodel/snowtime.chartdb.json. Start with `bun run datamodel`.
 name: snowtime-datamodel
 services:
   chartdb:

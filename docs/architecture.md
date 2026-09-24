@@ -118,9 +118,9 @@ the source of truth. Workflow and rules: `docs/migrations.md`.
 - `drizzle-kit pull` is lossy on SQLite (drops partial-index `WHERE`, inline
   `UNIQUE`, timestamp/boolean modes, composite-FK relations), so `schema.ts`
   is not generated from it.
-- Data model visualization: `docs/data-model/snowtime.dbml` is the design
+- Data model visualization: `datamodel/snowtime.dbml` is the design
   source until the first migration lands; afterwards it is regenerated from
-  the schema for documentation only (see `docs/data-model/README.md`).
+  the schema for documentation only (see `datamodel/README.md`).
 
 **Env vars:** `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`.
 

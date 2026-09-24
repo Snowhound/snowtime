@@ -1,17 +1,17 @@
 #!/usr/bin/env bun
-// Convert docs/data-model/snowtime.dbml into a ChartDB diagram JSON.
+// Convert datamodel/snowtime.dbml into a ChartDB diagram JSON.
 //
 // ChartDB's DBML importer strips TableGroup blocks and table colors before parsing, so a
 // DBML import always lands as an unsorted, uncolored pile of tables. Its own diagram format
 // (File > Import diagram) carries areas, colors and coordinates, so this script emits that
 // instead: one colored area per TableGroup, with the group's tables laid out inside it.
 //
-// Usage: bun scripts/dbml-to-chartdb.mjs [input.dbml] [output.json]
+// Usage: bun datamodel/dbml-to-chartdb.mjs [input.dbml] [output.json]
 
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const input = process.argv[2] ?? 'docs/data-model/snowtime.dbml';
-const output = process.argv[3] ?? 'docs/data-model/snowtime.chartdb.json';
+const input = process.argv[2] ?? 'datamodel/snowtime.dbml';
+const output = process.argv[3] ?? 'datamodel/snowtime.chartdb.json';
 
 // ChartDB renders a table node at this size; the layout below needs the same numbers.
 const TABLE_WIDTH = 224;

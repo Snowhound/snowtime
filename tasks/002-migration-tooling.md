@@ -12,4 +12,4 @@ SQL-first, roll-forward migrations with Drizzle v1 as runner and query layer. Se
 - [x] Snapshots removed by `db:generate`; applied-migration checksums verified
 - [ ] CI: `db:verify` + `db:migrate` against staging on PRs, prod on merge to main
 - [ ] CI: `db:drift` as a non-blocking warning
-- [ ] Script to regenerate `docs/data-model/snowtime.dbml` from `src/db/schema.ts`
+- [ ] Script to regenerate `datamodel/snowtime.dbml` from `src/db/schema.ts`

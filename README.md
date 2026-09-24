@@ -1,4 +1,7 @@
-Welcome to your new TanStack Start app!
+# Snowtime
+
+Minimal multi-tenant time tracker. Start with `docs/product.md` and
+`docs/architecture.md`.
 
 # Getting Started
 
@@ -6,8 +9,19 @@ To run this application:
 
 ```bash
 bun install
+bun run db:migrate
 bun --bun run dev
 ```
+
+## Database and data model
+
+- **Schema changes** are hand-written SQL migrations: `bun run db:generate <name>`, write
+  the SQL, `bun run db:migrate`, then update `src/db/schema.ts` to match and check with
+  `bun run db:drift`. Full workflow and rules: [`docs/migrations.md`](docs/migrations.md).
+- **Viewing the data model:** `bun run datamodel` starts ChartDB on
+  http://localhost:8080; import `datamodel/snowtime.chartdb.json` via
+  **Actions > Import > .json** (not the `.dbml`). Details and the edit flow:
+  [`datamodel/README.md`](datamodel/README.md).
 
 # Building For Production
 
