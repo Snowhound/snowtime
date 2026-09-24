@@ -667,8 +667,27 @@ snow from `snowtime_login_intro_with_backgrounds.html`, ported to [scene.js](sce
 seasons' effects are rough versions built the same way, for comparison. Each effect draws its
 points in one call on one shared canvas, runs at about 45 fps, stops when the tab is hidden or the
 weather is off, and scales its point count to the area it covers. Unlike the mock-up, snow covers
-the full width. The pages load WebP copies of the images (110 to 215 KB
-each, from the 2 to 2.5 MB PNGs).
+the full width.
+
+The images are upscaled to 3840 px and come as WebP files 1920 and 3840 px wide (see
+`design/backgrounds/README.md`). `scene.js` picks the 3840 file when the image covers more than
+2400 device pixels across: `cover` stretches it to the larger of the viewport's width and its
+height's 16:9 width, times the pixel ratio (at most 2). Screens under 768 px wide always get the
+1920 file. The shown theme's layer gets the 1920 file first and swaps to the 3840 one once it has
+loaded and decoded, so the picture sharpens without moving. The other theme's layer gets its 1920
+file after that, for the crossfade. Nothing loads while the background is off, except that the
+intro calls `preload('dark')`, which loads the dark 3840 file while the intro opens on the
+weather alone.
+
+Checked on 2026-09-25 in headless Chromium with the cache off, autumn (the month's season), times
+from navigation:
+
+| Case                    | Fast 4G (9 Mbps, 170 ms)                                   | Slow 4G (1.6 Mbps, 150 ms)                                                 |
+| ----------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------- |
+| 1440 × 900 at 2×, intro | Dark 3840 (509 KB) ready at 1.3 s; background in at 3.7 s  | Dark 3840 ready at 4.9 s, 0.7 s into the fade; the 1920 file shows until then |
+| 1440 × 900 at 2×, light | 1920 (277 KB) at 1.3 s, 3840 (637 KB) at 1.7 s             | 1920 at 4.9 s, 3840 at 6.6 s                                               |
+| 1440 × 900 at 1×, dark  | 1920 (232 KB) only, at 1.1 s                               | 1920 only, at 3.3 s                                                        |
+| 390 × 844 at 3×, light  | 1920 (277 KB) only, at 1.1 s                               | 1920 only, at 3.5 s                                                        |
 
 - **Scene**: it fills the page behind the card.
 - **Intro**: about 13 seconds, always dark. It opens on the weather alone over the page color,

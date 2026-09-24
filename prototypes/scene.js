@@ -418,6 +418,38 @@
     }
   }
 
+  // --- Photos ----------------------------------------------------------------------------------
+  // Each image comes 1920 and 3840 px wide (design/backgrounds/README.md). `cover` stretches it to
+  // the larger of the viewport's width and its height's 16:9 width, so that is what the file has to
+  // cover. Screens under 768 px get the small file whatever their pixel ratio.
+  const PHOTO_SMALL = 1920
+  const PHOTO_LARGE = 3840
+  function photoWidth() {
+    if (innerWidth < 768) return PHOTO_SMALL
+    const needed = Math.max(innerWidth, (innerHeight * 16) / 9) * Math.min(devicePixelRatio || 1, 2)
+    return needed > PHOTO_SMALL * 1.25 ? PHOTO_LARGE : PHOTO_SMALL
+  }
+  function photoUrl(season, theme, width) {
+    return `${BASE}${season}-${theme}-01-${width}.webp`
+  }
+  // Files loaded and decoded, so a layer only switches to an image that's ready to paint.
+  const ready = new Set()
+  const loading = new Map()
+  function load(url) {
+    if (!loading.has(url)) {
+      const img = new Image()
+      img.src = url
+      loading.set(
+        url,
+        img.decode().then(
+          () => ready.add(url),
+          () => {},
+        ),
+      )
+    }
+    return loading.get(url)
+  }
+
   // --- Controller ------------------------------------------------------------------------------
   // `pace` is `{ density, speed }`, each a factor of the sign-in page's weather.
   function create({ season = 'winter', strength = 'full', background = true, weather = true, pace = { density: 1, speed: 1 } } = {}) {
@@ -432,10 +464,50 @@
     const colors = () => EFFECTS[effect()].colors({ dark: isDark(), background: state.background })
     const effect = () => (SEASONS[state.season] ?? SEASONS.winter).weather[isDark() ? 'dark' : 'light']
 
+    // Themes whose sharp file loads even while the background is off: the intro's, which opens
+    // without it and fades it in later (`preload`).
+    const preloaded = new Set()
+    // The theme on screen gets the file for this screen, and until that has loaded, the small one,
+    // which it then replaces. The other theme gets the small one for the crossfade once the shown
+    // theme's file has loaded. Nothing loads while the background is off. It runs after the calling
+    // script, so a page that creates the scene and then turns the background off for its intro
+    // loads only what the intro needs.
+    let queued = false
+    function photos() {
+      if (queued) return
+      queued = true
+      queueMicrotask(() => {
+        queued = false
+        updatePhotos()
+      })
+    }
+    function updatePhotos() {
+      const shown = isDark() ? 'dark' : 'light'
+      const shownReady = ready.has(photoUrl(state.season, shown, photoWidth()))
+      for (const theme of ['light', 'dark']) {
+        const layer = el.querySelector(`.scene-photo-${theme}`)
+        function show(url) {
+          if (layer.dataset.src !== url) layer.style.backgroundImage = `url("${url}")`
+          layer.dataset.src = url
+        }
+        const sharp = photoUrl(state.season, theme, photoWidth())
+        if (ready.has(sharp)) {
+          show(sharp)
+          continue
+        }
+        // Once per file: a file that fails stays on the small one.
+        const wanted = (state.background && theme === shown) || preloaded.has(theme)
+        if (wanted && !loading.has(sharp)) load(sharp).then(photos)
+        const current = layer.dataset.src ?? ''
+        const due = theme === shown || shownReady
+        if (state.background && due && !current.startsWith(`${BASE}${state.season}-${theme}-`)) show(photoUrl(state.season, theme, PHOTO_SMALL))
+      }
+    }
+    addEventListener('resize', photos)
+
     function render() {
       const dark = isDark()
-      el.querySelector('.scene-photo-light').style.backgroundImage = `url("${BASE}${state.season}-light-01.webp")`
-      el.querySelector('.scene-photo-dark').style.backgroundImage = `url("${BASE}${state.season}-dark-01.webp")`
+      photos()
       el.style.setProperty('--scene-tint', STRENGTHS[state.strength][dark ? 'dark' : 'light'])
       el.dataset.background = state.background ? 'on' : 'off'
       let on = state.weather && !!fx && !failed.has(effect()) && !reducedMotion.matches && !document.hidden
@@ -463,6 +535,12 @@
         render()
       },
       get: () => ({ ...state }),
+      // Starts loading the theme's sharp image while the background is still off, so it's ready
+      // when it fades in.
+      preload(theme) {
+        preloaded.add(theme)
+        photos()
+      },
       // Why the weather can't show right now, or null.
       weatherBlocked() {
         if (reducedMotion.matches) return 'Off while your device reduces motion.'

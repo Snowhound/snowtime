@@ -819,6 +819,7 @@
         document.body.dataset.intro = 'playing'
         introBackground = false
         applyScene()
+        sceneCtl.preload('dark')
         document.documentElement.classList.add('dark')
         introEl.hidden = false
         document.documentElement.classList.remove('intro-pending')
