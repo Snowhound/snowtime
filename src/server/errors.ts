@@ -6,6 +6,9 @@ export type AppErrorCode =
   | 'FORBIDDEN'
   | 'NOT_FOUND'
   | 'CONFLICT'
+  // Input that passed the schema but not a rule that needs the database, e.g. an update
+  // that would end an entry before it starts.
+  | 'INVALID'
 
 export class AppError extends Error {
   constructor(

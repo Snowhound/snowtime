@@ -149,8 +149,18 @@
   - `src/server/middleware.ts`: `sessionMiddleware` resolves the Better Auth
     session; `scopeMiddleware` adds the tenancy scope of the active
     organization. Both run the call inside `withActor()`.
-  - `src/server/*.server.ts`: server-only modules. TanStack Start's import
-    protection keeps `*.server.*` files out of the client bundle.
+  - `src/functions/`: the server functions the UI calls, one file per area.
+    Each is a thin wrapper that picks a middleware, validates input and calls
+    the rules in `src/server/`.
+  - `src/server/*.server.ts`: server-only modules holding the rules. They take
+    the database and scope as arguments, so tests run them against seeded
+    throwaway databases. TanStack Start's import protection keeps `*.server.*`
+    files out of the client bundle.
+  - `src/server/errors.ts`: `AppError`, thrown with a code (`FORBIDDEN`,
+    `NOT_FOUND`, and so on). A serialization adapter in `src/start.ts` keeps
+    the code across the wire; Start would otherwise send only the message.
+    `src/start.ts` also registers Start's CSRF middleware, which Start applies
+    by default only when no start instance exists.
   - `src/schemas/`: Valibot input schemas shared by forms and server
     functions. They must stay importable from the browser.
 

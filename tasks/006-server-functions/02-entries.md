@@ -1,10 +1,11 @@
 # 02: Entries
 
-Status: todo
+Status: done
 
 ## Acceptance criteria
 
-- [ ] `createEntry` (manual past entry), `updateEntry`, `deleteEntry`
-- [ ] `listEntries` by range: own entries; team leads also their teams; admins/owners all
-- [ ] Writes to another user's entry allowed for admin/owner only
-- [ ] Archived projects rejected for new entries
+- [x] `createEntry` (manual past entry), `updateEntry`, `deleteEntry`
+- [x] `listEntries` by range: own entries; team leads also their teams; admins/owners all
+- [x] Writes to another user's entry allowed for admin/owner only
+- [x] Archived projects rejected for new entries
+- [x] Role rules tested on a seeded throwaway database (`src/server/entries.test.ts`)

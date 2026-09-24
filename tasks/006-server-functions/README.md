@@ -9,6 +9,6 @@ One subtask per area.
 ## Acceptance criteria
 
 - [x] `01-timer.md`
-- [ ] `02-entries.md`
+- [x] `02-entries.md`
 - [ ] `03-projects.md`
 - [ ] `04-settings.md`
