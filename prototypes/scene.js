@@ -229,7 +229,7 @@
         float ph = fract(u_time / mix(3.0, 6.0, r5) + r1);
         float glow = smoothstep(0.0, .12, ph) * (1.0 - smoothstep(.18, .6, ph));
         v_alpha = glow * mix(.6, 1.0, z);
-        gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * mix(16.0, 34.0, z);
+        gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * mix(9.0, 18.0, z);
       }`,
       fs: `${FS_HEAD}
       in float v_alpha;
@@ -245,14 +245,14 @@
       }`,
       colors: () => [[1.0, 0.98, 0.72], [0.74, 0.9, 0.32]],
     },
-    // Summer days: dandelion seeds and pollen drifting on the breeze, the pollen catching the light.
+    // Summer days: soft dandelion fluff and pollen drifting on the breeze, the pollen catching the light.
     // A is the seeds' color, B the pollen's.
     seeds: {
       density: 70,
       min: 30,
       max: 110,
       vs: `${HEAD}
-      out float v_alpha, v_kind, v_angle;
+      out float v_alpha, v_kind;
       void main() {
         float id = float(gl_VertexID) + 1.0;
         float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
@@ -264,26 +264,23 @@
         x = -1.15 + mod(x + 1.15, 2.3);
         y = -1.15 + mod(y + 1.15, 2.3);
         gl_Position = vec4(x, y, 0.0, 1.0);
-        gl_PointSize = u_dpr * (seed > .5 ? mix(10.0, 22.0, z) : mix(2.5, 5.5, z));
+        gl_PointSize = u_dpr * (seed > .5 ? mix(8.0, 16.0, z) : mix(2.5, 5.5, z));
         float glint = seed > .5 ? 1.0 : .45 + .55 * pow(.5 + .5*sin(t*mix(1.0, 2.6, r4) + r2*6.28), 3.0);
         v_alpha = mix(.45, .95, z) * glint;
         v_kind = seed;
-        v_angle = r4*6.28 + sin(t*.5 + r1*6.28) * .5;
       }`,
       fs: `${FS_HEAD}
-      in float v_alpha, v_kind, v_angle;
+      in float v_alpha, v_kind;
       void main() {
         vec2 q = (gl_PointCoord - .5) * 2.0;
         float r = length(q);
         float a;
         vec3 col;
         if (v_kind > .5) {
-          // A puff of fine rays around a small core.
-          float ang = atan(q.y, q.x) + v_angle;
-          float rays = pow(abs(cos(ang * 6.0)), 24.0) * smoothstep(.95, .3, r) * smoothstep(.08, .22, r);
-          float fluff = smoothstep(.9, .2, r) * .18;
-          float core = smoothstep(.2, .05, r);
-          a = clamp(rays * .8 + fluff + core, 0.0, 1.0) * v_alpha;
+          // A soft tuft of fluff around a small, brighter core.
+          float fluff = smoothstep(1.0, .2, r) * .7;
+          float core = smoothstep(.32, .08, r) * .8;
+          a = clamp(fluff + core, 0.0, 1.0) * v_alpha;
           col = u_colorA;
         } else {
           a = smoothstep(1.0, .2, r) * v_alpha;

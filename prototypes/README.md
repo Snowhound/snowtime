@@ -637,7 +637,7 @@ each, from the 2 to 2.5 MB PNGs).
   | ------ | --------------------------------------------------------------------------------------- | --------------------- |
   | Winter | Snow: white in dark mode and over the light image, blue-grey on the plain light page     | 500                   |
   | Spring | A light shower: thin streaks slanted with the wind, in soft bursts that come and go      | 260, fewer between bursts |
-  | Summer | Light: dandelion seeds (fine rays) and pollen that glints; dark: fireflies that wander low over the meadow and glow on and off | 70; 40 |
+  | Summer | Light: soft tufts of dandelion fluff and pollen that glints; dark: small fireflies that wander low over the meadow and glow on and off | 70; 40 |
   | Autumn | Leaves in rust and ochre that sway, tumble edge-on, and turn as they fall                 | 45                    |
 
   The Scenery menu's Weather hint names the season's effect; Settings names all four.
