@@ -6,8 +6,8 @@ Goal: run initially on the Vercel and Turso free tiers.
 
 - Hosts the TanStack Start app as Vercel Functions plus static assets.
 - Hobby is limited to personal, **non-commercial** use per Vercel's terms.
-  Company-internal use by Snowhound, and certainly hosting other tenants, may
-  require the Pro plan. Confirm before relying on Hobby in production.
+  Company use by Snowhound and hosting other companies are likely commercial
+  and may require the Pro plan. Confirm before relying on Hobby in production.
 - Functions run in a single region; pick it to match the Turso `prod` database.
 
 ## Turso (Free)
@@ -21,7 +21,7 @@ Goal: run initially on the Vercel and Turso free tiers.
 
 - No background workers or cron beyond what the free tiers allow; compute on
   request.
-- Keep the number of databases small (one per environment) unless
-  per-tenant databases are chosen later.
+- One database per environment shared by all tenants (row-level isolation),
+  keeping the database count small.
 - Check current quotas on the vendors' pricing pages rather than hardcoding
   them here.

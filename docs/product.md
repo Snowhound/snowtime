@@ -3,7 +3,8 @@
 ## Purpose
 
 Snowtime is a minimal time tracker in the spirit of Toggl. Built primarily for
-Snowhound's own use, with the option of hosting other teams (tenants) later.
+Snowhound's own use (multiple teams), and multi-tenant from day one so other
+companies can use it too.
 
 ## Principles
 
@@ -16,25 +17,31 @@ Snowhound's own use, with the option of hosting other teams (tenants) later.
 | Area     | Included                                                    |
 | -------- | ----------------------------------------------------------- |
 | Auth     | Sign up / sign in via Better Auth                           |
+| Tenancy  | Organizations, teams, members, invitations; org switcher    |
 | Timer    | Start / stop a single running timer with a description      |
 | Entries  | List, edit, delete, and manually add past entries           |
-| Projects | Assign entries to a project; basic project CRUD             |
-| Reports  | Totals per day / week / project in the user's time zone     |
+| Projects | Org-level projects, optionally assigned to teams; CRUD      |
+| Reports  | Totals per day / week / project / team / member, user's zone |
 | Settings | Time zone and week start                                    |
 
 ## Not in MVP
 
 - Billing, rates, invoicing
-- Tags, clients, teams/roles beyond a single workspace
+- Tags, clients, custom roles beyond owner / admin / member
 - Integrations, browser extension, mobile app
 - Offline / local-first sync
 - Exports beyond what is trivial
 
-## Multi-tenancy (open)
+## Tenancy
 
-Other tenants are possible but not committed. To keep the option cheap:
+Organizations and teams are in scope from day one; see `architecture.md`.
 
-- Proposed: scope data by a `workspace` from day one, with Snowhound as the
-  first workspace, and check workspace membership in server functions.
-- Undecided: whether tenants share one database (row-level `workspace_id`) or
-  get one Turso database each.
+| Concept      | Meaning                                                    |
+| ------------ | ---------------------------------------------------------- |
+| Organization | A tenant (company), e.g. Snowhound                         |
+| Team         | A group within an organization, e.g. a Snowhound team      |
+| Member       | A user in an organization, role owner / admin / member     |
+
+- A user can belong to several organizations and switches the active one.
+- A member can be in several teams within an organization.
+- Members see their own entries; admins/owners see the whole organization.

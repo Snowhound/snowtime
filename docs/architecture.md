@@ -8,7 +8,7 @@
 | Runtime / PM    | Bun (local)                                               |
 | Database        | Turso (libSQL/SQLite) via `@libsql/client`                |
 | ORM             | Drizzle, SQLite dialect (`"turso"` in drizzle-kit)        |
-| Auth            | Better Auth with the Drizzle adapter                      |
+| Auth            | Better Auth with the Drizzle adapter; organization plugin with teams |
 | Data fetching   | TanStack Query with optimistic updates                    |
 | Forms           | TanStack Form                                             |
 | Validation      | Valibot, shared by forms and server functions             |
@@ -24,6 +24,19 @@
   enforces at most one running entry per user.
 - Elapsed time for the running timer is computed on the client, never
   written periodically.
+
+## Tenancy
+
+- Model: Better Auth organization plugin with teams enabled
+  (`organization`, `member`, `team`, `teamMember`, `invitation` tables).
+- One shared database per environment; tenant isolation is row-level.
+- Every tenant-owned table has a non-null `organization_id`; team-scoped rows
+  (e.g. project assignments) also reference `team_id`.
+- The active organization comes from the session. Every server function
+  resolves it and checks membership and role before touching data; queries
+  always filter by `organization_id`.
+- Roles: owner / admin / member (plugin defaults). Members access their own
+  entries; admins/owners access all entries in the organization.
 
 ## Time zones
 
