@@ -1,5 +1,10 @@
 # Third-party notices
 
+## Snowhound brand assets
+
+`assets/snowhound-wolf.svg` and `assets/snowhound-pack.svg` are derived from snowhound.eu artwork
+and belong to Snowhound. They are not covered by the licenses below.
+
 ## Brand logos
 
 The Google and Microsoft logos in `auth.html` are from gilbarbara/logos

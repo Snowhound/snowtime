@@ -123,6 +123,16 @@ Gotchas:
 - Absolutely positioned elements (e.g. `sr-only`) inside an `overflow-x-auto` wrapper escape it
   unless the wrapper is `relative`, causing page-level horizontal scroll.
 
+## Assets
+
+`assets/` holds Snowhound brand files, used with Snowhound's permission as the maker of
+Snowtime.
+
+| File                   | Source                                                          | Notes                                                    |
+| ---------------------- | --------------------------------------------------------------- | -------------------------------------------------------- |
+| `snowhound-wolf.svg`   | Traced from `sh-pea-300x300.png`, the snowhound.eu site icon    | Placeholder with uneven edges; replaced by task 017      |
+| `snowhound-pack.svg`   | `hundikari-uus-1.svg` from snowhound.eu                         | Embedded PNG recompressed to WebP at half size: 1.4 MB to 177 KB |
+
 ## Prototypes
 
 ### [timer.html](timer.html) — Timer and entries
@@ -184,6 +194,11 @@ accepts an invitation from a user with that verified email, so a different accou
 wrong-account screen. Create organization derives the short name from the name until it's
 edited. The passkey button depends on task 015. Limits match Better Auth defaults: passwords of 8
 to 128 characters, reset links valid for 1 hour, invitations for 48 hours.
+
+Branding: the Snowhound wolf on a navy tile marks the product in both layouts and is the
+favicon of both prototypes. The split panel shows the Snowhound wolf pack illustration with the
+tagline "Winter is coming."; the card layout shows the tagline under the card. See
+[Assets](#assets).
 
 Simulated with fictional rules: the password `wrong` fails sign-in, `taken@example.com` is
 already registered, and the short name `snowhound` is taken. Provider, passkey, and email steps
