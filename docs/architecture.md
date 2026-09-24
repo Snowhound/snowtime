@@ -102,6 +102,9 @@
   does (see "Tenancy"): changing the name, linking and unlinking providers, and adding
   and removing passkeys. Better Auth checks that the session owns the account, and no
   Snowtime rule applies, so there are no server functions for them.
+  - Better Auth's defaults apply. A provider links only when its email matches the
+    user's. Unlinking and passkey changes need a session from the last day, and the last
+    account can't be unlinked; passkeys don't count as accounts.
 - The MVP sends no email. OAuth providers supply the verified email address that
   Better Auth requires before an invitation can be accepted, and admins share
   invitation links themselves. Password sign-in, which would need email for
@@ -205,6 +208,10 @@
     can resolve `system`. The script also follows later changes to the setting and to
     the system preference.
 - The UI saves each field when it changes, so `updateSettings` takes a partial patch.
+  The session query carries the settings, and `useUpdateSettings` in
+  `src/lib/settings.ts` updates it optimistically. A change therefore shows at once
+  wherever the settings are read. A new language applies without a reload: the root
+  passes it to Paraglide, which sets the cookie, and renders the page again.
 - The app validates the text values (`src/schemas/settings.ts`); their columns have no
   `CHECK`, so adding a value needs no table rebuild. `show_summary` is a boolean and keeps
   the usual 0/1 `CHECK`.

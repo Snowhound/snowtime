@@ -1,0 +1,21 @@
+import { useMutation, useQueryClient } from '@tanstack/solid-query'
+import type { AppSession } from '../functions/auth'
+import { updateSettings } from '../functions/settings'
+import type { UpdateSettingsInput } from '../schemas/settings'
+import { optimistic } from './query'
+import { sessionQuery } from './session'
+
+// Saves a partial settings patch. The session query carries the settings, so the change
+// shows at once everywhere that reads them: the theme on <html>, the language, the timer
+// layout. The settings page, the timer's View popover, and the user menu all save here.
+export function useUpdateSettings() {
+  const queryClient = useQueryClient()
+  return useMutation(() => ({
+    mutationFn: (patch: UpdateSettingsInput) => updateSettings({ data: patch }),
+    ...optimistic<AppSession | null, UpdateSettingsInput>(queryClient, {
+      queryKey: sessionQuery.queryKey,
+      update: (session, patch) =>
+        session?.settings ? { ...session, settings: { ...session.settings, ...patch } } : session,
+    }),
+  }))
+}

@@ -13,7 +13,7 @@ import { TanStackRouterDevtools } from '@tanstack/solid-router-devtools'
 import '@fontsource/inter/400.css'
 
 import { HydrationScript, isServer } from 'solid-js/web'
-import { Suspense } from 'solid-js'
+import { Show, Suspense, createMemo } from 'solid-js'
 
 import styleCss from '../styles.css?url'
 import { getLocale, setLocale } from '../paraglide/runtime.js'
@@ -46,8 +46,17 @@ function RootComponent() {
   const session = useQuery(() => sessionQuery)
   const theme = () => session.data?.settings?.theme ?? 'system'
 
+  // Saving another language switches it in place: Paraglide takes the new locale and sets
+  // the cookie for later requests, and the page renders again, since messages are plain
+  // functions that Solid doesn't track. The first render already has the right locale.
+  const locale = createMemo(() => {
+    const saved = session.data?.settings?.locale
+    if (!isServer && saved && saved !== getLocale()) void setLocale(saved, { reload: false })
+    return getLocale()
+  })
+
   return (
-    <html lang={getLocale()} data-theme={theme()}>
+    <html lang={locale()} data-theme={theme()}>
       <head>
         {/* oxlint-disable-next-line solid/no-innerhtml -- themeScript is a constant. */}
         <script innerHTML={themeScript} />
@@ -56,7 +65,9 @@ function RootComponent() {
       </head>
       <body>
         <Suspense>
-          <Outlet />
+          <Show when={locale()} keyed>
+            <Outlet />
+          </Show>
           <TanStackRouterDevtools />
         </Suspense>
         <Scripts />

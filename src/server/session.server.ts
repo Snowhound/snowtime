@@ -32,7 +32,14 @@ export async function appSession(
 
   const settings = (
     await db
-      .select({ locale: userSettings.locale, theme: userSettings.theme })
+      .select({
+        timeZone: userSettings.timeZone,
+        weekStart: userSettings.weekStart,
+        locale: userSettings.locale,
+        theme: userSettings.theme,
+        timerLayout: userSettings.timerLayout,
+        showSummary: userSettings.showSummary,
+      })
       .from(userSettings)
       .where(eq(userSettings.userId, user.id))
   ).at(0)

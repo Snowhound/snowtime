@@ -1,7 +1,7 @@
 // The signed-in header every page shares (prototypes/app-frame.js): the organization
 // switcher, the navigation, and the user menu. Below 768 px the navigation moves to a
 // second row of equal-width links.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query'
+import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/solid-router'
 import BuildingComplexIcon from 'lucide-solid/icons/building-complex'
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
@@ -19,11 +19,10 @@ import UserIcon from 'lucide-solid/icons/user'
 import type { Component } from 'solid-js'
 import { For, Show } from 'solid-js'
 import type { AppSession } from '../functions/auth'
-import { updateSettings } from '../functions/settings'
 import { authClient } from '../lib/auth-client'
-import { optimistic } from '../lib/query'
 import { type ThemeSetting, sessionQuery } from '../lib/session'
-import { cn } from '../lib/utils'
+import { useUpdateSettings } from '../lib/settings'
+import { cn, initials } from '../lib/utils'
 import { m } from '../paraglide/messages.js'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { Button, buttonVariants } from './ui/button'
@@ -52,14 +51,6 @@ const THEMES: { value: ThemeSetting; label: () => string; Icon: Component<{ clas
     { value: 'dark', label: m.theme_dark, Icon: MoonIcon },
     { value: 'system', label: m.theme_system, Icon: MonitorIcon },
   ]
-
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0].toUpperCase())
-    .join('')
 
 function OrgMark(props: { name: string; class?: string }) {
   return (
@@ -188,14 +179,7 @@ function UserMenu(props: { session: AppSession }) {
   const navigate = useNavigate()
 
   // The theme applies at once: the root renders data-theme from the session query.
-  const saveTheme = useMutation(() => ({
-    mutationFn: (theme: ThemeSetting) => updateSettings({ data: { theme } }),
-    ...optimistic<AppSession | null, ThemeSetting>(queryClient, {
-      queryKey: sessionQuery.queryKey,
-      update: (session, theme) =>
-        session?.settings ? { ...session, settings: { ...session.settings, theme } } : session,
-    }),
-  }))
+  const saveSettings = useUpdateSettings()
 
   async function signOut() {
     await authClient.signOut()
@@ -232,7 +216,7 @@ function UserMenu(props: { session: AppSession }) {
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
           value={props.session.settings?.theme ?? 'system'}
-          onChange={(theme) => saveTheme.mutate(theme)}
+          onChange={(theme) => saveSettings.mutate({ theme })}
         >
           <DropdownMenuGroupLabel class="text-muted-foreground text-xs font-medium">
             {m.user_menu_theme()}

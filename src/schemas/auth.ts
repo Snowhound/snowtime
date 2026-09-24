@@ -1,4 +1,4 @@
-// Inputs of the signed-out screens and of creating an organization. Sign-in and
+// Inputs of the signed-out screens, of creating an organization, and of the profile. Sign-in and
 // organizations go through the Better Auth client, so these validate the forms only;
 // Better Auth checks again on its side.
 import * as v from 'valibot'
@@ -29,16 +29,21 @@ export const Slug = v.pipe(
   v.maxLength(48, (issue) => m.validation_too_long({ max: issue.requirement })),
 )
 
-export const CreateOrganizationForm = v.object({
-  name: v.pipe(
-    v.string(),
-    v.trim(),
-    v.nonEmpty(() => m.validation_name_required()),
-    v.maxLength(100, (issue) => m.validation_too_long({ max: issue.requirement })),
-  ),
-  slug: Slug,
-})
+// A person's or an organization's name.
+export const Name = v.pipe(
+  v.string(),
+  v.trim(),
+  v.nonEmpty(() => m.validation_name_required()),
+  v.maxLength(100, (issue) => m.validation_too_long({ max: issue.requirement })),
+)
+
+export const CreateOrganizationForm = v.object({ name: Name, slug: Slug })
 export type CreateOrganizationForm = v.InferOutput<typeof CreateOrganizationForm>
+
+// The profile's name, saved through Better Auth's updateUser. The email can't change:
+// invitations are matched to the verified address.
+export const ProfileForm = v.object({ name: Name })
+export type ProfileForm = v.InferOutput<typeof ProfileForm>
 
 // The short name suggested for an organization name until the user edits it: accents
 // dropped, anything else that isn't a letter or digit turned into single dashes.

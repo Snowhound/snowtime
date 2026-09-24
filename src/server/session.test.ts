@@ -53,7 +53,14 @@ describe('appSession', () => {
     ])
     expect(session.activeOrganizationId).toBe(O.northwind)
     expect(session.role).toBe('admin')
-    expect(session.settings).toEqual({ locale: 'en', theme: 'system' })
+    expect(session.settings).toEqual({
+      timeZone: 'Europe/Berlin',
+      weekStart: 'mon',
+      locale: 'en',
+      theme: 'system',
+      timerLayout: 'bar',
+      showSummary: true,
+    })
     expect(session.invitationId).toBeNull()
   })
 
