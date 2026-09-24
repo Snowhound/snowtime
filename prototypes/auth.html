@@ -8,6 +8,7 @@
     <script src="prototype-theme.js"></script>
     <script src="ui.js"></script>
     <script src="app-icon.js"></script>
+    <script src="seasons.js"></script>
     <script src="scene.js"></script>
     <style type="text/tailwindcss">
       .auth-form {
@@ -25,9 +26,9 @@
         @apply shadow-xl;
       }
       /* Tagline over the scene (prototype variant): a pill, a glow in the page color, a footer line
-         in the card, or at the foot of the page over a fade. */
+         in the card, or at the foot of the page over a fade, as on the signed-in pages. */
       .tagline-in-card,
-      #tagline-fade {
+      .page-tagline {
         display: none;
       }
       body[data-scene-bg='on'][data-tagline='pill'] .card-tagline {
@@ -43,12 +44,16 @@
       body[data-tagline='card'] .tagline-in-card {
         @apply block border-t pt-4 text-center text-sm text-muted-foreground;
       }
-      body[data-scene-bg='on'][data-tagline='fade'] .card-tagline {
-        @apply fixed inset-x-0 bottom-5 z-[1] px-4 font-medium text-foreground;
+      body[data-tagline='fade'] .card-tagline {
+        display: none;
       }
-      body[data-scene-bg='on'][data-tagline='fade'] #tagline-fade {
-        @apply pointer-events-none absolute inset-x-0 bottom-0 block h-48;
-        background: linear-gradient(to top, color-mix(in srgb, var(--background) 88%, transparent), transparent);
+      /* In the page flow, so it never covers the card; it overlaps the page's bottom padding. */
+      body[data-tagline='fade'] .page-tagline {
+        @apply pointer-events-none relative -mt-10 block px-4 pb-5 pt-16 text-center text-sm text-muted-foreground sm:-mt-16 sm:pt-20;
+        background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--background) 88%, transparent));
+      }
+      body[data-scene-bg='on'][data-tagline='fade'] .page-tagline {
+        @apply font-medium text-foreground;
       }
       .scene[data-background='off'] {
         background: transparent;
@@ -143,11 +148,13 @@
       }
       /* The page waits under the intro, then rises into place. */
       .auth-shell,
-      #auth-header {
+      #auth-header,
+      .page-tagline {
         transition: opacity 0.95s ease, transform 0.95s cubic-bezier(0.2, 0.72, 0.2, 1), filter 0.95s ease;
       }
       body[data-intro] .auth-shell,
-      body[data-intro] #auth-header {
+      body[data-intro] #auth-header,
+      body[data-intro] .page-tagline {
         opacity: 0;
         transform: translateY(18px) scale(0.988);
         filter: blur(12px);
@@ -224,7 +231,7 @@
       </defs>
     </svg>
 
-    <div id="scene-page" class="fixed inset-0"><div id="tagline-fade"></div></div>
+    <div id="scene-page" class="fixed inset-0"></div>
 
     <section id="intro" class="intro" aria-label="Intro" hidden>
       <div class="intro-fade"></div>
@@ -279,9 +286,9 @@
           </select>
           <label for="tagline-select" class="sr-only">Tagline</label>
           <select id="tagline-select" data-ui="select" class="h-9 w-48" data-variant-key="tagline">
+            <option value="fade">Tagline: bottom fade</option>
             <option value="halo">Tagline: halo</option>
             <option value="card">Tagline: in card</option>
-            <option value="fade">Tagline: bottom fade</option>
             <option value="pill">Tagline: pill</option>
           </select>
           <label for="tone-select" class="sr-only">Page tone</label>
@@ -362,6 +369,7 @@
         <p class="card-tagline text-center text-sm text-muted-foreground">Winter is coming. So is the end of the month.</p>
       </main>
     </div>
+    <p class="page-tagline">Winter is coming. So is the end of the month.</p>
 
     <script>
       const invitation = { inviter: 'Mari Tamm', organization: 'Snowhound', team: 'Platform', role: 'member', email: 'anna@snowhound.eu' }
@@ -687,7 +695,7 @@
       // tagline, and tone are prototype variants, kept in their own key.
       const VARIANTS_KEY = 'snowtime.prototypeAuthScene'
       const variants = (() => {
-        const defaults = { season: 'winter', tone: 'deep', tagline: 'halo' }
+        const defaults = { season: seasons.byMonth(), tone: 'deep', tagline: 'fade' }
         try {
           return { ...defaults, ...JSON.parse(localStorage.getItem(VARIANTS_KEY) ?? '{}') }
         } catch {
@@ -722,11 +730,10 @@
         const weatherSwitch = document.getElementById('scene-weather-switch')
         ui.setSwitch(weatherSwitch, user.sceneWeather)
         weatherSwitch.disabled = !!blocked
-        const season = scene.SEASONS[variants.season]
-        document.getElementById('scene-weather-hint').textContent = blocked ?? season.hint
+        document.getElementById('scene-weather-hint').textContent = blocked ?? scene.SEASONS[variants.season].hint
         // The season's intro lines, and the first two as the tagline.
-        season.lines.forEach((line, i) => (introLines[i].textContent = line))
-        document.querySelectorAll('.card-tagline, .tagline-in-card').forEach((el) => (el.textContent = `${season.lines[0]} ${season.lines[1]}`))
+        seasons.SEASONS[variants.season].lines.forEach((line, i) => (introLines[i].textContent = line))
+        document.querySelectorAll('.card-tagline, .tagline-in-card, .page-tagline').forEach((el) => (el.textContent = seasons.tagline(variants.season)))
         ui.setSwitch(document.getElementById('scene-intro-switch'), user.sceneIntro)
         document.querySelectorAll('[data-variant-key]').forEach((el) => (el.value = variants[el.dataset.variantKey]))
       }

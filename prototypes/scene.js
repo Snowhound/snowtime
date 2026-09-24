@@ -12,32 +12,28 @@
   const SETTINGS_KEY = 'snowtime.prototypeSettings'
   const INTRO_SEEN_KEY = 'snowtime.introSeen'
   const DEFAULTS = { sceneBackground: true, sceneStrength: 'full', surfaces: 'glass', sceneWeather: true, sceneIntro: true }
-  // `weather` names the effect for light and dark pages; `lines` are the intro's four lines, and
-  // the first two are the tagline.
+  // `weather` names the effect for light and dark pages. The intro's lines and the tagline are in
+  // seasons.js.
   const SEASONS = {
     winter: {
       label: 'Winter',
       weather: { light: 'snow', dark: 'snow' },
       hint: 'Falling snow.',
-      lines: ['Winter is coming.', 'So is the end of the month.', 'Before the snow gets deeper, fill in your timesheet.', 'Sign in and get it done!'],
     },
     spring: {
       label: 'Spring',
       weather: { light: 'rain', dark: 'rain' },
       hint: 'A light spring shower.',
-      lines: ['Spring is here.', 'So is the end of the month.', 'Before the week melts away, fill in your timesheet.', 'Sign in and get it done!'],
     },
     summer: {
       label: 'Summer',
       weather: { light: 'seeds', dark: 'fireflies' },
       hint: 'Drifting seeds by day, fireflies at night.',
-      lines: ['Summer is here.', 'So is the end of the month.', 'While the days are long, fill in your timesheet.', 'Sign in and get it done!'],
     },
     autumn: {
       label: 'Autumn',
       weather: { light: 'leaves', dark: 'leaves' },
       hint: 'Falling leaves.',
-      lines: ['Autumn is here.', 'So is the end of the month.', 'Before the last leaf falls, fill in your timesheet.', 'Sign in and get it done!'],
     },
   }
   // How much of the page color covers the image, dark / light.

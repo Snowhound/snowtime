@@ -386,6 +386,7 @@
     renderBar(title)
     renderHeader()
     renderIconDialog()
+    renderTagline()
     // The page's own prototype controls (fixtures, variants) move into the bar, before the role.
     const controls = document.getElementById('prototype-controls')
     if (controls) document.getElementById('prototype-bar-controls').prepend(...controls.children)
@@ -397,6 +398,24 @@
       emit('role')
     })
     syncLinks()
+  }
+
+  // The season's tagline (seasons.js) at the foot of every page, over a fade into a deeper tint. On a
+  // short page, `sticky` with a top offset of the viewport minus its height moves it down to the
+  // bottom of the full-height body; a flex column would shrink the pages' `mx-auto` blocks.
+  function renderTagline() {
+    const main = document.querySelector('body > main')
+    if (!main || !window.seasons) return
+    document.body.classList.add('min-h-dvh')
+    main.insertAdjacentHTML(
+      'afterend',
+      `<p id="page-tagline" class="pointer-events-none sticky top-[calc(100dvh-5.5rem)] h-[5.5rem] px-4 pb-5 pt-12 text-center text-sm text-muted-foreground"
+        style="background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--muted) 70%, transparent))"></p>`
+    )
+    const update = () => (document.getElementById('page-tagline').textContent = seasons.tagline())
+    update()
+    // The season follows the sign-in prototype's Season variant, also from another tab.
+    addEventListener('storage', (event) => event.key === seasons.VARIANTS_KEY && update())
   }
 
   // Fixtures can swap in another user, e.g. a long name, to check the header.

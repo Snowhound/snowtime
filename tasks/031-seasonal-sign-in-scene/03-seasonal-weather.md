@@ -18,7 +18,7 @@ Proposed effects:
   comes in soft bursts rather than a steady rain.
 
 Rough versions of all three are in `prototypes/scene.js` for comparison, with intro lines per
-season (`SEASONS` in `scene.js`). Autumn's dark drizzle isn't built. Next: compare them over the
+season (`prototypes/seasons.js`). Autumn's dark drizzle isn't built. Next: compare them over the
 images, tune the ones worth keeping, and drop or rework the rest.
 
 ## Acceptance criteria

@@ -207,6 +207,11 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
   only), and a user menu (Profile, Settings, theme, Sign out). Below 768 px the navigation moves
   to a second header row of four equal-width links, so every page stays one tap away without a
   hamburger menu.
+- The season's **tagline** after `<main>`, centered over a fade into a deeper tint, as on the
+  sign-in page. It's `sticky` with a top offset of the viewport minus its height, so it sits at
+  the bottom of short pages without making the body a flex column, which would shrink the pages'
+  `mx-auto` blocks. The season comes from the sign-in prototype's Season variant, or the month.
+  Pages load [seasons.js](seasons.js) before `app-frame.js`.
 
 It also provides:
 
@@ -584,8 +589,9 @@ wrong-account screen. Create organization derives the short name from the name u
 edited. The passkey button depends on task 015. Limits match Better Auth defaults: passwords of 8
 to 128 characters, reset links valid for 1 hour, invitations for 48 hours.
 
-The tagline, the intro's first two lines ("Winter is coming. So is the end of the month." in
-winter), sits under the card. The mark is the chosen app icon (see [App icon](#app-icon)).
+The tagline, the season's first two intro lines ("Winter is coming. So is the end of the month."
+in winter), sits at the foot of the page over a fade, as on every signed-in page (see
+[App frame](#app-frame)). The mark is the chosen app icon (see [App icon](#app-icon)).
 
 #### Seasonal scene and intro
 
@@ -605,9 +611,8 @@ each, from the 2 to 2.5 MB PNGs).
   in and get it done!") comes after a longer beat, eases in more slowly, and stays for 3 seconds.
   Then the page rises into place and the chosen theme returns. The intro always shows the weather
   and the background, even when they're off for the page; the page follows the switches once it
-  appears. Each season has its own first and third lines (`SEASONS` in `scene.js`): "Spring is
-  here." and "Before the week melts away", "Summer is here." and "While the days are long",
-  "Autumn is here." and "Before the last leaf falls". It plays on the first visit to this browser
+  appears. Each season has its own lines, from [seasons.js](seasons.js) (see "Seasonal copy"
+  below). It plays on the first visit to this browser
   (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay intro plays it any
   time. **Skip intro** or Escape ends it; the rest of the page
   is `inert` while it plays. With reduced motion it doesn't play, and the snow stays off.
@@ -636,11 +641,29 @@ The prototype bar's second row holds variants to compare, kept in `snowtime.prot
 | Variant  | Options                                                                          |
 | -------- | -------------------------------------------------------------------------------- |
 | Season   | Winter, spring, summer, autumn: the image, weather, intro lines, and tagline      |
-| Tagline  | Halo (a glow in the page color), in the card (a footer line), bottom fade (at the foot of the page over a fade), or pill |
+| Tagline  | Bottom fade (chosen: at the foot of the page over a fade, in the page flow so it never covers the card), halo (a glow in the page color), in the card (a footer line), or pill |
 | Tone     | Deeper (`#060c14` dark with card `#0d1929`, `#fbfdff` light) or the app's tokens |
 
 Over the images, contrast depends on the picture, so axe's color-contrast results don't apply to
 the scene; the card and the tagline's pill keep text on a page-colored surface.
+
+##### Seasonal copy
+
+[seasons.js](seasons.js) holds the copy the sign-in page and the frame share. Every set follows
+the winter line's pattern: the season does something, then the timesheet does the same. The
+fourth intro line is always "Sign in and get it done!", and the first two are the tagline.
+
+| Season | Lines 1 to 3 (shown)                                                                                   | Alternates (lines 1 and 2; not shown yet)                                                    |
+| ------ | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Winter | Winter is coming. / So is the end of the month. / Before the snow gets deeper, fill in your timesheet. | None                                                                                         |
+| Spring | The snow is melting. / So is your memory of last week. / Before it's gone, fill in your timesheet.     | Everything's growing. / So are your unlogged hours.                                          |
+| Summer | The days are long. / Your timesheet doesn't have to be. / While the sun's still up, fill it in.        | Summer is here. / Your hours didn't go on holiday.                                           |
+| Autumn | The leaves are falling. / So is the end of the month. / Before the last one lands, fill in your timesheet. | The leaves are falling. / So are your unlogged hours. The nights are drawing in. / So is the deadline. |
+
+`seasons.PERIODS` adds taglines for a timesheet period's last days, whatever the season: "It's
+Friday. So is the deadline." and "The month is almost out. Your hours shouldn't be." The
+alternates and period lines are for the app (task 031, subtask 06); the prototypes don't show
+them.
 
 Simulated with fictional rules: the password `wrong` fails sign-in, `taken@example.com` is
 already registered, and the short name `snowhound` is taken. Provider, passkey, and email steps
