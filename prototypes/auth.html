@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sign-in flows</title>
-    <link rel="icon" href="assets/snowhound-wolf.svg" />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
     <script src="prototype-theme.js"></script>
     <script src="ui.js"></script>
@@ -124,12 +123,11 @@
     </header>
 
     <div class="auth-shell grid flex-1 grid-cols-[minmax(0,1fr)]">
-      <aside class="brand-panel relative hidden flex-col justify-between bg-[#1f2430] p-10 text-zinc-50 lg:flex" aria-hidden="true">
+      <aside class="brand-panel relative hidden flex-col justify-between bg-zinc-900 p-10 text-zinc-50 lg:flex" aria-hidden="true">
         <div class="flex items-center gap-2 text-lg font-medium">
-          <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-[#1f2430]"><img src="assets/snowhound-wolf.svg" alt="" class="size-5" /></span>
+          <svg class="prototype-icon size-6" aria-hidden="true"><use href="#icon-clock" /></svg>
           Snowtime
         </div>
-        <img src="assets/snowhound-pack.svg" alt="" class="mx-auto w-full max-w-md" />
         <div class="flex flex-col gap-2">
           <p class="text-2xl font-semibold tracking-tight">Winter is coming.</p>
           <p class="text-sm text-zinc-400">So is the end of the month. Start the timer.</p>
@@ -139,7 +137,7 @@
       <main class="auth-main flex flex-col items-center justify-start gap-6 bg-muted/40 px-4 py-10 sm:justify-center sm:py-16">
         <div class="auth-form flex w-full max-w-sm flex-col gap-6">
           <div class="flex items-center gap-2 text-sm font-medium" id="product-mark">
-            <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-[#1f2430]"><img src="assets/snowhound-wolf.svg" alt="" class="size-5" /></span>
+            <svg class="prototype-icon size-5" aria-hidden="true"><use href="#icon-clock" /></svg>
             Snowtime
           </div>
           <div id="screen" class="flex flex-col gap-6"></div>

@@ -1,16 +1,15 @@
-# 017: Snowtime logo as a hand-built SVG
+# 017: Snowtime logo
 
-Status: todo
+Status: todo (postponed; may not be done)
 
-The prototypes use `prototypes/assets/snowhound-wolf.svg`, traced from the 300 px
-Snowhound site icon (`sh-pea-300x300.png`); its edges are uneven. The wolf head is made of
-flat triangles, so build it from scratch as polygons in a separate session.
+Snowtime has no logo; the prototypes use a clock icon. The Snowhound company logo and wolf
+pack illustration were tried and don't fit the product. A new mark is postponed and may
+not be made at all.
 
 ## Acceptance criteria
 
-- [ ] SVG built from polygons with the icon's four colors (`#d6dce4`, `#c2c8d0`,
-      `#aab2bc`, `#232323`), under 3 KB
-- [ ] Legible at 16, 32, and 180 px, on light and dark backgrounds
-- [ ] Replaces `prototypes/assets/snowhound-wolf.svg`; favicon and app icons exported
+- [ ] Logo designed as an SVG, legible at 16, 32, and 180 px on light and dark backgrounds
+- [ ] Favicon and app icons exported
+- [ ] Clock icon replaced in the prototypes
 - [ ] Logo and tagline come from deployment config, not code, so a dedicated client stack
       can rebrand (`docs/architecture.md`, "Deployment model")
