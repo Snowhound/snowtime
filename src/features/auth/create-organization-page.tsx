@@ -16,7 +16,7 @@ import {
 import { authClient } from '~/lib/auth-client'
 import { errorMessage } from '~/lib/errors'
 import { fieldError } from '~/lib/form'
-import { sessionQuery } from '~/lib/session'
+import { forgetSignedInUser, sessionQuery } from '~/lib/session'
 import { m } from '~/paraglide/messages.js'
 import { CreateOrganizationForm, slugify } from '~/server/auth/auth.schemas'
 import { AuthHeading, AuthLayout } from './auth-layout'
@@ -66,7 +66,7 @@ export function CreateOrganizationPage(props: { email: string }) {
 
   async function signOut() {
     await authClient.signOut()
-    queryClient.clear()
+    forgetSignedInUser(queryClient)
     await navigate({ to: '/sign-in' })
   }
 

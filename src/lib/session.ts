@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/solid-query'
+import { type QueryClient, queryOptions } from '@tanstack/solid-query'
 import { getAppSession } from '~/server/auth/auth.functions'
 
 // The signed-in user, their organizations and settings, or null when signed out. The root
@@ -8,6 +8,17 @@ export const sessionQuery = queryOptions({
   queryKey: ['session'],
   queryFn: () => getAppSession(),
 })
+
+// After signing out: the session becomes null and every other query, all of them the user's
+// data, is dropped. The session query itself stays in the cache, because the root watches it:
+// clearing it would leave the root on a query the cache no longer holds, and the next sign-in's
+// invalidation wouldn't refetch the session, so the new user stayed on the sign-in page.
+export function forgetSignedInUser(queryClient: QueryClient) {
+  queryClient.setQueryData(sessionQuery.queryKey, null)
+  queryClient.removeQueries({
+    predicate: (query) => query.queryKey[0] !== sessionQuery.queryKey[0],
+  })
+}
 
 // Signed-out pages and signed-in users without settings yet follow the system theme.
 export type ThemeSetting = 'system' | 'light' | 'dark'

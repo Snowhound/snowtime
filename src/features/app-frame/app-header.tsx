@@ -33,7 +33,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { appIcon } from '~/lib/app-icon'
 import { authClient } from '~/lib/auth-client'
-import { type ThemeSetting, sessionQuery } from '~/lib/session'
+import { type ThemeSetting, forgetSignedInUser, sessionQuery } from '~/lib/session'
 import { useUpdateSettings } from '~/lib/settings'
 import { cn, initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
@@ -189,7 +189,7 @@ function UserMenu(props: { session: AppSession }) {
 
   async function signOut() {
     await authClient.signOut()
-    queryClient.clear()
+    forgetSignedInUser(queryClient)
     await navigate({ to: '/sign-in' })
   }
 
