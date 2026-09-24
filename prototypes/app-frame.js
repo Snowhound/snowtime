@@ -220,7 +220,7 @@
           .map(
             (g) => `<div class="grid gap-2">
               <h3 id="app-icon-group-${g.id}" class="text-sm font-medium">${g.label}</h3>
-              <div role="radiogroup" aria-labelledby="app-icon-group-${g.id}" class="grid grid-cols-4 gap-1 sm:gap-2 md:grid-cols-7">${g.icons.map((i) => option(i, g.dark)).join('')}</div>
+              <div role="radiogroup" aria-labelledby="app-icon-group-${g.id}" class="grid grid-cols-3 gap-1 sm:grid-cols-6 sm:gap-2">${g.icons.map((i) => option(i, g.dark)).join('')}</div>
             </div>`
           )
           .join('')}
