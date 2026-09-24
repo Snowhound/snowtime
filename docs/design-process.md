@@ -118,7 +118,7 @@ project uses no Prettier.
 
 ## Changes along the way
 
-Fourteen decisions changed during the build. The docs changed with the code, so they
+Fifteen decisions changed during the build. The docs changed with the code, so they
 record the current choice; the commits retain the earlier one.
 
 | Area                 | Change                                                                                                         | Reason                                                                                        |
@@ -137,9 +137,13 @@ record the current choice; the commits retain the earlier one.
 | Icon names           | A proposed prefix became an `Icon` suffix, enforced by a script.                                               | JSX makes icons recognizable, and the check keeps names consistent.                           |
 | Project name         | `snowtime-slop` became `snowtime-kaitk`, then `snowhound-kaitk`.                                               | Naming cleanup across files and folders.                                                      |
 | Linting              | oxlint and oxfmt were added in stage 7.                                                                        | The initial stack omitted them.                                                               |
+| Import paths         | A rule requiring the `~/` alias throughout `src/` was reverted; only `scripts/` and `datamodel/` must use it.  | Relative imports read better inside `src/`; `../src/` from outside it does not.               |
 
-Linting and formatting arrived after much of the code. A parallel session is applying
-them across that code; on a new repo, they would belong with the stack choices. The
+Linting and formatting arrived after much of the code; on a new repo, they would belong
+with the stack choices. Later rules came from the minupatsient configs, taken selectively
+rather than wholesale: function declarations over arrow constants, sorted imports, regex
+backtracking checks, and a pre-commit hook. The import-path rule shows the limit of
+copying: minupatsient's alias convention fit only the code outside `src/`. The
 icon and diagram changes show another recurring response: when a correction was easy
 to lose in later agent sessions, it became a script check.
 
@@ -148,14 +152,14 @@ to lose in later agent sessions, it became a script check.
 The data model, server rules, and MVP prototypes are done. Building the views and
 setting up real environments remain.
 
-| Work                                        | Status on 2026-09-24                                                                                                             |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Task 023, app UI                            | App foundation and frame done; settings, timer and layouts, projects, reports, organization views, and the Estonian pass remain. |
-| Lint and format                             | Finishing in a parallel session.                                                                                                 |
-| Task 009, CI and environments               | In progress. Turso staging and production databases, the Vercel project, and migrations in GitHub Actions need account access.   |
-| Tasks 012 and 014, i18n and component tests | Set up; close as the views land.                                                                                                 |
-| Task 016, email delivery                    | Optional later work with Brevo, if email invitations or notifications are needed.                                                |
-| Task 017, logo                              | Postponed; it may never be made.                                                                                                 |
+| Work                                        | Status on 2026-09-24                                                                                                              |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Task 023, app UI                            | App foundation, frame, and settings done; timer and layouts, projects, reports, organization views, and the Estonian pass remain. |
+| Lint and format                             | Done, with a pre-commit hook.                                                                                                     |
+| Task 009, CI and environments               | In progress. Turso staging and production databases, the Vercel project, and migrations in GitHub Actions need account access.    |
+| Tasks 012 and 014, i18n and component tests | Set up; close as the views land.                                                                                                  |
+| Task 016, email delivery                    | Optional later work with Brevo, if email invitations or notifications are needed.                                                 |
+| Task 017, logo                              | Postponed; it may never be made.                                                                                                  |
 
 Three questions remain for an architect to assess:
 
