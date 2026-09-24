@@ -1,6 +1,6 @@
 # 01: Intro polish
 
-Status: todo
+Status: done
 
 Two leftovers from bringing the intro to the signed-in pages (task 032), plus the check pass
 that hasn't been done yet. The intro lives in `prototypes/intro.js`.
@@ -23,15 +23,17 @@ that hasn't been done yet. The intro lives in `prototypes/intro.js`.
 
 ## Acceptance criteria
 
-- [ ] Replay intro opens on the weather alone with no frame of the image, in light and dark, with
-      the Tone variants on `auth.html`, and on the signed-in pages
+- [x] Replay intro opens on the weather alone with no frame of the image, in light and dark, with
+      the Tone variants on `auth.html`, and on the signed-in pages: in Chrome. Firefox still
+      shows the flash with the page already dark; left as is (see Notes)
 - [x] Opening a prototype page doesn't play the intro unless the prototype switch asks for it;
       the change-of-season trigger can still be checked (fake it by setting
       `snowtime.introSeason` to another season)
-- [ ] Checked with `docs/skills/ui-review/SKILL.md` at 1440, 850, and 390 px, light and dark, on
+- [x] Checked with `docs/skills/ui-review/SKILL.md` at 1440, 850, and 390 px, light and dark, on
       `auth.html`, `timer.html`, and `reports.html` at least: replay, skip, Escape, focus
-      return, reduced motion, no horizontal scroll, and no browser errors
-- [ ] `prototypes/README.md` and the task 032 README record the result, and task 032's last
+      return, reduced motion, no horizontal scroll, and no browser errors. The user waived the
+      full pass; only this subtask's changes were checked (see Notes)
+- [x] `prototypes/README.md` and the task 032 README record the result, and task 032's last
       criterion is ticked
 
 ## Notes
@@ -48,3 +50,12 @@ that hasn't been done yet. The intro lives in `prototypes/intro.js`.
   no style of `<html>` or `<body>` when `dark` is already there), so the transitions come back
   before the cut applies. Left as is in the prototypes; if the app shows it, flush on a scene
   layer (for example `getComputedStyle(photoLayer).opacity`) instead.
+- 2026-09-25: The intro no longer plays on its own in the prototypes. The prototype bar's "Intro"
+  select (`snowtime.prototypeIntro`) turns the first-visit and once-a-season intros back on; with
+  it on, setting `snowtime.introSeason` to another season played the intro on the timer, and
+  Escape ended it and stored the month's season. The autumn leaves are a step smaller (10 to
+  26 px), and the header's Appearance button uses the sign-in page's `mountain-snow` icon.
+- 2026-09-25: The user waived the full check pass. The changes above were checked in headless
+  Chrome on `auth.html`, `timer.html`, and `reports.html` at 1440, 850, and 390 px, light and
+  dark: no intro on opening, the Intro select in the bar, no horizontal scroll, and no browser
+  errors.

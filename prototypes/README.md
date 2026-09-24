@@ -313,6 +313,11 @@ Reports, Projects, Organization, and Settings checked on 2026-09-25 in Chrome wi
 horizontal scroll and no browser errors; the Appearance popover, the centered tagline, and the
 timesheet scrolled and not.
 
+The intro switch, the smaller leaves, and the Appearance icon checked on 2026-09-25 in headless
+Chrome on the sign-in, timer, and Reports pages at 1440, 850, and 390 px, light and dark: no
+intro on opening, no horizontal scroll, and no browser errors. The full intro pass (replay, skip,
+focus, and reduced motion on every page and size) was waived.
+
 ### App icon
 
 The header shows the user's app icon, one of the 12 concepts in `design/brand-assets/`
@@ -723,7 +728,9 @@ from navigation:
   always shows the weather and the background, even when they're off for the page; the page
   follows the switches once it appears. At the start, the image, the page, and the theme switch
   at once: a replay with the background on used to fade the image out as the black lifted, so it
-  flashed. Each season has its own lines and colors, from [seasons.js](seasons.js) (see
+  flashed. Firefox still shows that flash when the page is already dark, likely because
+  it skips the style flush that applies the cut; it's left as is in the prototypes (task 032,
+  subtask 01, has the details and a fix to try in the app). Each season has its own lines and colors, from [seasons.js](seasons.js) (see
   "Seasonal copy" below): white and ice in winter, fresh green and meltwater teal in spring,
   firefly yellow and green in summer, and the leaves' amber and rust in autumn, each on the
   headline and the last line. On a first visit to this browser, the intro plays dark in any

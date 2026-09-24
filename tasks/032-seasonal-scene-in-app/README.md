@@ -1,6 +1,6 @@
 # 032: Seasonal scene on the signed-in pages
 
-Status: in-progress
+Status: done
 
 The sign-in page has a seasonal scene (task 031): a background image per season, a tint, a
 weather effect, glass or solid cards, and a Season setting. Try the same scene on the signed-in
@@ -29,11 +29,13 @@ Surfaces was named for every card so it can apply app-wide.
       it too, or the README records why a page stays plain.
 - [x] The scene's cost is checked with several pages open: the weather stops in hidden tabs, and
       the timer's running clock and the weather don't make the page janky.
-- [ ] `prototypes/README.md` records the result, checked at 1440, 850, and 390 px, light and
-      dark, with no horizontal scroll and no browser errors.
+- [x] `prototypes/README.md` records the result, checked at 1440, 850, and 390 px, light and
+      dark, with no horizontal scroll and no browser errors. The pages were checked on 2026-09-24
+      and 25; the user waived subtask 01's full pass.
 
-- [ ] `01-intro-polish.md`: the replay's background flash, no intro on its own in the
-      prototypes, and the full check pass
+- [x] `01-intro-polish.md`: the replay's background flash, no intro on its own in the
+      prototypes, and the full check pass. The flash shows only in Firefox and is left as is; the
+      full check pass was waived.
 
 ## Progress
 
@@ -57,6 +59,12 @@ Surfaces was named for every card so it can apply app-wide.
   the Appearance popover and Settings, ending on "You're in. Get it done!". Checked on the timer
   at 1440 px: the season trigger, replay, Escape, focus, the theme's return, and a running timer
   with an unsaved description. The full viewport and page pass is still to do.
+- 2026-09-25: Subtask 01 is done. The replay's background flash shows only in Firefox with the
+  page already dark and is left as is. The prototypes no longer play the intro on their own: the
+  prototype bar's "Intro" select turns it back on, and the app keeps the first-visit and
+  once-a-season intros. The autumn leaves are smaller, and the Appearance button uses the
+  sign-in page's Scenery icon. The user waived the full check pass; only these changes were
+  checked.
 
 ## Intro in the app
 
