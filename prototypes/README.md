@@ -52,8 +52,13 @@ class strings as Solid-UI, so the look matches and markup ports directly, but Ko
 | `select`                                      | `SelectTrigger` classes        | native `<select>`, wrapped with Solid-UI's chevrons           |
 | `card`, `card-header`, `card-title`, `card-description`, `card-content`, `card-footer` | `Card*` | —                                          |
 | `table`, `table-header`, `table-body`, `table-row`, `table-head`, `table-cell`, `table-caption` | `Table*` | wrap in `relative w-full overflow-auto` like `Table` does |
+| `dialog`, `dialog-header`, `dialog-footer`, `dialog-title`, `dialog-description`, `dialog-close` | `Dialog*` | native modal `<dialog>`; overlay via `::backdrop` |
+| `popover`                                     | `PopoverContent`               | native `[popover]` + `popovertarget`; `ui.js` places it under the trigger |
+| `switch`, `switch-thumb`                      | `Switch*`                      | `<button role="switch" aria-checked>`; `ui.js` toggles it and fires `change` |
+| `error-message`                               | `TextFieldErrorMessage`        | mark invalid inputs with `data-invalid`                       |
 
-Classes are applied on load and to any later-inserted or changed `data-ui` element. Change a
+Kobalte's enter/exit animations are not reproduced. Classes are applied on load and to any
+later-inserted or changed `data-ui` element. Change a
 variant by setting `data-variant`; don't toggle classes on `data-ui` elements from JS, since the
 original `class` is what gets re-merged. Start page scripts from `ui.ready`.
 
@@ -70,7 +75,8 @@ registry into `ui.js`, keeping the commit noted at the top of the file. Badge va
 3. Start with one complete design; add meaningfully different variants only when they help the
    decision. Switch variants with `body[data-design]` and CSS, keeping state and form controls
    intact across switches.
-4. Use fictional data and local state only. No network calls, storage, or real user data.
+4. Use fictional data and local state only. No network calls or real user data. Use
+   `localStorage` only where the app will too (per-device view settings), wrapped in try/catch.
 5. Make the interactions needed to judge the design work; disable out-of-scope actions. Include a
    fixture selector for empty, populated, long-content, and relevant edge states.
 6. Run the checks below, then add a reference entry to this README.
@@ -118,20 +124,32 @@ Gotchas:
 
 ### [timer.html](timer.html) — Timer and entries
 
-Decision: layout of the main tracking view (running timer plus recent entries).
+Decision: layout of the main tracking view (running timer plus recent entries). All three layouts
+are kept as user-selectable options.
 
-- **01 · Bar**: Toggl-style single-line timer; entries grouped by day in cards with day totals.
-- **02 · Focus**: large clock, "continue recent" chips, compact day list, and a today/week summary
-  with per-project bars.
-- **03 · Table**: dense table with day subtotal rows; scrolls horizontally inside its container on
+- **Bar**: Toggl-style single-line timer; entries grouped by day in cards with day totals.
+- **Focus**: large clock, "continue recent" chips, and a compact day list.
+- **Table**: dense table with day subtotal rows; scrolls horizontally inside its container on
   narrow screens.
 
-Simulated: start/stop, Enter to start, editing the running entry's description/project, continue
-(stops any running timer first), delete. Fixtures: running, idle, long content, empty. Day totals
-count stopped entries only; the Focus summary includes the running timer.
+The settings button opens a **View** popover: layout, theme (light / dark / system), and whether
+the summary panel (today / this week, per-project bars) is shown. Settings persist per device in
+`localStorage` under `snowtime.viewSettings`, as planned for the app.
 
-Omitted: editing past entries, manual entry, reports, org/team switching, persistence. No design
-selected yet.
+Entries are edited in a dialog opened from the pencil action or the time range: description,
+project, date, start, and end. An end time at or before the start means the next day. Clicking the
+running timer's clock edits the running entry's start date and time. Validation: all times
+required, no entry ending in the future, no running entry starting in the future; a live line
+shows the resulting duration.
 
-Checked in Chromium at 1440, 850, and 390 px, light and dark, all fixtures: no horizontal page
-overflow and no browser errors.
+Simulated: start/stop, Enter to start, editing the running entry inline or in the dialog, continue
+(stops any running timer first), delete, edit. Fixtures: running, idle, long content, empty. Day
+totals count stopped entries only; the summary includes the running timer. Entries are grouped by
+their start day; splitting at midnight belongs to reports.
+
+Omitted: overlap checks between entries, manual entry, reports, org/team switching, persistence of
+entries.
+
+Checked in Chromium at 1440, 850, and 390 px, light and dark, all layouts with summary on and off:
+no horizontal page overflow, settings survive reload, dialog validation and saving work, no browser
+errors.

@@ -15,7 +15,7 @@
 | Validation      | Valibot, shared by forms and server functions             |
 | UI              | Solid-UI + Tailwind                                       |
 | i18n            | Paraglide JS (planned, not yet installed)                 |
-| Client state    | No library; Solid signals/stores and URL search params    |
+| Client state    | No library; Solid signals/stores and URL search params; per-device view settings (layout, theme, summary) in localStorage |
 
 ## Data conventions
 

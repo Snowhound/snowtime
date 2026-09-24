@@ -65,6 +65,12 @@ body {
   display: none !important;
 }
 
+/* Component display classes (e.g. `grid`) must not reveal closed dialogs and popovers. */
+dialog:not([open]),
+[popover]:not(:popover-open) {
+  display: none !important;
+}
+
 summary::-webkit-details-marker {
   display: none;
 }

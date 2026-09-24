@@ -13,13 +13,13 @@
         @apply flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center;
       }
       body[data-design='bar'] .timer-elapsed {
-        @apply text-lg sm:w-28 sm:text-right;
+        @apply justify-start text-lg sm:w-28 sm:justify-end;
       }
       body[data-design='focus'] .timer {
         @apply grid grid-cols-1 gap-4 rounded-xl border bg-card p-6 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto];
       }
       body[data-design='focus'] .timer-elapsed {
-        @apply order-first text-5xl font-light tracking-tight sm:col-span-2 sm:text-6xl;
+        @apply order-first h-auto justify-self-start text-5xl font-light tracking-tight sm:col-span-2 sm:text-6xl;
       }
       body[data-design='focus'] .timer-fields {
         @apply sm:col-start-1;
@@ -31,13 +31,14 @@
         @apply flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center;
       }
       body[data-design='table'] .timer-elapsed {
-        @apply text-base sm:w-24 sm:text-right;
+        @apply justify-start text-base sm:w-24 sm:justify-end;
       }
-      body:not([data-design='focus']) .focus-only {
+      body:not([data-design='focus']) .focus-only,
+      body[data-summary='off'] #summary-panel {
         display: none;
       }
-      .running .timer-elapsed {
-        @apply text-foreground;
+      body[data-summary='off'] main {
+        @apply lg:grid-cols-[minmax(0,1fr)];
       }
       .entry-actions {
         @apply flex items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100;
@@ -60,6 +61,18 @@
           <path d="M3 6h18" />
           <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
         </symbol>
+        <symbol id="icon-pencil" viewBox="0 0 24 24">
+          <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+          <path d="m15 5 4 4" />
+        </symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24">
+          <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
+          <circle cx="12" cy="12" r="3" />
+        </symbol>
+        <symbol id="icon-x" viewBox="0 0 24 24">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </symbol>
         <symbol id="icon-clock" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10" />
           <path d="M12 6v6l4 2" />
@@ -76,11 +89,6 @@
           <h1 class="mt-1 text-lg font-semibold tracking-tight">Timer and entries</h1>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <div data-ui="toggle-group" role="group" aria-label="Design">
-            <button data-ui="toggle" data-variant="outline" data-size="sm" data-design-option="bar" aria-pressed="true" data-pressed>01 · Bar</button>
-            <button data-ui="toggle" data-variant="outline" data-size="sm" data-design-option="focus" aria-pressed="false">02 · Focus</button>
-            <button data-ui="toggle" data-variant="outline" data-size="sm" data-design-option="table" aria-pressed="false">03 · Table</button>
-          </div>
           <label for="fixture" class="sr-only">Fixture</label>
           <select id="fixture" data-ui="select" class="h-9 w-40">
             <option value="running">Running</option>
@@ -88,7 +96,34 @@
             <option value="long">Long content</option>
             <option value="empty">Empty</option>
           </select>
-          <button id="theme-button" data-ui="button" data-variant="outline" data-size="sm">Dark</button>
+          <button data-ui="button" data-variant="outline" data-size="icon" class="size-9" popovertarget="view-settings" aria-label="View settings">
+            <svg class="prototype-icon" aria-hidden="true"><use href="#icon-settings" /></svg>
+          </button>
+          <div id="view-settings" popover data-ui="popover" class="grid gap-4" role="dialog" aria-labelledby="view-settings-title">
+            <h2 id="view-settings-title" class="font-medium leading-none">View</h2>
+            <div class="grid gap-2">
+              <span data-ui="label" id="layout-label">Layout</span>
+              <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="layout-label">
+                <button data-ui="toggle" data-variant="outline" data-size="sm" data-setting="design" data-value="bar">Bar</button>
+                <button data-ui="toggle" data-variant="outline" data-size="sm" data-setting="design" data-value="focus">Focus</button>
+                <button data-ui="toggle" data-variant="outline" data-size="sm" data-setting="design" data-value="table">Table</button>
+              </div>
+            </div>
+            <div class="grid gap-2">
+              <span data-ui="label" id="theme-label">Theme</span>
+              <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="theme-label">
+                <button data-ui="toggle" data-variant="outline" data-size="sm" data-setting="theme" data-value="light">Light</button>
+                <button data-ui="toggle" data-variant="outline" data-size="sm" data-setting="theme" data-value="dark">Dark</button>
+                <button data-ui="toggle" data-variant="outline" data-size="sm" data-setting="theme" data-value="system">System</button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span data-ui="label" id="summary-label">Show summary</span>
+              <button id="summary-switch" type="button" role="switch" aria-checked="true" aria-labelledby="summary-label" data-ui="switch">
+                <span data-ui="switch-thumb"></span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </header>
@@ -102,7 +137,7 @@
             <label for="project" class="sr-only">Project</label>
             <select id="project" data-ui="select" class="sm:w-48"></select>
           </div>
-          <div class="timer-elapsed font-mono tabular-nums text-muted-foreground" id="elapsed" aria-live="off">0:00:00</div>
+          <button id="elapsed" type="button" data-ui="button" data-variant="ghost" class="timer-elapsed px-2 font-mono tabular-nums" aria-label="Edit start time" disabled>0:00:00</button>
           <button id="toggle" data-ui="button" class="timer-toggle" type="button"></button>
         </section>
 
@@ -114,13 +149,56 @@
         <section id="entries" aria-label="Time entries" class="flex min-w-0 flex-col gap-4"></section>
       </div>
 
-      <aside class="focus-only w-full lg:w-72" aria-labelledby="summary-heading">
+      <aside id="summary-panel" class="w-full lg:w-72" aria-labelledby="summary-heading">
         <div data-ui="card">
           <div data-ui="card-header"><h2 id="summary-heading" data-ui="card-title">Summary</h2></div>
           <div id="summary" data-ui="card-content" class="flex flex-col gap-4"></div>
         </div>
       </aside>
     </main>
+
+    <dialog id="entry-dialog" data-ui="dialog" aria-labelledby="entry-dialog-title" aria-describedby="entry-dialog-description">
+      <form id="entry-form" class="grid gap-4" novalidate>
+        <div data-ui="dialog-header">
+          <h2 id="entry-dialog-title" data-ui="dialog-title">Edit entry</h2>
+          <p id="entry-dialog-description" data-ui="dialog-description"></p>
+        </div>
+        <div class="grid gap-4">
+          <div class="grid gap-1.5">
+            <label data-ui="label" for="edit-description">Description</label>
+            <input id="edit-description" data-ui="input" type="text" autocomplete="off" placeholder="What did you work on?" />
+          </div>
+          <div class="grid gap-1.5">
+            <label data-ui="label" for="edit-project">Project</label>
+            <select id="edit-project" data-ui="select"></select>
+          </div>
+          <div class="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
+            <div class="grid gap-1.5">
+              <label data-ui="label" for="edit-date">Date</label>
+              <input id="edit-date" data-ui="input" type="date" required />
+            </div>
+            <div class="grid gap-1.5">
+              <label data-ui="label" for="edit-start">Start</label>
+              <input id="edit-start" data-ui="input" type="time" required />
+            </div>
+            <div class="grid gap-1.5" id="edit-end-field">
+              <label data-ui="label" for="edit-end">End</label>
+              <input id="edit-end" data-ui="input" type="time" required />
+            </div>
+          </div>
+          <p id="edit-summary" class="text-sm text-muted-foreground" aria-live="polite"></p>
+          <p id="edit-error" data-ui="error-message" role="alert" hidden></p>
+        </div>
+        <div data-ui="dialog-footer">
+          <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
+          <button type="submit" data-ui="button">Save</button>
+        </div>
+      </form>
+      <button type="button" data-ui="dialog-close" data-dialog-cancel>
+        <svg class="prototype-icon" aria-hidden="true"><use href="#icon-x" /></svg>
+        <span class="sr-only">Close</span>
+      </button>
+    </dialog>
 
     <script>
       const DAY = 86_400_000
@@ -219,9 +297,14 @@
 
       function actions(e) {
         return `<div class="entry-actions">
+          <button data-ui="button" data-variant="ghost" data-size="icon" data-edit="${e.id}" aria-label="Edit ${escapeHtml(e.description || 'entry')}">${icon('pencil')}</button>
           <button data-ui="button" data-variant="ghost" data-size="icon" data-continue="${e.id}" aria-label="Continue ${escapeHtml(e.description || 'entry')}">${icon('play')}</button>
           <button data-ui="button" data-variant="ghost" data-size="icon" data-delete="${e.id}" aria-label="Delete ${escapeHtml(e.description || 'entry')}">${icon('trash-2')}</button>
         </div>`
+      }
+
+      function timeButton(e, text) {
+        return `<button type="button" data-edit="${e.id}" class="rounded-sm text-xs tabular-nums text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Edit time of ${escapeHtml(e.description || 'entry')}">${text}</button>`
       }
 
       function emptyState() {
@@ -249,7 +332,7 @@
                       ${p.id === 'none' ? '' : `<span class="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground sm:max-w-56">${dot(p)}<span class="truncate">${escapeHtml(p.name)}</span></span>`}
                     </div>
                     <div class="flex items-center justify-between gap-3 sm:justify-end">
-                      <span class="text-xs tabular-nums text-muted-foreground">${timeFmt.format(e.startedAt)} – ${timeFmt.format(e.stoppedAt)}</span>
+                      ${timeButton(e, `${timeFmt.format(e.startedAt)} – ${timeFmt.format(e.stoppedAt)}`)}
                       <span class="w-16 text-right font-mono text-sm tabular-nums">${duration(entryDuration(e))}</span>
                       ${actions(e)}
                     </div>
@@ -275,8 +358,8 @@
                   return `<tr data-ui="table-row" class="group">
                     <td data-ui="table-cell" class="max-w-0"><div class="truncate">${describe(e)}</div></td>
                     <td data-ui="table-cell" class="max-w-0"><div class="flex items-center gap-1.5 text-muted-foreground">${dot(p)}<span class="truncate">${p.id === 'none' ? '—' : escapeHtml(p.name)}</span></div></td>
-                    <td data-ui="table-cell" class="tabular-nums text-muted-foreground">${timeFmt.format(e.startedAt)}</td>
-                    <td data-ui="table-cell" class="tabular-nums text-muted-foreground">${timeFmt.format(e.stoppedAt)}</td>
+                    <td data-ui="table-cell">${timeButton(e, timeFmt.format(e.startedAt))}</td>
+                    <td data-ui="table-cell">${timeButton(e, timeFmt.format(e.stoppedAt))}</td>
                     <td data-ui="table-cell" class="text-right font-mono tabular-nums">${duration(entryDuration(e))}</td>
                     <td data-ui="table-cell">${actions(e)}</td>
                   </tr>`
@@ -358,7 +441,7 @@
       function renderTimer() {
         const running = state.running
         const toggle = document.getElementById('toggle')
-        document.getElementById('timer').classList.toggle('running', !!running)
+        document.getElementById('elapsed').disabled = !running
         toggle.dataset.variant = running ? 'destructive' : 'default'
         toggle.innerHTML = running ? `${icon('square')}Stop` : `${icon('play')}Start`
         tick()
@@ -367,7 +450,7 @@
       function tick() {
         document.getElementById('elapsed').textContent = duration(state.running ? entryDuration(state.running) : 0)
         document.title = state.running ? `${duration(entryDuration(state.running))} · Timer and entries` : 'Timer and entries'
-        if (document.body.dataset.design === 'focus') renderSummary()
+        if (settings.showSummary) renderSummary()
       }
 
       function setInputs(description, projectId) {
@@ -406,20 +489,133 @@
         renderSummary()
       }
 
-      function setDesign(design) {
-        document.body.dataset.design = design
-        document.querySelectorAll('[data-design-option]').forEach((b) => {
-          const pressed = b.dataset.designOption === design
+      // View settings: per device, so localStorage (as in the app).
+      const SETTINGS_KEY = 'snowtime.viewSettings'
+      const darkQuery = matchMedia('(prefers-color-scheme: dark)')
+      const settings = (() => {
+        const defaults = { design: 'bar', theme: 'system', showSummary: true }
+        try {
+          return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') }
+        } catch {
+          return defaults
+        }
+      })()
+
+      function saveSettings() {
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+        } catch {}
+      }
+
+      function applySettings() {
+        document.body.dataset.design = settings.design
+        document.body.dataset.summary = settings.showSummary ? 'on' : 'off'
+        document.documentElement.classList.toggle('dark', settings.theme === 'dark' || (settings.theme === 'system' && darkQuery.matches))
+        document.querySelectorAll('[data-setting]').forEach((b) => {
+          const pressed = settings[b.dataset.setting] === b.dataset.value
           b.setAttribute('aria-pressed', String(pressed))
           b.toggleAttribute('data-pressed', pressed)
         })
+        ui.setSwitch(document.getElementById('summary-switch'), settings.showSummary)
         renderEntries()
         renderSummary()
       }
 
-      document.getElementById('project').innerHTML = projects
-        .map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`)
-        .join('')
+      // Entry editor. Times are entered in the browser zone (the user's zone in the app).
+      const dialog = document.getElementById('entry-dialog')
+      const field = (id) => document.getElementById(`edit-${id}`)
+      const pad = (n) => String(n).padStart(2, '0')
+      const toDateValue = (t) => {
+        const d = new Date(t)
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+      }
+      const toTimeValue = (t) => {
+        const d = new Date(t)
+        return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+      }
+      const fromValues = (date, time, addDays = 0) => {
+        const [y, m, d] = date.split('-').map(Number)
+        const [h, min] = time.split(':').map(Number)
+        return new Date(y, m - 1, d + addDays, h, min).getTime()
+      }
+      let editing = null
+
+      function openEditor(id) {
+        const running = id === 'running'
+        const e = running ? state.running : state.entries.find((x) => x.id === id)
+        if (!e) return
+        editing = id
+        document.getElementById('entry-dialog-title').textContent = running ? 'Edit running entry' : 'Edit entry'
+        document.getElementById('entry-dialog-description').textContent = `Times are in ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`
+        field('description').value = e.description
+        field('project').value = e.projectId
+        field('date').value = toDateValue(e.startedAt)
+        field('start').value = toTimeValue(e.startedAt)
+        field('end').value = running ? '' : toTimeValue(e.stoppedAt)
+        document.getElementById('edit-end-field').hidden = running
+        showEditorState(readEditor(), false)
+        dialog.showModal()
+      }
+
+      function readEditor() {
+        const running = editing === 'running'
+        const date = field('date').value
+        const start = field('start').value
+        const end = field('end').value
+        if (!date || !start || (!running && !end)) return { error: running ? 'Enter a date and start time.' : 'Enter a date, start and end time.' }
+        const startedAt = fromValues(date, start)
+        const now = Date.now()
+        if (running) {
+          if (startedAt > now) return { error: "A running entry can't start in the future." }
+          return { patch: { startedAt }, summary: `Running for ${duration(now - startedAt, false)}` }
+        }
+        const nextDay = fromValues(date, end) <= startedAt
+        const stoppedAt = fromValues(date, end, nextDay ? 1 : 0)
+        if (stoppedAt > now) return { error: "An entry can't end in the future." }
+        return { patch: { startedAt, stoppedAt }, summary: `Duration ${duration(stoppedAt - startedAt, false)}${nextDay ? ' · ends the next day' : ''}` }
+      }
+
+      function showEditorState(result, showError = true) {
+        const error = document.getElementById('edit-error')
+        document.getElementById('edit-summary').textContent = result.summary ?? ''
+        error.textContent = result.error ?? ''
+        error.hidden = !(showError && result.error)
+        for (const id of ['date', 'start', 'end']) field(id).toggleAttribute('data-invalid', !!(showError && result.error))
+      }
+
+      function updateEntry(id, patch) {
+        if (id === 'running') {
+          Object.assign(state.running, patch)
+          setInputs(state.running.description, state.running.projectId)
+          renderTimer()
+        } else {
+          Object.assign(state.entries.find((x) => x.id === id), patch)
+          renderEntries()
+        }
+        renderSummary()
+      }
+
+      document.getElementById('entry-form').addEventListener('input', () => showEditorState(readEditor()))
+      document.getElementById('entry-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const result = readEditor()
+        showEditorState(result)
+        if (result.error) return
+        updateEntry(editing, { ...result.patch, description: field('description').value.trim(), projectId: field('project').value })
+        dialog.close()
+      })
+      dialog.querySelectorAll('[data-dialog-cancel]').forEach((b) => b.addEventListener('click', () => dialog.close()))
+      dialog.addEventListener('click', (event) => {
+        if (event.target !== dialog) return
+        const r = dialog.getBoundingClientRect()
+        const inside = event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom
+        if (!inside) dialog.close()
+      })
+      document.getElementById('elapsed').addEventListener('click', () => openEditor('running'))
+
+      const projectOptions = projects.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')
+      document.getElementById('project').innerHTML = projectOptions
+      field('project').innerHTML = projectOptions
 
       document.getElementById('toggle').addEventListener('click', () => {
         if (state.running) stopTimer()
@@ -438,18 +634,29 @@
       document.addEventListener('click', (event) => {
         const cont = event.target.closest('[data-continue]')
         const del = event.target.closest('[data-delete]')
-        if (cont) {
+        const edit = event.target.closest('[data-edit]')
+        if (edit) openEditor(edit.dataset.edit)
+        else if (cont) {
           const e = state.entries.find((x) => x.id === cont.dataset.continue)
           if (e) startTimer(e.description, e.projectId)
         } else if (del) deleteEntry(del.dataset.delete)
       })
-      document.querySelectorAll('[data-design-option]').forEach((b) => b.addEventListener('click', () => setDesign(b.dataset.designOption)))
-      document.getElementById('theme-button').addEventListener('click', (event) => {
-        const dark = document.documentElement.classList.toggle('dark')
-        event.currentTarget.textContent = dark ? 'Light' : 'Dark'
+      document.querySelectorAll('[data-setting]').forEach((b) =>
+        b.addEventListener('click', () => {
+          settings[b.dataset.setting] = b.dataset.value
+          saveSettings()
+          applySettings()
+        })
+      )
+      document.getElementById('summary-switch').addEventListener('change', (event) => {
+        settings.showSummary = event.currentTarget.getAttribute('aria-checked') === 'true'
+        saveSettings()
+        applySettings()
       })
+      darkQuery.addEventListener('change', () => settings.theme === 'system' && applySettings())
 
       ui.ready.then(() => {
+        applySettings()
         loadFixture('running')
         setInterval(tick, 1000)
       })

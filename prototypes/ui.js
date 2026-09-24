@@ -56,6 +56,25 @@
     'table-head': 'h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0',
     'table-cell': 'p-2 align-middle [&:has([role=checkbox])]:pr-0',
     'table-caption': 'mt-4 text-sm text-muted-foreground',
+    // DialogContent on a native modal <dialog>; `m-0` resets the UA margin and `backdrop:` carries
+    // DialogOverlay's `bg-background/80`. Kobalte's enter/exit animations are left out.
+    dialog:
+      'fixed left-1/2 top-1/2 z-50 grid max-h-screen w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto border bg-background p-6 shadow-lg duration-200 sm:rounded-lg m-0 text-foreground backdrop:bg-background/80',
+    'dialog-header': 'flex flex-col space-y-1.5 text-center sm:text-left',
+    'dialog-footer': 'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2',
+    'dialog-title': 'text-lg font-semibold leading-none tracking-tight',
+    'dialog-description': 'text-sm text-muted-foreground',
+    'dialog-close':
+      'absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[expanded]:bg-accent data-[expanded]:text-muted-foreground',
+    // PopoverContent on a native [popover]; ui.js positions it below its trigger, aligned to the end.
+    popover:
+      'z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none m-0',
+    // Switch control on a <button role="switch">; the focus ring moves from the hidden input to the button.
+    switch:
+      'inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent bg-input transition-[color,background-color,box-shadow] data-[disabled]:cursor-not-allowed data-[checked]:bg-primary data-[disabled]:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+    'switch-thumb':
+      'pointer-events-none block size-5 translate-x-0 rounded-full bg-background shadow-lg ring-0 transition-transform data-[checked]:translate-x-5',
+    'error-message': 'text-xs text-destructive',
   }
 
   const variants = { button, badge, toggle }
@@ -88,6 +107,37 @@
     }
   }
 
+  // Mirrors Kobalte's `data-checked` on the switch and its thumb; fires `change` on user toggles.
+  function setSwitch(el, checked) {
+    el.setAttribute('aria-checked', String(checked))
+    for (const n of [el, ...el.querySelectorAll('[data-ui="switch-thumb"]')]) n.toggleAttribute('data-checked', checked)
+  }
+  document.addEventListener('click', (event) => {
+    const sw = event.target.closest('[data-ui="switch"]')
+    if (!sw || sw.disabled) return
+    setSwitch(sw, sw.getAttribute('aria-checked') !== 'true')
+    sw.dispatchEvent(new Event('change', { bubbles: true }))
+  })
+
+  // Place an opening popover under its trigger, end-aligned and kept inside the viewport.
+  document.addEventListener(
+    'beforetoggle',
+    (event) => {
+      const pop = event.target
+      if (event.newState !== 'open' || pop.dataset?.ui !== 'popover') return
+      const trigger = document.querySelector(`[popovertarget="${pop.id}"]`)
+      if (!trigger) return
+      // A closed popover still reports its specified width (e.g. `w-72`) through computed style.
+      const r = trigger.getBoundingClientRect()
+      const w = Math.min(parseFloat(getComputedStyle(pop).width) || 288, innerWidth - 16)
+      pop.style.inset = 'auto'
+      pop.style.top = `${r.bottom + 4}px`
+      pop.style.left = `${Math.max(8, Math.min(r.right - w, innerWidth - w - 8))}px`
+      pop.style.maxWidth = 'calc(100vw - 16px)'
+    },
+    true
+  )
+
   function applyAll(root = document) {
     if (root.matches?.('[data-ui]')) apply(root)
     root.querySelectorAll?.('[data-ui]').forEach(apply)
@@ -100,6 +150,7 @@
     new Promise((resolve) => document.addEventListener('DOMContentLoaded', resolve)),
   ]).then(() => {
     applyAll()
+    document.querySelectorAll('[data-ui="switch"]').forEach((el) => setSwitch(el, el.getAttribute('aria-checked') === 'true'))
     new MutationObserver((records) => {
       for (const r of records) {
         if (r.type === 'attributes') apply(r.target)
@@ -113,5 +164,5 @@
     })
   })
 
-  window.ui = { apply: applyAll, ready }
+  window.ui = { apply: applyAll, ready, setSwitch }
 })()
