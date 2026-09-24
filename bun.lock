@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "snowtime-slop",
+      "name": "snowtime-katik",
       "dependencies": {
         "@better-auth/passkey": "1.7.5",
         "@fontsource/inter": "^5.1.1",
