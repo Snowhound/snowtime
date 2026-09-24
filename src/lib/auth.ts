@@ -1,3 +1,4 @@
+import { passkey } from '@better-auth/passkey'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { betterAuth } from 'better-auth'
 import { organization } from 'better-auth/plugins'
@@ -6,6 +7,10 @@ import { v7 as uuidv7 } from 'uuid'
 import { db } from '../db'
 import * as schema from '../db/schema'
 import { env } from '../env'
+
+// Passkeys are bound to the app's domain, so each environment's relying party follows its
+// BETTER_AUTH_URL; the plugin would otherwise default to localhost.
+const appUrl = new URL(env.BETTER_AUTH_URL)
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
@@ -35,6 +40,7 @@ export const auth = betterAuth({
       // Organizations own time entries and are never hard-deleted (docs/architecture.md).
       disableOrganizationDeletion: true,
     }),
+    passkey({ rpID: appUrl.hostname, rpName: 'Snowtime', origin: appUrl.origin }),
     // Must stay last: it sets cookies from the other plugins' responses.
     tanstackStartCookies(),
   ],

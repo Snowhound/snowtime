@@ -587,7 +587,7 @@
     },
     {
       "id": "t3",
-      "name": "verification",
+      "name": "passkey",
       "schema": "main",
       "x": 316,
       "y": 506,
@@ -611,24 +611,24 @@
         },
         {
           "id": "t3f1",
-          "name": "identifier",
+          "name": "name",
           "type": {
             "id": "text",
             "name": "text"
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": false,
+          "nullable": true,
           "createdAt": 1700000000000,
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "What the value verifies, e.g. an email address."
+          "comments": "Label the user gave it."
         },
         {
           "id": "t3f2",
-          "name": "value",
+          "name": "public_key",
           "type": {
             "id": "text",
             "name": "text"
@@ -641,11 +641,45 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "COSE public key, base64."
         },
         {
           "id": "t3f3",
-          "name": "expires_at",
+          "name": "user_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "ON DELETE CASCADE."
+        },
+        {
+          "id": "t3f4",
+          "name": "credential_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": true,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "WebAuthn credential id, base64url."
+        },
+        {
+          "id": "t3f5",
+          "name": "counter",
           "type": {
             "id": "integer",
             "name": "integer"
@@ -658,10 +692,61 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "Signature counter, checked against replayed assertions."
         },
         {
-          "id": "t3f4",
+          "id": "t3f6",
+          "name": "device_type",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "singleDevice or multiDevice."
+        },
+        {
+          "id": "t3f7",
+          "name": "backed_up",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Boolean. Synced by the platform, e.g. iCloud Keychain."
+        },
+        {
+          "id": "t3f8",
+          "name": "transports",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Comma-separated, e.g. internal,hybrid."
+        },
+        {
+          "id": "t3f9",
           "name": "created_at",
           "type": {
             "id": "integer",
@@ -669,39 +754,39 @@
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": false,
+          "nullable": true,
           "createdAt": 1700000000000,
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "Epoch ms, UTC."
         },
         {
-          "id": "t3f5",
-          "name": "updated_at",
+          "id": "t3f10",
+          "name": "aaguid",
           "type": {
-            "id": "integer",
-            "name": "integer"
+            "id": "text",
+            "name": "text"
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": false,
+          "nullable": true,
           "createdAt": 1700000000000,
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "Authenticator model id."
         }
       ],
       "indexes": [
         {
           "id": "t3i0",
-          "name": "verification_identifier_idx",
+          "name": "passkey_user_id_idx",
           "unique": false,
           "fieldIds": [
-            "t3f1"
+            "t3f3"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
@@ -711,15 +796,15 @@
       "color": "#BAB0AC",
       "isView": false,
       "createdAt": 1700000000000,
-      "comments": "Better Auth one-time values: email verification, password reset.",
+      "comments": "Passkey plugin (@better-auth/passkey). A WebAuthn credential a signed-in user registered; sign-in looks it up by credential_id.",
       "order": 3,
       "parentAreaId": "a0"
     },
     {
       "id": "t4",
-      "name": "organization",
+      "name": "verification",
       "schema": "main",
-      "x": 724,
+      "x": 600,
       "y": 64,
       "fields": [
         {
@@ -741,6 +826,136 @@
         },
         {
           "id": "t4f1",
+          "name": "identifier",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "What the value verifies, e.g. an email address."
+        },
+        {
+          "id": "t4f2",
+          "name": "value",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t4f3",
+          "name": "expires_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t4f4",
+          "name": "created_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t4f5",
+          "name": "updated_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        }
+      ],
+      "indexes": [
+        {
+          "id": "t4i0",
+          "name": "verification_identifier_idx",
+          "unique": false,
+          "fieldIds": [
+            "t4f1"
+          ],
+          "createdAt": 1700000000000,
+          "isPrimaryKey": false,
+          "comments": null
+        }
+      ],
+      "color": "#BAB0AC",
+      "isView": false,
+      "createdAt": 1700000000000,
+      "comments": "Better Auth one-time values: email verification, password reset.",
+      "order": 4,
+      "parentAreaId": "a0"
+    },
+    {
+      "id": "t5",
+      "name": "organization",
+      "schema": "main",
+      "x": 1008,
+      "y": 64,
+      "fields": [
+        {
+          "id": "t5f0",
+          "name": "id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t5f1",
           "name": "name",
           "type": {
             "id": "text",
@@ -757,7 +972,7 @@
           "comments": null
         },
         {
-          "id": "t4f2",
+          "id": "t5f2",
           "name": "slug",
           "type": {
             "id": "text",
@@ -774,7 +989,7 @@
           "comments": "URL-safe handle."
         },
         {
-          "id": "t4f3",
+          "id": "t5f3",
           "name": "logo",
           "type": {
             "id": "text",
@@ -791,7 +1006,7 @@
           "comments": null
         },
         {
-          "id": "t4f4",
+          "id": "t5f4",
           "name": "metadata",
           "type": {
             "id": "text",
@@ -808,7 +1023,7 @@
           "comments": "Plugin-defined JSON. Not used by the app."
         },
         {
-          "id": "t4f5",
+          "id": "t5f5",
           "name": "created_at",
           "type": {
             "id": "integer",
@@ -830,140 +1045,15 @@
       "isView": false,
       "createdAt": 1700000000000,
       "comments": "Tenant. Every app-owned table carries organization_id and every query filters by it.",
-      "order": 4,
-      "parentAreaId": "a1"
-    },
-    {
-      "id": "t5",
-      "name": "member",
-      "schema": "main",
-      "x": 724,
-      "y": 346,
-      "fields": [
-        {
-          "id": "t5f0",
-          "name": "id",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": true,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comments": null
-        },
-        {
-          "id": "t5f1",
-          "name": "organization_id",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comments": null
-        },
-        {
-          "id": "t5f2",
-          "name": "user_id",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comments": null
-        },
-        {
-          "id": "t5f3",
-          "name": "role",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": "'member'",
-          "comments": "owner, admin, member (plugin defaults). No CHECK: the plugin can store several roles comma-separated."
-        },
-        {
-          "id": "t5f4",
-          "name": "created_at",
-          "type": {
-            "id": "integer",
-            "name": "integer"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comments": null
-        }
-      ],
-      "indexes": [
-        {
-          "id": "t5i0",
-          "name": "member_organization_id_user_id_idx",
-          "unique": true,
-          "fieldIds": [
-            "t5f1",
-            "t5f2"
-          ],
-          "createdAt": 1700000000000,
-          "isPrimaryKey": false,
-          "comments": null
-        },
-        {
-          "id": "t5i1",
-          "name": "member_user_id_idx",
-          "unique": false,
-          "fieldIds": [
-            "t5f2"
-          ],
-          "createdAt": 1700000000000,
-          "isPrimaryKey": false,
-          "comments": null
-        }
-      ],
-      "color": "#4E79A7",
-      "isView": false,
-      "createdAt": 1700000000000,
-      "comments": "A user in an organization. A user can be a member of several organizations.",
       "order": 5,
       "parentAreaId": "a1"
     },
     {
       "id": "t6",
-      "name": "team",
+      "name": "member",
       "schema": "main",
       "x": 1008,
-      "y": 64,
+      "y": 346,
       "fields": [
         {
           "id": "t6f0",
@@ -1001,7 +1091,7 @@
         },
         {
           "id": "t6f2",
-          "name": "name",
+          "name": "user_id",
           "type": {
             "id": "text",
             "name": "text"
@@ -1018,10 +1108,10 @@
         },
         {
           "id": "t6f3",
-          "name": "member_count",
+          "name": "role",
           "type": {
-            "id": "integer",
-            "name": "integer"
+            "id": "text",
+            "name": "text"
           },
           "primaryKey": false,
           "unique": false,
@@ -1030,8 +1120,8 @@
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
-          "default": "0",
-          "comments": "Maintained by Better Auth when members join or leave."
+          "default": "'member'",
+          "comments": "owner, admin, member (plugin defaults). No CHECK: the plugin can store several roles comma-separated."
         },
         {
           "id": "t6f4",
@@ -1049,29 +1139,12 @@
           "scale": null,
           "default": null,
           "comments": null
-        },
-        {
-          "id": "t6f5",
-          "name": "updated_at",
-          "type": {
-            "id": "integer",
-            "name": "integer"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": true,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comments": null
         }
       ],
       "indexes": [
         {
           "id": "t6i0",
-          "name": "team_organization_id_name_idx",
+          "name": "member_organization_id_user_id_idx",
           "unique": true,
           "fieldIds": [
             "t6f1",
@@ -1083,30 +1156,29 @@
         },
         {
           "id": "t6i1",
-          "name": "team_id_organization_id_idx",
-          "unique": true,
+          "name": "member_user_id_idx",
+          "unique": false,
           "fieldIds": [
-            "t6f0",
-            "t6f1"
+            "t6f2"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
-          "comments": "Target of composite foreign keys, so rows pointing at a team cannot name another organization."
+          "comments": null
         }
       ],
       "color": "#4E79A7",
       "isView": false,
       "createdAt": 1700000000000,
-      "comments": "A group of members within an organization. Groups people for access and reporting; it owns no data.",
+      "comments": "A user in an organization. A user can be a member of several organizations.",
       "order": 6,
       "parentAreaId": "a1"
     },
     {
       "id": "t7",
-      "name": "team_member",
+      "name": "team",
       "schema": "main",
-      "x": 1008,
-      "y": 346,
+      "x": 1292,
+      "y": 64,
       "fields": [
         {
           "id": "t7f0",
@@ -1127,7 +1199,7 @@
         },
         {
           "id": "t7f1",
-          "name": "team_id",
+          "name": "organization_id",
           "type": {
             "id": "text",
             "name": "text"
@@ -1144,7 +1216,7 @@
         },
         {
           "id": "t7f2",
-          "name": "user_id",
+          "name": "name",
           "type": {
             "id": "text",
             "name": "text"
@@ -1161,10 +1233,10 @@
         },
         {
           "id": "t7f3",
-          "name": "role",
+          "name": "member_count",
           "type": {
-            "id": "text",
-            "name": "text"
+            "id": "integer",
+            "name": "integer"
           },
           "primaryKey": false,
           "unique": false,
@@ -1173,29 +1245,29 @@
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
-          "default": "'member'",
-          "comments": "App-managed. CHECK: lead, member. A lead reads and reports on the time of the team. Better Auth 1.7 has no additional fields on team members, so it never reads or writes this column; new rows get the default."
+          "default": "0",
+          "comments": "Maintained by Better Auth when members join or leave."
         },
         {
           "id": "t7f4",
-          "name": "membership_key",
+          "name": "created_at",
           "type": {
-            "id": "text",
-            "name": "text"
+            "id": "integer",
+            "name": "integer"
           },
           "primaryKey": false,
-          "unique": true,
-          "nullable": true,
+          "unique": false,
+          "nullable": false,
           "createdAt": 1700000000000,
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Better Auth dedupe key, SHA-256 of team_id and user_id."
+          "comments": null
         },
         {
           "id": "t7f5",
-          "name": "created_at",
+          "name": "updated_at",
           "type": {
             "id": "integer",
             "name": "integer"
@@ -1214,7 +1286,7 @@
       "indexes": [
         {
           "id": "t7i0",
-          "name": "team_member_team_id_user_id_idx",
+          "name": "team_organization_id_name_idx",
           "unique": true,
           "fieldIds": [
             "t7f1",
@@ -1226,29 +1298,30 @@
         },
         {
           "id": "t7i1",
-          "name": "team_member_user_id_idx",
-          "unique": false,
+          "name": "team_id_organization_id_idx",
+          "unique": true,
           "fieldIds": [
-            "t7f2"
+            "t7f0",
+            "t7f1"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
-          "comments": null
+          "comments": "Target of composite foreign keys, so rows pointing at a team cannot name another organization."
         }
       ],
       "color": "#4E79A7",
       "isView": false,
       "createdAt": 1700000000000,
-      "comments": "A user in a team. A member can be in several teams of the same organization.",
+      "comments": "A group of members within an organization. Groups people for access and reporting; it owns no data.",
       "order": 7,
       "parentAreaId": "a1"
     },
     {
       "id": "t8",
-      "name": "invitation",
+      "name": "team_member",
       "schema": "main",
       "x": 1292,
-      "y": 64,
+      "y": 346,
       "fields": [
         {
           "id": "t8f0",
@@ -1269,7 +1342,7 @@
         },
         {
           "id": "t8f1",
-          "name": "organization_id",
+          "name": "team_id",
           "type": {
             "id": "text",
             "name": "text"
@@ -1286,7 +1359,7 @@
         },
         {
           "id": "t8f2",
-          "name": "email",
+          "name": "user_id",
           "type": {
             "id": "text",
             "name": "text"
@@ -1299,7 +1372,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Invitee address, lowercased."
+          "comments": null
         },
         {
           "id": "t8f3",
@@ -1310,84 +1383,33 @@
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": true,
+          "nullable": false,
           "createdAt": 1700000000000,
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
-          "default": null,
-          "comments": "Organization role granted on acceptance."
+          "default": "'member'",
+          "comments": "App-managed. CHECK: lead, member. A lead reads and reports on the time of the team. Better Auth 1.7 has no additional fields on team members, so it never reads or writes this column; new rows get the default."
         },
         {
           "id": "t8f4",
-          "name": "team_id",
+          "name": "membership_key",
           "type": {
             "id": "text",
             "name": "text"
           },
           "primaryKey": false,
-          "unique": false,
+          "unique": true,
           "nullable": true,
           "createdAt": 1700000000000,
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Team joined on acceptance, if any."
+          "comments": "Better Auth dedupe key, SHA-256 of team_id and user_id."
         },
         {
           "id": "t8f5",
-          "name": "status",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": "'pending'",
-          "comments": "pending, accepted, rejected, canceled."
-        },
-        {
-          "id": "t8f6",
-          "name": "expires_at",
-          "type": {
-            "id": "integer",
-            "name": "integer"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comments": null
-        },
-        {
-          "id": "t8f7",
-          "name": "inviter_id",
-          "type": {
-            "id": "text",
-            "name": "text"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comments": null
-        },
-        {
-          "id": "t8f8",
           "name": "created_at",
           "type": {
             "id": "integer",
@@ -1395,7 +1417,7 @@
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": false,
+          "nullable": true,
           "createdAt": 1700000000000,
           "characterMaximumLength": null,
           "precision": null,
@@ -1407,10 +1429,21 @@
       "indexes": [
         {
           "id": "t8i0",
-          "name": "invitation_organization_id_email_idx",
-          "unique": false,
+          "name": "team_member_team_id_user_id_idx",
+          "unique": true,
           "fieldIds": [
             "t8f1",
+            "t8f2"
+          ],
+          "createdAt": 1700000000000,
+          "isPrimaryKey": false,
+          "comments": null
+        },
+        {
+          "id": "t8i1",
+          "name": "team_member_user_id_idx",
+          "unique": false,
+          "fieldIds": [
             "t8f2"
           ],
           "createdAt": 1700000000000,
@@ -1421,20 +1454,20 @@
       "color": "#4E79A7",
       "isView": false,
       "createdAt": 1700000000000,
-      "comments": "Pending invitation to an organization, optionally into a team.",
+      "comments": "A user in a team. A member can be in several teams of the same organization.",
       "order": 8,
       "parentAreaId": "a1"
     },
     {
       "id": "t9",
-      "name": "user_settings",
+      "name": "invitation",
       "schema": "main",
-      "x": 1984,
-      "y": 314,
+      "x": 1576,
+      "y": 64,
       "fields": [
         {
           "id": "t9f0",
-          "name": "user_id",
+          "name": "id",
           "type": {
             "id": "text",
             "name": "text"
@@ -1451,6 +1484,188 @@
         },
         {
           "id": "t9f1",
+          "name": "organization_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t9f2",
+          "name": "email",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Invitee address, lowercased."
+        },
+        {
+          "id": "t9f3",
+          "name": "role",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Organization role granted on acceptance."
+        },
+        {
+          "id": "t9f4",
+          "name": "team_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Team joined on acceptance, if any."
+        },
+        {
+          "id": "t9f5",
+          "name": "status",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "'pending'",
+          "comments": "pending, accepted, rejected, canceled."
+        },
+        {
+          "id": "t9f6",
+          "name": "expires_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t9f7",
+          "name": "inviter_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t9f8",
+          "name": "created_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        }
+      ],
+      "indexes": [
+        {
+          "id": "t9i0",
+          "name": "invitation_organization_id_email_idx",
+          "unique": false,
+          "fieldIds": [
+            "t9f1",
+            "t9f2"
+          ],
+          "createdAt": 1700000000000,
+          "isPrimaryKey": false,
+          "comments": null
+        }
+      ],
+      "color": "#4E79A7",
+      "isView": false,
+      "createdAt": 1700000000000,
+      "comments": "Pending invitation to an organization, optionally into a team.",
+      "order": 9,
+      "parentAreaId": "a1"
+    },
+    {
+      "id": "t10",
+      "name": "user_settings",
+      "schema": "main",
+      "x": 2268,
+      "y": 314,
+      "fields": [
+        {
+          "id": "t10f0",
+          "name": "user_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t10f1",
           "name": "time_zone",
           "type": {
             "id": "text",
@@ -1467,7 +1682,7 @@
           "comments": "IANA zone, e.g. Europe/Tallinn. Drives display and report day/week boundaries."
         },
         {
-          "id": "t9f2",
+          "id": "t10f2",
           "name": "week_start",
           "type": {
             "id": "text",
@@ -1484,7 +1699,7 @@
           "comments": "CHECK: mon, sun."
         },
         {
-          "id": "t9f3",
+          "id": "t10f3",
           "name": "created_at",
           "type": {
             "id": "integer",
@@ -1501,7 +1716,7 @@
           "comments": "Audit. Epoch ms, set by the database."
         },
         {
-          "id": "t9f4",
+          "id": "t10f4",
           "name": "created_by",
           "type": {
             "id": "text",
@@ -1518,7 +1733,7 @@
           "comments": "Audit. Acting user, set by the app per request."
         },
         {
-          "id": "t9f5",
+          "id": "t10f5",
           "name": "updated_at",
           "type": {
             "id": "integer",
@@ -1535,7 +1750,7 @@
           "comments": "Audit. Set by the app on update; trigger fallback."
         },
         {
-          "id": "t9f6",
+          "id": "t10f6",
           "name": "updated_by",
           "type": {
             "id": "text",
@@ -1550,25 +1765,93 @@
           "scale": null,
           "default": null,
           "comments": "Audit. Acting user of the last change, set by the app."
+        },
+        {
+          "id": "t10f7",
+          "name": "locale",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "'en'",
+          "comments": "UI language: en, et. Set from the browser on first sign-in; validated in the app, no CHECK."
+        },
+        {
+          "id": "t10f8",
+          "name": "theme",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "'system'",
+          "comments": "system, light, dark. The server renders the theme class from it. Validated in the app, no CHECK."
+        },
+        {
+          "id": "t10f9",
+          "name": "timer_layout",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "'bar'",
+          "comments": "bar, focus, table. Validated in the app, no CHECK."
+        },
+        {
+          "id": "t10f10",
+          "name": "show_summary",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "1",
+          "comments": "Boolean 0/1 (CHECK). Whether the timer page shows the summary."
         }
       ],
       "indexes": [],
       "color": "#59A14F",
       "isView": false,
       "createdAt": 1700000000000,
-      "comments": "Per-user preferences, one row per user, shared across organizations. Created on first sign-in with the time zone of the browser. Lives as long as the user, so no sys_deleted.",
-      "order": 9,
+      "comments": "Per-user settings, one row per user, shared across organizations and devices. Created on first sign-in with the time zone and language of the browser. Lives as long as the user, so no sys_deleted.",
+      "order": 10,
       "parentAreaId": "a2"
     },
     {
-      "id": "t10",
+      "id": "t11",
       "name": "project",
       "schema": "main",
-      "x": 1700,
+      "x": 1984,
       "y": 506,
       "fields": [
         {
-          "id": "t10f0",
+          "id": "t11f0",
           "name": "id",
           "type": {
             "id": "text",
@@ -1585,7 +1868,7 @@
           "comments": "UUIDv7, generated on the client."
         },
         {
-          "id": "t10f1",
+          "id": "t11f1",
           "name": "organization_id",
           "type": {
             "id": "text",
@@ -1602,7 +1885,7 @@
           "comments": null
         },
         {
-          "id": "t10f2",
+          "id": "t11f2",
           "name": "name",
           "type": {
             "id": "text",
@@ -1619,7 +1902,7 @@
           "comments": null
         },
         {
-          "id": "t10f3",
+          "id": "t11f3",
           "name": "color",
           "type": {
             "id": "text",
@@ -1636,7 +1919,7 @@
           "comments": "Hex color for the UI, e.g. #4E79A7."
         },
         {
-          "id": "t10f4",
+          "id": "t11f4",
           "name": "archived_at",
           "type": {
             "id": "integer",
@@ -1653,7 +1936,7 @@
           "comments": "Epoch ms. Domain lifecycle, not deletion: archived projects take no new entries but stay in history and reports."
         },
         {
-          "id": "t10f5",
+          "id": "t11f5",
           "name": "created_at",
           "type": {
             "id": "integer",
@@ -1670,7 +1953,7 @@
           "comments": "Audit. Epoch ms, set by the database."
         },
         {
-          "id": "t10f6",
+          "id": "t11f6",
           "name": "created_by",
           "type": {
             "id": "text",
@@ -1687,7 +1970,7 @@
           "comments": "Audit. Acting user, set by the app per request."
         },
         {
-          "id": "t10f7",
+          "id": "t11f7",
           "name": "updated_at",
           "type": {
             "id": "integer",
@@ -1704,7 +1987,7 @@
           "comments": "Audit. Set by the app on update; trigger fallback."
         },
         {
-          "id": "t10f8",
+          "id": "t11f8",
           "name": "updated_by",
           "type": {
             "id": "text",
@@ -1721,7 +2004,7 @@
           "comments": "Audit. Acting user of the last change, set by the app."
         },
         {
-          "id": "t10f9",
+          "id": "t11f9",
           "name": "sys_deleted",
           "type": {
             "id": "integer",
@@ -1740,24 +2023,24 @@
       ],
       "indexes": [
         {
-          "id": "t10i0",
+          "id": "t11i0",
           "name": "project_organization_id_name_idx",
           "unique": true,
           "fieldIds": [
-            "t10f1",
-            "t10f2"
+            "t11f1",
+            "t11f2"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
           "comments": "Partial: WHERE sys_deleted = 0, so a deleted project frees its name."
         },
         {
-          "id": "t10i1",
+          "id": "t11i1",
           "name": "project_id_organization_id_idx",
           "unique": true,
           "fieldIds": [
-            "t10f0",
-            "t10f1"
+            "t11f0",
+            "t11f1"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
@@ -1768,18 +2051,18 @@
       "isView": false,
       "createdAt": 1700000000000,
       "comments": "Owned by the organization. Visible to the whole organization unless assigned to teams.",
-      "order": 10,
+      "order": 11,
       "parentAreaId": "a2"
     },
     {
-      "id": "t11",
+      "id": "t12",
       "name": "project_team",
       "schema": "main",
-      "x": 1984,
+      "x": 2268,
       "y": 64,
       "fields": [
         {
-          "id": "t11f0",
+          "id": "t12f0",
           "name": "project_id",
           "type": {
             "id": "text",
@@ -1796,7 +2079,7 @@
           "comments": null
         },
         {
-          "id": "t11f1",
+          "id": "t12f1",
           "name": "team_id",
           "type": {
             "id": "text",
@@ -1813,7 +2096,7 @@
           "comments": "ON DELETE CASCADE: deleting a team (Better Auth deletes rows) drops its assignments."
         },
         {
-          "id": "t11f2",
+          "id": "t12f2",
           "name": "organization_id",
           "type": {
             "id": "text",
@@ -1830,7 +2113,7 @@
           "comments": "Tenant key. Composite FKs (project_id, organization_id) to project and (team_id, organization_id) to team make it equal the organization of both."
         },
         {
-          "id": "t11f3",
+          "id": "t12f3",
           "name": "created_at",
           "type": {
             "id": "integer",
@@ -1847,7 +2130,7 @@
           "comments": "Audit. Epoch ms, set by the database."
         },
         {
-          "id": "t11f4",
+          "id": "t12f4",
           "name": "created_by",
           "type": {
             "id": "text",
@@ -1866,24 +2149,24 @@
       ],
       "indexes": [
         {
-          "id": "t11i0",
+          "id": "t12i0",
           "name": "project_team_project_id_team_id_idx",
           "unique": true,
           "fieldIds": [
-            "t11f0",
-            "t11f1"
+            "t12f0",
+            "t12f1"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": true,
           "comments": null
         },
         {
-          "id": "t11i1",
+          "id": "t12i1",
           "name": "project_team_organization_id_team_id_idx",
           "unique": false,
           "fieldIds": [
-            "t11f2",
-            "t11f1"
+            "t12f2",
+            "t12f1"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
@@ -1894,18 +2177,18 @@
       "isView": false,
       "createdAt": 1700000000000,
       "comments": "Assigns a project to a team. A project with no rows here is available to everyone in the organization. Rows are inserted and deleted, never updated, so only created_* audit columns.",
-      "order": 11,
+      "order": 12,
       "parentAreaId": "a2"
     },
     {
-      "id": "t12",
+      "id": "t13",
       "name": "time_entry",
       "schema": "main",
-      "x": 1700,
+      "x": 1984,
       "y": 64,
       "fields": [
         {
-          "id": "t12f0",
+          "id": "t13f0",
           "name": "id",
           "type": {
             "id": "text",
@@ -1922,7 +2205,7 @@
           "comments": "UUIDv7, generated on the client so optimistic updates keep a stable key."
         },
         {
-          "id": "t12f1",
+          "id": "t13f1",
           "name": "organization_id",
           "type": {
             "id": "text",
@@ -1939,7 +2222,7 @@
           "comments": null
         },
         {
-          "id": "t12f2",
+          "id": "t13f2",
           "name": "user_id",
           "type": {
             "id": "text",
@@ -1956,7 +2239,7 @@
           "comments": "Whose time this is. May differ from created_by when an admin adds an entry for someone."
         },
         {
-          "id": "t12f3",
+          "id": "t13f3",
           "name": "project_id",
           "type": {
             "id": "text",
@@ -1973,7 +2256,7 @@
           "comments": "Optional. Composite FK (project_id, organization_id) to project keeps it in the same organization."
         },
         {
-          "id": "t12f4",
+          "id": "t13f4",
           "name": "description",
           "type": {
             "id": "text",
@@ -1990,7 +2273,7 @@
           "comments": "What was worked on."
         },
         {
-          "id": "t12f5",
+          "id": "t13f5",
           "name": "started_at",
           "type": {
             "id": "integer",
@@ -2007,7 +2290,7 @@
           "comments": "Epoch ms, UTC."
         },
         {
-          "id": "t12f6",
+          "id": "t13f6",
           "name": "stopped_at",
           "type": {
             "id": "integer",
@@ -2024,7 +2307,7 @@
           "comments": "Epoch ms, UTC. CHECK stopped_at > started_at. Null while running."
         },
         {
-          "id": "t12f7",
+          "id": "t13f7",
           "name": "created_at",
           "type": {
             "id": "integer",
@@ -2041,7 +2324,7 @@
           "comments": "Audit. Epoch ms, set by the database."
         },
         {
-          "id": "t12f8",
+          "id": "t13f8",
           "name": "created_by",
           "type": {
             "id": "text",
@@ -2058,7 +2341,7 @@
           "comments": "Audit. Acting user, set by the app per request."
         },
         {
-          "id": "t12f9",
+          "id": "t13f9",
           "name": "updated_at",
           "type": {
             "id": "integer",
@@ -2075,7 +2358,7 @@
           "comments": "Audit. Set by the app on update; trigger fallback."
         },
         {
-          "id": "t12f10",
+          "id": "t13f10",
           "name": "updated_by",
           "type": {
             "id": "text",
@@ -2092,7 +2375,7 @@
           "comments": "Audit. Acting user of the last change, set by the app."
         },
         {
-          "id": "t12f11",
+          "id": "t13f11",
           "name": "sys_deleted",
           "type": {
             "id": "integer",
@@ -2111,47 +2394,47 @@
       ],
       "indexes": [
         {
-          "id": "t12i0",
+          "id": "t13i0",
           "name": "time_entry_user_id_idx",
           "unique": true,
           "fieldIds": [
-            "t12f2"
+            "t13f2"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
           "comments": "Partial: WHERE stopped_at IS NULL AND sys_deleted = 0. At most one running timer per user across all organizations."
         },
         {
-          "id": "t12i1",
+          "id": "t13i1",
           "name": "time_entry_organization_id_user_id_started_at_idx",
           "unique": false,
           "fieldIds": [
-            "t12f1",
-            "t12f2",
-            "t12f5"
+            "t13f1",
+            "t13f2",
+            "t13f5"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
           "comments": "Own entry list and per-member reports."
         },
         {
-          "id": "t12i2",
+          "id": "t13i2",
           "name": "time_entry_organization_id_started_at_idx",
           "unique": false,
           "fieldIds": [
-            "t12f1",
-            "t12f5"
+            "t13f1",
+            "t13f5"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
           "comments": "Organization-wide reports by time range."
         },
         {
-          "id": "t12i3",
+          "id": "t13i3",
           "name": "time_entry_project_id_idx",
           "unique": false,
           "fieldIds": [
-            "t12f3"
+            "t13f3"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
@@ -2162,7 +2445,7 @@
       "isView": false,
       "createdAt": 1700000000000,
       "comments": "A span of tracked time. A row with stopped_at null is the running timer; elapsed time is computed on the client and never written periodically.",
-      "order": 12,
+      "order": 13,
       "parentAreaId": "a2"
     }
   ],
@@ -2186,9 +2469,9 @@
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t1",
-      "targetTableId": "t4",
+      "targetTableId": "t5",
       "sourceFieldId": "t1f6",
-      "targetFieldId": "t4f0",
+      "targetFieldId": "t5f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
@@ -2199,9 +2482,9 @@
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t1",
-      "targetTableId": "t6",
+      "targetTableId": "t7",
       "sourceFieldId": "t1f7",
-      "targetFieldId": "t6f0",
+      "targetFieldId": "t7f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
@@ -2221,116 +2504,116 @@
     },
     {
       "id": "r4",
-      "name": "member_organization_id_organization_id",
+      "name": "passkey_user_id_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t5",
-      "targetTableId": "t4",
-      "sourceFieldId": "t5f1",
-      "targetFieldId": "t4f0",
+      "sourceTableId": "t3",
+      "targetTableId": "t0",
+      "sourceFieldId": "t3f3",
+      "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r5",
-      "name": "member_user_id_user_id",
+      "name": "member_organization_id_organization_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t5",
-      "targetTableId": "t0",
-      "sourceFieldId": "t5f2",
-      "targetFieldId": "t0f0",
+      "sourceTableId": "t6",
+      "targetTableId": "t5",
+      "sourceFieldId": "t6f1",
+      "targetFieldId": "t5f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r6",
-      "name": "team_organization_id_organization_id",
+      "name": "member_user_id_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t6",
-      "targetTableId": "t4",
-      "sourceFieldId": "t6f1",
-      "targetFieldId": "t4f0",
+      "targetTableId": "t0",
+      "sourceFieldId": "t6f2",
+      "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r7",
-      "name": "team_member_team_id_team_id",
+      "name": "team_organization_id_organization_id",
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t7",
-      "targetTableId": "t6",
+      "targetTableId": "t5",
       "sourceFieldId": "t7f1",
-      "targetFieldId": "t6f0",
+      "targetFieldId": "t5f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r8",
-      "name": "team_member_user_id_user_id",
+      "name": "team_member_team_id_team_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t7",
-      "targetTableId": "t0",
-      "sourceFieldId": "t7f2",
-      "targetFieldId": "t0f0",
+      "sourceTableId": "t8",
+      "targetTableId": "t7",
+      "sourceFieldId": "t8f1",
+      "targetFieldId": "t7f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r9",
-      "name": "invitation_organization_id_organization_id",
-      "sourceSchema": "main",
-      "targetSchema": "main",
-      "sourceTableId": "t8",
-      "targetTableId": "t4",
-      "sourceFieldId": "t8f1",
-      "targetFieldId": "t4f0",
-      "sourceCardinality": "many",
-      "targetCardinality": "one",
-      "createdAt": 1700000000000
-    },
-    {
-      "id": "r10",
-      "name": "invitation_team_id_team_id",
-      "sourceSchema": "main",
-      "targetSchema": "main",
-      "sourceTableId": "t8",
-      "targetTableId": "t6",
-      "sourceFieldId": "t8f4",
-      "targetFieldId": "t6f0",
-      "sourceCardinality": "many",
-      "targetCardinality": "one",
-      "createdAt": 1700000000000
-    },
-    {
-      "id": "r11",
-      "name": "invitation_inviter_id_user_id",
+      "name": "team_member_user_id_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t8",
       "targetTableId": "t0",
-      "sourceFieldId": "t8f7",
+      "sourceFieldId": "t8f2",
       "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
+      "id": "r10",
+      "name": "invitation_organization_id_organization_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t9",
+      "targetTableId": "t5",
+      "sourceFieldId": "t9f1",
+      "targetFieldId": "t5f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r11",
+      "name": "invitation_team_id_team_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t9",
+      "targetTableId": "t7",
+      "sourceFieldId": "t9f4",
+      "targetFieldId": "t7f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
       "id": "r12",
-      "name": "user_settings_user_id_user_id",
+      "name": "invitation_inviter_id_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t9",
       "targetTableId": "t0",
-      "sourceFieldId": "t9f0",
+      "sourceFieldId": "t9f7",
       "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
@@ -2338,12 +2621,12 @@
     },
     {
       "id": "r13",
-      "name": "user_settings_created_by_user_id",
+      "name": "user_settings_user_id_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t9",
+      "sourceTableId": "t10",
       "targetTableId": "t0",
-      "sourceFieldId": "t9f4",
+      "sourceFieldId": "t10f0",
       "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
@@ -2351,12 +2634,12 @@
     },
     {
       "id": "r14",
-      "name": "user_settings_updated_by_user_id",
+      "name": "user_settings_created_by_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t9",
+      "sourceTableId": "t10",
       "targetTableId": "t0",
-      "sourceFieldId": "t9f6",
+      "sourceFieldId": "t10f4",
       "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
@@ -2364,20 +2647,7 @@
     },
     {
       "id": "r15",
-      "name": "project_organization_id_organization_id",
-      "sourceSchema": "main",
-      "targetSchema": "main",
-      "sourceTableId": "t10",
-      "targetTableId": "t4",
-      "sourceFieldId": "t10f1",
-      "targetFieldId": "t4f0",
-      "sourceCardinality": "many",
-      "targetCardinality": "one",
-      "createdAt": 1700000000000
-    },
-    {
-      "id": "r16",
-      "name": "project_created_by_user_id",
+      "name": "user_settings_updated_by_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t10",
@@ -2389,13 +2659,26 @@
       "createdAt": 1700000000000
     },
     {
-      "id": "r17",
-      "name": "project_updated_by_user_id",
+      "id": "r16",
+      "name": "project_organization_id_organization_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t10",
+      "sourceTableId": "t11",
+      "targetTableId": "t5",
+      "sourceFieldId": "t11f1",
+      "targetFieldId": "t5f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r17",
+      "name": "project_created_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t11",
       "targetTableId": "t0",
-      "sourceFieldId": "t10f8",
+      "sourceFieldId": "t11f6",
       "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
@@ -2403,116 +2686,129 @@
     },
     {
       "id": "r18",
-      "name": "project_team_project_id_project_id",
+      "name": "project_updated_by_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t11",
-      "targetTableId": "t10",
-      "sourceFieldId": "t11f0",
-      "targetFieldId": "t10f0",
+      "targetTableId": "t0",
+      "sourceFieldId": "t11f8",
+      "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r19",
-      "name": "project_team_team_id_team_id",
+      "name": "project_team_project_id_project_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t11",
-      "targetTableId": "t6",
-      "sourceFieldId": "t11f1",
-      "targetFieldId": "t6f0",
+      "sourceTableId": "t12",
+      "targetTableId": "t11",
+      "sourceFieldId": "t12f0",
+      "targetFieldId": "t11f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r20",
-      "name": "project_team_organization_id_organization_id",
+      "name": "project_team_team_id_team_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t11",
-      "targetTableId": "t4",
-      "sourceFieldId": "t11f2",
-      "targetFieldId": "t4f0",
+      "sourceTableId": "t12",
+      "targetTableId": "t7",
+      "sourceFieldId": "t12f1",
+      "targetFieldId": "t7f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r21",
-      "name": "project_team_created_by_user_id",
+      "name": "project_team_organization_id_organization_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t11",
-      "targetTableId": "t0",
-      "sourceFieldId": "t11f4",
-      "targetFieldId": "t0f0",
+      "sourceTableId": "t12",
+      "targetTableId": "t5",
+      "sourceFieldId": "t12f2",
+      "targetFieldId": "t5f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r22",
-      "name": "time_entry_organization_id_organization_id",
+      "name": "project_team_created_by_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t12",
-      "targetTableId": "t4",
-      "sourceFieldId": "t12f1",
-      "targetFieldId": "t4f0",
+      "targetTableId": "t0",
+      "sourceFieldId": "t12f4",
+      "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r23",
-      "name": "time_entry_user_id_user_id",
+      "name": "time_entry_organization_id_organization_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t12",
-      "targetTableId": "t0",
-      "sourceFieldId": "t12f2",
-      "targetFieldId": "t0f0",
+      "sourceTableId": "t13",
+      "targetTableId": "t5",
+      "sourceFieldId": "t13f1",
+      "targetFieldId": "t5f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
       "id": "r24",
-      "name": "time_entry_project_id_project_id",
+      "name": "time_entry_user_id_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t12",
-      "targetTableId": "t10",
-      "sourceFieldId": "t12f3",
-      "targetFieldId": "t10f0",
-      "sourceCardinality": "many",
-      "targetCardinality": "one",
-      "createdAt": 1700000000000
-    },
-    {
-      "id": "r25",
-      "name": "time_entry_created_by_user_id",
-      "sourceSchema": "main",
-      "targetSchema": "main",
-      "sourceTableId": "t12",
+      "sourceTableId": "t13",
       "targetTableId": "t0",
-      "sourceFieldId": "t12f8",
+      "sourceFieldId": "t13f2",
       "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
+      "id": "r25",
+      "name": "time_entry_project_id_project_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t13",
+      "targetTableId": "t11",
+      "sourceFieldId": "t13f3",
+      "targetFieldId": "t11f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
       "id": "r26",
+      "name": "time_entry_created_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t13",
+      "targetTableId": "t0",
+      "sourceFieldId": "t13f8",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r27",
       "name": "time_entry_updated_by_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
-      "sourceTableId": "t12",
+      "sourceTableId": "t13",
       "targetTableId": "t0",
-      "sourceFieldId": "t12f10",
+      "sourceFieldId": "t13f10",
       "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
@@ -2525,15 +2821,15 @@
       "name": "auth",
       "x": 0,
       "y": 0,
-      "width": 572,
-      "height": 772,
+      "width": 856,
+      "height": 932,
       "color": "#BAB0AC",
       "order": 0
     },
     {
       "id": "a1",
       "name": "tenancy",
-      "x": 692,
+      "x": 976,
       "y": 0,
       "width": 856,
       "height": 612,
@@ -2543,7 +2839,7 @@
     {
       "id": "a2",
       "name": "tracking",
-      "x": 1668,
+      "x": 1952,
       "y": 0,
       "width": 572,
       "height": 900,

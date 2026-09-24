@@ -74,7 +74,7 @@
 | Google           | Decided  | A Google OAuth client; uses the existing `account` table              |
 | GitHub           | Decided  | A GitHub OAuth app; uses the existing `account` table                 |
 | Microsoft        | Decided  | An Entra ID app registration; uses the existing `account` table       |
-| Passkey          | Proposed | `@better-auth/passkey` and one new `passkey` table (additive migration) |
+| Passkey          | Decided  | `@better-auth/passkey` and its `passkey` table                        |
 
 - Social providers are built into Better Auth and store their link in `account`, so
   adding one is configuration plus an OAuth app and its client ID and secret per
@@ -84,6 +84,11 @@
   invitation links themselves. Password sign-in, which would need email for
   verification and reset, is enabled only in local development, where seeded users
   (task 008) sign in with a known password.
+- Passkeys are added to an existing account: a signed-in user registers one, then signs
+  in with it instead of their provider. Nobody signs up with a passkey alone.
+- A passkey is bound to its relying party, the host of `BETTER_AUTH_URL`, so it works
+  only in the environment where it was registered. A preview deployment with its own
+  URL needs its own passkeys.
 - Email provider when email is added: Brevo (free tier 300 emails a day, EU-based
   company), optional per deployment through env vars (task 016).
 - Sign-up and sign-in screens are prototyped in `prototypes/auth.html`.

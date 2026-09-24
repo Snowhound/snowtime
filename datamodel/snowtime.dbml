@@ -57,6 +57,24 @@ Table account [note: 'Better Auth credential or linked provider. Email/password 
   }
 }
 
+Table passkey [note: 'Passkey plugin (@better-auth/passkey). A WebAuthn credential a signed-in user registered; sign-in looks it up by credential_id.'] {
+  id text [pk]
+  name text [note: 'Label the user gave it.']
+  public_key text [not null, note: 'COSE public key, base64.']
+  user_id text [not null, ref: > user.id, note: 'ON DELETE CASCADE.']
+  credential_id text [not null, unique, note: 'WebAuthn credential id, base64url.']
+  counter integer [not null, note: 'Signature counter, checked against replayed assertions.']
+  device_type text [not null, note: 'singleDevice or multiDevice.']
+  backed_up integer [not null, note: 'Boolean. Synced by the platform, e.g. iCloud Keychain.']
+  transports text [note: 'Comma-separated, e.g. internal,hybrid.']
+  created_at integer [note: 'Epoch ms, UTC.']
+  aaguid text [note: 'Authenticator model id.']
+
+  indexes {
+    user_id
+  }
+}
+
 Table verification [note: 'Better Auth one-time values: email verification, password reset.'] {
   id text [pk]
   identifier text [not null, note: 'What the value verifies, e.g. an email address.']
@@ -213,6 +231,7 @@ TableGroup auth [color: #BAB0AC] {
   user
   session
   account
+  passkey
   verification
 }
 

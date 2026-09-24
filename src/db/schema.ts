@@ -137,6 +137,32 @@ export const account = sqliteTable(
   (t) => [index('account_user_id_idx').on(t.userId)],
 )
 
+// @better-auth/passkey's table (task 015). The key credentialID matches the plugin's
+// field name, which the Drizzle adapter looks up.
+export const passkey = sqliteTable(
+  'passkey',
+  {
+    id: text().primaryKey(),
+    name: text(),
+    publicKey: text('public_key').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    credentialID: text('credential_id').notNull(),
+    counter: integer().notNull(),
+    deviceType: text('device_type').notNull(),
+    backedUp: integer('backed_up', { mode: 'boolean' }).notNull(),
+    transports: text(),
+    createdAt: timestamp('created_at'),
+    aaguid: text(),
+  },
+  (t) => [
+    index('passkey_user_id_idx').on(t.userId),
+    uniqueIndex('passkey_credential_id_unique').on(t.credentialID),
+    check('passkey_backed_up', sql`backed_up IN (0, 1)`),
+  ],
+)
+
 export const verification = sqliteTable(
   'verification',
   {
