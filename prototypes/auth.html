@@ -185,6 +185,9 @@
       body[data-intro] .scene-photo {
         transition-duration: 2.6s, 3.2s;
       }
+      .intro-cut :is(.scene, .scene *, .auth-shell, #auth-header, .page-tagline) {
+        transition: none !important;
+      }
       @media (prefers-reduced-motion: reduce) {
         .intro,
         .intro *,
@@ -816,11 +819,15 @@
         introTimers = []
         document.getElementById('scene-menu').hidePopover?.()
         if (!document.body.dataset.intro) introDark = document.documentElement.classList.contains('dark')
+        // It opens on the weather alone: the image, the page, and the theme change at once instead
+        // of fading out, which let the image show as the black lifted.
+        document.documentElement.classList.add('intro-cut', 'dark')
         document.body.dataset.intro = 'playing'
         introBackground = false
         applyScene()
         sceneCtl.preload('dark')
-        document.documentElement.classList.add('dark')
+        getComputedStyle(document.body).opacity
+        document.documentElement.classList.remove('intro-cut')
         introEl.hidden = false
         document.documentElement.classList.remove('intro-pending')
         introEl.classList.remove('intro-done')

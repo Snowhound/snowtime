@@ -46,6 +46,8 @@ Surfaces was named for every card so it can apply app-wide.
 - 2026-09-25: Reports, Projects, Organization, and Settings have the scene too. The tagline is
   centered on the title row, page notes read better over the picture, and Reports' sticky column
   turns solid only while the timesheet scrolls sideways.
+- 2026-09-25: Replay intro no longer flashes the background: at the intro's start the image, the
+  page, and the theme switch at once instead of fading out behind the lifting black.
 
 ## Intro in the app
 
