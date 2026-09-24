@@ -46,11 +46,17 @@
         text-shadow: 0 0 6px var(--background), 0 0 14px var(--background), 0 0 28px var(--background);
       }
       /* Above the card in the intro's colors, as beside the signed-in pages' titles (chosen). */
+      /* The line under the card keeps its space, and the tagline is out of the flow, so the card
+         sits where it does in the other variants. Phones give it room above the card, which starts
+         near the top there. */
       body[data-tagline='top'] .card-tagline {
-        display: none;
+        visibility: hidden;
       }
       body[data-tagline='top'] .top-tagline {
-        @apply block max-w-xl text-balance text-center text-base font-medium;
+        @apply absolute bottom-[calc(100%+2rem)] left-1/2 block w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 text-balance text-center text-base font-medium;
+      }
+      body[data-tagline='top'] .auth-main {
+        @apply max-sm:pt-24;
       }
       body[data-tagline='card'] .card-tagline {
         display: none;
@@ -267,14 +273,16 @@
             <svg class="prototype-icon" aria-hidden="true"><use href="#icon-rotate-ccw" /></svg>Replay intro
           </button>
         </div>
+        <div class="relative w-full max-w-sm">
         <p class="top-tagline season-tagline"></p>
-        <div class="auth-form flex w-full max-w-sm flex-col gap-6">
+        <div class="auth-form flex w-full flex-col gap-6">
           <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]" id="product-mark">
             <img data-app-mark="small" src="../design/brand-assets/marks-small/02-hound-hour-light.svg" alt="" class="size-7 object-contain" />
             Snowtime
           </div>
           <div id="screen" class="flex flex-col gap-6"></div>
           <p class="tagline-in-card">Winter is coming. So is the end of the month.</p>
+        </div>
         </div>
         <p class="card-tagline text-center text-sm text-muted-foreground">Winter is coming. So is the end of the month.</p>
       </main>

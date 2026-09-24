@@ -670,7 +670,9 @@ to 128 characters, reset links valid for 1 hour, invitations for 48 hours.
 
 The tagline, the season's first two intro lines ("Winter is coming. So is the end of the month."
 in winter), sits above the card in the intro's two colors, as beside every signed-in page's title
-(see [App frame](#app-frame)). The mark is the chosen app icon (see [App icon](#app-icon)).
+(see [App frame](#app-frame)). It sits 32 px above the card, out of the page flow, so the card
+stays where it is in the other variants; on phones the card moves down to make room. The mark is
+the chosen app icon (see [App icon](#app-icon)).
 
 #### Seasonal scene and intro
 
