@@ -27,8 +27,8 @@ Table session [note: 'Better Auth session. Carries the active organization and t
   expires_at integer [not null, note: 'Epoch ms, UTC.']
   ip_address text
   user_agent text
-  active_organization_id text [ref: > organization.id, note: 'Organization plugin. The tenant every query in this session is scoped to.']
-  active_team_id text [ref: > team.id, note: 'Organization plugin with teams. Optional filter, not an access boundary.']
+  active_organization_id text [ref: > organization.id, note: 'Organization plugin. The tenant every query in this session is scoped to. ON DELETE SET NULL.']
+  active_team_id text [ref: > team.id, note: 'Organization plugin with teams. Optional filter, not an access boundary. ON DELETE SET NULL.']
   created_at integer [not null]
   updated_at integer [not null]
 
@@ -85,7 +85,7 @@ Table member [note: 'A user in an organization. A user can be a member of severa
   id text [pk]
   organization_id text [not null, ref: > organization.id]
   user_id text [not null, ref: > user.id]
-  role text [not null, default: 'member', note: 'owner, admin, member (plugin defaults).']
+  role text [not null, default: 'member', note: 'owner, admin, member (plugin defaults). No CHECK: the plugin can store several roles comma-separated.']
   created_at integer [not null]
 
   indexes {
@@ -98,6 +98,7 @@ Table team [note: 'A group of members within an organization. Groups people for 
   id text [pk]
   organization_id text [not null, ref: > organization.id]
   name text [not null]
+  member_count integer [not null, default: 0, note: 'Maintained by Better Auth when members join or leave.']
   created_at integer [not null]
   updated_at integer
 
@@ -111,8 +112,9 @@ Table team_member [note: 'A user in a team. A member can be in several teams of 
   id text [pk]
   team_id text [not null, ref: > team.id]
   user_id text [not null, ref: > user.id]
-  role text [not null, default: 'member', note: 'App-level field, not part of the plugin. CHECK: lead, member. A lead reads and reports on the time of the team.']
-  created_at integer [not null]
+  role text [not null, default: 'member', note: 'App-managed. CHECK: lead, member. A lead reads and reports on the time of the team. Better Auth 1.7 has no additional fields on team members, so it never reads or writes this column; new rows get the default.']
+  membership_key text [unique, note: 'Better Auth dedupe key, SHA-256 of team_id and user_id.']
+  created_at integer
 
   indexes {
     (team_id, user_id) [unique]
@@ -124,7 +126,7 @@ Table invitation [note: 'Pending invitation to an organization, optionally into 
   id text [pk]
   organization_id text [not null, ref: > organization.id]
   email text [not null, note: 'Invitee address, lowercased.']
-  role text [not null, note: 'Organization role granted on acceptance.']
+  role text [note: 'Organization role granted on acceptance.']
   team_id text [ref: > team.id, note: 'Team joined on acceptance, if any.']
   status text [not null, default: 'pending', note: 'pending, accepted, rejected, canceled.']
   expires_at integer [not null]

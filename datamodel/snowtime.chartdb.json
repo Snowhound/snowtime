@@ -262,7 +262,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Organization plugin. The tenant every query in this session is scoped to."
+          "comments": "Organization plugin. The tenant every query in this session is scoped to. ON DELETE SET NULL."
         },
         {
           "id": "t1f7",
@@ -279,7 +279,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Organization plugin with teams. Optional filter, not an access boundary."
+          "comments": "Organization plugin with teams. Optional filter, not an access boundary. ON DELETE SET NULL."
         },
         {
           "id": "t1f8",
@@ -906,7 +906,7 @@
           "precision": null,
           "scale": null,
           "default": "'member'",
-          "comments": "owner, admin, member (plugin defaults)."
+          "comments": "owner, admin, member (plugin defaults). No CHECK: the plugin can store several roles comma-separated."
         },
         {
           "id": "t5f4",
@@ -1018,6 +1018,23 @@
         },
         {
           "id": "t6f3",
+          "name": "member_count",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comments": "Maintained by Better Auth when members join or leave."
+        },
+        {
+          "id": "t6f4",
           "name": "created_at",
           "type": {
             "id": "integer",
@@ -1034,7 +1051,7 @@
           "comments": null
         },
         {
-          "id": "t6f4",
+          "id": "t6f5",
           "name": "updated_at",
           "type": {
             "id": "integer",
@@ -1089,7 +1106,7 @@
       "name": "team_member",
       "schema": "main",
       "x": 1008,
-      "y": 314,
+      "y": 346,
       "fields": [
         {
           "id": "t7f0",
@@ -1157,10 +1174,27 @@
           "precision": null,
           "scale": null,
           "default": "'member'",
-          "comments": "App-level field, not part of the plugin. CHECK: lead, member. A lead reads and reports on the time of the team."
+          "comments": "App-managed. CHECK: lead, member. A lead reads and reports on the time of the team. Better Auth 1.7 has no additional fields on team members, so it never reads or writes this column; new rows get the default."
         },
         {
           "id": "t7f4",
+          "name": "membership_key",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": true,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Better Auth dedupe key, SHA-256 of team_id and user_id."
+        },
+        {
+          "id": "t7f5",
           "name": "created_at",
           "type": {
             "id": "integer",
@@ -1168,7 +1202,7 @@
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": false,
+          "nullable": true,
           "createdAt": 1700000000000,
           "characterMaximumLength": null,
           "precision": null,
@@ -1276,7 +1310,7 @@
           },
           "primaryKey": false,
           "unique": false,
-          "nullable": false,
+          "nullable": true,
           "createdAt": 1700000000000,
           "characterMaximumLength": null,
           "precision": null,
@@ -2502,7 +2536,7 @@
       "x": 692,
       "y": 0,
       "width": 856,
-      "height": 580,
+      "height": 612,
       "color": "#4E79A7",
       "order": 1
     },

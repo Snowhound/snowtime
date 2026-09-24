@@ -78,7 +78,9 @@
   always filter by `organization_id`.
 - Organization roles: owner / admin / member (plugin defaults).
 - Team role: `lead` or `member`, stored per team membership. The plugin has
-  no team roles, so this is an app-level field on team membership.
+  no team roles and (as of Better Auth 1.7) no additional fields on team
+  members, so `team_member.role` is an extra column Better Auth never reads or
+  writes; its inserts get the default `member`, and the app sets leads.
 - Teams group people for access and reporting; data is owned by the
   organization, not the team.
 

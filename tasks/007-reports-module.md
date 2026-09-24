@@ -7,7 +7,7 @@ in the user's zone, queried as UTC ranges, aggregated in TypeScript.
 
 ## Acceptance criteria
 
-- [ ] `bun test` set up
+- [x] `bun test` set up
 - [ ] Day/week range computation for a zone and week start, including DST transitions
 - [ ] Entries crossing midnight split across days
 - [ ] Running entry counted up to "now"

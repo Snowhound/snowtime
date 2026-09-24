@@ -14,7 +14,8 @@
     "db:generate": "bun scripts/db-generate.ts",
     "db:migrate": "bun scripts/db-verify.ts && bunx --bun drizzle-kit migrate",
     "db:verify": "bun scripts/db-verify.ts",
-    "db:drift": "bun scripts/db-drift.ts"
+    "db:drift": "bun scripts/db-drift.ts",
+    "test": "bun test"
   },
   "dependencies": {
     "@fontsource/inter": "^5.1.1",
@@ -41,6 +42,7 @@
   "devDependencies": {
     "@tanstack/devtools-vite": "latest",
     "@tanstack/router-cli": "^1.133.21",
+    "@types/bun": "1.4.2",
     "drizzle-kit": "1.0.0-rc.4",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
