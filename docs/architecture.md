@@ -81,7 +81,7 @@
 
 - Social providers are built into Better Auth and store their link in `account`, so
   adding one is configuration plus an OAuth app and its client ID and secret per
-  environment. `src/server/sign-in.server.ts` builds both the Better Auth provider config
+  environment. `src/server/auth/sign-in.server.ts` builds both the Better Auth provider config
   and the method list from the env vars, so the two cannot disagree.
 - The sign-in view shows only the configured methods. `getSignInMethods` runs signed out
   and returns method ids (`google`, `github`, `microsoft`, `password`, `passkey`), never
@@ -185,8 +185,9 @@
 - Reports: day/week boundaries are computed in TypeScript on the server using
   the user's zone, then queried as UTC ranges. Aggregation happens in
   TypeScript; entries crossing midnight are split there.
-- This lives in one tested reports module: `src/server/calendar.ts` holds the pure zone
-  math (Intl offsets, no library), and `src/server/reports.server.ts` queries and sums.
+- This lives in one tested reports module: `src/lib/calendar.ts` holds the pure zone math
+  (Intl offsets, no library), and `src/server/reports/reports.server.ts` queries and sums.
+  The client uses the same calendar functions for its own dates.
   - A day starts at its first instant in the zone: local midnight, its first occurrence
     when clocks fall back, or the moment clocks spring forward past it.
   - A running entry counts up to the request's time.
@@ -212,7 +213,7 @@
   `src/lib/settings.ts` updates it optimistically. A change therefore shows at once
   wherever the settings are read. A new language applies without a reload: the root
   passes it to Paraglide, which sets the cookie, and renders the page again.
-- The app validates the text values (`src/schemas/settings.ts`); their columns have no
+- The app validates the text values (`src/server/settings/settings.schemas.ts`); their columns have no
   `CHECK`, so adding a value needs no table rebuild. `show_summary` is a boolean and keeps
   the usual 0/1 `CHECK`.
 
@@ -239,7 +240,7 @@
     the Paraglide message `error_<key>`.
   - Valibot issues need no server translation: forms run the same schemas in the browser
     first, so only a faulty or hostile client reaches the server's validation. Custom
-    messages in `src/schemas/` are Paraglide calls, evaluated when validation runs.
+    messages in the `*.schemas.ts` files are Paraglide calls, evaluated when validation runs.
 
 ## Application rules
 
@@ -251,31 +252,51 @@
 - The UI applies writes optimistically. `optimistic` in `src/lib/query.ts` updates every
   cache a mutation touches before the server answers, restores them on error, and
   refetches either way; the view then shows the error's message. The timer
-  (`src/lib/timer.ts`) sets the pattern: starting a timer updates both the running timer
+  (`src/features/timer/queries.ts`) sets the pattern: starting a timer updates both the running timer
   and the entry lists.
 - Business logic lives in TypeScript, not DB triggers. The one trigger kind
   allowed is the `updated_at` safety net above, which is bookkeeping, not
   logic.
 - Queries on soft-deleted tables filter `sys_deleted = 0` through shared
   helpers, not ad hoc in each server function.
-- Server code layout:
-  - `src/server/middleware.ts`: `sessionMiddleware` resolves the Better Auth
-    session; `scopeMiddleware` adds the tenancy scope of the active
-    organization. Both run the call inside `withActor()`.
-  - `src/functions/`: the server functions the UI calls, one file per area.
-    Each is a thin wrapper that picks a middleware, validates input and calls
-    the rules in `src/server/`.
-  - `src/server/*.server.ts`: server-only modules holding the rules. They take
-    the database and scope as arguments, so tests run them against seeded
-    throwaway databases. TanStack Start's import protection keeps `*.server.*`
-    files out of the client bundle.
-  - `src/server/errors.ts`: `AppError`, thrown with a code (`FORBIDDEN`,
-    `NOT_FOUND`, and so on). A serialization adapter in `src/start.ts` keeps
-    the code across the wire; Start would otherwise send only the message.
-    `src/start.ts` also registers Start's CSRF middleware, which Start applies
-    by default only when no start instance exists.
-  - `src/schemas/`: Valibot input schemas shared by forms and server
-    functions. They must stay importable from the browser.
+- Server code is grouped by domain: `auth`, `entries`, `timer`, `projects`, `reports`,
+  `teams`, and `settings`, each in `src/server/<domain>/`. A domain folder holds:
+  - `<domain>.functions.ts`: the server functions the UI calls. Each is a thin wrapper
+    that picks a middleware, validates input, and calls the rules. The client imports
+    these files; Start compiles them to RPC calls there.
+  - `<domain>.server.ts`: server-only modules holding the rules. They take the database
+    and scope as arguments, so tests run them against seeded throwaway databases.
+    TanStack Start's import protection keeps `*.server.*` files out of the client
+    bundle. The auth domain also holds the Better Auth instance
+    (`better-auth.server.ts`).
+  - `<domain>.schemas.ts`: Valibot input schemas shared by forms and server functions.
+    They must stay importable from the browser. A domain that needs another's schema
+    imports that domain's file.
+  - `<domain>.test.ts`: tests of the rules.
+- Code that several domains share sits directly in `src/server/`:
+  - `middleware.ts`: `sessionMiddleware` resolves the Better Auth session;
+    `scopeMiddleware` adds the tenancy scope of the active organization. Both run the
+    call inside `withActor()`.
+  - `scope.server.ts`, `queries.server.ts`, and `testing.ts`: the tenancy scope, the
+    soft-delete query helpers, and the seeded test databases.
+  - `schemas.ts`: Valibot building blocks (`Uuidv7`, `Description`, `Timestamp`) for
+    the domain schemas.
+  - `errors.ts`: `AppError`, thrown with a code (`FORBIDDEN`, `NOT_FOUND`, and so on).
+    A serialization adapter in `src/start.ts` keeps the code across the wire; Start
+    would otherwise send only the message. `src/start.ts` also registers Start's CSRF
+    middleware, which Start applies by default only when no start instance exists.
+- The client imports a domain's `*.functions.ts` and `*.schemas.ts`, `schemas.ts`, and
+  `errors.ts`: that is the backend's contract. It never imports `*.server.ts`, even
+  for a type. Response types are derived from the server function
+  (`Awaited<ReturnType<typeof listEntries>>`), so they can't drift. A type the client
+  needs by name is exported from `*.functions.ts` (`AppSession`, `SignInMethod`). Code
+  the client and server share that isn't part of the contract, such as `calendar.ts`,
+  lives in `src/lib/`.
+- One folder per domain replaced parallel `src/functions/`, `src/schemas/`, and
+  `src/server/` trees, in which one change to a domain touched three folders. The
+  separate route, service, and DAO layers of minupatsient-api were not adopted: a
+  server function already is the route, and one rules module per domain is tested
+  directly, so the extra layers would mostly pass calls through.
 
 ## Environments and deployment
 

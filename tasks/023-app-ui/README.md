@@ -8,7 +8,8 @@ and the app frame come first because every view depends on them.
 
 Each subtask ports the selected prototype variant with its markup mapped one to one to
 Solid-UI components, as `prototypes/README.md` describes, and does not port prototype JS.
-UI strings are Paraglide messages from the start. English is written with each view;
+Each view is a feature in `src/features/<name>/` with a thin route file, as the
+"Code conventions" in `AGENTS.md` describe (task 026). UI strings are Paraglide messages from the start. English is written with each view;
 Estonian can follow in one pass before this task is done.
 
 ## Acceptance criteria

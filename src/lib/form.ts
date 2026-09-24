@@ -1,5 +1,5 @@
-// TanStack Form takes the Valibot schemas from src/schemas/ directly as validators, since
-// both implement Standard Schema:
+// TanStack Form takes the Valibot schemas (src/server/*/*.schemas.ts) directly as
+// validators, since both implement Standard Schema:
 //
 //   const form = createForm(() => ({
 //     defaultValues: { name: '' },

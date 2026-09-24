@@ -118,34 +118,40 @@ project uses no Prettier.
 
 ## Changes along the way
 
-Fifteen decisions changed during the build. The docs changed with the code, so they
+Seventeen decisions changed during the build. The docs changed with the code, so they
 record the current choice; the commits retain the earlier one.
 
-| Area                 | Change                                                                                                         | Reason                                                                                        |
-| -------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Tenancy              | An open question about workspace scope became organizations and teams from day one.                            | Snowhound needs teams, and other companies are a goal. This was settled in the second commit. |
-| Prototype components | Basecoat gave way to Solid-UI's own class strings.                                                             | Basecoat only approximated Solid-UI.                                                          |
-| Data model diagram   | Hand-written DBML became generation from `schema.ts`, checked in CI.                                           | A hand-kept diagram could drift.                                                              |
-| Env validation       | The scaffold's T3 Env validator gave way to Valibot.                                                           | Valibot already serves forms and server functions.                                            |
-| Email and passwords  | Password sign-in with reset email became no email in the MVP and local-only passwords; Brevo was deferred.     | There was no need to run an email provider yet.                                               |
-| View settings        | `localStorage` gave way to server-side `user_settings`.                                                        | The server can render the correct theme on first paint.                                       |
-| Team management      | Planned server functions for team writes gave way to Better Auth's client; server functions handle team roles. | Wrapping plugin writes duplicated its checks.                                                 |
-| Branding             | Snowhound wolf and pack illustrations were removed; the tagline stayed and the logo task was postponed.        | The company marks did not fit the product.                                                    |
-| Server entry         | `src/server.ts`, first thought required by Start, became `src/server-entry.ts` through Vite config.            | The user requested the rename, and the entry proved configurable.                             |
-| Member removal       | Removing or leaving a member now stops their running timer in that organization.                               | The security review found the gap (task 024).                                                 |
-| Dev sign-in          | A long notice became a short “DEV users” list that fills in credentials.                                       | The notice was too long for a development helper.                                             |
-| Icon names           | A proposed prefix became an `Icon` suffix, enforced by a script.                                               | JSX makes icons recognizable, and the check keeps names consistent.                           |
-| Project name         | `snowtime-slop` became `snowtime-kaitk`, then `snowhound-kaitk`.                                               | Naming cleanup across files and folders.                                                      |
-| Linting              | oxlint and oxfmt were added in stage 7.                                                                        | The initial stack omitted them.                                                               |
-| Import paths         | A rule requiring the `~/` alias throughout `src/` was reverted; only `scripts/` and `datamodel/` must use it.  | Relative imports read better inside `src/`; `../src/` from outside it does not.               |
+| Area                 | Change                                                                                                             | Reason                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Tenancy              | An open question about workspace scope became organizations and teams from day one.                                | Snowhound needs teams, and other companies are a goal. This was settled in the second commit. |
+| Prototype components | Basecoat gave way to Solid-UI's own class strings.                                                                 | Basecoat only approximated Solid-UI.                                                          |
+| Data model diagram   | Hand-written DBML became generation from `schema.ts`, checked in CI.                                               | A hand-kept diagram could drift.                                                              |
+| Env validation       | The scaffold's T3 Env validator gave way to Valibot.                                                               | Valibot already serves forms and server functions.                                            |
+| Email and passwords  | Password sign-in with reset email became no email in the MVP and local-only passwords; Brevo was deferred.         | There was no need to run an email provider yet.                                               |
+| View settings        | `localStorage` gave way to server-side `user_settings`.                                                            | The server can render the correct theme on first paint.                                       |
+| Team management      | Planned server functions for team writes gave way to Better Auth's client; server functions handle team roles.     | Wrapping plugin writes duplicated its checks.                                                 |
+| Branding             | Snowhound wolf and pack illustrations were removed; the tagline stayed and the logo task was postponed.            | The company marks did not fit the product.                                                    |
+| Server entry         | `src/server.ts`, first thought required by Start, became `src/server-entry.ts` through Vite config.                | The user requested the rename, and the entry proved configurable.                             |
+| Member removal       | Removing or leaving a member now stops their running timer in that organization.                                   | The security review found the gap (task 024).                                                 |
+| Dev sign-in          | A long notice became a short “DEV users” list that fills in credentials.                                           | The notice was too long for a development helper.                                             |
+| Icon names           | A proposed prefix became an `Icon` suffix, enforced by a script.                                                   | JSX makes icons recognizable, and the check keeps names consistent.                           |
+| Project name         | `snowtime-slop` became `snowtime-kaitk`, then `snowhound-kaitk`.                                                   | Naming cleanup across files and folders.                                                      |
+| Linting              | oxlint and oxfmt were added in stage 7.                                                                            | The initial stack omitted them.                                                               |
+| Import paths         | A rule requiring the `~/` alias throughout `src/` was reverted; only `scripts/` and `datamodel/` must use it.      | Relative imports read better inside `src/`; `../src/` from outside it does not.               |
+| Import paths, again  | Relative imports became limited to the importer's feature or folder; everything else uses `~/`.                    | The new feature and domain folders made `../../` paths common (task 026).                     |
+| Code layout          | Folders by kind (`components/`, `functions/`, `schemas/`, `server/`) became frontend features and backend domains. | One change to a view or domain touched three or four folders (task 026).                      |
 
 Linting and formatting arrived after much of the code; on a new repo, they would belong
 with the stack choices. Later rules came from the minupatsient configs, taken selectively
 rather than wholesale: function declarations over arrow constants, sorted imports, regex
 backtracking checks, and a pre-commit hook. The import-path rule shows the limit of
-copying: minupatsient's alias convention fit only the code outside `src/`. The
-icon and diagram changes show another recurring response: when a correction was easy
-to lose in later agent sessions, it became a script check.
+copying: minupatsient's alias-everywhere convention was reverted, and the alias came back
+only for imports that leave a feature or folder. The code layout was taken the same way:
+features came from minupatsient-front and domain folders from minupatsient-api's modules.
+The api's route, service, and DAO layers stayed behind, because a Start server function
+already is the route and one rules module per domain is tested directly. The icon and
+diagram changes show another recurring response: when a correction was easy to lose in
+later agent sessions, it became a script check.
 
 ## State on 2026-09-24
 

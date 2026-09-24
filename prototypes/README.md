@@ -193,7 +193,7 @@ Active and Archived tabs and a name search. A project with no teams shows "Whole
 | Admin, owner | Every project                                            | The organization's  | New project; per project: edit, archive or restore, delete |
 | Member, team lead | Projects with no teams, and those assigned to their teams | Their own         | None; a note says admins and owners manage projects |
 
-Visibility follows `visibleProjects` in `src/server/projects.server.ts`: a team lead sees the
+Visibility follows `visibleProjects` in `src/server/projects/projects.server.ts`: a team lead sees the
 same projects as a member. The time column would come from `getReport` over this month in the
 user's time zone; leads get their team's time in Reports. The Client support project is
 assigned to Client services only, so members and leads don't see it.

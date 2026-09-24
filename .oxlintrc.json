@@ -62,9 +62,36 @@
   ],
   "overrides": [
     {
-      "files": ["scripts/**", "datamodel/**"],
+      "files": [
+        "scripts/**",
+        "datamodel/**",
+        "src/*.{ts,tsx}",
+        "src/components/**",
+        "src/db/**",
+        "src/lib/**",
+        "src/routes/**",
+        "src/test/**",
+        "src/features/*/*.{ts,tsx}",
+        "src/server/*.ts"
+      ],
       "rules": {
         "import/no-relative-parent-imports": "error"
+      }
+    },
+    {
+      "files": ["src/features/*/*/**", "src/server/*/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^\\.\\./\\.\\./",
+                "message": "Import from outside this feature or src/server/ through ~/."
+              }
+            ]
+          }
+        ]
       }
     },
     {

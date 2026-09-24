@@ -10,9 +10,9 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/solid-router-devtools'
 import { Show, Suspense, createMemo } from 'solid-js'
 import { HydrationScript, isServer } from 'solid-js/web'
-import { sessionQuery, themeScript } from '../lib/session'
-import { getLocale, setLocale } from '../paraglide/runtime.js'
-import styleCss from '../styles.css?url'
+import { sessionQuery, themeScript } from '~/lib/session'
+import { getLocale, setLocale } from '~/paraglide/runtime.js'
+import styleCss from '~/styles.css?url'
 import '@fontsource/inter/400.css'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({

@@ -12,5 +12,5 @@ English is the default language and Estonian the second. The server side is task
 - [ ] The UI language follows `user_settings.locale` once signed in (task 023, app frame)
 - [x] Error messages come from the `AppError` key, with the server's English text as the
       fallback; every catalog key has an `en` and an `et` message
-- [x] Custom messages in `src/schemas/` come from Paraglide
+- [x] Custom messages in the `*.schemas.ts` files come from Paraglide
 - [x] Architecture doc updated from "planned" to the chosen setup

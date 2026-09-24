@@ -33,7 +33,7 @@ export function cacheUpdate<TData, TVariables>(
 //   }))
 //
 // A mutation that touches several caches passes a list of `cacheUpdate(queryKey, update)`
-// instead, as starting the timer does (src/lib/timer.ts).
+// instead, as starting the timer does (src/features/timer/queries.ts).
 export function optimistic<TData, TVariables>(
   queryClient: QueryClient,
   options:

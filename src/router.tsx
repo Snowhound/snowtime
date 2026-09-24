@@ -1,6 +1,6 @@
 import { createRouter as createTanStackRouter } from '@tanstack/solid-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/solid-router-ssr-query'
-import { getContext } from './integrations/tanstack-query/provider'
+import { getContext } from '~/integrations/tanstack-query/provider'
 import { routeTree } from './routeTree.gen'
 
 export function getRouter() {

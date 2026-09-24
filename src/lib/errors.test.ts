@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test'
+import { AppError, errorMessages, type AppErrorKey } from '~/server/errors'
+// oxlint-disable-next-line import/no-relative-parent-imports -- messages/ is outside src/
 import en from '../../messages/en.json'
+// oxlint-disable-next-line import/no-relative-parent-imports -- messages/ is outside src/
 import et from '../../messages/et.json'
-import { AppError, errorMessages, type AppErrorKey } from '../server/errors'
 import { errorMessage } from './errors'
 
 const keys = Object.keys(errorMessages) as AppErrorKey[]
