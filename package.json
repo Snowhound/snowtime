@@ -7,10 +7,18 @@
     "generate-routes": "tsr generate",
     "build": "vite build",
     "start": "node .output/server/index.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "datamodel": "bun run datamodel:build && docker compose -f docs/data-model/docker-compose.yml up -d && echo 'ChartDB: http://localhost:8080 (Import > .json > docs/data-model/snowtime.chartdb.json)'",
+    "datamodel:build": "bun scripts/dbml-to-chartdb.mjs",
+    "datamodel:stop": "docker compose -f docs/data-model/docker-compose.yml down",
+    "db:generate": "bun scripts/db-generate.ts",
+    "db:migrate": "bun scripts/db-verify.ts && bunx --bun drizzle-kit migrate",
+    "db:verify": "bun scripts/db-verify.ts",
+    "db:drift": "bun scripts/db-drift.ts"
   },
   "dependencies": {
     "@fontsource/inter": "^5.1.1",
+    "@libsql/client": "0.18.0",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/solid-form": "latest",
@@ -22,6 +30,7 @@
     "better-auth": "^1.5.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "drizzle-orm": "1.0.0-rc.4",
     "nitro": "3.0.260610-beta",
     "solid-js": "^1.9.12",
     "tailwind-merge": "^3.0.2",
@@ -32,6 +41,7 @@
   "devDependencies": {
     "@tanstack/devtools-vite": "latest",
     "@tanstack/router-cli": "^1.133.21",
+    "drizzle-kit": "1.0.0-rc.4",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "vite-plugin-solid": "^2.11.12"

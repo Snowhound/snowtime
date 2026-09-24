@@ -4,7 +4,8 @@
 
 - Product scope: `docs/product.md`
 - Architecture decisions: `docs/architecture.md`
-- Data model: `docs/data-model/` (DBML design source, `bun run datamodel` to view)
+- Data model: `docs/data-model/` (DBML diagram, `bun run datamodel` to view)
+- Migrations: `docs/migrations.md` — read before touching the schema
 - Hosting constraints: `docs/hosting.md`
 - Task tracking: `tasks/` (see `tasks/README.md`)
 - UI prototypes: `prototypes/` (see `prototypes/README.md`); browser checks via

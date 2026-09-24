@@ -7,7 +7,8 @@
 | Framework       | TanStack Start with Solid; Vercel deployment adapter      |
 | Runtime / PM    | Bun (local)                                               |
 | Database        | Turso (libSQL/SQLite) via `@libsql/client`                |
-| ORM             | Drizzle, SQLite dialect (`"turso"` in drizzle-kit)        |
+| ORM             | Drizzle v1 (pinned rc), `"turso"` dialect; query layer only |
+| Migrations      | Hand-written SQL, applied by `drizzle-kit migrate`        |
 | Auth            | Better Auth with the Drizzle adapter; organization plugin with teams |
 | Data fetching   | TanStack Query with optimistic updates                    |
 | Forms           | TanStack Form                                             |
@@ -17,6 +18,12 @@
 | Client state    | No library; Solid signals/stores and URL search params    |
 
 ## Data conventions
+
+- The database schema is defined by the SQL migrations, not by the Drizzle
+  schema; see "Schema and migrations" below.
+- Tenant-scoped references are composite foreign keys on
+  `(id, organization_id)`, so a row cannot point into another organization.
+  Target tables carry a matching unique index.
 
 - Primary keys: UUIDv7, stored as text, generated on the client.
 - Timestamps: UTC epoch milliseconds (`integer({ mode: "timestamp_ms" })`).
@@ -85,10 +92,35 @@
 | Preview     | One shared `staging` Turso database                        |
 | Production  | `prod` Turso database, same region as the Vercel functions |
 
-**Migrations:** `drizzle-kit generate` output is committed to the repo.
-`drizzle-kit migrate` runs in CI — staging on PRs, prod on merge to main
-before promotion — never in the Vercel build. Prefer backward-compatible
-migrations.
+**Migrations:** `drizzle-kit migrate` runs in CI — staging on PRs, prod on
+merge to main before promotion — never in the Vercel build or on app start.
+Prefer backward-compatible migrations.
+
+## Schema and migrations
+
+Liquibase-style: the database, built by an ordered log of SQL migrations, is
+the source of truth. Workflow and rules: `docs/migrations.md`.
+
+- Migrations are hand-written SQL in `drizzle/<timestamp>_<name>/migration.sql`,
+  created by `bun run db:generate <name>` and applied by `drizzle-kit migrate`,
+  which records each by name and SHA-256 in `__drizzle_migrations`. Pending
+  migrations apply by name, so ones merged out of order still run.
+- Roll-forward only: no down migrations. A mistake is fixed by a new migration.
+- Applied migrations are immutable. `db:migrate` first runs `db:verify`, which
+  fails if an applied file was edited or deleted (drizzle-kit does not check).
+- `src/db/schema.ts` is a hand-maintained mapping for typed queries and the
+  Better Auth adapter. It is never used to generate migrations; `drizzle-kit
+  generate` (non-custom) and `push` are not run against real databases.
+- `bun run db:drift` applies all migrations to an empty database and diffs it
+  against `schema.ts` (`drizzle-kit push --explain`). Drift is a warning, not
+  a failure.
+- drizzle-kit snapshots are not kept; `db:generate` deletes them.
+- `drizzle-kit pull` is lossy on SQLite (drops partial-index `WHERE`, inline
+  `UNIQUE`, timestamp/boolean modes, composite-FK relations), so `schema.ts`
+  is not generated from it.
+- Data model visualization: `docs/data-model/snowtime.dbml` is the design
+  source until the first migration lands; afterwards it is regenerated from
+  the schema for documentation only (see `docs/data-model/README.md`).
 
 **Env vars:** `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`.
 
