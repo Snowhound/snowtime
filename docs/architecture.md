@@ -72,8 +72,8 @@
 | ---------------- | -------- | --------------------------------------------------------------------- |
 | Email + password | Local development only | Nothing new in the schema (`account.password`); seeded users |
 | Google           | Decided  | A Google OAuth client; uses the existing `account` table              |
-| GitHub           | Proposed | A GitHub OAuth app; uses the existing `account` table                 |
-| Microsoft        | Proposed | An Entra ID app registration; uses the existing `account` table       |
+| GitHub           | Decided  | A GitHub OAuth app; uses the existing `account` table                 |
+| Microsoft        | Decided  | An Entra ID app registration; uses the existing `account` table       |
 | Passkey          | Proposed | `@better-auth/passkey` and one new `passkey` table (additive migration) |
 
 - Social providers are built into Better Auth and store their link in `account`, so

@@ -89,20 +89,30 @@
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div data-ui="toggle-group" role="group" aria-label="Layout">
-            <button data-ui="toggle" data-variant="outline" data-size="sm" data-layout-option="card" aria-pressed="true" data-pressed>01 · Card</button>
+            <button data-ui="toggle" data-variant="outline" data-size="sm" data-layout-option="card" aria-pressed="true" data-pressed>01 · Card (selected)</button>
             <button data-ui="toggle" data-variant="outline" data-size="sm" data-layout-option="split" aria-pressed="false">02 · Split</button>
           </div>
+          <div data-ui="toggle-group" role="group" aria-label="Password sign-in">
+            <button data-ui="toggle" data-variant="outline" data-size="sm" data-password-option="off" aria-pressed="true" data-pressed>No password</button>
+            <button data-ui="toggle" data-variant="outline" data-size="sm" data-password-option="local" aria-pressed="false">Local dev</button>
+            <button data-ui="toggle" data-variant="outline" data-size="sm" data-password-option="email" aria-pressed="false">With email</button>
+          </div>
           <label for="screen-select" class="sr-only">Screen</label>
-          <select id="screen-select" data-ui="select" class="h-9 w-52">
-            <option value="sign-in">Sign in</option>
-            <option value="sign-up">Sign up</option>
-            <option value="verify-email">Verify email</option>
-            <option value="forgot">Forgot password</option>
-            <option value="reset">Reset password</option>
-            <option value="invite">Accept invitation</option>
-            <option value="invite-expired">Expired invitation</option>
-            <option value="create-org">Create organization</option>
-            <option value="done">Signed in</option>
+          <select id="screen-select" data-ui="select" class="h-9 w-56">
+            <optgroup label="MVP">
+              <option value="sign-in">Sign in</option>
+              <option value="invite">Accept invitation</option>
+              <option value="invite-wrong-account">Invitation, wrong account</option>
+              <option value="invite-expired">Expired invitation</option>
+              <option value="create-org">Create organization</option>
+              <option value="done">Signed in</option>
+            </optgroup>
+            <optgroup label="Later (needs email)">
+              <option value="sign-up">Sign up with password</option>
+              <option value="verify-email">Verify email</option>
+              <option value="forgot">Forgot password</option>
+              <option value="reset">Reset password</option>
+            </optgroup>
           </select>
           <button id="theme-button" data-ui="button" data-variant="outline" data-size="sm">Dark</button>
         </div>
@@ -135,6 +145,11 @@
     <script>
       const invitation = { inviter: 'Mari Tamm', organization: 'Snowhound', team: 'Platform', role: 'member', email: 'anna@snowhound.eu' }
       const flow = { email: '', name: '' }
+      // Password sign-in: off in the MVP, on for seeded users in local development, and with
+      // email flows once an email provider is added (task 016).
+      let passwordMode = 'off'
+      let currentScreen = 'sign-in'
+      const emailScreens = ['sign-up', 'verify-email', 'forgot', 'forgot-sent', 'reset', 'reset-done']
 
       const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
       const icon = (name, cls = '') => `<svg class="prototype-icon ${cls}" aria-hidden="true"><use href="#icon-${name}" /></svg>`
@@ -158,6 +173,23 @@
           <p id="${id}-error" data-ui="error-message" class="empty:hidden"></p>
         </div>`
 
+      const localNotice = () =>
+        passwordMode === 'local'
+          ? `<div data-ui="alert">${icon('key-round')}<div data-ui="alert-title">Local development</div><div data-ui="alert-description">Password sign-in for seeded users. Deployed environments use providers only.</div></div>`
+          : ''
+
+      const passwordForm = (form, { email = flow.email, submit, hint = '' }) =>
+        passwordMode === 'off'
+          ? ''
+          : `${divider('or')}
+          ${localNotice()}
+          <form class="grid gap-4" data-form="${form}" novalidate>
+            ${formAlert()}
+            ${field({ id: 'email', label: 'Email', type: 'email', autocomplete: 'username webauthn', value: email })}
+            ${field({ id: 'password', label: 'Password', type: 'password', autocomplete: 'current-password', hint, aside: passwordMode === 'email' ? link('forgot', 'Forgot password?') : '' })}
+            <button type="submit" data-ui="button">${submit}</button>
+          </form>`
+
       const formAlert = () => `<div id="form-alert" data-ui="alert" data-variant="destructive" role="alert" hidden>${icon('circle-alert')}<div data-ui="alert-description"></div></div>`
 
       const providers = () => `<div class="grid gap-2">
@@ -173,17 +205,11 @@
       const link = (to, text) => `<button type="button" data-ui="button" data-variant="link" class="h-auto p-0" data-goto="${to}">${text}</button>`
 
       const screens = {
-        'sign-in': () => `${heading('Sign in', 'Use your work account or email.')}
+        'sign-in': () => `${heading('Sign in', 'Use your work account. The first sign-in creates your Snowtime account.')}
           ${providers()}
           <button type="button" data-ui="button" data-variant="outline" data-passkey>${icon('key-round')}Sign in with a passkey</button>
-          ${divider('or')}
-          <form class="grid gap-4" data-form="sign-in" novalidate>
-            ${formAlert()}
-            ${field({ id: 'email', label: 'Email', type: 'email', autocomplete: 'username webauthn', value: flow.email })}
-            ${field({ id: 'password', label: 'Password', type: 'password', autocomplete: 'current-password', aside: link('forgot', 'Forgot password?') })}
-            <button type="submit" data-ui="button">Sign in</button>
-          </form>
-          <p class="text-center text-sm text-muted-foreground">No account? ${link('sign-up', 'Sign up')}</p>`,
+          ${passwordForm('sign-in', { submit: 'Sign in' })}
+          ${passwordMode === 'email' ? `<p class="text-center text-sm text-muted-foreground">No account? ${link('sign-up', 'Sign up with email')}</p>` : ''}`,
 
         'sign-up': () => `${heading('Create an account', 'Sign up with a provider or your email.')}
           ${providers()}
@@ -234,16 +260,18 @@
             <div data-ui="avatar"><div data-ui="avatar-fallback" class="font-medium">${invitation.organization[0]}</div></div>
             <div class="min-w-0"><p class="truncate font-medium">${escapeHtml(invitation.organization)}</p><p class="truncate text-sm text-muted-foreground">Team ${escapeHtml(invitation.team)}</p></div>
           </div>
-          ${heading('Join ' + escapeHtml(invitation.organization), `${escapeHtml(invitation.inviter)} invited <span class="font-medium text-foreground">${escapeHtml(invitation.email)}</span> to join as a ${invitation.role}. Sign in or create an account with that email to accept.`)}
+          ${heading('Join ' + escapeHtml(invitation.organization), `${escapeHtml(invitation.inviter)} invited <span class="font-medium text-foreground">${escapeHtml(invitation.email)}</span> to join as a ${invitation.role}. Continue with the account that uses this address.`)}
           ${providers()}
-          ${divider('or')}
-          <form class="grid gap-4" data-form="invite" novalidate>
-            ${formAlert()}
-            ${field({ id: 'email', label: 'Email', type: 'email', autocomplete: 'username', value: invitation.email })}
-            ${field({ id: 'password', label: 'Password', type: 'password', autocomplete: 'current-password', hint: 'New here? Choose a password to create your account.' })}
-            <button type="submit" data-ui="button">Accept invitation</button>
-          </form>
+          ${passwordForm('invite', { email: invitation.email, submit: 'Accept invitation', hint: passwordMode === 'email' ? 'New here? Choose a password to create your account.' : '' })}
           <p class="text-center text-sm text-muted-foreground">Not you? ${link('sign-in', 'Sign in with another account')}</p>`,
+
+        'invite-wrong-account': () => `<div class="flex size-12 items-center justify-center rounded-full bg-muted">${icon('circle-alert', 'size-6')}</div>
+          ${heading('This invitation is for another address', `You're signed in as <span class="font-medium text-foreground">other@gmail.com</span>, but ${escapeHtml(invitation.inviter)} invited <span class="font-medium text-foreground">${escapeHtml(invitation.email)}</span>.`)}
+          <div class="grid gap-2">
+            <button type="button" data-ui="button" data-goto="invite">Use another account</button>
+            <button type="button" data-ui="button" data-variant="outline" data-goto="create-org">Continue as other@gmail.com</button>
+          </div>
+          <p class="text-sm text-muted-foreground">Or ask ${escapeHtml(invitation.inviter)} for a new link to the address you use.</p>`,
 
         'invite-expired': () => `<div class="flex size-12 items-center justify-center rounded-full bg-muted">${icon('clock', 'size-6')}</div>
           ${heading('This invitation has expired', `Invitations are valid for 48 hours. Ask ${escapeHtml(invitation.inviter)} or another admin of ${escapeHtml(invitation.organization)} to send a new one.`)}
@@ -255,7 +283,7 @@
             ${field({ id: 'org-slug', label: 'Short name', hint: 'Lowercase letters, numbers, and dashes. Used in links.' })}
             <button type="submit" data-ui="button">Create organization</button>
           </form>
-          <div data-ui="alert">${icon('mail')}<div data-ui="alert-title">Joining an existing organization?</div><div data-ui="alert-description">Ask its admin to invite <span class="font-medium">${escapeHtml(flow.email || 'you')}</span>. The invitation appears here when you sign in.</div></div>`,
+          <div data-ui="alert">${icon('mail')}<div data-ui="alert-title">Joining an existing organization?</div><div data-ui="alert-description">Ask its admin for an invitation link for <span class="font-medium">${escapeHtml(flow.email || 'your address')}</span>, then open it.</div></div>`,
 
         done: () => `<div class="flex size-12 items-center justify-center rounded-full bg-muted">${icon('check', 'size-6')}</div>
           ${heading('Signed in', 'In the app this lands on the timer. The app frame is the next prototype.')}
@@ -263,6 +291,8 @@
       }
 
       function go(name) {
+        if (emailScreens.includes(name) && passwordMode !== 'email') setPasswordMode('email', false)
+        currentScreen = name
         document.getElementById('screen').innerHTML = screens[name]()
         const select = document.getElementById('screen-select')
         if ([...select.options].some((o) => o.value === name)) select.value = name
@@ -397,6 +427,17 @@
         slugEdited = false
         go(event.currentTarget.value)
       })
+      function setPasswordMode(mode, rerender = true) {
+        passwordMode = mode
+        document.querySelectorAll('[data-password-option]').forEach((x) => {
+          const pressed = x.dataset.passwordOption === mode
+          x.setAttribute('aria-pressed', String(pressed))
+          x.toggleAttribute('data-pressed', pressed)
+        })
+        if (rerender) go(emailScreens.includes(currentScreen) && mode !== 'email' ? 'sign-in' : currentScreen)
+      }
+      document.querySelectorAll('[data-password-option]').forEach((b) => b.addEventListener('click', () => setPasswordMode(b.dataset.passwordOption)))
+
       document.querySelectorAll('[data-layout-option]').forEach((b) =>
         b.addEventListener('click', () => {
           document.body.dataset.layout = b.dataset.layoutOption

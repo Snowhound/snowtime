@@ -159,22 +159,31 @@ errors.
 
 ### [auth.html](auth.html) — Sign-in flows
 
-Decision: layout of the signed-out screens, and which sign-in methods appear on them (see
-"Sign-in methods" in `docs/architecture.md`).
+Decision: layout of the signed-out screens, and how the sign-in methods in
+`docs/architecture.md` ("Sign-in methods") appear on them.
 
-- **01 · Card**: the form in a centered card on a muted background.
-- **02 · Split**: a dark brand panel beside the form on wide screens; form only on narrow ones.
+- **01 · Card**: the form in a centered card on a muted background. Selected for the app.
+- **02 · Split**: a dark brand panel beside the form on wide screens; kept for comparison.
 
-Screens: sign in, sign up, verify email, forgot password (and its sent state), reset password
-(and its done state), accept invitation, expired invitation, create organization, signed in. The
-screen selector jumps to any of them; the forms also move between them.
+The **password** toggle shows the three stages of password sign-in:
 
-Sign in and sign up show Google, GitHub, and Microsoft, then email and password. Sign in also offers
-a passkey button, and the email field uses `autocomplete="username webauthn"` for passkey autofill.
-The invitation screen names the organization, team, role, and invited address, and only accepts
-that address, as Better Auth does. Create organization derives the short name from the name
-until it's edited. Limits match Better Auth defaults: passwords of 8 to 128 characters, reset
-links valid for 1 hour, invitations for 48 hours.
+| Mode        | Stage                              | What the screens show                                        |
+| ----------- | ---------------------------------- | ------------------------------------------------------------ |
+| No password | MVP in deployed environments       | Google, GitHub, Microsoft, and passkey buttons only          |
+| Local dev   | MVP in local development           | Providers plus an email and password form for seeded users   |
+| With email  | Later, once email exists (task 016) | Providers, password form, sign-up, forgot and reset password |
+
+MVP screens: sign in, accept invitation, invitation opened with the wrong account, expired
+invitation, create organization, and signed in. Screens under "Later (needs email)" in the
+selector (sign up with password, verify email, forgot and reset password) switch the toggle to
+"With email".
+
+The first provider sign-in creates the account, so the MVP has no separate sign-up screen. The
+invitation screen names the organization, team, role, and invited address. Better Auth only
+accepts an invitation from a user with that verified email, so a different account lands on the
+wrong-account screen. Create organization derives the short name from the name until it's
+edited. The passkey button depends on task 015. Limits match Better Auth defaults: passwords of 8
+to 128 characters, reset links valid for 1 hour, invitations for 48 hours.
 
 Simulated with fictional rules: the password `wrong` fails sign-in, `taken@example.com` is
 already registered, and the short name `snowhound` is taken. Provider, passkey, and email steps
@@ -182,8 +191,7 @@ show a short loading state, then continue. The theme follows `snowtime.viewSetti
 timer prototype, or the system setting.
 
 Omitted: two-factor authentication, rate-limit messages, and the real provider consent screens.
-No design selected yet.
 
-Checked in Chromium at 1440, 850, and 390 px, light and dark, both layouts and every screen: no
-horizontal page overflow, validation messages and focus on the first invalid field, and no
-browser errors.
+Checked in Chromium at 1440, 850, and 390 px, light and dark, both layouts, every password mode,
+and every screen: no horizontal page overflow, validation messages and focus on the first invalid
+field, and no browser errors.
