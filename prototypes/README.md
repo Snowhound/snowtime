@@ -577,16 +577,18 @@ wrong-account screen. Create organization derives the short name from the name u
 edited. The passkey button depends on task 015. Limits match Better Auth defaults: passwords of 8
 to 128 characters, reset links valid for 1 hour, invitations for 48 hours.
 
-The tagline "Winter is coming." sits under the card. The mark is the chosen app icon (see [App icon](#app-icon)).
+The tagline, the intro's first two lines ("Winter is coming. So is the end of the month." in
+winter), sits under the card. The mark is the chosen app icon (see [App icon](#app-icon)).
 
 #### Seasonal scene and intro
 
 Task 031 tries a seasonal scene from `design/backgrounds/`: a landscape per season in a light and
-a dark version, a tint of the page color over it, and a weather effect. Only winter has weather:
-the WebGL snow from `snowtime_login_intro_with_backgrounds.html`, ported to
-[scene.js](scene.js). It draws every flake as a point in one call, runs at about 45 fps, stops when
-the tab is hidden or the weather is off, and scales the flake count to the area it covers. Unlike
-the mock-up, flakes cover the full width. The pages load WebP copies of the images (110 to 215 KB
+a dark version, a tint of the page color over it, and a weather effect. Winter's is the WebGL
+snow from `snowtime_login_intro_with_backgrounds.html`, ported to [scene.js](scene.js); the other
+seasons' effects are rough versions built the same way, for comparison. Each effect draws its
+points in one call on one shared canvas, runs at about 45 fps, stops when the tab is hidden or the
+weather is off, and scales its point count to the area it covers. Unlike the mock-up, snow covers
+the full width. The pages load WebP copies of the images (110 to 215 KB
 each, from the 2 to 2.5 MB PNGs).
 
 - **Scene**: it fills the page behind the card.
@@ -596,7 +598,9 @@ each, from the 2 to 2.5 MB PNGs).
   in and get it done!") comes after a longer beat, eases in more slowly, and stays for 3 seconds.
   Then the page rises into place and the chosen theme returns. The intro always shows the weather
   and the background, even when they're off for the page; the page follows the switches once it
-  appears. It plays on the first visit to this browser
+  appears. Each season has its own first and third lines (`SEASONS` in `scene.js`): "Spring is
+  here." and "Before the week melts away", "Summer is here." and "While the days are long",
+  "Autumn is here." and "Before the last leaf falls". It plays on the first visit to this browser
   (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay intro plays it any
   time. **Skip intro** or Escape ends it; the rest of the page
   is `inert` while it plays. With reduced motion it doesn't play, and the snow stays off.
@@ -608,15 +612,23 @@ each, from the 2 to 2.5 MB PNGs).
   `sceneWeather`, and `sceneIntro`, shared with Settings > Preferences > Sign-in page, which lays
   them out the same way. Signed out, the app would keep them on the device. Surfaces is named for
   every card, so it can apply app-wide once other pages get a background.
-- **Snow colors**: white in dark mode and over the light image; blue-grey on the plain light page,
-  where white flakes would vanish. The canvas blends with premultiplied alpha, so flake edges don't
-  darken.
+- **Weather**: each season's effect, colored for its image in light and dark and for the plain
+  page. The canvas blends with premultiplied alpha, so edges don't darken.
+
+  | Season | Effect                                                                                  | Points per 1440 × 900 |
+  | ------ | --------------------------------------------------------------------------------------- | --------------------- |
+  | Winter | Snow: white in dark mode and over the light image, blue-grey on the plain light page     | 500                   |
+  | Spring | A light shower: thin streaks slanted with the wind, in soft bursts that come and go      | 260, fewer between bursts |
+  | Summer | Light: dandelion seeds (fine rays) and pollen that glints; dark: fireflies that wander low over the meadow and glow on and off | 70; 40 |
+  | Autumn | Leaves in rust and ochre that sway, tumble edge-on, and turn as they fall                 | 45                    |
+
+  The Scenery menu's Weather hint names the season's effect; Settings names all four.
 
 The prototype bar's second row holds variants to compare, kept in `snowtime.prototypeAuthScene`:
 
 | Variant  | Options                                                                          |
 | -------- | -------------------------------------------------------------------------------- |
-| Season   | Winter (with snow), spring, summer, autumn (images only)                         |
+| Season   | Winter, spring, summer, autumn: the image, weather, intro lines, and tagline      |
 | Tagline  | Halo (a glow in the page color), in the card (a footer line), bottom fade (at the foot of the page over a fade), or pill |
 | Tone     | Deeper (`#060c14` dark with card `#0d1929`, `#fbfdff` light) or the app's tokens |
 

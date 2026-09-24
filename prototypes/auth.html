@@ -694,6 +694,8 @@
           return defaults
         }
       })()
+      const introEl = document.getElementById('intro')
+      const introLines = [...introEl.querySelectorAll('.intro-line')]
       const sceneCtl = scene.create({ season: variants.season })
       document.getElementById('scene-page').prepend(sceneCtl.el)
 
@@ -720,7 +722,11 @@
         const weatherSwitch = document.getElementById('scene-weather-switch')
         ui.setSwitch(weatherSwitch, user.sceneWeather)
         weatherSwitch.disabled = !!blocked
-        document.getElementById('scene-weather-hint').textContent = blocked ?? 'Falling snow in winter.'
+        const season = scene.SEASONS[variants.season]
+        document.getElementById('scene-weather-hint').textContent = blocked ?? season.hint
+        // The season's intro lines, and the first two as the tagline.
+        season.lines.forEach((line, i) => (introLines[i].textContent = line))
+        document.querySelectorAll('.card-tagline, .tagline-in-card').forEach((el) => (el.textContent = `${season.lines[0]} ${season.lines[1]}`))
         ui.setSwitch(document.getElementById('scene-intro-switch'), user.sceneIntro)
         document.querySelectorAll('[data-variant-key]').forEach((el) => (el.value = variants[el.dataset.variantKey]))
       }
@@ -753,8 +759,6 @@
       addEventListener('storage', (event) => event.key === appIcon.SETTINGS_KEY && applyScene())
 
       // The intro always plays dark, then hands over to the chosen theme as the page appears.
-      const introEl = document.getElementById('intro')
-      const introLines = [...introEl.querySelectorAll('.intro-line')]
       let introTimers = []
       let introDark = false
       function playIntro() {
