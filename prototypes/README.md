@@ -216,6 +216,9 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
   (Profile, Settings, Sign out). Below 768 px the navigation moves to a second header row of four
   equal-width links, so every page stays one tap away without a hamburger menu. Between 768 and
   1024 px the header drops the "Snowtime" name beside the mark, so the organization name fits.
+  In the app the header sticks to the top of the page at every width, both rows below 768 px, so
+  the navigation stays in reach down a long entry list; over the scene, the page scrolls under
+  its blur. The prototypes' header scrolls away.
 - The **Appearance** popover, from the mountain button left of the avatar, on every page. The
   button uses the sign-in page's Scenery icon (Lucide `mountain-snow`, which replaced a palette),
   so one icon opens the scenery everywhere. It holds Theme (light, dark, system), the app icon with **Change** (opens the [app icon picker](#app-icon)),

@@ -1,6 +1,6 @@
 // The signed-in header every page shares (prototypes/app-frame.js): the app icon, the
 // organization switcher, the navigation, the Appearance popover, and the user menu. Below 768 px the navigation moves to a
-// second row of equal-width links.
+// second row of equal-width links. It sticks to the top, above the cards and below popovers (z-50).
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/solid-router'
 import BuildingComplexIcon from 'lucide-solid/icons/building-complex'
@@ -61,7 +61,7 @@ export function AppHeader() {
   return (
     <Show when={session.data}>
       {(data) => (
-        <header class="scene-header bg-background border-b">
+        <header class="scene-header bg-background sticky top-0 z-30 border-b">
           <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
             <Link
               to="/timer"

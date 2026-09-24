@@ -102,6 +102,10 @@ Work in this order, one commit or more per step, and check each in the dev app a
   marks itself `data-scrolled` while scrolled sideways, and on glass its sticky column is
   see-through until then. The app has no midnight note on Reports, so there's nothing to style.
   Checked at 1440, 850, and 390 px, light and dark: no horizontal scroll and no browser errors.
+- 2026-09-25: Step 3d: the signed-in header is sticky at every width (both rows below 768 px),
+  so the navigation stays in reach down a long entry list; the prototypes' header scrolls away,
+  and `prototypes/README.md` records the difference. Checked scrolled at 1440 and 390 px, light and
+  dark: the cards scroll under the header's blur, and the organization menu opens above it.
 
 ## Acceptance criteria
 
