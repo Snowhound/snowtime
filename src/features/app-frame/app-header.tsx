@@ -1,5 +1,5 @@
 // The signed-in header every page shares (prototypes/app-frame.js): the app icon, the
-// organization switcher, the navigation, and the user menu. Below 768 px the navigation moves to a
+// organization switcher, the navigation, the Appearance popover, and the user menu. Below 768 px the navigation moves to a
 // second row of equal-width links.
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/solid-router'
@@ -8,14 +8,10 @@ import ChartColumnIcon from 'lucide-solid/icons/chart-column'
 import ChevronsUpDownIcon from 'lucide-solid/icons/chevrons-up-down'
 import FolderKanbanIcon from 'lucide-solid/icons/folder-kanban'
 import LogOutIcon from 'lucide-solid/icons/log-out'
-import MonitorIcon from 'lucide-solid/icons/monitor'
-import MoonIcon from 'lucide-solid/icons/moon'
 import PlusIcon from 'lucide-solid/icons/plus'
 import SettingsIcon from 'lucide-solid/icons/settings'
-import SunIcon from 'lucide-solid/icons/sun'
 import TimerIcon from 'lucide-solid/icons/timer'
 import UserIcon from 'lucide-solid/icons/user'
-import type { Component } from 'solid-js'
 import { For, Show } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
@@ -33,11 +29,11 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { appIcon } from '~/lib/app-icon'
 import { authClient } from '~/lib/auth-client'
-import { type ThemeSetting, forgetSignedInUser, sessionQuery } from '~/lib/session'
-import { useUpdateSettings } from '~/lib/settings'
+import { forgetSignedInUser, sessionQuery } from '~/lib/session'
 import { cn, initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { AppSession } from '~/server/auth/auth.functions'
+import { AppearancePopover } from './appearance-popover'
 
 const NAV = [
   { to: '/timer', label: m.nav_timer, Icon: TimerIcon },
@@ -45,13 +41,6 @@ const NAV = [
   { to: '/projects', label: m.nav_projects, Icon: FolderKanbanIcon },
   { to: '/organization', label: m.nav_organization, Icon: BuildingComplexIcon, admin: true },
 ] as const
-
-const THEMES: { value: ThemeSetting; label: () => string; Icon: Component<{ class?: string }> }[] =
-  [
-    { value: 'light', label: m.theme_light, Icon: SunIcon },
-    { value: 'dark', label: m.theme_dark, Icon: MoonIcon },
-    { value: 'system', label: m.theme_system, Icon: MonitorIcon },
-  ]
 
 function OrgMark(props: { name: string; class?: string }) {
   return (
@@ -87,6 +76,9 @@ export function AppHeader() {
             <nav class="ml-2 hidden items-center gap-1 md:flex" aria-label={m.nav_main()}>
               <NavLinks role={data().role} />
             </nav>
+            <Show when={data().settings} fallback={<span class="ml-auto" />}>
+              {(settings) => <AppearancePopover settings={settings()} />}
+            </Show>
             <UserMenu session={data()} />
           </div>
           <nav class="flex gap-1 border-t px-2 py-1.5 md:hidden" aria-label={m.nav_main()}>
@@ -184,9 +176,6 @@ function UserMenu(props: { session: AppSession }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
-  // The theme applies at once: the root renders data-theme from the session query.
-  const saveSettings = useUpdateSettings()
-
   async function signOut() {
     await authClient.signOut()
     forgetSignedInUser(queryClient)
@@ -196,7 +185,7 @@ function UserMenu(props: { session: AppSession }) {
   return (
     <DropdownMenu placement="bottom-end">
       <DropdownMenuTrigger
-        class="focus-visible:ring-ring focus-visible:ring-offset-background ml-auto shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        class="focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         aria-label={m.user_menu_label({ name: props.session.user.name })}
       >
         <Avatar class="size-8">
@@ -219,23 +208,6 @@ function UserMenu(props: { session: AppSession }) {
           <SettingsIcon class="size-4" aria-hidden="true" />
           {m.nav_settings()}
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          value={props.session.settings?.theme ?? 'system'}
-          onChange={(theme) => saveSettings.mutate({ theme })}
-        >
-          <DropdownMenuGroupLabel class="text-muted-foreground text-xs font-medium">
-            {m.user_menu_theme()}
-          </DropdownMenuGroupLabel>
-          <For each={THEMES}>
-            {(theme) => (
-              <DropdownMenuRadioItem value={theme.value} class="gap-2" closeOnSelect={false}>
-                <theme.Icon class="size-4" aria-hidden="true" />
-                {theme.label()}
-              </DropdownMenuRadioItem>
-            )}
-          </For>
-        </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={signOut}>
           <LogOutIcon class="size-4" aria-hidden="true" />

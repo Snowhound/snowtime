@@ -5,6 +5,7 @@ import CheckIcon from 'lucide-solid/icons/check'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import GlobeIcon from 'lucide-solid/icons/globe'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
+import { AppIconDialog } from '~/components/app-icon-dialog'
 import { AppMark } from '~/components/app-mark'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -26,7 +27,6 @@ import { formatDateTime, formatIsoDate } from '~/lib/format'
 import { type Settings, useUpdateSettings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
-import { AppIconDialog } from './app-icon-dialog'
 
 // Languages by their own names, so each reads the same in every UI language.
 const LANGUAGES = [

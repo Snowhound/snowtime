@@ -20,9 +20,6 @@ export function forgetSignedInUser(queryClient: QueryClient) {
   })
 }
 
-// Signed-out pages and signed-in users without settings yet follow the system theme.
-export type ThemeSetting = 'system' | 'light' | 'dark'
-
 // Runs in <head> before the body paints. The server renders the theme setting as
 // data-theme on <html>; this applies the `dark` class from it, resolving "system" with
 // the browser's preference, and follows later changes to either.

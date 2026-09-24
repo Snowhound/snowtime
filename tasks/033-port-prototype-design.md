@@ -50,6 +50,17 @@ Work in this order, one commit or more per step, and check each in the dev app a
   or a season), `scene_background`, `scene_strength` (`'dimmed'` or `'full'`), `surfaces`
   (`'glass'` or `'solid'`), `scene_weather`, and `scene_intro`, with the prototype's defaults.
   The session and `updateSettings` carry them. Nothing shows or uses them yet.
+- 2026-09-25: Step 2b: the header's Appearance popover (`mountain-snow` button left of the
+  avatar) holds the theme, the app icon with Change, the scenery (`src/components/scenery-fields.tsx`,
+  shared with Settings and the sign-in page), and All settings. Theme left the user menu and the
+  timer's View popover. `AppIconDialog` moved to `src/components/`. The scenery controls save,
+  but nothing acts on them yet: Season, Background, Strength, and Surfaces wait for step 3, and
+  Weather for step 4, whose hint gives only the season's effect or reduced motion until then
+  (no WebGL reasons yet). Replay intro comes with step 6. Escape now closes the popovers when
+  focus is on a toggle: Kobalte's toggle group took Escape to clear its selection and blocked the
+  dismiss, in the View popover too. Checked at 1440, 850, and 390 px, light and dark: saves survive
+  a reload, Strength and Surfaces disable with Background off, Change opens the dialog with focus
+  on the chosen icon and Escape returns it to the Appearance button, and no horizontal scroll.
 
 ## Acceptance criteria
 
