@@ -31,7 +31,7 @@ export async function getSettings(db: Database, userId: string, input: GetSettin
     .insert(userSettings)
     .values({ userId, timeZone: input.timeZone, locale: input.locale })
     .onConflictDoNothing()
-  return (await findSettings(db, userId))!
+  return await findSettings(db, userId)
 }
 
 // Applies a partial patch; the UI saves one field at a time. Drizzle skips undefined

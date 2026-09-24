@@ -58,7 +58,7 @@ const initials = (name: string) =>
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((word) => word[0]!.toUpperCase())
+    .map((word) => word[0].toUpperCase())
     .join('')
 
 function OrgMark(props: { name: string; class?: string }) {
@@ -232,7 +232,7 @@ function UserMenu(props: { session: AppSession }) {
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
           value={props.session.settings?.theme ?? 'system'}
-          onChange={(theme) => saveTheme.mutate(theme as ThemeSetting)}
+          onChange={(theme) => saveTheme.mutate(theme)}
         >
           <DropdownMenuGroupLabel class="text-muted-foreground text-xs font-medium">
             {m.user_menu_theme()}

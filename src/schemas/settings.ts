@@ -10,6 +10,8 @@ export const TimeZone = v.pipe(
   v.check(
     (zone) => {
       try {
+        // Constructing the formatter is the check: it throws on an unknown zone.
+        // oxlint-disable-next-line no-new
         new Intl.DateTimeFormat('en', { timeZone: zone })
         return true
       } catch {

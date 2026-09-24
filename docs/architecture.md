@@ -16,6 +16,8 @@
 | UI            | Solid-UI + Tailwind; components in `src/components/ui/`, copied from the Solid-UI registry at the commit the prototypes use (`21ba4fa`)                                                                      |
 | i18n          | English and Estonian; Paraglide JS                                                                                                                                                                           |
 | Testing       | `bun test` for server and database code (`*.test.ts`); Vitest with Solid Testing Library in jsdom for components (`*.test.tsx`); `bunfig.toml` and `vitest.config.ts` keep each runner off the other's files |
+| Lint          | oxlint with type-aware rules (`oxlint-tsgolint`) and `eslint-plugin-solid` as a JS plugin; config in `.oxlintrc.json`, warnings fail                                                                         |
+| Format        | oxfmt (Prettier-compatible; the project uses no Prettier); config in `.oxfmtrc.json`; prototypes and generated files are skipped                                                                             |
 | Client state  | No library; Solid signals/stores and URL search params; user settings on the server (see "User settings")                                                                                                    |
 
 ## Data conventions

@@ -27,7 +27,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     if (session?.localeChanged && session.settings) {
       context.queryClient.removeQueries({ queryKey: sessionQuery.queryKey })
       if (isServer) throw redirect({ href: location.href })
-      setLocale(session.settings.locale)
+      void setLocale(session.settings.locale)
     }
     return { session }
   },
@@ -49,6 +49,7 @@ function RootComponent() {
   return (
     <html lang={getLocale()} data-theme={theme()}>
       <head>
+        {/* oxlint-disable-next-line solid/no-innerhtml -- themeScript is a constant. */}
         <script innerHTML={themeScript} />
         <HydrationScript />
         <HeadContent />

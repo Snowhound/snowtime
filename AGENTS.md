@@ -22,6 +22,8 @@ the same change or ask first.
   `bun run icons:check` checks these imports and runs in `bun run test`;
   `bun run icons:fix` renames them. Name hand-written icons the same way, for example
   `GoogleIcon`.
+- Run `bun run format` and `bun run lint` before committing; CI checks both. Disable a
+  lint rule inline only with a reason: `// oxlint-disable-next-line rule -- why`.
 
 ## Commits
 

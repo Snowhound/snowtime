@@ -64,7 +64,10 @@ function CreateOrganization() {
       }
       // Better Auth makes the new organization the session's active one.
       const { error } = await authClient.organization.create({ name, slug: value.slug })
-      if (error) return setFormError(m.sign_in_error_failed())
+      if (error) {
+        setFormError(m.sign_in_error_failed())
+        return
+      }
       await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })
       await navigate({ to: '/timer' })
     },

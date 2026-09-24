@@ -28,6 +28,12 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
+      - name: Format
+        run: bun run format:check
+
+      - name: Lint
+        run: bun run lint
+
       - name: Type check
         run: bunx tsc --noEmit -p .
 

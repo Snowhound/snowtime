@@ -26,8 +26,8 @@ for await (const file of new Glob('src/**/*.{ts,tsx}').scan('.')) {
   let source = readFileSync(file, 'utf8')
   const renames = new Map<string, string>()
   for (const [, name, icon] of source.matchAll(importPattern)) {
-    const expected = expectedName(icon!)
-    if (name !== expected) renames.set(name!, expected)
+    const expected = expectedName(icon)
+    if (name !== expected) renames.set(name, expected)
   }
   if (renames.size === 0) continue
 

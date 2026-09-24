@@ -25,6 +25,7 @@ const applied = await client.execute('SELECT name, hash FROM __drizzle_migration
 const problems: string[] = []
 
 for (const row of applied.rows) {
+  // oxlint-disable-next-line typescript/no-base-to-string -- name is a text column.
   const name = String(row.name)
   const file = `drizzle/${name}/migration.sql`
   if (!existsSync(file)) {
