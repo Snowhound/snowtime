@@ -64,6 +64,15 @@ Work in this order, one commit or more per step, and check each in the dev app a
 - 2026-09-25: Step 2c: Settings > Preferences > Scenery (`#scenery`) has the scene controls with
   the prototype's hints and the Intro switch, each saved on its own. "Replay it" comes with step 6. Checked at 1440, 850, and 390 px, light and dark: saves show Saved, survive a reload, and
   show in the Appearance popover.
+- 2026-09-25: Step 2d: signed-out pages keep the theme, the app icon, and the scene settings on
+  the device (`snowtime.settings`, `src/lib/device-settings.ts`, each field checked and every
+  storage access guarded). Their Appearance menu (the mountain button, top right) adds Theme above
+  the scenery, since signed out the theme had no control; `docs/architecture.md` and the README
+  record the change. The head script applies the device's theme before the first paint, and the
+  sign-in card and favicon show the chosen icon once the page hydrates. Signed in, the root copies
+  the account's values to the device; at sign-in the account's settings apply. Checked at 1440,
+  850, and 390 px, light and dark: settings survive a reload, the device theme wins over the
+  system's, broken or invalid storage falls back to the defaults, and no horizontal scroll.
 
 ## Acceptance criteria
 

@@ -8,9 +8,16 @@ import {
   redirect,
 } from '@tanstack/solid-router'
 import { TanStackRouterDevtools } from '@tanstack/solid-router-devtools'
-import { For, Show, Suspense, createEffect, createMemo, on } from 'solid-js'
+import { For, Show, Suspense, createEffect, createMemo, on, onMount } from 'solid-js'
 import { HydrationScript, isServer } from 'solid-js/web'
 import { appIcon, faviconLinks, setFavicon } from '~/lib/app-icon'
+import {
+  DEVICE_DEFAULTS,
+  type DeviceSettings,
+  deviceSettings,
+  loadDeviceSettings,
+  updateDeviceSettings,
+} from '~/lib/device-settings'
 import { sessionQuery, themeScript } from '~/lib/session'
 import { getLocale, setLocale } from '~/paraglide/runtime.js'
 import styleCss from '~/styles.css?url'
@@ -41,9 +48,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
   const session = useQuery(() => sessionQuery)
+  // Signed out, the device's settings apply (src/lib/device-settings.ts). They load after
+  // hydration; until then data-theme is unset and the head script applies the device's theme.
+  onMount(loadDeviceSettings)
   function theme() {
-    return session.data?.settings?.theme ?? 'system'
+    return session.data?.settings?.theme ?? deviceSettings()?.theme
   }
+
+  // Signed in, the device keeps a copy of the account's theme, app icon, and scene, so the
+  // sign-in page opens as the user left it.
+  createEffect(() => {
+    const settings = session.data?.settings
+    const device = deviceSettings()
+    if (!settings || !device) return
+    const copy = Object.fromEntries(
+      Object.keys(DEVICE_DEFAULTS).map((key) => [key, settings[key as keyof DeviceSettings]]),
+    ) as DeviceSettings
+    if (JSON.stringify(copy) !== JSON.stringify(device)) updateDeviceSettings(copy)
+  })
 
   // Saving another language switches it in place: Paraglide takes the new locale and sets
   // the cookie for later requests, and the page renders again, since messages are plain
@@ -54,10 +76,10 @@ function RootComponent() {
     return getLocale()
   })
 
-  // The user's app icon; signed out, Hound Hour. The server renders its favicon links, and a
+  // The user's app icon; signed out, the device's, or Hound Hour. The server renders its favicon links, and a
   // change replaces them (Solid doesn't hydrate <head>). Media queries pick Hound Hour's tile.
   function appIconId() {
-    return appIcon(session.data?.settings?.appIcon).id
+    return appIcon(session.data?.settings?.appIcon ?? deviceSettings()?.appIcon).id
   }
   createEffect(on(appIconId, setFavicon, { defer: true }))
 

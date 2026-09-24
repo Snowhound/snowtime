@@ -749,14 +749,17 @@ from navigation:
   [Seasonal scene in the app](#seasonal-scene-in-the-app)). **Skip intro** or Escape ends it, and focus returns to the Scenery
   button; the rest of the page is `inert` while it plays. With reduced motion it doesn't play,
   the snow stays off, and the Intro switch and Replay are disabled, the switch's hint saying why.
-- **Scenery menu** (the mountain button, top right): Season (Auto, which follows the month and
+- **Scenery menu** (the mountain button, top right): in the app, titled Appearance and led by
+  Theme (light, dark, system), since signed out there is no other way to change it; then Season (Auto, which follows the month and
   names the current season, or winter, spring, summer, or autumn), then the Background switch, with two options
   under it that apply only while it's on: Strength (dimmed, the default, or full: how much page
   color covers the image, 55 or 30% dark, 50 or 20% light, stronger toward the bottom) and Surfaces (glass,
   `bg-card/70` with a backdrop blur, or solid cards). Then the Weather switch, the Intro switch,
   and Replay intro. These are the user settings `sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`,
   `sceneWeather`, and `sceneIntro`, shared with Settings > Preferences > Scenery, which lays
-  them out the same way. Signed out, the app would keep them on the device. Surfaces applies to
+  them out the same way. Signed out, the app keeps them, the theme, and the app icon on the
+  device, and signed in it copies the account's values there; the account's settings apply at
+  sign-in. Surfaces applies to
   every card, on the signed-in pages too (see [Seasonal scene in the app](#seasonal-scene-in-the-app)).
 - **Weather**: each season's effect, colored for its image in light and dark and for the plain
   page. The canvas blends with premultiplied alpha, so edges don't darken.

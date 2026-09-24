@@ -234,11 +234,15 @@ such as rate limiting.
   `scene_weather`, `scene_intro`).
 - The server renders the theme class from the session user's settings, so the first
   paint uses the right theme with no flash. This is the main reason view settings moved
-  here from `localStorage`. Signed-out pages (sign-in, invitations) follow the system
-  theme.
+  here from `localStorage`. Signed-out pages (sign-in, invitations) use the theme, app
+  icon, and scene settings kept on the device (`snowtime.settings` in `localStorage`,
+  `src/lib/device-settings.ts`), which their Appearance menu changes. Signed in, the root
+  copies the account's values there, so the sign-in page opens as the last user left it;
+  signed-out changes stay on the device, and the account's settings apply at sign-in.
   - The server renders the setting as `data-theme` on `<html>`. A script in `<head>`
     applies the `dark` class from it before the body paints, because only the browser
-    can resolve `system`. The script also follows later changes to the setting and to
+    can resolve `system`. Signed out, there is no `data-theme`, and the script reads the
+    device's theme instead. The script also follows later changes to the setting and to
     the system preference.
 - The UI saves each field when it changes, so `updateSettings` takes a partial patch.
   The session query carries the settings, and `useUpdateSettings` in
