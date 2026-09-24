@@ -9,18 +9,18 @@ The old timeline in `auth.html` (`playIntro`), in ms from the start: the black f
 250, lines appear at 850, 2050, 3550, and 4850, the page rises at 5950, the intro fades at 6150,
 the chosen theme returns at 6500, and the intro ends at 7600.
 
-The new one: the black fade lifts at 300, lines appear at 2200 and 3700, the background fades in
-at 5000, lines 3 and 4 appear at 7000 and 9000, the page rises at 12000, the intro fades at
-12200, the chosen theme returns at 12550, and the intro ends at 13650.
+The new one: the black fade lifts at 300, the first line appears at 1900, the background fades
+in from 3100 to 5700, lines 2, 3, and 4 appear at 5400, 7700, and 10200, the page rises at
+13300, the intro fades at 13500, the chosen theme returns at 13850, and the intro ends at 14950.
 
 ## Acceptance criteria
 
 - [x] The intro opens on the weather alone (winter: snow over the dark page color) for longer
       than today, before the first line.
-- [x] The background image fades in after the second line, with a short delay.
-- [x] The third and fourth lines follow, and they, the fourth most of all, stay on screen longer
+- [x] The background image fades in after the first line, with a pause before and after it.
+- [x] The other lines follow at a natural reading pace, and they, the fourth most of all, stay on screen longer
       before the page rises.
-- [x] The fourth line reads "Sign in and get it done."
+- [x] The fourth line reads "Sign in and get it done!"
 - [x] The intro always shows the weather and the background, even when the user turned them off
       for the page. After the intro, the page follows their settings. Reduced motion still skips
       the intro.

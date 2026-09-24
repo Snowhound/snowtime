@@ -590,11 +590,12 @@ the mock-up, flakes cover the full width. The pages load WebP copies of the imag
 each, from the 2 to 2.5 MB PNGs).
 
 - **Scene**: it fills the page behind the card.
-- **Intro**: about 12 seconds, always dark. It opens on the weather alone over the page color,
-  shows two lines, fades the background in (over 2.6 s) a second after the second line, then
-  shows the last two lines, the last one ("Sign in and get it done.") for 3 seconds. Then the
-  page rises into place and the chosen theme returns. The intro always shows the weather and the
-  background, even when they're off for the page; the page follows the switches once it
+- **Intro**: about 13 seconds, always dark. It opens on the weather alone over the page color,
+  shows the first line, pauses, fades the background in (over 2.6 s), pauses again, and then
+  shows the other lines, each once the one before has had time to be read. The last line ("Sign
+  in and get it done!") comes after a longer beat, eases in more slowly, and stays for 3 seconds.
+  Then the page rises into place and the chosen theme returns. The intro always shows the weather
+  and the background, even when they're off for the page; the page follows the switches once it
   appears. It plays on the first visit to this browser
   (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay intro plays it any
   time. **Skip intro** or Escape ends it; the rest of the page

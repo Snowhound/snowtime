@@ -129,6 +129,7 @@
       }
       .intro-line-4 {
         margin-top: 12px;
+        transition-duration: 1.2s;
         font-size: clamp(13px, 1.45vw, 16px);
         line-height: 1.5;
         letter-spacing: 0.03em;
@@ -231,7 +232,7 @@
         <p class="intro-line intro-line-1">Winter is coming.</p>
         <p class="intro-line intro-line-2">So is the end of the month.</p>
         <p class="intro-line intro-line-3">Before the snow gets deeper, fill in your timesheet.</p>
-        <p class="intro-line intro-line-4">Sign in and get it done.</p>
+        <p class="intro-line intro-line-4">Sign in and get it done!</p>
       </div>
       <button type="button" id="skip-intro" data-ui="button" data-variant="outline" data-size="sm" class="intro-skip border-white/20 bg-black/40 text-white backdrop-blur hover:bg-black/60 hover:text-white">Skip intro</button>
     </section>
@@ -772,18 +773,19 @@
         for (const el of [document.getElementById('auth-header'), document.querySelector('.auth-shell')]) el.inert = true
         document.getElementById('skip-intro').focus()
         const at = (ms, fn) => introTimers.push(setTimeout(fn, ms))
-        // The weather alone, then two lines, then the background fades in under the last two lines,
-        // which stay longest.
+        // The weather alone, the first line, a pause, the background fades in, a pause, then the
+        // other lines, each after the one before has had time to be read. The last one gets a
+        // longer beat before it and stays longest.
         at(300, () => introEl.querySelector('.intro-fade').classList.add('reveal'))
-        ;[2200, 3700, 7000, 9000].forEach((ms, i) => at(ms, () => introLines[i].classList.add('show')))
-        at(5000, () => {
+        ;[1900, 5400, 7700, 10200].forEach((ms, i) => at(ms, () => introLines[i].classList.add('show')))
+        at(3100, () => {
           introBackground = true
           applyScene()
         })
-        at(12000, revealPage)
-        at(12200, () => introEl.classList.add('intro-done'))
-        at(12550, () => setDark(introDark))
-        at(13650, endIntro)
+        at(13300, revealPage)
+        at(13500, () => introEl.classList.add('intro-done'))
+        at(13850, () => setDark(introDark))
+        at(14950, endIntro)
       }
       function revealPage() {
         delete document.body.dataset.intro
