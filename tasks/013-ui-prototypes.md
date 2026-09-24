@@ -12,8 +12,8 @@ workflow and checks.
       invitation, and create organization for a user with no organization or invitation
 - [x] App frame: header with organization switcher, navigation, and user menu, plus the
       settings page (`prototypes/settings.html`)
-- [ ] Reports: day and week totals by project, team, and member over a date range, including the
-      team lead's view of their teams
+- [x] Reports: day and week totals by project, team, and member over a date range, including the
+      team lead's view of their teams (`prototypes/reports.html`, timesheet selected)
 - [ ] Organization admin: members with invitations and roles, teams with members and the lead
 - [ ] Projects: list, create and edit, and assignment to teams
 - [ ] Each prototype has a reference entry in `prototypes/README.md` and passes its checks

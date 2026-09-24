@@ -17,7 +17,8 @@ prototype, include its full absolute `file:///` URL so it can be opened directly
 | tailwind-merge 3.7.0 (loaded by `ui.js`) | Class merging, same as the app's `cn()`                     |
 | [prototype-theme.js](prototype-theme.js) | Dark variant, semantic color/radius mappings, base layer    |
 | [prototype.css](prototype.css)           | Snowtime theme tokens from `src/styles.css`, shared styles  |
-| [app-frame.js](app-frame.js)             | App frame, view settings, icons, and markup helpers         |
+| [app-frame.js](app-frame.js)             | App frame, user settings, icons, and markup helpers         |
+| [app-data.js](app-data.js)               | Shared fictional organization, generated entries, zone helpers |
 | Inline Lucide SVG paths                  | Icons, copied from `lucide-static` (pinned)                 |
 
 Dependency order in `<head>`:
@@ -27,6 +28,7 @@ Dependency order in `<head>`:
 <script src="prototype-theme.js"></script>
 <script src="ui.js"></script>
 <script src="app-frame.js"></script> <!-- signed-in pages only -->
+<script src="app-data.js"></script> <!-- pages that need members, teams, projects -->
 <!-- view-specific <style type="text/tailwindcss"> -->
 <link rel="stylesheet" href="prototype.css" />
 ```
@@ -85,8 +87,9 @@ registry into `ui.js`, keeping the commit noted at the top of the file. Badge va
 3. Start with one complete design; add meaningfully different variants only when they help the
    decision. Switch variants with `body[data-design]` and CSS, keeping state and form controls
    intact across switches.
-4. Use fictional data and local state only. No network calls or real user data. Use
-   `localStorage` only where the app will too (per-device view settings), wrapped in try/catch.
+4. Use fictional data and local state only. No network calls or real user data. The one
+   `localStorage` key is the frame's stand-in for `user_settings` (see [App frame](#app-frame)),
+   so settings carry across prototypes; wrap any access in try/catch.
 5. Make the interactions needed to judge the design work; disable out-of-scope actions. Include a
    fixture selector for empty, populated, long-content, and relevant edge states.
 6. Run the checks below, then add a reference entry to this README.
@@ -134,7 +137,7 @@ It also provides:
 
 | API                                  | Use                                                            |
 | ------------------------------------ | -------------------------------------------------------------- |
-| `appFrame.viewSettings.get()` / `.set(patch)` | Per-device settings in `localStorage` under `snowtime.viewSettings`: `design`, `theme`, `showSummary`. `set` saves, applies the theme, and notifies. |
+| `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`. The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
 | `appFrame.on('settings' \| 'role' \| 'org', fn)` | Re-render when settings, the prototype role, or the organization change |
 | `appFrame.role`, `appFrame.isAdmin()`, `appFrame.org`, `appFrame.user` | Prototype session |
 | `appFrame.setUser(patch)`            | Swap the header's user, for long-content fixtures              |
@@ -145,6 +148,18 @@ The role and organization live in the URL (`?role=admin&org=snowhound`) so they 
 between prototypes. Frame links with `data-frame-link="<href>"` keep them. Switching the
 organization changes the header only; page data stays the same fictional Snowhound data. The
 signed-in user is Anna Kask (`anna@snowhound.eu`), matching the invitation in `auth.html`.
+
+[app-data.js](app-data.js) holds the fictional Snowhound organization: nine members, three teams
+(Platform, Design, Client services) with leads, the timer's projects plus an archived one, and
+about ten weeks of generated entries in Tallinn time, including a few that cross midnight and
+Anna's running timer. `appData.organization({ role, long })` returns fresh copies; as team lead,
+Anna leads Platform. `appData.tz` computes day and week starts in any IANA zone, DST included.
+
+Project colors come from eight categorical slots (`--series-1` to `--series-8` in
+[prototype.css](prototype.css)), validated for lightness, chroma, and color-vision separation on
+the light and dark surfaces. `project.color` stores the light hex, and dark mode uses each slot's
+dark step. Light mode's yellow, aqua, and magenta are below 3:1 against the surface, so charts
+always carry a legend or labels and a table view.
 
 ## Checks before handoff
 
@@ -165,18 +180,61 @@ Gotchas:
 
 ## Prototypes
 
+### [reports.html](reports.html) — Reports
+
+Decision: how day and week totals by project, team, and member read, for members, team leads,
+and admins. **02 · Timesheet** is selected for the app; the other two stay for comparison.
+
+- **01 · Summary**: stat tiles (total, average per tracked day, top project), stacked columns per
+  day or week by project with a hover and focus tooltip, a Table tab with the same values, and
+  share bars by the chosen grouping.
+- **02 · Timesheet (selected)**: a grid of rows by the chosen grouping and a column per day or
+  week, with row and column totals and today's column shaded. It scrolls horizontally inside its
+  card with the first column sticky.
+- **03 · Breakdown**: a two-level outline (project, then member; member, then project; team, then
+  member) with share bars, the first three groups open.
+
+Filters sit in one row: a range preset (today, this week, last week, this month, last month,
+custom), previous and next, from and to dates, People, Group by, and Totals per day or week.
+Ranges over 35 days switch to weeks. Days and weeks follow the user's time zone and week start
+from Settings; the subtitle links there.
+
+Aggregation follows task 007: entries are clipped to the range and split at midnight in the
+user's zone (a note counts the entries that crossed), and the running timer counts up to now.
+Teams count their current members, so a member in two teams counts in both; the total row counts
+each entry once.
+
+| Role      | People options                                  | Group by                 |
+| --------- | ----------------------------------------------- | ------------------------ |
+| Member    | None: own time only                             | Project only             |
+| Team lead | Their led team (Platform), and its members      | Project, team, member; teams limited to led teams |
+| Admin, owner | Everyone, each team, each member              | Project, team, member; members in no team as "No team" |
+
+Charts fold projects past seven into "Other". Fixtures: populated, empty, and long content (long
+project, member, and team names, twelve projects).
+
+Omitted: exports, filters by project or description, saved reports, and billable rates.
+
+Checked in Chromium at 1440, 850, and 390 px, light and dark, every layout and fixture, as
+member, team lead, and admin: no horizontal page overflow, tooltip within the viewport, and no
+browser errors.
+
 ### [settings.html](settings.html) — Settings
 
-Decision: one settings page for account-wide and per-device settings, and how it relates to the
+Decision: one settings page, with every setting saved to the account, and how it relates to the
 timer's View popover.
 
-Three cards, with section links beside them from 1024 px:
+Two cards, with section links beside them from 1024 px:
 
-| Card        | Stored in                        | Saves                                   |
-| ----------- | -------------------------------- | --------------------------------------- |
-| Profile     | `user`, `account`                | Name with "Save profile"                |
-| Preferences | `user_settings`                  | Time zone and week start with "Save preferences" |
-| This device | `localStorage` (`snowtime.viewSettings`) | Timer layout, theme, show summary, immediately |
+| Card        | Stored in         | Fields                                                         |
+| ----------- | ----------------- | -------------------------------------------------------------- |
+| Preferences | `user_settings`   | Language, time zone, week start, theme, timer layout, show summary; each saves on change |
+| Profile     | `user`, `account` | Name with "Save profile"; email read-only; sign-in methods      |
+
+Preferences come first because they change most often. Theme and timer layout moved from
+per-device `localStorage` into `user_settings` so they follow the user and the server can render
+the theme without a flash; the column change is with the backend (task 018 added `locale`). The
+Language select offers English and Eesti and changes nothing yet; translations are task 012.
 
 The email is read-only because invitations are matched to the verified address and changing it
 would need email verification (task 016). Sign-in methods list Google, GitHub, and Microsoft with
@@ -186,20 +244,20 @@ in a dialog). Disconnect is disabled on the last linked method. Passkeys show as
 offset, plus a button for the device's zone; a preview shows the current time and this week's
 range in the chosen zone and week start.
 
-The timer's gear popover stays as a shortcut to This device, with an "All settings" link. Both
-and the user menu's theme items write the same key through `appFrame.viewSettings`, so they never
-disagree; other open tabs follow through the `storage` event.
+The timer's gear popover stays as a shortcut to the appearance fields, with an "All settings"
+link. It, this page, and the user menu's theme items write through `appFrame.settings`, so they
+never disagree; other open tabs follow through the `storage` event.
 
-Fixtures: populated (Google and GitHub), new account (one provider, preferences from the
-browser), long content (long name, email, and zone), and local dev password (only the seeded
-credential account).
+Fixtures: populated (Google and GitHub), new account (one provider; resets preferences to the
+defaults with the browser's zone), long content (long name and email), and local dev password
+(only the seeded credential account).
 
 Omitted: avatar upload, email change, account deletion (users are anonymized, not deleted), and
 active sessions.
 
 Checked in Chromium at 1440, 850, and 390 px, light and dark, every fixture, as member and owner:
-no horizontal page overflow, settings shared with the timer across pages, menu focus and Escape,
-and no browser errors.
+no horizontal page overflow, settings shared with the timer and reports across pages, menu focus
+and Escape, and no browser errors.
 
 ### [timer.html](timer.html) — Timer and entries
 
@@ -213,8 +271,7 @@ are kept as user-selectable options.
 
 The settings button opens a **View** popover: layout, theme (light / dark / system), and whether
 the summary panel (today / this week, per-project bars) is shown, plus a link to Settings.
-Settings persist per device in `localStorage` under `snowtime.viewSettings`, as planned for the
-app, through the app frame.
+These are user settings, saved through the app frame (`user_settings` in the app).
 
 Entries are edited in a dialog opened from the pencil action or the time range: description,
 project, date, start, and end. An end time at or before the start means the next day. Clicking the
@@ -266,8 +323,8 @@ card layout. A clock icon stands in for a logo; a logo is postponed (task 017).
 
 Simulated with fictional rules: the password `wrong` fails sign-in, `taken@example.com` is
 already registered, and the short name `snowhound` is taken. Provider, passkey, and email steps
-show a short loading state, then continue. The theme follows `snowtime.viewSettings` from the
-timer prototype, or the system setting.
+show a short loading state, then continue. Signed-out screens follow the system theme in the
+app; the prototype also follows the theme chosen in the signed-in prototypes.
 
 Omitted: two-factor authentication, rate-limit messages, and the real provider consent screens.
 

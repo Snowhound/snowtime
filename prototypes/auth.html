@@ -453,10 +453,11 @@
         })
       )
 
-      // Follow the theme saved by the timer prototype's view settings, like the app would.
+      // Signed-out pages follow the system theme in the app. The prototype also follows the theme
+      // chosen in the signed-in prototypes, so screens can be compared in one theme.
       const savedTheme = (() => {
         try {
-          return JSON.parse(localStorage.getItem('snowtime.viewSettings') ?? '{}').theme ?? 'system'
+          return JSON.parse(localStorage.getItem('snowtime.prototypeSettings') ?? '{}').theme ?? 'system'
         } catch {
           return 'system'
         }

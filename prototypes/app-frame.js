@@ -1,5 +1,5 @@
 // App frame shared by the signed-in prototypes: header with organization switcher, navigation and
-// user menu; a prototype bar with the page's fixture controls and a role switcher; per-device view
+// user menu; a prototype bar with the page's fixture controls and a role switcher; the user's
 // settings; icons and markup helpers. Load after ui.js and call `appFrame.mount()` first thing in
 // the page script.
 ;(() => {
@@ -60,11 +60,19 @@
       .map((w) => w[0].toUpperCase())
       .join('')
 
-  // --- View settings (per device) ------------------------------------------------------------
-  // One localStorage key for layout, theme and summary, as planned for the app. The timer's View
-  // popover, the Settings page and the user menu's theme items all read and write it through here.
-  const SETTINGS_KEY = 'snowtime.viewSettings'
-  const SETTINGS_DEFAULTS = { design: 'bar', theme: 'system', showSummary: true }
+  // --- User settings -------------------------------------------------------------------------
+  // The app keeps these in user_settings. The prototypes stand in for it with one localStorage key,
+  // so every page sees the same values. The Settings page, the timer's View popover and the user
+  // menu's theme items all read and write it through here, and each change saves right away.
+  const SETTINGS_KEY = 'snowtime.prototypeSettings'
+  const SETTINGS_DEFAULTS = {
+    locale: 'en',
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    weekStart: 'mon',
+    theme: 'system',
+    design: 'bar', // user_settings.timer_layout
+    showSummary: true,
+  }
   const darkQuery = matchMedia('(prefers-color-scheme: dark)')
   const readSettings = () => {
     try {
@@ -81,13 +89,21 @@
     document.documentElement.classList.toggle('dark', settings.theme === 'dark' || (settings.theme === 'system' && darkQuery.matches))
     document.querySelectorAll('[data-frame-theme]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.frameTheme === settings.theme)))
   }
-  const viewSettings = {
+  const settingsStore = {
     get: () => ({ ...settings }),
     set(patch) {
       settings = { ...settings, ...patch }
       try {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
       } catch {}
+      applyTheme()
+      emit('settings')
+    },
+    reset() {
+      try {
+        localStorage.removeItem(SETTINGS_KEY)
+      } catch {}
+      settings = { ...SETTINGS_DEFAULTS }
       applyTheme()
       emit('settings')
     },
@@ -128,7 +144,7 @@
     { page: 'organization', href: 'organization.html', label: 'Organization', icon: 'building-2', admin: true },
   ]
   const isAdmin = () => role === 'admin' || role === 'owner'
-  // Links keep the prototype role and organization; a hash (e.g. #device) stays at the end.
+  // Links keep the prototype role and organization; a hash (e.g. #profile) stays at the end.
   const link = (href) => {
     const [path, hash] = href.split('#')
     const q = new URLSearchParams({ role, org: orgId })
@@ -240,7 +256,7 @@
       renderHeader()
       syncLinks()
       emit('org')
-    } else if (themeItem) viewSettings.set({ theme: themeItem.dataset.frameTheme })
+    } else if (themeItem) settingsStore.set({ theme: themeItem.dataset.frameTheme })
   })
 
   function mount({ page, title }) {
@@ -278,7 +294,7 @@
     mount,
     setUser,
     on: (type, fn) => listeners[type].push(fn),
-    viewSettings,
+    settings: settingsStore,
     user,
     organizations,
     get role() {

@@ -88,7 +88,7 @@
           </button>
         </div>
         <div data-ui="separator"></div>
-        <a href="settings.html#device" data-frame-link="settings.html#device" data-ui="button" data-variant="link" data-size="sm" class="h-auto justify-start p-0">All settings</a>
+        <a href="settings.html#preferences" data-frame-link="settings.html#preferences" data-ui="button" data-variant="link" data-size="sm" class="h-auto justify-start p-0">All settings</a>
       </div>
     </div>
 
@@ -173,10 +173,10 @@
 
       const projects = [
         { id: 'none', name: 'No project', color: 'transparent' },
-        { id: 'p1', name: 'Snowtime', color: 'oklch(0.62 0.19 255)' },
-        { id: 'p2', name: 'Client portal', color: 'oklch(0.7 0.17 150)' },
-        { id: 'p3', name: 'Internal', color: 'oklch(0.75 0.15 70)' },
-        { id: 'p4', name: 'Nordic Logistics – warehouse management system migration', color: 'oklch(0.65 0.2 20)' },
+        { id: 'p1', name: 'Snowtime', color: 'var(--series-1)' },
+        { id: 'p2', name: 'Client portal', color: 'var(--series-3)' },
+        { id: 'p3', name: 'Internal', color: 'var(--series-4)' },
+        { id: 'p4', name: 'Nordic Logistics – warehouse management system migration', color: 'var(--series-8)' },
       ]
 
       const state = { entries: [], running: null }
@@ -454,11 +454,11 @@
         renderSummary()
       }
 
-      // View settings: per device, read and written through the app frame (snowtime.viewSettings).
-      let settings = appFrame.viewSettings.get()
+      // User settings (user_settings in the app), read and written through the app frame.
+      let settings = appFrame.settings.get()
 
       function applySettings() {
-        settings = appFrame.viewSettings.get()
+        settings = appFrame.settings.get()
         document.body.dataset.design = settings.design
         document.body.dataset.summary = settings.showSummary ? 'on' : 'off'
         document.querySelectorAll('[data-setting]').forEach((b) => {
@@ -593,11 +593,11 @@
       })
       document.querySelectorAll('[data-setting]').forEach((b) =>
         b.addEventListener('click', () => {
-          appFrame.viewSettings.set({ [b.dataset.setting]: b.dataset.value })
+          appFrame.settings.set({ [b.dataset.setting]: b.dataset.value })
         })
       )
       document.getElementById('summary-switch').addEventListener('change', (event) => {
-        appFrame.viewSettings.set({ showSummary: event.currentTarget.getAttribute('aria-checked') === 'true' })
+        appFrame.settings.set({ showSummary: event.currentTarget.getAttribute('aria-checked') === 'true' })
       })
       appFrame.on('settings', applySettings)
 

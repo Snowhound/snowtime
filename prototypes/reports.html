@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reports</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="app-frame.js"></script>
+    <script src="app-data.js"></script>
+    <style type="text/tailwindcss">
+      body:not([data-design='summary']) .summary-only,
+      body:not([data-design='timesheet']) .timesheet-only,
+      body:not([data-design='breakdown']) .breakdown-only {
+        display: none;
+      }
+      .chart-grid {
+        stroke: var(--border);
+        stroke-width: 1;
+      }
+      .chart-band:focus-visible {
+        outline: none;
+      }
+      .chart-band:focus-visible .chart-hit {
+        @apply fill-muted;
+      }
+      .chart-band:hover .chart-hit {
+        @apply fill-muted/60;
+      }
+      .timesheet th:first-child,
+      .timesheet td:first-child {
+        @apply sticky left-0 z-10 bg-card;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body data-design="timesheet" class="bg-muted/40">
+    <div id="prototype-controls">
+      <div data-ui="toggle-group" role="group" aria-label="Layout">
+        <button data-ui="toggle" data-variant="outline" data-size="sm" data-design-option="summary">01 · Summary</button>
+        <button data-ui="toggle" data-variant="outline" data-size="sm" data-design-option="timesheet">02 · Timesheet (selected)</button>
+        <button data-ui="toggle" data-variant="outline" data-size="sm" data-design-option="breakdown">03 · Breakdown</button>
+      </div>
+      <label for="fixture" class="sr-only">Fixture</label>
+      <select id="fixture" data-ui="select" class="h-9 w-36">
+        <option value="populated">Populated</option>
+        <option value="empty">Empty</option>
+        <option value="long">Long content</option>
+      </select>
+    </div>
+
+    <div class="mx-auto flex max-w-6xl flex-col gap-1 px-4 pt-6 sm:px-8">
+      <h1 class="text-2xl font-semibold tracking-tight">Reports</h1>
+      <p id="scope-note" class="text-sm text-muted-foreground"></p>
+    </div>
+
+    <main class="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-10 pt-4 sm:px-8">
+      <!-- Filters: one row above the report. -->
+      <section aria-label="Report filters" class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
+        <div class="flex flex-wrap items-end gap-2">
+          <div class="grid gap-1.5">
+            <label data-ui="label" for="range-preset">Range</label>
+            <select id="range-preset" data-ui="select" class="h-9 w-36">
+              <option value="today">Today</option>
+              <option value="this-week">This week</option>
+              <option value="last-week">Last week</option>
+              <option value="this-month">This month</option>
+              <option value="last-month">Last month</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" id="range-prev" data-ui="button" data-variant="outline" data-size="icon" class="size-9" aria-label="Previous range"></button>
+            <button type="button" id="range-next" data-ui="button" data-variant="outline" data-size="icon" class="size-9" aria-label="Next range"></button>
+          </div>
+          <div class="flex items-end gap-2">
+            <div class="grid gap-1.5">
+              <label data-ui="label" for="range-from">From</label>
+              <input id="range-from" data-ui="input" type="date" class="h-9 w-[8.75rem]" />
+            </div>
+            <div class="grid gap-1.5">
+              <label data-ui="label" for="range-to">To</label>
+              <input id="range-to" data-ui="input" type="date" class="h-9 w-[8.75rem]" />
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-end gap-2 lg:ml-auto">
+          <div class="grid gap-1.5" id="scope-field">
+            <label data-ui="label" for="scope">People</label>
+            <select id="scope" data-ui="select" class="h-9 w-44"></select>
+          </div>
+          <div class="grid gap-1.5" id="group-field">
+            <span data-ui="label" id="group-label">Group by</span>
+            <div data-ui="tabs-list" id="group-by" role="tablist" aria-labelledby="group-label" class="h-9">
+              <button type="button" role="tab" data-ui="tabs-trigger" data-group="project" aria-selected="true">Project</button>
+              <button type="button" role="tab" data-ui="tabs-trigger" data-group="team">Team</button>
+              <button type="button" role="tab" data-ui="tabs-trigger" data-group="member">Member</button>
+            </div>
+          </div>
+          <div class="grid gap-1.5">
+            <span data-ui="label" id="unit-label">Totals per</span>
+            <div data-ui="toggle-group" role="group" aria-labelledby="unit-label" class="justify-start">
+              <button type="button" data-ui="toggle" data-variant="outline" data-unit="day">Day</button>
+              <button type="button" data-ui="toggle" data-variant="outline" data-unit="week">Week</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <p id="split-note" class="-mt-2 flex items-start gap-2 text-sm text-muted-foreground" hidden></p>
+
+      <!-- 01 · Summary -->
+      <section class="summary-only flex min-w-0 flex-col gap-6" aria-label="Summary">
+        <dl id="stats" class="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3"></dl>
+        <div data-ui="card" class="min-w-0">
+          <div data-ui="card-header" class="flex-row flex-wrap items-center justify-between gap-2 space-y-0 pb-4">
+            <h2 id="chart-title" data-ui="card-title" class="text-base"></h2>
+            <div data-ui="tabs-list" role="tablist" aria-label="Chart or table" class="h-9">
+              <button type="button" role="tab" data-ui="tabs-trigger" aria-controls="chart-panel" aria-selected="true" class="py-1">Chart</button>
+              <button type="button" role="tab" data-ui="tabs-trigger" aria-controls="chart-table-panel" class="py-1">Table</button>
+            </div>
+          </div>
+          <div data-ui="card-content" class="grid grid-cols-[minmax(0,1fr)] gap-4">
+            <div id="chart-panel" role="tabpanel" class="grid grid-cols-[minmax(0,1fr)] gap-4">
+              <ul id="chart-legend" class="flex flex-wrap gap-x-4 gap-y-1.5 text-xs" aria-label="Projects"></ul>
+              <div id="chart" class="relative"></div>
+            </div>
+            <div id="chart-table-panel" role="tabpanel" hidden></div>
+          </div>
+        </div>
+        <div data-ui="card" class="min-w-0">
+          <div data-ui="card-header" class="pb-4">
+            <h2 id="breakdown-title" data-ui="card-title" class="text-base"></h2>
+            <p id="breakdown-note" data-ui="card-description" class="empty:hidden"></p>
+          </div>
+          <div id="summary-breakdown" data-ui="card-content"></div>
+        </div>
+      </section>
+
+      <!-- 02 · Timesheet -->
+      <section class="timesheet-only min-w-0" aria-label="Timesheet">
+        <div data-ui="card" class="min-w-0 overflow-hidden">
+          <div data-ui="card-header" class="pb-4">
+            <h2 id="timesheet-title" data-ui="card-title" class="text-base"></h2>
+            <p id="timesheet-note" data-ui="card-description" class="empty:hidden"></p>
+          </div>
+          <div id="timesheet"></div>
+        </div>
+      </section>
+
+      <!-- 03 · Breakdown -->
+      <section class="breakdown-only min-w-0" aria-label="Breakdown">
+        <div data-ui="card" class="min-w-0">
+          <div data-ui="card-header" class="flex-row flex-wrap items-baseline justify-between gap-2 space-y-0">
+            <div class="grid gap-1.5">
+              <h2 id="outline-title" data-ui="card-title" class="text-base"></h2>
+              <p id="outline-note" data-ui="card-description" class="empty:hidden"></p>
+            </div>
+            <p id="outline-total" class="font-mono text-2xl tabular-nums"></p>
+          </div>
+          <div id="outline" data-ui="card-content"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="chart-tooltip" role="tooltip" class="pointer-events-none fixed z-50 hidden min-w-44 max-w-72 rounded-md border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md"></div>
+
+    <script>
+      appFrame.mount({ page: 'reports', title: 'Reports' })
+      const { escapeHtml, icon } = appFrame
+      const { tz: Z, HOUR, colorVar } = appData
+      const ME = appData.currentUserId
+
+      const state = {
+        fixture: 'populated',
+        // The user's time zone and week start, from user_settings (Settings page).
+        zone: appFrame.settings.get().timeZone,
+        weekStart: appFrame.settings.get().weekStart,
+        preset: 'this-week',
+        from: 0, // first day start (inclusive)
+        to: 0, // day start after the last day (exclusive)
+        scope: 'default',
+        group: 'project',
+        unit: 'day',
+        org: null,
+        entries: [],
+      }
+
+      // --- Formatting ---------------------------------------------------------------------------
+      const hm = (ms) => {
+        const m = Math.round(ms / 60_000)
+        return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
+      }
+      const fmt = (opts) => new Intl.DateTimeFormat(undefined, { timeZone: state.zone, ...opts })
+      const dateValue = (t) => {
+        const p = Z.zonedParts(t, state.zone)
+        return `${p.y}-${String(p.m).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`
+      }
+      const fromDateValue = (v) => {
+        const [y, m, d] = v.split('-').map(Number)
+        return Z.zonedTime(y, m, d, 0, 0, state.zone)
+      }
+      const dot = (color, cls = 'size-2') => `<span class="inline-block ${cls} shrink-0 rounded-full" style="background:${color}" aria-hidden="true"></span>`
+      const NO_PROJECT = { id: 'none', name: 'No project', color: 'var(--muted-foreground)' }
+
+      // --- Visibility (docs/architecture.md, Tenancy) -------------------------------------------
+      const role = () => appFrame.role
+      const ledTeams = () => state.org.teams.filter((t) => t.members.some(([u, r]) => u === ME && r === 'lead'))
+      function visibleUsers() {
+        if (appFrame.isAdmin()) return new Set(state.org.members.map((m) => m.id))
+        const ids = new Set([ME])
+        if (role() === 'lead') ledTeams().forEach((t) => t.members.forEach(([u]) => ids.add(u)))
+        return ids
+      }
+      const visibleTeams = () => (appFrame.isAdmin() ? state.org.teams : role() === 'lead' ? ledTeams() : [])
+      const member = (id) => state.org.members.find((m) => m.id === id)
+      const project = (id) => state.org.projects.find((p) => p.id === id) ?? NO_PROJECT
+
+      function scopeOptions() {
+        const opt = (value, label) => `<option value="${value}">${escapeHtml(label)}</option>`
+        const people = (ids) =>
+          [...ids]
+            .map(member)
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((m) => opt(`user:${m.id}`, m.id === ME ? `${m.name} (you)` : m.name))
+            .join('')
+        if (appFrame.isAdmin())
+          return `${opt('default', 'Everyone')}<optgroup label="Teams">${state.org.teams.map((t) => opt(`team:${t.id}`, t.name)).join('')}</optgroup><optgroup label="Members">${people(visibleUsers())}</optgroup>`
+        const teams = ledTeams()
+        return `${opt('default', teams.length > 1 ? 'My teams' : teams[0].name)}${teams.length > 1 ? `<optgroup label="Teams">${teams.map((t) => opt(`team:${t.id}`, t.name)).join('')}</optgroup>` : ''}<optgroup label="Members">${people(visibleUsers())}</optgroup>`
+      }
+
+      function scopedUsers() {
+        const all = visibleUsers()
+        if (state.scope.startsWith('user:')) return new Set([state.scope.slice(5)])
+        if (state.scope.startsWith('team:')) return new Set(state.org.teams.find((t) => t.id === state.scope.slice(5)).members.map(([u]) => u))
+        return all
+      }
+
+      // --- Aggregation (the reports module, task 007) -------------------------------------------
+      // Entries are clipped to the range and split at day boundaries in the user's zone; the
+      // running entry counts up to now.
+      function segments() {
+        const users = scopedUsers()
+        const now = Date.now()
+        const out = []
+        let split = 0
+        for (const e of state.entries) {
+          if (!users.has(e.userId)) continue
+          let s = Math.max(e.startedAt, state.from)
+          const end = Math.min(e.stoppedAt ?? now, state.to)
+          if (s >= end) continue
+          let day = Z.startOfDay(s, state.zone)
+          let parts = 0
+          while (s < end) {
+            const next = Z.addDays(day, 1, state.zone)
+            out.push({ entry: e, day, ms: Math.min(end, next) - s })
+            s = next
+            day = next
+            parts++
+          }
+          if (parts > 1) split++
+        }
+        return { segs: out, split }
+      }
+
+      function buckets() {
+        const list = []
+        if (state.unit === 'week') {
+          for (let w = Z.startOfWeek(state.from, state.zone, state.weekStart); w < state.to; w = Z.addDays(w, 7, state.zone)) list.push(w)
+        } else for (let d = state.from; d < state.to; d = Z.addDays(d, 1, state.zone)) list.push(d)
+        return list
+      }
+      const bucketOf = (day) => (state.unit === 'week' ? Z.startOfWeek(day, state.zone, state.weekStart) : day)
+
+      // Keys for the grouping dimension. A member in several teams counts in each (current members).
+      function keysFor(entry, group) {
+        if (group === 'project') return [entry.projectId ?? 'none']
+        if (group === 'member') return [entry.userId]
+        const teams = visibleTeams().filter((t) => t.members.some(([u]) => u === entry.userId))
+        if (teams.length) return teams.map((t) => t.id)
+        return appFrame.isAdmin() ? ['no-team'] : []
+      }
+      function labelFor(key, group) {
+        if (group === 'project') {
+          const p = project(key)
+          return { name: p.name, color: colorVar(p.color), archived: !!p.archivedAt }
+        }
+        if (group === 'member') {
+          const m = member(key)
+          return { name: key === ME ? `${m.name} (you)` : m.name }
+        }
+        return { name: key === 'no-team' ? 'No team' : state.org.teams.find((t) => t.id === key).name, muted: key === 'no-team' }
+      }
+
+      function rowsBy(segs, group) {
+        const rows = new Map()
+        for (const s of segs)
+          for (const key of keysFor(s.entry, group)) {
+            if (!rows.has(key)) rows.set(key, { key, ...labelFor(key, group), total: 0, byBucket: new Map(), segs: [] })
+            const r = rows.get(key)
+            const b = bucketOf(s.day)
+            r.total += s.ms
+            r.byBucket.set(b, (r.byBucket.get(b) ?? 0) + s.ms)
+            r.segs.push(s)
+          }
+        return [...rows.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+      }
+
+      // --- Range --------------------------------------------------------------------------------
+      function setPreset(preset, anchor = Date.now()) {
+        const tz = state.zone
+        const today = Z.startOfDay(anchor, tz)
+        const p = Z.zonedParts(today + 12 * HOUR, tz)
+        const monthStart = (y, m) => Z.zonedTime(y, m, 1, 0, 0, tz)
+        const ranges = {
+          today: [today, Z.addDays(today, 1, tz)],
+          'this-week': [Z.startOfWeek(today, tz, state.weekStart), Z.addDays(Z.startOfWeek(today, tz, state.weekStart), 7, tz)],
+          'last-week': [Z.addDays(Z.startOfWeek(today, tz, state.weekStart), -7, tz), Z.startOfWeek(today, tz, state.weekStart)],
+          'this-month': [monthStart(p.y, p.m), monthStart(p.y, p.m + 1)],
+          'last-month': [monthStart(p.y, p.m - 1), monthStart(p.y, p.m)],
+        }
+        state.preset = preset
+        if (ranges[preset]) [state.from, state.to] = ranges[preset]
+        state.unit = daysInRange() > 35 ? 'week' : 'day'
+      }
+      const daysInRange = () => Math.round((state.to - state.from) / (24 * HOUR))
+
+      function shiftRange(dir) {
+        const tz = state.zone
+        if (state.preset === 'this-month' || state.preset === 'last-month') {
+          const p = Z.zonedParts(state.from + 12 * HOUR, tz)
+          state.from = Z.zonedTime(p.y, p.m + dir, 1, 0, 0, tz)
+          state.to = Z.zonedTime(p.y, p.m + dir + 1, 1, 0, 0, tz)
+        } else {
+          const n = daysInRange()
+          state.from = Z.addDays(state.from, dir * n, tz)
+          state.to = Z.addDays(state.to, dir * n, tz)
+        }
+        state.preset = matchPreset()
+      }
+      // A shifted range that lands on a preset shows that preset again.
+      function matchPreset() {
+        const { from, to } = state
+        for (const p of ['today', 'this-week', 'last-week', 'this-month', 'last-month']) {
+          setPreset(p)
+          if (state.from === from && state.to === to) return p
+        }
+        state.from = from
+        state.to = to
+        return 'custom'
+      }
+
+      function rangeLabel() {
+        const last = Z.addDays(state.to, -1, state.zone)
+        const f = fmt({ day: 'numeric', month: 'short', year: 'numeric' })
+        return state.from === last ? fmt({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(state.from) : f.formatRange(state.from, last + 12 * HOUR)
+      }
+
+      // --- Rendering: shared --------------------------------------------------------------------
+      function emptyState(text = 'No time tracked in this range.') {
+        return `<div class="flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-10 text-center">
+          ${icon('chart-column', 'size-6 text-muted-foreground')}
+          <p class="font-medium">${text}</p>
+          <p class="text-sm text-muted-foreground">Pick another range or other people.</p>
+        </div>`
+      }
+      const groupNoun = () => ({ project: 'project', team: 'team', member: 'member' })[state.group]
+      const teamNote = () =>
+        state.group === 'team' ? 'Teams count the time of their current members, so someone in two teams counts in both and team totals can add up to more than the total.' : ''
+
+      function bucketLabel(b, short) {
+        if (state.unit === 'week') return short ? fmt({ day: 'numeric', month: 'short' }).format(b + 12 * HOUR) : `Week of ${fmt({ day: 'numeric', month: 'short' }).format(b + 12 * HOUR)}`
+        return short ? fmt(daysInRange() <= 7 ? { weekday: 'short', day: 'numeric' } : { day: 'numeric' }).format(b + 12 * HOUR) : fmt({ weekday: 'short', day: 'numeric', month: 'short' }).format(b + 12 * HOUR)
+      }
+      const isCurrent = (b) => {
+        const today = Z.startOfDay(Date.now(), state.zone)
+        return state.unit === 'week' ? b === Z.startOfWeek(today, state.zone, state.weekStart) : b === today
+      }
+
+      function shareBar(fraction, color) {
+        return `<div data-ui="progress" class="h-1.5" aria-hidden="true"><div data-ui="progress-fill" style="width:${Math.max(0, fraction * 100).toFixed(1)}%${color ? `;background:${color}` : ''}"></div></div>`
+      }
+
+      // --- 01 · Summary -------------------------------------------------------------------------
+      function renderStats(segs) {
+        const total = segs.reduce((s, x) => s + x.ms, 0)
+        const today = Z.startOfDay(Date.now(), state.zone)
+        let elapsed = 0
+        for (let d = state.from; d < state.to && d <= today; d = Z.addDays(d, 1, state.zone)) elapsed++
+        const days = new Set(segs.map((s) => s.day)).size
+        const top = rowsBy(segs, 'project')[0]
+        document.getElementById('stats').innerHTML = `
+          <div data-ui="card" class="p-5"><dt class="text-sm text-muted-foreground">Total</dt><dd class="mt-1 text-4xl font-semibold tracking-tight">${hm(total)}</dd></div>
+          <div data-ui="card" class="p-5"><dt class="text-sm text-muted-foreground">Average per tracked day</dt><dd class="mt-1 text-2xl font-semibold">${days ? hm(total / days) : '0:00'}</dd><dd class="text-xs text-muted-foreground">${days} of ${elapsed} ${elapsed === 1 ? 'day' : 'days'} so far</dd></div>
+          <div data-ui="card" class="min-w-0 p-5"><dt class="text-sm text-muted-foreground">Top project</dt>${
+            top
+              ? `<dd class="mt-1 flex min-w-0 items-center gap-2 text-2xl font-semibold">${dot(top.color, 'size-2.5')}<span class="truncate">${escapeHtml(top.name)}</span></dd><dd class="text-xs text-muted-foreground">${hm(top.total)} · ${Math.round((top.total / total) * 100)}%</dd>`
+              : '<dd class="mt-1 text-2xl font-semibold text-muted-foreground">—</dd>'
+          }</div>`
+      }
+
+      // Stacked columns by project. At most eight series: the smallest projects fold into "Other".
+      function chartSeries(segs) {
+        const rows = rowsBy(segs, 'project')
+        if (rows.length <= 8) return rows
+        const kept = rows.slice(0, 7)
+        const rest = rows.slice(7)
+        const other = { key: 'other', name: `Other (${rest.length} projects)`, color: 'var(--muted-foreground)', total: 0, byBucket: new Map() }
+        for (const r of rest) {
+          other.total += r.total
+          for (const [b, ms] of r.byBucket) other.byBucket.set(b, (other.byBucket.get(b) ?? 0) + ms)
+        }
+        return [...kept, other]
+      }
+
+      function niceStep(maxHours) {
+        for (const s of [0.5, 1, 2, 4, 5, 8, 10, 20, 25, 40, 50, 100, 200]) if (maxHours / s <= 4) return s
+        return 500
+      }
+
+      let chartModel = null
+      function renderChart(segs) {
+        const series = chartSeries(segs)
+        const bs = buckets()
+        const unitWord = state.unit === 'week' ? 'week' : 'day'
+        document.getElementById('chart-title').textContent = `Time per ${unitWord}`
+        const legend = document.getElementById('chart-legend')
+        const chart = document.getElementById('chart')
+        if (!series.length) {
+          legend.innerHTML = ''
+          chart.innerHTML = emptyState()
+          document.getElementById('chart-table-panel').innerHTML = emptyState()
+          chartModel = null
+          return
+        }
+        legend.innerHTML = series
+          .map((s) => `<li class="flex min-w-0 max-w-full items-center gap-1.5">${dot(s.color)}<span class="truncate sm:max-w-56">${escapeHtml(s.name)}</span><span class="font-mono tabular-nums text-muted-foreground">${hm(s.total)}</span></li>`)
+          .join('')
+
+        const W = Math.max(280, chart.clientWidth || 600)
+        const H = 220
+        const left = 36
+        const bottom = 22
+        const top = 8
+        const plotW = W - left - 4
+        const plotH = H - top - bottom
+        const totals = bs.map((b) => series.reduce((s, x) => s + (x.byBucket.get(b) ?? 0), 0))
+        const maxH = Math.max(1, ...totals.map((t) => t / HOUR))
+        const step = niceStep(maxH)
+        const yMax = Math.ceil(maxH / step) * step
+        const y = (h) => top + plotH - (h / yMax) * plotH
+        const band = plotW / bs.length
+        const barW = Math.max(3, Math.min(24, band * 0.62))
+        const every = Math.ceil(bs.length / Math.max(1, Math.floor(plotW / 44)))
+        let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Stacked columns of time per ${unitWord} by project. The Table tab lists the same values." class="block overflow-visible">`
+        for (let v = 0; v <= yMax + 1e-9; v += step)
+          svg += `<line class="chart-grid" x1="${left}" x2="${W}" y1="${y(v)}" y2="${y(v)}" /><text x="${left - 8}" y="${y(v)}" dy="0.32em" text-anchor="end" class="fill-muted-foreground text-[10px] tabular-nums">${v}h</text>`
+        bs.forEach((b, i) => {
+          const x = left + i * band + (band - barW) / 2
+          let acc = 0
+          const stack = series.map((s) => ({ s, ms: s.byBucket.get(b) ?? 0 })).filter((x) => x.ms > 0)
+          let marks = ''
+          stack.forEach(({ s, ms }, j) => {
+            const y0 = y(acc / HOUR)
+            acc += ms
+            const y1 = y(acc / HOUR)
+            // A 2px surface gap between stacked segments; the top segment gets 4px rounded corners.
+            const hgt = Math.max(0, y0 - y1 - (j > 0 ? 2 : 0))
+            const yTop = y1
+            if (hgt <= 0) return
+            const r = j === stack.length - 1 ? Math.min(4, barW / 2, hgt) : 0
+            marks += `<path d="M${x},${yTop + hgt} V${yTop + r} Q${x},${yTop} ${x + r},${yTop} H${x + barW - r} Q${x + barW},${yTop} ${x + barW},${yTop + r} V${yTop + hgt} Z" style="fill:${s.color}" />`
+          })
+          const label = i % every === 0 ? `<text x="${left + i * band + band / 2}" y="${H - 6}" text-anchor="middle" class="${isCurrent(b) ? 'fill-foreground font-medium' : 'fill-muted-foreground'} text-[10px]">${escapeHtml(bucketLabel(b, true))}</text>` : ''
+          svg += `<g class="chart-band" tabindex="0" data-bucket="${i}" aria-label="${escapeHtml(`${bucketLabel(b, false)}: ${hm(totals[i])}`)}">
+            <rect class="chart-hit fill-transparent" x="${left + i * band}" y="${top}" width="${band}" height="${plotH}" rx="4" />${marks}</g>${label}`
+        })
+        svg += `<line x1="${left}" x2="${W}" y1="${y(0)}" y2="${y(0)}" class="stroke-muted-foreground/40" /></svg>`
+        chart.innerHTML = svg
+        chartModel = { series, bs, totals }
+
+        // Table view with the same values.
+        document.getElementById('chart-table-panel').innerHTML = `<div class="relative w-full overflow-auto rounded-md border">
+          <table data-ui="table" class="min-w-[28rem]">
+            <thead data-ui="table-header"><tr data-ui="table-row"><th data-ui="table-head">${state.unit === 'week' ? 'Week' : 'Day'}</th>${series.map((s) => `<th data-ui="table-head" class="text-right"><span class="inline-flex max-w-40 items-center gap-1.5">${dot(s.color)}<span class="truncate">${escapeHtml(s.name)}</span></span></th>`).join('')}<th data-ui="table-head" class="text-right">Total</th></tr></thead>
+            <tbody data-ui="table-body">${bs
+              .map(
+                (b, i) => `<tr data-ui="table-row"><td data-ui="table-cell" class="whitespace-nowrap">${escapeHtml(bucketLabel(b, false))}</td>${series
+                  .map((s) => `<td data-ui="table-cell" class="text-right font-mono tabular-nums ${s.byBucket.get(b) ? '' : 'text-muted-foreground'}">${s.byBucket.get(b) ? hm(s.byBucket.get(b)) : '—'}</td>`)
+                  .join('')}<td data-ui="table-cell" class="text-right font-mono font-medium tabular-nums">${hm(totals[i])}</td></tr>`
+              )
+              .join('')}</tbody>
+          </table></div>`
+      }
+
+      // Tooltip for one column: every series at that bucket, values first.
+      const tooltip = document.getElementById('chart-tooltip')
+      function showTooltip(band, clientX, clientY) {
+        if (!chartModel) return
+        const i = +band.dataset.bucket
+        const b = chartModel.bs[i]
+        const rows = chartModel.series.map((s) => ({ s, ms: s.byBucket.get(b) ?? 0 })).filter((x) => x.ms > 0)
+        tooltip.innerHTML = `<p class="mb-1.5 font-medium">${escapeHtml(bucketLabel(b, false))} · <span class="font-mono tabular-nums">${hm(chartModel.totals[i])}</span></p>${
+          rows.length
+            ? `<ul class="grid gap-1">${rows
+                .reverse()
+                .map(({ s, ms }) => `<li class="flex min-w-0 items-center gap-2"><span class="w-10 shrink-0 font-mono font-medium tabular-nums">${hm(ms)}</span>${dot(s.color)}<span class="min-w-0 truncate text-muted-foreground">${escapeHtml(s.name)}</span></li>`)
+                .join('')}</ul>`
+            : '<p class="text-muted-foreground">No time</p>'
+        }`
+        tooltip.classList.remove('hidden')
+        const r = tooltip.getBoundingClientRect()
+        tooltip.style.left = `${Math.max(8, Math.min(clientX + 12, innerWidth - r.width - 8))}px`
+        tooltip.style.top = `${Math.max(8, clientY - r.height - 12)}px`
+      }
+      const chartEl = document.getElementById('chart')
+      chartEl.addEventListener('pointermove', (event) => {
+        const band = event.target.closest('.chart-band')
+        band ? showTooltip(band, event.clientX, event.clientY) : tooltip.classList.add('hidden')
+      })
+      chartEl.addEventListener('pointerleave', () => tooltip.classList.add('hidden'))
+      chartEl.addEventListener('focusin', (event) => {
+        const band = event.target.closest('.chart-band')
+        if (!band) return
+        const r = band.getBoundingClientRect()
+        showTooltip(band, r.left + r.width / 2, r.top + 40)
+      })
+      chartEl.addEventListener('focusout', () => tooltip.classList.add('hidden'))
+      new ResizeObserver(() => document.body.dataset.design === 'summary' && chartModel && renderChart(segments().segs)).observe(chartEl)
+
+      function renderSummaryBreakdown(segs) {
+        const rows = rowsBy(segs, state.group)
+        const total = segs.reduce((s, x) => s + x.ms, 0)
+        document.getElementById('breakdown-title').textContent = `By ${groupNoun()}`
+        document.getElementById('breakdown-note').textContent = teamNote()
+        document.getElementById('summary-breakdown').innerHTML = rows.length
+          ? `<ul class="grid gap-3">${rows
+              .map(
+                (r) => `<li class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 text-sm">
+                  <span class="flex min-w-0 items-center gap-2">${r.color ? dot(r.color) : ''}<span class="truncate ${r.muted ? 'text-muted-foreground' : ''}">${escapeHtml(r.name)}</span>${r.archived ? '<span data-ui="badge" data-variant="outline" class="px-1.5 text-[10px]">Archived</span>' : ''}</span>
+                  <span class="flex items-baseline gap-3"><span class="w-10 text-right text-xs text-muted-foreground">${Math.round((r.total / total) * 100)}%</span><span class="w-14 text-right font-mono tabular-nums">${hm(r.total)}</span></span>
+                  <div class="col-span-2">${shareBar(r.total / total, r.color)}</div>
+                </li>`
+              )
+              .join('')}</ul>`
+          : emptyState()
+      }
+
+      // --- 02 · Timesheet -----------------------------------------------------------------------
+      function renderTimesheet(segs) {
+        const rows = rowsBy(segs, state.group)
+        const bs = buckets()
+        document.getElementById('timesheet-title').textContent = `${groupNoun()[0].toUpperCase()}${groupNoun().slice(1)}s by ${state.unit}`
+        document.getElementById('timesheet-note').textContent = teamNote()
+        const el = document.getElementById('timesheet')
+        if (!rows.length) return (el.innerHTML = `<div class="px-6 pb-6">${emptyState()}</div>`)
+        const colTotal = (b) => {
+          // The total row counts each segment once, even when a member is in two teams.
+          return segs.filter((s) => bucketOf(s.day) === b).reduce((a, s) => a + s.ms, 0)
+        }
+        const grand = segs.reduce((a, s) => a + s.ms, 0)
+        const head = (b) => `<th data-ui="table-head" class="min-w-16 whitespace-nowrap text-right ${isCurrent(b) ? 'text-foreground' : ''}" scope="col">${escapeHtml(bucketLabel(b, true))}${state.unit === 'day' && daysInRange() > 7 ? `<span class="block text-[10px] font-normal">${escapeHtml(fmt({ weekday: 'narrow' }).format(b + 12 * HOUR))}</span>` : ''}</th>`
+        const cell = (ms, b, extra = '') =>
+          `<td data-ui="table-cell" class="whitespace-nowrap text-right font-mono tabular-nums ${isCurrent(b) ? 'bg-muted/50' : ''} ${ms ? '' : 'text-muted-foreground/50'} ${extra}">${ms ? hm(ms) : '·'}</td>`
+        el.innerHTML = `<div class="relative w-full overflow-auto border-t">
+          <table data-ui="table" class="timesheet">
+            <thead data-ui="table-header"><tr data-ui="table-row"><th data-ui="table-head" class="min-w-36 max-w-40 pl-6 sm:max-w-64" scope="col">${escapeHtml(groupNoun()[0].toUpperCase() + groupNoun().slice(1))}</th>${bs.map(head).join('')}<th data-ui="table-head" class="pr-6 text-right" scope="col">Total</th></tr></thead>
+            <tbody data-ui="table-body">${rows
+              .map(
+                (r) => `<tr data-ui="table-row"><th data-ui="table-cell" scope="row" class="max-w-40 pl-6 text-left font-normal sm:max-w-64"><span class="flex min-w-0 items-center gap-2">${r.color ? dot(r.color) : ''}<span class="truncate ${r.muted ? 'text-muted-foreground' : ''}" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span></span></th>${bs.map((b) => cell(r.byBucket.get(b) ?? 0, b)).join('')}<td data-ui="table-cell" class="pr-6 text-right font-mono font-medium tabular-nums">${hm(r.total)}</td></tr>`
+              )
+              .join('')}
+              <tr data-ui="table-row" class="border-t-2 font-medium hover:bg-transparent"><th data-ui="table-cell" scope="row" class="pl-6 text-left">Total</th>${bs.map((b) => cell(colTotal(b), b, 'font-medium')).join('')}<td data-ui="table-cell" class="pr-6 text-right font-mono tabular-nums">${hm(grand)}</td></tr>
+            </tbody>
+          </table></div>`
+      }
+
+      // --- 03 · Breakdown -----------------------------------------------------------------------
+      const SUBGROUP = { project: 'member', member: 'project', team: 'member' }
+      function renderOutline(segs) {
+        const rows = rowsBy(segs, state.group)
+        const total = segs.reduce((a, s) => a + s.ms, 0)
+        const sub = appFrame.role === 'member' && state.group === 'project' ? null : SUBGROUP[state.group]
+        document.getElementById('outline-title').textContent = `By ${groupNoun()}${sub ? `, then ${sub}` : ''}`
+        document.getElementById('outline-note').textContent = teamNote()
+        document.getElementById('outline-total').textContent = hm(total)
+        const el = document.getElementById('outline')
+        if (!rows.length) return (el.innerHTML = emptyState())
+        const line = (r, of, level) => `<div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 ${level ? 'text-sm' : ''}">
+            <span class="flex min-w-0 items-center gap-2">${r.color ? dot(r.color) : ''}<span class="truncate ${level ? 'text-muted-foreground' : 'font-medium'} ${r.muted ? 'text-muted-foreground' : ''}">${escapeHtml(r.name)}</span>${r.archived ? '<span data-ui="badge" data-variant="outline" class="px-1.5 text-[10px]">Archived</span>' : ''}</span>
+            <span class="flex items-baseline gap-3"><span class="w-10 text-right text-xs text-muted-foreground">${Math.round((r.total / of) * 100)}%</span><span class="w-14 text-right font-mono tabular-nums">${hm(r.total)}</span></span>
+            <div class="col-span-2">${shareBar(r.total / of, r.color)}</div>
+          </div>`
+        el.innerHTML = `<ul class="divide-y rounded-md border">${rows
+          .map((r, i) => {
+            const children = sub ? rowsBy(r.segs, sub) : []
+            if (!children.length) return `<li class="px-4 py-3">${line(r, total, 0)}</li>`
+            return `<li><details ${i < 3 ? 'open' : ''} class="group">
+              <summary class="flex cursor-pointer items-start gap-2 px-4 py-3 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+                ${icon('chevron-right', 'mt-0.5 text-muted-foreground transition-transform group-open:rotate-90')}<div class="min-w-0 flex-1">${line(r, total, 0)}</div>
+              </summary>
+              <ul class="grid gap-3 pb-4 pl-10 pr-4">${children.map((c) => `<li>${line(c, r.total, 1)}</li>`).join('')}</ul>
+            </details></li>`
+          })
+          .join('')}</ul>`
+      }
+
+      // --- Controls -----------------------------------------------------------------------------
+      function renderControls() {
+        document.getElementById('range-preset').value = state.preset
+        document.getElementById('range-from').value = dateValue(state.from)
+        document.getElementById('range-to').value = dateValue(Z.addDays(state.to, -1, state.zone))
+        document.getElementById('range-prev').innerHTML = icon('chevron-left')
+        document.getElementById('range-next').innerHTML = icon('chevron-right')
+        document.querySelectorAll('[data-unit]').forEach((b) => {
+          const pressed = b.dataset.unit === state.unit
+          b.setAttribute('aria-pressed', String(pressed))
+          b.toggleAttribute('data-pressed', pressed)
+        })
+        const isMember = role() === 'member'
+        document.getElementById('scope-field').hidden = isMember
+        document.getElementById('group-field').hidden = isMember
+        document.querySelectorAll('[data-design-option]').forEach((b) => {
+          const pressed = b.dataset.designOption === document.body.dataset.design
+          b.setAttribute('aria-pressed', String(pressed))
+          b.toggleAttribute('data-pressed', pressed)
+        })
+        const note = {
+          member: 'Your own time.',
+          lead: `Your time and the time of the ${ledTeams().map((t) => t.name).join(', ')} team${ledTeams().length > 1 ? 's' : ''}, which you lead.`,
+          admin: 'Everyone in the organization.',
+          owner: 'Everyone in the organization.',
+        }[role()]
+        document.getElementById('scope-note').innerHTML = `${escapeHtml(rangeLabel())} · ${escapeHtml(note)} Days and weeks in ${escapeHtml(state.zone.replaceAll('_', ' '))}, starting ${state.weekStart === 'sun' ? 'Sunday' : 'Monday'} (<a href="${appFrame.link('settings.html#preferences')}" data-frame-link="settings.html#preferences" class="underline underline-offset-4 hover:text-foreground">change</a>).`
+      }
+
+      function render() {
+        renderControls()
+        const { segs, split } = segments()
+        const splitNote = document.getElementById('split-note')
+        splitNote.hidden = !split
+        splitNote.innerHTML = `${icon('moon', 'mt-0.5')}<span>${split} ${split === 1 ? 'entry crosses' : 'entries cross'} midnight and ${split === 1 ? 'is' : 'are'} split between days.</span>`
+        const design = document.body.dataset.design
+        if (design === 'summary') {
+          renderStats(segs)
+          renderChart(segs)
+          renderSummaryBreakdown(segs)
+        } else if (design === 'timesheet') renderTimesheet(segs)
+        else renderOutline(segs)
+      }
+
+      function loadOrg() {
+        state.org = appData.organization({ role: role(), long: state.fixture === 'long' })
+        state.entries = state.fixture === 'empty' ? [] : appData.generateEntries(state.org)
+        document.getElementById('scope').innerHTML = role() === 'member' ? '' : scopeOptions()
+        state.scope = 'default'
+        if (role() === 'member') state.group = 'project'
+        const groupTab = document.querySelector(`[data-group="${state.group}"]`)
+        if (groupTab.getAttribute('aria-selected') !== 'true') ui.selectTab(groupTab)
+      }
+
+      document.getElementById('range-preset').addEventListener('change', (event) => {
+        if (event.currentTarget.value === 'custom') state.preset = 'custom'
+        else setPreset(event.currentTarget.value)
+        render()
+      })
+      document.getElementById('range-prev').addEventListener('click', () => (shiftRange(-1), render()))
+      document.getElementById('range-next').addEventListener('click', () => (shiftRange(1), render()))
+      for (const id of ['range-from', 'range-to'])
+        document.getElementById(id).addEventListener('change', () => {
+          const from = document.getElementById('range-from').value
+          const to = document.getElementById('range-to').value
+          if (!from || !to) return
+          let a = fromDateValue(from)
+          let b = Z.addDays(fromDateValue(to), 1, state.zone)
+          if (b <= a) [a, b] = [fromDateValue(to), Z.addDays(fromDateValue(from), 1, state.zone)]
+          state.from = a
+          state.to = b
+          state.preset = matchPreset()
+          state.unit = daysInRange() > 35 ? 'week' : state.unit
+          render()
+        })
+      document.getElementById('scope').addEventListener('change', (event) => {
+        state.scope = event.currentTarget.value
+        render()
+      })
+      document.getElementById('group-by').addEventListener('change', (event) => {
+        state.group = event.detail.dataset.group
+        if (state.org) render()
+      })
+      document.querySelectorAll('[data-unit]').forEach((b) =>
+        b.addEventListener('click', () => {
+          state.unit = b.dataset.unit
+          render()
+        })
+      )
+      document.querySelectorAll('[data-design-option]').forEach((b) =>
+        b.addEventListener('click', () => {
+          document.body.dataset.design = b.dataset.designOption
+          render()
+        })
+      )
+      document.getElementById('fixture').addEventListener('change', (event) => {
+        state.fixture = event.currentTarget.value
+        loadOrg()
+        render()
+      })
+      appFrame.on('settings', () => {
+        const { timeZone, weekStart } = appFrame.settings.get()
+        if (timeZone === state.zone && weekStart === state.weekStart) return
+        state.zone = timeZone
+        state.weekStart = weekStart
+        setPreset(state.preset === 'custom' ? 'this-week' : state.preset)
+        render()
+      })
+      appFrame.on('role', () => {
+        loadOrg()
+        render()
+      })
+
+      ui.ready.then(() => {
+        loadOrg()
+        setPreset('this-week')
+        render()
+      })
+    </script>
+  </body>
+</html>
