@@ -142,6 +142,22 @@
               </div>
               <div class="flex items-center justify-between gap-4">
                 <div class="grid gap-1">
+                  <label data-ui="label" for="scene-season">Season</label>
+                  <span class="text-sm text-muted-foreground">The landscape and weather, and the tagline on every page.</span>
+                </div>
+                <!-- ui.js wraps the select; this keeps the wrapper from shrinking in the row. -->
+                <div class="shrink-0">
+                  <select id="scene-season" data-ui="select" class="h-9 w-36">
+                    <option value="auto">Auto</option>
+                    <option value="winter">Winter</option>
+                    <option value="spring">Spring</option>
+                    <option value="summer">Summer</option>
+                    <option value="autumn">Autumn</option>
+                  </select>
+                </div>
+              </div>
+              <div class="flex items-center justify-between gap-4">
+                <div class="grid gap-1">
                   <span data-ui="label" id="scene-bg-label">Background</span>
                   <span class="text-sm text-muted-foreground">A landscape for the season.</span>
                 </div>
@@ -452,6 +468,9 @@
         })
         ui.setSwitch(document.getElementById('summary-switch'), settings.showSummary)
         document.querySelectorAll('[data-scene-setting]').forEach((sw) => ui.setSwitch(sw, settings[sw.dataset.sceneSetting]))
+        const seasonSelect = document.getElementById('scene-season')
+        seasonSelect.value = settings.sceneSeason in seasons.SEASONS ? settings.sceneSeason : 'auto'
+        seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
         document.querySelectorAll('[data-setting="sceneStrength"], [data-setting="surfaces"]').forEach((b) => (b.disabled = !settings.sceneBackground))
         const browserBtn = document.getElementById('use-browser-zone')
         browserBtn.innerHTML = `${icon('globe')}Use this device's zone`
@@ -477,6 +496,7 @@
       zoneSelect.addEventListener('change', () => save({ timeZone: zoneSelect.value }))
       document.getElementById('use-browser-zone').addEventListener('click', () => save({ timeZone: browserZone }))
       document.querySelectorAll('[data-setting]').forEach((b) => b.addEventListener('click', () => save({ [b.dataset.setting]: b.dataset.value })))
+      document.getElementById('scene-season').addEventListener('change', (event) => save({ sceneSeason: event.currentTarget.value }))
       document.getElementById('summary-switch').addEventListener('change', (event) => save({ showSummary: event.currentTarget.getAttribute('aria-checked') === 'true' }))
       appFrame.on('settings', renderPreferences)
       document.querySelectorAll('[data-scene-setting]').forEach((sw) =>

@@ -10,6 +10,19 @@
     <script src="app-icon.js"></script>
     <script src="seasons.js"></script>
     <script src="scene.js"></script>
+    <!-- When the intro will play, the first paint is its black instead of the page in the system
+         theme, so a light-mode visitor sees no flash before the intro starts. -->
+    <style>
+      html.intro-pending {
+        background: #05070a;
+      }
+      html.intro-pending body {
+        visibility: hidden;
+      }
+    </style>
+    <script>
+      if (new URLSearchParams(location.search).get('intro') === 'replay' || scene.intro.due()) document.documentElement.classList.add('intro-pending')
+    </script>
     <style type="text/tailwindcss">
       .auth-form {
         @apply rounded-lg border bg-card p-6 shadow-sm sm:p-8;
@@ -102,6 +115,7 @@
         opacity: 0;
         transform: translateY(16px);
         filter: blur(10px);
+        text-wrap: balance;
         transition: opacity 0.85s ease, transform 0.85s ease, filter 0.85s ease;
         text-shadow: 0 4px 28px rgb(0 0 0 / 0.45);
       }
@@ -115,7 +129,7 @@
         line-height: 1.05;
         letter-spacing: -0.04em;
         font-weight: 720;
-        color: #f4f8fd;
+        color: var(--intro-title, #f4f8fd);
       }
       .intro-line-2 {
         margin-top: 8px;
@@ -123,7 +137,7 @@
         line-height: 1.12;
         letter-spacing: -0.03em;
         font-weight: 610;
-        color: rgb(255 255 255 / 0.9);
+        color: var(--intro-sub, #e6eef8);
       }
       .intro-line-3 {
         margin-top: 24px;
@@ -139,7 +153,7 @@
         line-height: 1.5;
         letter-spacing: 0.03em;
         text-transform: uppercase;
-        color: #b4d5f4;
+        color: var(--intro-accent, #b4d5f4);
       }
       .intro-skip {
         position: absolute;
@@ -277,13 +291,6 @@
           <button id="theme-button" data-ui="button" data-variant="outline" data-size="sm">Dark</button>
         </div>
         <div class="flex flex-wrap items-center gap-2 lg:justify-end" title="Prototype variants for the seasonal scene">
-          <label for="season-select" class="sr-only">Season</label>
-          <select id="season-select" data-ui="select" class="h-9 w-28" data-variant-key="season">
-            <option value="winter">Winter</option>
-            <option value="spring">Spring</option>
-            <option value="summer">Summer</option>
-            <option value="autumn">Autumn</option>
-          </select>
           <label for="tagline-select" class="sr-only">Tagline</label>
           <select id="tagline-select" data-ui="select" class="h-9 w-48" data-variant-key="tagline">
             <option value="fade">Tagline: bottom fade</option>
@@ -312,6 +319,22 @@
           <div class="grid gap-1">
             <h2 id="scene-menu-title" class="text-sm font-semibold">Scenery</h2>
             <p class="text-xs text-muted-foreground">Saved on this device, and in Settings once you sign in.</p>
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <div class="grid gap-0.5">
+              <label data-ui="label" for="scene-season">Season</label>
+              <span class="text-xs text-muted-foreground">The landscape, weather, and taglines.</span>
+            </div>
+            <!-- ui.js wraps the select; this keeps the wrapper from shrinking in the row. -->
+            <div class="shrink-0">
+              <select id="scene-season" data-ui="select" class="h-9 w-36">
+                <option value="auto">Auto</option>
+                <option value="winter">Winter</option>
+                <option value="spring">Spring</option>
+                <option value="summer">Summer</option>
+                <option value="autumn">Autumn</option>
+              </select>
+            </div>
           </div>
           <div class="flex items-center justify-between gap-4">
             <div class="grid gap-0.5">
@@ -690,12 +713,12 @@
       addEventListener('storage', (event) => event.key === appIcon.SETTINGS_KEY && appIcon.apply(appIcon.saved()))
 
       // --- Seasonal scene and intro ----------------------------------------------------------------
-      // The user's choices (background, its strength, weather, intro, surfaces) are settings shared
-      // with the signed-in prototypes; signed out, the app would keep them on the device. Season,
-      // tagline, and tone are prototype variants, kept in their own key.
+      // The user's choices (season, background, its strength, weather, intro, surfaces) are settings
+      // shared with the signed-in prototypes; signed out, the app would keep them on the device. The
+      // tagline treatment and tone are prototype variants, kept in their own key.
       const VARIANTS_KEY = 'snowtime.prototypeAuthScene'
       const variants = (() => {
-        const defaults = { season: seasons.byMonth(), tone: 'deep', tagline: 'fade' }
+        const defaults = { tone: 'deep', tagline: 'fade' }
         try {
           return { ...defaults, ...JSON.parse(localStorage.getItem(VARIANTS_KEY) ?? '{}') }
         } catch {
@@ -704,7 +727,7 @@
       })()
       const introEl = document.getElementById('intro')
       const introLines = [...introEl.querySelectorAll('.intro-line')]
-      const sceneCtl = scene.create({ season: variants.season })
+      const sceneCtl = scene.create({ season: seasons.current() })
       document.getElementById('scene-page').prepend(sceneCtl.el)
 
       // During the intro the scene ignores the user's switches: the weather shows throughout, and
@@ -714,7 +737,7 @@
         const user = scene.settings.get()
         const intro = !!document.body.dataset.intro
         const background = intro ? introBackground : user.sceneBackground
-        sceneCtl.set({ season: variants.season, strength: user.sceneStrength, background, weather: intro || user.sceneWeather })
+        sceneCtl.set({ season: seasons.current(), strength: user.sceneStrength, background, weather: intro || user.sceneWeather })
         document.body.dataset.sceneBg = background ? 'on' : 'off'
         document.body.dataset.card = user.surfaces
         document.body.dataset.tagline = variants.tagline
@@ -730,10 +753,15 @@
         const weatherSwitch = document.getElementById('scene-weather-switch')
         ui.setSwitch(weatherSwitch, user.sceneWeather)
         weatherSwitch.disabled = !!blocked
-        document.getElementById('scene-weather-hint').textContent = blocked ?? scene.SEASONS[variants.season].hint
-        // The season's intro lines, and the first two as the tagline.
-        seasons.SEASONS[variants.season].lines.forEach((line, i) => (introLines[i].textContent = line))
-        document.querySelectorAll('.card-tagline, .tagline-in-card, .page-tagline').forEach((el) => (el.textContent = seasons.tagline(variants.season)))
+        const season = seasons.current()
+        document.getElementById('scene-weather-hint').textContent = blocked ?? scene.SEASONS[season].hint
+        const seasonSelect = document.getElementById('scene-season')
+        seasonSelect.value = user.sceneSeason
+        seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
+        // The season's intro lines and colors, and the first two lines as the tagline.
+        seasons.SEASONS[season].lines.forEach((line, i) => (introLines[i].textContent = line))
+        for (const [name, color] of Object.entries(seasons.SEASONS[season].colors)) introEl.style.setProperty(`--intro-${name}`, color)
+        document.querySelectorAll('.card-tagline, .tagline-in-card, .page-tagline').forEach((el) => (el.textContent = seasons.tagline(season)))
         ui.setSwitch(document.getElementById('scene-intro-switch'), user.sceneIntro)
         document.querySelectorAll('[data-variant-key]').forEach((el) => (el.value = variants[el.dataset.variantKey]))
       }
@@ -744,6 +772,10 @@
       })
       document.getElementById('scene-weather-switch').addEventListener('change', (event) => {
         scene.settings.set({ sceneWeather: event.currentTarget.getAttribute('aria-checked') === 'true' })
+        applyScene()
+      })
+      document.getElementById('scene-season').addEventListener('change', (event) => {
+        scene.settings.set({ sceneSeason: event.currentTarget.value })
         applyScene()
       })
       document.getElementById('scene-intro-switch').addEventListener('change', (event) => scene.settings.set({ sceneIntro: event.currentTarget.getAttribute('aria-checked') === 'true' }))
@@ -778,6 +810,7 @@
         applyScene()
         document.documentElement.classList.add('dark')
         introEl.hidden = false
+        document.documentElement.classList.remove('intro-pending')
         introEl.classList.remove('intro-done')
         introEl.querySelector('.intro-fade').classList.remove('reveal')
         introLines.forEach((l) => l.classList.remove('show'))

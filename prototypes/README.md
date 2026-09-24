@@ -210,7 +210,7 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
 - The season's **tagline** after `<main>`, centered over a fade into a deeper tint, as on the
   sign-in page. It's `sticky` with a top offset of the viewport minus its height, so it sits at
   the bottom of short pages without making the body a flex column, which would shrink the pages'
-  `mx-auto` blocks. The season comes from the sign-in prototype's Season variant, or the month.
+  `mx-auto` blocks. The season is the user's Season setting (see the Scenery menu below).
   Pages load [seasons.js](seasons.js) before `app-frame.js`.
 
 It also provides:
@@ -611,16 +611,22 @@ each, from the 2 to 2.5 MB PNGs).
   in and get it done!") comes after a longer beat, eases in more slowly, and stays for 3 seconds.
   Then the page rises into place and the chosen theme returns. The intro always shows the weather
   and the background, even when they're off for the page; the page follows the switches once it
-  appears. Each season has its own lines, from [seasons.js](seasons.js) (see "Seasonal copy"
-  below). It plays on the first visit to this browser
+  appears. Each season has its own lines and colors, from [seasons.js](seasons.js) (see
+  "Seasonal copy" below): white and ice in winter, fresh green and meltwater teal in spring,
+  firefly yellow and green in summer, and the leaves' amber and rust in autumn, each on the
+  headline and the last line. On a first visit to this browser, the intro plays dark in any
+  system theme, and after it the page keeps the background (on by default) and follows the system
+  theme. When the intro is due, a small script in `<head>` paints the page black until it starts,
+  so a light-mode visitor sees no flash of the light page first. It plays on the first visit to this browser
   (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay intro plays it any
   time. **Skip intro** or Escape ends it; the rest of the page
   is `inert` while it plays. With reduced motion it doesn't play, and the snow stays off.
-- **Scenery menu** (the mountain button, top right): the Background switch, with two options
+- **Scenery menu** (the mountain button, top right): Season (Auto, which follows the month and
+  names the current season, or winter, spring, summer, or autumn), then the Background switch, with two options
   under it that apply only while it's on: Strength (full or dimmed: how much page color covers
   the image, 30 or 55% dark, 20 or 50% light, stronger toward the bottom) and Surfaces (glass,
   `bg-card/70` with a backdrop blur, or solid cards). Then the Weather switch, the Intro switch,
-  and Replay intro. These are the user settings `sceneBackground`, `sceneStrength`, `surfaces`,
+  and Replay intro. These are the user settings `sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`,
   `sceneWeather`, and `sceneIntro`, shared with Settings > Preferences > Sign-in page, which lays
   them out the same way. Signed out, the app would keep them on the device. Surfaces is named for
   every card, so it can apply app-wide once other pages get a background.
@@ -640,7 +646,6 @@ The prototype bar's second row holds variants to compare, kept in `snowtime.prot
 
 | Variant  | Options                                                                          |
 | -------- | -------------------------------------------------------------------------------- |
-| Season   | Winter, spring, summer, autumn: the image, weather, intro lines, and tagline      |
 | Tagline  | Bottom fade (chosen: at the foot of the page over a fade, in the page flow so it never covers the card), halo (a glow in the page color), in the card (a footer line), or pill |
 | Tone     | Deeper (`#060c14` dark with card `#0d1929`, `#fbfdff` light) or the app's tokens |
 

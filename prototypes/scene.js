@@ -4,14 +4,15 @@
 // `scene.create()` returns a controller; `controller.el` is the element to place.
 //
 // The user's choices are settings in the shared prototype settings key (app-frame.js):
-// `sceneBackground`, `sceneStrength` ('full', 'dimmed'), `sceneWeather`, and `sceneIntro` (play it
+// `sceneSeason` ('auto' or a season, see seasons.js), `sceneBackground`, `sceneStrength` ('full',
+// 'dimmed'), `sceneWeather`, and `sceneIntro` (play it
 // on the first visit), plus the app-wide `surfaces` ('glass', 'solid'): whether cards let a
 // background show through. `scene.settings` reads and writes them for auth.html, which has no frame.
 ;(() => {
   const BASE = '../design/backgrounds/'
   const SETTINGS_KEY = 'snowtime.prototypeSettings'
   const INTRO_SEEN_KEY = 'snowtime.introSeen'
-  const DEFAULTS = { sceneBackground: true, sceneStrength: 'full', surfaces: 'glass', sceneWeather: true, sceneIntro: true }
+  const DEFAULTS = { sceneSeason: 'auto', sceneBackground: true, sceneStrength: 'full', surfaces: 'glass', sceneWeather: true, sceneIntro: true }
   // `weather` names the effect for light and dark pages. The intro's lines and the tagline are in
   // seasons.js.
   const SEASONS = {
@@ -49,6 +50,7 @@
       try {
         const s = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') }
         return {
+          sceneSeason: s.sceneSeason in SEASONS ? s.sceneSeason : 'auto',
           sceneBackground: s.sceneBackground !== false,
           sceneStrength: s.sceneStrength in STRENGTHS ? s.sceneStrength : DEFAULTS.sceneStrength,
           surfaces: s.surfaces === 'solid' ? 'solid' : 'glass',

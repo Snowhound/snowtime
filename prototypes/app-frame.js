@@ -73,7 +73,8 @@
     design: 'bar', // user_settings.timer_layout
     showSummary: true,
     surfaces: 'glass', // 'glass' | 'solid': whether cards let a background show through
-    // The sign-in page's seasonal scene; see scene.js.
+    // The sign-in page's seasonal scene; see scene.js. The season also picks every page's tagline.
+    sceneSeason: 'auto', // 'auto' (by month) | 'winter' | 'spring' | 'summer' | 'autumn'
     sceneBackground: true,
     sceneStrength: 'full', // 'full' | 'dimmed'
     sceneWeather: true,
@@ -414,8 +415,7 @@
     )
     const update = () => (document.getElementById('page-tagline').textContent = seasons.tagline())
     update()
-    // The season follows the sign-in prototype's Season variant, also from another tab.
-    addEventListener('storage', (event) => event.key === seasons.VARIANTS_KEY && update())
+    listeners.settings.push(update)
   }
 
   // Fixtures can swap in another user, e.g. a long name, to check the header.

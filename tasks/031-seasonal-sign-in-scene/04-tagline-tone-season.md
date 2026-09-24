@@ -16,4 +16,5 @@ already rejected: the card layout is the sign-in page.
       other treatments stay in the prototype bar until the variants are pruned.
 - [ ] A page tone is chosen, deeper or the app's, and either folded into the brand tokens (task 029) or kept to the sign-in page.
 - [ ] How the app picks the season is decided, for example by month, flipped for the southern
-      hemisphere from the user's time zone.
+      hemisphere from the user's time zone. The prototypes have a Season setting in the Scenery
+      menu and Settings: Auto (by month, northern hemisphere) or one of the four.
