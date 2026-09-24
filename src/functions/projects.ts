@@ -1,15 +1,15 @@
 // Project server functions. Thin wrappers: the rules live in src/server/projects.server.ts.
 import { createServerFn } from '@tanstack/solid-start'
-import { db } from '../db'
+import { db } from '~/db'
 import {
   CreateProjectInput,
   ListProjectsInput,
   ProjectIdInput,
   ProjectTeamInput,
   UpdateProjectInput,
-} from '../schemas/projects'
-import { scopeMiddleware } from '../server/middleware'
-import * as projects from '../server/projects.server'
+} from '~/schemas/projects'
+import { scopeMiddleware } from '~/server/middleware'
+import * as projects from '~/server/projects.server'
 
 export const createProject = createServerFn({ method: 'POST' })
   .middleware([scopeMiddleware])

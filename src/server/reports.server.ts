@@ -4,9 +4,9 @@
 // Everyone reports on the entries they may read (readableUserIds); team totals count each
 // team's current members. Results are ids, dates and milliseconds, never display text.
 import { and, eq, gt, inArray, isNull, lt, or } from 'drizzle-orm'
-import type { Database } from '../db'
-import { team, teamMember, timeEntry, userSettings } from '../db/schema'
-import type { ReportInput } from '../schemas/reports'
+import type { Database } from '~/db'
+import { team, teamMember, timeEntry, userSettings } from '~/db/schema'
+import type { ReportInput } from '~/schemas/reports'
 import {
   addDays,
   countedSpan,

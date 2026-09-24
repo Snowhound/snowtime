@@ -2,14 +2,14 @@
 // owners also write other members' entries; team leads only read their teams' entries
 // (docs/architecture.md, "Tenancy").
 import { and, desc, eq, gt, inArray, isNull, lt, or } from 'drizzle-orm'
-import type { Database } from '../db'
-import { member, timeEntry } from '../db/schema'
+import type { Database } from '~/db'
+import { member, timeEntry } from '~/db/schema'
 import type {
   CreateEntryInput,
   DeleteEntryInput,
   ListEntriesInput,
   UpdateEntryInput,
-} from '../schemas/entries'
+} from '~/schemas/entries'
 import { AppError } from './errors'
 import { assertUsableProject } from './projects.server'
 import { failedConstraint, live } from './queries.server'

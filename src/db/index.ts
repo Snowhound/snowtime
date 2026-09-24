@@ -1,7 +1,7 @@
 // Server-only database client. Import it from server functions and server code only; the
 // Turso token must never reach the browser.
 import { drizzle } from 'drizzle-orm/libsql'
-import { env } from '../env'
+import { env } from '~/env'
 import { relations } from './relations'
 
 export const db = drizzle({

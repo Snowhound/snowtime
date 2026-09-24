@@ -11,7 +11,7 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core'
-import { LOCALES, THEMES, TIMER_LAYOUTS } from '../schemas/settings'
+import { LOCALES, THEMES, TIMER_LAYOUTS } from '~/schemas/settings'
 import { currentActor } from './actor'
 
 const nowMs = sql`(CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER))`

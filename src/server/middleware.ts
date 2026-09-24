@@ -6,9 +6,9 @@
 // created_by/updated_by.
 import { createMiddleware } from '@tanstack/solid-start'
 import { getRequestHeaders } from '@tanstack/solid-start/server'
-import { db } from '../db'
-import { withActor } from '../db/actor'
-import { auth } from '../lib/auth'
+import { db } from '~/db'
+import { withActor } from '~/db/actor'
+import { auth } from '~/lib/auth'
 import { AppError } from './errors'
 import { resolveScope } from './scope.server'
 

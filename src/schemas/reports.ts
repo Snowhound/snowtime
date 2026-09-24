@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import { m } from '../paraglide/messages.js'
+import { m } from '~/paraglide/messages.js'
 import { Uuidv7 } from './common'
 
 // A calendar day such as 2026-09-24, read in the user's time zone.

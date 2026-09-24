@@ -1,5 +1,5 @@
-import { m } from '../paraglide/messages.js'
-import { AppError, type AppErrorKey } from '../server/errors'
+import { m } from '~/paraglide/messages.js'
+import { AppError, type AppErrorKey } from '~/server/errors'
 
 // One message per AppError key. Typed as a full record, so a key added to the catalog in
 // src/server/errors.ts fails the type check until it has a message here.

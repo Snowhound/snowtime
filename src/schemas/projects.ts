@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import { m } from '../paraglide/messages.js'
+import { m } from '~/paraglide/messages.js'
 import { Uuidv7 } from './common'
 
 export const ProjectName = v.pipe(

@@ -2,9 +2,9 @@
 // (docs/architecture.md, "Time zones" and "User settings"). They belong to the user, not an
 // organization, so these rules take the user id.
 import { eq } from 'drizzle-orm'
-import type { Database } from '../db'
-import { userSettings } from '../db/schema'
-import type { GetSettingsInput, UpdateSettingsInput } from '../schemas/settings'
+import type { Database } from '~/db'
+import { userSettings } from '~/db/schema'
+import type { GetSettingsInput, UpdateSettingsInput } from '~/schemas/settings'
 import { AppError } from './errors'
 
 const columns = {

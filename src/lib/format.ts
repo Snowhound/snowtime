@@ -1,4 +1,4 @@
-import { getLocale } from '../paraglide/runtime.js'
+import { getLocale } from '~/paraglide/runtime.js'
 
 // Display formatting in the user's language and time zone. The server returns instants
 // and milliseconds; only the client turns them into text (docs/architecture.md,

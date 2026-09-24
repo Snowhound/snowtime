@@ -4,9 +4,9 @@ import { describe, expect, test, vi } from 'vitest'
 import { ProviderButtons } from './sign-in-methods'
 
 // Server functions and Better Auth stay out of the DOM tests.
-vi.mock('../../functions/auth', () => ({ getDevUsers: vi.fn() }))
+vi.mock('~/functions/auth', () => ({ getDevUsers: vi.fn() }))
 const social = vi.fn()
-vi.mock('../../lib/auth-client', () => ({
+vi.mock('~/lib/auth-client', () => ({
   authClient: { signIn: { social: (...args: unknown[]) => social(...args) } },
 }))
 

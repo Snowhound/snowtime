@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import { m } from '../paraglide/messages.js'
+import { m } from '~/paraglide/messages.js'
 
 // An IANA zone name such as Europe/Tallinn or UTC. Intl accepts the names the runtime
 // knows; the pattern rejects the offsets ("+02:00") Intl also accepts, because an offset

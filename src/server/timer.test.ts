@@ -2,9 +2,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { and, eq } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
-import type { Database } from '../db'
-import { member, timeEntry } from '../db/schema'
-import { seedIds } from '../db/seed'
+import type { Database } from '~/db'
+import { member, timeEntry } from '~/db/schema'
+import { seedIds } from '~/db/seed'
 import { as, createSeededDatabase, scopeOf } from './testing'
 import { getRunningTimer, startTimer, stopTimer, stopTimerOfRemovedMember } from './timer.server'
 

@@ -4,20 +4,26 @@ import CheckIcon from 'lucide-solid/icons/check'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import GlobeIcon from 'lucide-solid/icons/globe'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
-import type { AppSession } from '../../functions/auth'
-import { errorMessage } from '../../lib/errors'
-import { formatDateTime, formatIsoDate } from '../../lib/format'
-import { useUpdateSettings } from '../../lib/settings'
-import { m } from '../../paraglide/messages.js'
-import type { UpdateSettingsInput } from '../../schemas/settings'
-import { addDays, localDate, startOfWeek } from '../../server/calendar'
-import { Button } from '../ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
-import { Label } from '../ui/label'
-import { NativeSelect } from '../ui/native-select'
-import { Separator } from '../ui/separator'
-import { Switch, SwitchControl, SwitchDescription, SwitchLabel, SwitchThumb } from '../ui/switch'
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group'
+import type { AppSession } from '~/functions/auth'
+import { errorMessage } from '~/lib/errors'
+import { formatDateTime, formatIsoDate } from '~/lib/format'
+import { useUpdateSettings } from '~/lib/settings'
+import { m } from '~/paraglide/messages.js'
+import type { UpdateSettingsInput } from '~/schemas/settings'
+import { addDays, localDate, startOfWeek } from '~/server/calendar'
+import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
+import { Label } from '~/components/ui/label'
+import { NativeSelect } from '~/components/ui/native-select'
+import { Separator } from '~/components/ui/separator'
+import {
+  Switch,
+  SwitchControl,
+  SwitchDescription,
+  SwitchLabel,
+  SwitchThumb,
+} from '~/components/ui/switch'
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 
 type Settings = NonNullable<AppSession['settings']>
 

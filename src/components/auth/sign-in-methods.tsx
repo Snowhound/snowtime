@@ -9,15 +9,20 @@ import KeyRoundIcon from 'lucide-solid/icons/key-round'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import type { Component } from 'solid-js'
 import { For, Show, createSignal } from 'solid-js'
-import { getDevUsers } from '../../functions/auth'
-import { authClient } from '../../lib/auth-client'
-import { fieldError } from '../../lib/form'
-import { m } from '../../paraglide/messages.js'
-import { SignInForm } from '../../schemas/auth'
-import type { SignInMethod } from '../../server/sign-in.server'
-import { Alert, AlertDescription } from '../ui/alert'
-import { Button } from '../ui/button'
-import { TextField, TextFieldErrorMessage, TextFieldInput, TextFieldLabel } from '../ui/text-field'
+import { getDevUsers } from '~/functions/auth'
+import { authClient } from '~/lib/auth-client'
+import { fieldError } from '~/lib/form'
+import { m } from '~/paraglide/messages.js'
+import { SignInForm } from '~/schemas/auth'
+import type { SignInMethod } from '~/server/sign-in.server'
+import { Alert, AlertDescription } from '~/components/ui/alert'
+import { Button } from '~/components/ui/button'
+import {
+  TextField,
+  TextFieldErrorMessage,
+  TextFieldInput,
+  TextFieldLabel,
+} from '~/components/ui/text-field'
 import { AuthDivider } from './auth-layout'
 import { GitHubIcon, GoogleIcon, MicrosoftIcon } from './brand-logos'
 

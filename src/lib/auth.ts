@@ -5,12 +5,12 @@ import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { organization } from 'better-auth/plugins'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { v7 as uuidv7 } from 'uuid'
-import { db } from '../db'
-import { withActor } from '../db/actor'
-import * as schema from '../db/schema'
-import { env } from '../env'
-import { passwordEnabled, socialProviders } from '../server/sign-in.server'
-import { stopTimerOfRemovedMember } from '../server/timer.server'
+import { db } from '~/db'
+import { withActor } from '~/db/actor'
+import * as schema from '~/db/schema'
+import { env } from '~/env'
+import { passwordEnabled, socialProviders } from '~/server/sign-in.server'
+import { stopTimerOfRemovedMember } from '~/server/timer.server'
 
 // Passkeys are bound to the app's domain, so each environment's relying party follows its
 // BETTER_AUTH_URL; the plugin would otherwise default to localhost.

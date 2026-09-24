@@ -3,9 +3,9 @@
 // functions here see only entries in organizations the user still belongs to; removing a
 // member stops their timer there (stopTimerOfRemovedMember).
 import { and, eq, isNull, not, sql } from 'drizzle-orm'
-import type { Database, Executor } from '../db'
-import { member, timeEntry } from '../db/schema'
-import type { StartTimerInput, StopTimerInput } from '../schemas/timer'
+import type { Database, Executor } from '~/db'
+import { member, timeEntry } from '~/db/schema'
+import type { StartTimerInput, StopTimerInput } from '~/schemas/timer'
 import { AppError } from './errors'
 import { assertUsableProject } from './projects.server'
 import { failedConstraint, notDeleted } from './queries.server'

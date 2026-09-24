@@ -1,8 +1,8 @@
 import ClockIcon from 'lucide-solid/icons/clock'
 import type { JSX } from 'solid-js'
 import { Show } from 'solid-js'
-import { m } from '../../paraglide/messages.js'
-import { Separator } from '../ui/separator'
+import { m } from '~/paraglide/messages.js'
+import { Separator } from '~/components/ui/separator'
 
 // The signed-out screens' frame: a centered card on a muted background, with the product
 // mark and the tagline (prototypes/auth.html, 01 · Card).

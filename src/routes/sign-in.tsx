@@ -2,17 +2,17 @@ import { queryOptions, useQuery, useQueryClient } from '@tanstack/solid-query'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
 import * as v from 'valibot'
-import { AuthHeading, AuthLayout } from '../components/auth/auth-layout'
+import { AuthHeading, AuthLayout } from '~/components/auth/auth-layout'
 import {
   FormAlert,
   PasskeyButton,
   PasswordSignIn,
   ProviderButtons,
-} from '../components/auth/sign-in-methods'
-import { getSignInMethods } from '../functions/auth'
-import { safeRedirect } from '../lib/redirect'
-import { sessionQuery } from '../lib/session'
-import { m } from '../paraglide/messages.js'
+} from '~/components/auth/sign-in-methods'
+import { getSignInMethods } from '~/functions/auth'
+import { safeRedirect } from '~/lib/redirect'
+import { sessionQuery } from '~/lib/session'
+import { m } from '~/paraglide/messages.js'
 
 export const signInMethodsQuery = queryOptions({
   queryKey: ['sign-in-methods'],

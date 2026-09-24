@@ -3,9 +3,9 @@
 // what the plugin cannot: team roles (team_member.role is an app column) and lists that
 // include them (docs/architecture.md, "Tenancy").
 import { and, asc, eq, inArray } from 'drizzle-orm'
-import type { Database } from '../db'
-import { member, team, teamMember, user } from '../db/schema'
-import type { SetTeamRoleInput } from '../schemas/teams'
+import type { Database } from '~/db'
+import { member, team, teamMember, user } from '~/db/schema'
+import type { SetTeamRoleInput } from '~/schemas/teams'
 import { AppError } from './errors'
 import { isAdmin, strongestRole, type Scope } from './scope.server'
 

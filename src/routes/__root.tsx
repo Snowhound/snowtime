@@ -15,9 +15,9 @@ import '@fontsource/inter/400.css'
 import { HydrationScript, isServer } from 'solid-js/web'
 import { Show, Suspense, createMemo } from 'solid-js'
 
-import styleCss from '../styles.css?url'
-import { getLocale, setLocale } from '../paraglide/runtime.js'
-import { sessionQuery, themeScript } from '../lib/session'
+import styleCss from '~/styles.css?url'
+import { getLocale, setLocale } from '~/paraglide/runtime.js'
+import { sessionQuery, themeScript } from '~/lib/session'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   beforeLoad: async ({ context, location }) => {
