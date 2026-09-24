@@ -9,6 +9,7 @@
     <script src="ui.js"></script>
     <script src="app-icon.js"></script>
     <script src="seasons.js"></script>
+    <script src="scene.js"></script>
     <script src="app-frame.js"></script>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -262,7 +263,7 @@
     </dialog>
 
     <script>
-      appFrame.mount({ page: 'settings', title: 'Settings' })
+      appFrame.mount({ page: 'settings', title: 'Settings', scene: true })
       const { escapeHtml, icon, initials } = appFrame
 
       const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone

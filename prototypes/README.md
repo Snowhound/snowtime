@@ -217,14 +217,17 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
   where the label says enough, so it fits a 390 × 844 screen. Theme used to be in the user menu
   and the timer's View popover too; it's only here and in Settings now. The intro's switch and
   Replay stay on the sign-in page and in Settings, since the intro only plays there.
-- The season's **tagline** in the page's title row, after the `h1`: beside the title after a
-  divider from 1024 px, on its own line under it below that. It's two-toned like the intro: the
+- The season's **tagline** in the page's title row: from 1024 px centered on the page, level
+  with the title, and below that on its own line under the title. If the centered tagline would
+  come within 24 px of the title or the row's actions, it drops under the title too; it's
+  re-placed on resize and when the season changes. It's two-toned like the intro: the
   first line in the season's headline color, the second in its second line's color (see
   [Seasonal copy](#seasonal-copy)). The season is the user's Season setting (see the Scenery menu
   below). Pages load [seasons.js](seasons.js) before `app-frame.js`. It replaced a tagline at
   the foot of the page over a fade, which covered the end of long lists and read as a footer.
-- With `scene: true`, the **seasonal scene** behind the page and a **Scenery** button in the
-  header; see [Seasonal scene in the app](#seasonal-scene-in-the-app).
+  Pages with nothing right of the title (Reports, Projects, Organization, Settings) read as
+  balanced with it centered, so they got nothing extra there.
+- With `scene: true`, the **seasonal scene** behind the page; see [Seasonal scene in the app](#seasonal-scene-in-the-app).
 
 It also provides:
 
@@ -246,7 +249,7 @@ signed-in user is Anna Kask (`anna@snowhound.eu`), matching the invitation in `a
 ### Seasonal scene in the app
 
 Task 032 brings the sign-in page's scene (see [Seasonal scene and intro](#seasonal-scene-and-intro))
-to the signed-in pages, starting with the timer. A page opts in with
+to the signed-in pages. Every signed-in page has it. A page opts in with
 `appFrame.mount({ scene: true })` and loads [scene.js](scene.js) before `app-frame.js`. The frame
 puts the scene in a fixed layer behind the page, from the same user settings as the sign-in page:
 the season's image in light and dark, the tint, and the weather.
@@ -261,11 +264,19 @@ the season's image in light and dark, the tint, and the weather.
   menus, and dialogs stay solid, so their text never sits on the picture. With the background
   off, the page looks as before, with the weather over the page tint.
 - **Over the image**: the header is the page color at 82% with a blur (solid for solid surfaces),
-  the prototype bar is solid, page titles get a glow in the page color, and outline buttons a
-  page-colored fill. The tagline gets the same glow as the title.
+  the prototype bar is solid, page titles get a glow in the page color, and outline buttons
+  outside popovers and dialogs a page-colored fill. The tagline gets the same glow as the title.
+  Page-level notes get the glow too and a color between `muted-foreground` and `foreground`, since
+  muted text was hard to read on the light images: subtitles and Reports' midnight note
+  (`scene-text`), and the footnotes under Projects' and Organization's main cards (`page-note`,
+  which are also centered, like the tagline).
+- **Reports' timesheet**: its sticky first column is see-through like the glass card until the
+  table scrolls sideways; then it's solid, so the cells scrolling under it don't show through. A
+  translucent column let them show, and a solid one was a white strip on the glass.
 - **Weather**: behind real work, the sign-in page's weather felt busy, so app pages run it
-  **calm**: half the points and 70% of the speed. The prototype bar's "Weather" select switches
-  to the sign-in page's pace for comparison (`snowtime.prototypeAppScene`). As on the sign-in
+  **calm**: half the points and 70% of the speed. On the timer, the prototype bar's "Weather"
+  select switches to the sign-in page's pace for comparison (`snowtime.prototypeAppScene`); other
+  pages use the saved choice. As on the sign-in
   page, it stops in hidden tabs and stays off with reduced motion; the popover's switch then says
   why.
 
@@ -276,6 +287,11 @@ readable; no horizontal scroll; no browser errors. With the long fixture, glass,
 on, frames held 16.7 ms (p95 16.8 ms) at 1440 × 900 and 2× scale in headless Chrome, the same as
 with the weather off. The weather stopped when the tab was hidden and restarted when shown. At
 768 px the organization name "Snowhound" is 14 px short and truncates.
+
+Reports, Projects, Organization, and Settings checked on 2026-09-25 in Chrome with every page at
+1440, 850, and 390 px, light and dark (36 states with the timer and sign-in pages): no
+horizontal scroll and no browser errors; the Appearance popover, the centered tagline, and the
+timesheet scrolled and not.
 
 ### App icon
 

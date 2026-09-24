@@ -9,6 +9,7 @@
     <script src="ui.js"></script>
     <script src="app-icon.js"></script>
     <script src="seasons.js"></script>
+    <script src="scene.js"></script>
     <script src="app-frame.js"></script>
     <script src="app-data.js"></script>
     <link rel="stylesheet" href="prototype.css" />
@@ -25,7 +26,7 @@
 
     <div class="mx-auto flex max-w-6xl flex-col gap-1 px-4 pt-6 sm:px-8">
       <h1 class="text-2xl font-semibold tracking-tight">Organization</h1>
-      <p id="org-subtitle" class="min-w-0 truncate text-sm text-muted-foreground"></p>
+      <p id="org-subtitle" class="scene-text min-w-0 truncate text-sm text-muted-foreground"></p>
     </div>
 
     <main class="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-10 pt-4 sm:px-8">
@@ -60,7 +61,7 @@
             </div>
             <ul id="members" class="divide-y border-t"></ul>
           </div>
-          <p class="mt-3 text-sm text-muted-foreground">
+          <p class="page-note mt-3 text-sm text-muted-foreground">
             Owners can change any role. Admins manage members and admins but not owners. An organization always keeps at least one owner.
           </p>
         </section>
@@ -208,7 +209,7 @@
     </dialog>
 
     <script>
-      appFrame.mount({ page: 'organization', title: 'Organization admin' })
+      appFrame.mount({ page: 'organization', title: 'Organization admin', scene: true })
       const { escapeHtml, icon, initials } = appFrame
       const ME = appData.currentUserId
       const HOUR = appData.HOUR
@@ -470,7 +471,7 @@
       function renderTeams() {
         const el = document.getElementById('teams')
         if (!state.org.teams.length) {
-          el.innerHTML = `<div class="col-span-full flex flex-col items-center gap-2 rounded-lg border border-dashed bg-background px-6 py-12 text-center">
+          el.innerHTML = `<div class="surface col-span-full flex flex-col items-center gap-2 rounded-lg border border-dashed bg-background px-6 py-12 text-center">
             ${icon('users', 'size-6 text-muted-foreground')}
             <p class="font-medium">No teams yet</p>
             <p class="max-w-md text-sm text-muted-foreground">Everyone tracks time on the organization's projects without teams. Create a team to give it a lead and its own projects.</p>

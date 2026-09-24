@@ -9,6 +9,7 @@
     <script src="ui.js"></script>
     <script src="app-icon.js"></script>
     <script src="seasons.js"></script>
+    <script src="scene.js"></script>
     <script src="app-frame.js"></script>
     <script src="app-data.js"></script>
     <style type="text/tailwindcss">
@@ -34,6 +35,11 @@
       .timesheet td:first-child {
         @apply sticky left-0 z-10 bg-card;
       }
+      /* On glass, the sticky column is see-through like the card until the table scrolls sideways;
+         then it's solid, so the cells that scroll under it don't show. */
+      body[data-scene-bg='on'][data-surfaces='glass'] .timesheet:not([data-scrolled]) :is(th, td):first-child {
+        background-color: transparent;
+      }
     </style>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -54,7 +60,7 @@
 
     <div class="mx-auto flex max-w-6xl flex-col gap-1 px-4 pt-6 sm:px-8">
       <h1 class="text-2xl font-semibold tracking-tight">Reports</h1>
-      <p id="scope-note" class="text-sm text-muted-foreground"></p>
+      <p id="scope-note" class="scene-text text-sm text-muted-foreground"></p>
     </div>
 
     <main class="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-10 pt-4 sm:px-8">
@@ -110,7 +116,7 @@
         </div>
       </section>
 
-      <p id="split-note" class="-mt-2 flex items-start gap-2 text-sm text-muted-foreground" hidden></p>
+      <p id="split-note" class="scene-text -mt-2 flex items-start gap-2 text-sm text-muted-foreground" hidden></p>
 
       <!-- 01 · Summary -->
       <section class="summary-only flex min-w-0 flex-col gap-6" aria-label="Summary">
@@ -169,7 +175,16 @@
     <div id="chart-tooltip" role="tooltip" class="pointer-events-none fixed z-50 hidden min-w-44 max-w-72 rounded-md border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md"></div>
 
     <script>
-      appFrame.mount({ page: 'reports', title: 'Reports' })
+      appFrame.mount({ page: 'reports', title: 'Reports', scene: true })
+      // Marks the timesheet while it's scrolled sideways, for its sticky column's background.
+      document.addEventListener(
+        'scroll',
+        (event) => {
+          const table = event.target.querySelector?.(':scope > .timesheet')
+          table?.toggleAttribute('data-scrolled', event.target.scrollLeft > 0)
+        },
+        true
+      )
       const { escapeHtml, icon } = appFrame
       const { tz: Z, HOUR, colorVar } = appData
       const ME = appData.currentUserId
@@ -362,7 +377,7 @@
 
       // --- Rendering: shared --------------------------------------------------------------------
       function emptyState(text = 'No time tracked in this range.') {
-        return `<div class="flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-10 text-center">
+        return `<div class="surface flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-10 text-center">
           ${icon('chart-column', 'size-6 text-muted-foreground')}
           <p class="font-medium">${text}</p>
           <p class="text-sm text-muted-foreground">Pick another range or other people.</p>

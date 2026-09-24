@@ -25,7 +25,7 @@ Surfaces was named for every card so it can apply app-wide.
       the timer's View popover or a Scenery button in the header, and Settings groups them as
       scenery for the whole app, not only the sign-in page.
 - [x] The tagline footer's fade suits the scene.
-- [ ] Once the timer page works, the other pages (reports, projects, organization, settings) get
+- [x] Once the timer page works, the other pages (reports, projects, organization, settings) get
       it too, or the README records why a page stays plain.
 - [x] The scene's cost is checked with several pages open: the weather stops in hidden tabs, and
       the timer's running clock and the weather don't make the page janky.
@@ -43,3 +43,12 @@ Surfaces was named for every card so it can apply app-wide.
 - 2026-09-25: The header's Scenery button became an Appearance popover on every page, with the
   theme, app icon, and scenery. Theme left the user menu and the timer's View popover, and the
   header mark links to the timer.
+- 2026-09-25: Reports, Projects, Organization, and Settings have the scene too. The tagline is
+  centered on the title row, page notes read better over the picture, and Reports' sticky column
+  turns solid only while the timesheet scrolls sideways.
+
+## For the app, not the prototypes
+
+- Replay the intro from the Appearance popover too, not only from the sign-in page and Settings.
+- Maybe: replay it automatically once a day, week, or month. Probably overkill; decide when
+  building the app.

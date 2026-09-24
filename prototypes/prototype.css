@@ -143,8 +143,18 @@ body {
   --series-8: #c24b49;
 }
 
-/* The season's tagline (seasons.taglineHtml) beside page titles and on the sign-in page, in the
-   intro's colors: the headline color, darkened on light pages, then the second line's. */
+/* The season's tagline (seasons.taglineHtml) in page title rows and on the sign-in page, in the
+   intro's colors: the headline color, darkened on light pages, then the second line's. From
+   1024 px app-frame.js centers it on the title row (`page-tagline-centered`). */
+.page-title-area {
+  position: relative;
+}
+.page-tagline-centered {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
 .season-tagline .tagline-1 {
   color: var(--tagline-title-light);
 }
@@ -191,9 +201,18 @@ body[data-scene-bg='on'][data-surfaces='glass'] :is([data-ui='card'], .surface) 
 body[data-scene-bg='on'] :is([data-ui='card'], .surface) {
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
 }
-/* Text and controls that sit on the image itself: page titles and the tagline get a glow in the
-   page color, and outline buttons outside popovers and dialogs a page-colored fill. */
-body[data-scene-bg='on'] :is(h1, .season-tagline) {
+/* A page's footnote under its main card, centered like the tagline. */
+.page-note {
+  text-align: center;
+}
+/* Text and controls that sit on the image itself: page titles, the tagline, and page-level notes
+   (`scene-text`, `page-note`) get a glow in the page color, the notes a color between
+   muted-foreground and foreground, and outline buttons outside popovers and dialogs a
+   page-colored fill. */
+body[data-scene-bg='on'] :is(.scene-text, .page-note) {
+  color: color-mix(in srgb, var(--muted-foreground) 55%, var(--foreground));
+}
+body[data-scene-bg='on'] :is(h1, .season-tagline, .scene-text, .page-note) {
   text-shadow:
     0 0 6px var(--background),
     0 0 16px var(--background),

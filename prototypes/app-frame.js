@@ -402,7 +402,7 @@
   const SCENE_VARIANTS_KEY = 'snowtime.prototypeAppScene'
   const PACES = {
     calm: { label: 'Weather: calm', density: 0.5, speed: 0.7 },
-    'sign-in': { label: 'Weather: as sign-in', density: 1, speed: 1 },
+    'sign-in': { label: 'Weather: sign-in', density: 1, speed: 1 },
   }
   function scenePace() {
     try {
@@ -468,7 +468,7 @@
       'beforeend',
       `<div id="appearance-menu" popover data-ui="popover" class="grid w-80 gap-3" role="dialog" aria-labelledby="appearance-menu-title">
         <h2 id="appearance-menu-title" class="text-sm font-semibold">Appearance</h2>
-        <div class="grid gap-1.5">
+        <div class="mb-2 grid gap-1.5">
           <span data-ui="label" id="appearance-theme-label">Theme</span>
           <div data-ui="toggle-group" class="grid grid-cols-3" role="group" aria-labelledby="appearance-theme-label">
             ${[
@@ -480,7 +480,7 @@
               .join('')}
           </div>
         </div>
-        <div class="flex items-center justify-between gap-3">
+        <div class="mb-2 flex items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-2.5">
             ${appIconImg('large', 'size-8')}
             <div class="grid min-w-0 gap-0.5">
@@ -544,11 +544,13 @@
     window.scene?.reducedMotion.addEventListener('change', applyAppearanceMenu)
     if (!sceneCtl) return
 
-    // Prototype variant: the weather's pace on app pages. Changing it reloads the scene.
+    // Prototype variant: the weather's pace on app pages, compared on the timer. Other pages use the
+    // saved choice.
+    if (currentPage !== 'timer') return
     document.getElementById('prototype-bar-controls').insertAdjacentHTML(
       'afterbegin',
       `<label for="scene-pace" class="sr-only">Weather pace (prototype)</label>
-      <select id="scene-pace" data-ui="select" class="h-9 w-48" title="Prototype only: the weather's density and speed on app pages">
+      <select id="scene-pace" data-ui="select" class="h-9 w-40" title="Prototype only: the weather's density and speed on app pages">
         ${Object.entries(PACES)
           .map(([id, p]) => `<option value="${id}"${id === scenePace() ? ' selected' : ''}>${p.label}</option>`)
           .join('')}
@@ -563,8 +565,9 @@
     })
   }
 
-  // The season's tagline (seasons.js) in the page's title row, after the h1, in the intro's colors.
-  // From 1024 px it sits beside the title after a divider; below, on its own line under it.
+  // The season's tagline (seasons.js) in the page's title row, in the intro's colors. From 1024 px
+  // it's centered on the page, level with the title, unless it would touch the title or the
+  // row's actions; otherwise, and on narrower screens, it's on its own line under the title.
   function renderTagline() {
     const h1 = document.querySelector('body h1')
     if (!h1 || !window.seasons) return
@@ -572,10 +575,37 @@
     row.className = 'flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1'
     h1.replaceWith(row)
     row.append(h1)
-    row.insertAdjacentHTML('beforeend', '<p id="page-tagline" class="season-tagline min-w-0 basis-full text-sm font-medium lg:basis-auto lg:border-l lg:pl-4"></p>')
-    const update = () => (document.getElementById('page-tagline').innerHTML = seasons.taglineHtml())
+    row.insertAdjacentHTML('beforeend', '<p id="page-tagline" class="season-tagline min-w-0 basis-full text-sm font-medium"></p>')
+    const tag = document.getElementById('page-tagline')
+    const area = row.parentElement
+    area.classList.add('page-title-area')
+    const blockers = () => [h1, ...[...area.children].filter((el) => el !== row)]
+    function place() {
+      tag.classList.remove('page-tagline-centered')
+      tag.style.top = ''
+      if (innerWidth < 1024) return
+      tag.classList.add('page-tagline-centered')
+      const a = area.getBoundingClientRect()
+      const h = h1.getBoundingClientRect()
+      tag.style.top = `${h.top - a.top + (h.height - tag.offsetHeight) / 2}px`
+      const t = tag.getBoundingClientRect()
+      const touches = blockers().some((el) => {
+        const r = el.getBoundingClientRect()
+        return r.width && r.left < t.right + 24 && r.right > t.left - 24 && r.top < t.bottom && r.bottom > t.top
+      })
+      if (touches) {
+        tag.classList.remove('page-tagline-centered')
+        tag.style.top = ''
+      }
+    }
+    const update = () => {
+      tag.innerHTML = seasons.taglineHtml()
+      place()
+    }
     update()
     listeners.settings.push(update)
+    new ResizeObserver(place).observe(area)
+    document.fonts.ready.then(place)
   }
 
   // Fixtures can swap in another user, e.g. a long name, to check the header.
