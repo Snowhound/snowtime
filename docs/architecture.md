@@ -35,8 +35,28 @@
 - The active organization comes from the session. Every server function
   resolves it and checks membership and role before touching data; queries
   always filter by `organization_id`.
-- Roles: owner / admin / member (plugin defaults). Members access their own
-  entries; admins/owners access all entries in the organization.
+- Organization roles: owner / admin / member (plugin defaults).
+- Team role: `lead` or `member`, stored per team membership. The plugin has
+  no team roles, so this is an app-level field on team membership.
+- Teams group people for access and reporting; data is owned by the
+  organization, not the team.
+
+| Role        | Own entries | Team members' entries  | All org entries |
+| ----------- | ----------- | ---------------------- | --------------- |
+| Member      | read/write  | —                      | —               |
+| Team lead   | read/write  | read, reports          | —               |
+| Admin/owner | read/write  | read/write, reports    | read/write      |
+
+- One running timer per user, across all organizations.
+
+## Deployment model
+
+- Default: one shared multi-tenant deployment.
+- Must remain possible: a dedicated stack per client (own Vercel project and
+  Turso database) from the same codebase, with no code changes.
+- Therefore: nothing tenant-specific in code (no hardcoded org names,
+  domains, or branding); everything instance-specific comes from env vars;
+  migrations apply cleanly to an empty database.
 
 ## Time zones
 

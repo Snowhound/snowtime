@@ -41,7 +41,11 @@ Organizations and teams are in scope from day one; see `architecture.md`.
 | Organization | A tenant (company), e.g. Snowhound                         |
 | Team         | A group within an organization, e.g. a Snowhound team      |
 | Member       | A user in an organization, role owner / admin / member     |
+| Team lead    | A team member who can see and report on the team's time    |
 
 - A user can belong to several organizations and switches the active one.
 - A member can be in several teams within an organization.
-- Members see their own entries; admins/owners see the whole organization.
+- Members see their own entries; team leads also see their teams' entries;
+  admins/owners see the whole organization.
+- Hosted as one shared instance; a dedicated instance per client must stay
+  possible but is not needed initially.
