@@ -293,5 +293,59 @@
         "countPlural=*": "{count} members"
       }
     }
-  ]
+  ],
+  "reports_filters": "Report filters",
+  "reports_range": "Range",
+  "reports_preset_today": "Today",
+  "reports_preset_this_week": "This week",
+  "reports_preset_last_week": "Last week",
+  "reports_preset_this_month": "This month",
+  "reports_preset_last_month": "Last month",
+  "reports_preset_custom": "Custom",
+  "reports_previous": "Previous range",
+  "reports_next": "Next range",
+  "reports_from": "From",
+  "reports_to": "To",
+  "reports_people": "People",
+  "reports_everyone": "Everyone",
+  "reports_my_teams": "My teams",
+  "reports_teams": "Teams",
+  "reports_members": "Members",
+  "reports_you": "{name} (you)",
+  "reports_group_by": "Group by",
+  "reports_group_project": "Project",
+  "reports_group_team": "Team",
+  "reports_group_member": "Member",
+  "reports_totals_per": "Totals per",
+  "reports_unit_day": "Day",
+  "reports_unit_week": "Week",
+  "reports_timesheet": "Timesheet",
+  "reports_title_project_day": "Projects by day",
+  "reports_title_project_week": "Projects by week",
+  "reports_title_team_day": "Teams by day",
+  "reports_title_team_week": "Teams by week",
+  "reports_title_member_day": "Members by day",
+  "reports_title_member_week": "Members by week",
+  "reports_team_note": "Teams count the time of their current members, so someone in two teams counts in both and team totals can add up to more than the total.",
+  "reports_total": "Total",
+  "reports_week_of": "Week of {date}",
+  "reports_no_project": "No project",
+  "reports_no_team": "No team",
+  "reports_empty_title": "No time tracked in this range.",
+  "reports_empty_description": "Pick another range or other people.",
+  "reports_scope_member": "Your own time.",
+  "reports_scope_admin": "Everyone in the organization.",
+  "reports_scope_lead": [
+    {
+      "declarations": ["input count", "input teams", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Your time and the time of the {teams} team, which you lead.",
+        "countPlural=*": "Your time and the time of the {teams} teams, which you lead."
+      }
+    }
+  ],
+  "reports_zone_monday": "Days and weeks in {zone}, starting Monday",
+  "reports_zone_sunday": "Days and weeks in {zone}, starting Sunday",
+  "reports_change_settings": "change"
 }

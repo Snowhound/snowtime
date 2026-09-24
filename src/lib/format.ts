@@ -47,3 +47,13 @@ export function formatTime(ms: number | Date, timeZone: string) {
 export function formatIsoDate(date: string, options: Intl.DateTimeFormatOptions): string {
   return formatDateTime(Date.parse(`${date}T00:00:00Z`), 'UTC', options)
 }
+
+// Two ISO dates as a range, such as "21–27 Sep 2026", in the UI language.
+export function formatIsoDateRange(
+  from: string,
+  to: string,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  const formatter = new Intl.DateTimeFormat(getLocale(), { timeZone: 'UTC', ...options })
+  return formatter.formatRange(Date.parse(`${from}T00:00:00Z`), Date.parse(`${to}T00:00:00Z`))
+}

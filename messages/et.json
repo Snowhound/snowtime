@@ -293,5 +293,59 @@
         "countPlural=*": "{count} liiget"
       }
     }
-  ]
+  ],
+  "reports_filters": "Aruande filtrid",
+  "reports_range": "Periood",
+  "reports_preset_today": "Täna",
+  "reports_preset_this_week": "See nädal",
+  "reports_preset_last_week": "Eelmine nädal",
+  "reports_preset_this_month": "See kuu",
+  "reports_preset_last_month": "Eelmine kuu",
+  "reports_preset_custom": "Muu",
+  "reports_previous": "Eelmine periood",
+  "reports_next": "Järgmine periood",
+  "reports_from": "Alates",
+  "reports_to": "Kuni",
+  "reports_people": "Inimesed",
+  "reports_everyone": "Kõik",
+  "reports_my_teams": "Minu tiimid",
+  "reports_teams": "Tiimid",
+  "reports_members": "Liikmed",
+  "reports_you": "{name} (sina)",
+  "reports_group_by": "Rühmita",
+  "reports_group_project": "Projekt",
+  "reports_group_team": "Tiim",
+  "reports_group_member": "Liige",
+  "reports_totals_per": "Kokku",
+  "reports_unit_day": "Päev",
+  "reports_unit_week": "Nädal",
+  "reports_timesheet": "Ajatabel",
+  "reports_title_project_day": "Projektid päevade kaupa",
+  "reports_title_project_week": "Projektid nädalate kaupa",
+  "reports_title_team_day": "Tiimid päevade kaupa",
+  "reports_title_team_week": "Tiimid nädalate kaupa",
+  "reports_title_member_day": "Liikmed päevade kaupa",
+  "reports_title_member_week": "Liikmed nädalate kaupa",
+  "reports_team_note": "Tiimi aeg on tema praeguste liikmete aeg, nii et kahe tiimi liige läheb arvesse mõlemas ja tiimide summa võib olla suurem kui kogusumma.",
+  "reports_total": "Kokku",
+  "reports_week_of": "Nädal alates {date}",
+  "reports_no_project": "Projektita",
+  "reports_no_team": "Tiimita",
+  "reports_empty_title": "Selles perioodis pole aega märgitud.",
+  "reports_empty_description": "Vali teine periood või teised inimesed.",
+  "reports_scope_member": "Sinu enda aeg.",
+  "reports_scope_admin": "Kõik organisatsioonis.",
+  "reports_scope_lead": [
+    {
+      "declarations": ["input count", "input teams", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Sinu aeg ja sinu juhitud tiimi {teams} aeg.",
+        "countPlural=*": "Sinu aeg ja sinu juhitud tiimide {teams} aeg."
+      }
+    }
+  ],
+  "reports_zone_monday": "Päevad ja nädalad ajavööndis {zone}, nädal algab esmaspäeval",
+  "reports_zone_sunday": "Päevad ja nädalad ajavööndis {zone}, nädal algab pühapäeval",
+  "reports_change_settings": "muuda"
 }
