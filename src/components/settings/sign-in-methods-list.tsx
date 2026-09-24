@@ -120,20 +120,28 @@ export function SignInMethodsList(props: {
     setConfirmOpen(true)
   }
 
-  const alert = () => error() ?? props.linkError ?? null
-  const date = (at: Date | string) =>
-    formatDateTime(new Date(at), props.timeZone, {
+  function alert() {
+    return error() ?? props.linkError ?? null
+  }
+  function date(at: Date | string) {
+    return formatDateTime(new Date(at), props.timeZone, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     })
-  const linked = (providerId: string) => accounts.data?.find((a) => a.providerId === providerId)
-  const lastAccount = () => (accounts.data?.length ?? 0) <= 1
+  }
+  function linked(providerId: string) {
+    return accounts.data?.find((a) => a.providerId === providerId)
+  }
+  function lastAccount() {
+    return (accounts.data?.length ?? 0) <= 1
+  }
 
   // Configured providers, plus any linked one that was since switched off, so it can
   // still be disconnected.
-  const providers = () =>
-    PROVIDERS.filter((p) => props.methods.includes(p.id) || linked(p.id) !== undefined)
+  function providers() {
+    return PROVIDERS.filter((p) => props.methods.includes(p.id) || linked(p.id) !== undefined)
+  }
 
   // Linking leaves the page for the provider, which sends the user back here.
   async function connect(provider: SocialProvider) {

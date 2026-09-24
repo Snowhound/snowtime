@@ -78,7 +78,7 @@ describe('timer', () => {
   })
 
   describe('projects', () => {
-    const start = async (userId: string, projectId: string) => {
+    async function start(userId: string, projectId: string) {
       const scope = await scopeOf(db, userId, O.northwind)
       return as(scope, () => startTimer(db, scope, { id: uuidv7(), description: '', projectId }))
     }
@@ -113,7 +113,7 @@ describe('timer', () => {
 
     afterAll(() => freshCleanup())
 
-    const runningEntry = async () => {
+    async function runningEntry() {
       const [row] = await fresh.select().from(timeEntry).where(eq(timeEntry.id, E.running))
       return row
     }

@@ -43,8 +43,12 @@ function SignIn() {
   const [error, setError] = createSignal<string | null>(
     search().error ? m.sign_in_error_failed() : null,
   )
-  const target = () => safeRedirect(search().redirect)
-  const has = (method: 'password' | 'passkey') => methods.data?.includes(method) ?? false
+  function target() {
+    return safeRedirect(search().redirect)
+  }
+  function has(method: 'password' | 'passkey') {
+    return methods.data?.includes(method) ?? false
+  }
 
   // Password and passkey sign-in stay on the page, so the session is loaded again here.
   async function signedIn() {

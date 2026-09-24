@@ -14,12 +14,16 @@ import {
 } from './calendar'
 
 const HOUR = 3_600_000
-const at = (iso: string) => Date.parse(iso)
-const iso = (range: { from: number; to: number }) => ({
-  from: new Date(range.from).toISOString(),
-  to: new Date(range.to).toISOString(),
-  hours: (range.to - range.from) / HOUR,
-})
+function at(iso: string) {
+  return Date.parse(iso)
+}
+function iso(range: { from: number; to: number }) {
+  return {
+    from: new Date(range.from).toISOString(),
+    to: new Date(range.to).toISOString(),
+    hours: (range.to - range.from) / HOUR,
+  }
+}
 
 describe('dates', () => {
   test('addDays, daysBetween and datesBetween cross month and year ends', () => {
@@ -190,10 +194,12 @@ describe('splitByDay', () => {
 describe('countedSpan', () => {
   const range = { from: at('2026-09-24T00:00:00Z'), to: at('2026-09-25T00:00:00Z') }
   const now = at('2026-09-24T12:00:00Z')
-  const entry = (startedAt: string, stoppedAt: string | null) => ({
-    startedAt: new Date(startedAt),
-    stoppedAt: stoppedAt ? new Date(stoppedAt) : null,
-  })
+  function entry(startedAt: string, stoppedAt: string | null) {
+    return {
+      startedAt: new Date(startedAt),
+      stoppedAt: stoppedAt ? new Date(stoppedAt) : null,
+    }
+  }
 
   test('a running entry counts up to now', () => {
     expect(countedSpan(entry('2026-09-24T11:15:00Z', null), range, now)).toEqual({

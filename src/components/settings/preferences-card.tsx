@@ -52,8 +52,9 @@ function zoneLabel(zone: string) {
   return `${zone.replaceAll('_', ' ')} (${offset})`
 }
 
-const weekDay = (date: string) =>
-  formatIsoDate(date, { weekday: 'short', day: 'numeric', month: 'short' })
+function weekDay(date: string) {
+  return formatIsoDate(date, { weekday: 'short', day: 'numeric', month: 'short' })
+}
 
 export function PreferencesCard(props: { settings: Settings }) {
   const save = useUpdateSettings()
@@ -85,7 +86,7 @@ export function PreferencesCard(props: { settings: Settings }) {
   })
 
   // A saved zone the browser doesn't list (an alias, or newer tz data) still shows.
-  const zones = () => {
+  function zones() {
     const listed = device()?.zones ?? []
     const extra = [props.settings.timeZone, device()?.zone].filter(
       (zone): zone is string => !!zone && !listed.includes(zone),
@@ -93,7 +94,7 @@ export function PreferencesCard(props: { settings: Settings }) {
     return [...new Set([...extra, ...listed])]
   }
 
-  const week = () => {
+  function week() {
     const start = startOfWeek(localDate(now(), props.settings.timeZone), props.settings.weekStart)
     return `${weekDay(start)} – ${weekDay(addDays(start, 6))}`
   }

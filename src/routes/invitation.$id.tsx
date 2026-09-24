@@ -17,11 +17,12 @@ import { Uuidv7 } from '../schemas/common'
 import { signInMethodsQuery } from './sign-in'
 
 // A malformed id can't match an invitation, so it shows as closed without asking.
-const invitationQuery = (id: string) =>
-  queryOptions({
+function invitationQuery(id: string) {
+  return queryOptions({
     queryKey: ['invitation', id],
     queryFn: () => (v.is(Uuidv7, id) ? getInvitation({ data: { id } }) : null),
   })
+}
 
 export const Route = createFileRoute('/invitation/$id')({
   validateSearch: v.object({ error: v.optional(v.string()) }),
@@ -54,10 +55,16 @@ function Invitation() {
   )
   const [accepting, setAccepting] = createSignal(false)
 
-  const path = () => `/invitation/${params().id}`
-  const user = () => session.data?.user
+  function path() {
+    return `/invitation/${params().id}`
+  }
+  function user() {
+    return session.data?.user
+  }
   // Better Auth accepts only from the invited address, compared case-insensitively.
-  const isRecipient = () => user()?.email.toLowerCase() === invitation.data?.email.toLowerCase()
+  function isRecipient() {
+    return user()?.email.toLowerCase() === invitation.data?.email.toLowerCase()
+  }
 
   async function refreshSession() {
     await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })

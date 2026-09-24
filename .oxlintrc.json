@@ -19,6 +19,7 @@
         "checksVoidReturn": false
       }
     ],
+    "eslint/func-style": ["error", "declaration", { "allowTypeAnnotation": true }],
     "solid/components-return-once": "warn",
     "solid/event-handlers": "warn",
     "solid/imports": "warn",
@@ -46,6 +47,12 @@
     ".output/**"
   ],
   "overrides": [
+    {
+      "files": ["src/components/ui/**"],
+      "rules": {
+        "eslint/func-style": "off"
+      }
+    },
     {
       "files": ["**/*.tsx"],
       "rules": {

@@ -16,35 +16,43 @@ import { currentActor } from './actor'
 
 const nowMs = sql`(CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER))`
 
-const timestamp = (name: string) => integer(name, { mode: 'timestamp_ms' })
+function timestamp(name: string) {
+  return integer(name, { mode: 'timestamp_ms' })
+}
 
 // Audit columns, in the order docs/migrations.md prescribes. updated_at is set here on
 // every update; the table's trigger only covers statements that bypass Drizzle.
-const createdAudit = () => ({
-  createdAt: timestamp('created_at').default(nowMs).notNull(),
-  createdBy: text('created_by')
-    .notNull()
-    .references(() => user.id)
-    .$defaultFn(currentActor),
-})
+function createdAudit() {
+  return {
+    createdAt: timestamp('created_at').default(nowMs).notNull(),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => user.id)
+      .$defaultFn(currentActor),
+  }
+}
 
-const updatedAudit = () => ({
-  updatedAt: timestamp('updated_at')
-    .default(nowMs)
-    .notNull()
-    .$onUpdateFn(() => new Date()),
-  updatedBy: text('updated_by')
-    .notNull()
-    .references(() => user.id)
-    .$defaultFn(currentActor)
-    .$onUpdateFn(currentActor),
-})
+function updatedAudit() {
+  return {
+    updatedAt: timestamp('updated_at')
+      .default(nowMs)
+      .notNull()
+      .$onUpdateFn(() => new Date()),
+    updatedBy: text('updated_by')
+      .notNull()
+      .references(() => user.id)
+      .$defaultFn(currentActor)
+      .$onUpdateFn(currentActor),
+  }
+}
 
-const sysDeleted = () => ({
-  sysDeleted: integer('sys_deleted', { mode: 'boolean' })
-    .default(sql`0`)
-    .notNull(),
-})
+function sysDeleted() {
+  return {
+    sysDeleted: integer('sys_deleted', { mode: 'boolean' })
+      .default(sql`0`)
+      .notNull(),
+  }
+}
 
 // Auth (Better Auth core) -------------------------------------------------------------------
 

@@ -6,10 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Up to two initials for an avatar: "Anna Kask" is "AK".
-export const initials = (name: string) =>
-  name
+export function initials(name: string) {
+  return name
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((word) => word[0].toUpperCase())
     .join('')
+}

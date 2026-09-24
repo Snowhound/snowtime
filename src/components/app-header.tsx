@@ -99,11 +99,15 @@ export function AppHeader() {
 
 function NavLinks(props: { role: AppSession['role']; mobile?: boolean }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const items = () => NAV.filter((item) => !('admin' in item) || props.role !== 'member')
+  function items() {
+    return NAV.filter((item) => !('admin' in item) || props.role !== 'member')
+  }
   return (
     <For each={items()}>
       {(item) => {
-        const current = () => pathname() === item.to || pathname().startsWith(`${item.to}/`)
+        function current() {
+          return pathname() === item.to || pathname().startsWith(`${item.to}/`)
+        }
         return (
           <Link
             to={item.to}
@@ -125,8 +129,9 @@ function OrganizationSwitcher(props: { session: AppSession }) {
   const queryClient = useQueryClient()
   const router = useRouter()
   const navigate = useNavigate()
-  const active = () =>
-    props.session.organizations.find((o) => o.id === props.session.activeOrganizationId)!
+  function active() {
+    return props.session.organizations.find((o) => o.id === props.session.activeOrganizationId)!
+  }
 
   // Every organization-scoped query belongs to the old organization, so all of them load
   // again, and the routes check the role in the new one.

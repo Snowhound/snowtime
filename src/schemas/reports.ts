@@ -17,7 +17,9 @@ export const REPORT_UNITS = ['day', 'week'] as const
 // Longest range a report covers: a year of weeks, to keep one call's reads bounded.
 export const MAX_REPORT_DAYS = 371
 
-const days = (from: string, to: string) => (Date.parse(to) - Date.parse(from)) / 86_400_000
+function days(from: string, to: string) {
+  return (Date.parse(to) - Date.parse(from)) / 86_400_000
+}
 
 // Totals for the days from `from` up to but not including `to`, per day or per week,
 // optionally of one member or of one team's current members.

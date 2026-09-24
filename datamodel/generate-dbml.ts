@@ -16,10 +16,14 @@ const OUTPUT = 'datamodel/snowtime.dbml'
 const WIDTH = 90
 
 const dialect = new SQLiteDialect()
-const sqlText = (value: SQL) => dialect.sqlToQuery(value).sql
+function sqlText(value: SQL) {
+  return dialect.sqlToQuery(value).sql
+}
 
 const warnings: string[] = []
-const warn = (message: string) => warnings.push(message)
+function warn(message: string) {
+  return warnings.push(message)
+}
 
 type Config = ReturnType<typeof getTableConfig>
 
@@ -50,9 +54,13 @@ function defaultOf(column: Config['columns'][number]): string | null {
   throw new Error(`Unsupported default on ${column.name}: ${String(value)}`)
 }
 
-const joinNotes = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' ')
+function joinNotes(...parts: (string | undefined)[]) {
+  return parts.filter(Boolean).join(' ')
+}
 
-const list = (names: string[]) => (names.length === 1 ? names[0] : `(${names.join(', ')})`)
+function list(names: string[]) {
+  return names.length === 1 ? names[0] : `(${names.join(', ')})`
+}
 
 function renderTable(config: Config): string[] {
   const notes = tableNotes[config.name] ?? {}
@@ -146,7 +154,7 @@ function renderTable(config: Config): string[] {
   return lines
 }
 
-const heading = (title: string) => {
+function heading(title: string) {
   const start = `// --- ${title} `
   return start + '-'.repeat(Math.max(3, WIDTH - start.length))
 }

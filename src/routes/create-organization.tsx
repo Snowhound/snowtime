@@ -41,10 +41,11 @@ function CreateOrganization() {
   const [slugEdited, setSlugEdited] = createSignal(false)
   let formRef!: HTMLFormElement
 
-  const focusInvalid = () =>
+  function focusInvalid() {
     queueMicrotask(() =>
       formRef.querySelector<HTMLInputElement>('input[aria-invalid="true"]')?.focus(),
     )
+  }
 
   const form = createForm(() => ({
     defaultValues: { name: '', slug: '' },

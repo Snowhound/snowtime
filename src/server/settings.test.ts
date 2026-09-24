@@ -82,8 +82,9 @@ describe('updateSettings', () => {
   })
 
   test('view settings save one field at a time, as the UI auto-saves them', async () => {
-    const save = (patch: UpdateSettingsInput) =>
-      as({ userId: U.loner }, () => updateSettings(db, U.loner, patch))
+    function save(patch: UpdateSettingsInput) {
+      return as({ userId: U.loner }, () => updateSettings(db, U.loner, patch))
+    }
     await save({ theme: 'dark' })
     await save({ timerLayout: 'table' })
     const last = await save({ showSummary: false })

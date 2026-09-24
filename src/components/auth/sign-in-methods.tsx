@@ -48,7 +48,9 @@ export function ProviderButtons(props: {
   onError: (message: string) => void
 }) {
   const [pending, setPending] = createSignal<SocialProvider | null>(null)
-  const shown = () => PROVIDERS.filter((p) => props.methods.includes(p.id))
+  function shown() {
+    return PROVIDERS.filter((p) => props.methods.includes(p.id))
+  }
 
   async function signIn(provider: SocialProvider) {
     setPending(provider)

@@ -97,10 +97,11 @@ describe('tenancy', () => {
 })
 
 describe('running timer', () => {
-  const running = (id: string) =>
-    withActor(alice, async () =>
+  function running(id: string) {
+    return withActor(alice, async () =>
       db.insert(timeEntry).values({ id, organizationId: 'org-a', userId: alice, startedAt: now }),
     )
+  }
 
   test('a user has at most one running entry', async () => {
     await running('e-run-1')

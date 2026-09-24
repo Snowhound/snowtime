@@ -20,7 +20,9 @@ beforeAll(async () => {
 
 afterAll(() => cleanup())
 
-const seeded = (id: string, email: string) => ({ id, email })
+function seeded(id: string, email: string) {
+  return { id, email }
+}
 
 // A signed-up user in no organization and without settings.
 async function newUser(email: string) {

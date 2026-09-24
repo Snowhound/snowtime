@@ -15,12 +15,14 @@ const client = vi.hoisted(() => ({
 }))
 vi.mock('../../lib/auth-client', () => ({ authClient: client }))
 
-const account = (id: string, providerId: string) => ({
-  id,
-  providerId,
-  accountId: `${providerId}-user`,
-  createdAt: new Date('2026-09-01T10:00:00Z'),
-})
+function account(id: string, providerId: string) {
+  return {
+    id,
+    providerId,
+    accountId: `${providerId}-user`,
+    createdAt: new Date('2026-09-01T10:00:00Z'),
+  }
+}
 
 function renderList(methods: SignInMethod[]) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -31,7 +33,9 @@ function renderList(methods: SignInMethod[]) {
   ))
 }
 
-const row = (name: string) => screen.getByText(name, { selector: 'p' }).closest('li')!
+function row(name: string) {
+  return screen.getByText(name, { selector: 'p' }).closest('li')!
+}
 
 beforeEach(() => {
   vi.clearAllMocks()

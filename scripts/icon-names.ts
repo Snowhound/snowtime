@@ -15,11 +15,14 @@ import { readFileSync, writeFileSync } from 'node:fs'
 const fix = process.argv.includes('--fix')
 const importPattern = /^import (\w+) from ['"]lucide-solid\/icons\/([\w-]+)['"]/gm
 
-const expectedName = (icon: string) =>
-  icon
-    .split('-')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('') + 'Icon'
+function expectedName(icon: string) {
+  return (
+    icon
+      .split('-')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('') + 'Icon'
+  )
+}
 
 let problems = 0
 for await (const file of new Glob('src/**/*.{ts,tsx}').scan('.')) {

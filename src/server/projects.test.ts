@@ -34,11 +34,13 @@ beforeAll(async () => {
 
 afterAll(() => cleanup())
 
-const idsOf = async (scope: Scope, includeArchived = false) =>
-  (await listProjects(db, scope, { includeArchived })).map((p) => p.id)
+async function idsOf(scope: Scope, includeArchived = false) {
+  return (await listProjects(db, scope, { includeArchived })).map((p) => p.id)
+}
 
-const newProject = (scope: Scope, name: string) =>
-  as(scope, () => createProject(db, scope, { id: uuidv7(), name, color: null }))
+function newProject(scope: Scope, name: string) {
+  return as(scope, () => createProject(db, scope, { id: uuidv7(), name, color: null }))
+}
 
 describe('listProjects', () => {
   test('members see unassigned projects and those of their teams', async () => {
@@ -230,8 +232,8 @@ describe('assignProjectToTeam and unassignProjectFromTeam', () => {
 })
 
 describe('deleteProject', () => {
-  const logOn = (projectId: string, deleted = false) =>
-    as(scopes.admin, async () => {
+  function logOn(projectId: string, deleted = false) {
+    return as(scopes.admin, async () => {
       await db.insert(timeEntry).values({
         id: uuidv7(),
         organizationId: O.northwind,
@@ -242,6 +244,7 @@ describe('deleteProject', () => {
         sysDeleted: deleted,
       })
     })
+  }
 
   test('deletes the project and its team assignments, and frees the name', async () => {
     const created = await newProject(scopes.admin, 'Typo projekt')

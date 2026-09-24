@@ -29,8 +29,12 @@ beforeAll(async () => {
 
 afterAll(() => cleanup())
 
-const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
-const ids = <K extends string>(rows: Record<K, unknown>[], key: K) => rows.map((r) => r[key]).sort()
+function sum(xs: number[]) {
+  return xs.reduce((a, b) => a + b, 0)
+}
+function ids<K extends string>(rows: Record<K, unknown>[], key: K) {
+  return rows.map((r) => r[key]).sort()
+}
 
 // Every breakdown of a report adds up to its total.
 function expectConsistent(report: Report) {
@@ -43,13 +47,13 @@ function expectConsistent(report: Report) {
   }
 }
 
-const logFor = (
+function logFor(
   scope: Scope,
   startedAt: string,
   stoppedAt: string,
   projectId: string | null = P.internal,
-) =>
-  as(scope, async () => {
+) {
+  return as(scope, async () => {
     await db.insert(timeEntry).values({
       id: uuidv7(),
       organizationId: O.northwind,
@@ -59,6 +63,7 @@ const logFor = (
       stoppedAt: new Date(stoppedAt),
     })
   })
+}
 
 describe('aggregate', () => {
   const base: Aggregation = {
@@ -73,17 +78,19 @@ describe('aggregate', () => {
       { teamId: 't2', userIds: ['b', 'c'] },
     ],
   }
-  const entry = (
+  function entry(
     userId: string,
     projectId: string | null,
     startedAt: string,
     stoppedAt: string | null,
-  ) => ({
-    userId,
-    projectId,
-    startedAt: new Date(startedAt),
-    stoppedAt: stoppedAt ? new Date(stoppedAt) : null,
-  })
+  ) {
+    return {
+      userId,
+      projectId,
+      startedAt: new Date(startedAt),
+      stoppedAt: stoppedAt ? new Date(stoppedAt) : null,
+    }
+  }
 
   test('splits at local midnights over a DST change and counts a running entry to now', () => {
     const report = aggregate(
@@ -280,8 +287,12 @@ describe('getReport', () => {
   test('team totals follow current membership', async () => {
     const input = { from: '2026-09-14', to: '2026-09-21', unit: 'day' } as const
     const before = await getReport(db, scopes.admin, input, NOW)
-    const totalOf = (r: Report, userId: string) => r.members.find((m) => m.userId === userId)!.total
-    const designOf = (r: Report) => r.teams.find((t) => t.teamId === T.design)!.total
+    function totalOf(r: Report, userId: string) {
+      return r.members.find((m) => m.userId === userId)!.total
+    }
+    function designOf(r: Report) {
+      return r.teams.find((t) => t.teamId === T.design)!.total
+    }
     expect(designOf(before)).toBe(totalOf(before, U.lead) + totalOf(before, U.member))
 
     await db

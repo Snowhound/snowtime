@@ -3,7 +3,9 @@ import { v7 as uuidv7 } from 'uuid'
 
 // Ids for app-owned rows, generated on the client so an optimistic row keeps its key once
 // the server confirms it (docs/architecture.md, "Data conventions").
-export const newId = () => uuidv7()
+export function newId() {
+  return uuidv7()
+}
 
 // Callbacks for a mutation that updates cached data before the server answers. `update`
 // runs on every cached query under `queryKey` (for example each loaded range of entries).

@@ -88,8 +88,10 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
   const buckets = bucketsOf(a)
   const range = rangeOf(a)
   const step = a.unit === 'week' ? 7 : 1
-  const empty = () => ({ total: 0, perBucket: buckets.map(() => 0) })
-  const add = (t: Totals, bucket: number, ms: number) => {
+  function empty() {
+    return { total: 0, perBucket: buckets.map(() => 0) }
+  }
+  function add(t: Totals, bucket: number, ms: number) {
     t.total += ms
     t.perBucket[bucket] += ms
   }
@@ -112,11 +114,12 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
     }
   }
 
-  const rows = <K extends string, V>(key: K, map: Map<V, Totals>) =>
-    [...map]
+  function rows<K extends string, V>(key: K, map: Map<V, Totals>) {
+    return [...map]
       .filter(([, t]) => t.total > 0)
       .map(([id, t]) => ({ [key]: id, ...t }) as Totals & Record<K, V>)
       .sort((x, y) => y.total - x.total || String(x[key]).localeCompare(String(y[key])))
+  }
 
   const teams = new Map<string, Totals>()
   for (const t of a.teams) {

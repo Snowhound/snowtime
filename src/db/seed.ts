@@ -23,7 +23,9 @@ import {
 export const SEED_PASSWORD = 'snowtime-local'
 
 // Fixed UUIDv7-shaped ids, so tests can name seeded rows.
-const id = (n: number) => `01900000-0000-7000-8000-${n.toString(16).padStart(12, '0')}`
+function id(n: number) {
+  return `01900000-0000-7000-8000-${n.toString(16).padStart(12, '0')}`
+}
 
 export const seedIds = {
   users: {

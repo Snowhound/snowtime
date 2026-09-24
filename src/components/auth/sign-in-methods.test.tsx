@@ -10,7 +10,9 @@ vi.mock('../../lib/auth-client', () => ({
   authClient: { signIn: { social: (...args: unknown[]) => social(...args) } },
 }))
 
-const buttons = () => screen.queryAllByRole('button').map((button) => button.textContent)
+function buttons() {
+  return screen.queryAllByRole('button').map((button) => button.textContent)
+}
 
 describe('ProviderButtons', () => {
   test('shows only the providers getSignInMethods returned, in its order', () => {

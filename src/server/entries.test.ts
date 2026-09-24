@@ -29,11 +29,15 @@ beforeAll(async () => {
 
 afterAll(() => cleanup())
 
-const usersIn = (entries: { userId: string }[]) => [...new Set(entries.map((e) => e.userId))].sort()
-const past = (hoursAgo: number, hours = 1) => ({
-  startedAt: new Date(NOW.getTime() - hoursAgo * 3_600_000),
-  stoppedAt: new Date(NOW.getTime() - (hoursAgo - hours) * 3_600_000),
-})
+function usersIn(entries: { userId: string }[]) {
+  return [...new Set(entries.map((e) => e.userId))].sort()
+}
+function past(hoursAgo: number, hours = 1) {
+  return {
+    startedAt: new Date(NOW.getTime() - hoursAgo * 3_600_000),
+    stoppedAt: new Date(NOW.getTime() - (hoursAgo - hours) * 3_600_000),
+  }
+}
 
 describe('listEntries', () => {
   test('member: own entries only, including the running timer', async () => {
@@ -104,7 +108,9 @@ describe('createEntry', () => {
   })
 
   test('only admins and owners log entries for other members', async () => {
-    const forMax = () => ({ id: uuidv7(), userId: U.member, description: '', ...past(40) })
+    function forMax() {
+      return { id: uuidv7(), userId: U.member, description: '', ...past(40) }
+    }
     await expect(
       as(scopes.lead, () => createEntry(db, scopes.lead, forMax())),
     ).rejects.toMatchObject({
@@ -147,10 +153,11 @@ describe('createEntry', () => {
 })
 
 describe('updateEntry', () => {
-  const newEntry = async (scope: Scope, projectId: string | null = null) =>
-    as(scope, () =>
+  async function newEntry(scope: Scope, projectId: string | null = null) {
+    return as(scope, () =>
       createEntry(db, scope, { id: uuidv7(), description: 'Draft', projectId, ...past(60) }),
     )
+  }
 
   test('a member updates their own entry', async () => {
     const entry = await newEntry(scopes.member)

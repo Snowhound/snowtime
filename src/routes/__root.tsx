@@ -44,7 +44,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
   const session = useQuery(() => sessionQuery)
-  const theme = () => session.data?.settings?.theme ?? 'system'
+  function theme() {
+    return session.data?.settings?.theme ?? 'system'
+  }
 
   // Saving another language switches it in place: Paraglide takes the new locale and sets
   // the cookie for later requests, and the page renders again, since messages are plain
