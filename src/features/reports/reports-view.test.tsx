@@ -70,7 +70,7 @@ function person(userId: string, name: string) {
   return { userId, name, email: '', image: null, orgRole: 'member', teams: memberships }
 }
 
-const snowtime = { id: newId(), name: 'Snowtime', color: '#2a78d6', archivedAt: null, teamIds: [] }
+const snowtime = { id: newId(), name: 'Snowtime', color: '#3b82b8', archivedAt: null, teamIds: [] }
 
 interface Row {
   kind: 'project' | 'member' | 'team'

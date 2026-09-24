@@ -37,6 +37,9 @@ Work in this order, one commit or more per step, and check each in the dev app a
   from `@fontsource-variable/plus-jakarta-sans`, and times and durations use it with
   `tabular-nums` instead of `font-mono`. `html` has the background color and the signed-in frame
   the `bg-muted/40` tint. Checked at 1440, 850, and 390 px, light and dark.
+- 2026-09-25: Step 1b: the brand's project colors are in `--series-1` to `--series-8` and
+  `PROJECT_COLORS`, with the prototype's names (Blue, Terracotta, Teal, Ochre, Rose, Moss, Indigo,
+  Brick). A data-only migration moves each stored palette hex to the new color in its slot.
 
 ## Acceptance criteria
 

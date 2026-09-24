@@ -54,7 +54,7 @@ const design = { id: newId(), name: 'Design', members: [] }
 const client = { id: newId(), name: 'Client services', members: [] }
 
 function project(name: string, patch: Partial<Project> = {}): Project {
-  return { id: newId(), name, color: '#2a78d6', archivedAt: null, teamIds: [], ...patch }
+  return { id: newId(), name, color: '#3b82b8', archivedAt: null, teamIds: [], ...patch }
 }
 
 const server: { role: 'member' | 'admin'; projects: Project[] } = {
@@ -194,7 +194,7 @@ describe('ProjectsView', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'New project' }))
     const dialog = await screen.findByRole('dialog', { name: 'New project' })
     // Blue is taken by the active Snowtime; the archived project doesn't count.
-    expect(within(dialog).getByRole('radio', { name: 'Orange' })).toBeChecked()
+    expect(within(dialog).getByRole('radio', { name: 'Terracotta' })).toBeChecked()
     await userEvent.type(within(dialog).getByLabelText('Name'), 'Q4 planning')
     await userEvent.click(within(dialog).getByRole('checkbox', { name: 'Design' }))
     expect(within(dialog).getByText(/Only members of Design can track time/)).toBeInTheDocument()
@@ -202,7 +202,7 @@ describe('ProjectsView', () => {
 
     expect(await screen.findByText('Q4 planning')).toBeInTheDocument()
     expect(fn.createProject).toHaveBeenCalledWith({
-      data: expect.objectContaining({ name: 'Q4 planning', color: '#eb6834' }),
+      data: expect.objectContaining({ name: 'Q4 planning', color: '#d9703f' }),
     })
     const { id } = fn.createProject.mock.calls[0][0].data
     await waitFor(() =>

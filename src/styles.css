@@ -66,19 +66,20 @@ code {
   --sidebar-ring: oklch(0.871 0.006 286.286);
 }
 
-/* Project colors: eight categorical slots validated for lightness, chroma, and color-vision
-   separation on the light (#ffffff) and dark (#09090b) surfaces. project.color stores the light
-   hex; dark mode uses the slot's dark step (src/lib/colors.ts). Light mode's yellow, aqua, and
-   magenta are below 3:1 against the surface, so charts always carry labels or a table. */
+/* Project colors: eight categorical slots in cooler, muted steps that suit the brand, validated
+   for lightness, chroma, and color-vision separation on the light card and page tint and the dark
+   card, page tint, and popover (prototypes/README.md, "App frame"). project.color stores the light
+   hex; dark mode uses the slot's dark step (src/lib/colors.ts). Some steps are below 3:1 against
+   a surface, so charts always carry labels or a table. */
 :root {
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --series-3: #1baf7a;
-  --series-4: #eda100;
-  --series-5: #e87ba4;
-  --series-6: #008300;
-  --series-7: #4a3aa7;
-  --series-8: #e34948;
+  --series-1: #3b82b8;
+  --series-2: #d9703f;
+  --series-3: #1f9e8a;
+  --series-4: #d59a1c;
+  --series-5: #c9759f;
+  --series-6: #4f8f3a;
+  --series-7: #5a4fa8;
+  --series-8: #c9514f;
 }
 
 .dark {
@@ -117,14 +118,14 @@ code {
 }
 
 .dark {
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --series-3: #199e70;
-  --series-4: #c98500;
-  --series-5: #d55181;
-  --series-6: #008300;
-  --series-7: #9085e9;
-  --series-8: #e66767;
+  --series-1: #357cb2;
+  --series-2: #cc6433;
+  --series-3: #119884;
+  --series-4: #af7c00;
+  --series-5: #ba6791;
+  --series-6: #498934;
+  --series-7: #6e68b2;
+  --series-8: #c24b49;
   /* Native controls, such as <select> popups and date pickers, follow the theme. */
   color-scheme: dark;
 }

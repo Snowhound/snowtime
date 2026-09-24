@@ -40,13 +40,13 @@ export type ProjectDialogTarget = { kind: 'new' } | { kind: 'edit'; project: Pro
 // In PROJECT_COLORS order.
 const COLOR_NAMES = [
   m.projects_color_blue,
-  m.projects_color_orange,
-  m.projects_color_aqua,
-  m.projects_color_yellow,
-  m.projects_color_magenta,
-  m.projects_color_green,
-  m.projects_color_violet,
-  m.projects_color_red,
+  m.projects_color_terracotta,
+  m.projects_color_teal,
+  m.projects_color_ochre,
+  m.projects_color_rose,
+  m.projects_color_moss,
+  m.projects_color_indigo,
+  m.projects_color_brick,
 ]
 
 export function ProjectDialog(props: {

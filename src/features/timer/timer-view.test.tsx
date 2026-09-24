@@ -56,7 +56,7 @@ const userId = newId()
 const snowtime = {
   id: newId(),
   name: 'Snowtime',
-  color: '#2a78d6',
+  color: '#3b82b8',
   archivedAt: null,
   teamIds: [],
 }

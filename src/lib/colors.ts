@@ -1,14 +1,14 @@
 // The eight project colors. project.color stores the light hex; each maps to a --series-N
 // variable in src/styles.css, which switches to the slot's dark step in dark mode.
 export const PROJECT_COLORS = [
-  '#2a78d6', // blue
-  '#eb6834', // orange
-  '#1baf7a', // aqua
-  '#eda100', // yellow
-  '#e87ba4', // magenta
-  '#008300', // green
-  '#4a3aa7', // violet
-  '#e34948', // red
+  '#3b82b8', // blue, the brand's slate blue
+  '#d9703f', // terracotta
+  '#1f9e8a', // teal
+  '#d59a1c', // ochre
+  '#c9759f', // rose
+  '#4f8f3a', // moss
+  '#5a4fa8', // indigo
+  '#c9514f', // brick
 ] as const
 
 // The CSS color for a stored project color. A color outside the palette (set before the
