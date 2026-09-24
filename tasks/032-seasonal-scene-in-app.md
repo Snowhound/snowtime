@@ -50,6 +50,10 @@ Surfaces was named for every card so it can apply app-wide.
   page, and the theme switch at once instead of fading out behind the lifting black.
 - 2026-09-25: The intro moved from `auth.html` to `prototypes/intro.js`, with its first-visit
   memory, so the app frame can play it too.
+- 2026-09-25: The signed-in pages play the intro once at the change of season and replay it from
+  the Appearance popover and Settings, ending on "You're in. Get it done!". Checked on the timer
+  at 1440 px: the season trigger, replay, Escape, focus, the theme's return, and a running timer
+  with an unsaved description. The full viewport and page pass is still to do.
 
 ## Intro in the app
 

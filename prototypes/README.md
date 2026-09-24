@@ -217,8 +217,9 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
   and the scenery settings: Season, Background with Strength and Surfaces under it, and Weather,
   whose hint names the season's effect or why it's off. Then "All settings". Hints are left out
   where the label says enough, so it fits a 390 × 844 screen. Theme used to be in the user menu
-  and the timer's View popover too; it's only here and in Settings now. The intro's switch and
-  Replay stay on the sign-in page and in Settings, since the intro only plays there.
+  and the timer's View popover too; it's only here and in Settings now. The last row has **Replay
+  intro** beside All settings (see [Seasonal scene in the app](#seasonal-scene-in-the-app)); the
+  Intro switch stays in Settings, since it's set once and the popover is tight at 390 px.
 - The season's **tagline** in the page's title row: from 1024 px centered on the page, level
   with the title, and below that on its own line under the title. If the centered tagline would
   come within 24 px of the title or the row's actions, it drops under the title too; it's
@@ -272,6 +273,16 @@ the season's image in light and dark, the tint, and the weather.
   muted text was hard to read on the light images: subtitles and Reports' midnight note
   (`scene-text`), and the footnotes under Projects' and Organization's main cards (`page-note`,
   which are also centered, like the tagline).
+- **Intro**: the sign-in page's intro ([intro.js](intro.js)) plays over the scene, with the
+  signed-in sign-off "You're in. Get it done!" as its last line (`seasons.SIGNED_IN_SIGN_OFF`).
+  It plays once at the change of season: on the first page opened in a season by month it hasn't
+  played in (`snowtime.introSeason` in `localStorage`, which the sign-in page's intro sets too),
+  under the Intro switch. It keys on the calendar season, not the Season setting, so changing
+  that setting doesn't queue an intro. Replay intro in the Appearance popover and "Replay it" in
+  Settings play it any time; focus returns to the Appearance button or the link. The page's
+  theme and scene settings return after it, and the page stays mounted under it, so a running
+  timer keeps counting and unsaved input stays. With reduced motion it doesn't play and Replay is
+  disabled.
 - **Reports' timesheet**: its sticky first column is see-through like the glass card until the
   table scrolls sideways; then it's solid, so the cells scrolling under it don't show through. A
   translucent column let them show, and a solid one was a white strip on the glass.

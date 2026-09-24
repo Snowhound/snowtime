@@ -10,6 +10,7 @@
     <script src="app-icon.js"></script>
     <script src="seasons.js"></script>
     <script src="scene.js"></script>
+    <script src="intro.js"></script>
     <script src="app-frame.js"></script>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -198,9 +199,9 @@
               <div class="flex items-center justify-between gap-4">
                 <div class="grid gap-1">
                   <span data-ui="label" id="scene-intro-label">Intro</span>
-                  <span class="text-sm text-muted-foreground">Plays on the sign-in page on your first visit. <a id="replay-intro" href="auth.html?intro=replay" class="underline underline-offset-4 hover:text-foreground">Replay it</a></span>
+                  <span class="text-sm text-muted-foreground" id="scene-intro-hint">Plays on the sign-in page on your first visit, and once each season when you open the app. Off while your device reduces motion. <button type="button" id="replay-intro" class="underline underline-offset-4 hover:text-foreground disabled:no-underline disabled:opacity-50">Replay it</button></span>
                 </div>
-                <button id="scene-intro-switch" type="button" role="switch" aria-checked="true" aria-labelledby="scene-intro-label" data-ui="switch" data-scene-setting="sceneIntro">
+                <button id="scene-intro-switch" type="button" role="switch" aria-checked="true" aria-labelledby="scene-intro-label" aria-describedby="scene-intro-hint" data-ui="switch" data-scene-setting="sceneIntro">
                   <span data-ui="switch-thumb"></span>
                 </button>
               </div>
@@ -473,6 +474,7 @@
         seasonSelect.value = settings.sceneSeason in seasons.SEASONS ? settings.sceneSeason : 'auto'
         seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
         document.querySelectorAll('[data-setting="sceneStrength"], [data-setting="surfaces"]').forEach((b) => (b.disabled = !settings.sceneBackground))
+        document.getElementById('replay-intro').disabled = intro.reducedMotion.matches
         const browserBtn = document.getElementById('use-browser-zone')
         browserBtn.innerHTML = `${icon('globe')}Use this device's zone`
         browserBtn.disabled = timeZone === browserZone
@@ -506,6 +508,9 @@
       document.getElementById('app-icon-preview').innerHTML = appFrame.appIconImg('large', 'size-10')
       appIcon.apply(appFrame.settings.get().appIcon)
       document.getElementById('change-app-icon').addEventListener('click', appFrame.openIconPicker)
+      // Replays the signed-in intro here; focus comes back to the link.
+      document.getElementById('replay-intro').addEventListener('click', (event) => appFrame.replayIntro(event.currentTarget))
+      intro.reducedMotion.addEventListener('change', renderPreferences)
 
       function loadFixture(name) {
         const f = fixtures[name]()

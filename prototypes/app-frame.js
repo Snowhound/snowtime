@@ -1,7 +1,7 @@
 // App frame shared by the signed-in prototypes: header with organization switcher, navigation and
 // user menu; a prototype bar with the page's fixture controls and a role switcher; the user's
 // settings; the app icon picker; the seasonal scene behind pages that opt in; icons and markup
-// helpers. Load after ui.js, app-icon.js, seasons.js, and (for the scene) scene.js, and call
+// helpers. Load after ui.js, app-icon.js, seasons.js, and (for the scene) scene.js and intro.js, and call
 // `appFrame.mount()` first thing in the page script.
 ;(() => {
   // Lucide icons, copied from lucide-static@1.48.0. Pages can still define their own <symbol>s.
@@ -37,6 +37,7 @@
     'pencil': '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" />',
     'play': '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />',
     'plus': '<path d="M5 12h14" /><path d="M12 5v14" />',
+    'rotate-ccw': '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />',
     'search': '<path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" />',
     'settings': '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" />',
     'shield': '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />',
@@ -81,7 +82,7 @@
     sceneBackground: true,
     sceneStrength: 'dimmed', // 'full' | 'dimmed'
     sceneWeather: true,
-    sceneIntro: true, // play the intro on the first visit
+    sceneIntro: true, // play the intro on the sign-in page's first visit and once a season in the app
     appIcon: appIcon.DEFAULT, // '01' to '12', see app-icon.js
   }
   const darkQuery = matchMedia('(prefers-color-scheme: dark)')
@@ -94,6 +95,8 @@
     }
   }
   let settings = readSettings()
+  // The seasonal intro's player (intro.js), on pages with the scene.
+  let introPlayer = null
   const listeners = { role: [], org: [], settings: [] }
   const emit = (type) => listeners[type].forEach((fn) => fn())
 
@@ -111,7 +114,9 @@
     })
   }
   function applyTheme() {
-    document.documentElement.classList.toggle('dark', settings.theme === 'dark' || (settings.theme === 'system' && darkQuery.matches))
+    // The intro keeps the page dark until it hands back.
+    const dark = introPlayer?.holdsDark() || settings.theme === 'dark' || (settings.theme === 'system' && darkQuery.matches)
+    document.documentElement.classList.toggle('dark', dark)
     document.querySelectorAll('[data-frame-theme]').forEach((b) => {
       b.setAttribute('aria-pressed', String(b.dataset.frameTheme === settings.theme))
       b.toggleAttribute('data-pressed', b.dataset.frameTheme === settings.theme)
@@ -149,6 +154,8 @@
     emit('settings')
   })
   applyTheme()
+  // When the intro is due, the page stays black until it starts, so it doesn't flash first.
+  if (window.intro?.due('app')) intro.hold()
 
   // --- Session (prototype) -------------------------------------------------------------------
   // The signed-in user, their organizations, and a prototype-only role. Role and organization are
@@ -382,6 +389,8 @@
     renderIconDialog()
     renderTagline()
     renderAppearanceMenu()
+    if (introPlayer && intro.due('app')) introPlayer.play()
+    else document.documentElement.classList.remove('intro-pending')
     // The page's own prototype controls (fixtures, variants) move into the bar, before the role.
     const controls = document.getElementById('prototype-controls')
     if (controls) document.getElementById('prototype-bar-controls').prepend(...controls.children)
@@ -421,14 +430,33 @@
     holder.append(sceneCtl.el)
     document.body.prepend(holder)
     document.body.dataset.scene = 'on'
+    if (window.intro) {
+      // Everything but the scene, popovers, and dialogs hides under the intro and is inert.
+      introPlayer = intro.create({
+        scene: sceneCtl,
+        signedIn: true,
+        page: () => [...document.body.children].filter((el) => !el.matches('.app-scene, .intro, [popover], dialog, script, style, svg')),
+        onChange: applyScene,
+        restoreTheme: applyTheme,
+      })
+    }
     applyScene()
     listeners.settings.push(applyScene)
   }
 
+  // While the intro plays, the scene shows its weather and background, not the settings'.
   function applyScene() {
-    sceneCtl.set({ season: seasons.current(), strength: settings.sceneStrength, background: settings.sceneBackground, weather: settings.sceneWeather })
-    document.body.dataset.sceneBg = settings.sceneBackground ? 'on' : 'off'
+    const wanted = { season: seasons.current(), strength: settings.sceneStrength, background: settings.sceneBackground, weather: settings.sceneWeather }
+    const shown = introPlayer ? introPlayer.scene(wanted) : wanted
+    sceneCtl.set(shown)
+    document.body.dataset.sceneBg = shown.background ? 'on' : 'off'
     document.body.dataset.surfaces = settings.surfaces
+  }
+
+  // Replays the intro; focus returns to `focus` afterwards, by default the Appearance button.
+  function replayIntro(focus = document.querySelector('[popovertarget="appearance-menu"]')) {
+    document.getElementById('appearance-menu')?.hidePopover()
+    return introPlayer?.play({ focus }) ?? false
   }
 
   // Keeps the Appearance popover's controls in step with the settings. The theme toggles follow
@@ -447,6 +475,12 @@
     ui.setSwitch(weatherSwitch, settings.sceneWeather)
     weatherSwitch.disabled = !!blocked
     document.getElementById('scene-weather-hint').textContent = blocked ?? window.scene?.SEASONS[seasons.current()].hint ?? ''
+    // With reduced motion the intro doesn't play; the weather hint says why.
+    const replay = menu.querySelector('[data-replay-intro]')
+    if (replay) {
+      replay.disabled = !!window.intro?.reducedMotion.matches
+      replay.title = replay.disabled ? 'Off while your device reduces motion.' : ''
+    }
     const seasonSelect = document.getElementById('scene-season')
     seasonSelect.value = seasons.chosen()
     seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
@@ -454,7 +488,7 @@
 
   // The Appearance popover, opened from the header's palette button on every page: theme, app icon,
   // and the scenery settings, compact, with hints only where they say something the label can't.
-  // The intro's switch and Replay stay on the sign-in page and in Settings. The popover sits
+  // Replay intro sits beside All settings; the intro's switch stays in Settings. The popover sits
   // outside the header, which re-renders.
   function renderAppearanceMenu() {
     const row = (label, control, indent = false) =>
@@ -522,7 +556,10 @@
           switchButton('scene-weather-switch', 'scene-weather-label', ' aria-describedby="scene-weather-hint"')
         )}
         <div data-ui="separator"></div>
-        <a href="${link('settings.html#preferences')}" data-frame-link="settings.html#preferences" data-ui="button" data-variant="link" data-size="sm" class="h-auto justify-start p-0">All settings</a>
+        <div class="flex items-center justify-between gap-3">
+          <a href="${link('settings.html#preferences')}" data-frame-link="settings.html#preferences" data-ui="button" data-variant="link" data-size="sm" class="h-auto justify-start p-0">All settings</a>
+          ${introPlayer ? `<button type="button" data-ui="button" data-variant="outline" data-size="sm" class="h-8" data-replay-intro>${icon('rotate-ccw')}Replay intro</button>` : ''}
+        </div>
       </div>`
     )
     const menu = document.getElementById('appearance-menu')
@@ -530,6 +567,7 @@
     menu.querySelector('#scene-bg-switch').addEventListener('change', (event) => settingsStore.set({ sceneBackground: event.currentTarget.getAttribute('aria-checked') === 'true' }))
     menu.querySelector('#scene-weather-switch').addEventListener('change', (event) => settingsStore.set({ sceneWeather: event.currentTarget.getAttribute('aria-checked') === 'true' }))
     menu.querySelectorAll('[data-scene-option]').forEach((b) => b.addEventListener('click', () => settingsStore.set({ [b.dataset.sceneOption]: b.dataset.value })))
+    menu.querySelector('[data-replay-intro]')?.addEventListener('click', () => replayIntro())
     // The picker returns focus to the palette button, since the popover closes behind it.
     menu.querySelector('[data-appearance-icon]').addEventListener('click', () => {
       menu.hidePopover()
@@ -630,6 +668,7 @@
     },
     isAdmin,
     openIconPicker,
+    replayIntro,
     appIconImg,
     link,
     escapeHtml,
