@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Organization admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="app-frame.js"></script>
+    <script src="app-data.js"></script>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body class="bg-muted/40">
+    <div id="prototype-controls">
+      <label for="fixture" class="sr-only">Fixture</label>
+      <select id="fixture" data-ui="select" class="h-9 w-40">
+        <option value="populated">Populated</option>
+        <option value="empty">New organization</option>
+        <option value="long">Long content</option>
+      </select>
+    </div>
+
+    <div class="mx-auto flex max-w-6xl flex-col gap-1 px-4 pt-6 sm:px-8">
+      <h1 class="text-2xl font-semibold tracking-tight">Organization</h1>
+      <p id="org-subtitle" class="min-w-0 truncate text-sm text-muted-foreground"></p>
+    </div>
+
+    <main class="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-10 pt-4 sm:px-8">
+      <div id="no-access" data-ui="alert" hidden>
+        <svg class="prototype-icon" aria-hidden="true"><use href="#icon-lock" /></svg>
+        <div data-ui="alert-title">Only admins and owners manage the organization</div>
+        <div data-ui="alert-description">Ask an admin to change roles, teams, or invitations. Switch the prototype role to admin or owner to see this page.</div>
+      </div>
+
+      <div id="admin" class="flex min-w-0 flex-col gap-4">
+        <div class="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <div data-ui="tabs-list" role="tablist" aria-label="Organization sections" id="sections">
+            <button type="button" role="tab" data-ui="tabs-trigger" id="tab-members" aria-controls="panel-members" aria-selected="true">Members <span class="ml-1.5 text-xs text-muted-foreground" data-count="members"></span></button>
+            <button type="button" role="tab" data-ui="tabs-trigger" id="tab-invitations" aria-controls="panel-invitations">Invitations <span class="ml-1.5 text-xs text-muted-foreground" data-count="invitations"></span></button>
+            <button type="button" role="tab" data-ui="tabs-trigger" id="tab-teams" aria-controls="panel-teams">Teams <span class="ml-1.5 text-xs text-muted-foreground" data-count="teams"></span></button>
+            <button type="button" role="tab" data-ui="tabs-trigger" id="tab-general" aria-controls="panel-general">General</button>
+          </div>
+        </div>
+
+        <!-- Members -->
+        <section id="panel-members" role="tabpanel" aria-labelledby="tab-members" data-ui="tabs-content" class="mt-0">
+          <div data-ui="card" class="min-w-0">
+            <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6 sm:pb-4">
+              <div class="relative min-w-0 sm:w-72">
+                <label for="member-search" class="sr-only">Search members</label>
+                <svg class="prototype-icon pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true"><use href="#icon-search" /></svg>
+                <input id="member-search" data-ui="input" type="search" placeholder="Search by name or email" class="h-9 pl-9" autocomplete="off" />
+              </div>
+              <button type="button" data-ui="button" data-size="sm" data-open-invite>
+                <svg class="prototype-icon" aria-hidden="true"><use href="#icon-user-plus" /></svg>Invite member
+              </button>
+            </div>
+            <ul id="members" class="divide-y border-t"></ul>
+          </div>
+          <p class="mt-3 text-sm text-muted-foreground">
+            Owners can change any role. Admins manage members and admins but not owners. An organization always keeps at least one owner.
+          </p>
+        </section>
+
+        <!-- Invitations -->
+        <section id="panel-invitations" role="tabpanel" aria-labelledby="tab-invitations" data-ui="tabs-content" class="mt-0" hidden>
+          <div data-ui="card" class="min-w-0">
+            <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-6 sm:pb-4">
+              <p class="max-w-xl text-sm text-muted-foreground">
+                Snowtime sends no email. Copy an invitation link and send it yourself. A link works for 48 hours, for whoever signs in with the invited address.
+              </p>
+              <button type="button" data-ui="button" data-size="sm" class="shrink-0 self-start" data-open-invite>
+                <svg class="prototype-icon" aria-hidden="true"><use href="#icon-user-plus" /></svg>Invite member
+              </button>
+            </div>
+            <ul id="invitations" class="divide-y border-t"></ul>
+          </div>
+        </section>
+
+        <!-- Teams -->
+        <section id="panel-teams" role="tabpanel" aria-labelledby="tab-teams" data-ui="tabs-content" class="mt-0 flex flex-col gap-4" hidden>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p class="max-w-2xl text-sm text-muted-foreground">
+              Teams group people for access and reports. Leads see and report on their team's time. Projects stay with the organization when a team is deleted.
+            </p>
+            <button type="button" data-ui="button" data-size="sm" class="shrink-0 self-start" id="open-create-team">
+              <svg class="prototype-icon" aria-hidden="true"><use href="#icon-plus" /></svg>Create team
+            </button>
+          </div>
+          <div id="teams" class="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2"></div>
+        </section>
+
+        <!-- General -->
+        <section id="panel-general" role="tabpanel" aria-labelledby="tab-general" data-ui="tabs-content" class="mt-0" hidden>
+          <form id="general-form" data-ui="card" class="max-w-2xl" novalidate>
+            <div data-ui="card-header">
+              <h2 data-ui="card-title">General</h2>
+              <p data-ui="card-description">The organization's name, shown in the switcher and in invitations.</p>
+            </div>
+            <div data-ui="card-content" class="grid grid-cols-[minmax(0,1fr)] gap-4">
+              <div class="grid gap-2">
+                <label data-ui="label" for="org-name">Name</label>
+                <input id="org-name" data-ui="input" type="text" autocomplete="organization" aria-describedby="org-name-error" />
+                <p id="org-name-error" data-ui="error-message" class="empty:hidden"></p>
+              </div>
+              <div class="grid gap-2">
+                <label data-ui="label" for="org-slug">Short name</label>
+                <input id="org-slug" data-ui="input" type="text" readonly class="bg-muted/50 text-muted-foreground" aria-describedby="org-slug-hint" />
+                <p id="org-slug-hint" class="text-xs text-muted-foreground">Set when the organization was created. Invitation links use it.</p>
+              </div>
+              <div data-ui="alert">
+                <svg class="prototype-icon" aria-hidden="true"><use href="#icon-info" /></svg>
+                <div data-ui="alert-description">Organizations can't be deleted, so their time history and audit trail stay intact.</div>
+              </div>
+            </div>
+            <div data-ui="card-footer" class="justify-end gap-3">
+              <p id="general-status" class="text-sm text-muted-foreground" aria-live="polite"></p>
+              <button type="submit" data-ui="button" id="general-save" disabled>Save</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <!-- Invite: form, then the link to share. -->
+    <dialog id="invite-dialog" data-ui="dialog" aria-labelledby="invite-title">
+      <form id="invite-form" class="grid gap-4" novalidate>
+        <div data-ui="dialog-header">
+          <h2 id="invite-title" data-ui="dialog-title">Invite member</h2>
+          <p data-ui="dialog-description">You get a link to send. It works for 48 hours.</p>
+        </div>
+        <div class="grid gap-4">
+          <div class="grid gap-2">
+            <label data-ui="label" for="invite-email">Email</label>
+            <input id="invite-email" data-ui="input" type="email" autocomplete="off" placeholder="name@example.com" aria-describedby="invite-email-hint invite-email-error" />
+            <p id="invite-email-hint" class="text-xs text-muted-foreground">They must sign in with this address to accept.</p>
+            <p id="invite-email-error" data-ui="error-message" class="empty:hidden"></p>
+          </div>
+          <div class="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-2">
+            <div class="grid gap-2">
+              <label data-ui="label" for="invite-role">Role</label>
+              <select id="invite-role" data-ui="select"></select>
+            </div>
+            <div class="grid gap-2">
+              <label data-ui="label" for="invite-team">Team</label>
+              <select id="invite-team" data-ui="select"></select>
+            </div>
+          </div>
+        </div>
+        <div data-ui="dialog-footer">
+          <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
+          <button type="submit" data-ui="button">Create link</button>
+        </div>
+      </form>
+      <div id="invite-result" class="grid gap-4" hidden>
+        <div data-ui="dialog-header">
+          <h2 data-ui="dialog-title">Invitation link ready</h2>
+          <p id="invite-result-description" data-ui="dialog-description"></p>
+        </div>
+        <div class="flex min-w-0 gap-2">
+          <label for="invite-link" class="sr-only">Invitation link</label>
+          <input id="invite-link" data-ui="input" type="text" readonly class="min-w-0 font-mono text-xs" />
+          <button type="button" data-ui="button" data-variant="outline" data-copy-target="invite-link" class="shrink-0">
+            <svg class="prototype-icon" aria-hidden="true"><use href="#icon-copy" /></svg>Copy
+          </button>
+        </div>
+        <div data-ui="dialog-footer">
+          <button type="button" data-ui="button" data-dialog-cancel>Done</button>
+        </div>
+      </div>
+      <button type="button" data-ui="dialog-close" data-dialog-cancel>
+        <svg class="prototype-icon" aria-hidden="true"><use href="#icon-x" /></svg>
+        <span class="sr-only">Close</span>
+      </button>
+    </dialog>
+
+    <!-- Create or rename a team. -->
+    <dialog id="team-dialog" data-ui="dialog" aria-labelledby="team-dialog-title">
+      <form id="team-form" class="grid gap-4" novalidate>
+        <div data-ui="dialog-header">
+          <h2 id="team-dialog-title" data-ui="dialog-title">Create team</h2>
+        </div>
+        <div class="grid gap-2">
+          <label data-ui="label" for="team-name">Name</label>
+          <input id="team-name" data-ui="input" type="text" autocomplete="off" aria-describedby="team-name-error" />
+          <p id="team-name-error" data-ui="error-message" class="empty:hidden"></p>
+        </div>
+        <div data-ui="dialog-footer">
+          <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
+          <button type="submit" data-ui="button" id="team-submit">Create team</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Confirm destructive actions. -->
+    <dialog id="confirm-dialog" data-ui="dialog" aria-labelledby="confirm-title" aria-describedby="confirm-description">
+      <div data-ui="dialog-header">
+        <h2 id="confirm-title" data-ui="dialog-title"></h2>
+        <p id="confirm-description" data-ui="dialog-description"></p>
+      </div>
+      <div data-ui="dialog-footer">
+        <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
+        <button type="button" data-ui="button" data-variant="destructive" id="confirm-ok"></button>
+      </div>
+    </dialog>
+
+    <script>
+      appFrame.mount({ page: 'organization', title: 'Organization admin' })
+      const { escapeHtml, icon, initials } = appFrame
+      const ME = appData.currentUserId
+      const HOUR = appData.HOUR
+      const ROLE_LABEL = { owner: 'Owner', admin: 'Admin', member: 'Member' }
+
+      const state = { fixture: 'populated', org: null, invitations: [], name: '', slug: '', search: '' }
+      let nextId = 1
+
+      // --- Fixtures -----------------------------------------------------------------------------
+      function loadFixture(name) {
+        state.fixture = name
+        const role = appFrame.role
+        const now = Date.now()
+        if (name === 'empty') {
+          // A new organization: Anna created it, or was invited by its owner.
+          const org = appData.organization({ role })
+          const keep = role === 'owner' ? ['u-anna'] : ['u-anna', 'u-mari']
+          org.members = org.members.filter((m) => keep.includes(m.id))
+          org.teams = []
+          state.org = org
+          state.invitations = []
+          state.name = 'Lumi Design Collective'
+          state.slug = 'lumi'
+        } else {
+          state.org = appData.organization({ role, long: name === 'long' })
+          state.name = name === 'long' ? 'Põhjamaade Logistika- ja Laohaldusteenuste Konsortsium OÜ' : 'Snowhound'
+          state.slug = name === 'long' ? 'pohjamaade-logistika-ja-laohaldusteenuste-konsortsium' : 'snowhound'
+          state.invitations = [
+            { id: 'inv-1', email: 'kristjan@snowhound.eu', role: 'member', teamId: 't-platform', inviterId: 'u-mari', expiresAt: now + 40 * HOUR, status: 'pending' },
+            { id: 'inv-2', email: 'helena.kuusk@gmail.com', role: 'admin', teamId: null, inviterId: 'u-jaan', expiresAt: now + 5 * HOUR, status: 'pending' },
+            { id: 'inv-3', email: 'priit@nordic-logistics.ee', role: 'member', teamId: 't-client', inviterId: 'u-mari', expiresAt: now - 50 * HOUR, status: 'pending' },
+          ]
+          if (name === 'long') {
+            const first = ['Katariina', 'Hendrik', 'Maarja-Liisa', 'Sten', 'Triin', 'Rasmus', 'Kertu', 'Oskar', 'Grete', 'Siim', 'Helen', 'Marten']
+            first.forEach((f, i) =>
+              state.org.members.push({ id: `u-x${i}`, name: `${f} ${['Tamm', 'Saar', 'Sepp', 'Mägi', 'Kask', 'Kukk'][i % 6]}-${['Rebane', 'Ilves', 'Karu', 'Hunt'][i % 4]}`, email: `${f.toLowerCase()}.${i}@snowhound.eu`, role: 'member', joined: '2026-07-01' })
+            )
+            state.invitations.push({ id: 'inv-4', email: 'annabel-katariina.von.loewenstein-wertheim-rosenberg@pohjamaade-logistika-konsortsium.eu', role: 'member', teamId: 't-long', inviterId: 'u-ants', expiresAt: now + 47 * HOUR, status: 'pending' })
+          }
+        }
+        render()
+      }
+
+      // --- Permissions (Better Auth organization plugin defaults) -------------------------------
+      const myRole = () => state.org.members.find((m) => m.id === ME).role
+      const owners = () => state.org.members.filter((m) => m.role === 'owner')
+      // Roles the viewer may give: only owners create owners.
+      const grantable = () => (myRole() === 'owner' ? ['member', 'admin', 'owner'] : ['member', 'admin'])
+      function canEditMember(m) {
+        if (m.id === ME) return { ok: false, why: "You can't change your own role." }
+        if (m.role === 'owner' && myRole() !== 'owner') return { ok: false, why: 'Only owners can change an owner.' }
+        return { ok: true }
+      }
+      const member = (id) => state.org.members.find((m) => m.id === id)
+      const team = (id) => state.org.teams.find((t) => t.id === id)
+      const teamsOf = (userId) => state.org.teams.filter((t) => t.members.some(([u]) => u === userId)).map((t) => ({ t, role: t.members.find(([u]) => u === userId)[1] }))
+
+      const avatar = (name, cls = 'size-9 text-xs') => `<span data-ui="avatar" class="${cls}"><span data-ui="avatar-fallback" class="font-medium">${escapeHtml(initials(name))}</span></span>`
+      const dateFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+
+      // --- Members ------------------------------------------------------------------------------
+      function roleControl(m) {
+        const edit = canEditMember(m)
+        if (!edit.ok) return `<span data-ui="badge" data-variant="${m.role === 'member' ? 'outline' : 'secondary'}" title="${escapeHtml(edit.why)}">${ROLE_LABEL[m.role]}</span>`
+        const options = [...new Set([...grantable(), m.role])]
+        return `<label class="sr-only" for="role-${m.id}">Role of ${escapeHtml(m.name)}</label>
+          <select id="role-${m.id}" data-ui="select" data-member-role="${m.id}" class="h-9 w-32">${options.map((r) => `<option value="${r}"${r === m.role ? ' selected' : ''}>${ROLE_LABEL[r]}</option>`).join('')}</select>`
+      }
+
+      function renderMembers() {
+        const q = state.search.trim().toLowerCase()
+        const list = state.org.members
+          .filter((m) => !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q))
+          .sort((a, b) => ['owner', 'admin', 'member'].indexOf(a.role) - ['owner', 'admin', 'member'].indexOf(b.role) || a.name.localeCompare(b.name))
+        const el = document.getElementById('members')
+        if (!list.length) {
+          el.innerHTML = `<li class="px-6 py-10 text-center text-sm text-muted-foreground">No members match “${escapeHtml(state.search)}”.</li>`
+          return
+        }
+        el.innerHTML = list
+          .map((m) => {
+            const teams = teamsOf(m.id)
+            const removable = canEditMember(m).ok
+            return `<li class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_8rem_2.5rem] xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_8rem_9rem]">
+              <div class="flex min-w-0 items-center gap-3">
+                ${avatar(m.name)}
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium">${escapeHtml(m.name)}${m.id === ME ? ' <span class="font-normal text-muted-foreground">(you)</span>' : ''}</p>
+                  <p class="truncate text-sm text-muted-foreground">${escapeHtml(m.email)}</p>
+                </div>
+              </div>
+              <div class="col-span-2 row-start-2 flex min-w-0 flex-wrap gap-1.5 md:col-span-1 md:row-start-auto">
+                ${
+                  teams.length
+                    ? teams.map(({ t, role }) => `<span data-ui="badge" data-variant="outline" class="max-w-full gap-1 font-normal"><span class="truncate">${escapeHtml(t.name)}</span>${role === 'lead' ? '<span class="text-muted-foreground">· Lead</span>' : ''}</span>`).join('')
+                    : '<span class="text-sm text-muted-foreground">No team</span>'
+                }
+              </div>
+              <div class="flex items-center gap-2">${roleControl(m)}</div>
+              <div class="col-start-2 row-start-1 flex items-center justify-end gap-1 md:col-start-auto md:row-start-auto">
+                <span class="hidden w-24 text-right text-xs text-muted-foreground xl:inline">${dateFmt.format(new Date(`${m.joined}T12:00:00`))}</span>
+                <button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="size-9" data-remove-member="${m.id}" aria-label="Remove ${escapeHtml(m.name)}" ${removable ? '' : 'disabled'}>${icon('user-minus')}</button>
+              </div>
+            </li>`
+          })
+          .join('')
+      }
+
+      document.getElementById('member-search').addEventListener('input', (event) => {
+        state.search = event.currentTarget.value
+        renderMembers()
+      })
+      document.getElementById('members').addEventListener('change', (event) => {
+        const select = event.target.closest('[data-member-role]')
+        if (!select) return
+        const m = member(select.dataset.memberRole)
+        if (m.role === 'owner' && select.value !== 'owner' && owners().length === 1) {
+          select.value = 'owner'
+          return alertDialog('Keep one owner', `${m.name} is the only owner. Make someone else an owner first.`)
+        }
+        m.role = select.value // organization.updateMemberRole
+        render()
+      })
+      document.getElementById('members').addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-remove-member]')
+        if (!btn) return
+        const m = member(btn.dataset.removeMember)
+        if (m.role === 'owner' && owners().length === 1) return alertDialog('Keep one owner', `${m.name} is the only owner and can't be removed.`)
+        confirmDialog({
+          title: `Remove ${m.name}?`,
+          description: `They lose access to ${state.name} and leave all its teams. Their tracked time stays in reports.`,
+          ok: 'Remove member',
+          run: () => {
+            // organization.removeMember; Better Auth also deletes their team rows.
+            state.org.members = state.org.members.filter((x) => x.id !== m.id)
+            state.org.teams.forEach((t) => (t.members = t.members.filter(([u]) => u !== m.id)))
+            render()
+          },
+        })
+      })
+
+      // --- Invitations --------------------------------------------------------------------------
+      const inviteLink = (inv) => `https://snowtime.app/invite/${inv.id}`
+      function expiry(inv) {
+        const left = inv.expiresAt - Date.now()
+        if (left <= 0) return { expired: true, text: `Expired ${dateFmt.format(inv.expiresAt)}` }
+        const h = Math.floor(left / HOUR)
+        return { expired: false, text: h >= 1 ? `Expires in ${h} ${h === 1 ? 'hour' : 'hours'}` : 'Expires in less than an hour' }
+      }
+      function renderInvitations() {
+        const list = state.invitations.filter((i) => i.status === 'pending').sort((a, b) => b.expiresAt - a.expiresAt)
+        const el = document.getElementById('invitations')
+        if (!list.length) {
+          el.innerHTML = `<li class="flex flex-col items-center gap-2 px-6 py-10 text-center">
+            ${icon('mail', 'size-6 text-muted-foreground')}
+            <p class="font-medium">No open invitations</p>
+            <p class="text-sm text-muted-foreground">Invite someone to get a link you can send them.</p>
+          </li>`
+          return
+        }
+        el.innerHTML = list
+          .map((inv) => {
+            const ex = expiry(inv)
+            const t = inv.teamId && team(inv.teamId)
+            return `<li class="flex flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center">
+              <div class="min-w-0 flex-1">
+                <p class="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium"><span class="min-w-0 truncate">${escapeHtml(inv.email)}</span>${ex.expired ? '<span data-ui="badge" data-variant="outline">Expired</span>' : ''}</p>
+                <p class="truncate text-sm text-muted-foreground">${ROLE_LABEL[inv.role]}${t ? ` · ${escapeHtml(t.name)}` : ''} · invited by ${escapeHtml(member(inv.inviterId)?.name ?? 'a former member')} · ${ex.text}</p>
+              </div>
+              <div class="flex shrink-0 flex-wrap items-center gap-2">
+                ${
+                  ex.expired
+                    ? `<button type="button" data-ui="button" data-variant="outline" data-size="sm" data-renew="${inv.id}">${icon('link')}New link</button>`
+                    : `<button type="button" data-ui="button" data-variant="outline" data-size="sm" data-copy-link="${inv.id}">${icon('copy')}Copy link</button>`
+                }
+                <button type="button" data-ui="button" data-variant="ghost" data-size="sm" data-cancel-invite="${inv.id}">Cancel</button>
+              </div>
+            </li>`
+          })
+          .join('')
+      }
+
+      async function copy(text, button) {
+        try {
+          await navigator.clipboard.writeText(text)
+        } catch {}
+        const html = button.innerHTML
+        button.innerHTML = `${icon('check')}Copied`
+        setTimeout(() => (button.innerHTML = html), 1500)
+      }
+
+      document.getElementById('invitations').addEventListener('click', (event) => {
+        const copyBtn = event.target.closest('[data-copy-link]')
+        const renew = event.target.closest('[data-renew]')
+        const cancel = event.target.closest('[data-cancel-invite]')
+        if (copyBtn) copy(inviteLink(state.invitations.find((i) => i.id === copyBtn.dataset.copyLink)), copyBtn)
+        else if (renew) {
+          // organization.inviteMember with resend: a fresh 48-hour link.
+          const inv = state.invitations.find((i) => i.id === renew.dataset.renew)
+          inv.expiresAt = Date.now() + 48 * HOUR
+          render()
+          showInviteResult(inv)
+        } else if (cancel) {
+          const inv = state.invitations.find((i) => i.id === cancel.dataset.cancelInvite)
+          confirmDialog({
+            title: 'Cancel invitation?',
+            description: `The link for ${inv.email} stops working.`,
+            ok: 'Cancel invitation',
+            cancel: 'Keep',
+            run: () => {
+              inv.status = 'canceled' // organization.cancelInvitation
+              render()
+            },
+          })
+        }
+      })
+
+      const inviteDialog = document.getElementById('invite-dialog')
+      function openInvite() {
+        document.getElementById('invite-form').hidden = false
+        document.getElementById('invite-result').hidden = true
+        document.getElementById('invite-email').value = ''
+        document.getElementById('invite-email').removeAttribute('data-invalid')
+        document.getElementById('invite-email-error').textContent = ''
+        document.getElementById('invite-role').innerHTML = grantable().map((r) => `<option value="${r}">${ROLE_LABEL[r]}</option>`).join('')
+        document.getElementById('invite-team').innerHTML = `<option value="">No team</option>${state.org.teams.map((t) => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('')}`
+        inviteDialog.showModal()
+      }
+      function showInviteResult(inv) {
+        if (!inviteDialog.open) inviteDialog.showModal()
+        document.getElementById('invite-form').hidden = true
+        document.getElementById('invite-result').hidden = false
+        document.getElementById('invite-link').value = inviteLink(inv)
+        document.getElementById('invite-result-description').textContent = `Send this link to ${inv.email}. It works until ${new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(inv.expiresAt)}.`
+      }
+      document.querySelectorAll('[data-open-invite]').forEach((b) => b.addEventListener('click', openInvite))
+      document.getElementById('invite-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const input = document.getElementById('invite-email')
+        const email = input.value.trim().toLowerCase()
+        let error = ''
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) error = 'Enter an email address.'
+        else if (state.org.members.some((m) => m.email === email)) error = `${email} is already a member.`
+        else if (state.invitations.some((i) => i.email === email && i.status === 'pending' && i.expiresAt > Date.now())) error = `${email} already has an open invitation. Copy its link from the list.`
+        document.getElementById('invite-email-error').textContent = error
+        input.toggleAttribute('data-invalid', !!error)
+        if (error) return input.focus()
+        const inv = { id: `inv-new-${nextId++}`, email, role: document.getElementById('invite-role').value, teamId: document.getElementById('invite-team').value || null, inviterId: ME, expiresAt: Date.now() + 48 * HOUR, status: 'pending' }
+        state.invitations.push(inv) // organization.inviteMember
+        render()
+        showInviteResult(inv)
+      })
+      inviteDialog.addEventListener('click', (event) => {
+        const b = event.target.closest('[data-copy-target]')
+        if (b) copy(document.getElementById(b.dataset.copyTarget).value, b)
+      })
+
+      // --- Teams --------------------------------------------------------------------------------
+      function renderTeams() {
+        const el = document.getElementById('teams')
+        if (!state.org.teams.length) {
+          el.innerHTML = `<div class="col-span-full flex flex-col items-center gap-2 rounded-lg border border-dashed bg-background px-6 py-12 text-center">
+            ${icon('users', 'size-6 text-muted-foreground')}
+            <p class="font-medium">No teams yet</p>
+            <p class="max-w-md text-sm text-muted-foreground">Everyone tracks time on the organization's projects without teams. Create a team to give it a lead and its own projects.</p>
+          </div>`
+          return
+        }
+        el.innerHTML = state.org.teams
+          .map((t) => {
+            const leads = t.members.filter(([, r]) => r === 'lead')
+            const outside = state.org.members.filter((m) => !t.members.some(([u]) => u === m.id))
+            const rows = [...t.members].sort((a, b) => (a[1] === b[1] ? member(a[0]).name.localeCompare(member(b[0]).name) : a[1] === 'lead' ? -1 : 1))
+            return `<section data-ui="card" class="min-w-0" aria-labelledby="team-${t.id}-title">
+              <header class="flex items-start justify-between gap-3 p-4 pb-3 sm:p-6 sm:pb-3">
+                <div class="min-w-0">
+                  <h2 id="team-${t.id}-title" class="break-words font-semibold leading-tight">${escapeHtml(t.name)}</h2>
+                  <p class="mt-1 text-sm text-muted-foreground">${t.members.length} ${t.members.length === 1 ? 'member' : 'members'} · ${leads.length ? `Led by ${leads.map(([u]) => escapeHtml(member(u).name)).join(', ')}` : 'No lead yet'}</p>
+                </div>
+                <button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="size-9 shrink-0" popovertarget="team-menu-${t.id}" aria-haspopup="menu" aria-expanded="false" aria-label="Actions for ${escapeHtml(t.name)}">${icon('ellipsis')}</button>
+                <div id="team-menu-${t.id}" popover data-ui="menu" class="w-44" role="menu" aria-label="${escapeHtml(t.name)}">
+                  <button type="button" role="menuitem" data-ui="menu-item" data-rename-team="${t.id}">${icon('pencil')}Rename</button>
+                  <button type="button" role="menuitem" data-ui="menu-item" data-delete-team="${t.id}" class="text-destructive focus:text-destructive">${icon('trash-2')}Delete team</button>
+                </div>
+              </header>
+              <ul class="divide-y border-y">${
+                rows.length
+                  ? rows
+                      .map(([u, r]) => {
+                        const m = member(u)
+                        return `<li class="flex items-center gap-3 px-4 py-2 sm:px-6">
+                          ${avatar(m.name, 'size-8 text-[11px]')}
+                          <span class="min-w-0 flex-1 truncate text-sm">${escapeHtml(m.name)}${u === ME ? ' <span class="text-muted-foreground">(you)</span>' : ''}</span>
+                          <label class="sr-only" for="tr-${t.id}-${u}">Team role of ${escapeHtml(m.name)}</label>
+                          <select id="tr-${t.id}-${u}" data-ui="select" data-team-role="${t.id}|${u}" class="h-8 w-28 text-xs">
+                            <option value="member"${r === 'member' ? ' selected' : ''}>Member</option>
+                            <option value="lead"${r === 'lead' ? ' selected' : ''}>Lead</option>
+                          </select>
+                          <button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="size-8" data-remove-from-team="${t.id}|${u}" aria-label="Remove ${escapeHtml(m.name)} from ${escapeHtml(t.name)}">${icon('x')}</button>
+                        </li>`
+                      })
+                      .join('')
+                  : '<li class="px-6 py-4 text-sm text-muted-foreground">No members yet.</li>'
+              }</ul>
+              <form class="flex gap-2 p-4 sm:px-6" data-add-to-team="${t.id}">
+                <label class="sr-only" for="add-${t.id}">Add a member to ${escapeHtml(t.name)}</label>
+                <div class="min-w-0 flex-1">
+                  <select id="add-${t.id}" data-ui="select" class="h-9" ${outside.length ? '' : 'disabled'}>
+                    ${outside.length ? `<option value="">Add a member…</option>${outside.map((m) => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('')}` : '<option>Everyone is on this team</option>'}
+                  </select>
+                </div>
+                <button type="submit" data-ui="button" data-variant="outline" data-size="sm" class="shrink-0" ${outside.length ? '' : 'disabled'}>Add</button>
+              </form>
+            </section>`
+          })
+          .join('')
+      }
+
+      const teamsEl = document.getElementById('teams')
+      teamsEl.addEventListener('change', (event) => {
+        const select = event.target.closest('[data-team-role]')
+        if (!select) return
+        const [tid, u] = select.dataset.teamRole.split('|')
+        team(tid).members.find(([x]) => x === u)[1] = select.value // setTeamRole
+        render()
+      })
+      teamsEl.addEventListener('submit', (event) => {
+        const form = event.target.closest('[data-add-to-team]')
+        if (!form) return
+        event.preventDefault()
+        const value = form.querySelector('select').value
+        if (!value) return
+        team(form.dataset.addToTeam).members.push([value, 'member']) // organization.addTeamMember
+        render()
+      })
+      teamsEl.addEventListener('click', (event) => {
+        const remove = event.target.closest('[data-remove-from-team]')
+        const rename = event.target.closest('[data-rename-team]')
+        const del = event.target.closest('[data-delete-team]')
+        if (remove) {
+          const [tid, u] = remove.dataset.removeFromTeam.split('|')
+          team(tid).members = team(tid).members.filter(([x]) => x !== u) // organization.removeTeamMember
+          render()
+        } else if (rename) openTeamDialog(rename.dataset.renameTeam)
+        else if (del) {
+          const t = team(del.dataset.deleteTeam)
+          const projects = state.org.projects.filter((p) => p.teams.includes(t.id))
+          const alone = projects.filter((p) => p.teams.length === 1)
+          confirmDialog({
+            title: `Delete ${t.name}?`,
+            description: `${t.members.length} ${t.members.length === 1 ? 'member leaves' : 'members leave'} the team but stay in the organization, and their time stays in reports.${
+              projects.length ? ` ${projects.length} ${projects.length === 1 ? 'project loses' : 'projects lose'} this team${alone.length ? `; ${alone.map((p) => p.name).join(', ')} then ${alone.length === 1 ? 'becomes' : 'become'} available to the whole organization` : ''}.` : ''
+            }`,
+            ok: 'Delete team',
+            run: () => {
+              // organization.removeTeam; project_team rows cascade.
+              state.org.teams = state.org.teams.filter((x) => x.id !== t.id)
+              state.org.projects.forEach((p) => (p.teams = p.teams.filter((x) => x !== t.id)))
+              render()
+            },
+          })
+        }
+      })
+
+      const teamDialog = document.getElementById('team-dialog')
+      let editingTeam = null
+      function openTeamDialog(id = null) {
+        editingTeam = id
+        document.getElementById('team-dialog-title').textContent = id ? 'Rename team' : 'Create team'
+        document.getElementById('team-submit').textContent = id ? 'Save' : 'Create team'
+        document.getElementById('team-name').value = id ? team(id).name : ''
+        document.getElementById('team-name').removeAttribute('data-invalid')
+        document.getElementById('team-name-error').textContent = ''
+        teamDialog.showModal()
+      }
+      document.getElementById('open-create-team').addEventListener('click', () => openTeamDialog())
+      document.getElementById('team-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const input = document.getElementById('team-name')
+        const name = input.value.trim()
+        let error = ''
+        if (!name) error = 'Enter a team name.'
+        else if (state.org.teams.some((t) => t.id !== editingTeam && t.name.toLowerCase() === name.toLowerCase())) error = `${name} already exists.`
+        document.getElementById('team-name-error').textContent = error
+        input.toggleAttribute('data-invalid', !!error)
+        if (error) return input.focus()
+        if (editingTeam) team(editingTeam).name = name // organization.updateTeam
+        else state.org.teams.push({ id: `t-new-${nextId++}`, name, members: [] }) // organization.createTeam
+        teamDialog.close()
+        render()
+      })
+
+      // --- General ------------------------------------------------------------------------------
+      function renderGeneral() {
+        document.getElementById('org-name').value = state.name
+        document.getElementById('org-slug').value = state.slug
+        document.getElementById('general-save').disabled = true
+        document.getElementById('general-status').textContent = ''
+      }
+      document.getElementById('org-name').addEventListener('input', (event) => {
+        document.getElementById('general-save').disabled = event.currentTarget.value.trim() === state.name
+        document.getElementById('general-status').textContent = ''
+      })
+      document.getElementById('general-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const input = document.getElementById('org-name')
+        const name = input.value.trim()
+        document.getElementById('org-name-error').textContent = name ? '' : 'Enter a name.'
+        input.toggleAttribute('data-invalid', !name)
+        if (!name) return input.focus()
+        state.name = name // organization.update
+        render()
+        document.getElementById('general-status').textContent = 'Saved.'
+      })
+
+      // --- Dialog helpers -----------------------------------------------------------------------
+      const confirmEl = document.getElementById('confirm-dialog')
+      let confirmRun = null
+      function confirmDialog({ title, description, ok, cancel = 'Cancel', run }) {
+        document.getElementById('confirm-title').textContent = title
+        document.getElementById('confirm-description').textContent = description
+        const okBtn = document.getElementById('confirm-ok')
+        okBtn.textContent = ok
+        okBtn.hidden = false
+        confirmEl.querySelector('[data-dialog-cancel]').textContent = cancel
+        confirmRun = run
+        confirmEl.showModal()
+      }
+      function alertDialog(title, description) {
+        confirmDialog({ title, description, ok: '', cancel: 'OK', run: null })
+        document.getElementById('confirm-ok').hidden = true
+      }
+      document.getElementById('confirm-ok').addEventListener('click', () => {
+        confirmEl.close()
+        confirmRun?.()
+      })
+      for (const d of [inviteDialog, teamDialog, confirmEl]) {
+        d.querySelectorAll('[data-dialog-cancel]').forEach((b) => b.addEventListener('click', () => d.close()))
+        d.addEventListener('click', (event) => {
+          if (event.target !== d) return
+          const r = d.getBoundingClientRect()
+          if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) d.close()
+        })
+      }
+
+      // --- Render -------------------------------------------------------------------------------
+      function render() {
+        const admin = appFrame.isAdmin()
+        document.getElementById('no-access').hidden = admin
+        document.getElementById('admin').hidden = !admin
+        document.getElementById('org-subtitle').textContent = `${state.name} · ${state.org.members.length} ${state.org.members.length === 1 ? 'member' : 'members'}`
+        if (!admin) return
+        const pending = state.invitations.filter((i) => i.status === 'pending').length
+        document.querySelector('[data-count="members"]').textContent = state.org.members.length
+        document.querySelector('[data-count="invitations"]').textContent = pending || ''
+        document.querySelector('[data-count="teams"]').textContent = state.org.teams.length || ''
+        renderMembers()
+        renderInvitations()
+        renderTeams()
+        renderGeneral()
+      }
+
+      document.getElementById('fixture').addEventListener('change', (event) => loadFixture(event.currentTarget.value))
+      appFrame.on('role', () => loadFixture(state.fixture))
+
+      ui.ready.then(() => loadFixture('populated'))
+    </script>
+  </body>
+</html>

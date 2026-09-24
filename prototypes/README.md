@@ -180,6 +180,37 @@ Gotchas:
 
 ## Prototypes
 
+### [organization.html](organization.html) — Organization admin
+
+Decision: how admins and owners manage members, invitations, and teams without email.
+
+Four tabs:
+
+- **Members**: search, each member's teams (with "Lead"), role select, and remove. Owners change
+  any role; admins manage members and admins but not owners and can't grant owner. Nobody changes
+  their own role, and the last owner can't be demoted or removed.
+- **Invitations**: open invitations with role, team, inviter, and time left. "Invite member" takes
+  an email, role, and optional team and returns a link to copy, because the MVP sends no email.
+  Links last 48 hours; expired ones get a new link, and any can be canceled. Existing members and
+  addresses with an open invitation are refused.
+- **Teams**: a card per team with its lead, a Lead or Member select per person (`setTeamRole`),
+  remove, add a member, rename, and delete. Deleting a team names the projects that lose it and
+  the ones that then become available to the whole organization.
+- **General**: the name, the read-only short name, and a note that organizations can't be deleted.
+
+Writes are named after the calls they map to: the Better Auth organization client for members,
+roles, invitations, and teams, and `setTeamRole` for leads (`docs/architecture.md`, "Tenancy").
+Members and team leads get a no-access message; the navigation hides the page for them. The
+invitation link's origin is a placeholder; the app builds it from `BETTER_AUTH_URL`.
+
+Fixtures: populated, new organization (only Anna, plus an owner when Anna isn't one), and long
+content (23 members, long names, a long team name, a long invited address).
+
+Omitted: transferring ownership, leaving the organization, and bulk invitations.
+
+Checked in Chromium at 1440, 850, and 390 px, light and dark, every tab and fixture, as member,
+admin, and owner: no horizontal page overflow, dialogs with validation, and no browser errors.
+
 ### [reports.html](reports.html) — Reports
 
 Decision: how day and week totals by project, team, and member read, for members, team leads,
