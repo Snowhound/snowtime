@@ -1,39 +1,17 @@
 import { createEnv } from '@t3-oss/env-core'
-import { z } from 'zod'
+import * as v from 'valibot'
 
+// Server-only environment. Import it from server code only; nothing here may reach the
+// browser. Under Bun (`bun --bun run dev`), .env / .env.development / .env.local populate
+// process.env; on Vercel the project settings do.
 export const env = createEnv({
   server: {
-    SERVER_URL: z.url().optional(),
+    TURSO_DATABASE_URL: v.pipe(v.string(), v.minLength(1)),
+    // Absent locally, where the database is a file.
+    TURSO_AUTH_TOKEN: v.optional(v.pipe(v.string(), v.minLength(1))),
+    BETTER_AUTH_SECRET: v.pipe(v.string(), v.minLength(32)),
+    BETTER_AUTH_URL: v.pipe(v.string(), v.url()),
   },
-
-  /**
-   * The prefix that client-side variables must have. This is enforced both at
-   * a type-level and at runtime.
-   */
-  clientPrefix: 'VITE_',
-
-  client: {
-    VITE_APP_TITLE: z.string().min(1).optional(),
-  },
-
-  /**
-   * What object holds the environment variables at runtime. This is usually
-   * `process.env` or `import.meta.env`.
-   */
-  runtimeEnv: import.meta.env,
-
-  /**
-   * By default, this library will feed the environment variables directly to
-   * the Zod validator.
-   *
-   * This means that if you have an empty string for a value that is supposed
-   * to be a number (e.g. `PORT=` in a ".env" file), Zod will incorrectly flag
-   * it as a type mismatch violation. Additionally, if you have an empty string
-   * for a value that is supposed to be a string with a default value (e.g.
-   * `DOMAIN=` in an ".env" file), the default value will never be applied.
-   *
-   * In order to solve these issues, we recommend that all new projects
-   * explicitly specify this option as true.
-   */
+  runtimeEnv: process.env,
   emptyStringAsUndefined: true,
 })
