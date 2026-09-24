@@ -3,3 +3,6 @@
 
 # Format the codebase with oxfmt.
 d5617ab6c88ec71f2b68719028e1696500c97bc2
+
+# Sort imports with oxfmt.
+2c28cee01ea564b6249343664c47fc03bfdc5e0d
