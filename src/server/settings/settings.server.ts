@@ -15,6 +15,12 @@ const columns = {
   timerLayout: userSettings.timerLayout,
   showSummary: userSettings.showSummary,
   appIcon: userSettings.appIcon,
+  sceneSeason: userSettings.sceneSeason,
+  sceneBackground: userSettings.sceneBackground,
+  sceneStrength: userSettings.sceneStrength,
+  surfaces: userSettings.surfaces,
+  sceneWeather: userSettings.sceneWeather,
+  sceneIntro: userSettings.sceneIntro,
 }
 
 async function findSettings(db: Database, userId: string) {

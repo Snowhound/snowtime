@@ -46,6 +46,10 @@ Work in this order, one commit or more per step, and check each in the dev app a
   from Change. The sign-in card shows Hound Hour until step 2. The Appearance popover's Change
   comes in step 2. Checked at 1440, 850, and 390 px, light and dark: keyboard use, focus return,
   the favicon following a change, and the dialog fitting 390 × 844.
+- 2026-09-25: Step 2a: the scene settings are `user_settings` columns: `scene_season` (`'auto'`,
+  or a season), `scene_background`, `scene_strength` (`'dimmed'` or `'full'`), `surfaces`
+  (`'glass'` or `'solid'`), `scene_weather`, and `scene_intro`, with the prototype's defaults.
+  The session and `updateSettings` carry them. Nothing shows or uses them yet.
 
 ## Acceptance criteria
 

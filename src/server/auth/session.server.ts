@@ -40,6 +40,12 @@ export async function appSession(
         timerLayout: userSettings.timerLayout,
         showSummary: userSettings.showSummary,
         appIcon: userSettings.appIcon,
+        sceneSeason: userSettings.sceneSeason,
+        sceneBackground: userSettings.sceneBackground,
+        sceneStrength: userSettings.sceneStrength,
+        surfaces: userSettings.surfaces,
+        sceneWeather: userSettings.sceneWeather,
+        sceneIntro: userSettings.sceneIntro,
       })
       .from(userSettings)
       .where(eq(userSettings.userId, user.id))

@@ -38,6 +38,16 @@ export const TIMER_LAYOUTS = ['bar', 'focus', 'table'] as const
 export const TimerLayout = v.picklist(TIMER_LAYOUTS)
 // The brand concepts in src/lib/app-icon.ts; '02' is the default.
 export const AppIcon = v.picklist(APP_ICON_IDS)
+// The seasonal scene (prototypes/README.md, "Seasonal scene in the app"). 'auto' picks the
+// season by month.
+export const SCENE_SEASONS = ['auto', 'winter', 'spring', 'summer', 'autumn'] as const
+export const SceneSeason = v.picklist(SCENE_SEASONS)
+// How much page color covers the background image.
+export const SCENE_STRENGTHS = ['dimmed', 'full'] as const
+export const SceneStrength = v.picklist(SCENE_STRENGTHS)
+// Whether cards let the background show through.
+export const SURFACES = ['glass', 'solid'] as const
+export const Surfaces = v.picklist(SURFACES)
 
 // The browser's zone (Intl.DateTimeFormat().resolvedOptions().timeZone) and the supported
 // locale that best matches its languages, used only when the user has no settings yet.
@@ -56,5 +66,11 @@ export const UpdateSettingsInput = v.object({
   timerLayout: v.optional(TimerLayout),
   showSummary: v.optional(v.boolean()),
   appIcon: v.optional(AppIcon),
+  sceneSeason: v.optional(SceneSeason),
+  sceneBackground: v.optional(v.boolean()),
+  sceneStrength: v.optional(SceneStrength),
+  surfaces: v.optional(Surfaces),
+  sceneWeather: v.optional(v.boolean()),
+  sceneIntro: v.optional(v.boolean()),
 })
 export type UpdateSettingsInput = v.InferOutput<typeof UpdateSettingsInput>

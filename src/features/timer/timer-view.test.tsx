@@ -76,6 +76,12 @@ function defaultSettings(): Settings {
     timerLayout: 'bar',
     showSummary: false,
     appIcon: '02',
+    sceneSeason: 'auto',
+    sceneBackground: true,
+    sceneStrength: 'dimmed',
+    surfaces: 'glass',
+    sceneWeather: true,
+    sceneIntro: true,
   }
 }
 

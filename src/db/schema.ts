@@ -12,7 +12,14 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core'
 import { APP_ICON_IDS, DEFAULT_APP_ICON } from '~/lib/app-icon'
-import { LOCALES, THEMES, TIMER_LAYOUTS } from '~/server/settings/settings.schemas'
+import {
+  LOCALES,
+  SCENE_SEASONS,
+  SCENE_STRENGTHS,
+  SURFACES,
+  THEMES,
+  TIMER_LAYOUTS,
+} from '~/server/settings/settings.schemas'
 import { currentActor } from './actor'
 
 const nowMs = sql`(CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER))`
@@ -281,10 +288,25 @@ export const userSettings = sqliteTable(
       .default(sql`1`)
       .notNull(),
     appIcon: text('app_icon', { enum: APP_ICON_IDS }).default(DEFAULT_APP_ICON).notNull(),
+    sceneSeason: text('scene_season', { enum: SCENE_SEASONS }).default('auto').notNull(),
+    sceneBackground: integer('scene_background', { mode: 'boolean' })
+      .default(sql`1`)
+      .notNull(),
+    sceneStrength: text('scene_strength', { enum: SCENE_STRENGTHS }).default('dimmed').notNull(),
+    surfaces: text({ enum: SURFACES }).default('glass').notNull(),
+    sceneWeather: integer('scene_weather', { mode: 'boolean' })
+      .default(sql`1`)
+      .notNull(),
+    sceneIntro: integer('scene_intro', { mode: 'boolean' })
+      .default(sql`1`)
+      .notNull(),
   },
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),
     check('user_settings_show_summary', sql`show_summary IN (0, 1)`),
+    check('user_settings_scene_background', sql`scene_background IN (0, 1)`),
+    check('user_settings_scene_weather', sql`scene_weather IN (0, 1)`),
+    check('user_settings_scene_intro', sql`scene_intro IN (0, 1)`),
   ],
 )
 

@@ -168,6 +168,15 @@ export const tables: Record<string, TableNotes> = {
       show_summary: 'Boolean 0/1 (CHECK). Whether the timer page shows the summary.',
       app_icon:
         'Brand concept 01 to 12 (src/lib/app-icon.ts), default 02. Header mark and favicon. Validated in the app, no CHECK.',
+      scene_season:
+        'auto (by month), winter, spring, summer, autumn. The scene, weather, and tagline. Validated in the app, no CHECK.',
+      scene_background: 'Boolean 0/1 (CHECK). Whether the season image shows behind the pages.',
+      scene_strength:
+        'dimmed, full: how much page color covers the image. Validated in the app, no CHECK.',
+      surfaces:
+        'glass, solid: whether cards let the image show through. Validated in the app, no CHECK.',
+      scene_weather: 'Boolean 0/1 (CHECK). Whether the season weather effect runs.',
+      scene_intro: 'Boolean 0/1 (CHECK). Whether the intro plays on first visit and once a season.',
     },
   },
   project: {

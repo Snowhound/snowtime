@@ -29,6 +29,12 @@ const DEFAULTS = {
   timerLayout: 'bar',
   showSummary: true,
   appIcon: '02',
+  sceneSeason: 'auto',
+  sceneBackground: true,
+  sceneStrength: 'dimmed',
+  surfaces: 'glass',
+  sceneWeather: true,
+  sceneIntro: true,
 } as const
 
 // A signed-up user who has not loaded the app yet, so has no settings row.
@@ -90,7 +96,13 @@ describe('updateSettings', () => {
     await save({ theme: 'dark' })
     await save({ timerLayout: 'table' })
     await save({ showSummary: false })
-    const last = await save({ appIcon: '10' })
+    await save({ appIcon: '10' })
+    await save({ sceneSeason: 'winter' })
+    await save({ sceneBackground: false })
+    await save({ sceneStrength: 'full' })
+    await save({ surfaces: 'solid' })
+    await save({ sceneWeather: false })
+    const last = await save({ sceneIntro: false })
     expect(last).toEqual({
       ...DEFAULTS,
       timeZone: 'Europe/London',
@@ -98,6 +110,12 @@ describe('updateSettings', () => {
       timerLayout: 'table',
       showSummary: false,
       appIcon: '10',
+      sceneSeason: 'winter',
+      sceneBackground: false,
+      sceneStrength: 'full',
+      surfaces: 'solid',
+      sceneWeather: false,
+      sceneIntro: false,
     })
     expect(await save({})).toEqual(last)
   })
@@ -149,6 +167,30 @@ describe('settings input', () => {
       { showSummary: 1 },
       { appIcon: '13' },
       { appIcon: 2 },
+    ]) {
+      expect(v.safeParse(UpdateSettingsInput, patch).success).toBe(false)
+    }
+  })
+
+  test('scene settings are known values, and the switches booleans', () => {
+    for (const patch of [
+      { sceneSeason: 'auto' },
+      { sceneSeason: 'autumn' },
+      { sceneStrength: 'full' },
+      { surfaces: 'solid' },
+      { sceneBackground: false },
+      { sceneWeather: true },
+      { sceneIntro: false },
+    ]) {
+      expect(v.safeParse(UpdateSettingsInput, patch).success).toBe(true)
+    }
+    for (const patch of [
+      { sceneSeason: 'fall' },
+      { sceneStrength: 'half' },
+      { surfaces: 'frosted' },
+      { sceneBackground: 1 },
+      { sceneWeather: 'on' },
+      { sceneIntro: null },
     ]) {
       expect(v.safeParse(UpdateSettingsInput, patch).success).toBe(false)
     }

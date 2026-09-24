@@ -64,6 +64,12 @@ describe('appSession', () => {
       timerLayout: 'bar',
       showSummary: true,
       appIcon: '02',
+      sceneSeason: 'auto',
+      sceneBackground: true,
+      sceneStrength: 'dimmed',
+      surfaces: 'glass',
+      sceneWeather: true,
+      sceneIntro: true,
     })
     expect(session.invitationId).toBeNull()
   })
