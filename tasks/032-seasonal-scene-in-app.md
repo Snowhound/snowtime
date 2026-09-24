@@ -47,8 +47,11 @@ Surfaces was named for every card so it can apply app-wide.
   centered on the title row, page notes read better over the picture, and Reports' sticky column
   turns solid only while the timesheet scrolls sideways.
 
-## For the app, not the prototypes
+## Intro in the app
 
-- Replay the intro from the Appearance popover too, not only from the sign-in page and Settings.
-- Maybe: replay it automatically once a day, week, or month. Probably overkill; decide when
-  building the app.
+- **Replay intro** in the Appearance popover. Signed in, the last line isn't "Sign in and get it
+  done!" (the season's third line or a signed-in sign-off), and the page's own theme returns
+  after it, as on the sign-in page.
+- It plays once at the change of season, the first time the app opens in a new season, under the
+  existing Intro switch. A daily, weekly, or monthly replay setting was considered and left out:
+  a 13-second intro on a schedule gets in the way of logging time.
