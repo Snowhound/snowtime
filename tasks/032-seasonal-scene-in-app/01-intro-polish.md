@@ -40,3 +40,11 @@ that hasn't been done yet. The intro lives in `prototypes/intro.js`.
   thread for 1 to 11 seconds, for example toggling `.dark` or a body data attribute, likely
   from repainting the glass cards' backdrop blur without a GPU. Check whether a headed Chrome
   shows it before treating it as jank in the intro.
+- 2026-09-25: The replay flash didn't show in headed Chrome (every composited frame recorded, light
+  and dark, both Tones, 1× and 2×, `auth.html` and the signed-in pages) and shows only in Firefox.
+  Playwright's Firefox reproduced it with the page already dark: the dark image faded out over 2.6 s
+  at the intro's start. `play()` flushes styles with `getComputedStyle(document.body)`, and Firefox
+  likely skips that flush when only descendants' styles are pending (`intro-cut` on `<html>` changes
+  no style of `<html>` or `<body>` when `dark` is already there), so the transitions come back
+  before the cut applies. Left as is in the prototypes; if the app shows it, flush on a scene
+  layer (for example `getComputedStyle(photoLayer).opacity`) instead.
