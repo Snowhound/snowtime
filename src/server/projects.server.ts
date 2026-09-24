@@ -3,7 +3,7 @@
 // functions check projects through assertUsableProject.
 import { and, asc, eq, exists, inArray, isNull, notExists, or, type SQL } from 'drizzle-orm'
 import type { Database, Executor } from '../db'
-import { project, projectTeam, team, teamMember } from '../db/schema'
+import { project, projectTeam, team, teamMember, timeEntry } from '../db/schema'
 import type {
   CreateProjectInput,
   ListProjectsInput,
@@ -159,6 +159,34 @@ export function archiveProject(db: Database, scope: Scope, input: ProjectIdInput
 
 export function unarchiveProject(db: Database, scope: Scope, input: ProjectIdInput) {
   return setArchived(db, scope, input.id, false)
+}
+
+// Deletes a project created by mistake: sets sys_deleted and removes its team assignments,
+// so its name is free again. A project with live time entries is archived instead, so no
+// entry loses its project.
+export async function deleteProject(db: Database, scope: Scope, input: ProjectIdInput) {
+  assertAdmin(scope)
+  const existing = await findProject(db, scope, input.id)
+  return db.transaction(async (tx) => {
+    const [used] = await tx
+      .select({ id: timeEntry.id })
+      .from(timeEntry)
+      .where(and(eq(timeEntry.projectId, existing.id), live(timeEntry, scope)))
+      .limit(1)
+    if (used) throw new AppError('CONFLICT', 'project_has_entries')
+    await tx
+      .delete(projectTeam)
+      .where(
+        and(eq(projectTeam.projectId, existing.id), eq(projectTeam.organizationId, scope.organizationId)),
+      )
+    const [deleted] = await tx
+      .update(project)
+      .set({ sysDeleted: true })
+      .where(and(eq(project.id, existing.id), live(project, scope)))
+      .returning({ id: project.id })
+    if (!deleted) throw new AppError('NOT_FOUND', 'project_not_found')
+    return deleted
+  })
 }
 
 async function assertTeamInScope(db: Executor, scope: Scope, teamId: string) {

@@ -31,6 +31,11 @@ export const unarchiveProject = createServerFn({ method: 'POST' })
   .validator(ProjectIdInput)
   .handler(({ data, context }) => projects.unarchiveProject(db, context.scope, data))
 
+export const deleteProject = createServerFn({ method: 'POST' })
+  .middleware([scopeMiddleware])
+  .validator(ProjectIdInput)
+  .handler(({ data, context }) => projects.deleteProject(db, context.scope, data))
+
 export const assignProjectToTeam = createServerFn({ method: 'POST' })
   .middleware([scopeMiddleware])
   .validator(ProjectTeamInput)

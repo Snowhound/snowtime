@@ -1,13 +1,16 @@
 /// <reference types="bun" />
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { eq } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
 import type { Database } from '../db'
+import { projectTeam, timeEntry } from '../db/schema'
 import { seedIds } from '../db/seed'
 import {
   archiveProject,
   assertUsableProject,
   assignProjectToTeam,
   createProject,
+  deleteProject,
   listProjects,
   unarchiveProject,
   unassignProjectFromTeam,
@@ -193,5 +196,69 @@ describe('assignProjectToTeam and unassignProjectFromTeam', () => {
     await expect(
       as(scopes.admin, () => assignProjectToTeam(db, scopes.admin, { projectId: P.scrapped, teamId: T.design })),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  })
+})
+
+describe('deleteProject', () => {
+  const logOn = (projectId: string, deleted = false) =>
+    as(scopes.admin, async () => {
+      await db.insert(timeEntry).values({
+        id: uuidv7(),
+        organizationId: O.northwind,
+        userId: U.admin,
+        projectId,
+        startedAt: new Date('2026-09-01T08:00:00Z'),
+        stoppedAt: new Date('2026-09-01T09:00:00Z'),
+        sysDeleted: deleted,
+      })
+    })
+
+  test('deletes the project and its team assignments, and frees the name', async () => {
+    const created = await newProject(scopes.admin, 'Typo projekt')
+    await as(scopes.admin, () => assignProjectToTeam(db, scopes.admin, { projectId: created.id, teamId: T.design }))
+    // Deleted entries do not count as time on the project.
+    await logOn(created.id, true)
+
+    expect(await as(scopes.owner, () => deleteProject(db, scopes.owner, { id: created.id }))).toEqual({
+      id: created.id,
+    })
+    expect(await idsOf(scopes.admin, true)).not.toContain(created.id)
+    expect(await db.select().from(projectTeam).where(eq(projectTeam.projectId, created.id))).toEqual([])
+    await expect(
+      as(scopes.owner, () => deleteProject(db, scopes.owner, { id: created.id })),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+
+    const reused = await newProject(scopes.admin, 'Typo projekt')
+    expect(reused.id).not.toBe(created.id)
+  })
+
+  test('a project with time on it is a conflict and stays as it was', async () => {
+    const created = await newProject(scopes.admin, 'Used once')
+    await as(scopes.admin, () => assignProjectToTeam(db, scopes.admin, { projectId: created.id, teamId: T.design }))
+    await logOn(created.id)
+    await expect(
+      as(scopes.admin, () => deleteProject(db, scopes.admin, { id: created.id })),
+    ).rejects.toMatchObject({ code: 'CONFLICT', key: 'project_has_entries' })
+    const [kept] = (await listProjects(db, scopes.admin, { includeArchived: false })).filter(
+      (p) => p.id === created.id,
+    )
+    expect(kept.teamIds).toEqual([T.design])
+    await expect(
+      as(scopes.admin, () => deleteProject(db, scopes.admin, { id: P.mobile })),
+    ).rejects.toMatchObject({ code: 'CONFLICT' })
+  })
+
+  test('only admins and owners delete; other organizations’ projects are not found', async () => {
+    const created = await newProject(scopes.admin, 'Not yours')
+    for (const scope of [scopes.member, scopes.lead, scopes.engLead]) {
+      await expect(
+        as(scope, () => deleteProject(db, scope, { id: created.id })),
+      ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    }
+    for (const id of [P.audit, P.scrapped]) {
+      await expect(as(scopes.admin, () => deleteProject(db, scopes.admin, { id }))).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      })
+    }
   })
 })

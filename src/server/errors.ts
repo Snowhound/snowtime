@@ -34,6 +34,7 @@ export const errorMessages = {
   project_id_taken: 'A project with this id already exists.',
   project_name_taken: 'A project with this name already exists.',
   project_archived: 'The project is archived.',
+  project_has_entries: 'This project has time entries. Archive it instead.',
   projects_forbidden: 'Only admins can manage projects.',
   settings_not_found: 'Load the settings first.',
 } as const
