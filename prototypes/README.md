@@ -19,6 +19,7 @@ prototype, include its full absolute `file:///` URL so it can be opened directly
 | [prototype.css](prototype.css)           | Brand font and tokens (ahead of `src/styles.css`), shared styles |
 | [app-icon.js](app-icon.js)               | App icon concepts, header mark images, and the favicon      |
 | [app-frame.js](app-frame.js)             | App frame, user settings, icons, and markup helpers         |
+| [scene.js](scene.js)                     | Seasonal sign-in scene: background, tint, WebGL snow        |
 | [app-data.js](app-data.js)               | Shared fictional organization, generated entries, zone helpers |
 | Inline Lucide SVG paths                  | Icons, copied from `lucide-static` (pinned)                 |
 
@@ -577,7 +578,47 @@ edited. The passkey button depends on task 015. Limits match Better Auth default
 to 128 characters, reset links valid for 1 hour, invitations for 48 hours.
 
 The tagline "Winter is coming." sits in the split layout's brand panel and under the card in the
-card layout. A clock icon stands in for a logo; a logo is postponed (task 017).
+card layout. The mark is the chosen app icon (see [App icon](#app-icon)).
+
+#### Seasonal scene and intro
+
+Task 031 tries a seasonal scene from `design/backgrounds/`: a landscape per season in a light and
+a dark version, a tint of the page color over it, and a weather effect. Only winter has weather:
+the WebGL snow from `snowtime_login_intro_with_backgrounds.html`, ported to
+[scene.js](scene.js). It draws every flake as a point in one call, runs at about 45 fps, stops when
+the tab is hidden or the weather is off, and scales the flake count to the area it covers. Unlike
+the mock-up, flakes cover the full width. The pages load WebP copies of the images (110 to 215 KB
+each, from the 2 to 2.5 MB PNGs).
+
+- **Card layout**: the scene fills the page behind the card. **Split layout**: it fills the brand
+  panel, which fades toward the page color behind its text; the form side stays plain.
+- **Intro**: the mock-up's four lines over the scene, always dark, then the page rises into place
+  and the chosen theme returns. It plays on the first visit to this browser
+  (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay intro plays it any
+  time. **Skip intro** or Escape ends it; the rest of the page
+  is `inert` while it plays. With reduced motion it doesn't play, and the snow stays off.
+- **Scenery menu** (the mountain button, top right): the Background switch with its strength
+  (full or dimmed: how much page color covers the image, 30 or 55% dark, 20 or 50% light,
+  stronger toward the bottom), the Weather switch, the Intro switch, and Replay intro. These are
+  the user settings `sceneBackground`, `sceneStrength`, `sceneWeather`, and `sceneIntro`, shared
+  with Settings > Preferences > Sign-in page. Signed out, the app would keep them on the device.
+- **Surfaces** (`surfaces`): glass (`bg-card/70` with a backdrop blur) or solid cards. It's an
+  app-wide appearance setting, so Settings shows it under Appearance, and the Scenery menu lists it
+  apart from the scene. Only the sign-in card uses it so far.
+- **Snow colors**: white in dark mode and over the light image; blue-grey on the plain light page,
+  where white flakes would vanish. The canvas blends with premultiplied alpha, so flake edges don't
+  darken.
+
+The prototype bar's second row holds variants to compare, kept in `snowtime.prototypeAuthScene`:
+
+| Variant  | Options                                                                          |
+| -------- | -------------------------------------------------------------------------------- |
+| Season   | Winter (with snow), spring, summer, autumn (images only)                         |
+| Tagline  | Halo (a glow in the page color), in the card (a footer line), bottom fade (at the foot of the page over a fade), or pill |
+| Tone     | Deeper (`#060c14` dark with card `#0d1929`, `#fbfdff` light) or the app's tokens |
+
+Over the images, contrast depends on the picture, so axe's color-contrast results don't apply to
+the scene; the card and the tagline's pill keep text on a page-colored surface.
 
 Simulated with fictional rules: the password `wrong` fails sign-in, `taken@example.com` is
 already registered, and the short name `snowhound` is taken. Provider, passkey, and email steps
@@ -588,4 +629,6 @@ Omitted: two-factor authentication, rate-limit messages, and the real provider c
 
 Checked in Chromium at 1440, 850, and 390 px, light and dark, both layouts, every password mode,
 and every screen: no horizontal page overflow, validation messages and focus on the first invalid
-field, and no browser errors.
+field, and no browser errors. The scene was checked on 2026-09-24 at 1440 and 390 px, light and
+dark, both layouts: the intro's sequence, skip, replay, and first-visit memory, every variant, the
+Settings switches reaching an open sign-in tab, reduced motion, and no browser errors.

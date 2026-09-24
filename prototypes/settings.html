@@ -115,6 +115,14 @@
                 </div>
               </div>
               <div class="grid gap-2">
+                <span data-ui="label" id="surfaces-label">Surfaces</span>
+                <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="surfaces-label" aria-describedby="surfaces-hint">
+                  <button type="button" data-ui="toggle" data-variant="outline" data-setting="surfaces" data-value="glass">Glass</button>
+                  <button type="button" data-ui="toggle" data-variant="outline" data-setting="surfaces" data-value="solid">Solid</button>
+                </div>
+                <p id="surfaces-hint" class="text-xs text-muted-foreground">Glass lets a background show through cards. Only the sign-in page has one so far.</p>
+              </div>
+              <div class="grid gap-2">
                 <span data-ui="label" id="layout-label">Timer layout</span>
                 <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="layout-label">
                   <button type="button" data-ui="toggle" data-variant="outline" data-setting="design" data-value="bar">Bar</button>
@@ -128,6 +136,44 @@
                   <span class="text-sm text-muted-foreground">Today and this week beside the timer.</span>
                 </div>
                 <button id="summary-switch" type="button" role="switch" aria-checked="true" aria-labelledby="summary-label" data-ui="switch">
+                  <span data-ui="switch-thumb"></span>
+                </button>
+              </div>
+            </div>
+            <div data-ui="separator"></div>
+            <div class="grid gap-5">
+              <div class="grid gap-1">
+                <h3 class="text-sm font-medium">Sign-in page</h3>
+                <p class="text-sm text-muted-foreground">The seasonal scene behind the sign-in page.</p>
+              </div>
+              <div class="flex items-center justify-between gap-4">
+                <div class="grid gap-1">
+                  <span data-ui="label" id="scene-bg-label">Background</span>
+                  <span class="text-sm text-muted-foreground">A landscape for the season.</span>
+                </div>
+                <button id="scene-bg-switch" type="button" role="switch" aria-checked="true" aria-labelledby="scene-bg-label" data-ui="switch" data-scene-setting="sceneBackground">
+                  <span data-ui="switch-thumb"></span>
+                </button>
+              </div>
+              <div data-ui="toggle-group" class="-mt-2 justify-start" role="group" aria-label="Background strength">
+                <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-setting="sceneStrength" data-value="full">Full</button>
+                <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-setting="sceneStrength" data-value="dimmed">Dimmed</button>
+              </div>
+              <div class="flex items-center justify-between gap-4">
+                <div class="grid gap-1">
+                  <span data-ui="label" id="scene-weather-label">Weather</span>
+                  <span class="text-sm text-muted-foreground">Falling snow in winter. Off while your device reduces motion.</span>
+                </div>
+                <button id="scene-weather-switch" type="button" role="switch" aria-checked="true" aria-labelledby="scene-weather-label" data-ui="switch" data-scene-setting="sceneWeather">
+                  <span data-ui="switch-thumb"></span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between gap-4">
+                <div class="grid gap-1">
+                  <span data-ui="label" id="scene-intro-label">Intro</span>
+                  <span class="text-sm text-muted-foreground">Plays on your first visit. <a id="replay-intro" href="auth.html?intro=replay" class="underline underline-offset-4 hover:text-foreground">Replay it</a></span>
+                </div>
+                <button id="scene-intro-switch" type="button" role="switch" aria-checked="true" aria-labelledby="scene-intro-label" data-ui="switch" data-scene-setting="sceneIntro">
                   <span data-ui="switch-thumb"></span>
                 </button>
               </div>
@@ -395,6 +441,8 @@
           b.toggleAttribute('data-pressed', pressed)
         })
         ui.setSwitch(document.getElementById('summary-switch'), settings.showSummary)
+        document.querySelectorAll('[data-scene-setting]').forEach((sw) => ui.setSwitch(sw, settings[sw.dataset.sceneSetting]))
+        document.querySelectorAll('[data-setting="sceneStrength"]').forEach((b) => (b.disabled = !settings.sceneBackground))
         const browserBtn = document.getElementById('use-browser-zone')
         browserBtn.innerHTML = `${icon('globe')}Use this device's zone`
         browserBtn.disabled = timeZone === browserZone
@@ -421,6 +469,9 @@
       document.querySelectorAll('[data-setting]').forEach((b) => b.addEventListener('click', () => save({ [b.dataset.setting]: b.dataset.value })))
       document.getElementById('summary-switch').addEventListener('change', (event) => save({ showSummary: event.currentTarget.getAttribute('aria-checked') === 'true' }))
       appFrame.on('settings', renderPreferences)
+      document.querySelectorAll('[data-scene-setting]').forEach((sw) =>
+        sw.addEventListener('change', () => save({ [sw.dataset.sceneSetting]: sw.getAttribute('aria-checked') === 'true' }))
+      )
       document.getElementById('app-icon-preview').innerHTML = appFrame.appIconImg('large', 'size-10')
       appIcon.apply(appFrame.settings.get().appIcon)
       document.getElementById('change-app-icon').addEventListener('click', appFrame.openIconPicker)

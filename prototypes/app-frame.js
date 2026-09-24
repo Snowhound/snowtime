@@ -72,6 +72,12 @@
     theme: 'system',
     design: 'bar', // user_settings.timer_layout
     showSummary: true,
+    surfaces: 'glass', // 'glass' | 'solid': whether cards let a background show through
+    // The sign-in page's seasonal scene; see scene.js.
+    sceneBackground: true,
+    sceneStrength: 'full', // 'full' | 'dimmed'
+    sceneWeather: true,
+    sceneIntro: true, // play the intro on the first visit
     appIcon: appIcon.DEFAULT, // '01' to '12', see app-icon.js
   }
   const darkQuery = matchMedia('(prefers-color-scheme: dark)')
