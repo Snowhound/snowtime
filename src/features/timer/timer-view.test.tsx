@@ -75,6 +75,7 @@ function defaultSettings(): Settings {
     theme: 'system',
     timerLayout: 'bar',
     showSummary: false,
+    appIcon: '02',
   }
 }
 

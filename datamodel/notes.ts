@@ -166,6 +166,8 @@ export const tables: Record<string, TableNotes> = {
         'system, light, dark. The server renders the theme class from it. Validated in the app, no CHECK.',
       timer_layout: 'bar, focus, table. Validated in the app, no CHECK.',
       show_summary: 'Boolean 0/1 (CHECK). Whether the timer page shows the summary.',
+      app_icon:
+        'Brand concept 01 to 12 (src/lib/app-icon.ts), default 02. Header mark and favicon. Validated in the app, no CHECK.',
     },
   },
   project: {

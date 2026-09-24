@@ -28,6 +28,7 @@ const DEFAULTS = {
   theme: 'system',
   timerLayout: 'bar',
   showSummary: true,
+  appIcon: '02',
 } as const
 
 // A signed-up user who has not loaded the app yet, so has no settings row.
@@ -88,13 +89,15 @@ describe('updateSettings', () => {
     }
     await save({ theme: 'dark' })
     await save({ timerLayout: 'table' })
-    const last = await save({ showSummary: false })
+    await save({ showSummary: false })
+    const last = await save({ appIcon: '10' })
     expect(last).toEqual({
       ...DEFAULTS,
       timeZone: 'Europe/London',
       theme: 'dark',
       timerLayout: 'table',
       showSummary: false,
+      appIcon: '10',
     })
     expect(await save({})).toEqual(last)
   })
@@ -129,16 +132,24 @@ describe('settings input', () => {
     expect(v.safeParse(UpdateSettingsInput, { weekStart: 'sat' }).success).toBe(false)
   })
 
-  test('theme and timer layout are known values, and show summary a boolean', () => {
+  test('theme, timer layout, and app icon are known values, and show summary a boolean', () => {
     for (const patch of [
       { theme: 'light' },
       { theme: 'system' },
       { timerLayout: 'focus' },
       { showSummary: false },
+      { appIcon: '01' },
+      { appIcon: '12' },
     ]) {
       expect(v.safeParse(UpdateSettingsInput, patch).success).toBe(true)
     }
-    for (const patch of [{ theme: 'sepia' }, { timerLayout: 'grid' }, { showSummary: 1 }]) {
+    for (const patch of [
+      { theme: 'sepia' },
+      { timerLayout: 'grid' },
+      { showSummary: 1 },
+      { appIcon: '13' },
+      { appIcon: 2 },
+    ]) {
       expect(v.safeParse(UpdateSettingsInput, patch).success).toBe(false)
     }
   })

@@ -63,6 +63,7 @@ describe('appSession', () => {
       theme: 'system',
       timerLayout: 'bar',
       showSummary: true,
+      appIcon: '02',
     })
     expect(session.invitationId).toBeNull()
   })

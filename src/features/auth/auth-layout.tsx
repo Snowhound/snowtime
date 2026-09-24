@@ -1,7 +1,8 @@
-import ClockIcon from 'lucide-solid/icons/clock'
 import type { JSX } from 'solid-js'
 import { Show } from 'solid-js'
+import { AppMark } from '~/components/app-mark'
 import { Separator } from '~/components/ui/separator'
+import { DEFAULT_APP_ICON } from '~/lib/app-icon'
 import { m } from '~/paraglide/messages.js'
 
 // The signed-out screens' frame: a centered card on a muted background, with the product
@@ -10,8 +11,9 @@ export function AuthLayout(props: { children: JSX.Element }) {
   return (
     <main class="bg-muted/40 flex min-h-dvh flex-col items-center justify-start gap-6 px-4 py-10 sm:justify-center sm:py-16">
       <div class="bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-lg border p-6 shadow-sm sm:p-8">
-        <div class="flex items-center gap-2 text-sm font-medium">
-          <ClockIcon class="size-5" aria-hidden="true" />
+        {/* Signed out there is no app icon setting yet, so the card shows the default. */}
+        <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]">
+          <AppMark id={DEFAULT_APP_ICON} small class="size-7" />
           {m.app_name()}
         </div>
         <div class="flex flex-col gap-6">{props.children}</div>

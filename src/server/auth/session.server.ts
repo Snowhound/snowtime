@@ -39,6 +39,7 @@ export async function appSession(
         theme: userSettings.theme,
         timerLayout: userSettings.timerLayout,
         showSummary: userSettings.showSummary,
+        appIcon: userSettings.appIcon,
       })
       .from(userSettings)
       .where(eq(userSettings.userId, user.id))

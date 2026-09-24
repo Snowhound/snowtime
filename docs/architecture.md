@@ -229,7 +229,7 @@ such as rate limiting.
 
 - All of a user's settings live in `user_settings`, one row per user, so they follow the
   user across devices: time zone, week start, language (`locale`), theme, timer layout,
-  and whether the summary shows.
+  whether the summary shows, and the app icon (`app_icon`, the header mark and favicon).
 - The server renders the theme class from the session user's settings, so the first
   paint uses the right theme with no flash. This is the main reason view settings moved
   here from `localStorage`. Signed-out pages (sign-in, invitations) follow the system

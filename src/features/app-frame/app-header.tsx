@@ -1,12 +1,11 @@
-// The signed-in header every page shares (prototypes/app-frame.js): the organization
-// switcher, the navigation, and the user menu. Below 768 px the navigation moves to a
+// The signed-in header every page shares (prototypes/app-frame.js): the app icon, the
+// organization switcher, the navigation, and the user menu. Below 768 px the navigation moves to a
 // second row of equal-width links.
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/solid-router'
 import BuildingComplexIcon from 'lucide-solid/icons/building-complex'
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
 import ChevronsUpDownIcon from 'lucide-solid/icons/chevrons-up-down'
-import ClockIcon from 'lucide-solid/icons/clock'
 import FolderKanbanIcon from 'lucide-solid/icons/folder-kanban'
 import LogOutIcon from 'lucide-solid/icons/log-out'
 import MonitorIcon from 'lucide-solid/icons/monitor'
@@ -18,6 +17,7 @@ import TimerIcon from 'lucide-solid/icons/timer'
 import UserIcon from 'lucide-solid/icons/user'
 import type { Component } from 'solid-js'
 import { For, Show } from 'solid-js'
+import { AppMark } from '~/components/app-mark'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { Button, buttonVariants } from '~/components/ui/button'
 import {
@@ -31,6 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { appIcon } from '~/lib/app-icon'
 import { authClient } from '~/lib/auth-client'
 import { type ThemeSetting, sessionQuery } from '~/lib/session'
 import { useUpdateSettings } from '~/lib/settings'
@@ -75,11 +76,11 @@ export function AppHeader() {
           <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
             <Link
               to="/timer"
-              class="focus-visible:ring-ring mr-1 flex shrink-0 items-center gap-2 rounded-md text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none"
+              class="focus-visible:ring-ring focus-visible:ring-offset-background mr-1 flex shrink-0 items-center gap-2 rounded-md text-base font-bold tracking-[-0.02em] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               aria-label={m.app_home()}
             >
-              <ClockIcon class="size-5" aria-hidden="true" />
-              <span class="hidden sm:inline">{m.app_name()}</span>
+              <AppMark id={appIcon(data().settings?.appIcon).id} small class="size-7" />
+              <span class="hidden sm:inline md:hidden lg:inline">{m.app_name()}</span>
             </Link>
             <span class="bg-border mx-1 h-5 w-px shrink-0" aria-hidden="true" />
             <OrganizationSwitcher session={data()} />

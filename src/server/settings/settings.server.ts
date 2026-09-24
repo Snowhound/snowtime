@@ -14,6 +14,7 @@ const columns = {
   theme: userSettings.theme,
   timerLayout: userSettings.timerLayout,
   showSummary: userSettings.showSummary,
+  appIcon: userSettings.appIcon,
 }
 
 async function findSettings(db: Database, userId: string) {

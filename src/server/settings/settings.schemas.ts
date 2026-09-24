@@ -1,4 +1,5 @@
 import * as v from 'valibot'
+import { APP_ICON_IDS } from '~/lib/app-icon'
 import { m } from '~/paraglide/messages.js'
 
 // An IANA zone name such as Europe/Tallinn or UTC. Intl accepts the names the runtime
@@ -35,6 +36,8 @@ export const THEMES = ['system', 'light', 'dark'] as const
 export const Theme = v.picklist(THEMES)
 export const TIMER_LAYOUTS = ['bar', 'focus', 'table'] as const
 export const TimerLayout = v.picklist(TIMER_LAYOUTS)
+// The brand concepts in src/lib/app-icon.ts; '02' is the default.
+export const AppIcon = v.picklist(APP_ICON_IDS)
 
 // The browser's zone (Intl.DateTimeFormat().resolvedOptions().timeZone) and the supported
 // locale that best matches its languages, used only when the user has no settings yet.
@@ -52,5 +55,6 @@ export const UpdateSettingsInput = v.object({
   theme: v.optional(Theme),
   timerLayout: v.optional(TimerLayout),
   showSummary: v.optional(v.boolean()),
+  appIcon: v.optional(AppIcon),
 })
 export type UpdateSettingsInput = v.InferOutput<typeof UpdateSettingsInput>

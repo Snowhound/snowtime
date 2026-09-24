@@ -175,6 +175,7 @@ Table user_settings [note: 'Per-user settings, one row per user, shared across o
   theme text [not null, default: 'system', note: 'system, light, dark. The server renders the theme class from it. Validated in the app, no CHECK.']
   timer_layout text [not null, default: 'bar', note: 'bar, focus, table. Validated in the app, no CHECK.']
   show_summary integer [not null, default: 1, note: 'Boolean 0/1 (CHECK). Whether the timer page shows the summary.']
+  app_icon text [not null, default: '02', note: 'Brand concept 01 to 12 (src/lib/app-icon.ts), default 02. Header mark and favicon. Validated in the app, no CHECK.']
 }
 
 Table project [note: 'Owned by the organization. Visible to the whole organization unless assigned to teams.'] {

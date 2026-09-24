@@ -11,6 +11,7 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core'
+import { APP_ICON_IDS, DEFAULT_APP_ICON } from '~/lib/app-icon'
 import { LOCALES, THEMES, TIMER_LAYOUTS } from '~/server/settings/settings.schemas'
 import { currentActor } from './actor'
 
@@ -279,6 +280,7 @@ export const userSettings = sqliteTable(
     showSummary: integer('show_summary', { mode: 'boolean' })
       .default(sql`1`)
       .notNull(),
+    appIcon: text('app_icon', { enum: APP_ICON_IDS }).default(DEFAULT_APP_ICON).notNull(),
   },
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),

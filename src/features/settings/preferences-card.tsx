@@ -1,9 +1,11 @@
 // The Preferences card of the settings page (prototypes/settings.html): language and
-// region, and appearance. Each field saves on change as a one-field updateSettings patch.
+// region, and appearance with the app icon. Each field saves on change as a one-field
+// updateSettings patch.
 import CheckIcon from 'lucide-solid/icons/check'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import GlobeIcon from 'lucide-solid/icons/globe'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
+import { AppMark } from '~/components/app-mark'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
@@ -17,12 +19,14 @@ import {
   SwitchThumb,
 } from '~/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
+import { appIcon } from '~/lib/app-icon'
 import { addDays, localDate, startOfWeek } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatIsoDate } from '~/lib/format'
 import { type Settings, useUpdateSettings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
+import { AppIconDialog } from './app-icon-dialog'
 
 // Languages by their own names, so each reads the same in every UI language.
 const LANGUAGES = [
@@ -100,6 +104,11 @@ export function PreferencesCard(props: { settings: Settings }) {
   function week() {
     const start = startOfWeek(localDate(now(), props.settings.timeZone), props.settings.weekStart)
     return `${weekDay(start)} – ${weekDay(addDays(start, 6))}`
+  }
+
+  const [iconDialogOpen, setIconDialogOpen] = createSignal(false)
+  function icon() {
+    return appIcon(props.settings.appIcon)
   }
 
   return (
@@ -223,6 +232,32 @@ export function PreferencesCard(props: { settings: Settings }) {
         <Separator />
         <div class="grid gap-5">
           <h4 class="text-sm font-medium">{m.settings_appearance()}</h4>
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex min-w-0 items-center gap-3">
+              <AppMark id={icon().id} class="size-10" />
+              <div class="grid gap-1">
+                <span class="text-sm leading-none font-medium">{m.settings_app_icon()}</span>
+                <span class="text-muted-foreground text-sm">
+                  {icon().id} {icon().name}
+                </span>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label={m.settings_app_icon_change_label()}
+              aria-haspopup="dialog"
+              onClick={() => setIconDialogOpen(true)}
+            >
+              {m.settings_app_icon_change()}
+            </Button>
+            <AppIconDialog
+              open={iconDialogOpen()}
+              value={icon().id}
+              onChange={(id) => update({ appIcon: id })}
+              onClose={() => setIconDialogOpen(false)}
+            />
+          </div>
           <div class="grid gap-2">
             <span class="text-sm leading-none font-medium" id="theme-label">
               {m.user_menu_theme()}

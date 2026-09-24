@@ -8,8 +8,9 @@ import {
   redirect,
 } from '@tanstack/solid-router'
 import { TanStackRouterDevtools } from '@tanstack/solid-router-devtools'
-import { Show, Suspense, createMemo } from 'solid-js'
+import { For, Show, Suspense, createEffect, createMemo, on } from 'solid-js'
 import { HydrationScript, isServer } from 'solid-js/web'
+import { appIcon, faviconLinks, setFavicon } from '~/lib/app-icon'
 import { sessionQuery, themeScript } from '~/lib/session'
 import { getLocale, setLocale } from '~/paraglide/runtime.js'
 import styleCss from '~/styles.css?url'
@@ -53,6 +54,13 @@ function RootComponent() {
     return getLocale()
   })
 
+  // The user's app icon; signed out, Hound Hour. The server renders its favicon links, and a
+  // change replaces them (Solid doesn't hydrate <head>). Media queries pick Hound Hour's tile.
+  function appIconId() {
+    return appIcon(session.data?.settings?.appIcon).id
+  }
+  createEffect(on(appIconId, setFavicon, { defer: true }))
+
   return (
     <html lang={locale()} data-theme={theme()}>
       <head>
@@ -60,6 +68,17 @@ function RootComponent() {
         <script innerHTML={themeScript} />
         <HydrationScript />
         <HeadContent />
+        <For each={faviconLinks(appIconId())}>
+          {(icon) => (
+            <link
+              rel="icon"
+              type="image/png"
+              sizes={icon.sizes}
+              href={icon.href}
+              media={icon.media}
+            />
+          )}
+        </For>
       </head>
       <body>
         <Suspense>

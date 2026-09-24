@@ -40,6 +40,12 @@ Work in this order, one commit or more per step, and check each in the dev app a
 - 2026-09-25: Step 1b: the brand's project colors are in `--series-1` to `--series-8` and
   `PROJECT_COLORS`, with the prototype's names (Blue, Terracotta, Teal, Ochre, Rose, Moss, Indigo,
   Brick). A data-only migration moves each stored palette hex to the new color in its slot.
+- 2026-09-25: Step 1c: the app icon is the `appIcon` user setting (`app_icon`, `'01'` to `'12'`,
+  default `'02'`). The header and the sign-in card show the bare mark for the page's theme, the
+  favicon follows the setting, and Settings > Preferences > Appearance opens the app icon dialog
+  from Change. The sign-in card shows Hound Hour until step 2. The Appearance popover's Change
+  comes in step 2. Checked at 1440, 850, and 390 px, light and dark: keyboard use, focus return,
+  the favicon following a change, and the dialog fitting 390 × 844.
 
 ## Acceptance criteria
 

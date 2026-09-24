@@ -356,6 +356,11 @@ The prototypes reference the exports in place instead of copying them:
 | Dialog's tab icon badge (20 px)            | `icons-small/<NN-name>.svg`, 02 also `-light`       |
 | Favicon                                    | `favicon/variants/<NN-name>-16.png`, `-32.png`; 02 also `-light` |
 
+The app copies these folders to `public/brand/`, and `src/lib/app-icon.ts` holds the concept
+list. `appIcon` is a column of `user_settings`. The app renders both versions of a mark and lets
+the `dark` class pick one, and Hound Hour's favicon links carry `prefers-color-scheme` media
+queries instead of a script.
+
 Page images follow the page's theme, and `app-frame.js` and `auth.html` call `appIcon.apply()`
 again when it changes. The favicon follows the system's color scheme instead, because the
 browser's tab strip does, not the page.
