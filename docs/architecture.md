@@ -145,6 +145,14 @@
   logic.
 - Queries on soft-deleted tables filter `sys_deleted = 0` through shared
   helpers, not ad hoc in each server function.
+- Server code layout:
+  - `src/server/middleware.ts`: `sessionMiddleware` resolves the Better Auth
+    session; `scopeMiddleware` adds the tenancy scope of the active
+    organization. Both run the call inside `withActor()`.
+  - `src/server/*.server.ts`: server-only modules. TanStack Start's import
+    protection keeps `*.server.*` files out of the client bundle.
+  - `src/schemas/`: Valibot input schemas shared by forms and server
+    functions. They must stay importable from the browser.
 
 ## Environments and deployment
 

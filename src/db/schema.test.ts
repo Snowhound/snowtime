@@ -2,24 +2,20 @@
 // Runs the real migrations on a throwaway database and checks the rules the schema enforces.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { eq, sql } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/libsql'
-import { migrate } from 'drizzle-orm/libsql/migrator'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import type { Database } from '.'
 import { withActor } from './actor'
-import { relations } from './relations'
 import { organization, project, teamMember, team, timeEntry, user } from './schema'
+import { createTestDatabase } from './testing'
 
-const dir = mkdtempSync(join(tmpdir(), 'snowtime-schema-'))
-const db = drizzle({ connection: { url: `file:${join(dir, 'test.db')}` }, relations })
+let db: Database
+let cleanup: () => void
 
 const now = new Date()
 const alice = 'user-alice'
 const bob = 'user-bob'
 
 beforeAll(async () => {
-  await migrate(db, { migrationsFolder: 'drizzle' })
+  ;({ db, cleanup } = await createTestDatabase())
   await db.insert(user).values([
     { id: alice, name: 'Alice', email: 'alice@example.com', createdAt: now, updatedAt: now },
     { id: bob, name: 'Bob', email: 'bob@example.com', createdAt: now, updatedAt: now },
@@ -30,7 +26,7 @@ beforeAll(async () => {
   ])
 })
 
-afterAll(() => rmSync(dir, { recursive: true, force: true }))
+afterAll(() => cleanup())
 
 describe('audit columns', () => {
   test('a write without an actor fails', async () => {
