@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
     <script src="prototype-theme.js"></script>
     <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
     <style type="text/tailwindcss">
       body[data-layout='card'] .brand-panel {
         display: none;
@@ -123,21 +124,21 @@
     </header>
 
     <div class="auth-shell grid flex-1 grid-cols-[minmax(0,1fr)]">
-      <aside class="brand-panel relative hidden flex-col justify-between bg-zinc-900 p-10 text-zinc-50 lg:flex" aria-hidden="true">
-        <div class="flex items-center gap-2 text-lg font-medium">
-          <svg class="prototype-icon size-6" aria-hidden="true"><use href="#icon-clock" /></svg>
+      <aside class="brand-panel relative hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex dark:bg-card dark:text-card-foreground" aria-hidden="true">
+        <div class="flex items-center gap-3 text-xl font-bold tracking-[-0.02em]">
+          <img data-app-icon="large" src="../design/brand-assets/icons/02-hound-hour.svg" alt="" class="size-10 rounded-[22.5%] ring-1 ring-primary-foreground/25 dark:ring-border" />
           Snowtime
         </div>
         <div class="flex flex-col gap-2">
           <p class="text-2xl font-semibold tracking-tight">Winter is coming.</p>
-          <p class="text-sm text-zinc-400">So is the end of the month. Start the timer.</p>
+          <p class="text-sm text-primary-foreground/75 dark:text-muted-foreground">So is the end of the month. Start the timer.</p>
         </div>
       </aside>
 
       <main class="auth-main flex flex-col items-center justify-start gap-6 bg-muted/40 px-4 py-10 sm:justify-center sm:py-16">
         <div class="auth-form flex w-full max-w-sm flex-col gap-6">
-          <div class="flex items-center gap-2 text-sm font-medium" id="product-mark">
-            <svg class="prototype-icon size-5" aria-hidden="true"><use href="#icon-clock" /></svg>
+          <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]" id="product-mark">
+            <img data-app-icon="small" src="../design/brand-assets/icons-small/02-hound-hour.svg" alt="" class="size-7 rounded-[22.5%] ring-1 ring-border" />
             Snowtime
           </div>
           <div id="screen" class="flex flex-col gap-6"></div>
@@ -466,9 +467,14 @@
       const setDark = (dark) => {
         document.documentElement.classList.toggle('dark', dark)
         themeButton.textContent = dark ? 'Light' : 'Dark'
+        appIcon.apply() // 02's tile follows the theme
       }
       setDark(savedTheme === 'dark' || (savedTheme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
       themeButton.addEventListener('click', () => setDark(!document.documentElement.classList.contains('dark')))
+
+      // The app icon chosen in the signed-in prototypes, kept in step with other tabs.
+      appIcon.apply(appIcon.saved())
+      addEventListener('storage', (event) => event.key === appIcon.SETTINGS_KEY && appIcon.apply(appIcon.saved()))
 
       ui.ready.then(() => go('sign-in'))
     </script>

@@ -1,0 +1,26 @@
+/* Proposed Snowtime brand tokens. These are approximate readings of the concept board,
+   not exact Snowhound brand values. Keep existing app semantic tokens until UI review. */
+:root {
+  --snowtime-navy: #0f1f2e;
+  --snowtime-slate-blue: #3b82b8;
+  --snowtime-icy-blue: #7fb3e6;
+  --snowtime-pale-blue: #d7ecfc;
+  --snowtime-ice: #f4faff;
+  --snowtime-background: #f4faff;
+  --snowtime-surface: #ffffff;
+  --snowtime-foreground: #0f1f2e;
+  --snowtime-muted-foreground: #315f89;
+  --snowtime-action: #2f6797;
+  --snowtime-action-foreground: #ffffff;
+  --snowtime-border: #c5def2;
+}
+
+.dark {
+  --snowtime-background: #0b1622;
+  --snowtime-surface: #1e2f45;
+  --snowtime-foreground: #e6f4ff;
+  --snowtime-muted-foreground: #b6d9f7;
+  --snowtime-action: #a7d0fb;
+  --snowtime-action-foreground: #0b1622;
+  --snowtime-border: #3b5571;
+}

@@ -1,6 +1,6 @@
 // App frame shared by the signed-in prototypes: header with organization switcher, navigation and
 // user menu; a prototype bar with the page's fixture controls and a role switcher; the user's
-// settings; icons and markup helpers. Load after ui.js and call `appFrame.mount()` first thing in
+// settings; the app icon picker; icons and markup helpers. Load after ui.js and app-icon.js and call `appFrame.mount()` first thing in
 // the page script.
 ;(() => {
   // Lucide icons, copied from lucide-static@1.48.0. Pages can still define their own <symbol>s.
@@ -72,11 +72,13 @@
     theme: 'system',
     design: 'bar', // user_settings.timer_layout
     showSummary: true,
+    appIcon: appIcon.DEFAULT, // '01' to '12', see app-icon.js
   }
   const darkQuery = matchMedia('(prefers-color-scheme: dark)')
   const readSettings = () => {
     try {
-      return { ...SETTINGS_DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') }
+      const stored = { ...SETTINGS_DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') }
+      return { ...stored, appIcon: appIcon.valid(stored.appIcon) }
     } catch {
       return { ...SETTINGS_DEFAULTS }
     }
@@ -85,9 +87,23 @@
   const listeners = { role: [], org: [], settings: [] }
   const emit = (type) => listeners[type].forEach((fn) => fn())
 
+  function applyAppIcon() {
+    appIcon.apply(settings.appIcon)
+    // Each group of the picker is its own radio group, with one option in the tab order: the
+    // chosen one, or the group's first.
+    document.querySelectorAll('#app-icon-dialog [role="radiogroup"]').forEach((group) => {
+      const options = [...group.querySelectorAll('[data-app-icon-option]')]
+      const tabbable = options.find((b) => b.dataset.appIconOption === settings.appIcon) ?? options[0]
+      options.forEach((b) => {
+        b.setAttribute('aria-checked', String(b.dataset.appIconOption === settings.appIcon))
+        b.tabIndex = b === tabbable ? 0 : -1
+      })
+    })
+  }
   function applyTheme() {
     document.documentElement.classList.toggle('dark', settings.theme === 'dark' || (settings.theme === 'system' && darkQuery.matches))
     document.querySelectorAll('[data-frame-theme]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.frameTheme === settings.theme)))
+    appIcon.apply(settings.appIcon) // 02's tile follows the theme
   }
   const settingsStore = {
     get: () => ({ ...settings }),
@@ -97,6 +113,7 @@
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
       } catch {}
       applyTheme()
+      applyAppIcon()
       emit('settings')
     },
     reset() {
@@ -105,6 +122,7 @@
       } catch {}
       settings = { ...SETTINGS_DEFAULTS }
       applyTheme()
+      applyAppIcon()
       emit('settings')
     },
   }
@@ -114,6 +132,7 @@
     if (event.key !== SETTINGS_KEY) return
     settings = readSettings()
     applyTheme()
+    applyAppIcon()
     emit('settings')
   })
   applyTheme()
@@ -157,6 +176,90 @@
     return `<span class="flex ${cls} shrink-0 items-center justify-center rounded-md bg-primary font-semibold text-primary-foreground" aria-hidden="true">${escapeHtml(org.name[0])}</span>`
   }
 
+  // The tile's corner radius matches the exports' (338 / 1500); the ring shows light tiles on light
+  // pages and navy tiles on dark ones.
+  function appIconImg(size, cls) {
+    return `<img data-app-icon="${size}" src="${appIcon.src(settings.appIcon, size === 'small')}" alt="" class="${cls} shrink-0 rounded-[22.5%] ring-1 ring-border" />`
+  }
+
+  // --- App icon picker -----------------------------------------------------------------------
+  // Two radio groups in a modal dialog, concepts on light tiles and on navy tiles, opened from the
+  // header mark and from Settings. Hound Hour is in both, since its tile follows the theme; choosing
+  // it in either group is the same choice. A choice saves right away, like the other settings.
+  function renderIconDialog() {
+    const groups = [
+      { id: 'light', label: 'Light tiles', dark: false, icons: appIcon.list.filter((i) => i.ice) },
+      { id: 'navy', label: 'Navy tiles', dark: true, icons: appIcon.list.filter((i) => i.navy) },
+    ]
+    const option = (i, dark) => `<button type="button" role="radio" data-app-icon-option="${i.id}" aria-checked="false" tabindex="-1"
+        class="group relative flex flex-col items-center gap-1.5 rounded-lg border border-transparent px-1 py-2 text-center text-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-checked:border-primary aria-checked:bg-accent sm:gap-2 sm:p-3 sm:text-sm">
+        <span class="absolute right-1 top-1 hidden size-5 items-center justify-center rounded-full bg-primary text-primary-foreground group-aria-checked:flex">${icon('check', 'size-3')}</span>
+        <img src="${appIcon.src(i.id, false, dark)}" alt="" class="size-11 rounded-[22.5%] ring-1 ring-border sm:size-14" />
+        <span class="flex flex-col leading-tight"><span class="text-xs tabular-nums text-muted-foreground">${i.id}</span><span class="font-medium">${i.name}</span></span>
+        ${i.id === appIcon.DEFAULT ? '<span data-ui="badge" data-variant="secondary" class="px-1.5 py-0 text-[10px]">Default</span>' : ''}
+      </button>`
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<dialog id="app-icon-dialog" data-ui="dialog" class="max-w-3xl" aria-labelledby="app-icon-title" aria-describedby="app-icon-description">
+        <div data-ui="dialog-header">
+          <h2 id="app-icon-title" data-ui="dialog-title">App icon</h2>
+          <p id="app-icon-description" data-ui="dialog-description">Shown in the header and on the browser tab. Hound Hour, in both groups, matches the light or dark theme. Your choice saves right away.</p>
+        </div>
+        ${groups
+          .map(
+            (g) => `<div class="grid gap-2">
+              <h3 id="app-icon-group-${g.id}" class="text-sm font-medium">${g.label}</h3>
+              <div role="radiogroup" aria-labelledby="app-icon-group-${g.id}" class="grid grid-cols-4 gap-1 sm:gap-2 md:grid-cols-7">${g.icons.map((i) => option(i, g.dark)).join('')}</div>
+            </div>`
+          )
+          .join('')}
+        <div data-ui="dialog-footer">
+          <button type="button" data-ui="button" data-dialog-cancel>Done</button>
+        </div>
+        <button type="button" data-ui="dialog-close" data-dialog-cancel>${icon('x')}<span class="sr-only">Close</span></button>
+      </dialog>`
+    )
+    const dialog = document.getElementById('app-icon-dialog')
+    applyAppIcon()
+    const choose = (b) => {
+      b.focus()
+      if (b.dataset.appIconOption !== settings.appIcon) settingsStore.set({ appIcon: b.dataset.appIconOption })
+    }
+    dialog.addEventListener('click', (event) => {
+      const option = event.target.closest('[data-app-icon-option]')
+      if (option) choose(option)
+      else if (event.target.closest('[data-dialog-cancel]')) dialog.close()
+      else if (event.target === dialog) {
+        // A click on the backdrop lands on the dialog itself, outside its box.
+        const r = dialog.getBoundingClientRect()
+        if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.close()
+      }
+    })
+    // Arrow keys move through a group's grid and choose, as in a radio group; Home and End jump.
+    dialog.addEventListener('keydown', (event) => {
+      const group = event.target.closest?.('[role="radiogroup"]')
+      if (!group) return
+      const options = [...group.querySelectorAll('[data-app-icon-option]')]
+      const i = options.indexOf(event.target)
+      const columns = options.filter((b) => b.offsetTop === options[0].offsetTop).length
+      const next = { ArrowLeft: i - 1, ArrowRight: i + 1, ArrowUp: i - columns, ArrowDown: i + columns, Home: 0, End: options.length - 1 }[event.key]
+      if (next === undefined) return
+      event.preventDefault()
+      choose(options[(next + options.length) % options.length])
+    })
+  }
+
+  // Opens the picker; closing it returns focus to the control that opened it.
+  function openIconPicker() {
+    const dialog = document.getElementById('app-icon-dialog')
+    const opener = document.activeElement
+    dialog.addEventListener('close', () => opener?.isConnected && opener.focus(), { once: true })
+    dialog.showModal()
+    // Hound Hour is checked in both groups; focus the one for the page's theme.
+    const group = document.documentElement.classList.contains('dark') ? 'navy' : 'light'
+    ;(dialog.querySelector(`#app-icon-group-${group} + * [aria-checked="true"]`) ?? dialog.querySelector('[aria-checked="true"]')).focus()
+  }
+
   function navLinks(mobile) {
     return NAV.filter((n) => !n.admin || isAdmin())
       .map((n) => {
@@ -172,9 +275,10 @@
     const header = document.getElementById('app-header')
     header.innerHTML = `
       <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
-        <a href="${link('timer.html')}" data-frame-link="timer.html" class="mr-1 flex shrink-0 items-center gap-2 rounded-md text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Snowtime home">
-          ${icon('clock', 'size-5')}<span class="hidden sm:inline">Snowtime</span>
-        </a>
+        <button type="button" data-frame-app-icon class="mr-1 flex shrink-0 items-center gap-2 rounded-md text-base font-bold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-haspopup="dialog" aria-label="Snowtime: change app icon" title="Change app icon">
+          ${appIconImg('small', 'size-7')}<span class="hidden sm:inline">Snowtime</span>
+        </button>
         <span class="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden="true"></span>
         <button type="button" data-ui="button" data-variant="ghost" data-size="sm" class="min-w-0 max-w-[13rem] justify-start gap-2 px-2 lg:max-w-[16rem]"
           popovertarget="org-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Organization: ${escapeHtml(org.name)}">
@@ -249,6 +353,7 @@
   }
 
   document.addEventListener('click', (event) => {
+    if (event.target.closest('[data-frame-app-icon]')) return openIconPicker()
     const orgItem = event.target.closest('[data-frame-org]')
     const themeItem = event.target.closest('[data-frame-theme]')
     if (orgItem && orgItem.dataset.frameOrg !== orgId) {
@@ -270,6 +375,7 @@
     )
     renderBar(title)
     renderHeader()
+    renderIconDialog()
     // The page's own prototype controls (fixtures, variants) move into the bar, before the role.
     const controls = document.getElementById('prototype-controls')
     if (controls) document.getElementById('prototype-bar-controls').prepend(...controls.children)
@@ -304,6 +410,8 @@
       return organizations.find((o) => o.id === orgId)
     },
     isAdmin,
+    openIconPicker,
+    appIconImg,
     link,
     escapeHtml,
     icon,

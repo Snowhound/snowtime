@@ -1,53 +1,73 @@
-/* Snowtime theme tokens, copied from src/styles.css. */
+/* Snowtime brand tokens: a proposal ahead of src/styles.css, derived from the palette on
+   design/input/asset-sytem-icon-picker.png. Contrast ratios are in README.md. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.871 0.006 286.286);
+  --background: #f4faff;
+  --foreground: #0f1f2e;
+  --card: #ffffff;
+  --card-foreground: #0f1f2e;
+  --popover: #ffffff;
+  --popover-foreground: #0f1f2e;
+  --primary: #2f6797;
+  --primary-foreground: #ffffff;
+  --secondary: #d7ecfc;
+  --secondary-foreground: #0f1f2e;
+  --muted: #e4f1fc;
+  --muted-foreground: #3f6488;
+  --accent: #d7ecfc;
+  --accent-foreground: #0f1f2e;
+  --destructive: #dc0010;
+  --destructive-foreground: #ffffff;
+  --border: #c9e0f3;
+  --input: #6a8cae;
+  --ring: #3b82b8;
   --radius: 0.625rem;
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.141 0.005 285.823);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.141 0.005 285.823);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.274 0.006 286.033);
-  --input: oklch(0.274 0.006 286.033);
-  --ring: oklch(0.442 0.017 285.786);
+  --background: #0b1622;
+  --foreground: #e6f4ff;
+  --card: #142438;
+  --card-foreground: #e6f4ff;
+  --popover: #1e2f45;
+  --popover-foreground: #e6f4ff;
+  --primary: #a7d0fb;
+  --primary-foreground: #0b1622;
+  --secondary: #1e2f45;
+  --secondary-foreground: #e6f4ff;
+  --muted: #1e2f45;
+  --muted-foreground: #9dbbd9;
+  --accent: #2a4160;
+  --accent-foreground: #e6f4ff;
+  --destructive: #ff6467;
+  --destructive-foreground: #0b1622;
+  --border: #263b54;
+  --input: #587ba3;
+  --ring: #4f7fb9;
+}
+
+/* Pages tint the body with bg-muted/40; this keeps the background under it. With its own
+   background, html no longer takes the body's, so the body fills the viewport instead. */
+html {
+  background: var(--background);
+}
+
+body {
+  min-height: 100dvh;
+}
+
+/* Brand font: Plus Jakarta Sans (SIL OFL 1.1), the variable font the wordmark was outlined from. */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../design/brand-assets/fonts/PlusJakartaSans%5Bwght%5D.ttf') format('truetype');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
 }
 
 body {
   font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
-    'Droid Sans', 'Helvetica Neue', sans-serif;
+    'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .prototype-icon {
@@ -100,24 +120,25 @@ body {
 }
 
 /* Project and chart colors: categorical slots validated with the dataviz palette checks (light
-   surface #ffffff, dark #09090b). project.color stores the light hex; dark mode uses its dark step. */
+   card #ffffff and page #eef6fe; dark card #142438, page #132030, and popover #1e2f45).
+   project.color stores the light hex; dark mode uses its dark step. */
 :root {
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --series-3: #1baf7a;
-  --series-4: #eda100;
-  --series-5: #e87ba4;
-  --series-6: #008300;
-  --series-7: #4a3aa7;
-  --series-8: #e34948;
+  --series-1: #3b82b8;
+  --series-2: #d9703f;
+  --series-3: #1f9e8a;
+  --series-4: #d59a1c;
+  --series-5: #c9759f;
+  --series-6: #4f8f3a;
+  --series-7: #5a4fa8;
+  --series-8: #c9514f;
 }
 .dark {
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --series-3: #199e70;
-  --series-4: #c98500;
-  --series-5: #d55181;
-  --series-6: #008300;
-  --series-7: #9085e9;
-  --series-8: #e66767;
+  --series-1: #357cb2;
+  --series-2: #cc6433;
+  --series-3: #119884;
+  --series-4: #af7c00;
+  --series-5: #ba6791;
+  --series-6: #498934;
+  --series-7: #6e68b2;
+  --series-8: #c24b49;
 }

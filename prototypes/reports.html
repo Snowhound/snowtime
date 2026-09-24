@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
     <script src="prototype-theme.js"></script>
     <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
     <script src="app-frame.js"></script>
     <script src="app-data.js"></script>
     <style type="text/tailwindcss">
@@ -157,7 +158,7 @@
               <h2 id="outline-title" data-ui="card-title" class="text-base"></h2>
               <p id="outline-note" data-ui="card-description" class="empty:hidden"></p>
             </div>
-            <p id="outline-total" class="font-mono text-2xl tabular-nums"></p>
+            <p id="outline-total" class="text-2xl tabular-nums"></p>
           </div>
           <div id="outline" data-ui="card-content"></div>
         </div>
@@ -436,7 +437,7 @@
           return
         }
         legend.innerHTML = series
-          .map((s) => `<li class="flex min-w-0 max-w-full items-center gap-1.5">${dot(s.color)}<span class="truncate sm:max-w-56">${escapeHtml(s.name)}</span><span class="font-mono tabular-nums text-muted-foreground">${hm(s.total)}</span></li>`)
+          .map((s) => `<li class="flex min-w-0 max-w-full items-center gap-1.5">${dot(s.color)}<span class="truncate sm:max-w-56">${escapeHtml(s.name)}</span><span class="tabular-nums text-muted-foreground">${hm(s.total)}</span></li>`)
           .join('')
 
         const W = Math.max(280, chart.clientWidth || 600)
@@ -488,8 +489,8 @@
             <tbody data-ui="table-body">${bs
               .map(
                 (b, i) => `<tr data-ui="table-row"><td data-ui="table-cell" class="whitespace-nowrap">${escapeHtml(bucketLabel(b, false))}</td>${series
-                  .map((s) => `<td data-ui="table-cell" class="text-right font-mono tabular-nums ${s.byBucket.get(b) ? '' : 'text-muted-foreground'}">${s.byBucket.get(b) ? hm(s.byBucket.get(b)) : '—'}</td>`)
-                  .join('')}<td data-ui="table-cell" class="text-right font-mono font-medium tabular-nums">${hm(totals[i])}</td></tr>`
+                  .map((s) => `<td data-ui="table-cell" class="text-right tabular-nums ${s.byBucket.get(b) ? '' : 'text-muted-foreground'}">${s.byBucket.get(b) ? hm(s.byBucket.get(b)) : '—'}</td>`)
+                  .join('')}<td data-ui="table-cell" class="text-right font-medium tabular-nums">${hm(totals[i])}</td></tr>`
               )
               .join('')}</tbody>
           </table></div>`
@@ -502,11 +503,11 @@
         const i = +band.dataset.bucket
         const b = chartModel.bs[i]
         const rows = chartModel.series.map((s) => ({ s, ms: s.byBucket.get(b) ?? 0 })).filter((x) => x.ms > 0)
-        tooltip.innerHTML = `<p class="mb-1.5 font-medium">${escapeHtml(bucketLabel(b, false))} · <span class="font-mono tabular-nums">${hm(chartModel.totals[i])}</span></p>${
+        tooltip.innerHTML = `<p class="mb-1.5 font-medium">${escapeHtml(bucketLabel(b, false))} · <span class="tabular-nums">${hm(chartModel.totals[i])}</span></p>${
           rows.length
             ? `<ul class="grid gap-1">${rows
                 .reverse()
-                .map(({ s, ms }) => `<li class="flex min-w-0 items-center gap-2"><span class="w-10 shrink-0 font-mono font-medium tabular-nums">${hm(ms)}</span>${dot(s.color)}<span class="min-w-0 truncate text-muted-foreground">${escapeHtml(s.name)}</span></li>`)
+                .map(({ s, ms }) => `<li class="flex min-w-0 items-center gap-2"><span class="w-10 shrink-0 font-medium tabular-nums">${hm(ms)}</span>${dot(s.color)}<span class="min-w-0 truncate text-muted-foreground">${escapeHtml(s.name)}</span></li>`)
                 .join('')}</ul>`
             : '<p class="text-muted-foreground">No time</p>'
         }`
@@ -540,7 +541,7 @@
               .map(
                 (r) => `<li class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 text-sm">
                   <span class="flex min-w-0 items-center gap-2">${r.color ? dot(r.color) : ''}<span class="truncate ${r.muted ? 'text-muted-foreground' : ''}">${escapeHtml(r.name)}</span>${r.archived ? '<span data-ui="badge" data-variant="outline" class="px-1.5 text-[10px]">Archived</span>' : ''}</span>
-                  <span class="flex items-baseline gap-3"><span class="w-10 text-right text-xs text-muted-foreground">${Math.round((r.total / total) * 100)}%</span><span class="w-14 text-right font-mono tabular-nums">${hm(r.total)}</span></span>
+                  <span class="flex items-baseline gap-3"><span class="w-10 text-right text-xs text-muted-foreground">${Math.round((r.total / total) * 100)}%</span><span class="w-14 text-right tabular-nums">${hm(r.total)}</span></span>
                   <div class="col-span-2">${shareBar(r.total / total, r.color)}</div>
                 </li>`
               )
@@ -563,16 +564,16 @@
         const grand = segs.reduce((a, s) => a + s.ms, 0)
         const head = (b) => `<th data-ui="table-head" class="min-w-16 whitespace-nowrap text-right ${isCurrent(b) ? 'text-foreground' : ''}" scope="col">${escapeHtml(bucketLabel(b, true))}${state.unit === 'day' && daysInRange() > 7 ? `<span class="block text-[10px] font-normal">${escapeHtml(fmt({ weekday: 'narrow' }).format(b + 12 * HOUR))}</span>` : ''}</th>`
         const cell = (ms, b, extra = '') =>
-          `<td data-ui="table-cell" class="whitespace-nowrap text-right font-mono tabular-nums ${isCurrent(b) ? 'bg-muted/50' : ''} ${ms ? '' : 'text-muted-foreground/50'} ${extra}">${ms ? hm(ms) : '·'}</td>`
+          `<td data-ui="table-cell" class="whitespace-nowrap text-right tabular-nums ${isCurrent(b) ? 'bg-muted/50' : ''} ${ms ? '' : 'text-muted-foreground/50'} ${extra}">${ms ? hm(ms) : '·'}</td>`
         el.innerHTML = `<div class="relative w-full overflow-auto border-t">
           <table data-ui="table" class="timesheet">
             <thead data-ui="table-header"><tr data-ui="table-row"><th data-ui="table-head" class="min-w-36 max-w-40 pl-6 sm:max-w-64" scope="col">${escapeHtml(groupNoun()[0].toUpperCase() + groupNoun().slice(1))}</th>${bs.map(head).join('')}<th data-ui="table-head" class="pr-6 text-right" scope="col">Total</th></tr></thead>
             <tbody data-ui="table-body">${rows
               .map(
-                (r) => `<tr data-ui="table-row"><th data-ui="table-cell" scope="row" class="max-w-40 pl-6 text-left font-normal sm:max-w-64"><span class="flex min-w-0 items-center gap-2">${r.color ? dot(r.color) : ''}<span class="truncate ${r.muted ? 'text-muted-foreground' : ''}" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span></span></th>${bs.map((b) => cell(r.byBucket.get(b) ?? 0, b)).join('')}<td data-ui="table-cell" class="pr-6 text-right font-mono font-medium tabular-nums">${hm(r.total)}</td></tr>`
+                (r) => `<tr data-ui="table-row"><th data-ui="table-cell" scope="row" class="max-w-40 pl-6 text-left font-normal sm:max-w-64"><span class="flex min-w-0 items-center gap-2">${r.color ? dot(r.color) : ''}<span class="truncate ${r.muted ? 'text-muted-foreground' : ''}" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span></span></th>${bs.map((b) => cell(r.byBucket.get(b) ?? 0, b)).join('')}<td data-ui="table-cell" class="pr-6 text-right font-medium tabular-nums">${hm(r.total)}</td></tr>`
               )
               .join('')}
-              <tr data-ui="table-row" class="border-t-2 font-medium hover:bg-transparent"><th data-ui="table-cell" scope="row" class="pl-6 text-left">Total</th>${bs.map((b) => cell(colTotal(b), b, 'font-medium')).join('')}<td data-ui="table-cell" class="pr-6 text-right font-mono tabular-nums">${hm(grand)}</td></tr>
+              <tr data-ui="table-row" class="border-t-2 font-medium hover:bg-transparent"><th data-ui="table-cell" scope="row" class="pl-6 text-left">Total</th>${bs.map((b) => cell(colTotal(b), b, 'font-medium')).join('')}<td data-ui="table-cell" class="pr-6 text-right tabular-nums">${hm(grand)}</td></tr>
             </tbody>
           </table></div>`
       }
@@ -590,7 +591,7 @@
         if (!rows.length) return (el.innerHTML = emptyState())
         const line = (r, of, level) => `<div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 ${level ? 'text-sm' : ''}">
             <span class="flex min-w-0 items-center gap-2">${r.color ? dot(r.color) : ''}<span class="truncate ${level ? 'text-muted-foreground' : 'font-medium'} ${r.muted ? 'text-muted-foreground' : ''}">${escapeHtml(r.name)}</span>${r.archived ? '<span data-ui="badge" data-variant="outline" class="px-1.5 text-[10px]">Archived</span>' : ''}</span>
-            <span class="flex items-baseline gap-3"><span class="w-10 text-right text-xs text-muted-foreground">${Math.round((r.total / of) * 100)}%</span><span class="w-14 text-right font-mono tabular-nums">${hm(r.total)}</span></span>
+            <span class="flex items-baseline gap-3"><span class="w-10 text-right text-xs text-muted-foreground">${Math.round((r.total / of) * 100)}%</span><span class="w-14 text-right tabular-nums">${hm(r.total)}</span></span>
             <div class="col-span-2">${shareBar(r.total / of, r.color)}</div>
           </div>`
         el.innerHTML = `<ul class="divide-y rounded-md border">${rows

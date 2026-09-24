@@ -16,7 +16,8 @@ prototype, include its full absolute `file:///` URL so it can be opened directly
 | [ui.js](ui.js)                           | Solid-UI component classes, applied from `data-ui`          |
 | tailwind-merge 3.7.0 (loaded by `ui.js`) | Class merging, same as the app's `cn()`                     |
 | [prototype-theme.js](prototype-theme.js) | Dark variant, semantic color/radius mappings, base layer    |
-| [prototype.css](prototype.css)           | Snowtime theme tokens from `src/styles.css`, shared styles  |
+| [prototype.css](prototype.css)           | Brand font and tokens (ahead of `src/styles.css`), shared styles |
+| [app-icon.js](app-icon.js)               | App icon concepts, header mark images, and the favicon      |
 | [app-frame.js](app-frame.js)             | App frame, user settings, icons, and markup helpers         |
 | [app-data.js](app-data.js)               | Shared fictional organization, generated entries, zone helpers |
 | Inline Lucide SVG paths                  | Icons, copied from `lucide-static` (pinned)                 |
@@ -116,9 +117,82 @@ functions. Do not port prototype JS.
   `lucide-solid` once installed). Keep [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) with the
   files.
 - Only add to `prototype.css` / `prototype-theme.js` what is useful across prototypes; keep
-  feature styles in the HTML. When `src/styles.css` tokens change, update `prototype.css`.
+  feature styles in the HTML. The tokens in `prototype.css` are a proposal ahead of
+  `src/styles.css`, so don't copy `src/styles.css` over them; task 017 ports them to the app.
+  See [Brand font and colors](#brand-font-and-colors).
 - Keep each view in its own HTML file. The app frame is the shared exception, so every
   signed-in page has the same header; see [App frame](#app-frame).
+
+## Brand font and colors
+
+The prototypes try the draft brand from `design/brand-assets/` (task 029). `src/styles.css`
+still has the neutral Solid-UI theme until task 017 ports these values.
+
+UI text uses Plus Jakarta Sans (SIL OFL 1.1), the font the wordmark was outlined from.
+`prototype.css` loads the variable font from `design/brand-assets/fonts/` with `@font-face`
+(weights 200 to 800), and the `font-family` stack keeps the system fonts as fallback.
+Its default digits are proportional, but `tabular-nums` switches to digits of one width, so
+durations and table numbers stay aligned and the running clock doesn't jitter. Times and
+durations therefore use the brand font with `tabular-nums` instead of `font-mono`; only the
+invitation link keeps `font-mono`, because it's a URL.
+
+The tokens come from the board's swatches (`design/input/asset-sytem-icon-picker.png`), which
+are approximate readings of a generated image, not Snowhound brand values. Primary is a deep
+slate blue, the `action` color in `design/brand-assets/theme-tokens.css`, rather than the board's
+navy: navy primary buttons read as near-black, like the neutral theme. Navy stays the text color.
+Icy blue (`#7fb3e6`) is too strong for a hover and too light for text
+or borders, so no token uses it. The lowest ratio is the one against the weakest of
+`background`, `card`, `popover`, `muted`, `accent`, and the page tint below; text needs 4.5:1,
+`input` and `ring` 3:1. `border` is decorative and has no minimum.
+
+| Token                       | Light                            | Dark                              | Lowest ratio (light / dark) |
+| --------------------------- | -------------------------------- | --------------------------------- | --------------------------- |
+| `background` / `foreground` | `#f4faff` ice / `#0f1f2e` navy   | `#0b1622` / `#e6f4ff`             | 15.33 / 14.68               |
+| `card` / `-foreground`      | `#ffffff` / navy                 | `#142438` / `#e6f4ff`             | 16.72 / 14.00               |
+| `popover` / `-foreground`   | `#ffffff` / navy                 | `#1e2f45` surface / `#e6f4ff`     | 16.72 / 12.11               |
+| `primary` / `-foreground`   | `#2f6797` / `#ffffff`            | `#a7d0fb` highlight / `#0b1622`   | 5.99 / 11.33                |
+| `secondary` / `-foreground` | `#d7ecfc` pale blue / navy       | `#1e2f45` / `#e6f4ff`             | 13.77 / 12.11               |
+| `muted`                     | `#e4f1fc`                        | `#1e2f45`                         | —                           |
+| `muted-foreground`          | `#3f6488`                        | `#9dbbd9`                         | 5.10 / 5.21                 |
+| `accent` / `-foreground`    | `#d7ecfc` / navy                 | `#2a4160` / `#e6f4ff`             | 13.77 / 9.27                |
+| `border`                    | `#c9e0f3`                        | `#263b54`                         | —                           |
+| `input`                     | `#6a8cae`                        | `#587ba3`                         | 3.22 / 3.09                 |
+| `ring`                      | `#3b82b8` slate blue             | `#4f7fb9` accent                  | 3.80 / 3.27                 |
+| `destructive` / `-foreground` | `#dc0010` / `#ffffff`          | `#ff6467` / `#0b1622`             | 4.75 / 5.69; 5.18 / 6.31 on the button |
+
+Colors that aren't board swatches, and why:
+
+- `primary` `#2f6797`: slate blue darkened until white text on it is 5.99:1; as text or a
+  checkbox border it's 5.49:1 on the page tint.
+- `muted-foreground` `#3f6488`: slate blue is 3.94:1 on ice, so it's darkened to 5.10:1 at
+  its weakest, on `accent`. Dark `#9dbbd9` sits between highlight and surface, 5.21:1 on
+  `accent`.
+- `muted` `#e4f1fc`: between pale blue and ice, so muted rows and the page tint differ from
+  `secondary` and `accent`.
+- `input` `#6a8cae`: the first try, `#7f9fbe`, was 2.53:1 on the page tint; this is 3.22:1.
+  Dark `#587ba3` is 3.09:1 on `popover`.
+- `destructive` `#dc0010`: the old red, `#e7000b`, was 4.37:1 on the page tint; this is
+  4.75:1. Dark `destructive-foreground` is `#0b1622`, because white on `#ff6467` is 2.89:1.
+- Dark `card` `#142438`: between background and surface, so cards lift off the page.
+- Dark `accent` `#2a4160`: lighter than `popover`, so menu items show their hover (9.27:1
+  with `accent-foreground`).
+- `border` `#c9e0f3` and dark `#263b54`: tints of pale blue and surface for dividers.
+
+The project and chart colors lean toward the brand too; see [App frame](#app-frame).
+
+Signed-in pages tint the body with `bg-muted/40`. `prototype.css` gives `html` the
+`background` color, so the tint sits on it instead of the browser's white or dark canvas; the
+page tint is `#eef6fe` light and `#132030` dark. The auth split layout's brand panel uses
+`primary` in light mode and `card` in dark mode.
+
+Checked in Chrome on 2026-09-24, before the blue primary and the brand series colors, at 1440,
+850, and 390 px, light and dark, every page with
+every layout, fixture, and auth screen (306 states): no horizontal page overflow, a visible
+focus ring, and no browser errors. axe's color-contrast rule passes in every state. Before
+the brand tokens it failed on 33 elements at 1440 px, mostly the page title, prototype bar,
+and muted text in dark mode, plus inactive tabs in light mode. Two axe findings not about
+color remain, as before: `aria-prohibited-attr` on the Reports summary chart's bar groups and
+`scrollable-region-focusable` on the timesheet at 390 px.
 
 ## App frame
 
@@ -127,7 +201,8 @@ functions. Do not port prototype JS.
 
 - A dashed **prototype bar** with the page title, the page's own controls (move them in with a
   `<div id="prototype-controls">`), and a role switcher (member, team lead, admin, owner).
-- The **app header**: the clock mark, the organization switcher (a dropdown menu of the user's
+- The **app header**: the app icon and name, a button that opens the
+  [app icon picker](#app-icon), the organization switcher (a dropdown menu of the user's
   organizations), navigation (Timer, Reports, Projects, and Organization for admins and owners
   only), and a user menu (Profile, Settings, theme, Sign out). Below 768 px the navigation moves
   to a second header row of four equal-width links, so every page stays one tap away without a
@@ -137,9 +212,10 @@ It also provides:
 
 | API                                  | Use                                                            |
 | ------------------------------------ | -------------------------------------------------------------- |
-| `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`. The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
+| `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`, `appIcon`. The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
 | `appFrame.on('settings' \| 'role' \| 'org', fn)` | Re-render when settings, the prototype role, or the organization change |
 | `appFrame.role`, `appFrame.isAdmin()`, `appFrame.org`, `appFrame.user` | Prototype session |
+| `appFrame.openIconPicker()`, `appFrame.appIconImg(size, cls)` | Open the app icon dialog; an `<img>` of the chosen icon that follows changes |
 | `appFrame.setUser(patch)`            | Swap the header's user, for long-content fixtures              |
 | `appFrame.link(href)`                | A link that keeps `?role=` and `?org=`                         |
 | `appFrame.escapeHtml`, `appFrame.icon(name)`, `appFrame.initials` | Markup helpers; `icon` uses the Lucide sprite the frame injects |
@@ -149,6 +225,56 @@ between prototypes. Frame links with `data-frame-link="<href>"` keep them. Switc
 organization changes the header only; page data stays the same fictional Snowhound data. The
 signed-in user is Anna Kask (`anna@snowhound.eu`), matching the invitation in `auth.html`.
 
+### App icon
+
+The header shows the user's app icon, one of the 12 concepts in `design/brand-assets/`
+(task 029), and "Snowtime" in the brand font. Concept `02`, Hound Hour, is the default. The
+mark is a button that opens the app icon dialog; the Timer link is the way home. Settings >
+Preferences > Appearance opens the same dialog from its **Change** button.
+
+Each concept is drawn on either an ice tile or a navy tile, and reads best on a page of the
+same kind, so the dialog groups them: **Light tiles** (01, 03, 06, 08, 09, 11) and **Navy
+tiles** (04, 05, 07, 10, 12). Hound Hour has both tiles and follows the theme: the ice tile on
+light pages, the navy tile on dark ones. It leads both groups, and choosing it in either is the
+same choice, so both copies show as checked.
+
+Each group is its own radio group, so at most one option per group is checked; an option shows
+its number, name, and icon, and `02` has a Default badge. Tab moves between the groups, arrow
+keys move through a group's grid and choose, Home and End jump, Escape or Done closes it, and
+focus returns to the control that opened it. On open, focus goes to the chosen option, in the
+group that matches the page's theme when it's Hound Hour. A choice saves right away,
+like the other settings, and updates the header mark, the Settings preview, and the favicon.
+
+The choice is the `appIcon` setting, `'01'` to `'12'`; an unset or unknown value falls back to
+`'02'`. [app-icon.js](app-icon.js) holds the concept list, reads the setting, and sets the
+favicon and every `<img data-app-icon>`. Load it in `<head>` before `app-frame.js`, so the tab
+shows the icon before the page renders. `auth.html` has no frame and loads only `app-icon.js`.
+Other tabs follow a change through the `storage` event.
+
+The prototypes reference the exports in place instead of copying them:
+
+| Use                                   | Path under `design/brand-assets/`         |
+| ------------------------------------- | ----------------------------------------- |
+| Header and auth card mark (28 px)     | `icons-small/<NN-name>.svg`               |
+| Dialog, Settings, auth brand panel    | `icons/<NN-name>.svg`                     |
+| Favicon                               | `favicon/variants/<NN-name>-16.png`, `-32.png` |
+| Hound Hour on light pages             | the same paths with `02-hound-hour-light`  |
+
+Page images follow the page's theme, and `app-frame.js` and `auth.html` call `appIcon.apply()`
+again when it changes. The favicon follows the system's color scheme instead, because the
+browser's tab strip does, not the page.
+
+The small icons fill more of their tile, so they suit 28 px and the favicon. Tiles are navy or
+ice, so a `ring-border` outline with the exports' corner radius (22.5%) shows light tiles on the
+light theme and navy tiles on the dark one.
+
+Checked in Chrome on 2026-09-24 at 1440, 850, and 390 px, light and dark: the header mark,
+the dialog (it fits 390 × 844 without scrolling the page), keyboard use and focus return, an
+invalid stored value falling back to `02`, all 24 favicon PNGs loading, Hound Hour switching
+tiles with the theme on the signed-in pages and `auth.html`, the favicon and marks following a
+change in another tab, and no browser errors. Headless Chrome
+has no tab strip, so the 16 px favicon in a real tab still needs a look in a headed browser.
+
 [app-data.js](app-data.js) holds the fictional Snowhound organization: nine members, three teams
 (Platform, Design, Client services) with leads, the timer's projects plus an archived one, and
 about ten weeks of generated entries in Tallinn time, including a few that cross midnight and
@@ -156,10 +282,24 @@ Anna's running timer. `appData.organization({ role, long })` returns fresh copie
 Anna leads Platform. `appData.tz` computes day and week starts in any IANA zone, DST included.
 
 Project colors come from eight categorical slots (`--series-1` to `--series-8` in
-[prototype.css](prototype.css)), validated for lightness, chroma, and color-vision separation on
-the light and dark surfaces. `project.color` stores the light hex, and dark mode uses each slot's
-dark step. Light mode's yellow, aqua, and magenta are below 3:1 against the surface, so charts
-always carry a legend or labels and a table view.
+[prototype.css](prototype.css)), in the same fixed order of hue families as the dataviz reference
+palette but in cooler, muted steps that suit the brand: slate blue (the brand's `#3b82b8`),
+terracotta, teal, ochre, rose, moss, indigo, and brick. A palette of blues alone would fail,
+because neighboring series must stay distinct, including under color-vision deficiency.
+
+| Mode  | Slots 1 to 8                                                                   |
+| ----- | ------------------------------------------------------------------------------ |
+| Light | `#3b82b8` `#d9703f` `#1f9e8a` `#d59a1c` `#c9759f` `#4f8f3a` `#5a4fa8` `#c9514f` |
+| Dark  | `#357cb2` `#cc6433` `#119884` `#af7c00` `#ba6791` `#498934` `#6e68b2` `#c24b49` |
+
+Each dark step keeps its light slot's hue, with lightness and chroma set so it reaches 3.2:1 on
+the dark card. The dataviz validator passes both modes against the light card `#ffffff` and page
+`#eef6fe`, and the dark card `#142438`, page `#132030`, and popover `#1e2f45`: lightness band,
+chroma floor, adjacent-pair color-vision separation (worst ΔE 10.4 light, 10.9 dark; target 8),
+and the normal-vision floor (19.5 light, 17.5 dark; floor 15). Below 3:1 are ochre on the light
+card, rose too on the light page, and indigo and brick on the dark popover, so charts always
+carry a legend or labels and a table view, and project dots sit beside their names.
+`project.color` stores the light hex, and dark mode uses each slot's dark step.
 
 ## Checks before handoff
 
@@ -222,9 +362,8 @@ between projects.
 
 Checked in Chromium at 1440, 850, and 390 px, light and dark, both tabs and every fixture, as
 member, team lead, and admin: no horizontal page overflow, dialog validation and keyboard use of
-the swatches, and no browser errors. axe reports color contrast on the page title and muted
-text in dark mode; `organization.html` reports the same, because axe composites the body's
-translucent `bg-muted/40` over white.
+the swatches, and no browser errors. axe reports no color-contrast issues since the brand
+tokens (see [Brand font and colors](#brand-font-and-colors)).
 
 ### [organization.html](organization.html) — Organization admin
 
@@ -406,8 +545,8 @@ Omitted: overlap checks between entries, reports, persistence of entries.
 Checked in Chromium at 1440, 850, and 390 px, light and dark, all layouts with summary on and off:
 no horizontal page overflow, settings survive reload, dialog and inline validation and saving
 work, failed saves roll back, focus stays on the edited field across saves, the date popover
-saves on Enter and cancels on Escape, and no browser errors. axe reports color contrast on the page title and prototype bar, as
-for `projects.html`, and on the Add entry and Stop buttons.
+saves on Enter and cancels on Escape, and no browser errors. axe reports no color-contrast
+issues since the brand tokens.
 
 ### [auth.html](auth.html) — Sign-in flows
 

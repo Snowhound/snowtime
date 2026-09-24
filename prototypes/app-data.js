@@ -8,14 +8,14 @@
   // Project colors: the categorical slots validated in docs (see prototypes/README.md). The app
   // stores the light hex in project.color; prototype.css maps each slot to its dark step.
   const PALETTE = [
-    { id: 'blue', light: '#2a78d6', dark: '#3987e5' },
-    { id: 'orange', light: '#eb6834', dark: '#d95926' },
-    { id: 'aqua', light: '#1baf7a', dark: '#199e70' },
-    { id: 'yellow', light: '#eda100', dark: '#c98500' },
-    { id: 'magenta', light: '#e87ba4', dark: '#d55181' },
-    { id: 'green', light: '#008300', dark: '#008300' },
-    { id: 'violet', light: '#4a3aa7', dark: '#9085e9' },
-    { id: 'red', light: '#e34948', dark: '#e66767' },
+    { id: 'blue', light: '#3b82b8', dark: '#357cb2' },
+    { id: 'terracotta', light: '#d9703f', dark: '#cc6433' },
+    { id: 'teal', light: '#1f9e8a', dark: '#119884' },
+    { id: 'ochre', light: '#d59a1c', dark: '#af7c00' },
+    { id: 'rose', light: '#c9759f', dark: '#ba6791' },
+    { id: 'moss', light: '#4f8f3a', dark: '#498934' },
+    { id: 'indigo', light: '#5a4fa8', dark: '#6e68b2' },
+    { id: 'brick', light: '#c9514f', dark: '#c24b49' },
   ]
   const colorVar = (hex) => {
     const i = PALETTE.findIndex((c) => c.light === hex)
@@ -43,21 +43,21 @@
 
   // Same ids and names as timer.html. `teams` is project_team; empty means the whole organization.
   const PROJECTS = [
-    { id: 'p1', name: 'Snowtime', color: '#2a78d6', teams: ['t-platform'], archivedAt: null },
-    { id: 'p2', name: 'Client portal', color: '#1baf7a', teams: ['t-client', 't-design'], archivedAt: null },
-    { id: 'p3', name: 'Internal', color: '#eda100', teams: [], archivedAt: null },
-    { id: 'p4', name: 'Nordic Logistics – warehouse management system migration', color: '#e34948', teams: ['t-client', 't-platform'], archivedAt: null },
-    { id: 'p5', name: 'Design system', color: '#4a3aa7', teams: ['t-design'], archivedAt: null },
-    { id: 'p6', name: 'Website 2025', color: '#e87ba4', teams: [], archivedAt: Date.parse('2026-06-30T12:00:00Z') },
+    { id: 'p1', name: 'Snowtime', color: '#3b82b8', teams: ['t-platform'], archivedAt: null },
+    { id: 'p2', name: 'Client portal', color: '#1f9e8a', teams: ['t-client', 't-design'], archivedAt: null },
+    { id: 'p3', name: 'Internal', color: '#d59a1c', teams: [], archivedAt: null },
+    { id: 'p4', name: 'Nordic Logistics – warehouse management system migration', color: '#c9514f', teams: ['t-client', 't-platform'], archivedAt: null },
+    { id: 'p5', name: 'Design system', color: '#5a4fa8', teams: ['t-design'], archivedAt: null },
+    { id: 'p6', name: 'Website 2025', color: '#c9759f', teams: [], archivedAt: Date.parse('2026-06-30T12:00:00Z') },
   ]
 
   const LONG_PROJECTS = [
-    { id: 'p7', name: 'Põhjamaade Logistika – tarneahela nähtavuse platvormi arendus ja integratsioonid', color: '#eb6834', teams: ['t-platform', 't-client', 't-design'], archivedAt: null },
-    { id: 'p8', name: 'Accessibility audit for the public customer self-service portal (WCAG 2.2 AA)', color: '#008300', teams: ['t-design'], archivedAt: null },
-    { id: 'p9', name: 'Data warehouse', color: '#2a78d6', teams: [], archivedAt: null },
-    { id: 'p10', name: 'Security review', color: '#e87ba4', teams: ['t-platform'], archivedAt: null },
-    { id: 'p11', name: 'Mobile app spike', color: '#1baf7a', teams: ['t-platform'], archivedAt: null },
-    { id: 'p12', name: 'Hiring', color: '#eda100', teams: [], archivedAt: null },
+    { id: 'p7', name: 'Põhjamaade Logistika – tarneahela nähtavuse platvormi arendus ja integratsioonid', color: '#d9703f', teams: ['t-platform', 't-client', 't-design'], archivedAt: null },
+    { id: 'p8', name: 'Accessibility audit for the public customer self-service portal (WCAG 2.2 AA)', color: '#4f8f3a', teams: ['t-design'], archivedAt: null },
+    { id: 'p9', name: 'Data warehouse', color: '#3b82b8', teams: [], archivedAt: null },
+    { id: 'p10', name: 'Security review', color: '#c9759f', teams: ['t-platform'], archivedAt: null },
+    { id: 'p11', name: 'Mobile app spike', color: '#1f9e8a', teams: ['t-platform'], archivedAt: null },
+    { id: 'p12', name: 'Hiring', color: '#d59a1c', teams: [], archivedAt: null },
   ]
   const LONG_MEMBERS = [
     { id: 'u-annabel', name: 'Annabel-Katariina von Löwenstein-Wertheim-Rosenberg', email: 'annabel-katariina.von.loewenstein-wertheim-rosenberg@snowhound.eu', role: 'member', joined: '2026-04-01' },

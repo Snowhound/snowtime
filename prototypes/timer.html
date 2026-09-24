@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
     <script src="prototype-theme.js"></script>
     <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
     <script src="app-frame.js"></script>
     <style type="text/tailwindcss">
       /* Timer controls share one DOM across designs; only layout changes. */
@@ -122,7 +123,7 @@
             <label for="project" class="sr-only">Project</label>
             <select id="project" data-ui="select" class="sm:w-48"></select>
           </div>
-          <button id="elapsed" type="button" data-ui="button" data-variant="ghost" class="timer-elapsed px-2 font-mono tabular-nums" aria-label="Edit start time" disabled>0:00:00</button>
+          <button id="elapsed" type="button" data-ui="button" data-variant="ghost" class="timer-elapsed px-2 tabular-nums" aria-label="Edit start time" disabled>0:00:00</button>
           <button id="toggle" data-ui="button" class="timer-toggle" type="button"></button>
         </section>
 
@@ -399,7 +400,7 @@
             <div class="col-span-2 -ml-2 min-w-0 md:flex-1">${descriptionInput(e)}</div>
             <div class="-ml-2 min-w-0 md:ml-0 md:w-36 md:shrink-0">${projectMenu(e)}</div>
             <div class="row-start-3 -ml-2 flex shrink-0 items-center gap-1 text-muted-foreground md:ml-0">${datePicker(e)}${timeInput(e, 'start')}<span aria-hidden="true">–</span>${timeInput(e, 'end')}${nextDayMark(e)}</div>
-            ${durationCell(e, 'row-start-3 w-16 shrink-0 text-right font-mono text-sm tabular-nums')}
+            ${durationCell(e, 'row-start-3 w-16 shrink-0 text-right text-sm tabular-nums')}
             <div class="col-start-2 row-start-2 justify-self-end">${actions(e)}</div>
           </div>
           ${rowErrorText(e)}
@@ -412,7 +413,7 @@
             (g) => `<div data-ui="card" class="overflow-hidden">
               <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
                 <h2 class="font-medium">${dayLabel(g.day)}</h2>
-                <span class="font-mono tabular-nums text-muted-foreground">${duration(g.total, false)}</span>
+                <span class="tabular-nums text-muted-foreground">${duration(g.total, false)}</span>
               </header>
               <ul class="divide-y">${g.items.map((e) => cardRow(e, compact)).join('')}</ul>
             </div>`
@@ -426,7 +427,7 @@
             <td data-ui="table-cell" class="max-w-0">${projectMenu(e)}</td>
             <td data-ui="table-cell"><div class="flex items-center gap-1">${datePicker(e)}${timeInput(e, 'start')}</div></td>
             <td data-ui="table-cell"><div class="flex items-center gap-1">${timeInput(e, 'end')}${nextDayMark(e)}</div></td>
-            <td data-ui="table-cell" class="text-right font-mono tabular-nums">${durationCell(e, '')}</td>
+            <td data-ui="table-cell" class="text-right tabular-nums">${durationCell(e, '')}</td>
             <td data-ui="table-cell">${actions(e)}</td>
           </tr>
           <tr data-ui="table-row" data-error-row="${e.id}" class="hover:bg-transparent"${inline.errors[e.id] ? '' : ' hidden'}><td data-ui="table-cell" colspan="6" class="pt-0">${rowErrorText(e)}</td></tr>`
@@ -437,7 +438,7 @@
           .map(
             (g) => `<tr data-ui="table-row" class="bg-muted/50">
                 <th colspan="4" scope="rowgroup" data-ui="table-cell" class="text-left text-xs font-medium">${dayLabel(g.day)}</th>
-                <td data-ui="table-cell" class="text-right font-mono text-xs tabular-nums">${duration(g.total, false)}</td>
+                <td data-ui="table-cell" class="text-right text-xs tabular-nums">${duration(g.total, false)}</td>
                 <td data-ui="table-cell"></td>
               </tr>
               ${g.items.map(tableRow).join('')}`
@@ -517,15 +518,15 @@
         const weekTotal = byProject.reduce((s, x) => s + x.total, 0)
         document.getElementById('summary').innerHTML = `
           <dl class="grid grid-cols-2 gap-3">
-            <div><dt class="text-xs text-muted-foreground">Today</dt><dd class="font-mono text-lg tabular-nums">${duration(sum(startOfDay(now)), false)}</dd></div>
-            <div><dt class="text-xs text-muted-foreground">This week</dt><dd class="font-mono text-lg tabular-nums">${duration(weekTotal, false)}</dd></div>
+            <div><dt class="text-xs text-muted-foreground">Today</dt><dd class="text-lg tabular-nums">${duration(sum(startOfDay(now)), false)}</dd></div>
+            <div><dt class="text-xs text-muted-foreground">This week</dt><dd class="text-lg tabular-nums">${duration(weekTotal, false)}</dd></div>
           </dl>
           ${
             byProject.length
               ? `<ul class="flex flex-col gap-2.5">${byProject
                   .map(
                     ({ p, total }) => `<li class="flex flex-col gap-1 text-xs">
-                      <div class="flex items-center justify-between gap-2"><span class="flex min-w-0 items-center gap-1.5">${dot(p)}<span class="truncate">${escapeHtml(p.name)}</span></span><span class="font-mono tabular-nums text-muted-foreground">${duration(total, false)}</span></div>
+                      <div class="flex items-center justify-between gap-2"><span class="flex min-w-0 items-center gap-1.5">${dot(p)}<span class="truncate">${escapeHtml(p.name)}</span></span><span class="tabular-nums text-muted-foreground">${duration(total, false)}</span></div>
                       <div class="h-1.5 rounded-full bg-muted"><div class="h-full rounded-full" style="width:${(total / weekTotal) * 100}%;background:${p.id === 'none' ? 'var(--muted-foreground)' : p.color}"></div></div>
                     </li>`
                   )

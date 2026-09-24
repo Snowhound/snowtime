@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
     <script src="prototype-theme.js"></script>
     <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
     <script src="app-frame.js"></script>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -95,6 +96,16 @@
             <div data-ui="separator"></div>
             <div class="grid gap-5">
               <h3 class="text-sm font-medium">Appearance</h3>
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex min-w-0 items-center gap-3">
+                  <span id="app-icon-preview"></span>
+                  <div class="grid gap-1">
+                    <span data-ui="label" id="app-icon-label">App icon</span>
+                    <span class="text-sm text-muted-foreground" data-app-icon-name></span>
+                  </div>
+                </div>
+                <button type="button" id="change-app-icon" data-ui="button" data-variant="outline" data-size="sm" aria-label="Change app icon" aria-haspopup="dialog">Change</button>
+              </div>
               <div class="grid gap-2">
                 <span data-ui="label" id="theme-label">Theme</span>
                 <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="theme-label">
@@ -410,6 +421,9 @@
       document.querySelectorAll('[data-setting]').forEach((b) => b.addEventListener('click', () => save({ [b.dataset.setting]: b.dataset.value })))
       document.getElementById('summary-switch').addEventListener('change', (event) => save({ showSummary: event.currentTarget.getAttribute('aria-checked') === 'true' }))
       appFrame.on('settings', renderPreferences)
+      document.getElementById('app-icon-preview').innerHTML = appFrame.appIconImg('large', 'size-10')
+      appIcon.apply(appFrame.settings.get().appIcon)
+      document.getElementById('change-app-icon').addEventListener('click', appFrame.openIconPicker)
 
       function loadFixture(name) {
         const f = fixtures[name]()

@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
     <script src="prototype-theme.js"></script>
     <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
     <script src="app-frame.js"></script>
     <script src="app-data.js"></script>
     <link rel="stylesheet" href="prototype.css" />
@@ -111,7 +112,7 @@
       const { escapeHtml, icon } = appFrame
       const { PALETTE, colorVar, tz: Z } = appData
       const ME = appData.currentUserId
-      const COLOR_NAMES = { blue: 'Blue', orange: 'Orange', aqua: 'Aqua', yellow: 'Yellow', magenta: 'Magenta', green: 'Green', violet: 'Violet', red: 'Red' }
+      const COLOR_NAMES = { blue: 'Blue', terracotta: 'Terracotta', teal: 'Teal', ochre: 'Ochre', rose: 'Rose', moss: 'Moss', indigo: 'Indigo', brick: 'Brick' }
 
       const state = { fixture: 'populated', org: null, entries: [], tab: 'active', search: '' }
       let nextId = 1
@@ -128,10 +129,10 @@
           state.entries = []
         } else {
           // Client services only, so members and team leads outside it don't see it.
-          org.projects.push({ id: 'p-support', name: 'Client support', color: '#eb6834', teams: ['t-client'], archivedAt: null })
+          org.projects.push({ id: 'p-support', name: 'Client support', color: '#d9703f', teams: ['t-client'], archivedAt: null })
           state.entries = appData.generateEntries(org)
           // Created by mistake last week: no time, so it can be deleted.
-          org.projects.push({ id: 'p-new', name: 'Q4 planning', color: '#008300', teams: [], archivedAt: null })
+          org.projects.push({ id: 'p-new', name: 'Q4 planning', color: '#4f8f3a', teams: [], archivedAt: null })
         }
         state.org = org
         render()
