@@ -15,6 +15,14 @@
 Follow the recorded decisions; if a change contradicts one, update the doc in
 the same change or ask first.
 
+## Code conventions
+
+- Icon components end in `Icon`, so JSX shows what they are. Import a Lucide icon as its
+  file name in PascalCase plus `Icon`: `import ClockIcon from 'lucide-solid/icons/clock'`.
+  `bun run icons:check` checks these imports and runs in `bun run test`;
+  `bun run icons:fix` renames them. Name hand-written icons the same way, for example
+  `GoogleIcon`.
+
 ## Commits
 
 - One or two lean sentences, imperative mood.

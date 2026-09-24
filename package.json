@@ -18,7 +18,9 @@
     "db:drift": "bun scripts/db-drift.ts",
     "db:seed": "bun scripts/db-seed.ts",
     "i18n:compile": "paraglide-js compile --project ./project.inlang --silent",
-    "test": "bun run i18n:compile && bun test && vitest run",
+    "icons:check": "bun scripts/icon-names.ts",
+    "icons:fix": "bun scripts/icon-names.ts --fix",
+    "test": "bun run i18n:compile && bun run icons:check && bun test && vitest run",
     "test:server": "bun test",
     "test:components": "vitest run",
     "postinstall": "bun run i18n:compile"
