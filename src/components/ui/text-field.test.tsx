@@ -11,7 +11,11 @@ describe('Solid-UI in the test DOM', () => {
   test('a text field shows its error when invalid', async () => {
     const [value, setValue] = createSignal('')
     render(() => (
-      <TextField value={value()} onChange={setValue} validationState={value() ? 'valid' : 'invalid'}>
+      <TextField
+        value={value()}
+        onChange={setValue}
+        validationState={value() ? 'valid' : 'invalid'}
+      >
         <TextFieldLabel>Name</TextFieldLabel>
         <TextFieldInput />
         <TextFieldErrorMessage>Enter a name.</TextFieldErrorMessage>

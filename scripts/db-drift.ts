@@ -13,7 +13,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const dir = mkdtempSync(join(tmpdir(), 'snowtime-drift-'))
-const env: NodeJS.ProcessEnv = { ...process.env, TURSO_DATABASE_URL: `file:${join(dir, 'drift.db')}` }
+const env: NodeJS.ProcessEnv = {
+  ...process.env,
+  TURSO_DATABASE_URL: `file:${join(dir, 'drift.db')}`,
+}
 delete env.TURSO_AUTH_TOKEN
 
 function drizzleKit(...args: string[]) {

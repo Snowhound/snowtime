@@ -2,21 +2,21 @@
 
 ## Stack
 
-| Concern         | Choice                                                    |
-| --------------- | --------------------------------------------------------- |
-| Framework       | TanStack Start with Solid; Vercel deployment adapter      |
-| Runtime / PM    | Bun (local)                                               |
-| Database        | Turso (libSQL/SQLite) via `@libsql/client`                |
-| ORM             | Drizzle v1 (pinned rc), `"turso"` dialect; query layer only |
-| Migrations      | Hand-written SQL, applied by `drizzle-kit migrate`        |
-| Auth            | Better Auth with the Drizzle adapter; organization plugin with teams (no default team, organization deletion disabled) |
-| Data fetching   | TanStack Query with optimistic updates                    |
-| Forms           | TanStack Form                                             |
-| Validation      | Valibot, shared by forms and server functions             |
-| UI              | Solid-UI + Tailwind; components in `src/components/ui/`, copied from the Solid-UI registry at the commit the prototypes use (`21ba4fa`) |
-| i18n            | English and Estonian; Paraglide JS                        |
-| Testing         | `bun test` for server and database code (`*.test.ts`); Vitest with Solid Testing Library in jsdom for components (`*.test.tsx`); `bunfig.toml` and `vitest.config.ts` keep each runner off the other's files |
-| Client state    | No library; Solid signals/stores and URL search params; user settings on the server (see "User settings") |
+| Concern       | Choice                                                                                                                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Framework     | TanStack Start with Solid; Vercel deployment adapter                                                                                                                                                         |
+| Runtime / PM  | Bun (local)                                                                                                                                                                                                  |
+| Database      | Turso (libSQL/SQLite) via `@libsql/client`                                                                                                                                                                   |
+| ORM           | Drizzle v1 (pinned rc), `"turso"` dialect; query layer only                                                                                                                                                  |
+| Migrations    | Hand-written SQL, applied by `drizzle-kit migrate`                                                                                                                                                           |
+| Auth          | Better Auth with the Drizzle adapter; organization plugin with teams (no default team, organization deletion disabled)                                                                                       |
+| Data fetching | TanStack Query with optimistic updates                                                                                                                                                                       |
+| Forms         | TanStack Form                                                                                                                                                                                                |
+| Validation    | Valibot, shared by forms and server functions                                                                                                                                                                |
+| UI            | Solid-UI + Tailwind; components in `src/components/ui/`, copied from the Solid-UI registry at the commit the prototypes use (`21ba4fa`)                                                                      |
+| i18n          | English and Estonian; Paraglide JS                                                                                                                                                                           |
+| Testing       | `bun test` for server and database code (`*.test.ts`); Vitest with Solid Testing Library in jsdom for components (`*.test.tsx`); `bunfig.toml` and `vitest.config.ts` keep each runner off the other's files |
+| Client state  | No library; Solid signals/stores and URL search params; user settings on the server (see "User settings")                                                                                                    |
 
 ## Data conventions
 
@@ -69,13 +69,13 @@
 
 ## Sign-in methods
 
-| Method           | Status                 | Enabled when                                         |
-| ---------------- | ---------------------- | ---------------------------------------------------- |
-| Email + password | Local development only | `NODE_ENV` is `development`; seeded users            |
-| Google           | Implemented            | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set |
-| GitHub           | Implemented            | `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set |
+| Method           | Status                 | Enabled when                                                |
+| ---------------- | ---------------------- | ----------------------------------------------------------- |
+| Email + password | Local development only | `NODE_ENV` is `development`; seeded users                   |
+| Google           | Implemented            | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set       |
+| GitHub           | Implemented            | `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set       |
 | Microsoft        | Implemented            | `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET` are set |
-| Passkey          | Implemented            | Always; `@better-auth/passkey` and its `passkey` table |
+| Passkey          | Implemented            | Always; `@better-auth/passkey` and its `passkey` table      |
 
 - Social providers are built into Better Auth and store their link in `account`, so
   adding one is configuration plus an OAuth app and its client ID and secret per
@@ -151,11 +151,11 @@
 - Teams group people for access and reporting; data is owned by the
   organization, not the team.
 
-| Role        | Own entries | Team members' entries  | All org entries |
-| ----------- | ----------- | ---------------------- | --------------- |
-| Member      | read/write  | —                      | —               |
-| Team lead   | read/write  | read, reports          | —               |
-| Admin/owner | read/write  | read/write, reports    | read/write      |
+| Role        | Own entries | Team members' entries | All org entries |
+| ----------- | ----------- | --------------------- | --------------- |
+| Member      | read/write  | —                     | —               |
+| Team lead   | read/write  | read, reports         | —               |
+| Admin/owner | read/write  | read/write, reports   | read/write      |
 
 - One running timer per user, across all organizations. The timer functions see only
   entries in organizations the user still belongs to. Removing a member, or a member
@@ -289,7 +289,7 @@ the source of truth. Workflow and rules: `docs/migrations.md`.
   fails if an applied file was edited or deleted (drizzle-kit does not check).
 - `src/db/schema.ts` is a hand-maintained mapping for typed queries and the
   Better Auth adapter. It is never used to generate migrations; `drizzle-kit
-  generate` (non-custom) and `push` are not run against real databases.
+generate` (non-custom) and `push` are not run against real databases.
 - `bun run db:drift` applies all migrations to an empty database and diffs it
   against `schema.ts` (`drizzle-kit push --explain`). Drift is a warning, not
   a failure.

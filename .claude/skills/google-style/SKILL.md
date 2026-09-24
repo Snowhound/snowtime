@@ -65,17 +65,17 @@ These are candidates, not banned strings. "Just-in-time" and "a very specific li
 stay if the word does work. Replace a vague adjective with the fact behind it: not "fast",
 but "one indexed range query".
 
-| Instead of | Write |
-| --- | --- |
-| "There is a column that stores…" | "The `x` column stores…" |
-| "It is possible to…" | "You can…" |
-| "In order to" | "To" |
-| "A number of" | The number |
-| "e.g." / "i.e." / "etc." | "for example" / "that is" / "and so on" |
-| "May potentially" | "May" |
-| "Since" / "as" meaning because | "Because" |
-| "As mentioned above" | A link to the section |
-| "Click here" | Link text naming the destination |
+| Instead of                       | Write                                   |
+| -------------------------------- | --------------------------------------- |
+| "There is a column that stores…" | "The `x` column stores…"                |
+| "It is possible to…"             | "You can…"                              |
+| "In order to"                    | "To"                                    |
+| "A number of"                    | The number                              |
+| "e.g." / "i.e." / "etc."         | "for example" / "that is" / "and so on" |
+| "May potentially"                | "May"                                   |
+| "Since" / "as" meaning because   | "Because"                               |
+| "As mentioned above"             | A link to the section                   |
+| "Click here"                     | Link text naming the destination        |
 
 ## Patterns that make text read as generated
 

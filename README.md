@@ -20,15 +20,15 @@ bun --bun run dev
 any database that is not a local file. Every seeded user signs in with the password
 `snowtime-local`; password sign-in is enabled only in local development.
 
-| Email                | Name         | Role                                                   |
-| -------------------- | ------------ | ------------------------------------------------------ |
-| `owner@example.com`  | Olivia Owner | Owner of Northwind Studio                              |
-| `admin@example.com`  | Adam Admin   | Admin of Northwind Studio, owner of Harbor Consulting  |
-| `lead@example.com`   | Lena Lead    | Member of Northwind Studio, lead of Design             |
+| Email                | Name         | Role                                                                     |
+| -------------------- | ------------ | ------------------------------------------------------------------------ |
+| `owner@example.com`  | Olivia Owner | Owner of Northwind Studio                                                |
+| `admin@example.com`  | Adam Admin   | Admin of Northwind Studio, owner of Harbor Consulting                    |
+| `lead@example.com`   | Lena Lead    | Member of Northwind Studio, lead of Design                               |
 | `member@example.com` | Max Member   | Member in Design, Engineering and Harbor's Delivery; has a running timer |
-| `theo@example.com`   | Theo Lead    | Member of Northwind Studio, lead of Engineering        |
-| `mia@example.com`    | Mia Engineer | Member in Engineering, lead of Delivery in Harbor Consulting |
-| `noah@example.com`   | Noah Solo    | Member of Northwind Studio, in no team                 |
+| `theo@example.com`   | Theo Lead    | Member of Northwind Studio, lead of Engineering                          |
+| `mia@example.com`    | Mia Engineer | Member in Engineering, lead of Delivery in Harbor Consulting             |
+| `noah@example.com`   | Noah Solo    | Member of Northwind Studio, in no team                                   |
 
 To start over: `rm local.db && bun run db:migrate && bun run db:seed`.
 
@@ -63,7 +63,6 @@ If you prefer not to use Tailwind CSS:
 3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
 4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
 
-
 ## Deploy to Vercel
 
 1. Push this repo to GitHub, GitLab, or Bitbucket
@@ -77,7 +76,6 @@ static assets. The included `vercel.json` makes framework detection explicit.
 
 Variables prefixed with `VITE_` are included in the browser bundle. Keep secrets
 unprefixed so they remain server-only.
-
 
 ## Setting up Better Auth
 
@@ -95,15 +93,15 @@ Better Auth can work in stateless mode, but to persist user data, add a database
 
 ```typescript
 // src/lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
+import { betterAuth } from 'better-auth'
+import { Pool } from 'pg'
 
 export const auth = betterAuth({
   database: new Pool({
     connectionString: process.env.DATABASE_URL,
   }),
   // ... rest of config
-});
+})
 ```
 
 Then run migrations:
@@ -111,7 +109,6 @@ Then run migrations:
 ```bash
 bunx --bun @better-auth/cli migrate
 ```
-
 
 ## Solid-UI
 
@@ -123,7 +120,6 @@ To install the components, run the following command (this install button):
 bunx --bun solidui-cli@latest add button
 ```
 
-
 ## T3Env
 
 - You can use T3Env to add type safety to your environment variables.
@@ -133,15 +129,10 @@ bunx --bun solidui-cli@latest add button
 ### Usage
 
 ```ts
-import { env } from "@/env";
+import { env } from '@/env'
 
-console.log(env.VITE_APP_TITLE);
+console.log(env.VITE_APP_TITLE)
 ```
-
-
-
-
-
 
 ## Routing
 
@@ -160,7 +151,7 @@ Now that you have two routes you can use a `Link` component to navigate between 
 To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/solid-router`.
 
 ```tsx
-import { Link } from "@tanstack/solid-router";
+import { Link } from '@tanstack/solid-router'
 ```
 
 Then anywhere in your JSX you can use it like so:
@@ -214,19 +205,13 @@ function PeopleComponent() {
   const data = Route.useLoaderData()
   return (
     <ul>
-      <For each={data().results}>
-        {(person) => <li>{person.name}</li>}
-      </For>
+      <For each={data().results}>{(person) => <li>{person.name}</li>}</For>
     </ul>
   )
 }
 ```
 
 Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/solid/guide/data-loading#loader-parameters).
-
-
-
-
 
 # Learn More
 

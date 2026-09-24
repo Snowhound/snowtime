@@ -77,9 +77,12 @@ describe('setTeamRole', () => {
       setTeamRole(db, scopes.owner, { teamId: T.design, userId: U.member, role: 'lead' }),
     )
     const design = (await listTeams(db, scopes.owner)).find((t) => t.id === T.design)!
-    expect(design.members.filter((m) => m.role === 'lead').map((m) => m.userId).sort()).toEqual(
-      [U.lead, U.member].sort(),
-    )
+    expect(
+      design.members
+        .filter((m) => m.role === 'lead')
+        .map((m) => m.userId)
+        .sort(),
+    ).toEqual([U.lead, U.member].sort())
     await as(scopes.owner, () =>
       setTeamRole(db, scopes.owner, { teamId: T.design, userId: U.member, role: 'member' }),
     )
@@ -88,14 +91,18 @@ describe('setTeamRole', () => {
   test('members and team leads cannot change team roles, not even in their own team', async () => {
     for (const scope of [scopes.lead, scopes.member, scopes.engLead]) {
       await expect(
-        as(scope, () => setTeamRole(db, scope, { teamId: T.design, userId: U.member, role: 'lead' })),
+        as(scope, () =>
+          setTeamRole(db, scope, { teamId: T.design, userId: U.member, role: 'lead' }),
+        ),
       ).rejects.toMatchObject({ code: 'FORBIDDEN' })
     }
   })
 
   test('the user must be on the team, and the team in the organization', async () => {
     await expect(
-      as(scopes.admin, () => setTeamRole(db, scopes.admin, { teamId: T.design, userId: U.loner, role: 'lead' })),
+      as(scopes.admin, () =>
+        setTeamRole(db, scopes.admin, { teamId: T.design, userId: U.loner, role: 'lead' }),
+      ),
     ).rejects.toMatchObject({ code: 'NOT_FOUND', key: 'team_member_not_found' })
     await expect(
       as(scopes.admin, () =>

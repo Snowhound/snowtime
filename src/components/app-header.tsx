@@ -46,11 +46,12 @@ const NAV = [
   { to: '/organization', label: m.nav_organization, Icon: BuildingComplexIcon, admin: true },
 ] as const
 
-const THEMES: { value: ThemeSetting; label: () => string; Icon: Component<{ class?: string }> }[] = [
-  { value: 'light', label: m.theme_light, Icon: SunIcon },
-  { value: 'dark', label: m.theme_dark, Icon: MoonIcon },
-  { value: 'system', label: m.theme_system, Icon: MonitorIcon },
-]
+const THEMES: { value: ThemeSetting; label: () => string; Icon: Component<{ class?: string }> }[] =
+  [
+    { value: 'light', label: m.theme_light, Icon: SunIcon },
+    { value: 'dark', label: m.theme_dark, Icon: MoonIcon },
+    { value: 'system', label: m.theme_system, Icon: MonitorIcon },
+  ]
 
 const initials = (name: string) =>
   name
@@ -79,17 +80,17 @@ export function AppHeader() {
   return (
     <Show when={session.data}>
       {(data) => (
-        <header class="border-b bg-background">
+        <header class="bg-background border-b">
           <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
             <Link
               to="/timer"
-              class="mr-1 flex shrink-0 items-center gap-2 rounded-md text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              class="focus-visible:ring-ring mr-1 flex shrink-0 items-center gap-2 rounded-md text-sm font-semibold focus-visible:ring-2 focus-visible:outline-none"
               aria-label={m.app_home()}
             >
               <ClockIcon class="size-5" aria-hidden="true" />
               <span class="hidden sm:inline">{m.app_name()}</span>
             </Link>
-            <span class="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+            <span class="bg-border mx-1 h-5 w-px shrink-0" aria-hidden="true" />
             <OrganizationSwitcher session={data()} />
             <nav class="ml-2 hidden items-center gap-1 md:flex" aria-label={m.nav_main()}>
               <NavLinks role={data().role} />
@@ -151,7 +152,7 @@ function OrganizationSwitcher(props: { session: AppSession }) {
         as={Button<'button'>}
         variant="ghost"
         size="sm"
-        class="min-w-0 max-w-[13rem] justify-start gap-2 px-2 lg:max-w-[16rem]"
+        class="max-w-[13rem] min-w-0 justify-start gap-2 px-2 lg:max-w-[16rem]"
         aria-label={m.org_switcher_label({ name: active().name })}
       >
         <OrgMark name={active().name} />
@@ -160,7 +161,7 @@ function OrganizationSwitcher(props: { session: AppSession }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent class="w-64">
         <DropdownMenuRadioGroup value={props.session.activeOrganizationId!} onChange={switchTo}>
-          <DropdownMenuGroupLabel class="text-xs font-medium text-muted-foreground">
+          <DropdownMenuGroupLabel class="text-muted-foreground text-xs font-medium">
             {m.org_menu_title()}
           </DropdownMenuGroupLabel>
           <For each={props.session.organizations}>
@@ -205,7 +206,7 @@ function UserMenu(props: { session: AppSession }) {
   return (
     <DropdownMenu placement="bottom-end">
       <DropdownMenuTrigger
-        class="ml-auto shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        class="focus-visible:ring-ring focus-visible:ring-offset-background ml-auto shrink-0 rounded-full focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         aria-label={m.user_menu_label({ name: props.session.user.name })}
       >
         <Avatar class="size-8">
@@ -217,7 +218,7 @@ function UserMenu(props: { session: AppSession }) {
       <DropdownMenuContent class="w-60">
         <DropdownMenuLabel class="flex flex-col gap-0.5 font-normal">
           <span class="truncate text-sm font-medium">{props.session.user.name}</span>
-          <span class="truncate text-xs text-muted-foreground">{props.session.user.email}</span>
+          <span class="text-muted-foreground truncate text-xs">{props.session.user.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => navigate({ to: '/settings', hash: 'profile' })}>
@@ -233,7 +234,7 @@ function UserMenu(props: { session: AppSession }) {
           value={props.session.settings?.theme ?? 'system'}
           onChange={(theme) => saveTheme.mutate(theme as ThemeSetting)}
         >
-          <DropdownMenuGroupLabel class="text-xs font-medium text-muted-foreground">
+          <DropdownMenuGroupLabel class="text-muted-foreground text-xs font-medium">
             {m.user_menu_theme()}
           </DropdownMenuGroupLabel>
           <For each={THEMES}>

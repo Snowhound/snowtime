@@ -70,7 +70,12 @@ function renderTable(config: Config): string[] {
   const uniqueColumns = new Set<string>()
   const indexes = config.indexes.filter((i) => {
     const columns = i.config.columns as { name: string }[]
-    if (i.config.unique && !i.config.where && columns.length === 1 && !notes.indexes?.[i.config.name]) {
+    if (
+      i.config.unique &&
+      !i.config.where &&
+      columns.length === 1 &&
+      !notes.indexes?.[i.config.name]
+    ) {
       uniqueColumns.add(columns[0].name)
       return false
     }
@@ -90,9 +95,15 @@ function renderTable(config: Config): string[] {
       pairs.length > 1
         ? `Composite FK (${pairs.map(([c]) => c).join(', ')}) to ${target} (${pairs.map(([, f]) => f).join(', ')}).`
         : undefined
-    const onDelete = fk.onDelete && fk.onDelete !== 'no action' ? `ON DELETE ${fk.onDelete.toUpperCase()}.` : undefined
+    const onDelete =
+      fk.onDelete && fk.onDelete !== 'no action'
+        ? `ON DELETE ${fk.onDelete.toUpperCase()}.`
+        : undefined
     if (references.has(column)) throw new Error(`${config.name}.${column} has two foreign keys`)
-    references.set(column, { ref: `${target}.${foreignColumn}`, note: joinNotes(composite, onDelete) || undefined })
+    references.set(column, {
+      ref: `${target}.${foreignColumn}`,
+      note: joinNotes(composite, onDelete) || undefined,
+    })
   }
 
   const lines: string[] = []
@@ -112,7 +123,9 @@ function renderTable(config: Config): string[] {
     const own = notes.columns?.[column.name] ?? (appOwned ? auditNotes[column.name] : undefined)
     const note = joinNotes(own, reference?.note)
     if (note) attrs.push(`note: ${quote(note, `${config.name}.${column.name}`)}`)
-    lines.push(`  ${column.name} ${column.getSQLType()}${attrs.length ? ` [${attrs.join(', ')}]` : ''}`)
+    lines.push(
+      `  ${column.name} ${column.getSQLType()}${attrs.length ? ` [${attrs.join(', ')}]` : ''}`,
+    )
   }
 
   const indexLines: string[] = []
@@ -145,7 +158,10 @@ const out: string[] = [
   'Project Snowtime {',
   "  database_type: 'SQLite'",
   "  Note: '''",
-  ...projectNote.trim().split('\n').map((line) => (line ? `    ${line}` : '')),
+  ...projectNote
+    .trim()
+    .split('\n')
+    .map((line) => (line ? `    ${line}` : '')),
   "  '''",
   '}',
 ]
@@ -173,7 +189,12 @@ if (ungrouped.length) {
 
 for (const group of groups) {
   const members = group.tables.filter((t) => configs.has(t))
-  out.push('', `TableGroup ${group.name} [color: ${group.color}] {`, ...members.map((t) => `  ${t}`), '}')
+  out.push(
+    '',
+    `TableGroup ${group.name} [color: ${group.color}] {`,
+    ...members.map((t) => `  ${t}`),
+    '}',
+  )
 }
 
 const dbml = `${out.join('\n')}\n`

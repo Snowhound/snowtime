@@ -12,7 +12,9 @@ import { SEED_PASSWORD, seed } from '../src/db/seed'
 
 const url = process.env.TURSO_DATABASE_URL
 if (!url?.startsWith('file:')) {
-  console.error(`[db-seed] Refusing to seed ${url ?? '(no TURSO_DATABASE_URL)'}: local file databases only.`)
+  console.error(
+    `[db-seed] Refusing to seed ${url ?? '(no TURSO_DATABASE_URL)'}: local file databases only.`,
+  )
   process.exit(1)
 }
 
@@ -20,9 +22,13 @@ const db = drizzle({ connection: { url }, relations })
 
 const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.id, SYSTEM_USER_ID))
 if (existing) {
-  console.error(`[db-seed] ${url} is already seeded. To start over: rm local.db && bun run db:migrate && bun run db:seed`)
+  console.error(
+    `[db-seed] ${url} is already seeded. To start over: rm local.db && bun run db:migrate && bun run db:seed`,
+  )
   process.exit(1)
 }
 
 await seed(db)
-console.log(`[db-seed] Seeded ${url}. Sign in as owner@example.com (or admin@, lead@, member@) with password "${SEED_PASSWORD}".`)
+console.log(
+  `[db-seed] Seeded ${url}. Sign in as owner@example.com (or admin@, lead@, member@) with password "${SEED_PASSWORD}".`,
+)

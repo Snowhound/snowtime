@@ -21,8 +21,6 @@ export function projectColor(hex: string | null | undefined): string {
 
 // A new project gets the least used color, earliest in the palette on a tie.
 export function leastUsedColor(used: readonly (string | null)[]): string {
-  const counts = PROJECT_COLORS.map(
-    (c) => used.filter((u) => u?.toLowerCase() === c).length,
-  )
+  const counts = PROJECT_COLORS.map((c) => used.filter((u) => u?.toLowerCase() === c).length)
   return PROJECT_COLORS[counts.indexOf(Math.min(...counts))]
 }

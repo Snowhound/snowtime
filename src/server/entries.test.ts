@@ -62,10 +62,14 @@ describe('listEntries', () => {
   test('filtering by user is limited to readable users', async () => {
     const maxOnly = await listEntries(db, scopes.lead, { ...range, userId: U.member })
     expect(usersIn(maxOnly)).toEqual([U.member])
-    await expect(listEntries(db, scopes.lead, { ...range, userId: U.engineer })).rejects.toMatchObject({
+    await expect(
+      listEntries(db, scopes.lead, { ...range, userId: U.engineer }),
+    ).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
-    await expect(listEntries(db, scopes.member, { ...range, userId: U.lead })).rejects.toMatchObject({
+    await expect(
+      listEntries(db, scopes.member, { ...range, userId: U.lead }),
+    ).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
   })
@@ -84,17 +88,31 @@ describe('createEntry', () => {
   test('a member logs a past entry for themselves', async () => {
     const id = uuidv7()
     const entry = await as(scopes.member, () =>
-      createEntry(db, scopes.member, { id, description: 'Call', projectId: P.website, ...past(30) }),
+      createEntry(db, scopes.member, {
+        id,
+        description: 'Call',
+        projectId: P.website,
+        ...past(30),
+      }),
     )
-    expect(entry).toMatchObject({ id, userId: U.member, organizationId: O.northwind, createdBy: U.member })
+    expect(entry).toMatchObject({
+      id,
+      userId: U.member,
+      organizationId: O.northwind,
+      createdBy: U.member,
+    })
   })
 
   test('only admins and owners log entries for other members', async () => {
     const forMax = () => ({ id: uuidv7(), userId: U.member, description: '', ...past(40) })
-    await expect(as(scopes.lead, () => createEntry(db, scopes.lead, forMax()))).rejects.toMatchObject({
+    await expect(
+      as(scopes.lead, () => createEntry(db, scopes.lead, forMax())),
+    ).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
-    await expect(as(scopes.engineer, () => createEntry(db, scopes.engineer, forMax()))).rejects.toMatchObject({
+    await expect(
+      as(scopes.engineer, () => createEntry(db, scopes.engineer, forMax())),
+    ).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
     const entry = await as(scopes.admin, () => createEntry(db, scopes.admin, forMax()))
@@ -104,7 +122,12 @@ describe('createEntry', () => {
   test('the other user must be a member of the organization', async () => {
     await expect(
       as(scopes.owner, () =>
-        createEntry(db, scopes.owner, { id: uuidv7(), userId: SYSTEM_USER_ID, description: '', ...past(40) }),
+        createEntry(db, scopes.owner, {
+          id: uuidv7(),
+          userId: SYSTEM_USER_ID,
+          description: '',
+          ...past(40),
+        }),
       ),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
@@ -112,7 +135,12 @@ describe('createEntry', () => {
   test('archived projects are rejected for new entries', async () => {
     await expect(
       as(scopes.engLead, () =>
-        createEntry(db, scopes.engLead, { id: uuidv7(), description: '', projectId: P.legacy, ...past(50) }),
+        createEntry(db, scopes.engLead, {
+          id: uuidv7(),
+          description: '',
+          projectId: P.legacy,
+          ...past(50),
+        }),
       ),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
   })
@@ -120,14 +148,20 @@ describe('createEntry', () => {
 
 describe('updateEntry', () => {
   const newEntry = async (scope: Scope, projectId: string | null = null) =>
-    as(scope, () => createEntry(db, scope, { id: uuidv7(), description: 'Draft', projectId, ...past(60) }))
+    as(scope, () =>
+      createEntry(db, scope, { id: uuidv7(), description: 'Draft', projectId, ...past(60) }),
+    )
 
   test('a member updates their own entry', async () => {
     const entry = await newEntry(scopes.member)
     const updated = await as(scopes.member, () =>
       updateEntry(db, scopes.member, { id: entry.id, description: 'Final', projectId: P.mobile }),
     )
-    expect(updated).toMatchObject({ description: 'Final', projectId: P.mobile, updatedBy: U.member })
+    expect(updated).toMatchObject({
+      description: 'Final',
+      projectId: P.mobile,
+      updatedBy: U.member,
+    })
     expect(updated.startedAt).toEqual(entry.startedAt)
   })
 
@@ -157,13 +191,19 @@ describe('updateEntry', () => {
   test('time cannot move onto an archived project, but an entry already on one stays editable', async () => {
     const entry = await newEntry(scopes.engLead)
     await expect(
-      as(scopes.engLead, () => updateEntry(db, scopes.engLead, { id: entry.id, projectId: P.legacy })),
+      as(scopes.engLead, () =>
+        updateEntry(db, scopes.engLead, { id: entry.id, projectId: P.legacy }),
+      ),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
-    const [onLegacy] = (await listEntries(db, scopes.engLead, { ...range, userId: U.engLead })).filter(
-      (e) => e.projectId === P.legacy,
-    )
+    const [onLegacy] = (
+      await listEntries(db, scopes.engLead, { ...range, userId: U.engLead })
+    ).filter((e) => e.projectId === P.legacy)
     const updated = await as(scopes.engLead, () =>
-      updateEntry(db, scopes.engLead, { id: onLegacy.id, projectId: P.legacy, description: 'Kept' }),
+      updateEntry(db, scopes.engLead, {
+        id: onLegacy.id,
+        projectId: P.legacy,
+        description: 'Kept',
+      }),
     )
     expect(updated.description).toBe('Kept')
   })
@@ -183,7 +223,9 @@ describe('deleteEntry', () => {
     await as(scopes.member, () => deleteEntry(db, scopes.member, { id: entry.id }))
     const ids = (await listEntries(db, scopes.member, range)).map((e) => e.id)
     expect(ids).not.toContain(entry.id)
-    await expect(as(scopes.member, () => deleteEntry(db, scopes.member, { id: entry.id }))).rejects.toMatchObject({
+    await expect(
+      as(scopes.member, () => deleteEntry(db, scopes.member, { id: entry.id })),
+    ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
@@ -192,7 +234,9 @@ describe('deleteEntry', () => {
     const entry = await as(scopes.member, () =>
       createEntry(db, scopes.member, { id: uuidv7(), description: 'Keep', ...past(80) }),
     )
-    await expect(as(scopes.engLead, () => deleteEntry(db, scopes.engLead, { id: entry.id }))).rejects.toMatchObject({
+    await expect(
+      as(scopes.engLead, () => deleteEntry(db, scopes.engLead, { id: entry.id })),
+    ).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
     await as(scopes.owner, () => deleteEntry(db, scopes.owner, { id: entry.id }))

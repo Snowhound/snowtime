@@ -46,7 +46,7 @@ These keep the drift check accurate; the spike behind them is summarized in
 - Timestamps: `integer` epoch milliseconds, UTC. In `schema.ts`:
   `integer('x', { mode: 'timestamp_ms' })`.
 - Booleans: `integer` with `CHECK (x IN (0, 1))`; defaults as `0`/`1`, and in
-  `schema.ts` `` .default(sql`0`) `` rather than `.default(false)`, or drift reports a
+  `schema.ts` ``.default(sql`0`)`` rather than `.default(false)`, or drift reports a
   false difference.
 - Unique constraints: a named `CREATE UNIQUE INDEX`, never inline `UNIQUE (...)`, which
   introspection cannot see.

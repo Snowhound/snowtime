@@ -43,7 +43,10 @@ export const MAX_LIST_DAYS = 93
 // Entries overlapping [from, to), optionally of one user.
 export const ListEntriesInput = v.pipe(
   v.object({ from: Timestamp, to: Timestamp, userId: v.optional(Uuidv7) }),
-  v.check((i) => i.to > i.from, () => m.validation_range_end_before_start()),
+  v.check(
+    (i) => i.to > i.from,
+    () => m.validation_range_end_before_start(),
+  ),
   v.check(
     (i) => i.to.getTime() - i.from.getTime() <= MAX_LIST_DAYS * 86_400_000,
     () => m.validation_range_too_long({ days: MAX_LIST_DAYS }),

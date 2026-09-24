@@ -33,7 +33,12 @@ describe('timer', () => {
     const { started, stopped } = await as(scope, () =>
       startTimer(db, scope, { id, description: 'Audit', projectId: P.audit }),
     )
-    expect(started).toMatchObject({ id, organizationId: O.harbor, stoppedAt: null, createdBy: U.member })
+    expect(started).toMatchObject({
+      id,
+      organizationId: O.harbor,
+      stoppedAt: null,
+      createdBy: U.member,
+    })
     expect(stopped?.id).toBe(E.running)
     expect(stopped?.stoppedAt).not.toBeNull()
     expect((await getRunningTimer(db, U.member))?.id).toBe(id)
@@ -41,13 +46,19 @@ describe('timer', () => {
 
   test('stopTimer stops only the given running entry, in any organization', async () => {
     const running = await getRunningTimer(db, U.member)
-    await expect(as({ userId: U.member }, () => stopTimer(db, U.member, { id: E.running }))).rejects.toMatchObject({
+    await expect(
+      as({ userId: U.member }, () => stopTimer(db, U.member, { id: E.running })),
+    ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
-    await expect(as({ userId: U.lead }, () => stopTimer(db, U.lead, { id: running!.id }))).rejects.toMatchObject({
+    await expect(
+      as({ userId: U.lead }, () => stopTimer(db, U.lead, { id: running!.id })),
+    ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
-    const stopped = await as({ userId: U.member }, () => stopTimer(db, U.member, { id: running!.id }))
+    const stopped = await as({ userId: U.member }, () =>
+      stopTimer(db, U.member, { id: running!.id }),
+    )
     expect(stopped.stoppedAt!.getTime()).toBeGreaterThan(stopped.startedAt.getTime())
     expect(stopped.updatedBy).toBe(U.member)
     expect(await getRunningTimer(db, U.member)).toBeNull()
@@ -57,7 +68,9 @@ describe('timer', () => {
     const scope = await scopeOf(db, U.owner, O.northwind)
     const id = uuidv7()
     await as(scope, () => startTimer(db, scope, { id, description: '', projectId: null }))
-    await expect(as(scope, () => startTimer(db, scope, { id, description: '' }))).rejects.toMatchObject({
+    await expect(
+      as(scope, () => startTimer(db, scope, { id, description: '' })),
+    ).rejects.toMatchObject({
       code: 'CONFLICT',
     })
     // The failed start rolled back: the first timer is still running.
@@ -132,7 +145,9 @@ describe('timer', () => {
 
       const scope = await scopeOf(fresh, U.member, O.harbor)
       const id = uuidv7()
-      const { stopped: none } = await as(scope, () => startTimer(fresh, scope, { id, description: '' }))
+      const { stopped: none } = await as(scope, () =>
+        startTimer(fresh, scope, { id, description: '' }),
+      )
       expect(none).toBeNull()
       expect((await getRunningTimer(fresh, U.member))?.id).toBe(id)
     })

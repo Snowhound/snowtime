@@ -24,8 +24,9 @@ test('each provider appears when both its client ID and secret are set', () => {
     MICROSOFT_CLIENT_SECRET: 'ms',
   }
   expect(signInMethods(all)).toEqual(['google', 'github', 'microsoft', 'passkey'])
-  expect(signInMethods({ ...production, GITHUB_CLIENT_ID: 'h', GITHUB_CLIENT_SECRET: 'hs' }))
-    .toEqual(['github', 'passkey'])
+  expect(
+    signInMethods({ ...production, GITHUB_CLIENT_ID: 'h', GITHUB_CLIENT_SECRET: 'hs' }),
+  ).toEqual(['github', 'passkey'])
 })
 
 test('a provider with only half its pair stays off', () => {
@@ -43,6 +44,7 @@ test('the list carries ids only, never a configured value', () => {
 test('the Microsoft tenant passes through only when set', () => {
   const microsoft = { ...production, MICROSOFT_CLIENT_ID: 'm', MICROSOFT_CLIENT_SECRET: 'ms' }
   expect(socialProviders(microsoft).microsoft).not.toHaveProperty('tenantId')
-  expect(socialProviders({ ...microsoft, MICROSOFT_TENANT_ID: 't' }).microsoft)
-    .toMatchObject({ tenantId: 't' })
+  expect(socialProviders({ ...microsoft, MICROSOFT_TENANT_ID: 't' }).microsoft).toMatchObject({
+    tenantId: 't',
+  })
 })

@@ -12,18 +12,16 @@ import { auth } from '../lib/auth'
 import { AppError } from './errors'
 import { resolveScope } from './scope.server'
 
-export const sessionMiddleware = createMiddleware({ type: 'function' }).server(
-  async ({ next }) => {
-    const session = await auth.api.getSession({ headers: getRequestHeaders() })
-    if (!session) {
-      throw new AppError('UNAUTHENTICATED', 'sign_in_required')
-    }
-    const { userId, activeOrganizationId } = session.session
-    return withActor(userId, () =>
-      next({ context: { userId, activeOrganizationId: activeOrganizationId ?? null } }),
-    )
-  },
-)
+export const sessionMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
+  const session = await auth.api.getSession({ headers: getRequestHeaders() })
+  if (!session) {
+    throw new AppError('UNAUTHENTICATED', 'sign_in_required')
+  }
+  const { userId, activeOrganizationId } = session.session
+  return withActor(userId, () =>
+    next({ context: { userId, activeOrganizationId: activeOrganizationId ?? null } }),
+  )
+})
 
 export const scopeMiddleware = createMiddleware({ type: 'function' })
   .middleware([sessionMiddleware])

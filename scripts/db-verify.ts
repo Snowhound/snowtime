@@ -38,7 +38,9 @@ for (const row of applied.rows) {
 }
 
 if (problems.length) {
-  console.error('[db-verify] Applied migrations changed. Revert them and add a new migration instead:')
+  console.error(
+    '[db-verify] Applied migrations changed. Revert them and add a new migration instead:',
+  )
   for (const problem of problems) console.error(`  - ${problem}`)
   process.exit(1)
 }

@@ -43,7 +43,12 @@ function expectConsistent(report: Report) {
   }
 }
 
-const logFor = (scope: Scope, startedAt: string, stoppedAt: string, projectId: string | null = P.internal) =>
+const logFor = (
+  scope: Scope,
+  startedAt: string,
+  stoppedAt: string,
+  projectId: string | null = P.internal,
+) =>
   as(scope, async () => {
     await db.insert(timeEntry).values({
       id: uuidv7(),
@@ -68,7 +73,12 @@ describe('aggregate', () => {
       { teamId: 't2', userIds: ['b', 'c'] },
     ],
   }
-  const entry = (userId: string, projectId: string | null, startedAt: string, stoppedAt: string | null) => ({
+  const entry = (
+    userId: string,
+    projectId: string | null,
+    startedAt: string,
+    stoppedAt: string | null,
+  ) => ({
     userId,
     projectId,
     startedAt: new Date(startedAt),
@@ -112,7 +122,13 @@ describe('aggregate', () => {
         entry('a', 'p1', '2026-09-20T09:00:00Z', '2026-09-20T10:00:00Z'),
         entry('a', 'p1', '2026-09-22T09:00:00Z', '2026-09-22T11:00:00Z'),
       ],
-      { ...base, unit: 'week', from: '2026-09-19', to: '2026-09-24', now: Date.parse('2026-09-24T12:00:00Z') },
+      {
+        ...base,
+        unit: 'week',
+        from: '2026-09-19',
+        to: '2026-09-24',
+        now: Date.parse('2026-09-24T12:00:00Z'),
+      },
     )
     expect(report.buckets).toEqual(['2026-09-14', '2026-09-21'])
     expect(report.perBucket).toEqual([1 * HOUR, 2 * HOUR])
@@ -142,7 +158,12 @@ describe('aggregate', () => {
 
 describe('getReport', () => {
   test("uses the user's zone and week start and counts the running timer up to now", async () => {
-    const today = await getReport(db, scopes.member, { from: '2026-09-23', to: '2026-09-24', unit: 'day' }, NOW)
+    const today = await getReport(
+      db,
+      scopes.member,
+      { from: '2026-09-23', to: '2026-09-24', unit: 'day' },
+      NOW,
+    )
     expect(today).toMatchObject({
       timeZone: 'Europe/Tallinn',
       weekStart: 'mon',
@@ -154,7 +175,12 @@ describe('getReport', () => {
       projects: [{ projectId: P.website, total: 45 * MINUTE }],
     })
     const later = new Date(NOW.getTime() + HOUR)
-    const again = await getReport(db, scopes.member, { from: '2026-09-23', to: '2026-09-24', unit: 'day' }, later)
+    const again = await getReport(
+      db,
+      scopes.member,
+      { from: '2026-09-23', to: '2026-09-24', unit: 'day' },
+      later,
+    )
     expect(again.total).toBe(105 * MINUTE)
   })
 
@@ -163,7 +189,12 @@ describe('getReport', () => {
     for (const scope of [scopes.engineer, scopes.member]) {
       const listed = await listEntries(db, scope, { ...range, userId: scope.userId })
       const expected = sum(listed.map((e) => e.stoppedAt!.getTime() - e.startedAt.getTime()))
-      const report = await getReport(db, scope, { from: '2026-09-22', to: '2026-09-23', unit: 'day' }, NOW)
+      const report = await getReport(
+        db,
+        scope,
+        { from: '2026-09-22', to: '2026-09-23', unit: 'day' },
+        NOW,
+      )
       expect(report.total).toBe(expected)
       expect(ids(report.projects, 'projectId')).not.toContain(P.audit)
     }
@@ -199,7 +230,9 @@ describe('getReport', () => {
     expect(ids(design.members, 'userId')).toEqual([U.lead, U.member].sort())
     expect(design.total).toBe(all.total)
 
-    await expect(getReport(db, scopes.lead, { ...input, userId: U.engineer }, NOW)).rejects.toMatchObject({
+    await expect(
+      getReport(db, scopes.lead, { ...input, userId: U.engineer }, NOW),
+    ).rejects.toMatchObject({
       code: 'FORBIDDEN',
       key: 'entries_forbidden',
     })
@@ -212,7 +245,9 @@ describe('getReport', () => {
         key: 'team_report_forbidden',
       })
     }
-    await expect(getReport(db, scopes.admin, { ...input, teamId: T.delivery }, NOW)).rejects.toMatchObject({
+    await expect(
+      getReport(db, scopes.admin, { ...input, teamId: T.delivery }, NOW),
+    ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
@@ -223,7 +258,9 @@ describe('getReport', () => {
     const weeks = await getReport(db, scopes.owner, { ...input, unit: 'week' }, NOW)
     expect(weeks.buckets).toEqual(['2026-08-31', '2026-09-07', '2026-09-14', '2026-09-21'])
     expect(weeks.total).toBe(days.total)
-    const byWeek = [0, 1, 2, 3].map((w) => sum(days.perBucket.filter((_, i) => Math.floor((i + 2) / 7) === w)))
+    const byWeek = [0, 1, 2, 3].map((w) =>
+      sum(days.perBucket.filter((_, i) => Math.floor((i + 2) / 7) === w)),
+    )
     expect(weeks.perBucket).toEqual(byWeek)
     expectConsistent(weeks)
   })
@@ -231,7 +268,12 @@ describe('getReport', () => {
   test("an entry crossing the user's midnight splits into both days", async () => {
     // 23:00 to 02:00 in London.
     await logFor(scopes.loner, '2026-09-25T22:00:00Z', '2026-09-26T01:00:00Z')
-    const report = await getReport(db, scopes.loner, { from: '2026-09-25', to: '2026-09-27', unit: 'day' }, NOW)
+    const report = await getReport(
+      db,
+      scopes.loner,
+      { from: '2026-09-25', to: '2026-09-27', unit: 'day' },
+      NOW,
+    )
     expect(report.perBucket).toEqual([1 * HOUR, 2 * HOUR])
   })
 
@@ -242,7 +284,9 @@ describe('getReport', () => {
     const designOf = (r: Report) => r.teams.find((t) => t.teamId === T.design)!.total
     expect(designOf(before)).toBe(totalOf(before, U.lead) + totalOf(before, U.member))
 
-    await db.delete(teamMember).where(and(eq(teamMember.teamId, T.design), eq(teamMember.userId, U.member)))
+    await db
+      .delete(teamMember)
+      .where(and(eq(teamMember.teamId, T.design), eq(teamMember.userId, U.member)))
     const after = await getReport(db, scopes.admin, input, NOW)
     expect(designOf(after)).toBe(totalOf(after, U.lead))
     expect(after.total).toBe(before.total)

@@ -96,11 +96,31 @@ const teams = [
 ]
 
 const projects = [
-  { id: P.website, org: O.northwind, name: 'Website redesign', color: '#2a78d6', teams: [T.design] },
+  {
+    id: P.website,
+    org: O.northwind,
+    name: 'Website redesign',
+    color: '#2a78d6',
+    teams: [T.design],
+  },
   { id: P.mobile, org: O.northwind, name: 'Mobile app', color: '#eb6834', teams: [T.engineering] },
   { id: P.internal, org: O.northwind, name: 'Internal', color: '#1baf7a', teams: [] },
-  { id: P.legacy, org: O.northwind, name: 'Legacy CRM', color: '#4a3aa7', teams: [T.engineering], archived: true },
-  { id: P.scrapped, org: O.northwind, name: 'Scrapped pitch', color: '#e87ba4', teams: [], deleted: true },
+  {
+    id: P.legacy,
+    org: O.northwind,
+    name: 'Legacy CRM',
+    color: '#4a3aa7',
+    teams: [T.engineering],
+    archived: true,
+  },
+  {
+    id: P.scrapped,
+    org: O.northwind,
+    name: 'Scrapped pitch',
+    color: '#e87ba4',
+    teams: [],
+    deleted: true,
+  },
   { id: P.onboarding, org: O.harbor, name: 'Client onboarding', color: '#008300', teams: [] },
   { id: P.audit, org: O.harbor, name: 'Audit', color: '#e34948', teams: [T.delivery] },
 ]
@@ -200,12 +220,14 @@ export async function seed(db: Database, { now = new Date() }: SeedOptions = {})
           updatedAt: at,
         })),
       )
-      await tx.insert(teamMember).values(
-        teams.flatMap((t) => [
-          { id: uuidv7(), teamId: t.id, userId: t.lead, role: 'lead' as const, createdAt: at },
-          ...t.members.map((userId) => ({ id: uuidv7(), teamId: t.id, userId, createdAt: at })),
-        ]),
-      )
+      await tx
+        .insert(teamMember)
+        .values(
+          teams.flatMap((t) => [
+            { id: uuidv7(), teamId: t.id, userId: t.lead, role: 'lead' as const, createdAt: at },
+            ...t.members.map((userId) => ({ id: uuidv7(), teamId: t.id, userId, createdAt: at })),
+          ]),
+        )
 
       await tx.insert(project).values(
         projects.map((p) => ({
@@ -217,11 +239,13 @@ export async function seed(db: Database, { now = new Date() }: SeedOptions = {})
           sysDeleted: p.deleted ?? false,
         })),
       )
-      await tx.insert(projectTeam).values(
-        projects.flatMap((p) =>
-          p.teams.map((teamId) => ({ projectId: p.id, teamId, organizationId: p.org })),
-        ),
-      )
+      await tx
+        .insert(projectTeam)
+        .values(
+          projects.flatMap((p) =>
+            p.teams.map((teamId) => ({ projectId: p.id, teamId, organizationId: p.org })),
+          ),
+        )
 
       await tx.insert(timeEntry).values(entries(at))
     }),

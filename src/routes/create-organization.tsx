@@ -139,7 +139,7 @@ function CreateOrganization() {
           {m.create_org_join_description({ email: context().session.user.email })}
         </AlertDescription>
       </Alert>
-      <p class="text-center text-sm text-muted-foreground">
+      <p class="text-muted-foreground text-center text-sm">
         {m.auth_not_you()}{' '}
         <Button variant="link" class="h-auto p-0" onClick={signOut}>
           {m.auth_sign_out()}

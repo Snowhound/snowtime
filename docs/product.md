@@ -14,15 +14,15 @@ companies can use it too.
 
 ## MVP scope
 
-| Area     | Included                                                    |
-| -------- | ----------------------------------------------------------- |
-| Auth     | Sign up / sign in via Better Auth                           |
-| Tenancy  | Organizations, teams, members, invitations; org switcher    |
-| Timer    | Start / stop a single running timer with a description      |
-| Entries  | List, edit, delete, and manually add past entries           |
-| Projects | Org-level projects, optionally assigned to teams; CRUD      |
+| Area     | Included                                                     |
+| -------- | ------------------------------------------------------------ |
+| Auth     | Sign up / sign in via Better Auth                            |
+| Tenancy  | Organizations, teams, members, invitations; org switcher     |
+| Timer    | Start / stop a single running timer with a description       |
+| Entries  | List, edit, delete, and manually add past entries            |
+| Projects | Org-level projects, optionally assigned to teams; CRUD       |
 | Reports  | Totals per day / week / project / team / member, user's zone |
-| Settings | Time zone and week start                                    |
+| Settings | Time zone and week start                                     |
 
 ## Not in MVP
 
@@ -36,12 +36,12 @@ companies can use it too.
 
 Organizations and teams are in scope from day one; see `architecture.md`.
 
-| Concept      | Meaning                                                    |
-| ------------ | ---------------------------------------------------------- |
-| Organization | A tenant (company), e.g. Snowhound                         |
-| Team         | A group within an organization, e.g. a Snowhound team      |
-| Member       | A user in an organization, role owner / admin / member     |
-| Team lead    | A team member who can see and report on the team's time    |
+| Concept      | Meaning                                                 |
+| ------------ | ------------------------------------------------------- |
+| Organization | A tenant (company), e.g. Snowhound                      |
+| Team         | A group within an organization, e.g. a Snowhound team   |
+| Member       | A user in an organization, role owner / admin / member  |
+| Team lead    | A team member who can see and report on the team's time |
 
 - A user can belong to several organizations and switches the active one.
 - A member can be in several teams within an organization.

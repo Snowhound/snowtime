@@ -7,7 +7,9 @@ import { CreateOrganizationForm, slugify } from './auth'
 describe('slugify', () => {
   test('lowercases, drops accents, and joins words with single dashes', () => {
     expect(slugify('Northwind Studio')).toBe('northwind-studio')
-    expect(slugify('Põhjamaade Logistika- ja Laohaldus OÜ')).toBe('pohjamaade-logistika-ja-laohaldus-ou')
+    expect(slugify('Põhjamaade Logistika- ja Laohaldus OÜ')).toBe(
+      'pohjamaade-logistika-ja-laohaldus-ou',
+    )
     expect(slugify('  --Acme & Co.--  ')).toBe('acme-co')
   })
 
@@ -20,7 +22,9 @@ describe('slugify', () => {
   test('stays within the 48 characters the form allows, without a trailing dash', () => {
     const slug = slugify(`${'a'.repeat(47)} b`)
     expect(slug).toBe('a'.repeat(47))
-    expect(v.is(CreateOrganizationForm, { name: 'Long', slug: slugify('x '.repeat(60)) })).toBe(true)
+    expect(v.is(CreateOrganizationForm, { name: 'Long', slug: slugify('x '.repeat(60)) })).toBe(
+      true,
+    )
   })
 })
 
@@ -30,7 +34,13 @@ describe('safeRedirect', () => {
   })
 
   test('falls back for other origins and missing targets', () => {
-    for (const target of [undefined, '', 'https://evil.example', '//evil.example', '/\\evil.example']) {
+    for (const target of [
+      undefined,
+      '',
+      'https://evil.example',
+      '//evil.example',
+      '/\\evil.example',
+    ]) {
       expect(safeRedirect(target)).toBe('/')
     }
   })

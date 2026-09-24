@@ -68,7 +68,10 @@ export async function startTimer(db: Database, scope: Scope, input: StartTimerIn
         .from(timeEntry)
         .where(and(runningOf(scope.userId), not(isMemberOfEntryOrganization(scope.userId))))
       // A timer the removal hook failed to stop blocks every new one; say so.
-      throw new AppError('CONFLICT', left ? 'timer_running_in_left_organization' : 'timer_started_elsewhere')
+      throw new AppError(
+        'CONFLICT',
+        left ? 'timer_running_in_left_organization' : 'timer_started_elsewhere',
+      )
     }
     if (constraint === 'time_entry.id') {
       throw new AppError('CONFLICT', 'entry_id_taken')
@@ -102,7 +105,11 @@ export async function getRunningTimer(db: Database, userId: string) {
 // Stops the timer a removed member left running in the organization, as of the removal.
 // Called from Better Auth's after hook once the member row is gone, so it skips the
 // membership check.
-export async function stopTimerOfRemovedMember(db: Database, userId: string, organizationId: string) {
+export async function stopTimerOfRemovedMember(
+  db: Database,
+  userId: string,
+  organizationId: string,
+) {
   const [stopped] = await db
     .update(timeEntry)
     .set({ stoppedAt: stopAt(new Date()) })

@@ -7,14 +7,17 @@ import { m } from '../paraglide/messages.js'
 export const TimeZone = v.pipe(
   v.string(),
   v.regex(/^[A-Za-z][\w+-]*(\/[\w+-]+)*$/, () => m.validation_time_zone_format()),
-  v.check((zone) => {
-    try {
-      new Intl.DateTimeFormat('en', { timeZone: zone })
-      return true
-    } catch {
-      return false
-    }
-  }, () => m.validation_time_zone_unknown()),
+  v.check(
+    (zone) => {
+      try {
+        new Intl.DateTimeFormat('en', { timeZone: zone })
+        return true
+      } catch {
+        return false
+      }
+    },
+    () => m.validation_time_zone_unknown(),
+  ),
 )
 
 export const WeekStart = v.picklist(['mon', 'sun'])

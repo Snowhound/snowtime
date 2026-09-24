@@ -177,7 +177,10 @@ export async function deleteProject(db: Database, scope: Scope, input: ProjectId
     await tx
       .delete(projectTeam)
       .where(
-        and(eq(projectTeam.projectId, existing.id), eq(projectTeam.organizationId, scope.organizationId)),
+        and(
+          eq(projectTeam.projectId, existing.id),
+          eq(projectTeam.organizationId, scope.organizationId),
+        ),
       )
     const [deleted] = await tx
       .update(project)
@@ -205,7 +208,11 @@ export async function assignProjectToTeam(db: Database, scope: Scope, input: Pro
   await assertTeamInScope(db, scope, input.teamId)
   await db
     .insert(projectTeam)
-    .values({ projectId: input.projectId, teamId: input.teamId, organizationId: scope.organizationId })
+    .values({
+      projectId: input.projectId,
+      teamId: input.teamId,
+      organizationId: scope.organizationId,
+    })
     .onConflictDoNothing()
   return { projectId: input.projectId, teamId: input.teamId }
 }

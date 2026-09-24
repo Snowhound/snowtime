@@ -41,7 +41,9 @@ const updatedAudit = () => ({
 })
 
 const sysDeleted = () => ({
-  sysDeleted: integer('sys_deleted', { mode: 'boolean' }).default(sql`0`).notNull(),
+  sysDeleted: integer('sys_deleted', { mode: 'boolean' })
+    .default(sql`0`)
+    .notNull(),
 })
 
 // Auth (Better Auth core) -------------------------------------------------------------------
@@ -52,7 +54,9 @@ export const user = sqliteTable(
     id: text().primaryKey(),
     name: text().notNull(),
     email: text().notNull(),
-    emailVerified: integer('email_verified', { mode: 'boolean' }).default(sql`0`).notNull(),
+    emailVerified: integer('email_verified', { mode: 'boolean' })
+      .default(sql`0`)
+      .notNull(),
     image: text(),
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),
@@ -112,7 +116,10 @@ export const session = sqliteTable(
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),
   },
-  (t) => [uniqueIndex('session_token_unique').on(t.token), index('session_user_id_idx').on(t.userId)],
+  (t) => [
+    uniqueIndex('session_token_unique').on(t.token),
+    index('session_user_id_idx').on(t.userId),
+  ],
 )
 
 export const account = sqliteTable(
@@ -261,7 +268,9 @@ export const userSettings = sqliteTable(
     locale: text({ enum: LOCALES }).default('en').notNull(),
     theme: text({ enum: THEMES }).default('system').notNull(),
     timerLayout: text('timer_layout', { enum: TIMER_LAYOUTS }).default('bar').notNull(),
-    showSummary: integer('show_summary', { mode: 'boolean' }).default(sql`1`).notNull(),
+    showSummary: integer('show_summary', { mode: 'boolean' })
+      .default(sql`1`)
+      .notNull(),
   },
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),

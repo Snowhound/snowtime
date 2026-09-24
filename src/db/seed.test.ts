@@ -34,10 +34,15 @@ test('a few weeks of entries, with archived and deleted projects', async () => {
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)` })
     .from(timeEntry)
-    .where(and(eq(timeEntry.organizationId, seedIds.orgs.northwind), eq(timeEntry.sysDeleted, false)))
+    .where(
+      and(eq(timeEntry.organizationId, seedIds.orgs.northwind), eq(timeEntry.sysDeleted, false)),
+    )
   expect(count).toBeGreaterThan(200)
   const legacy = await db.query.project.findFirst({ where: { id: seedIds.projects.legacy } })
   expect(legacy!.archivedAt).not.toBeNull()
-  const [scrapped] = await db.select().from(project).where(eq(project.id, seedIds.projects.scrapped))
+  const [scrapped] = await db
+    .select()
+    .from(project)
+    .where(eq(project.id, seedIds.projects.scrapped))
   expect(scrapped.sysDeleted).toBe(true)
 })

@@ -71,9 +71,15 @@ describe('listProjects', () => {
   })
 
   test('assertUsableProject follows the same visibility', async () => {
-    await expect(assertUsableProject(db, scopes.lead, P.mobile)).rejects.toMatchObject({ code: 'NOT_FOUND' })
-    await expect(assertUsableProject(db, scopes.lead, P.legacy)).rejects.toMatchObject({ code: 'NOT_FOUND' })
-    await expect(assertUsableProject(db, scopes.engineer, P.legacy)).rejects.toMatchObject({ code: 'CONFLICT' })
+    await expect(assertUsableProject(db, scopes.lead, P.mobile)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    })
+    await expect(assertUsableProject(db, scopes.lead, P.legacy)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    })
+    await expect(assertUsableProject(db, scopes.engineer, P.legacy)).rejects.toMatchObject({
+      code: 'CONFLICT',
+    })
     await assertUsableProject(db, scopes.loner, P.internal)
     await assertUsableProject(db, scopes.admin, P.mobile)
   })
@@ -87,7 +93,11 @@ describe('createProject', () => {
     const created = await as(scopes.admin, () =>
       createProject(db, scopes.admin, { id: uuidv7(), name: '  Research ', color: '#AABBCC' }),
     )
-    expect(created).toMatchObject({ organizationId: O.northwind, color: '#AABBCC', createdBy: U.admin })
+    expect(created).toMatchObject({
+      organizationId: O.northwind,
+      color: '#AABBCC',
+      createdBy: U.admin,
+    })
     expect(await idsOf(scopes.loner)).toContain(created.id)
   })
 
@@ -100,7 +110,9 @@ describe('createProject', () => {
 
   test('a reused id is a conflict', async () => {
     const id = uuidv7()
-    await as(scopes.owner, () => createProject(db, scopes.owner, { id, name: 'First', color: null }))
+    await as(scopes.owner, () =>
+      createProject(db, scopes.owner, { id, name: 'First', color: null }),
+    )
     await expect(
       as(scopes.owner, () => createProject(db, scopes.owner, { id, name: 'Second', color: null })),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
@@ -115,7 +127,9 @@ describe('updateProject', () => {
     )
     expect(updated).toMatchObject({ name: 'Final name', color: '#112233', updatedBy: U.admin })
     await expect(
-      as(scopes.admin, () => updateProject(db, scopes.admin, { id: created.id, name: 'Mobile app' })),
+      as(scopes.admin, () =>
+        updateProject(db, scopes.admin, { id: created.id, name: 'Mobile app' }),
+      ),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
   })
 
@@ -134,15 +148,21 @@ describe('updateProject', () => {
 describe('archiveProject and unarchiveProject', () => {
   test('archiving hides the project from lists and new time; unarchiving restores it', async () => {
     const created = await newProject(scopes.owner, 'Seasonal')
-    const archived = await as(scopes.owner, () => archiveProject(db, scopes.owner, { id: created.id }))
+    const archived = await as(scopes.owner, () =>
+      archiveProject(db, scopes.owner, { id: created.id }),
+    )
     expect(archived.archivedAt).toBeInstanceOf(Date)
     expect(await idsOf(scopes.member)).not.toContain(created.id)
-    await expect(assertUsableProject(db, scopes.member, created.id)).rejects.toMatchObject({ code: 'CONFLICT' })
+    await expect(assertUsableProject(db, scopes.member, created.id)).rejects.toMatchObject({
+      code: 'CONFLICT',
+    })
 
     const again = await as(scopes.owner, () => archiveProject(db, scopes.owner, { id: created.id }))
     expect(again.archivedAt).toEqual(archived.archivedAt)
 
-    const restored = await as(scopes.admin, () => unarchiveProject(db, scopes.admin, { id: created.id }))
+    const restored = await as(scopes.admin, () =>
+      unarchiveProject(db, scopes.admin, { id: created.id }),
+    )
     expect(restored.archivedAt).toBeNull()
     expect(await idsOf(scopes.member)).toContain(created.id)
   })
@@ -179,22 +199,32 @@ describe('assignProjectToTeam and unassignProjectFromTeam', () => {
 
   test('only admins and owners assign; a team lead cannot assign to their own team', async () => {
     await expect(
-      as(scopes.lead, () => assignProjectToTeam(db, scopes.lead, { projectId: P.internal, teamId: T.design })),
+      as(scopes.lead, () =>
+        assignProjectToTeam(db, scopes.lead, { projectId: P.internal, teamId: T.design }),
+      ),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' })
     await expect(
-      as(scopes.lead, () => unassignProjectFromTeam(db, scopes.lead, { projectId: P.website, teamId: T.design })),
+      as(scopes.lead, () =>
+        unassignProjectFromTeam(db, scopes.lead, { projectId: P.website, teamId: T.design }),
+      ),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' })
   })
 
-  test("teams and projects of another organization are not found", async () => {
+  test('teams and projects of another organization are not found', async () => {
     await expect(
-      as(scopes.admin, () => assignProjectToTeam(db, scopes.admin, { projectId: P.internal, teamId: T.delivery })),
+      as(scopes.admin, () =>
+        assignProjectToTeam(db, scopes.admin, { projectId: P.internal, teamId: T.delivery }),
+      ),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
     await expect(
-      as(scopes.admin, () => assignProjectToTeam(db, scopes.admin, { projectId: P.audit, teamId: T.design })),
+      as(scopes.admin, () =>
+        assignProjectToTeam(db, scopes.admin, { projectId: P.audit, teamId: T.design }),
+      ),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
     await expect(
-      as(scopes.admin, () => assignProjectToTeam(db, scopes.admin, { projectId: P.scrapped, teamId: T.design })),
+      as(scopes.admin, () =>
+        assignProjectToTeam(db, scopes.admin, { projectId: P.scrapped, teamId: T.design }),
+      ),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 })
@@ -215,15 +245,21 @@ describe('deleteProject', () => {
 
   test('deletes the project and its team assignments, and frees the name', async () => {
     const created = await newProject(scopes.admin, 'Typo projekt')
-    await as(scopes.admin, () => assignProjectToTeam(db, scopes.admin, { projectId: created.id, teamId: T.design }))
+    await as(scopes.admin, () =>
+      assignProjectToTeam(db, scopes.admin, { projectId: created.id, teamId: T.design }),
+    )
     // Deleted entries do not count as time on the project.
     await logOn(created.id, true)
 
-    expect(await as(scopes.owner, () => deleteProject(db, scopes.owner, { id: created.id }))).toEqual({
+    expect(
+      await as(scopes.owner, () => deleteProject(db, scopes.owner, { id: created.id })),
+    ).toEqual({
       id: created.id,
     })
     expect(await idsOf(scopes.admin, true)).not.toContain(created.id)
-    expect(await db.select().from(projectTeam).where(eq(projectTeam.projectId, created.id))).toEqual([])
+    expect(
+      await db.select().from(projectTeam).where(eq(projectTeam.projectId, created.id)),
+    ).toEqual([])
     await expect(
       as(scopes.owner, () => deleteProject(db, scopes.owner, { id: created.id })),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
@@ -234,7 +270,9 @@ describe('deleteProject', () => {
 
   test('a project with time on it is a conflict and stays as it was', async () => {
     const created = await newProject(scopes.admin, 'Used once')
-    await as(scopes.admin, () => assignProjectToTeam(db, scopes.admin, { projectId: created.id, teamId: T.design }))
+    await as(scopes.admin, () =>
+      assignProjectToTeam(db, scopes.admin, { projectId: created.id, teamId: T.design }),
+    )
     await logOn(created.id)
     await expect(
       as(scopes.admin, () => deleteProject(db, scopes.admin, { id: created.id })),
@@ -256,7 +294,9 @@ describe('deleteProject', () => {
       ).rejects.toMatchObject({ code: 'FORBIDDEN' })
     }
     for (const id of [P.audit, P.scrapped]) {
-      await expect(as(scopes.admin, () => deleteProject(db, scopes.admin, { id }))).rejects.toMatchObject({
+      await expect(
+        as(scopes.admin, () => deleteProject(db, scopes.admin, { id })),
+      ).rejects.toMatchObject({
         code: 'NOT_FOUND',
       })
     }

@@ -14,9 +14,7 @@ import { passwordEnabled, signInMethods } from '../server/sign-in.server'
 
 // The sign-in view calls this signed out, so it has no session or scope middleware. It
 // returns method ids only, never a client ID or secret.
-export const getSignInMethods = createServerFn({ method: 'GET' }).handler(() =>
-  signInMethods(env),
-)
+export const getSignInMethods = createServerFn({ method: 'GET' }).handler(() => signInMethods(env))
 
 // The seeded users and their shared password, for one-click sign-in in local development.
 // Empty wherever password sign-in is off, so deployed environments never list them.

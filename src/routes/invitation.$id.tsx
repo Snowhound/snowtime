@@ -57,8 +57,7 @@ function Invitation() {
   const path = () => `/invitation/${params().id}`
   const user = () => session.data?.user
   // Better Auth accepts only from the invited address, compared case-insensitively.
-  const isRecipient = () =>
-    user()?.email.toLowerCase() === invitation.data?.email.toLowerCase()
+  const isRecipient = () => user()?.email.toLowerCase() === invitation.data?.email.toLowerCase()
 
   async function refreshSession() {
     await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })
@@ -124,10 +123,12 @@ function Invitation() {
               <div class="grid gap-2">
                 <Button onClick={signOut}>{m.invitation_wrong_switch()}</Button>
                 <Button variant="outline" onClick={() => navigate({ to: '/' })}>
-                  <span class="truncate">{m.invitation_wrong_continue({ email: user()!.email })}</span>
+                  <span class="truncate">
+                    {m.invitation_wrong_continue({ email: user()!.email })}
+                  </span>
                 </Button>
               </div>
-              <p class="text-sm text-muted-foreground">
+              <p class="text-muted-foreground text-sm">
                 {m.invitation_wrong_hint({ inviter: data().inviterName })}
               </p>
             </Match>
@@ -142,7 +143,7 @@ function Invitation() {
                   <p class="truncate font-medium">{data().organizationName}</p>
                   <Show when={data().teamName}>
                     {(team) => (
-                      <p class="truncate text-sm text-muted-foreground">
+                      <p class="text-muted-foreground truncate text-sm">
                         {m.invitation_team({ team: team() })}
                       </p>
                     )}
@@ -186,7 +187,7 @@ function Invitation() {
                   </Show>
                 </Button>
               </Show>
-              <p class="text-center text-sm text-muted-foreground">
+              <p class="text-muted-foreground text-center text-sm">
                 {m.auth_not_you()}{' '}
                 <Show
                   when={user()}

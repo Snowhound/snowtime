@@ -92,7 +92,10 @@ export function ProviderButtons(props: {
   )
 }
 
-export function PasskeyButton(props: { onSuccess: () => void; onError: (message: string) => void }) {
+export function PasskeyButton(props: {
+  onSuccess: () => void
+  onError: (message: string) => void
+}) {
   const [pending, setPending] = createSignal(false)
 
   async function signIn() {
@@ -177,14 +180,14 @@ export function PasswordSignIn(props: {
       <AuthDivider />
       <Show when={devUsers.data?.length}>
         <div class="grid gap-2">
-          <p class="text-xs font-medium text-muted-foreground">{m.sign_in_dev_users()}</p>
+          <p class="text-muted-foreground text-xs font-medium">{m.sign_in_dev_users()}</p>
           <ul class="max-h-40 overflow-y-auto rounded-md border p-1">
             <For each={devUsers.data}>
               {(user) => (
                 <li>
                   <button
                     type="button"
-                    class="flex w-full min-w-0 flex-col items-start rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                    class="hover:bg-accent focus-visible:bg-accent flex w-full min-w-0 flex-col items-start rounded-sm px-2 py-1.5 text-left text-sm focus-visible:outline-none"
                     onClick={() => {
                       form.setFieldValue('email', user.email)
                       form.setFieldValue('password', user.password)
@@ -192,7 +195,7 @@ export function PasswordSignIn(props: {
                     }}
                   >
                     <span class="w-full truncate font-medium">{user.name}</span>
-                    <span class="w-full truncate text-xs text-muted-foreground">{user.email}</span>
+                    <span class="text-muted-foreground w-full truncate text-xs">{user.email}</span>
                   </button>
                 </li>
               )}
@@ -249,7 +252,7 @@ export function PasswordSignIn(props: {
                 <Button
                   variant="ghost"
                   size="icon"
-                  class="absolute right-0 top-0 hover:bg-transparent"
+                  class="absolute top-0 right-0 hover:bg-transparent"
                   aria-label={revealed() ? m.sign_in_hide_password() : m.sign_in_show_password()}
                   aria-pressed={revealed()}
                   onClick={() => setRevealed(!revealed())}

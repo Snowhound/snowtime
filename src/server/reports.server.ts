@@ -68,7 +68,11 @@ export interface Aggregation {
 function bucketsOf(a: Pick<Aggregation, 'unit' | 'weekStart' | 'from' | 'to'>): IsoDate[] {
   const step = a.unit === 'week' ? 7 : 1
   const buckets: IsoDate[] = []
-  for (let d = a.unit === 'week' ? startOfWeek(a.from, a.weekStart) : a.from; d < a.to; d = addDays(d, step)) {
+  for (
+    let d = a.unit === 'week' ? startOfWeek(a.from, a.weekStart) : a.from;
+    d < a.to;
+    d = addDays(d, step)
+  ) {
     buckets.push(d)
   }
   return buckets
@@ -209,7 +213,14 @@ export async function getReport(
   const settings = await settingsOf(db, scope.userId)
   const teams = await reportTeams(db, scope)
   const users = await reportUsers(db, scope, input, teams)
-  const a: Aggregation = { ...settings, unit: input.unit, from: input.from, to: input.to, now: now.getTime(), teams }
+  const a: Aggregation = {
+    ...settings,
+    unit: input.unit,
+    from: input.from,
+    to: input.to,
+    now: now.getTime(),
+    teams,
+  }
   const range = rangeOf(a)
 
   const entries =

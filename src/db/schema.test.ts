@@ -31,7 +31,8 @@ afterAll(() => cleanup())
 describe('audit columns', () => {
   test('a write without an actor fails', async () => {
     await expect(
-      (async () => db.insert(project).values({ id: 'p-none', organizationId: 'org-a', name: 'None' }))(),
+      (async () =>
+        db.insert(project).values({ id: 'p-none', organizationId: 'org-a', name: 'None' }))(),
     ).rejects.toThrow('without an actor')
   })
 
@@ -84,7 +85,9 @@ describe('tenancy', () => {
   })
 
   test('team members default to the member role', async () => {
-    await db.insert(team).values({ id: 't-1', organizationId: 'org-a', name: 'Team', createdAt: now })
+    await db
+      .insert(team)
+      .values({ id: 't-1', organizationId: 'org-a', name: 'Team', createdAt: now })
     const [row] = await db
       .insert(teamMember)
       .values({ id: 'tm-1', teamId: 't-1', userId: alice })

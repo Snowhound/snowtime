@@ -27,7 +27,12 @@ describe('ProviderButtons', () => {
 
   test('shows nothing when no provider is configured', () => {
     render(() => (
-      <ProviderButtons methods={['passkey']} callbackURL="/" errorCallbackURL="/" onError={() => {}} />
+      <ProviderButtons
+        methods={['passkey']}
+        callbackURL="/"
+        errorCallbackURL="/"
+        onError={() => {}}
+      />
     ))
     expect(buttons()).toEqual([])
   })
@@ -54,7 +59,7 @@ describe('ProviderButtons', () => {
       callbackURL: '/reports',
       errorCallbackURL: '/sign-in?redirect=%2Freports',
     })
-    expect(onError).toHaveBeenCalledWith('Sign-in didn\'t finish. Try again or use another method.')
+    expect(onError).toHaveBeenCalledWith("Sign-in didn't finish. Try again or use another method.")
     expect(screen.getByRole('button', { name: 'Continue with Microsoft' })).toBeEnabled()
   })
 })

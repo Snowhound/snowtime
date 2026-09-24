@@ -13,7 +13,13 @@ beforeAll(async () => {
   ;({ db, cleanup } = await createTestDatabase())
   const people = ['owner', 'admin', 'lead', 'member', 'outsider', 'multi']
   await db.insert(user).values(
-    people.map((id) => ({ id, name: id, email: `${id}@example.com`, createdAt: now, updatedAt: now })),
+    people.map((id) => ({
+      id,
+      name: id,
+      email: `${id}@example.com`,
+      createdAt: now,
+      updatedAt: now,
+    })),
   )
   await db.insert(organization).values([
     { id: 'org-a', name: 'A', slug: 'a', createdAt: now },
@@ -55,7 +61,12 @@ describe('resolveScope', () => {
 
   test('member: own entries only', async () => {
     const scope = await resolveScope(db, 'member', 'org-a')
-    expect(scope).toEqual({ userId: 'member', organizationId: 'org-a', orgRole: 'member', ledTeamIds: [] })
+    expect(scope).toEqual({
+      userId: 'member',
+      organizationId: 'org-a',
+      orgRole: 'member',
+      ledTeamIds: [],
+    })
     expect(isAdmin(scope)).toBe(false)
     expect(await readableUserIds(db, scope)).toEqual(['member'])
   })

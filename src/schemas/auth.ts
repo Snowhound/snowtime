@@ -10,8 +10,15 @@ export type GetInvitationInput = v.InferOutput<typeof GetInvitationInput>
 
 // Password sign-in, local development only (docs/architecture.md, "Sign-in methods").
 export const SignInForm = v.object({
-  email: v.pipe(v.string(), v.trim(), v.email(() => m.validation_email())),
-  password: v.pipe(v.string(), v.nonEmpty(() => m.validation_password_required())),
+  email: v.pipe(
+    v.string(),
+    v.trim(),
+    v.email(() => m.validation_email()),
+  ),
+  password: v.pipe(
+    v.string(),
+    v.nonEmpty(() => m.validation_password_required()),
+  ),
 })
 export type SignInForm = v.InferOutput<typeof SignInForm>
 

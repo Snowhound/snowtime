@@ -6,7 +6,10 @@ import { Uuidv7 } from './common'
 export const IsoDate = v.pipe(
   v.string(),
   v.isoDate(() => m.validation_date_format()),
-  v.check((d) => new Date(`${d}T00:00:00Z`).toISOString().startsWith(d), () => m.validation_date_unknown()),
+  v.check(
+    (d) => new Date(`${d}T00:00:00Z`).toISOString().startsWith(d),
+    () => m.validation_date_unknown(),
+  ),
 )
 
 export const REPORT_UNITS = ['day', 'week'] as const
@@ -26,11 +29,17 @@ export const ReportInput = v.pipe(
     userId: v.optional(Uuidv7),
     teamId: v.optional(Uuidv7),
   }),
-  v.check((i) => i.to > i.from, () => m.validation_range_end_before_start()),
+  v.check(
+    (i) => i.to > i.from,
+    () => m.validation_range_end_before_start(),
+  ),
   v.check(
     (i) => days(i.from, i.to) <= MAX_REPORT_DAYS,
     () => m.validation_range_too_long({ days: MAX_REPORT_DAYS }),
   ),
-  v.check((i) => !(i.userId && i.teamId), () => m.validation_member_or_team()),
+  v.check(
+    (i) => !(i.userId && i.teamId),
+    () => m.validation_member_or_team(),
+  ),
 )
 export type ReportInput = v.InferOutput<typeof ReportInput>

@@ -11,7 +11,10 @@ export const ProjectName = v.pipe(
 
 // A hex color such as #4E79A7; null removes it.
 export const ProjectColor = v.nullable(
-  v.pipe(v.string(), v.regex(/^#[\da-f]{6}$/i, () => m.validation_color_format())),
+  v.pipe(
+    v.string(),
+    v.regex(/^#[\da-f]{6}$/i, () => m.validation_color_format()),
+  ),
 )
 
 export const CreateProjectInput = v.object({

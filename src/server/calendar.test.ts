@@ -26,7 +26,11 @@ describe('dates', () => {
     expect(addDays('2026-12-31', 1)).toBe('2027-01-01')
     expect(addDays('2028-03-01', -1)).toBe('2028-02-29')
     expect(daysBetween('2026-09-01', '2026-10-01')).toBe(30)
-    expect(datesBetween('2026-09-29', '2026-10-02')).toEqual(['2026-09-29', '2026-09-30', '2026-10-01'])
+    expect(datesBetween('2026-09-29', '2026-10-02')).toEqual([
+      '2026-09-29',
+      '2026-09-30',
+      '2026-10-01',
+    ])
     expect(datesBetween('2026-09-29', '2026-09-29')).toEqual([])
   })
 
@@ -102,7 +106,12 @@ describe('dayRange', () => {
   })
 
   test('consecutive days tile time with no gap or overlap', () => {
-    for (const zone of ['Europe/Tallinn', 'America/Havana', 'Australia/Lord_Howe', 'Asia/Kathmandu']) {
+    for (const zone of [
+      'Europe/Tallinn',
+      'America/Havana',
+      'Australia/Lord_Howe',
+      'Asia/Kathmandu',
+    ]) {
       for (const date of datesBetween('2026-01-01', '2027-01-01')) {
         const day = dayRange(date, zone)
         expect(day.to).toBe(dayRange(addDays(date, 1), zone).from)
@@ -120,7 +129,9 @@ describe('weekRange', () => {
       to: '2026-09-27T21:00:00.000Z',
       hours: 168,
     })
-    expect(iso(weekRange('2026-09-24', 'Europe/Tallinn', 'sun')).from).toBe('2026-09-19T21:00:00.000Z')
+    expect(iso(weekRange('2026-09-24', 'Europe/Tallinn', 'sun')).from).toBe(
+      '2026-09-19T21:00:00.000Z',
+    )
   })
 
   test('a week holding a clock change is an hour shorter or longer', () => {
@@ -137,14 +148,16 @@ describe('weekRange', () => {
 
 describe('splitByDay', () => {
   test('an entry within a day is one piece', () => {
-    expect(splitByDay(at('2026-09-24T06:00:00Z'), at('2026-09-24T08:30:00Z'), 'Europe/Tallinn')).toEqual([
-      { date: '2026-09-24', ms: 2.5 * HOUR },
-    ])
+    expect(
+      splitByDay(at('2026-09-24T06:00:00Z'), at('2026-09-24T08:30:00Z'), 'Europe/Tallinn'),
+    ).toEqual([{ date: '2026-09-24', ms: 2.5 * HOUR }])
   })
 
   test('an entry crossing local midnight splits there, not at UTC midnight', () => {
     // 23:30 to 02:15 in Tallinn.
-    expect(splitByDay(at('2026-09-23T20:30:00Z'), at('2026-09-23T23:15:00Z'), 'Europe/Tallinn')).toEqual([
+    expect(
+      splitByDay(at('2026-09-23T20:30:00Z'), at('2026-09-23T23:15:00Z'), 'Europe/Tallinn'),
+    ).toEqual([
       { date: '2026-09-23', ms: 0.5 * HOUR },
       { date: '2026-09-24', ms: 2.25 * HOUR },
     ])
@@ -155,7 +168,11 @@ describe('splitByDay', () => {
 
   test('a multi-day entry gives each day its share, DST included', () => {
     // Friday 22:00 to Monday 02:00 in Tallinn, over the spring-forward Sunday.
-    const pieces = splitByDay(at('2026-03-27T20:00:00Z'), at('2026-03-30T00:00:00Z'), 'Europe/Tallinn')
+    const pieces = splitByDay(
+      at('2026-03-27T20:00:00Z'),
+      at('2026-03-30T00:00:00Z'),
+      'Europe/Tallinn',
+    )
     expect(pieces).toEqual([
       { date: '2026-03-27', ms: 2 * HOUR },
       { date: '2026-03-28', ms: 24 * HOUR },
@@ -184,7 +201,10 @@ describe('countedSpan', () => {
       to: now,
     })
     // A running entry started before the range counts from the range start.
-    expect(countedSpan(entry('2026-09-23T20:00:00Z', null), range, now)).toEqual({ from: range.from, to: now })
+    expect(countedSpan(entry('2026-09-23T20:00:00Z', null), range, now)).toEqual({
+      from: range.from,
+      to: now,
+    })
   })
 
   test('an entry is clipped to the range', () => {
@@ -199,7 +219,9 @@ describe('countedSpan', () => {
   })
 
   test('nothing counts outside the range or before a running entry starts', () => {
-    expect(countedSpan(entry('2026-09-23T10:00:00Z', '2026-09-24T00:00:00Z'), range, now)).toBeNull()
+    expect(
+      countedSpan(entry('2026-09-23T10:00:00Z', '2026-09-24T00:00:00Z'), range, now),
+    ).toBeNull()
     expect(countedSpan(entry('2026-09-24T13:00:00Z', null), range, now)).toBeNull()
   })
 })
