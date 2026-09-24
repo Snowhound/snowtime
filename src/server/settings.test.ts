@@ -20,6 +20,9 @@ beforeAll(async () => {
 
 afterAll(() => cleanup())
 
+// What a new row holds besides the zone.
+const DEFAULTS = { weekStart: 'mon', locale: 'en', theme: 'system', timerLayout: 'bar', showSummary: true } as const
+
 // A signed-up user who has not loaded the app yet, so has no settings row.
 async function newUser() {
   const id = uuidv7()
@@ -32,7 +35,7 @@ describe('getSettings', () => {
   test("the first call creates the settings with the browser's zone and locale; later calls keep them", async () => {
     const userId = await newUser()
     const first = await as({ userId }, () => getSettings(db, userId, { timeZone: 'Asia/Tokyo', locale: 'et' }))
-    expect(first).toEqual({ timeZone: 'Asia/Tokyo', weekStart: 'mon', locale: 'et' })
+    expect(first).toEqual({ ...DEFAULTS, timeZone: 'Asia/Tokyo', locale: 'et' })
     const again = await as({ userId }, () =>
       getSettings(db, userId, { timeZone: 'Europe/Paris', locale: 'en' }),
     )
@@ -41,20 +44,29 @@ describe('getSettings', () => {
 
   test('seeded users get their own settings', async () => {
     const settings = await as({ userId: U.engLead }, () => getSettings(db, U.engLead, { timeZone: 'UTC', locale: 'et' }))
-    expect(settings).toEqual({ timeZone: 'America/New_York', weekStart: 'mon', locale: 'en' })
+    expect(settings).toEqual({ ...DEFAULTS, timeZone: 'America/New_York' })
   })
 })
 
 describe('updateSettings', () => {
   test("changes only the fields present, and only the user's own row", async () => {
     const updated = await as({ userId: U.member }, () => updateSettings(db, U.member, { weekStart: 'sun' }))
-    expect(updated).toEqual({ timeZone: 'Europe/Tallinn', weekStart: 'sun', locale: 'en' })
+    expect(updated).toEqual({ ...DEFAULTS, timeZone: 'Europe/Tallinn', weekStart: 'sun' })
     const zone = await as({ userId: U.member }, () =>
       updateSettings(db, U.member, { timeZone: 'America/Los_Angeles', locale: 'et' }),
     )
-    expect(zone).toEqual({ timeZone: 'America/Los_Angeles', weekStart: 'sun', locale: 'et' })
+    expect(zone).toEqual({ ...DEFAULTS, timeZone: 'America/Los_Angeles', weekStart: 'sun', locale: 'et' })
     const other = await as({ userId: U.lead }, () => getSettings(db, U.lead, { timeZone: 'UTC', locale: 'en' }))
-    expect(other).toEqual({ timeZone: 'Europe/Tallinn', weekStart: 'mon', locale: 'en' })
+    expect(other).toEqual({ ...DEFAULTS, timeZone: 'Europe/Tallinn' })
+  })
+
+  test('view settings save one field at a time, as the UI auto-saves them', async () => {
+    const save = (patch: UpdateSettingsInput) => as({ userId: U.loner }, () => updateSettings(db, U.loner, patch))
+    await save({ theme: 'dark' })
+    await save({ timerLayout: 'table' })
+    const last = await save({ showSummary: false })
+    expect(last).toEqual({ ...DEFAULTS, timeZone: 'Europe/London', theme: 'dark', timerLayout: 'table', showSummary: false })
+    expect(await save({})).toEqual(last)
   })
 
   test('a user without settings is told to load them first', async () => {
@@ -78,6 +90,15 @@ describe('settings input', () => {
   test('the week starts on Monday or Sunday', () => {
     expect(v.safeParse(UpdateSettingsInput, { weekStart: 'sun' }).success).toBe(true)
     expect(v.safeParse(UpdateSettingsInput, { weekStart: 'sat' }).success).toBe(false)
+  })
+
+  test('theme and timer layout are known values, and show summary a boolean', () => {
+    for (const patch of [{ theme: 'light' }, { theme: 'system' }, { timerLayout: 'focus' }, { showSummary: false }]) {
+      expect(v.safeParse(UpdateSettingsInput, patch).success).toBe(true)
+    }
+    for (const patch of [{ theme: 'sepia' }, { timerLayout: 'grid' }, { showSummary: 1 }]) {
+      expect(v.safeParse(UpdateSettingsInput, patch).success).toBe(false)
+    }
   })
 
   test('the locale is a supported language, English by default', () => {

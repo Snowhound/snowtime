@@ -15,7 +15,7 @@
 | Validation      | Valibot, shared by forms and server functions             |
 | UI              | Solid-UI + Tailwind                                       |
 | i18n            | English and Estonian; Paraglide JS (planned, not yet installed) |
-| Client state    | No library; Solid signals/stores and URL search params; per-device view settings (layout, theme, summary) in localStorage |
+| Client state    | No library; Solid signals/stores and URL search params; user settings on the server (see "User settings") |
 
 ## Data conventions
 
@@ -133,14 +133,26 @@
   TypeScript; entries crossing midnight are split there.
 - All of this lives in one tested `reports` module.
 
+## User settings
+
+- All of a user's settings live in `user_settings`, one row per user, so they follow the
+  user across devices: time zone, week start, language (`locale`), theme, timer layout,
+  and whether the summary shows.
+- The server renders the theme class from the session user's settings, so the first
+  paint uses the right theme with no flash. This is the main reason view settings moved
+  here from `localStorage`. Signed-out pages (sign-in, invitations) follow the system
+  theme. (Planned: the app shell does not render it yet.)
+- The UI saves each field when it changes, so `updateSettings` takes a partial patch.
+- The app validates the text values (`src/schemas/settings.ts`); their columns have no
+  `CHECK`, so adding a value needs no table rebuild. `show_summary` is a boolean and keeps
+  the usual 0/1 `CHECK`.
+
 ## Internationalization
 
 - Languages: English (`en`, default) and Estonian (`et`). The UI translates with
   Paraglide JS (task 012).
-- The user's language is `user_settings.locale`, so it follows them across devices. The
-  first `getSettings` call sets it from the browser, as it does the time zone. The app
-  validates it against `LOCALES` in `src/schemas/settings.ts`; the column has no `CHECK`,
-  because changing one needs a table rebuild and adding a language should not.
+- The user's language is `user_settings.locale` (see "User settings"). The first
+  `getSettings` call sets it from the browser, as it does the time zone.
 - The server returns keys, dates, and numbers, never display text; the client translates
   and formats them in the user's locale and zone.
   - Each `AppError` carries a stable snake_case message key from the catalog in

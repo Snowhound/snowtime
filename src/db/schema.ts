@@ -11,7 +11,7 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core'
-import { LOCALES } from '../schemas/settings'
+import { LOCALES, THEMES, TIMER_LAYOUTS } from '../schemas/settings'
 import { currentActor } from './actor'
 
 const nowMs = sql`(CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER))`
@@ -230,10 +230,17 @@ export const userSettings = sqliteTable(
       .notNull(),
     ...createdAudit(),
     ...updatedAudit(),
-    // Added by a later migration, so it follows the audit columns. Validated in the app.
+    // Added by a later migration, so they follow the audit columns. Text values are
+    // validated in the app (src/schemas/settings.ts).
     locale: text({ enum: LOCALES }).default('en').notNull(),
+    theme: text({ enum: THEMES }).default('system').notNull(),
+    timerLayout: text('timer_layout', { enum: TIMER_LAYOUTS }).default('bar').notNull(),
+    showSummary: integer('show_summary', { mode: 'boolean' }).default(sql`1`).notNull(),
   },
-  () => [check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`)],
+  () => [
+    check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),
+    check('user_settings_show_summary', sql`show_summary IN (0, 1)`),
+  ],
 )
 
 export const project = sqliteTable(

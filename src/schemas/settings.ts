@@ -23,6 +23,13 @@ export const LOCALES = ['en', 'et'] as const
 export const Locale = v.picklist(LOCALES)
 export type Locale = v.InferOutput<typeof Locale>
 
+// View settings, kept on the server so the first paint uses them (docs/architecture.md,
+// "User settings"). The first value of each list is the default.
+export const THEMES = ['system', 'light', 'dark'] as const
+export const Theme = v.picklist(THEMES)
+export const TIMER_LAYOUTS = ['bar', 'focus', 'table'] as const
+export const TimerLayout = v.picklist(TIMER_LAYOUTS)
+
 // The browser's zone (Intl.DateTimeFormat().resolvedOptions().timeZone) and the supported
 // locale that best matches its languages, used only when the user has no settings yet.
 export const GetSettingsInput = v.object({
@@ -31,10 +38,13 @@ export const GetSettingsInput = v.object({
 })
 export type GetSettingsInput = v.InferOutput<typeof GetSettingsInput>
 
-// Only the fields present change.
+// A partial patch: the UI saves one field at a time, and only the fields present change.
 export const UpdateSettingsInput = v.object({
   timeZone: v.optional(TimeZone),
   weekStart: v.optional(WeekStart),
   locale: v.optional(Locale),
+  theme: v.optional(Theme),
+  timerLayout: v.optional(TimerLayout),
+  showSummary: v.optional(v.boolean()),
 })
 export type UpdateSettingsInput = v.InferOutput<typeof UpdateSettingsInput>
