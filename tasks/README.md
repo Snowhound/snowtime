@@ -29,3 +29,10 @@ Short description of what and why.
 ```
 
 Update the status line as work progresses; tick criteria as they are met.
+
+## Archive
+
+When a task is done and nothing still builds on its file, move it to `000-archive/` with
+`git mv`, keeping its name. The main folder then lists only open work. Numbers stay
+unique across both folders: pick the next number after the highest in either. Refer to
+tasks by number ("task 008"), not by path, so a move breaks no reference.
