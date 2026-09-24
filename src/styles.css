@@ -290,6 +290,31 @@ code {
   opacity: 0;
 }
 
+/* Surfaces over the image: glass lets the scene show through, solid keeps bg-card; both lift off
+   it with a shadow. `surface` marks cards and card-like elements, such as the timer bar. Popovers,
+   menus, and dialogs render outside the frame, so they stay solid. */
+[data-scene-bg='on'][data-surfaces='glass'] .surface {
+  background-color: color-mix(in srgb, var(--card) 70%, transparent);
+  backdrop-filter: blur(24px);
+}
+[data-scene-bg='on'] .surface {
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
+}
+/* The sign-in card lifts further, as in prototypes/auth.html (shadow-xl). */
+[data-scene-bg='on'] .auth-card {
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+/* Over the image, the header keeps a page-colored surface. */
+[data-scene-bg='on'] .scene-header {
+  background-color: color-mix(in srgb, var(--background) 82%, transparent);
+  backdrop-filter: blur(16px);
+}
+[data-scene-bg='on'][data-surfaces='solid'] .scene-header {
+  background-color: var(--background);
+}
+
 /* Tailwind v4 gives buttons the arrow cursor, as desktop apps do; on the web people expect the
    pointer on anything they can click. Menu items and listbox options get it too, so a menu reads
    like the button that opens it. Unlayered, so it beats the registry components' cursor-default;

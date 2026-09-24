@@ -165,7 +165,7 @@ export function EntryActions(props: {
 
 export function EmptyState() {
   return (
-    <div class="bg-background flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-12 text-center">
+    <div class="surface bg-background flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-12 text-center">
       <ClockIcon class="text-muted-foreground size-6" aria-hidden="true" />
       <p class="font-medium">{m.timer_empty_title()}</p>
       <p class="text-muted-foreground text-sm">{m.timer_empty_description()}</p>

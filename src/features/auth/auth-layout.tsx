@@ -40,7 +40,7 @@ export function AuthLayout(props: { children: JSX.Element }) {
     >
       <SceneLayer settings={settings()} />
       <AppearanceMenu settings={settings()} onDevice={!session.data?.settings} onChange={update} />
-      <div class="bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-lg border p-6 shadow-sm sm:p-8">
+      <div class="surface auth-card bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-lg border p-6 shadow-sm sm:p-8">
         <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]">
           <AppMark id={appIcon(settings().appIcon).id} small class="size-7" />
           {m.app_name()}

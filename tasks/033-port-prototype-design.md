@@ -85,6 +85,13 @@ Work in this order, one commit or more per step, and check each in the dev app a
   none. Season, Strength, and Background changes in the Appearance popover show at once. Checked at
   1440, 850, and 390 px, light and dark, on every signed-in page and the sign-in page: no
   horizontal scroll and no browser errors.
+- 2026-09-25: Step 3b: over the image, cards and card-like elements (`surface`: the timer bar,
+  the entry table, the empty states, the team cards, the sign-in card) are glass (`card` at 70%
+  with a 24 px blur) or solid, both with a soft shadow; the sign-in card keeps the prototype's
+  larger one. Solid-UI's `Card` got the `surface` class. The header is the page color at 82% with
+  a 16 px blur, or solid with solid surfaces. Dialogs and popovers stay solid, since they render
+  outside the frame. Checked at 1440, 850, and 390 px, light and dark, glass and solid, on every
+  signed-in page and the sign-in page: no horizontal scroll and no browser errors.
 
 ## Acceptance criteria
 

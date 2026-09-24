@@ -33,7 +33,7 @@ export function EntryTable(
   },
 ) {
   return (
-    <div class="bg-card overflow-hidden rounded-lg border">
+    <div class="surface bg-card overflow-hidden rounded-lg border">
       <Table class="min-w-[44rem] table-fixed">
         <colgroup>
           <col />

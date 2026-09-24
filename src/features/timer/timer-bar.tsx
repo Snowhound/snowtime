@@ -22,12 +22,12 @@ const LAYOUTS: Record<
 > = {
   bar: {
     timer:
-      'bg-card flex flex-col gap-3 rounded-xl border p-3 shadow-sm sm:flex-row sm:items-center',
+      'surface bg-card flex flex-col gap-3 rounded-xl border p-3 shadow-sm sm:flex-row sm:items-center',
     elapsed: 'justify-start text-lg sm:w-28 sm:justify-end',
   },
   focus: {
     timer:
-      'bg-card grid grid-cols-1 gap-4 rounded-xl border p-6 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto]',
+      'surface bg-card grid grid-cols-1 gap-4 rounded-xl border p-6 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto]',
     fields: 'sm:col-start-1',
     elapsed:
       'order-first h-auto justify-self-start text-5xl font-light tracking-tight sm:col-span-2 sm:text-6xl',

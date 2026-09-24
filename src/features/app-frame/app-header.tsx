@@ -61,7 +61,7 @@ export function AppHeader() {
   return (
     <Show when={session.data}>
       {(data) => (
-        <header class="bg-background border-b">
+        <header class="scene-header bg-background border-b">
           <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
             <Link
               to="/timer"
