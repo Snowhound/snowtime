@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "import", "vitest", "promise"],
-  "jsPlugins": ["eslint-plugin-solid"],
+  "jsPlugins": ["eslint-plugin-solid", "eslint-plugin-regexp"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -19,6 +19,20 @@
         "checksVoidReturn": false
       }
     ],
+    "eslint/eqeqeq": ["error", "smart"],
+    "regexp/no-contradiction-with-assertion": "error",
+    "regexp/no-dupe-disjunctions": "error",
+    "regexp/no-empty-alternative": "warn",
+    "regexp/no-empty-capturing-group": "error",
+    "regexp/no-empty-character-class": "error",
+    "regexp/no-empty-group": "error",
+    "regexp/no-empty-lookarounds-assertion": "error",
+    "regexp/no-misleading-capturing-group": "error",
+    "regexp/no-missing-g-flag": "error",
+    "regexp/no-potentially-useless-backreference": "warn",
+    "regexp/no-super-linear-backtracking": "error",
+    "regexp/no-useless-assertions": "error",
+    "regexp/no-useless-backreference": "error",
     "eslint/func-style": ["error", "declaration", { "allowTypeAnnotation": true }],
     "solid/components-return-once": "warn",
     "solid/event-handlers": "warn",

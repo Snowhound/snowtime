@@ -106,7 +106,9 @@ function parseDbml(source) {
         table = null
         continue
       }
-      const match = line.match(/^([a-z_][\w]*)\s+([a-z_][\w ]*?)(\(([^)]*)\))?\s*(?:\[(.*)\])?$/i)
+      const match = line.match(
+        /^([a-z_]\w*)\s+([a-z_]\w*(?: \w+)*)(\(([^)]*)\))?(?:\s+\[(.*)\])?$/i,
+      )
       if (!match) throw new Error(`Unparsed column line: ${line}`)
       const attributes = match[5] ? splitAttributes(match[5]) : []
       const defaultAttribute = attributes.find((a) => a.startsWith('default:'))
@@ -131,7 +133,7 @@ function parseDbml(source) {
       continue
     }
 
-    const tableMatch = line.match(/^Table\s+"?([\w.]+)"?\s*(?:\[(.*)\])?\s*\{$/)
+    const tableMatch = line.match(/^Table\s+"?([\w.]+)"?(?:\s+\[(.*)\])?\s+\{$/)
     if (tableMatch) {
       table = {
         name: tableMatch[1],
@@ -142,12 +144,12 @@ function parseDbml(source) {
       continue
     }
 
-    const groupMatch = line.match(/^TableGroup\s+"?([\w ]+)"?\s*(?:\[(.*)\])?\s*\{$/)
+    const groupMatch = line.match(/^TableGroup\s+(?:"([^"]+)"|(\w+))(?:\s+\[(.*)\])?\s+\{$/)
     if (groupMatch) {
-      const attributes = groupMatch[2] ? splitAttributes(groupMatch[2]) : []
+      const attributes = groupMatch[3] ? splitAttributes(groupMatch[3]) : []
       const color = attributes.find((a) => a.startsWith('color:'))
       groups.push({
-        name: groupMatch[1].trim(),
+        name: (groupMatch[1] ?? groupMatch[2]).trim(),
         color: color ? color.slice('color:'.length).trim() : null,
         tables: [],
       })
@@ -365,7 +367,8 @@ const tables = buildTables(parsed)
 const relationships = buildRelationships(parsed, tables)
 const areas = layout(parsed.groups, tables)
 
-const projectName = source.match(/^Project\s+"?([\w ]+?)"?\s*\{/m)?.[1]?.trim() ?? 'Data model'
+const projectMatch = source.match(/^Project\s+(?:"([^"]+)"|(\w+))\s+\{/m)
+const projectName = (projectMatch?.[1] ?? projectMatch?.[2])?.trim() ?? 'Data model'
 
 const diagram = {
   id: 'snowtime-data-model',
