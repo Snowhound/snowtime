@@ -212,8 +212,9 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
   (Profile, Settings, Sign out). Below 768 px the navigation moves to a second header row of four
   equal-width links, so every page stays one tap away without a hamburger menu. Between 768 and
   1024 px the header drops the "Snowtime" name beside the mark, so the organization name fits.
-- The **Appearance** popover, from the palette button left of the avatar, on every page: Theme
-  (light, dark, system), the app icon with **Change** (opens the [app icon picker](#app-icon)),
+- The **Appearance** popover, from the mountain button left of the avatar, on every page. The
+  button uses the sign-in page's Scenery icon (Lucide `mountain-snow`, which replaced a palette),
+  so one icon opens the scenery everywhere. It holds Theme (light, dark, system), the app icon with **Change** (opens the [app icon picker](#app-icon)),
   and the scenery settings: Season, Background with Strength and Surfaces under it, and Weather,
   whose hint names the season's effect or why it's off. Then "All settings". Hints are left out
   where the label says enough, so it fits a 390 × 844 screen. Theme used to be in the user menu
@@ -225,8 +226,8 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
   come within 24 px of the title or the row's actions, it drops under the title too; it's
   re-placed on resize and when the season changes. It's two-toned like the intro: the
   first line in the season's headline color, the second in its second line's color (see
-  [Seasonal copy](#seasonal-copy)). The season is the user's Season setting (see the Scenery menu
-  below). Pages load [seasons.js](seasons.js) before `app-frame.js`. It replaced a tagline at
+  [Seasonal copy](#seasonal-copy)). The season is the user's Season setting (see the Appearance
+  popover above). Pages load [seasons.js](seasons.js) before `app-frame.js`. It replaced a tagline at
   the foot of the page over a fade, which covered the end of long lists and read as a footer.
   Pages with nothing right of the title (Reports, Projects, Organization, Settings) read as
   balanced with it centered, so they got nothing extra there.

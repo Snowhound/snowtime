@@ -19,7 +19,8 @@ Work in this order, one commit or more per step, and check each in the dev app a
    scenery) and Settings > Preferences > Scenery, on the user settings `sceneSeason`,
    `sceneBackground`, `sceneStrength`, `surfaces`, `sceneWeather`, and `sceneIntro` in
    `user_settings`. Read `docs/migrations.md` before touching the schema. Signed out, the sign-in
-   page keeps them on the device.
+   page keeps them on the device. The Appearance button uses Lucide's `mountain-snow` icon, the sign-in
+   page's Scenery icon, so one icon opens the scenery everywhere.
 3. **Scene**: the background images (`design/backgrounds/`, 1920 and 3840 px WebP picked for the
    screen), the tint, and glass or solid surfaces behind every signed-in page and the sign-in
    page. Popovers and dialogs stay solid.

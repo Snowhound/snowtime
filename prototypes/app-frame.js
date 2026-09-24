@@ -32,8 +32,8 @@
     'log-out': '<path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />',
     'mail': '<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" /><rect x="2" y="4" width="20" height="16" rx="2" />',
     'monitor': '<rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" />',
-    'palette': '<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />',
     'moon': '<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />',
+    'mountain-snow': '<path d="m8 3 4 8 5-5 5 15H2L8 3z" /><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19" />',
     'pencil': '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" />',
     'play': '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />',
     'plus': '<path d="M5 12h14" /><path d="M12 5v14" />',
@@ -319,7 +319,7 @@
           <button type="button" role="menuitem" data-ui="menu-item" disabled>${icon('plus')}Create organization</button>
         </div>
         <nav class="ml-2 hidden items-center gap-1 md:flex" aria-label="Main">${navLinks(false)}</nav>
-        <button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="ml-auto size-9 shrink-0" popovertarget="appearance-menu" aria-haspopup="dialog" aria-expanded="false" aria-label="Appearance" title="Appearance">${icon('palette')}</button>
+        <button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="ml-auto size-9 shrink-0" popovertarget="appearance-menu" aria-haspopup="dialog" aria-expanded="false" aria-label="Appearance" title="Appearance">${icon('mountain-snow')}</button>
         <button type="button" class="ml-1 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           popovertarget="user-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Account menu for ${escapeHtml(user.name)}">
           <span data-ui="avatar" class="size-8"><span data-ui="avatar-fallback" class="text-xs font-medium">${escapeHtml(initials(user.name))}</span></span>
@@ -488,7 +488,7 @@
     seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
   }
 
-  // The Appearance popover, opened from the header's palette button on every page: theme, app icon,
+  // The Appearance popover, opened from the header's mountain button on every page: theme, app icon,
   // and the scenery settings, compact, with hints only where they say something the label can't.
   // Replay intro sits beside All settings; the intro's switch stays in Settings. The popover sits
   // outside the header, which re-renders.
@@ -570,7 +570,7 @@
     menu.querySelector('#scene-weather-switch').addEventListener('change', (event) => settingsStore.set({ sceneWeather: event.currentTarget.getAttribute('aria-checked') === 'true' }))
     menu.querySelectorAll('[data-scene-option]').forEach((b) => b.addEventListener('click', () => settingsStore.set({ [b.dataset.sceneOption]: b.dataset.value })))
     menu.querySelector('[data-replay-intro]')?.addEventListener('click', () => replayIntro())
-    // The picker returns focus to the palette button, since the popover closes behind it.
+    // The picker returns focus to the Appearance button, since the popover closes behind it.
     menu.querySelector('[data-appearance-icon]').addEventListener('click', () => {
       menu.hidePopover()
       document.querySelector('[popovertarget="appearance-menu"]').focus()
