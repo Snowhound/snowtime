@@ -2,15 +2,15 @@
 // src/server/sign-in.server.ts, session.server.ts and invitations.server.ts.
 import { createServerFn } from '@tanstack/solid-start'
 import { getRequestHeaders, setCookie } from '@tanstack/solid-start/server'
-import { db } from '~/db'
-import { SEED_PASSWORD, seedUsers } from '~/db/seed'
-import { env } from '~/env'
-import { auth } from '~/lib/auth'
-import { cookieMaxAge, cookieName, getLocale } from '~/paraglide/runtime.js'
-import { GetInvitationInput } from '~/schemas/auth'
-import { invitationPreview } from '~/server/invitations.server'
-import { appSession } from '~/server/session.server'
-import { passwordEnabled, signInMethods } from '~/server/sign-in.server'
+import { db } from '../db'
+import { SEED_PASSWORD, seedUsers } from '../db/seed'
+import { env } from '../env'
+import { auth } from '../lib/auth'
+import { cookieMaxAge, cookieName, getLocale } from '../paraglide/runtime.js'
+import { GetInvitationInput } from '../schemas/auth'
+import { invitationPreview } from '../server/invitations.server'
+import { appSession } from '../server/session.server'
+import { passwordEnabled, signInMethods } from '../server/sign-in.server'
 
 // The sign-in view calls this signed out, so it has no session or scope middleware. It
 // returns method ids only, never a client ID or secret.

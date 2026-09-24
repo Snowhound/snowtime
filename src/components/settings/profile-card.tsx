@@ -3,25 +3,25 @@
 import { createForm } from '@tanstack/solid-form'
 import { useQueryClient } from '@tanstack/solid-query'
 import { Show, createSignal } from 'solid-js'
-import type { AppSession } from '~/functions/auth'
-import { authClient } from '~/lib/auth-client'
-import { fieldError } from '~/lib/form'
-import { sessionQuery } from '~/lib/session'
-import { initials } from '~/lib/utils'
-import { m } from '~/paraglide/messages.js'
-import { ProfileForm } from '~/schemas/auth'
-import type { SignInMethod } from '~/server/sign-in.server'
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Separator } from '~/components/ui/separator'
+import type { AppSession } from '../../functions/auth'
+import { authClient } from '../../lib/auth-client'
+import { fieldError } from '../../lib/form'
+import { sessionQuery } from '../../lib/session'
+import { initials } from '../../lib/utils'
+import { m } from '../../paraglide/messages.js'
+import { ProfileForm } from '../../schemas/auth'
+import type { SignInMethod } from '../../server/sign-in.server'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Button } from '../ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { Separator } from '../ui/separator'
 import {
   TextField,
   TextFieldDescription,
   TextFieldErrorMessage,
   TextFieldInput,
   TextFieldLabel,
-} from '~/components/ui/text-field'
+} from '../ui/text-field'
 import { SignInMethodsList } from './sign-in-methods-list'
 
 export function ProfileCard(props: {

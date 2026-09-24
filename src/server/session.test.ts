@@ -1,9 +1,9 @@
 /// <reference types="bun" />
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { v7 as uuidv7 } from 'uuid'
-import type { Database } from '~/db'
-import { invitation, user } from '~/db/schema'
-import { seedIds } from '~/db/seed'
+import type { Database } from '../db'
+import { invitation, user } from '../db/schema'
+import { seedIds } from '../db/seed'
 import { appSession } from './session.server'
 import { createSeededDatabase } from './testing'
 

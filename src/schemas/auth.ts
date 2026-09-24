@@ -2,7 +2,7 @@
 // organizations go through the Better Auth client, so these validate the forms only;
 // Better Auth checks again on its side.
 import * as v from 'valibot'
-import { m } from '~/paraglide/messages.js'
+import { m } from '../paraglide/messages.js'
 import { Uuidv7 } from './common'
 
 export const GetInvitationInput = v.object({ id: Uuidv7 })

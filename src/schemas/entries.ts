@@ -1,5 +1,5 @@
 import * as v from 'valibot'
-import { m } from '~/paraglide/messages.js'
+import { m } from '../paraglide/messages.js'
 import { Description, Timestamp, Uuidv7 } from './common'
 
 // A manual, finished entry. Admins and owners may log one for another member (userId).

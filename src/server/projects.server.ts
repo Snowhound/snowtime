@@ -2,15 +2,15 @@
 // and owners create, change, archive and assign them. The timer and entry server
 // functions check projects through assertUsableProject.
 import { and, asc, eq, exists, inArray, isNull, notExists, or, type SQL } from 'drizzle-orm'
-import type { Database, Executor } from '~/db'
-import { project, projectTeam, team, teamMember, timeEntry } from '~/db/schema'
+import type { Database, Executor } from '../db'
+import { project, projectTeam, team, teamMember, timeEntry } from '../db/schema'
 import type {
   CreateProjectInput,
   ListProjectsInput,
   ProjectIdInput,
   ProjectTeamInput,
   UpdateProjectInput,
-} from '~/schemas/projects'
+} from '../schemas/projects'
 import { AppError } from './errors'
 import { failedConstraint, live } from './queries.server'
 import { isAdmin, type Scope } from './scope.server'

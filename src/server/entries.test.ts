@@ -1,9 +1,9 @@
 /// <reference types="bun" />
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { v7 as uuidv7 } from 'uuid'
-import type { Database } from '~/db'
-import { SYSTEM_USER_ID } from '~/db/actor'
-import { seedIds } from '~/db/seed'
+import type { Database } from '../db'
+import { SYSTEM_USER_ID } from '../db/actor'
+import { seedIds } from '../db/seed'
 import { createEntry, deleteEntry, listEntries, updateEntry } from './entries.server'
 import type { Scope } from './scope.server'
 import { as, createSeededDatabase, scopeOf } from './testing'

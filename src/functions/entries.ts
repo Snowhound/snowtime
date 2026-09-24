@@ -1,14 +1,14 @@
 // Time entry server functions. Thin wrappers: the rules live in src/server/entries.server.ts.
 import { createServerFn } from '@tanstack/solid-start'
-import { db } from '~/db'
+import { db } from '../db'
 import {
   CreateEntryInput,
   DeleteEntryInput,
   ListEntriesInput,
   UpdateEntryInput,
-} from '~/schemas/entries'
-import * as entries from '~/server/entries.server'
-import { scopeMiddleware } from '~/server/middleware'
+} from '../schemas/entries'
+import * as entries from '../server/entries.server'
+import { scopeMiddleware } from '../server/middleware'
 
 export const createEntry = createServerFn({ method: 'POST' })
   .middleware([scopeMiddleware])

@@ -2,8 +2,8 @@
 // which one is active, their settings, and an open invitation when they have no
 // organization yet (docs/architecture.md, "Tenancy" and "User settings").
 import { and, asc, eq, gt, sql } from 'drizzle-orm'
-import type { Database } from '~/db'
-import { invitation, member, organization, userSettings } from '~/db/schema'
+import type { Database } from '../db'
+import { invitation, member, organization, userSettings } from '../db/schema'
 import { strongestRole } from './scope.server'
 
 export async function appSession(

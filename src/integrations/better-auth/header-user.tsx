@@ -1,5 +1,5 @@
 import { Show } from 'solid-js'
-import { authClient } from '~/lib/auth-client'
+import { authClient } from '../../lib/auth-client'
 
 export default function BetterAuthHeader() {
   const session = authClient.useSession()

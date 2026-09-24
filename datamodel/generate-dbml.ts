@@ -9,7 +9,7 @@
 import { is, SQL } from 'drizzle-orm'
 import { getTableConfig, SQLiteDialect, SQLiteTable } from 'drizzle-orm/sqlite-core'
 import { readFileSync, writeFileSync } from 'node:fs'
-import * as schema from '~/db/schema'
+import * as schema from '../src/db/schema'
 import { auditNotes, groups, projectNote, tables as tableNotes } from './notes'
 
 const OUTPUT = 'datamodel/snowtime.dbml'

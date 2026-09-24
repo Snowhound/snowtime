@@ -1,10 +1,10 @@
 import { useQueryClient } from '@tanstack/solid-query'
 import { Outlet, createFileRoute, redirect } from '@tanstack/solid-router'
 import { onMount } from 'solid-js'
-import { AppHeader } from '~/components/app-header'
-import { getSettings } from '~/functions/settings'
-import { sessionQuery } from '~/lib/session'
-import { getLocale } from '~/paraglide/runtime.js'
+import { AppHeader } from '../components/app-header'
+import { getSettings } from '../functions/settings'
+import { sessionQuery } from '../lib/session'
+import { getLocale } from '../paraglide/runtime.js'
 
 // The signed-in layout. Signed-out users go to sign-in and come back to the page they
 // asked for; users without an organization go to their invitation or create one.

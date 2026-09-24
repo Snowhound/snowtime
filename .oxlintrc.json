@@ -19,7 +19,6 @@
         "checksVoidReturn": false
       }
     ],
-    "import/no-relative-parent-imports": "error",
     "eslint/func-style": ["error", "declaration", { "allowTypeAnnotation": true }],
     "solid/components-return-once": "warn",
     "solid/event-handlers": "warn",
@@ -51,7 +50,6 @@
     {
       "files": ["src/components/ui/**"],
       "rules": {
-        "import/no-relative-parent-imports": "error",
         "eslint/func-style": "off"
       }
     },

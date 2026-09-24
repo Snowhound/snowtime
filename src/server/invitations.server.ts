@@ -5,8 +5,8 @@
 // through Better Auth, which checks the address.
 import { eq } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
-import type { Database } from '~/db'
-import { invitation, organization, team, user } from '~/db/schema'
+import type { Database } from '../db'
+import { invitation, organization, team, user } from '../db/schema'
 import { strongestRole } from './scope.server'
 
 export type InvitationState = 'pending' | 'expired' | 'closed'

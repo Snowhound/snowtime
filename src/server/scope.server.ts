@@ -2,8 +2,8 @@
 // server function that touches tenant data gets its scope from here (through
 // scopeMiddleware) and filters by scope.organizationId.
 import { and, eq, inArray } from 'drizzle-orm'
-import type { Database } from '~/db'
-import { member, team, teamMember } from '~/db/schema'
+import type { Database } from '../db'
+import { member, team, teamMember } from '../db/schema'
 import { AppError } from './errors'
 
 export type OrgRole = 'owner' | 'admin' | 'member'

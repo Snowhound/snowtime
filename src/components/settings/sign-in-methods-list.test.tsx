@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import { render, screen, within } from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import type { SignInMethod } from '~/server/sign-in.server'
+import type { SignInMethod } from '../../server/sign-in.server'
 import { SignInMethodsList } from './sign-in-methods-list'
 
 // Better Auth stays out of the DOM tests; each call resolves to { data, error } like the
@@ -13,7 +13,7 @@ const client = vi.hoisted(() => ({
   linkSocial: vi.fn(),
   passkey: { listUserPasskeys: vi.fn(), addPasskey: vi.fn(), deletePasskey: vi.fn() },
 }))
-vi.mock('~/lib/auth-client', () => ({ authClient: client }))
+vi.mock('../../lib/auth-client', () => ({ authClient: client }))
 
 function account(id: string, providerId: string) {
   return {

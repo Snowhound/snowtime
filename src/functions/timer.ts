@@ -1,9 +1,9 @@
 // Timer server functions. Thin wrappers: the rules live in src/server/timer.server.ts.
 import { createServerFn } from '@tanstack/solid-start'
-import { db } from '~/db'
-import { StartTimerInput, StopTimerInput } from '~/schemas/timer'
-import { scopeMiddleware, sessionMiddleware } from '~/server/middleware'
-import * as timer from '~/server/timer.server'
+import { db } from '../db'
+import { StartTimerInput, StopTimerInput } from '../schemas/timer'
+import { scopeMiddleware, sessionMiddleware } from '../server/middleware'
+import * as timer from '../server/timer.server'
 
 export const startTimer = createServerFn({ method: 'POST' })
   .middleware([scopeMiddleware])

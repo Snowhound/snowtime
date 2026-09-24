@@ -1,7 +1,7 @@
 // Valibot building blocks shared by forms and server functions. Files under src/schemas/
 // must stay importable from the browser: no server imports.
 import * as v from 'valibot'
-import { m } from '~/paraglide/messages.js'
+import { m } from '../paraglide/messages.js'
 
 // App-owned rows get their id on the client, so optimistic updates keep a stable key.
 export const Uuidv7 = v.pipe(

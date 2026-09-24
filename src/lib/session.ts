@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/solid-query'
-import { getAppSession } from '~/functions/auth'
+import { getAppSession } from '../functions/auth'
 
 // The signed-in user, their organizations and settings, or null when signed out. The root
 // route loads it before every page; changes to the session (switching organization,

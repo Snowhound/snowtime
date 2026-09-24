@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import type { Database } from '~/db'
-import { seedIds } from '~/db/seed'
+import type { Database } from '../db'
+import { seedIds } from '../db/seed'
 import { readableUserIds, type Scope } from './scope.server'
 import { listMembers, listTeams, setTeamRole } from './teams.server'
 import { as, createSeededDatabase, scopeOf } from './testing'

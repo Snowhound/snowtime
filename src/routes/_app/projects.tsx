@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/solid-router'
-import { m } from '~/paraglide/messages.js'
+import { m } from '../../paraglide/messages.js'
 
 // Placeholder until task 023 builds this view.
 export const Route = createFileRoute('/_app/projects')({

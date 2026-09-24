@@ -9,14 +9,14 @@ import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import type { Component, JSX } from 'solid-js'
 import { For, Show, createSignal } from 'solid-js'
 import { isServer } from 'solid-js/web'
-import { authClient } from '~/lib/auth-client'
-import { formatDateTime } from '~/lib/format'
-import { m } from '~/paraglide/messages.js'
-import type { SignInMethod } from '~/server/sign-in.server'
-import { GitHubIcon, GoogleIcon, MicrosoftIcon } from '~/components/auth/brand-logos'
-import { Alert, AlertDescription } from '~/components/ui/alert'
-import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
+import { authClient } from '../../lib/auth-client'
+import { formatDateTime } from '../../lib/format'
+import { m } from '../../paraglide/messages.js'
+import type { SignInMethod } from '../../server/sign-in.server'
+import { GitHubIcon, GoogleIcon, MicrosoftIcon } from '../auth/brand-logos'
+import { Alert, AlertDescription } from '../ui/alert'
+import { Badge } from '../ui/badge'
+import { Button } from '../ui/button'
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '~/components/ui/dialog'
+} from '../ui/dialog'
 
 type SocialProvider = 'google' | 'github' | 'microsoft'
 

@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 import { describe, expect, test } from 'bun:test'
 import * as v from 'valibot'
-import { safeRedirect } from '~/lib/redirect'
+import { safeRedirect } from '../lib/redirect'
 import { CreateOrganizationForm, slugify } from './auth'
 
 describe('slugify', () => {

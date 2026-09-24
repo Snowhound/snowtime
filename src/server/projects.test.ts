@@ -2,9 +2,9 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { eq } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
-import type { Database } from '~/db'
-import { projectTeam, timeEntry } from '~/db/schema'
-import { seedIds } from '~/db/seed'
+import type { Database } from '../db'
+import { projectTeam, timeEntry } from '../db/schema'
+import { seedIds } from '../db/seed'
 import {
   archiveProject,
   assertUsableProject,

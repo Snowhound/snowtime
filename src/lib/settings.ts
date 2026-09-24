@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/solid-query'
-import type { AppSession } from '~/functions/auth'
-import { updateSettings } from '~/functions/settings'
-import type { UpdateSettingsInput } from '~/schemas/settings'
+import type { AppSession } from '../functions/auth'
+import { updateSettings } from '../functions/settings'
+import type { UpdateSettingsInput } from '../schemas/settings'
 import { optimistic } from './query'
 import { sessionQuery } from './session'
 
