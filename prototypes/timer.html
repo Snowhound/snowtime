@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timer and entries</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.18"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/js/all.min.js" defer></script>
+    <script src="prototype-theme.js"></script>
+    <style type="text/tailwindcss">
+      /* Timer controls share one DOM across designs; only layout changes. */
+      body[data-design='bar'] .timer {
+        @apply flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center;
+      }
+      body[data-design='bar'] .timer-elapsed {
+        @apply text-lg sm:w-28 sm:text-right;
+      }
+      body[data-design='focus'] .timer {
+        @apply grid grid-cols-1 gap-4 rounded-xl border bg-card p-6 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto];
+      }
+      body[data-design='focus'] .timer-elapsed {
+        @apply order-first text-5xl font-light tracking-tight sm:col-span-2 sm:text-6xl;
+      }
+      body[data-design='focus'] .timer-fields {
+        @apply sm:col-start-1;
+      }
+      body[data-design='focus'] .timer-toggle {
+        @apply h-12 sm:w-36;
+      }
+      body[data-design='table'] .timer {
+        @apply flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center;
+      }
+      body[data-design='table'] .timer-elapsed {
+        @apply text-base sm:w-24 sm:text-right;
+      }
+      body:not([data-design='focus']) .focus-only {
+        display: none;
+      }
+      .running .timer-elapsed {
+        @apply text-foreground;
+      }
+      .entry-actions {
+        @apply flex items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body data-design="bar" class="bg-muted/40 text-foreground antialiased">
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden">
+      <defs>
+        <symbol id="icon-play" viewBox="0 0 24 24">
+          <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />
+        </symbol>
+        <symbol id="icon-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /></symbol>
+        <symbol id="icon-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+        <symbol id="icon-trash-2" viewBox="0 0 24 24">
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <path d="M3 6h18" />
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <header class="border-b bg-background py-4">
+      <div class="mx-auto flex max-w-6xl px-4 sm:px-8 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Snowtime prototype
+          </div>
+          <h1 class="mt-1 text-lg font-semibold tracking-tight">Timer and entries</h1>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex rounded-lg bg-muted p-1" role="group" aria-label="Design">
+            <button class="btn text-xs aria-pressed:bg-background aria-pressed:shadow-sm" data-variant="ghost" data-size="sm" data-design-option="bar" aria-pressed="true">01 · Bar</button>
+            <button class="btn text-xs aria-pressed:bg-background aria-pressed:shadow-sm" data-variant="ghost" data-size="sm" data-design-option="focus" aria-pressed="false">02 · Focus</button>
+            <button class="btn text-xs aria-pressed:bg-background aria-pressed:shadow-sm" data-variant="ghost" data-size="sm" data-design-option="table" aria-pressed="false">03 · Table</button>
+          </div>
+          <div class="select w-40" id="fixture">
+            <button type="button" class="w-full text-xs" id="fixture-trigger" aria-label="Fixture" aria-haspopup="listbox" aria-expanded="false" aria-controls="fixture-listbox">
+              <span class="truncate">Running</span>
+              <svg class="prototype-icon text-muted-foreground" aria-hidden="true"><use href="#icon-chevron-down" /></svg>
+            </button>
+            <div data-popover aria-hidden="true">
+              <div role="listbox" id="fixture-listbox" aria-label="Fixture">
+                <div role="option" data-value="running">Running</div>
+                <div role="option" data-value="idle">Idle</div>
+                <div role="option" data-value="long">Long content</div>
+                <div role="option" data-value="empty">Empty</div>
+              </div>
+            </div>
+            <input type="hidden" value="running" />
+          </div>
+          <button id="theme-button" class="btn text-xs" data-variant="outline" data-size="sm">Dark</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 sm:px-8 lg:grid-cols-[minmax(0,1fr)_auto]">
+      <div class="flex min-w-0 flex-col gap-6">
+        <section id="timer" class="timer" aria-label="Timer">
+          <div class="timer-fields flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+            <label for="description" class="sr-only">What are you working on?</label>
+            <input id="description" class="input min-w-0 flex-1" type="text" placeholder="What are you working on?" autocomplete="off" />
+            <div class="select w-full min-w-0 sm:w-48" id="project">
+              <button type="button" class="w-full min-w-0" id="project-trigger" aria-label="Project" aria-haspopup="listbox" aria-expanded="false" aria-controls="project-listbox">
+                <span class="truncate"></span>
+                <svg class="prototype-icon text-muted-foreground" aria-hidden="true"><use href="#icon-chevron-down" /></svg>
+              </button>
+              <div data-popover aria-hidden="true">
+                <div role="listbox" id="project-listbox" aria-label="Project"></div>
+              </div>
+              <input type="hidden" value="none" />
+            </div>
+          </div>
+          <div class="timer-elapsed font-mono tabular-nums text-muted-foreground" id="elapsed" aria-live="off">0:00:00</div>
+          <button id="toggle" class="timer-toggle btn" type="button"></button>
+        </section>
+
+        <section class="focus-only" aria-labelledby="recent-heading">
+          <h2 id="recent-heading" class="mb-2 text-sm font-medium text-muted-foreground">Continue recent</h2>
+          <div id="recent" class="flex flex-wrap gap-2"></div>
+        </section>
+
+        <section id="entries" aria-label="Time entries" class="flex min-w-0 flex-col gap-4"></section>
+      </div>
+
+      <aside class="focus-only w-full lg:w-72" aria-labelledby="summary-heading">
+        <div class="card gap-4 py-5">
+          <header class="px-5"><h2 id="summary-heading">Summary</h2></header>
+          <section id="summary" class="flex flex-col gap-4 px-5"></section>
+        </div>
+      </aside>
+    </main>
+
+    <script>
+      const DAY = 86_400_000
+      const HOUR = 3_600_000
+      const MIN = 60_000
+
+      const projects = [
+        { id: 'none', name: 'No project', color: 'transparent' },
+        { id: 'p1', name: 'Snowtime', color: 'oklch(0.62 0.19 255)' },
+        { id: 'p2', name: 'Client portal', color: 'oklch(0.7 0.17 150)' },
+        { id: 'p3', name: 'Internal', color: 'oklch(0.75 0.15 70)' },
+        { id: 'p4', name: 'Nordic Logistics – warehouse management system migration', color: 'oklch(0.65 0.2 20)' },
+      ]
+
+      const state = { entries: [], running: null }
+      let nextId = 1
+
+      const startOfDay = (t) => {
+        const d = new Date(t)
+        d.setHours(0, 0, 0, 0)
+        return d.getTime()
+      }
+      // Week starts Monday (user setting in the app).
+      const startOfWeek = (t) => {
+        const d = new Date(startOfDay(t))
+        return d.getTime() - ((d.getDay() + 6) % 7) * DAY
+      }
+
+      function entry(dayOffset, startHour, minutes, description, projectId) {
+        const start = startOfDay(Date.now()) - dayOffset * DAY + startHour * HOUR
+        return { id: `e${nextId++}`, description, projectId, startedAt: start, stoppedAt: start + minutes * MIN }
+      }
+
+      const fixtures = {
+        running() {
+          return {
+            entries: [
+              entry(0, 8.5, 55, 'Standup and planning', 'p3'),
+              entry(0, 9.5, 95, 'Timer schema and partial unique index', 'p1'),
+              entry(1, 9, 30, 'Standup and planning', 'p3'),
+              entry(1, 9.75, 180, 'Invoice export review', 'p2'),
+              entry(1, 13.5, 70, '', 'none'),
+              entry(3, 10, 240, 'Report time zone boundaries', 'p1'),
+            ],
+            running: { id: `e${nextId++}`, description: 'Prototype timer layouts', projectId: 'p1', startedAt: Date.now() - 25 * MIN - 12_000 },
+          }
+        },
+        idle() {
+          return { entries: fixtures.running().entries, running: null }
+        },
+        long() {
+          const long =
+            'Workshop with the logistics team about migrating legacy warehouse stock adjustments, including edge cases for partial deliveries'
+          const entries = []
+          for (let day = 0; day < 6; day++)
+            for (let i = 0; i < 5; i++) entries.push(entry(day, 8 + i * 1.75, 40 + i * 13, i % 2 ? long : 'Code review', i % 2 ? 'p4' : 'p2'))
+          return { entries, running: { id: `e${nextId++}`, description: long, projectId: 'p4', startedAt: Date.now() - 9 * HOUR - 3 * MIN } }
+        },
+        empty() {
+          return { entries: [], running: null }
+        },
+      }
+
+      const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+      const icon = (name, cls = '') => `<svg class="prototype-icon ${cls}" aria-hidden="true"><use href="#icon-${name}" /></svg>`
+      const project = (id) => projects.find((p) => p.id === id) ?? projects[0]
+      const dot = (p) =>
+        p.id === 'none' ? '' : `<span class="inline-block size-2 shrink-0 rounded-full" style="background:${p.color}"></span>`
+      const timeFmt = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
+      const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+
+      function duration(ms, seconds = true) {
+        const total = Math.max(0, Math.floor(ms / 1000))
+        const h = Math.floor(total / 3600)
+        const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0')
+        const s = String(total % 60).padStart(2, '0')
+        return seconds ? `${h}:${m}:${s}` : `${h}:${m}`
+      }
+      function dayLabel(t) {
+        const diff = Math.round((startOfDay(Date.now()) - startOfDay(t)) / DAY)
+        return diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : dayFmt.format(t)
+      }
+      const entryDuration = (e) => (e.stoppedAt ?? Date.now()) - e.startedAt
+      const describe = (e) =>
+        e.description ? escapeHtml(e.description) : '<span class="text-muted-foreground italic">No description</span>'
+
+      function groupByDay(entries) {
+        const groups = new Map()
+        for (const e of [...entries].sort((a, b) => b.startedAt - a.startedAt)) {
+          const key = startOfDay(e.startedAt)
+          if (!groups.has(key)) groups.set(key, [])
+          groups.get(key).push(e)
+        }
+        return [...groups.entries()].map(([day, items]) => ({ day, items, total: items.reduce((s, e) => s + entryDuration(e), 0) }))
+      }
+
+      function actions(e) {
+        return `<div class="entry-actions">
+          <button class="btn" data-variant="ghost" data-size="icon" data-continue="${e.id}" aria-label="Continue ${escapeHtml(e.description || 'entry')}">${icon('play')}</button>
+          <button class="btn" data-variant="ghost" data-size="icon" data-delete="${e.id}" aria-label="Delete ${escapeHtml(e.description || 'entry')}">${icon('trash-2')}</button>
+        </div>`
+      }
+
+      function emptyState() {
+        return `<div class="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-background px-6 py-12 text-center">
+          ${icon('clock', 'size-6 text-muted-foreground')}
+          <p class="font-medium">No time tracked yet</p>
+          <p class="text-sm text-muted-foreground">Start the timer above. Entries appear here grouped by day.</p>
+        </div>`
+      }
+
+      function renderDayCards(groups, compact) {
+        return groups
+          .map(
+            (g) => `<div class="card gap-0 py-0">
+              <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
+                <h2 class="font-medium">${dayLabel(g.day)}</h2>
+                <span class="font-mono tabular-nums text-muted-foreground">${duration(g.total, false)}</span>
+              </header>
+              <ul class="divide-y">${g.items
+                .map((e) => {
+                  const p = project(e.projectId)
+                  return `<li class="group flex flex-col gap-1 px-4 ${compact ? 'py-2' : 'py-3'} sm:flex-row sm:items-center sm:gap-4">
+                    <div class="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
+                      <span class="truncate text-sm">${describe(e)}</span>
+                      ${p.id === 'none' ? '' : `<span class="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground sm:max-w-56">${dot(p)}<span class="truncate">${escapeHtml(p.name)}</span></span>`}
+                    </div>
+                    <div class="flex items-center justify-between gap-3 sm:justify-end">
+                      <span class="text-xs tabular-nums text-muted-foreground">${timeFmt.format(e.startedAt)} – ${timeFmt.format(e.stoppedAt)}</span>
+                      <span class="w-16 text-right font-mono text-sm tabular-nums">${duration(entryDuration(e))}</span>
+                      ${actions(e)}
+                    </div>
+                  </li>`
+                })
+                .join('')}</ul>
+            </div>`
+          )
+          .join('')
+      }
+
+      function renderTable(groups) {
+        const rows = groups
+          .map(
+            (g) => `<tr class="bg-muted/50">
+                <th colspan="4" scope="rowgroup" class="px-3 py-2 text-left text-xs font-medium">${dayLabel(g.day)}</th>
+                <td class="px-3 py-2 text-right font-mono text-xs tabular-nums">${duration(g.total, false)}</td>
+                <td></td>
+              </tr>
+              ${g.items
+                .map((e) => {
+                  const p = project(e.projectId)
+                  return `<tr class="group border-t">
+                    <td class="max-w-0 px-3 py-2"><div class="truncate">${describe(e)}</div></td>
+                    <td class="max-w-0 px-3 py-2"><div class="flex items-center gap-1.5 text-muted-foreground">${dot(p)}<span class="truncate">${p.id === 'none' ? '—' : escapeHtml(p.name)}</span></div></td>
+                    <td class="px-3 py-2 tabular-nums text-muted-foreground">${timeFmt.format(e.startedAt)}</td>
+                    <td class="px-3 py-2 tabular-nums text-muted-foreground">${timeFmt.format(e.stoppedAt)}</td>
+                    <td class="px-3 py-2 text-right font-mono tabular-nums">${duration(entryDuration(e))}</td>
+                    <td class="px-1 py-1">${actions(e)}</td>
+                  </tr>`
+                })
+                .join('')}`
+          )
+          .join('')
+        return `<div class="relative overflow-x-auto rounded-lg border bg-background">
+          <table class="w-full min-w-[40rem] table-fixed text-sm">
+            <colgroup><col /><col class="w-44" /><col class="w-20" /><col class="w-20" /><col class="w-24" /><col class="w-24" /></colgroup>
+            <thead class="text-xs text-muted-foreground">
+              <tr><th class="px-3 py-2 text-left font-medium">Description</th><th class="px-3 py-2 text-left font-medium">Project</th><th class="px-3 py-2 text-left font-medium">Start</th><th class="px-3 py-2 text-left font-medium">End</th><th class="px-3 py-2 text-right font-medium">Duration</th><th><span class="sr-only">Actions</span></th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`
+      }
+
+      function renderEntries() {
+        const design = document.body.dataset.design
+        const groups = groupByDay(state.entries)
+        const el = document.getElementById('entries')
+        if (!groups.length) el.innerHTML = emptyState()
+        else if (design === 'table') el.innerHTML = renderTable(groups)
+        else if (design === 'focus') el.innerHTML = renderDayCards(groups.slice(0, 3), true)
+        else el.innerHTML = renderDayCards(groups, false)
+        renderRecent()
+      }
+
+      function renderRecent() {
+        const seen = new Set()
+        const recent = []
+        for (const e of [...state.entries].sort((a, b) => b.startedAt - a.startedAt)) {
+          const key = `${e.description}|${e.projectId}`
+          if (!e.description || seen.has(key)) continue
+          seen.add(key)
+          recent.push(e)
+          if (recent.length === 5) break
+        }
+        document.getElementById('recent').innerHTML = recent.length
+          ? recent
+              .map(
+                (e) =>
+                  `<button class="btn max-w-full" data-variant="outline" data-size="sm" data-continue="${e.id}">${icon('play', 'size-3')}${dot(project(e.projectId))}<span class="truncate">${escapeHtml(e.description)}</span></button>`
+              )
+              .join('')
+          : '<p class="text-sm text-muted-foreground">Recent entries appear here.</p>'
+      }
+
+      function renderSummary() {
+        const now = Date.now()
+        const all = state.running ? [...state.entries, state.running] : state.entries
+        const sum = (from) => all.filter((e) => e.startedAt >= from).reduce((s, e) => s + entryDuration(e), 0)
+        const week = all.filter((e) => e.startedAt >= startOfWeek(now))
+        const byProject = projects
+          .map((p) => ({ p, total: week.filter((e) => e.projectId === p.id).reduce((s, e) => s + entryDuration(e), 0) }))
+          .filter((x) => x.total > 0)
+          .sort((a, b) => b.total - a.total)
+        const weekTotal = byProject.reduce((s, x) => s + x.total, 0)
+        document.getElementById('summary').innerHTML = `
+          <dl class="grid grid-cols-2 gap-3">
+            <div><dt class="text-xs text-muted-foreground">Today</dt><dd class="font-mono text-lg tabular-nums">${duration(sum(startOfDay(now)), false)}</dd></div>
+            <div><dt class="text-xs text-muted-foreground">This week</dt><dd class="font-mono text-lg tabular-nums">${duration(weekTotal, false)}</dd></div>
+          </dl>
+          ${
+            byProject.length
+              ? `<ul class="flex flex-col gap-2.5">${byProject
+                  .map(
+                    ({ p, total }) => `<li class="flex flex-col gap-1 text-xs">
+                      <div class="flex items-center justify-between gap-2"><span class="flex min-w-0 items-center gap-1.5">${dot(p)}<span class="truncate">${escapeHtml(p.name)}</span></span><span class="font-mono tabular-nums text-muted-foreground">${duration(total, false)}</span></div>
+                      <div class="h-1.5 rounded-full bg-muted"><div class="h-full rounded-full" style="width:${(total / weekTotal) * 100}%;background:${p.id === 'none' ? 'var(--muted-foreground)' : p.color}"></div></div>
+                    </li>`
+                  )
+                  .join('')}</ul>`
+              : '<p class="text-sm text-muted-foreground">Nothing tracked this week.</p>'
+          }`
+      }
+
+      function renderTimer() {
+        const running = state.running
+        const toggle = document.getElementById('toggle')
+        document.getElementById('timer').classList.toggle('running', !!running)
+        toggle.dataset.variant = running ? 'destructive' : ''
+        if (!running) delete toggle.dataset.variant
+        toggle.innerHTML = running ? `${icon('square')}Stop` : `${icon('play')}Start`
+        tick()
+      }
+
+      function tick() {
+        document.getElementById('elapsed').textContent = duration(state.running ? entryDuration(state.running) : 0)
+        document.title = state.running ? `${duration(entryDuration(state.running))} · Timer and entries` : 'Timer and entries'
+        if (document.body.dataset.design === 'focus') renderSummary()
+      }
+
+      function setInputs(description, projectId) {
+        document.getElementById('description').value = description
+        document.getElementById('project').value = projectId
+      }
+      const selectedProject = () => document.getElementById('project').value || 'none'
+
+      // Named mutations, mirroring the planned server functions.
+      function startTimer(description, projectId) {
+        if (state.running) stopTimer()
+        state.running = { id: `e${nextId++}`, description, projectId, startedAt: Date.now() }
+        setInputs(description, projectId)
+        renderTimer()
+      }
+      function stopTimer() {
+        state.entries.push({ ...state.running, stoppedAt: Date.now() })
+        state.running = null
+        setInputs('', 'none')
+        renderTimer()
+        renderEntries()
+      }
+      function deleteEntry(id) {
+        state.entries = state.entries.filter((e) => e.id !== id)
+        renderEntries()
+        renderSummary()
+      }
+
+      function loadFixture(name) {
+        const f = fixtures[name]()
+        state.entries = f.entries
+        state.running = f.running
+        setInputs(f.running?.description ?? '', f.running?.projectId ?? 'none')
+        renderTimer()
+        renderEntries()
+        renderSummary()
+      }
+
+      function setDesign(design) {
+        document.body.dataset.design = design
+        document.querySelectorAll('[data-design-option]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.designOption === design)))
+        renderEntries()
+        renderSummary()
+      }
+
+      document.getElementById('project-listbox').innerHTML = projects
+        .map((p) => `<div role="option" data-value="${p.id}" data-label="${escapeHtml(p.name)}"><span class="flex min-w-0 items-center gap-2">${dot(p)}<span class="truncate">${escapeHtml(p.name)}</span></span></div>`)
+        .join('')
+
+      document.getElementById('toggle').addEventListener('click', () => {
+        if (state.running) stopTimer()
+        else startTimer(document.getElementById('description').value.trim(), selectedProject())
+      })
+      document.getElementById('description').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !state.running) startTimer(event.currentTarget.value.trim(), selectedProject())
+      })
+      document.getElementById('description').addEventListener('input', (event) => {
+        if (state.running) state.running.description = event.currentTarget.value // updateEntry
+      })
+      document.getElementById('project').addEventListener('change', (event) => {
+        if (event.detail && state.running) state.running.projectId = event.detail.value // updateEntry
+      })
+      document.getElementById('fixture').addEventListener('change', (event) => {
+        if (event.detail) loadFixture(event.detail.value)
+      })
+      document.addEventListener('click', (event) => {
+        const cont = event.target.closest('[data-continue]')
+        const del = event.target.closest('[data-delete]')
+        if (cont) {
+          const e = state.entries.find((x) => x.id === cont.dataset.continue)
+          if (e) startTimer(e.description, e.projectId)
+        } else if (del) deleteEntry(del.dataset.delete)
+      })
+      document.querySelectorAll('[data-design-option]').forEach((b) => b.addEventListener('click', () => setDesign(b.dataset.designOption)))
+      document.getElementById('theme-button').addEventListener('click', (event) => {
+        const dark = document.documentElement.classList.toggle('dark')
+        event.currentTarget.textContent = dark ? 'Light' : 'Dark'
+      })
+
+      window.addEventListener('load', () => {
+        window.basecoat?.initAll()
+        loadFixture('running')
+        setInterval(tick, 1000)
+      })
+    </script>
+  </body>
+</html>

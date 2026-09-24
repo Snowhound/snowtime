@@ -4,8 +4,11 @@
 
 - Product scope: `docs/product.md`
 - Architecture decisions: `docs/architecture.md`
+- Data model: `docs/data-model/` (DBML design source, `bun run datamodel` to view)
 - Hosting constraints: `docs/hosting.md`
 - Task tracking: `tasks/` (see `tasks/README.md`)
+- UI prototypes: `prototypes/` (see `prototypes/README.md`); browser checks via
+  `docs/skills/ui-review/SKILL.md`
 
 Follow the recorded decisions; if a change contradicts one, update the doc in
 the same change or ask first.
