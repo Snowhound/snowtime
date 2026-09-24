@@ -16,14 +16,29 @@ export const env = createEnv({
     TURSO_AUTH_TOKEN: v.optional(secret),
     BETTER_AUTH_SECRET: v.pipe(v.string(), v.minLength(32)),
     BETTER_AUTH_URL: v.pipe(v.string(), v.url()),
-    // Google sign-in is enabled when both are set (docs/architecture.md, "Sign-in methods").
+    // Each OAuth provider is enabled when both its client ID and secret are set
+    // (docs/architecture.md, "Sign-in methods").
     GOOGLE_CLIENT_ID: v.optional(secret),
     GOOGLE_CLIENT_SECRET: v.optional(secret),
+    GITHUB_CLIENT_ID: v.optional(secret),
+    GITHUB_CLIENT_SECRET: v.optional(secret),
+    MICROSOFT_CLIENT_ID: v.optional(secret),
+    MICROSOFT_CLIENT_SECRET: v.optional(secret),
+    // Restricts Microsoft sign-in to one Entra ID tenant; unset allows any account.
+    MICROSOFT_TENANT_ID: v.optional(secret),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
 })
 
-if (!env.GOOGLE_CLIENT_ID !== !env.GOOGLE_CLIENT_SECRET) {
-  throw new Error('Set both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or neither.')
+for (const provider of ['GOOGLE', 'GITHUB', 'MICROSOFT'] as const) {
+  const id = `${provider}_CLIENT_ID` as const
+  const clientSecret = `${provider}_CLIENT_SECRET` as const
+  if (!env[id] !== !env[clientSecret]) {
+    throw new Error(`Set both ${id} and ${clientSecret}, or neither.`)
+  }
+}
+
+if (env.MICROSOFT_TENANT_ID && !env.MICROSOFT_CLIENT_ID) {
+  throw new Error('MICROSOFT_TENANT_ID needs MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET.')
 }

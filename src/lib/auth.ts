@@ -7,6 +7,7 @@ import { v7 as uuidv7 } from 'uuid'
 import { db } from '../db'
 import * as schema from '../db/schema'
 import { env } from '../env'
+import { passwordEnabled, socialProviders } from '../server/sign-in.server'
 
 // Passkeys are bound to the app's domain, so each environment's relying party follows its
 // BETTER_AUTH_URL; the plugin would otherwise default to localhost.
@@ -22,14 +23,9 @@ export const auth = betterAuth({
   // Password sign-in is for local development with seeded users only: the MVP sends no
   // email, so there is no verification or reset (docs/architecture.md, "Sign-in methods").
   emailAndPassword: {
-    enabled: env.NODE_ENV === 'development',
+    enabled: passwordEnabled(env),
   },
-  socialProviders: {
-    ...(env.GOOGLE_CLIENT_ID &&
-      env.GOOGLE_CLIENT_SECRET && {
-        google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
-      }),
-  },
+  socialProviders: socialProviders(env),
   plugins: [
     organization({
       teams: {

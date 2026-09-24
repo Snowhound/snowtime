@@ -68,17 +68,37 @@
 
 ## Sign-in methods
 
-| Method           | Status   | Needs                                                                 |
-| ---------------- | -------- | --------------------------------------------------------------------- |
-| Email + password | Local development only | Nothing new in the schema (`account.password`); seeded users |
-| Google           | Decided  | A Google OAuth client; uses the existing `account` table              |
-| GitHub           | Decided  | A GitHub OAuth app; uses the existing `account` table                 |
-| Microsoft        | Decided  | An Entra ID app registration; uses the existing `account` table       |
-| Passkey          | Decided  | `@better-auth/passkey` and its `passkey` table                        |
+| Method           | Status                 | Enabled when                                         |
+| ---------------- | ---------------------- | ---------------------------------------------------- |
+| Email + password | Local development only | `NODE_ENV` is `development`; seeded users            |
+| Google           | Implemented            | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set |
+| GitHub           | Implemented            | `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set |
+| Microsoft        | Implemented            | `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET` are set |
+| Passkey          | Implemented            | Always; `@better-auth/passkey` and its `passkey` table |
 
 - Social providers are built into Better Auth and store their link in `account`, so
   adding one is configuration plus an OAuth app and its client ID and secret per
-  environment.
+  environment. `src/server/sign-in.server.ts` builds both the Better Auth provider config
+  and the method list from the env vars, so the two cannot disagree.
+- The sign-in view shows only the configured methods. `getSignInMethods` runs signed out
+  and returns method ids (`google`, `github`, `microsoft`, `password`, `passkey`), never
+  secrets or display text.
+- Each provider's OAuth app redirects to `<BETTER_AUTH_URL>/api/auth/callback/<id>`, for
+  example `http://localhost:3000/api/auth/callback/github` locally. Providers match the
+  redirect URL exactly and allow no wildcards, so OAuth sign-in works only on hosts
+  registered in advance: local, a stable staging host for previews, and production. A
+  preview deployment on its own generated URL cannot use OAuth.
+  - Google: one OAuth client can list the redirect URLs of every environment.
+  - GitHub: an OAuth app has one callback URL, so each environment needs its own app.
+  - Microsoft: one Entra ID app registration can list several redirect URLs (web
+    platform). Non-localhost URLs must use HTTPS. For the default `common` tenant, the
+    app must accept accounts in any organizational directory and personal Microsoft
+    accounts. `MICROSOFT_TENANT_ID` restricts sign-in to one tenant, for example in a
+    dedicated stack for one client.
+- Profile edits go straight through the Better Auth client, as organization management
+  does (see "Tenancy"): changing the name, linking and unlinking providers, and adding
+  and removing passkeys. Better Auth checks that the session owns the account, and no
+  Snowtime rule applies, so there are no server functions for them.
 - The MVP sends no email. OAuth providers supply the verified email address that
   Better Auth requires before an invitation can be accepted, and admins share
   invitation links themselves. Password sign-in, which would need email for
@@ -250,8 +270,11 @@ the source of truth. Workflow and rules: `docs/migrations.md`.
   hand (see `datamodel/README.md`).
 
 **Env vars:** `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`,
-`BETTER_AUTH_URL`, and the optional pair `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`,
-validated at startup by `src/env.ts` (server-only, Valibot). Password sign-in is on only
+`BETTER_AUTH_URL`, the optional pairs `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`,
+`GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, and `MICROSOFT_CLIENT_ID` and
+`MICROSOFT_CLIENT_SECRET`, and the optional `MICROSOFT_TENANT_ID`, validated at startup by
+`src/env.ts` (server-only, Valibot). Each pair must be set in full or not at all, and
+`MICROSOFT_TENANT_ID` needs the Microsoft pair. Password sign-in is on only
 when `NODE_ENV` is `development`, which Vite sets for `dev`; an unset `NODE_ENV` counts as
 production.
 
