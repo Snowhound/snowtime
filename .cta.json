@@ -1,0 +1,24 @@
+{
+  "projectName": "snowtime-slop",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "bun",
+  "includeExamples": false,
+  "tailwind": true,
+  "projectPreset": "default",
+  "addOnOptions": {},
+  "git": true,
+  "install": true,
+  "intent": true,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "solid",
+  "chosenAddOns": [
+    "vercel",
+    "better-auth",
+    "tanstack-query",
+    "form",
+    "solid-ui",
+    "t3env"
+  ]
+}
