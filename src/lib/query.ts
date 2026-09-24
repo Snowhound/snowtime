@@ -34,34 +34,57 @@ export function cacheUpdate<TData, TVariables>(
 //
 // A mutation that touches several caches passes a list of `cacheUpdate(queryKey, update)`
 // instead, as starting the timer does (src/features/timer/queries.ts).
+//
+// With `delay`, the update waits that many milliseconds for the server: a success applies
+// it at once, an error leaves the caches as they were, and without an answer by then it
+// applies anyway. For writes the server often refuses, such as deleting a project with
+// time, so a refusal doesn't make the item vanish and come back.
 export function optimistic<TData, TVariables>(
   queryClient: QueryClient,
   options:
     | { queryKey: QueryKey; update: (data: TData, variables: TVariables) => TData }
     | CacheUpdate<TVariables>[],
+  { delay = 0 }: { delay?: number } = {},
 ) {
   const updates = Array.isArray(options)
     ? options
     : [cacheUpdate<TData, TVariables>(options.queryKey, options.update)]
-  type Snapshot = [QueryKey, unknown][]
-  return {
-    onMutate: async (variables: TVariables) => {
-      await Promise.all(updates.map(({ queryKey }) => queryClient.cancelQueries({ queryKey })))
-      const snapshot: Snapshot = updates.flatMap(({ queryKey }) =>
-        queryClient.getQueriesData({ queryKey }),
+  type Context = {
+    snapshot: [QueryKey, unknown][]
+    applied: boolean
+    timer?: ReturnType<typeof setTimeout>
+  }
+
+  function apply(variables: TVariables) {
+    for (const { queryKey, update } of updates) {
+      queryClient.setQueriesData({ queryKey }, (data: unknown) =>
+        data === undefined ? data : update(data, variables),
       )
-      for (const { queryKey, update } of updates) {
-        queryClient.setQueriesData({ queryKey }, (data: unknown) =>
-          data === undefined ? data : update(data, variables),
-        )
+    }
+  }
+
+  return {
+    onMutate: async (variables: TVariables): Promise<Context> => {
+      await Promise.all(updates.map(({ queryKey }) => queryClient.cancelQueries({ queryKey })))
+      const snapshot = updates.flatMap(({ queryKey }) => queryClient.getQueriesData({ queryKey }))
+      const context: Context = { snapshot, applied: delay <= 0 }
+      if (context.applied) apply(variables)
+      else {
+        context.timer = setTimeout(() => {
+          context.applied = true
+          apply(variables)
+        }, delay)
       }
-      return { snapshot }
+      return context
     },
-    onError: (
-      _error: unknown,
-      _variables: TVariables,
-      context: { snapshot: Snapshot } | undefined,
-    ) => {
+    onSuccess: (_data: unknown, variables: TVariables, context: Context | undefined) => {
+      if (!context || context.applied) return
+      clearTimeout(context.timer)
+      context.applied = true
+      apply(variables)
+    },
+    onError: (_error: unknown, _variables: TVariables, context: Context | undefined) => {
+      clearTimeout(context?.timer)
       for (const [key, data] of context?.snapshot ?? []) queryClient.setQueryData(key, data)
     },
     onSettled: () =>
