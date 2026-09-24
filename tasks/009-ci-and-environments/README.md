@@ -1,6 +1,6 @@
 # 009: CI and environments
 
-Status: todo
+Status: in-progress
 
 Environments from `docs/architecture.md` and the pipeline that migrates them.
 Needs account access (GitHub, Turso, Vercel).

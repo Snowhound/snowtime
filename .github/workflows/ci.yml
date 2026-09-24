@@ -1,0 +1,47 @@
+# Checks every PR and push to main. Needs no secrets: tests and db:drift use throwaway
+# local databases. Migrating staging and prod waits on Turso access (task 009).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bunx tsc --noEmit -p .
+
+      - name: Test
+        run: bun test
+
+      # Drift is a warning by decision (docs/architecture.md, "Schema and migrations"): the
+      # script exits 0 on drift and fails only when the migrations fail on an empty database.
+      - name: Schema drift
+        run: |
+          bun run db:drift 2>&1 | tee drift.log
+          if grep -q 'WARNING' drift.log; then
+            echo "::warning title=Schema drift::schema.ts differs from the migrations; see the Schema drift step."
+          fi
+
+      - name: Data model diagram is current
+        run: bun run datamodel:check
