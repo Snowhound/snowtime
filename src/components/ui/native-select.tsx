@@ -1,6 +1,5 @@
 import type { Component, ComponentProps } from 'solid-js'
 import { splitProps } from 'solid-js'
-
 import { cn } from '~/lib/utils'
 
 // SelectTrigger's classes and chevrons on a native <select>, as prototypes/ui.js draws

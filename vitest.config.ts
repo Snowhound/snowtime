@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config'
 import solidPlugin from 'vite-plugin-solid'
+import { defineConfig } from 'vitest/config'
 
 // Component tests: `*.test.tsx`, in a DOM. Server and database tests are `*.test.ts` and
 // run on `bun test` (bunfig.toml ignores the component tests). The Solid plugin is the

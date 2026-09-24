@@ -5,6 +5,17 @@
   "singleQuote": true,
   "trailingComma": "all",
   "sortTailwindcss": {},
+  "sortImports": {
+    "groups": [
+      ["builtin", "external"],
+      "internal",
+      ["parent", "sibling", "index"],
+      "side_effect",
+      "unknown"
+    ],
+    "newlinesBetween": false,
+    "order": "asc"
+  },
   "ignorePatterns": [
     "src/routeTree.gen.ts",
     "src/paraglide/**",

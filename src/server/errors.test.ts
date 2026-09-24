@@ -1,4 +1,5 @@
 /// <reference types="bun" />
+
 import { expect, test } from 'bun:test'
 import { AppError, errorMessages } from './errors'
 

@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import { render, screen, within } from '@solidjs/testing-library'
+import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type { SignInMethod } from '../../server/sign-in.server'

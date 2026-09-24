@@ -1,4 +1,5 @@
 /// <reference types="bun" />
+
 // Runs the real migrations on a throwaway database and checks the rules the schema enforces.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { eq, sql } from 'drizzle-orm'

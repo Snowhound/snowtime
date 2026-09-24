@@ -1,6 +1,7 @@
 /// <reference types="bun" />
-import { afterAll, beforeAll, expect, test } from 'bun:test'
+
 import { verifyPassword } from 'better-auth/crypto'
+import { afterAll, beforeAll, expect, test } from 'bun:test'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import type { Database } from '.'
 import { account, project, timeEntry } from './schema'

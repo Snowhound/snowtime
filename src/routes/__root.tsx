@@ -1,3 +1,5 @@
+import type { QueryClient } from '@tanstack/solid-query'
+import { useQuery } from '@tanstack/solid-query'
 import {
   HeadContent,
   Outlet,
@@ -5,19 +7,13 @@ import {
   createRootRouteWithContext,
   redirect,
 } from '@tanstack/solid-router'
-import type { QueryClient } from '@tanstack/solid-query'
-import { useQuery } from '@tanstack/solid-query'
-
 import { TanStackRouterDevtools } from '@tanstack/solid-router-devtools'
-
-import '@fontsource/inter/400.css'
-
-import { HydrationScript, isServer } from 'solid-js/web'
 import { Show, Suspense, createMemo } from 'solid-js'
-
-import styleCss from '../styles.css?url'
-import { getLocale, setLocale } from '../paraglide/runtime.js'
+import { HydrationScript, isServer } from 'solid-js/web'
 import { sessionQuery, themeScript } from '../lib/session'
+import { getLocale, setLocale } from '../paraglide/runtime.js'
+import styleCss from '../styles.css?url'
+import '@fontsource/inter/400.css'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   beforeLoad: async ({ context, location }) => {
