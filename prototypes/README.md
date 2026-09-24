@@ -126,6 +126,9 @@ functions. Do not port prototype JS.
   feature styles in the HTML. The tokens in `prototype.css` are a proposal ahead of
   `src/styles.css`, so don't copy `src/styles.css` over them; task 033 ports them to the app.
   See [Brand font and colors](#brand-font-and-colors).
+- Enabled buttons, selects, menu items, and listbox options show the pointer cursor, from one rule
+  in `prototype.css` and `src/styles.css`. Tailwind v4 gives buttons the arrow, as desktop apps
+  do, but on the web people expect the pointer on anything they can click.
 - Keep each view in its own HTML file. The app frame is the shared exception, so every
   signed-in page has the same header; see [App frame](#app-frame).
 

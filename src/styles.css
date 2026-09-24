@@ -227,3 +227,18 @@ code {
     animation: none !important;
   }
 }
+
+/* Tailwind v4 gives buttons the arrow cursor, as desktop apps do; on the web people expect the
+   pointer on anything they can click. Menu items and listbox options get it too, so a menu reads
+   like the button that opens it. Unlayered, so it beats the registry components' cursor-default;
+   disabled controls keep their own cursor. */
+button:not(:disabled),
+select:not(:disabled),
+summary,
+[role='button']:not([aria-disabled='true']),
+[role='menuitem']:not([aria-disabled='true']),
+[role='menuitemradio']:not([aria-disabled='true']),
+[role='menuitemcheckbox']:not([aria-disabled='true']),
+[role='option']:not([aria-disabled='true']) {
+  cursor: pointer;
+}
