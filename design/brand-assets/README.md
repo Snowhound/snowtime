@@ -45,7 +45,14 @@ shading follow the board: white on dark and slate blue on light.
   use the bare mark with navy text. Navy-tile concepts use the tile with navy
   text, plus a `-dark` lockup with the bare mark and white text for dark pages.
 - `source/`: traced outlines, shading, bounds, and masks for every concept.
-- `marks/`: the bare `02` mark for light and dark backgrounds.
+- `marks/`: every concept's bare mark, with no tile, for a light page (`-light`) and a dark page
+  (`-dark`). The app uses these; the tiled icons are for favicons and app icons. The traced
+  marks' shading is pale, drawn for their tiles, so `build.py` recolors it with an SVG filter
+  that maps its luminance onto brand blues: on light pages for every traced mark (`LIGHT_RAMP`,
+  3:1 or more against `#f4faff`), and on dark pages for the light-tile concepts, whose navy clock
+  hands would vanish (`DARK_RAMP`). The navy-tile concepts' dark marks keep the board's shading.
+- `marks-small/`: `02`'s bare mark for 20 to 28 px, without facets and with thicker hands. The
+  traced marks need no small version.
 - `png/`: 1024 px app icons for every concept, plus `02` marks and 4x lockups.
 - `wordmark.svg`: `Snowtime` in Plus Jakarta Sans Bold with -0.02 em tracking,
   outlined by [wordmark.py](wordmark.py). It needs no font at runtime. The font

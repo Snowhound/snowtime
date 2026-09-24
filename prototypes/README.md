@@ -215,7 +215,7 @@ It also provides:
 | `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`, `appIcon`. The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
 | `appFrame.on('settings' \| 'role' \| 'org', fn)` | Re-render when settings, the prototype role, or the organization change |
 | `appFrame.role`, `appFrame.isAdmin()`, `appFrame.org`, `appFrame.user` | Prototype session |
-| `appFrame.openIconPicker()`, `appFrame.appIconImg(size, cls)` | Open the app icon dialog; an `<img>` of the chosen icon that follows changes |
+| `appFrame.openIconPicker()`, `appFrame.appIconImg(size, cls)` | Open the app icon dialog; an `<img>` of the chosen bare mark that follows changes |
 | `appFrame.setUser(patch)`            | Swap the header's user, for long-content fixtures              |
 | `appFrame.link(href)`                | A link that keeps `?role=` and `?org=`                         |
 | `appFrame.escapeHtml`, `appFrame.icon(name)`, `appFrame.initials` | Markup helpers; `icon` uses the Lucide sprite the frame injects |
@@ -232,11 +232,14 @@ The header shows the user's app icon, one of the 12 concepts in `design/brand-as
 mark is a button that opens the app icon dialog; the Timer link is the way home. Settings >
 Preferences > Appearance opens the same dialog from its **Change** button.
 
-Each concept is drawn on either an ice tile or a navy tile, and reads best on a page of the
-same kind, so the dialog groups them: **Light tiles** (01, 03, 06, 08, 09, 11) and **Navy
-tiles** (04, 05, 07, 10, 12). Hound Hour has both tiles and follows the theme: the ice tile on
-light pages, the navy tile on dark ones. It leads both groups, and choosing it in either is the
-same choice, so both copies show as checked.
+Inside the app, every place shows the concept's bare mark, with no tile, in its light-page or
+dark-page version: the header, the dialog, the Settings preview, and the sign-in card. Only the
+favicon keeps the tiled icon. Each concept's favicon is on either an ice tile or a navy tile, so
+the dialog groups them by it: **Light tab icons** (01, 03, 06, 08, 09, 11) and **Navy tab icons**
+(04, 05, 07, 10, 12). Each option shows the mark for the page's theme with the tiled icon as a
+small badge, the tab icon it gives. Hound Hour has both tiles and follows the theme: the ice tile
+in a light tab strip, the navy tile in a dark one. It leads both groups, and choosing it in either
+is the same choice, so both copies show as checked.
 
 Each group is its own radio group, so at most one option per group is checked; an option shows
 its number, name, and icon, and `02` has a Default badge. Tab moves between the groups, arrow
@@ -247,26 +250,30 @@ like the other settings, and updates the header mark, the Settings preview, and 
 
 The choice is the `appIcon` setting, `'01'` to `'12'`; an unset or unknown value falls back to
 `'02'`. [app-icon.js](app-icon.js) holds the concept list, reads the setting, and sets the
-favicon and every `<img data-app-icon>`. Load it in `<head>` before `app-frame.js`, so the tab
+favicon, every bare mark `<img data-app-mark>`, and every tiled `<img data-app-icon>`. Load it in `<head>` before `app-frame.js`, so the tab
 shows the icon before the page renders. `auth.html` has no frame and loads only `app-icon.js`.
 Other tabs follow a change through the `storage` event.
 
 The prototypes reference the exports in place instead of copying them:
 
-| Use                                   | Path under `design/brand-assets/`         |
-| ------------------------------------- | ----------------------------------------- |
-| Header and auth card mark (28 px)     | `icons-small/<NN-name>.svg`               |
-| Dialog and Settings                   | `icons/<NN-name>.svg`                     |
-| Favicon                               | `favicon/variants/<NN-name>-16.png`, `-32.png` |
-| Hound Hour on light pages             | the same paths with `02-hound-hour-light`  |
+| Use                                        | Path under `design/brand-assets/`                   |
+| ------------------------------------------ | --------------------------------------------------- |
+| Header and sign-in card mark (28 px)       | `marks/<NN-name>-light.svg` or `-dark.svg`; 02 uses `marks-small/` |
+| Dialog and Settings mark (40 to 56 px)     | `marks/<NN-name>-light.svg` or `-dark.svg`          |
+| Dialog's tab icon badge (20 px)            | `icons-small/<NN-name>.svg`, 02 also `-light`       |
+| Favicon                                    | `favicon/variants/<NN-name>-16.png`, `-32.png`; 02 also `-light` |
 
 Page images follow the page's theme, and `app-frame.js` and `auth.html` call `appIcon.apply()`
 again when it changes. The favicon follows the system's color scheme instead, because the
 browser's tab strip does, not the page.
 
-The small icons fill more of their tile, so they suit 28 px and the favicon. Tiles are navy or
-ice, so a `ring-border` outline with the exports' corner radius (22.5%) shows light tiles on the
-light theme and navy tiles on the dark one.
+`appFrame.appIconImg(size, cls)` returns the chosen mark, fitted into a square with
+`object-contain`, since the marks aren't square. The badges keep a `ring-border` outline with
+the exports' corner radius (22.5%), so an ice tile shows on the light popover.
+
+The marks were checked on 2026-09-24 at 64, 28, and 20 px on the light page, white, and the dark
+page. Only 02 needed a small version (no facets, thicker hands); the traced marks read at 20 px
+as they are.
 
 Checked in Chrome on 2026-09-24 at 1440, 850, and 390 px, light and dark: the header mark,
 the dialog (it fits 390 × 844 without scrolling the page), keyboard use and focus return, an

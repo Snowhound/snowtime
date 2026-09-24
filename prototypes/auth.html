@@ -353,7 +353,7 @@
         </div>
         <div class="auth-form flex w-full max-w-sm flex-col gap-6">
           <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]" id="product-mark">
-            <img data-app-icon="small" src="../design/brand-assets/icons-small/02-hound-hour.svg" alt="" class="size-7 rounded-[22.5%] ring-1 ring-border" />
+            <img data-app-mark="small" src="../design/brand-assets/marks-small/02-hound-hour-light.svg" alt="" class="size-7 object-contain" />
             Snowtime
           </div>
           <div id="screen" class="flex flex-col gap-6"></div>
@@ -672,7 +672,7 @@
       const setDark = (dark) => {
         document.documentElement.classList.toggle('dark', dark)
         themeButton.textContent = dark ? 'Light' : 'Dark'
-        appIcon.apply() // 02's tile follows the theme
+        appIcon.apply() // the mark follows the theme
       }
       setDark(savedTheme === 'dark' || (savedTheme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
       themeButton.addEventListener('click', () => setDark(!document.documentElement.classList.contains('dark')))

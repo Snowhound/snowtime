@@ -42,6 +42,40 @@ def traced_mark(key, uid):
     return body, meta["bounds"]
 
 
+# Light-page marks: the board's shading is pale, drawn for a navy or ice tile, so on a light page
+# its luminance is mapped onto brand blues. Dark inks such as clock hands stay navy; the palest
+# parts, most of each mark, become the deepest blue. Table stops at luminance 0, .25, .5, .75, 1.
+LIGHT_RAMP = ["#0f1f2e", "#1f5c97", "#5b92c8", "#3b82b8", "#1f5c97"]
+# Dark-page marks of the light-tile concepts: their navy inks (clock hands) would vanish on a dark
+# page, so dark tones turn pale and the rest keep a pale-blue ramp. Navy-tile concepts need none.
+DARK_RAMP = ["#e8f2fd", "#a9cdef", "#78ade2", "#b9d4f0", "#ffffff"]
+
+
+def _ramp_filter(uid, ramp):
+    rgb = [[int(c[k:k + 2], 16) / 255 for c in ramp] for k in (1, 3, 5)]
+    funcs = "".join(f'<feFunc{ch} type="table" tableValues="{" ".join(f"{v:.3f}" for v in vals)}"/>'
+                    for ch, vals in zip("RGB", rgb))
+    lum = "0.2126 0.7152 0.0722 0 0 "
+    return (f'<filter id="r{uid}" color-interpolation-filters="sRGB">'
+            f'<feColorMatrix type="matrix" values="{lum * 3}0 0 0 1 0"/>'
+            f'<feComponentTransfer>{funcs}</feComponentTransfer></filter>')
+
+
+def traced_bare(i, theme):
+    """The traced mark alone, for a light or a dark page, recolored where the board's shading
+    would be too faint for that page."""
+    key = f"{i:02d}-{NAMES[i - 1]}"
+    uid = f"{i:02d}m{theme[0]}"
+    body, (x0, y0, x1, y1) = traced_mark(key, uid)
+    ramp = LIGHT_RAMP if theme == "light" else None if i in DARK else DARK_RAMP
+    if ramp:
+        body = f'<defs>{_ramp_filter(uid, ramp)}</defs><g filter="url(#r{uid})">{body}</g>'
+    pad = max(x1 - x0, y1 - y0) * .02
+    w, h = x1 - x0 + 2 * pad, y1 - y0 + 2 * pad
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x0 - pad:.0f} {y0 - pad:.0f} {w:.0f} {h:.0f}" '
+            f'width="{w / 10:.0f}" height="{h / 10:.0f}" role="img" aria-label="Snowtime">{body}</svg>')
+
+
 def traced_icon(i, small=False, size=128):
     """A traced concept on its tile. The small variant zooms in for tab sizes."""
     key = f"{i:02d}-{NAMES[i - 1]}"
@@ -117,7 +151,10 @@ def main():
             save(ROOT / "lockups" / f"{key}-dark.svg", hound_hour.lockup("dark", make_wordmark()))
             for theme in ("light", "dark"):
                 save(ROOT / "marks" / f"{key}-{theme}.svg", hound_hour.bare_mark(theme))
+                save(ROOT / "marks-small" / f"{key}-{theme}.svg", hound_hour.bare_mark(theme, small=True))
             continue
+        for theme in ("light", "dark"):
+            save(ROOT / "marks" / f"{key}-{theme}.svg", traced_bare(i, theme))
         save(ROOT / "icons" / f"{key}.svg", traced_icon(i))
         save(ROOT / "icons-small" / f"{key}.svg", traced_icon(i, small=True))
         save(ROOT / "lockups" / f"{key}.svg", traced_lockup(i, make_wordmark(), on_dark=False))

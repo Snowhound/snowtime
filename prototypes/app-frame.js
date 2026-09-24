@@ -109,7 +109,7 @@
   function applyTheme() {
     document.documentElement.classList.toggle('dark', settings.theme === 'dark' || (settings.theme === 'system' && darkQuery.matches))
     document.querySelectorAll('[data-frame-theme]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.frameTheme === settings.theme)))
-    appIcon.apply(settings.appIcon) // 02's tile follows the theme
+    appIcon.apply(settings.appIcon) // the marks follow the theme
   }
   const settingsStore = {
     get: () => ({ ...settings }),
@@ -182,25 +182,29 @@
     return `<span class="flex ${cls} shrink-0 items-center justify-center rounded-md bg-primary font-semibold text-primary-foreground" aria-hidden="true">${escapeHtml(org.name[0])}</span>`
   }
 
-  // The tile's corner radius matches the exports' (338 / 1500); the ring shows light tiles on light
-  // pages and navy tiles on dark ones.
+  // The chosen concept's bare mark for the page's theme, fitted into a square. Tiles are only for
+  // the favicon and the picker's badges.
   function appIconImg(size, cls) {
-    return `<img data-app-icon="${size}" src="${appIcon.src(settings.appIcon, size === 'small')}" alt="" class="${cls} shrink-0 rounded-[22.5%] ring-1 ring-border" />`
+    return `<img data-app-mark="${size}" src="${appIcon.markSrc(settings.appIcon, size === 'small')}" alt="" class="${cls} shrink-0 object-contain" />`
   }
 
   // --- App icon picker -----------------------------------------------------------------------
-  // Two radio groups in a modal dialog, concepts on light tiles and on navy tiles, opened from the
-  // header mark and from Settings. Hound Hour is in both, since its tile follows the theme; choosing
+  // Two radio groups in a modal dialog, opened from the header mark and from Settings. Each option
+  // shows the bare mark for the page's theme, with the tiled favicon as a badge; the groups are the
+  // favicon's tile, light or navy. Hound Hour is in both, since its tile follows the theme; choosing
   // it in either group is the same choice. A choice saves right away, like the other settings.
   function renderIconDialog() {
     const groups = [
-      { id: 'light', label: 'Light tiles', dark: false, icons: appIcon.list.filter((i) => i.ice) },
-      { id: 'navy', label: 'Navy tiles', dark: true, icons: appIcon.list.filter((i) => i.navy) },
+      { id: 'light', label: 'Light tab icons', dark: false, icons: appIcon.list.filter((i) => i.ice) },
+      { id: 'navy', label: 'Navy tab icons', dark: true, icons: appIcon.list.filter((i) => i.navy) },
     ]
     const option = (i, dark) => `<button type="button" role="radio" data-app-icon-option="${i.id}" aria-checked="false" tabindex="-1"
         class="group relative flex flex-col items-center gap-1.5 rounded-lg border border-transparent px-1 py-2 text-center text-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-checked:border-primary aria-checked:bg-accent sm:gap-2 sm:p-3 sm:text-sm">
         <span class="absolute right-1 top-1 hidden size-5 items-center justify-center rounded-full bg-primary text-primary-foreground group-aria-checked:flex">${icon('check', 'size-3')}</span>
-        <img src="${appIcon.src(i.id, false, dark)}" alt="" class="size-11 rounded-[22.5%] ring-1 ring-border sm:size-14" />
+        <span class="relative">
+          <img data-app-mark="large" data-app-icon-id="${i.id}" src="${appIcon.markSrc(i.id)}" alt="" class="size-11 object-contain sm:size-14" />
+          <img src="${appIcon.src(i.id, true, dark)}" alt="" title="Browser tab icon" class="absolute -bottom-1 -right-2 size-5 rounded-[22.5%] shadow-sm ring-1 ring-border" />
+        </span>
         <span class="flex flex-col leading-tight"><span class="text-xs tabular-nums text-muted-foreground">${i.id}</span><span class="font-medium">${i.name}</span></span>
         ${i.id === appIcon.DEFAULT ? '<span data-ui="badge" data-variant="secondary" class="px-1.5 py-0 text-[10px]">Default</span>' : ''}
       </button>`
@@ -209,7 +213,7 @@
       `<dialog id="app-icon-dialog" data-ui="dialog" class="max-w-3xl" aria-labelledby="app-icon-title" aria-describedby="app-icon-description">
         <div data-ui="dialog-header">
           <h2 id="app-icon-title" data-ui="dialog-title">App icon</h2>
-          <p id="app-icon-description" data-ui="dialog-description">Shown in the header and on the browser tab. Hound Hour, in both groups, matches the light or dark theme. Your choice saves right away.</p>
+          <p id="app-icon-description" data-ui="dialog-description">The mark shows in the app. The small tile is the browser tab icon, grouped by its tile. Hound Hour, in both groups, matches the light or dark theme. Your choice saves right away.</p>
         </div>
         ${groups
           .map(

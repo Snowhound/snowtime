@@ -111,10 +111,12 @@ def icon(small=False, size=128, label="Snowtime 02 hound hour", theme="dark"):
     )
 
 
-def bare_mark(theme):
-    """The mark alone on a transparent background, as on the board's lockups."""
+def bare_mark(theme, small=False):
+    """The mark alone on a transparent background, as on the board's lockups. The small variant,
+    for 20 to 28 px, drops the facets and thickens the hands, like the small icon."""
+    uid = ("ms" if small else "m") + theme
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 20 1420 1160" width="1420" height="1160" '
-            f'role="img" aria-label="Snowtime">{mark(theme, "m" + theme)}</svg>')
+            f'role="img" aria-label="Snowtime">{mark(theme, uid, small)}</svg>')
 
 
 def lockup(theme, wordmark_svg):
