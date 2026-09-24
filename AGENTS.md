@@ -8,6 +8,7 @@
 - Migrations: `docs/migrations.md` — read before touching the schema
 - Hosting constraints: `docs/hosting.md`
 - Task tracking: `tasks/` (see `tasks/README.md`)
+- Writing docs: `.claude/skills/google-style/SKILL.md`
 - UI prototypes: `prototypes/` (see `prototypes/README.md`); browser checks via
   `docs/skills/ui-review/SKILL.md`
 
