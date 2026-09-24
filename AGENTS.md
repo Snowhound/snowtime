@@ -30,7 +30,8 @@ the same change or ask first.
   fine as an inline callback, or where a type annotation needs a `const`
   (`const Card: Component<...> = ...`). oxlint's `func-style` checks this; the copied
   Solid-UI components in `src/components/ui/` are exempt so they stay as the registry has them.
-- Run `bun run format` and `bun run lint` before committing; CI checks both. Disable a
+- A lefthook pre-commit hook (`lefthook.yml`, installed by `bun install`) runs
+  `oxlint --fix` and `oxfmt` on the staged files; CI checks the whole repository. Disable a
   lint rule inline only with a reason: `// oxlint-disable-next-line rule -- why`.
 
 ## Commits

@@ -1,0 +1,13 @@
+# Lints and formats the staged files before each commit, and stages the fixes. CI runs the
+# same checks over the whole repository.
+pre-commit:
+  jobs:
+    - name: lint
+      glob: '*.{js,mjs,ts,tsx}'
+      run: ./node_modules/.bin/oxlint --fix {staged_files}
+      stage_fixed: true
+
+    - name: format
+      glob: '*.{js,mjs,ts,tsx,json,css,md,yml}'
+      run: ./node_modules/.bin/oxfmt --no-error-on-unmatched-pattern {staged_files}
+      stage_fixed: true

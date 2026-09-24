@@ -26,7 +26,8 @@
     "test": "bun run i18n:compile && bun run icons:check && bun test && vitest run",
     "test:server": "bun test",
     "test:components": "vitest run",
-    "postinstall": "bun run i18n:compile"
+    "postinstall": "bun run i18n:compile",
+    "prepare": "lefthook install"
   },
   "dependencies": {
     "@better-auth/passkey": "1.7.5",
@@ -67,6 +68,7 @@
     "eslint-plugin-regexp": "^3.3.1",
     "eslint-plugin-solid": "^0.18.0",
     "jsdom": "^30.1.1",
+    "lefthook": "^2.1.14",
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
     "oxlint-tsgolint": "^7.0.2002",
