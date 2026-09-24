@@ -179,6 +179,25 @@
   `after` hook on `/organization/remove-member` and `/organization/leave` does it, since
   the plugin's `afterRemoveMember` hook does not fire on leave.
 
+## Abuse limits
+
+Anyone who can sign in can create an organization, so caps keep one account from growing
+the database, and the Turso quotas in `docs/hosting.md`, without bound. The values live in
+`src/server/limits.server.ts` and sit far above honest use. Task 028 tracks the rest,
+such as rate limiting.
+
+- The organization plugin enforces organizations per user (`organizationLimit`, which
+  counts every organization the user belongs to), members, pending invitations, and
+  teams per organization.
+- `createProject` caps projects per organization, archived ones included.
+- `createEntry` and `startTimer` cap a member's entries starting within 24 hours of the
+  new one, either side. The count is one range read on the
+  `(organization_id, user_id, started_at)` index, so it stays cheap in Turso rows read.
+  A day cap bounds entries per day, not in total; rate limiting covers a script spreading
+  entries across years.
+- A refused write throws `AppError` with code `LIMIT_REACHED`. Two concurrent writes can
+  both pass a count and exceed a cap by one; a cap is a bound, not an exact number.
+
 ## Deployment model
 
 - Default: one shared multi-tenant deployment.

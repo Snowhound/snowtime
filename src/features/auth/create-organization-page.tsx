@@ -14,6 +14,7 @@ import {
   TextFieldLabel,
 } from '~/components/ui/text-field'
 import { authClient } from '~/lib/auth-client'
+import { errorMessage } from '~/lib/errors'
 import { fieldError } from '~/lib/form'
 import { sessionQuery } from '~/lib/session'
 import { m } from '~/paraglide/messages.js'
@@ -54,7 +55,7 @@ export function CreateOrganizationPage(props: { email: string }) {
       // Better Auth makes the new organization the session's active one.
       const { error } = await authClient.organization.create({ name, slug: value.slug })
       if (error) {
-        setFormError(m.sign_in_error_failed())
+        setFormError(errorMessage(error))
         return
       }
       await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })

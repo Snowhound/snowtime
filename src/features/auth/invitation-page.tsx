@@ -8,6 +8,7 @@ import * as v from 'valibot'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
 import { authClient } from '~/lib/auth-client'
+import { errorMessage } from '~/lib/errors'
 import { sessionQuery } from '~/lib/session'
 import { signInMethodsQuery } from '~/lib/sign-in-methods'
 import { m } from '~/paraglide/messages.js'
@@ -65,7 +66,7 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
     const { error } = await authClient.organization.acceptInvitation({ invitationId: data.id })
     if (error) {
       setAccepting(false)
-      setError(m.sign_in_error_failed())
+      setError(errorMessage(error))
       return
     }
     await authClient.organization.setActive({ organizationId: data.organizationId })

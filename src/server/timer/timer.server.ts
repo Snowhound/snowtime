@@ -5,6 +5,7 @@
 import { and, eq, isNull, not, sql } from 'drizzle-orm'
 import type { Database, Executor } from '~/db'
 import { member, timeEntry } from '~/db/schema'
+import { assertEntryRoom } from '../entries/entries.server'
 import { AppError } from '../errors'
 import { assertUsableProject } from '../projects/projects.server'
 import { failedConstraint, notDeleted } from '../queries.server'
@@ -46,6 +47,7 @@ export async function startTimer(db: Database, scope: Scope, input: StartTimerIn
   try {
     return await db.transaction(async (tx) => {
       if (input.projectId) await assertUsableProject(tx, scope, input.projectId)
+      await assertEntryRoom(tx, scope.organizationId, scope.userId, now)
       const stopped = await stopRunning(tx, scope.userId, now)
       const [started] = await tx
         .insert(timeEntry)

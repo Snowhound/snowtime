@@ -17,6 +17,7 @@ const errorText: Record<AppErrorKey, () => string> = {
   entries_forbidden: m.error_entries_forbidden,
   entry_running: m.error_entry_running,
   entry_end_before_start: m.error_entry_end_before_start,
+  entry_limit: m.error_entry_limit,
   timer_not_running: m.error_timer_not_running,
   timer_started_elsewhere: m.error_timer_started_elsewhere,
   timer_running_in_left_organization: m.error_timer_running_in_left_organization,
@@ -25,6 +26,7 @@ const errorText: Record<AppErrorKey, () => string> = {
   project_name_taken: m.error_project_name_taken,
   project_archived: m.error_project_archived,
   project_has_entries: m.error_project_has_entries,
+  project_limit: m.error_project_limit,
   projects_forbidden: m.error_projects_forbidden,
   team_report_forbidden: m.error_team_report_forbidden,
   settings_not_found: m.error_settings_not_found,
@@ -33,7 +35,7 @@ const errorText: Record<AppErrorKey, () => string> = {
 // Refusals from Better Auth's client calls, by the code its error carries (unwrap in
 // src/lib/auth-client.ts throws it). The organization plugin checks roles, owners and
 // invitations itself (docs/architecture.md, "Tenancy"); these are the refusals the
-// Organization view can meet.
+// Organization view, creating an organization, and accepting an invitation can meet.
 const authErrorText: Record<string, () => string> = {
   YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER: m.error_last_owner,
   YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER: m.error_last_owner,
@@ -52,6 +54,9 @@ const authErrorText: Record<string, () => string> = {
   USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION: m.error_already_member,
   USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION: m.error_already_invited,
   INVITATION_LIMIT_REACHED: m.error_invitation_limit,
+  ORGANIZATION_MEMBERSHIP_LIMIT_REACHED: m.error_member_limit,
+  YOU_HAVE_REACHED_THE_MAXIMUM_NUMBER_OF_TEAMS: m.error_team_limit,
+  YOU_HAVE_REACHED_THE_MAXIMUM_NUMBER_OF_ORGANIZATIONS: m.error_organization_limit,
   INVALID_EMAIL: m.error_invalid_email,
   MEMBER_NOT_FOUND: m.error_member_not_found,
   USER_IS_NOT_A_MEMBER_OF_THE_ORGANIZATION: m.error_member_not_found,

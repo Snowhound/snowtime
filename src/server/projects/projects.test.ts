@@ -4,8 +4,9 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { eq } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
 import type { Database } from '~/db'
-import { projectTeam, timeEntry } from '~/db/schema'
+import { project, projectTeam, timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
+import { limits } from '../limits.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
 import {
@@ -304,5 +305,26 @@ describe('deleteProject', () => {
         code: 'NOT_FOUND',
       })
     }
+  })
+})
+
+describe('project limit', () => {
+  test('an organization at the limit refuses new projects', async () => {
+    // Harbor, so the Northwind tests above keep their project lists.
+    const harbor = await scopeOf(db, U.admin, O.harbor)
+    const existing = await listProjects(db, harbor, { includeArchived: true })
+    await as(harbor, async () => {
+      await db.insert(project).values(
+        Array.from({ length: limits.projectsPerOrganization - existing.length }, (_, i) => ({
+          id: uuidv7(),
+          organizationId: O.harbor,
+          name: `Filler ${i}`,
+        })),
+      )
+    })
+    await expect(newProject(harbor, 'One too many')).rejects.toMatchObject({
+      code: 'LIMIT_REACHED',
+      key: 'project_limit',
+    })
   })
 })

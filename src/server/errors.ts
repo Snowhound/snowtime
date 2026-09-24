@@ -11,6 +11,8 @@ export type AppErrorCode =
   // Input that passed the schema but not a rule that needs the database, e.g. an update
   // that would end an entry before it starts.
   | 'INVALID'
+  // A cap in src/server/limits.server.ts.
+  | 'LIMIT_REACHED'
 
 // Every message an AppError can carry, by key. Keys are stable and snake_case, so they
 // name the Paraglide message error_<key> (src/lib/errors.ts); the English text is the fallback.
@@ -28,6 +30,7 @@ export const errorMessages = {
   entries_forbidden: "You cannot see this member's entries.",
   entry_running: 'Stop a running entry with the timer.',
   entry_end_before_start: 'The end must be after the start.',
+  entry_limit: 'You have too many entries around this time. Delete some first.',
   timer_not_running: 'This timer is not running.',
   timer_started_elsewhere: 'Another timer was started at the same time.',
   timer_running_in_left_organization:
@@ -37,6 +40,7 @@ export const errorMessages = {
   project_name_taken: 'A project with this name already exists.',
   project_archived: 'The project is archived.',
   project_has_entries: 'This project has time entries. Archive it instead.',
+  project_limit: 'This organization has too many projects. Delete unused ones first.',
   projects_forbidden: 'Only admins can manage projects.',
   team_report_forbidden: 'You can report only on teams you lead.',
   settings_not_found: 'Load the settings first.',

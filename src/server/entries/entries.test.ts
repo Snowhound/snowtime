@@ -4,7 +4,9 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { v7 as uuidv7 } from 'uuid'
 import type { Database } from '~/db'
 import { SYSTEM_USER_ID } from '~/db/actor'
+import { timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
+import { limits } from '../limits.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
 import {
@@ -172,6 +174,34 @@ describe('createEntry', () => {
         }),
       ),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
+  })
+
+  test('a member at the daily entry limit is refused entries within a day', async () => {
+    // A year ahead, clear of the seeded weeks.
+    const start = new Date(NOW.getTime() + 365 * DAY)
+    await as(scopes.loner, async () => {
+      await db.insert(timeEntry).values(
+        Array.from({ length: limits.entriesPerMemberPerDay }, (_, i) => ({
+          id: uuidv7(),
+          organizationId: O.northwind,
+          userId: U.loner,
+          startedAt: new Date(start.getTime() + i * 60_000),
+          stoppedAt: new Date(start.getTime() + i * 60_000 + 30_000),
+        })),
+      )
+    })
+    function at(time: number) {
+      return {
+        id: uuidv7(),
+        description: '',
+        startedAt: new Date(time),
+        stoppedAt: new Date(time + 1),
+      }
+    }
+    await expect(
+      as(scopes.loner, () => createEntry(db, scopes.loner, at(start.getTime() - 12 * 3_600_000))),
+    ).rejects.toMatchObject({ code: 'LIMIT_REACHED', key: 'entry_limit' })
+    await as(scopes.loner, () => createEntry(db, scopes.loner, at(start.getTime() + 2 * DAY)))
   })
 })
 

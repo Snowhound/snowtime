@@ -1,10 +1,11 @@
 // Time entries in the scope's organization. Everyone writes their own entries; admins and
 // owners also write other members' entries; team leads only read their teams' entries
 // (docs/architecture.md, "Tenancy").
-import { and, desc, eq, gt, inArray, isNull, lt, min, or } from 'drizzle-orm'
-import type { Database } from '~/db'
+import { and, count, desc, eq, gt, inArray, isNull, lt, min, or } from 'drizzle-orm'
+import type { Database, Executor } from '~/db'
 import { member, timeEntry } from '~/db/schema'
 import { AppError } from '../errors'
+import { limits } from '../limits.server'
 import { assertUsableProject } from '../projects/projects.server'
 import { failedConstraint, live } from '../queries.server'
 import { isAdmin, readableUserIds, type Scope } from '../scope.server'
@@ -31,6 +32,33 @@ async function findEntry(db: Database, scope: Scope, id: string) {
   return entry
 }
 
+const day = 24 * 60 * 60 * 1000
+
+// Refuses a new entry when the user already has limits.entriesPerMemberPerDay entries in
+// the organization starting within a day of it. The (organization_id, user_id, started_at)
+// index makes this one short range read.
+export async function assertEntryRoom(
+  db: Executor,
+  organizationId: string,
+  userId: string,
+  startedAt: Date,
+) {
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(timeEntry)
+    .where(
+      and(
+        live(timeEntry, { organizationId }),
+        eq(timeEntry.userId, userId),
+        gt(timeEntry.startedAt, new Date(startedAt.getTime() - day)),
+        lt(timeEntry.startedAt, new Date(startedAt.getTime() + day)),
+      ),
+    )
+  if (total >= limits.entriesPerMemberPerDay) {
+    throw new AppError('LIMIT_REACHED', 'entry_limit')
+  }
+}
+
 export async function createEntry(db: Database, scope: Scope, input: CreateEntryInput) {
   const userId = input.userId ?? scope.userId
   assertCanWrite(scope, userId)
@@ -42,6 +70,7 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
     if (!membership) throw new AppError('NOT_FOUND', 'member_not_found')
   }
   if (input.projectId) await assertUsableProject(db, scope, input.projectId)
+  await assertEntryRoom(db, scope.organizationId, userId, input.startedAt)
 
   try {
     const [entry] = await db

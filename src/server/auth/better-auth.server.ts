@@ -9,6 +9,7 @@ import { db } from '~/db'
 import { withActor } from '~/db/actor'
 import * as schema from '~/db/schema'
 import { env } from '~/env'
+import { limits } from '../limits.server'
 import { stopTimerOfRemovedMember } from '../timer/timer.server'
 import { passwordEnabled, socialProviders } from './sign-in.server'
 
@@ -56,7 +57,11 @@ export const auth = betterAuth({
         // may delete its last one.
         defaultTeam: { enabled: false },
         allowRemovingAllTeams: true,
+        maximumTeams: limits.teamsPerOrganization,
       },
+      organizationLimit: limits.organizationsPerUser,
+      membershipLimit: limits.membersPerOrganization,
+      invitationLimit: limits.pendingInvitationsPerOrganization,
       // Admins share invitation links themselves; a link works for 48 hours
       // (docs/architecture.md, "Sign-in methods").
       invitationExpiresIn: 48 * 60 * 60,

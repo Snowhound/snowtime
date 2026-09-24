@@ -1,10 +1,11 @@
 // Projects in the scope's organization. Everyone lists the projects they may see; admins
 // and owners create, change, archive and assign them. The timer and entry server
 // functions check projects through assertUsableProject.
-import { and, asc, eq, exists, inArray, isNull, notExists, or, type SQL } from 'drizzle-orm'
+import { and, asc, count, eq, exists, inArray, isNull, notExists, or, type SQL } from 'drizzle-orm'
 import type { Database, Executor } from '~/db'
 import { project, projectTeam, team, teamMember, timeEntry } from '~/db/schema'
 import { AppError } from '../errors'
+import { limits } from '../limits.server'
 import { failedConstraint, live } from '../queries.server'
 import { isAdmin, type Scope } from '../scope.server'
 import type {
@@ -93,6 +94,10 @@ export async function listProjects(db: Database, scope: Scope, input: ListProjec
 
 export async function createProject(db: Database, scope: Scope, input: CreateProjectInput) {
   assertAdmin(scope)
+  const [{ total }] = await db.select({ total: count() }).from(project).where(live(project, scope))
+  if (total >= limits.projectsPerOrganization) {
+    throw new AppError('LIMIT_REACHED', 'project_limit')
+  }
   try {
     const [created] = await db
       .insert(project)
