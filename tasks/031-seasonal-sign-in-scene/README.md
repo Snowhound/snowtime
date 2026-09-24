@@ -16,6 +16,7 @@ scene may want a deeper dark and a brighter light base than today's tokens.
 2. [Intro pacing](02-intro-pacing.md)
 3. [Weather for spring, summer, and autumn](03-seasonal-weather.md)
 4. [Tagline, tone, and season choice](04-tagline-tone-season.md)
+5. [Background image quality](05-background-quality.md)
 
 ## Acceptance criteria
 

@@ -15,9 +15,10 @@ convention isn't applied backwards.
 
 1. [Font and colors](01-font-and-colors.md)
 2. [App icon and picker](02-app-icon-picker.md)
+3. [In-app marks without tiles](03-in-app-marks.md)
 
 ## Acceptance criteria
 
-- [ ] Both subtasks are done.
+- [ ] All subtasks are done.
 - [x] `prototypes/README.md` records the brand font, the token mapping, the icon setting,
       and that the prototype tokens are a proposal ahead of `src/styles.css`.
