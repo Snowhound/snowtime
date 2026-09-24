@@ -90,10 +90,12 @@
   const style = document.createElement('style')
   style.textContent = `
     .scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: var(--background); transition: background-color .6s ease; }
-    .scene-photo { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transform: scale(1.02); transition: opacity .9s ease, transform 1.2s ease; }
-    .scene[data-background='on'] .scene-photo-light { opacity: 1; transform: scale(1.01); }
+    /* The light and dark images are the same view at another time of day, so the theme change only
+       crossfades them; a scale would make the mountains move. */
+    .scene-photo { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity .9s ease; }
+    .scene[data-background='on'] .scene-photo-light { opacity: 1; }
     .dark .scene[data-background='on'] .scene-photo-light { opacity: 0; }
-    .dark .scene[data-background='on'] .scene-photo-dark { opacity: 1; transform: scale(1.01); }
+    .dark .scene[data-background='on'] .scene-photo-dark { opacity: 1; }
     /* The page color over the image, stronger toward the bottom, where the text sits. */
     .scene-tint { position: absolute; inset: 0; transition: background .8s ease;
       background: linear-gradient(180deg, color-mix(in srgb, var(--background) calc(var(--scene-tint) * 70%), transparent), color-mix(in srgb, var(--background) min(100%, calc(var(--scene-tint) * 115%)), transparent)); }

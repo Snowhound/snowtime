@@ -689,7 +689,9 @@ from navigation:
 | 1440 × 900 at 1×, dark  | 1920 (232 KB) only, at 1.1 s                               | 1920 only, at 3.3 s                                                        |
 | 390 × 844 at 3×, light  | 1920 (277 KB) only, at 1.1 s                               | 1920 only, at 3.5 s                                                        |
 
-- **Scene**: it fills the page behind the card.
+- **Scene**: it fills the page behind the card. The light and dark images show the same view at
+  another time of day, so a theme change only crossfades them; a slight zoom on the shown image
+  made the mountains move and was removed.
 - **Intro**: about 13 seconds, always dark. It opens on the weather alone over the page color,
   shows the first line, pauses, fades the background in (over 2.6 s), pauses again, and then
   shows the other lines, each once the one before has had time to be read. The last line ("Sign
