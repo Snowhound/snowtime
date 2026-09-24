@@ -61,6 +61,9 @@ Work in this order, one commit or more per step, and check each in the dev app a
   dismiss, in the View popover too. Checked at 1440, 850, and 390 px, light and dark: saves survive
   a reload, Strength and Surfaces disable with Background off, Change opens the dialog with focus
   on the chosen icon and Escape returns it to the Appearance button, and no horizontal scroll.
+- 2026-09-25: Step 2c: Settings > Preferences > Scenery (`#scenery`) has the scene controls with
+  the prototype's hints and the Intro switch, each saved on its own. "Replay it" comes with step 6. Checked at 1440, 850, and 390 px, light and dark: saves show Saved, survive a reload, and
+  show in the Appearance popover.
 
 ## Acceptance criteria
 

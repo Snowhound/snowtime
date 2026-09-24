@@ -1,12 +1,13 @@
 // The Preferences card of the settings page (prototypes/settings.html): language and
-// region, and appearance with the app icon. Each field saves on change as a one-field
-// updateSettings patch.
+// region, appearance with the app icon, and the scenery. Each field saves on change as a
+// one-field updateSettings patch.
 import CheckIcon from 'lucide-solid/icons/check'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import GlobeIcon from 'lucide-solid/icons/globe'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { AppIconDialog } from '~/components/app-icon-dialog'
 import { AppMark } from '~/components/app-mark'
+import { SceneryFields } from '~/components/scenery-fields'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
@@ -311,6 +312,14 @@ export function PreferencesCard(props: { settings: Settings }) {
               <SwitchThumb />
             </SwitchControl>
           </Switch>
+        </div>
+        <Separator />
+        <div id="scenery" class="grid scroll-mt-6 gap-5">
+          <div class="grid gap-1">
+            <h4 class="text-sm font-medium">{m.scene_title()}</h4>
+            <p class="text-muted-foreground text-sm">{m.scene_description()}</p>
+          </div>
+          <SceneryFields settings={props.settings} hints="long" intro onChange={update} />
         </div>
       </CardContent>
     </Card>
