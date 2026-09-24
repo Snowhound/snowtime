@@ -15,7 +15,7 @@ export function TimerPage() {
             <TimerView
               organizationId={organizationId}
               userId={data().user.id}
-              zone={data().settings!.timeZone}
+              settings={data().settings!}
               organizations={data().organizations}
             />
           )}

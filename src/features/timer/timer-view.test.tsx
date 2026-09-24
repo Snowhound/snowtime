@@ -1,12 +1,15 @@
 import { fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import type { JSX } from 'solid-js'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { addDays, atLocalTime, localDate } from '~/lib/calendar'
 import { newId } from '~/lib/query'
+import type { Settings } from '~/lib/settings'
 import { AppError } from '~/server/errors'
+import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
 import type { Entry, RunningTimer } from './queries'
-import { TimerView } from './timer-view'
+import { TimerPage } from './timer-page'
 
 // The server functions stay out of the DOM tests. Each mock answers from `server`, which
 // a test sets up, so a refetch after a mutation sees what the server would return.
@@ -15,10 +18,13 @@ const fn = vi.hoisted(() => ({
   startTimer: vi.fn(),
   stopTimer: vi.fn(),
   listEntries: vi.fn(),
+  getFirstEntryStart: vi.fn(),
   createEntry: vi.fn(),
   updateEntry: vi.fn(),
   deleteEntry: vi.fn(),
   listProjects: vi.fn(),
+  getAppSession: vi.fn(),
+  updateSettings: vi.fn(),
 }))
 vi.mock('~/server/timer/timer.functions', () => ({
   getRunningTimer: fn.getRunningTimer,
@@ -27,12 +33,22 @@ vi.mock('~/server/timer/timer.functions', () => ({
 }))
 vi.mock('~/server/entries/entries.functions', () => ({
   listEntries: fn.listEntries,
+  getFirstEntryStart: fn.getFirstEntryStart,
   createEntry: fn.createEntry,
   updateEntry: fn.updateEntry,
   deleteEntry: fn.deleteEntry,
 }))
 vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
+vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
+vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
+// The view renders without a router; its one link only needs to be there.
+vi.mock('@tanstack/solid-router', () => ({
+  Link: (props: { to: string; hash?: string; class?: string; children: JSX.Element }) => (
+    <a href={`${props.to}#${props.hash}`} class={props.class}>
+      {props.children}
+    </a>
+  ),
+}))
 
 const zone = 'Europe/Tallinn'
 const organizationId = newId()
@@ -45,7 +61,31 @@ const snowtime = {
   teamIds: [],
 }
 
-const server: { running: RunningTimer | null; entries: Entry[] } = { running: null, entries: [] }
+const server: { running: RunningTimer | null; entries: Entry[]; settings: Settings } = {
+  running: null,
+  entries: [],
+  settings: defaultSettings(),
+}
+
+function defaultSettings(): Settings {
+  return {
+    timeZone: zone,
+    weekStart: 'mon',
+    locale: 'en',
+    theme: 'system',
+    timerLayout: 'bar',
+    showSummary: false,
+  }
+}
+
+function session() {
+  return {
+    activeOrganizationId: organizationId,
+    user: { id: userId },
+    organizations: [{ id: organizationId, name: 'Snowhound' }],
+    settings: { ...server.settings },
+  }
+}
 
 // An entry that started `daysAgo` days ago at the time, in the test zone.
 function entry(daysAgo: number, start: string, end: string, description: string): Entry {
@@ -73,18 +113,10 @@ function deferred<T>() {
 
 function renderView() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  queryClient.setQueryData(['session'], {
-    activeOrganizationId: organizationId,
-    user: { id: userId },
-  })
+  queryClient.setQueryData(['session'], session())
   render(() => (
     <QueryClientProvider client={queryClient}>
-      <TimerView
-        organizationId={organizationId}
-        userId={userId}
-        zone={zone}
-        organizations={[{ id: organizationId, name: 'Snowhound' }]}
-      />
+      <TimerPage />
     </QueryClientProvider>
   ))
 }
@@ -97,10 +129,28 @@ beforeEach(() => {
   vi.clearAllMocks()
   server.running = null
   server.entries = [entry(1, '09:00', '10:30', 'Invoice export review')]
+  server.settings = defaultSettings()
+  fn.getAppSession.mockImplementation(async () => session())
   fn.getRunningTimer.mockImplementation(async () => server.running)
   fn.listEntries.mockImplementation(async () => server.entries)
+  fn.getFirstEntryStart.mockImplementation(async () => {
+    const starts = [...server.entries, ...(server.running ? [server.running] : [])].map((e) =>
+      e.startedAt.getTime(),
+    )
+    return starts.length ? new Date(Math.min(...starts)) : null
+  })
   fn.listProjects.mockResolvedValue([snowtime])
 })
+
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+// Opens the View popover.
+async function openView() {
+  await userEvent.click(screen.getByRole('button', { name: 'View settings' }))
+  return screen.findByRole('dialog', { name: 'View' })
+}
 
 describe('TimerView', () => {
   test('starts on Enter and stops, showing each at once', async () => {
@@ -224,5 +274,111 @@ describe('TimerView', () => {
       }),
     })
     expect(await screen.findByText('Planning')).toBeInTheDocument()
+  })
+
+  test('saves a layout from the View popover and shows it at once', async () => {
+    renderView()
+    await screen.findByText('Invoice export review')
+    const saved = deferred<unknown>()
+    fn.updateSettings.mockReturnValue(saved.promise)
+
+    const view = await openView()
+    expect(within(view).getByRole('link', { name: 'All settings' })).toHaveAttribute(
+      'href',
+      '/settings#preferences',
+    )
+    await userEvent.click(within(view).getByRole('button', { name: 'Table' }))
+    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { timerLayout: 'table' } })
+
+    // The table, with its day subtotal row, before the server answers.
+    const table = await screen.findByRole('table')
+    expect(within(table).getByRole('rowheader', { name: 'Yesterday' })).toBeInTheDocument()
+    expect(within(table).getByText('1:30')).toBeInTheDocument()
+    server.settings.timerLayout = 'table'
+    saved.resolve(server.settings)
+    await waitFor(() => expect(fn.getAppSession).toHaveBeenCalledTimes(2))
+    expect(screen.getByRole('table')).toBeInTheDocument()
+  })
+
+  test('rolls back a failed layout change and says why', async () => {
+    renderView()
+    await screen.findByText('Invoice export review')
+    fn.updateSettings.mockRejectedValue(new AppError('NOT_FOUND', 'settings_not_found'))
+
+    await userEvent.click(within(await openView()).getByRole('button', { name: 'Focus' }))
+    expect(await screen.findByText('Load the settings first.')).toBeInTheDocument()
+    expect(screen.queryByText('Continue recent')).not.toBeInTheDocument()
+  })
+
+  test('the summary counts the running timer up to now, and hides from the popover', async () => {
+    // Thursday 24 September 2026, 15:00 in Tallinn; only Date is faked, so the view's
+    // interval and user events keep running.
+    vi.useFakeTimers({ toFake: ['Date'], now: Date.parse('2026-09-24T12:00:00Z') })
+    server.settings.showSummary = true
+    server.entries = [
+      entry(0, '09:00', '10:30', 'Invoice export review'),
+      entry(3, '09:00', '11:00', 'Report time zone boundaries'), // Monday
+      entry(4, '09:00', '12:00', 'Last week'),
+    ]
+    server.running = {
+      ...entry(0, '14:15', '14:16', 'Timer layouts'),
+      projectId: null,
+      stoppedAt: null,
+      project: null,
+    }
+    fn.updateSettings.mockImplementation(async (input: { data: UpdateSettingsInput }) => {
+      Object.assign(server.settings, input.data)
+      return server.settings
+    })
+    renderView()
+
+    const summary = await screen.findByRole('complementary', { name: 'Summary' })
+    expect(within(summary).getByText('Today').nextSibling).toHaveTextContent('2:15')
+    expect(within(summary).getByText('This week').nextSibling).toHaveTextContent('4:15')
+    expect(within(summary).getByText('Snowtime')).toBeInTheDocument()
+    expect(within(summary).getByText('No project')).toBeInTheDocument()
+
+    await userEvent.click(within(await openView()).getByRole('switch', { name: 'Show summary' }))
+    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { showSummary: false } })
+    expect(screen.queryByRole('complementary', { name: 'Summary' })).not.toBeInTheDocument()
+  })
+
+  test('Focus continues recent work from a chip', async () => {
+    server.settings.timerLayout = 'focus'
+    server.entries = [
+      entry(0, '09:00', '10:00', 'Invoice export review'),
+      entry(1, '09:00', '10:00', 'Invoice export review'),
+      entry(1, '11:00', '12:00', ''),
+    ]
+    fn.startTimer.mockReturnValue(new Promise(() => {}))
+    renderView()
+
+    const recent = await screen.findByRole('region', { name: 'Continue recent' })
+    const chips = within(recent).getAllByRole('button')
+    expect(chips).toHaveLength(1)
+    await userEvent.click(chips[0])
+    expect(fn.startTimer).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        description: 'Invoice export review',
+        projectId: snowtime.id,
+      }),
+    })
+    expect(await within(timer()).findByRole('button', { name: 'Stop' })).toBeInTheDocument()
+  })
+
+  test('offers earlier entries while there are any, then says it has shown everything', async () => {
+    const old = entry(20, '09:00', '10:00', 'Kickoff')
+    server.entries = [entry(1, '09:00', '10:30', 'Invoice export review'), old]
+    // The first range holds only the recent entry.
+    fn.listEntries.mockImplementation(async ({ data }: { data: { from: Date } }) =>
+      server.entries.filter((e) => e.startedAt >= data.from),
+    )
+    renderView()
+    await screen.findByText('Invoice export review')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Show earlier entries' }))
+    expect(await screen.findByText('Kickoff')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Show earlier entries' })).not.toBeInTheDocument()
+    expect(screen.getByText(/^That's everything since .+: 2:30 in total\.$/)).toBeInTheDocument()
   })
 })

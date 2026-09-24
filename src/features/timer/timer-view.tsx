@@ -1,22 +1,28 @@
-// The timer view in the Bar layout (prototypes/timer.html): the timer, the user's recent
-// entries by day, and the entry dialog. Every write is optimistic and rolls back on error
-// (queries.ts), with the error shown above the timer.
+// The timer view (prototypes/timer.html): the timer, the user's recent entries by day, the
+// summary, and the entry dialog, in the layout of the user's settings. Bar lists day
+// cards; Focus has a large clock, "continue recent" chips, and the last three days
+// compact; Table has one table with day subtotals. Every write is optimistic and rolls
+// back on error (queries.ts), with the error shown above the timer.
 import { keepPreviousData, useQuery } from '@tanstack/solid-query'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import PlusIcon from 'lucide-solid/icons/plus'
-import { Show, createEffect, createMemo, createSignal, onCleanup } from 'solid-js'
+import { Match, Show, Switch, createEffect, createMemo, createSignal, onCleanup } from 'solid-js'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
+import { localDate } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
-import { formatClock } from '~/lib/format'
+import { formatClock, formatHours, formatIsoDate } from '~/lib/format'
 import { newId } from '~/lib/query'
+import type { Settings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
-import { groupByDay, recentRange } from './entries'
+import { groupByDay, recentRange, recentWork, summarize } from './entries'
 import { EntryDialog, type EntryDialogTarget, type EntryDialogValues } from './entry-dialog'
-import { EntryList } from './entry-list'
+import { EmptyState, EntryList } from './entry-list'
+import { EntryTable } from './entry-table'
 import {
   type Entry,
   entriesQuery,
+  firstEntryQuery,
   projectsQuery,
   runningTimerQuery,
   useCreateEntry,
@@ -25,21 +31,33 @@ import {
   useStopTimer,
   useUpdateEntry,
 } from './queries'
+import { RecentWork } from './recent-work'
+import { SummaryPanel } from './summary-panel'
 import { TimerBar } from './timer-bar'
+import { ViewPopover } from './view-popover'
 
 // Days of entries shown at first, and added by "Show earlier entries", up to the most
 // listEntries returns in one call (MAX_LIST_DAYS). Older time is in Reports.
 export const RECENT_DAYS = 14
 const MAX_DAYS = 84
+// Days Focus shows.
+const FOCUS_DAYS = 3
 
 export function TimerView(props: {
   organizationId: string
   userId: string
-  zone: string
+  settings: Settings
   organizations: readonly { id: string; name: string }[]
 }) {
+  function zone() {
+    return props.settings.timeZone
+  }
+  function layout() {
+    return props.settings.timerLayout
+  }
+
   const [days, setDays] = createSignal(RECENT_DAYS)
-  const range = createMemo(() => recentRange(props.zone, days()))
+  const range = createMemo(() => recentRange(zone(), days()))
 
   const running = useQuery(() => runningTimerQuery)
   const projects = useQuery(() => projectsQuery(props.organizationId))
@@ -47,6 +65,7 @@ export function TimerView(props: {
     ...entriesQuery(props.organizationId, props.userId, range()),
     placeholderData: keepPreviousData,
   }))
+  const firstEntry = useQuery(() => firstEntryQuery(props.organizationId, props.userId))
 
   const startTimer = useStartTimer()
   const stopTimer = useStopTimer()
@@ -82,14 +101,51 @@ export function TimerView(props: {
   }
 
   // The running entry shows in the timer only.
-  const groups = createMemo(() =>
-    groupByDay(
-      (entries.data ?? []).filter((e) => e.stoppedAt),
-      props.zone,
-    ),
-  )
+  const stopped = createMemo(() => (entries.data ?? []).filter((e) => e.stoppedAt))
+  const groups = createMemo(() => groupByDay(stopped(), zone()))
+  function shownGroups() {
+    return layout() === 'focus' ? groups().slice(0, FOCUS_DAYS) : groups()
+  }
 
-  const options = { onError: (e: unknown) => setError(errorMessage(e)) }
+  // Earlier time exists when the earliest entry starts before the loaded days.
+  function hasEarlier() {
+    const first = firstEntry.data
+    return !!first && first.getTime() < range().from
+  }
+
+  // Everything is loaded, so the shown days hold all of the user's time.
+  function allTime() {
+    const first = firstEntry.data
+    if (!first) return null
+    const total = stopped().reduce(
+      (sum, e) => sum + e.stoppedAt!.getTime() - e.startedAt.getTime(),
+      0,
+    )
+    const date = formatIsoDate(localDate(first.getTime(), zone()), {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+    return m.timer_all_time({ date, total: formatHours(total) })
+  }
+
+  // The summary covers this organization, so a timer running in another one stays out.
+  // The ranges lie within the loaded days: a week is shorter than RECENT_DAYS.
+  function summary() {
+    const timer = running.data
+    const counted =
+      timer?.organizationId === props.organizationId ? [...stopped(), timer] : stopped()
+    return summarize(counted, {
+      zone: zone(),
+      weekStart: props.settings.weekStart,
+      now: now(),
+    })
+  }
+
+  function showError(e: unknown) {
+    setError(errorMessage(e))
+  }
+  const options = { onError: showError }
 
   function start(description: string, projectId: string | null) {
     setError(null)
@@ -128,66 +184,125 @@ export function TimerView(props: {
     }
   }
 
+  const listProps = {
+    get projects() {
+      return projects.data ?? []
+    },
+    get zone() {
+      return zone()
+    },
+    get now() {
+      return now()
+    },
+    onEdit: (entry: Entry) => setDialog({ kind: 'edit', entry }),
+    onContinue: (entry: Entry) => start(entry.description, entry.projectId),
+    onDelete: remove,
+  }
+
   return (
     <div class="grid gap-4">
       <div class="flex items-center justify-between gap-4">
         <h1 class="text-2xl font-semibold tracking-tight">{m.nav_timer()}</h1>
-        <Button variant="outline" onClick={() => setDialog({ kind: 'new' })}>
-          <PlusIcon aria-hidden="true" />
-          {m.timer_add_entry()}
-        </Button>
+        <div class="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setDialog({ kind: 'new' })}>
+            <PlusIcon aria-hidden="true" />
+            {m.timer_add_entry()}
+          </Button>
+          <ViewPopover settings={props.settings} onError={showError} />
+        </div>
       </div>
-      <div class="flex min-w-0 flex-col gap-6">
-        <Show when={error()}>
-          <Alert variant="destructive">
-            <CircleAlertIcon aria-hidden="true" />
-            <AlertDescription>{error()}</AlertDescription>
-          </Alert>
-        </Show>
-        <TimerBar
-          running={running.data ?? null}
-          projects={projects.data ?? []}
-          elsewhere={elsewhere()}
-          now={now()}
-          onStart={start}
-          onStop={stop}
-          onUpdate={(patch) => running.data && update(running.data.id, patch)}
-          onEditStart={() => running.data && setDialog({ kind: 'running', entry: running.data })}
-        />
-        <section class="flex min-w-0 flex-col gap-4" aria-label={m.timer_entries()}>
-          <Show when={entries.data}>
-            <EntryList
-              groups={groups()}
-              projects={projects.data ?? []}
-              zone={props.zone}
-              now={now()}
-              onEdit={(entry) => setDialog({ kind: 'edit', entry })}
-              onContinue={(entry) => start(entry.description, entry.projectId)}
-              onDelete={remove}
-            />
-            <div class="flex justify-center">
-              <Show
-                when={days() < MAX_DAYS}
-                fallback={
-                  <p class="text-muted-foreground text-sm">{m.timer_earlier_in_reports()}</p>
-                }
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={entries.isPlaceholderData}
-                  onClick={() => setDays((d) => d + RECENT_DAYS)}
-                >
-                  {m.timer_show_earlier()}
-                </Button>
-              </Show>
-            </div>
+      <div
+        class={
+          props.settings.showSummary
+            ? 'grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_auto]'
+            : 'grid grid-cols-[minmax(0,1fr)] gap-6'
+        }
+      >
+        <div class="flex min-w-0 flex-col gap-6">
+          <Show when={error()}>
+            <Alert variant="destructive">
+              <CircleAlertIcon aria-hidden="true" />
+              <AlertDescription>{error()}</AlertDescription>
+            </Alert>
           </Show>
-        </section>
+          <TimerBar
+            layout={layout()}
+            running={running.data ?? null}
+            projects={projects.data ?? []}
+            elsewhere={elsewhere()}
+            now={now()}
+            onStart={start}
+            onStop={stop}
+            onUpdate={(patch) => running.data && update(running.data.id, patch)}
+            onEditStart={() => running.data && setDialog({ kind: 'running', entry: running.data })}
+          />
+          <Show when={layout() === 'focus' && entries.data}>
+            <RecentWork
+              entries={recentWork(stopped())}
+              projects={projects.data ?? []}
+              onContinue={listProps.onContinue}
+            />
+          </Show>
+          <section class="flex min-w-0 flex-col gap-4" aria-label={m.timer_entries()}>
+            <Show when={entries.data}>
+              <Show when={groups().length > 0} fallback={<EmptyState />}>
+                <Switch>
+                  <Match when={layout() === 'table'}>
+                    <EntryTable groups={groups()} {...listProps} />
+                  </Match>
+                  <Match when={layout() !== 'table'}>
+                    <EntryList
+                      groups={shownGroups()}
+                      compact={layout() === 'focus'}
+                      {...listProps}
+                    />
+                  </Match>
+                </Switch>
+              </Show>
+              <Show when={layout() !== 'focus' && firstEntry.isSuccess}>
+                <div class="flex justify-center">
+                  <Show
+                    when={hasEarlier()}
+                    fallback={
+                      <Show when={groups().length > 0 && allTime()}>
+                        {(text) => (
+                          <p class="text-muted-foreground flex w-full items-center gap-3 text-sm">
+                            <span class="bg-border h-px flex-1" aria-hidden="true" />
+                            {text()}
+                            <span class="bg-border h-px flex-1" aria-hidden="true" />
+                          </p>
+                        )}
+                      </Show>
+                    }
+                  >
+                    <Show
+                      when={days() < MAX_DAYS}
+                      fallback={
+                        <p class="text-muted-foreground text-sm">{m.timer_earlier_in_reports()}</p>
+                      }
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={entries.isPlaceholderData}
+                        onClick={() => setDays((d) => d + RECENT_DAYS)}
+                      >
+                        {m.timer_show_earlier()}
+                      </Button>
+                    </Show>
+                  </Show>
+                </div>
+              </Show>
+            </Show>
+          </section>
+        </div>
+        <Show when={props.settings.showSummary && entries.data}>
+          <SummaryPanel summary={summary()} projects={projects.data ?? []} />
+        </Show>
       </div>
       <EntryDialog
         target={dialog()}
-        zone={props.zone}
+        zone={zone()}
         projects={projects.data ?? []}
         onSave={save}
         onClose={() => setDialog(null)}

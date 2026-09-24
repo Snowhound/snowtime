@@ -1,17 +1,45 @@
-// The Bar layout's timer (prototypes/timer.html): description, project, the elapsed time,
-// and Start or Stop. Enter in the description starts the timer. While it runs, the fields
-// edit the running entry, and the elapsed time opens its start in the entry dialog.
+// The timer (prototypes/timer.html): description, project, the elapsed time, and Start or
+// Stop. Enter in the description starts the timer. While it runs, the fields edit the
+// running entry, and the elapsed time opens its start in the entry dialog. The layouts
+// share these controls and differ only in their classes: one line in Bar, a large clock
+// in Focus, and a plain row above the table in Table.
 import PlayIcon from 'lucide-solid/icons/play'
 import SquareIcon from 'lucide-solid/icons/square'
 import { Show, createEffect, createSignal, on } from 'solid-js'
 import { Button } from '~/components/ui/button'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { formatClock } from '~/lib/format'
+import type { Settings } from '~/lib/settings'
+import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { ProjectSelect } from './project-select'
 import type { Project, RunningTimer } from './queries'
 
+const LAYOUTS: Record<
+  Settings['timerLayout'],
+  { timer: string; fields?: string; elapsed: string; toggle?: string }
+> = {
+  bar: {
+    timer:
+      'bg-card flex flex-col gap-3 rounded-xl border p-3 shadow-sm sm:flex-row sm:items-center',
+    elapsed: 'justify-start text-lg sm:w-28 sm:justify-end',
+  },
+  focus: {
+    timer:
+      'bg-card grid grid-cols-1 gap-4 rounded-xl border p-6 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto]',
+    fields: 'sm:col-start-1',
+    elapsed:
+      'order-first h-auto justify-self-start text-5xl font-light tracking-tight sm:col-span-2 sm:text-6xl',
+    toggle: 'h-12 sm:w-36',
+  },
+  table: {
+    timer: 'flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center',
+    elapsed: 'justify-start text-base sm:w-24 sm:justify-end',
+  },
+}
+
 export function TimerBar(props: {
+  layout: Settings['timerLayout']
   running: RunningTimer | null
   projects: readonly Project[]
   // The organization the running timer is in, when it isn't the active one. Entries
@@ -62,13 +90,19 @@ export function TimerBar(props: {
     }
   }
 
+  function classes() {
+    return LAYOUTS[props.layout]
+  }
+
   return (
     <div class="grid gap-2">
-      <section
-        class="bg-card flex flex-col gap-3 rounded-xl border p-3 shadow-sm sm:flex-row sm:items-center"
-        aria-label={m.timer_label()}
-      >
-        <div class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+      <section class={classes().timer} aria-label={m.timer_label()}>
+        <div
+          class={cn(
+            'flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center',
+            classes().fields,
+          )}
+        >
           <TextField
             class="min-w-0 flex-1"
             value={description()}
@@ -105,7 +139,7 @@ export function TimerBar(props: {
         </div>
         <Button
           variant="ghost"
-          class="justify-start px-2 font-mono text-lg tabular-nums sm:w-28 sm:justify-end"
+          class={cn('px-2 font-mono tabular-nums', classes().elapsed)}
           aria-label={m.timer_edit_start()}
           disabled={!props.running || !!props.elsewhere}
           onClick={() => props.onEditStart()}
@@ -115,13 +149,13 @@ export function TimerBar(props: {
         <Show
           when={props.running}
           fallback={
-            <Button onClick={start}>
+            <Button class={classes().toggle} onClick={start}>
               <PlayIcon aria-hidden="true" />
               {m.timer_start()}
             </Button>
           }
         >
-          <Button variant="destructive" onClick={() => props.onStop()}>
+          <Button variant="destructive" class={classes().toggle} onClick={() => props.onStop()}>
             <SquareIcon aria-hidden="true" />
             {m.timer_stop()}
           </Button>

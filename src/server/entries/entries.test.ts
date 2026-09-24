@@ -7,7 +7,13 @@ import { SYSTEM_USER_ID } from '~/db/actor'
 import { seedIds } from '~/db/seed'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
-import { createEntry, deleteEntry, listEntries, updateEntry } from './entries.server'
+import {
+  createEntry,
+  deleteEntry,
+  getFirstEntryStart,
+  listEntries,
+  updateEntry,
+} from './entries.server'
 
 const { users: U, orgs: O, projects: P, entries: E } = seedIds
 
@@ -39,6 +45,22 @@ function past(hoursAgo: number, hours = 1) {
     stoppedAt: new Date(NOW.getTime() - (hoursAgo - hours) * 3_600_000),
   }
 }
+
+describe('getFirstEntryStart', () => {
+  test("the start of the user's earliest entry in the organization", async () => {
+    const all = await listEntries(db, scopes.admin, { ...range, userId: U.member })
+    const earliest = Math.min(...all.map((e) => e.startedAt.getTime()))
+    const first = await getFirstEntryStart(db, scopes.member, { userId: U.member })
+    expect(first?.getTime()).toBe(earliest)
+  })
+
+  test('null without entries, and limited to readable users', async () => {
+    expect(await getFirstEntryStart(db, scopes.admin, { userId: uuidv7() })).toBeNull()
+    await expect(getFirstEntryStart(db, scopes.member, { userId: U.lead })).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    })
+  })
+})
 
 describe('listEntries', () => {
   test('member: own entries only, including the running timer', async () => {

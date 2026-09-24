@@ -20,12 +20,9 @@ import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { addDays, localDate, startOfWeek } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatIsoDate } from '~/lib/format'
-import { useUpdateSettings } from '~/lib/settings'
+import { type Settings, useUpdateSettings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
-import type { AppSession } from '~/server/auth/auth.functions'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
-
-type Settings = NonNullable<AppSession['settings']>
 
 // Languages by their own names, so each reads the same in every UI language.
 const LANGUAGES = [

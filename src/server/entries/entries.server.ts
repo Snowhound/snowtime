@@ -1,7 +1,7 @@
 // Time entries in the scope's organization. Everyone writes their own entries; admins and
 // owners also write other members' entries; team leads only read their teams' entries
 // (docs/architecture.md, "Tenancy").
-import { and, desc, eq, gt, inArray, isNull, lt, or } from 'drizzle-orm'
+import { and, desc, eq, gt, inArray, isNull, lt, min, or } from 'drizzle-orm'
 import type { Database } from '~/db'
 import { member, timeEntry } from '~/db/schema'
 import { AppError } from '../errors'
@@ -10,6 +10,7 @@ import { failedConstraint, live } from '../queries.server'
 import { isAdmin, readableUserIds, type Scope } from '../scope.server'
 import type {
   CreateEntryInput,
+  GetFirstEntryStartInput,
   DeleteEntryInput,
   ListEntriesInput,
   UpdateEntryInput,
@@ -110,6 +111,27 @@ export async function deleteEntry(db: Database, scope: Scope, input: DeleteEntry
 
 // Entries overlapping [from, to), newest first, including a running one. Members see their
 // own; team leads also their teams' members'; admins and owners everyone's.
+async function assertReadable(db: Database, scope: Scope, userId: string) {
+  const readable = await readableUserIds(db, scope)
+  if (readable && !readable.includes(userId)) {
+    throw new AppError('FORBIDDEN', 'entries_forbidden')
+  }
+}
+
+// When the user's earliest entry in the organization started, or null without entries.
+export async function getFirstEntryStart(
+  db: Database,
+  scope: Scope,
+  input: GetFirstEntryStartInput,
+) {
+  await assertReadable(db, scope, input.userId)
+  const [row] = await db
+    .select({ startedAt: min(timeEntry.startedAt) })
+    .from(timeEntry)
+    .where(and(live(timeEntry, scope), eq(timeEntry.userId, input.userId)))
+  return row?.startedAt ?? null
+}
+
 export async function listEntries(db: Database, scope: Scope, input: ListEntriesInput) {
   const readable = await readableUserIds(db, scope)
   if (input.userId && readable && !readable.includes(input.userId)) {

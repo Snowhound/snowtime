@@ -1,16 +1,19 @@
 # 05: Timer layouts and View popover
 
-Status: todo
+Status: done
 
 The two other timer layouts, kept as user-selectable options, and the popover that
 switches them. Prototype: `prototypes/timer.html`.
 
 ## Acceptance criteria
 
-- [ ] Focus layout: large clock, "continue recent" chips, and a compact day list
-- [ ] Table layout with day subtotal rows, scrolling horizontally inside its container on
+- [x] Focus layout: large clock, "continue recent" chips, and a compact day list
+- [x] Table layout with day subtotal rows, scrolling horizontally inside its container on
       narrow screens
-- [ ] Summary panel (today, this week, per-project bars, running timer included), shown
+- [x] Summary panel (today, this week, per-project bars, running timer included), shown
       when `show_summary` is on
-- [ ] View popover: layout, theme, and summary, saved through `updateSettings`, with a
+- [x] View popover: layout, theme, and summary, saved through `updateSettings`, with a
       link to Settings
+- [x] The end of the entry list: "Show earlier entries" shows only while the user has
+      earlier time (`getFirstEntryStart`); after the earliest entry, a line says so, with
+      the date and the total

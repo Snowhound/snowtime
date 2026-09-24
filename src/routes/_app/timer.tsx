@@ -1,6 +1,11 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { recentRange } from '~/features/timer/entries'
-import { entriesQuery, projectsQuery, runningTimerQuery } from '~/features/timer/queries'
+import {
+  entriesQuery,
+  firstEntryQuery,
+  projectsQuery,
+  runningTimerQuery,
+} from '~/features/timer/queries'
 import { TimerPage } from '~/features/timer/timer-page'
 import { RECENT_DAYS } from '~/features/timer/timer-view'
 import { m } from '~/paraglide/messages.js'
@@ -14,6 +19,7 @@ export const Route = createFileRoute('/_app/timer')({
     await Promise.all([
       queryClient.ensureQueryData(runningTimerQuery),
       queryClient.ensureQueryData(projectsQuery(organizationId)),
+      queryClient.ensureQueryData(firstEntryQuery(organizationId, session.user.id)),
       zone &&
         queryClient.ensureQueryData(
           entriesQuery(organizationId, session.user.id, recentRange(zone, RECENT_DAYS)),

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { groupByDay, readEntryTimes, recentRange } from './entries'
+import { groupByDay, readEntryTimes, recentRange, recentWork, summarize } from './entries'
 
 const zone = 'Europe/Tallinn'
 const now = Date.parse('2026-09-24T12:00:00Z') // 15:00 in Tallinn
@@ -27,6 +27,59 @@ describe('recentRange', () => {
     const range = recentRange(zone, 14, now)
     expect(new Date(range.from).toISOString()).toBe('2026-09-10T21:00:00.000Z')
     expect(new Date(range.to).toISOString()).toBe('2026-09-24T21:00:00.000Z')
+  })
+})
+
+describe('recentWork', () => {
+  function work(start: string, description: string, projectId: string | null) {
+    return { ...entry(start, start), description, projectId }
+  }
+
+  test('the newest entry of each description and project, without blank descriptions', () => {
+    const newest = work('2026-09-24T09:00:00Z', 'Review', 'p1')
+    const otherProject = work('2026-09-24T08:00:00Z', 'Review', 'p2')
+    const older = work('2026-09-23T09:00:00Z', 'Review', 'p1')
+    const blank = work('2026-09-24T10:00:00Z', '', 'p1')
+    expect(recentWork([older, blank, otherProject, newest])).toEqual([newest, otherProject])
+  })
+
+  test('stops at the limit', () => {
+    const entries = ['a', 'b', 'c'].map((d, i) => work(`2026-09-2${i}T09:00:00Z`, d, null))
+    expect(recentWork(entries, 2).map((e) => e.description)).toEqual(['c', 'b'])
+  })
+})
+
+describe('summarize', () => {
+  // Thursday 24 September 2026, 15:00 in Tallinn. The week from Monday starts on the 21st
+  // (the 20th at 21:00 UTC); from Sunday, on the 20th (the 19th at 21:00 UTC).
+  function work(start: string, stop: string | null, projectId: string | null) {
+    return { ...entry(start, stop), projectId }
+  }
+
+  test('clips entries to today and this week, and counts a running entry up to now', () => {
+    const acrossMidnight = work('2026-09-23T20:00:00Z', '2026-09-23T22:00:00Z', 'p1') // 23:00–01:00
+    const running = work('2026-09-24T11:30:00Z', null, 'p2')
+    const acrossWeekStart = work('2026-09-20T20:00:00Z', '2026-09-20T22:00:00Z', null) // Sun 23:00–Mon 01:00
+    const lastWeek = work('2026-09-18T09:00:00Z', '2026-09-18T10:00:00Z', 'p1')
+    const summary = summarize([acrossMidnight, running, acrossWeekStart, lastWeek], {
+      zone,
+      weekStart: 'mon',
+      now,
+    })
+
+    expect(summary.today).toBe(3_600_000 + 1_800_000)
+    expect(summary.week).toBe(7_200_000 + 1_800_000 + 3_600_000)
+    expect(summary.projects).toEqual([
+      { projectId: 'p1', total: 7_200_000 },
+      { projectId: null, total: 3_600_000 },
+      { projectId: 'p2', total: 1_800_000 },
+    ])
+  })
+
+  test('the week follows the week start', () => {
+    const sunday = work('2026-09-20T09:00:00Z', '2026-09-20T10:00:00Z', 'p1')
+    expect(summarize([sunday], { zone, weekStart: 'mon', now }).week).toBe(0)
+    expect(summarize([sunday], { zone, weekStart: 'sun', now }).week).toBe(3_600_000)
   })
 })
 

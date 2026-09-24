@@ -1,12 +1,17 @@
 // Time entry rules the timer view applies on the client (prototypes/timer.html): grouping
-// by day in the user's zone, and reading the entry dialog's date and times.
+// by day in the user's zone, the recent work and the summary, and reading the entry
+// dialog's date and times.
 import {
   type IsoDate,
   type Range,
+  type WeekStart,
   addDays,
   atLocalTime,
+  countedSpan,
+  dayRange,
   localDate,
   startOfDay,
+  weekRange,
 } from '~/lib/calendar'
 
 export interface EntryTimes {
@@ -46,6 +51,57 @@ export function recentRange(zone: string, days: number, now = Date.now()): Range
     from: startOfDay(addDays(today, -(days - 1)), zone),
     to: startOfDay(addDays(today, 1), zone),
   }
+}
+
+// The newest entries with distinct descriptions and projects, for "Continue recent".
+// Entries without a description are left out: there is nothing to tell them apart by.
+export function recentWork<
+  T extends EntryTimes & { description: string; projectId: string | null },
+>(entries: readonly T[], limit = 5) {
+  const seen = new Set<string>()
+  const recent: T[] = []
+  const sorted = [...entries].sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
+  for (const entry of sorted) {
+    const key = JSON.stringify([entry.description, entry.projectId])
+    if (!entry.description || seen.has(key)) continue
+    seen.add(key)
+    recent.push(entry)
+    if (recent.length === limit) break
+  }
+  return recent
+}
+
+export interface Summary {
+  today: number
+  week: number
+  // This week's time per project, most first; projectId null is time without a project.
+  projects: { projectId: string | null; total: number }[]
+}
+
+// Today's and this week's time in the zone, and the week's time per project. As in
+// reports, entries are clipped to the day or week and a running entry counts up to now.
+export function summarize(
+  entries: readonly (EntryTimes & { projectId: string | null })[],
+  options: { zone: string; weekStart: WeekStart; now?: number },
+): Summary {
+  const { zone, weekStart, now = Date.now() } = options
+  const today = localDate(now, zone)
+  const day = dayRange(today, zone)
+  const week = weekRange(today, zone, weekStart)
+  const summary: Summary = { today: 0, week: 0, projects: [] }
+  const byProject = new Map<string | null, number>()
+  for (const entry of entries) {
+    const inDay = countedSpan(entry, day, now)
+    if (inDay) summary.today += inDay.to - inDay.from
+    const inWeek = countedSpan(entry, week, now)
+    if (!inWeek) continue
+    summary.week += inWeek.to - inWeek.from
+    byProject.set(entry.projectId, (byProject.get(entry.projectId) ?? 0) + inWeek.to - inWeek.from)
+  }
+  summary.projects = [...byProject]
+    .map(([projectId, total]) => ({ projectId, total }))
+    .sort((a, b) => b.total - a.total)
+  return summary
 }
 
 export interface EntryFormTimes {

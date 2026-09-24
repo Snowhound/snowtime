@@ -8,6 +8,7 @@ import { sessionQuery } from '~/lib/session'
 import {
   createEntry,
   deleteEntry,
+  getFirstEntryStart,
   listEntries,
   updateEntry,
 } from '~/server/entries/entries.functions'
@@ -58,7 +59,22 @@ export function entriesQuery(organizationId: string, userId: string, range: Rang
   })
 }
 
+// When the user's earliest entry started, so the view knows whether earlier time exists.
+// Its key is outside ['entries'], whose caches hold entry lists.
+export function firstEntryQuery(organizationId: string, userId: string) {
+  return queryOptions({
+    queryKey: ['first-entry', organizationId, userId],
+    queryFn: () => getFirstEntryStart({ data: { userId } }),
+  })
+}
+
 const entriesKey = ['entries']
+const firstEntryKey = ['first-entry']
+
+// An entry now starting at `startedAt` may be the earliest.
+function earliest(first: Date | null, startedAt: Date | undefined) {
+  return startedAt && (!first || startedAt < first) ? startedAt : first
+}
 
 // The changed fields of an update; projectId null removes the project.
 function patch<T extends Entry>(entry: T, input: UpdateEntryInput): T {
@@ -124,6 +140,9 @@ export function useUpdateEntry() {
       cacheUpdate<Entry[], UpdateEntryInput>(entriesKey, (entries, input) =>
         entries.map((e) => (e.id === input.id ? patch(e, input) : e)),
       ),
+      cacheUpdate<Date | null, UpdateEntryInput>(firstEntryKey, (first, input) =>
+        earliest(first, input.startedAt),
+      ),
       cacheUpdate<RunningTimer | null, UpdateEntryInput>(
         runningTimerQuery.queryKey,
         (running, input) => {
@@ -141,10 +160,13 @@ export function useDeleteEntry() {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (input: DeleteEntryInput) => deleteEntry({ data: input }),
-    ...optimistic<Entry[], DeleteEntryInput>(queryClient, {
-      queryKey: entriesKey,
-      update: (entries, { id }) => entries.filter((e) => e.id !== id),
-    }),
+    ...optimistic(queryClient, [
+      cacheUpdate<Entry[], DeleteEntryInput>(entriesKey, (entries, { id }) =>
+        entries.filter((e) => e.id !== id),
+      ),
+      // Unchanged until the refetch, which the update causes, finds the new earliest.
+      cacheUpdate<Date | null, DeleteEntryInput>(firstEntryKey, (first) => first),
+    ]),
   }))
 }
 
@@ -153,9 +175,8 @@ export function useCreateEntry() {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (input: CreateEntryInput) => createEntry({ data: input }),
-    ...optimistic<Entry[], CreateEntryInput>(queryClient, {
-      queryKey: entriesKey,
-      update: (entries, input) => {
+    ...optimistic(queryClient, [
+      cacheUpdate<Entry[], CreateEntryInput>(entriesKey, (entries, input) => {
         const session = queryClient.getQueryData(sessionQuery.queryKey)
         const entry: Entry = {
           id: input.id,
@@ -167,7 +188,10 @@ export function useCreateEntry() {
           stoppedAt: input.stoppedAt,
         }
         return [entry, ...entries].sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
-      },
-    }),
+      }),
+      cacheUpdate<Date | null, CreateEntryInput>(firstEntryKey, (first, input) =>
+        earliest(first, input.startedAt),
+      ),
+    ]),
   }))
 }

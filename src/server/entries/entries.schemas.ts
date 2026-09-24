@@ -53,3 +53,7 @@ export const ListEntriesInput = v.pipe(
   ),
 )
 export type ListEntriesInput = v.InferOutput<typeof ListEntriesInput>
+
+// The start of one user's earliest entry, for telling the timer whether earlier time exists.
+export const GetFirstEntryStartInput = v.object({ userId: Uuidv7 })
+export type GetFirstEntryStartInput = v.InferOutput<typeof GetFirstEntryStartInput>

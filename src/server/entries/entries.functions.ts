@@ -5,6 +5,7 @@ import { scopeMiddleware } from '../middleware'
 import {
   CreateEntryInput,
   DeleteEntryInput,
+  GetFirstEntryStartInput,
   ListEntriesInput,
   UpdateEntryInput,
 } from './entries.schemas'
@@ -29,3 +30,8 @@ export const listEntries = createServerFn({ method: 'GET' })
   .middleware([scopeMiddleware])
   .validator(ListEntriesInput)
   .handler(({ data, context }) => entries.listEntries(db, context.scope, data))
+
+export const getFirstEntryStart = createServerFn({ method: 'GET' })
+  .middleware([scopeMiddleware])
+  .validator(GetFirstEntryStartInput)
+  .handler(({ data, context }) => entries.getFirstEntryStart(db, context.scope, data))
