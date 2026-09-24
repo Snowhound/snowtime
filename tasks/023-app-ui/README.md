@@ -1,6 +1,6 @@
 # 023: App UI
 
-Status: todo
+Status: in-progress
 
 Build the MVP pages in Solid from the prototypes in `prototypes/` (task 013), on the
 server functions from task 006. One subtask per view, in the order below: the foundation
@@ -13,8 +13,8 @@ Estonian can follow in one pass before this task is done.
 
 ## Acceptance criteria
 
-- [ ] `01-foundation.md`
-- [ ] `02-app-frame-and-sign-in.md`
+- [x] `01-foundation.md`
+- [x] `02-app-frame-and-sign-in.md`
 - [ ] `03-settings.md`
 - [ ] `04-timer.md`
 - [ ] `05-timer-layouts.md`

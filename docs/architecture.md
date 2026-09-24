@@ -104,7 +104,9 @@
   Better Auth requires before an invitation can be accepted, and admins share
   invitation links themselves. Password sign-in, which would need email for
   verification and reset, is enabled only in local development, where seeded users
-  (task 008) sign in with a known password.
+  (task 008) sign in with a known password. The sign-in form lists the seeded users, and
+  picking one fills in the email and password; `getDevUsers` returns the list only
+  where password sign-in is enabled.
 - Passkeys are added to an existing account: a signed-in user registers one, then signs
   in with it instead of their provider. Nobody signs up with a passkey alone.
 - A passkey is bound to its relying party, the host of `BETTER_AUTH_URL`, so it works
@@ -113,6 +115,12 @@
 - Email provider when email is added: Brevo (free tier 300 emails a day, EU-based
   company), optional per deployment through env vars (task 016).
 - Sign-up and sign-in screens are prototyped in `prototypes/auth.html`.
+- An invitation link is `<BETTER_AUTH_URL>/invitation/<id>`. Better Auth shows an
+  invitation only to the invited user's session, but the screen must name the
+  organization, team, inviter, and invited address before sign-in, so the reader knows
+  which account to use. `getInvitation` returns those details signed out. The id is
+  the link's only secret, as in Better Auth, and accepting still goes through Better
+  Auth, which checks the address.
 
 ## Tenancy
 
@@ -124,6 +132,11 @@
 - The active organization comes from the session. Every server function
   resolves it and checks membership and role before touching data; queries
   always filter by `organization_id`.
+- `getAppSession` loads the app frame's session: the user's organizations with their
+  role in each, the active one, and their settings. When the session has no active
+  organization, or one the user has left, it saves the first by name to the session.
+  A signed-in user with no organization goes to their open invitation, or to create
+  an organization.
 - Organization roles: owner / admin / member (plugin defaults).
 - Team role: `lead` or `member`, stored per team membership. The plugin has
   no team roles and (as of Better Auth 1.7) no additional fields on team
@@ -184,7 +197,11 @@
 - The server renders the theme class from the session user's settings, so the first
   paint uses the right theme with no flash. This is the main reason view settings moved
   here from `localStorage`. Signed-out pages (sign-in, invitations) follow the system
-  theme. (Planned: the app shell does not render it yet.)
+  theme.
+  - The server renders the setting as `data-theme` on `<html>`. A script in `<head>`
+    applies the `dark` class from it before the body paints, because only the browser
+    can resolve `system`. The script also follows later changes to the setting and to
+    the system preference.
 - The UI saves each field when it changes, so `updateSettings` takes a partial patch.
 - The app validates the text values (`src/schemas/settings.ts`); their columns have no
   `CHECK`, so adding a value needs no table rebuild. `show_summary` is a boolean and keeps
@@ -199,8 +216,9 @@
   `bun run test` run.
 - The locale lives in the `PARAGLIDE_LOCALE` cookie, not the URL: the app has no public
   pages that need localized links. Without the cookie, the browser's `Accept-Language`
-  picks it, then English. Signed-in pages set the cookie from `user_settings.locale`, so
-  the server renders the next page in the account's language. `src/server-entry.ts` runs
+  picks it, then English. Signed-in pages set the cookie from `user_settings.locale`:
+  when the account's language differs from the request's, `getAppSession` sets the
+  cookie and the page loads again, so the user sees only the account's language. `src/server-entry.ts` runs
   Paraglide's middleware around every request, which scopes the locale per request.
 - The user's language is `user_settings.locale` (see "User settings"). The first
   `getSettings` call sets it from the browser, as it does the time zone.

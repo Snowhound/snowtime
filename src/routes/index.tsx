@@ -1,14 +1,8 @@
-import { createFileRoute } from '@tanstack/solid-router'
+import { createFileRoute, redirect } from '@tanstack/solid-router'
 
-export const Route = createFileRoute('/')({ component: Home })
-
-function Home() {
-  return (
-    <div class="p-8">
-      <h1 class="text-4xl font-bold">Welcome to TanStack Start</h1>
-      <p class="mt-4 text-lg">
-        Edit <code>src/routes/index.tsx</code> to get started.
-      </p>
-    </div>
-  )
-}
+// The app starts at the timer; the signed-in layout sends signed-out users to sign-in.
+export const Route = createFileRoute('/')({
+  beforeLoad: ({ context }) => {
+    throw redirect({ to: context.session ? '/timer' : '/sign-in' })
+  },
+})

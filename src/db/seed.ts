@@ -59,7 +59,8 @@ const P = seedIds.projects
 const T = seedIds.teams
 const O = seedIds.orgs
 
-const people = [
+// Seeded users; the sign-in screen lists them in local development.
+export const seedUsers = [
   { id: U.owner, name: 'Olivia Owner', email: 'owner@example.com', timeZone: 'Europe/Tallinn' },
   { id: U.admin, name: 'Adam Admin', email: 'admin@example.com', timeZone: 'Europe/Berlin' },
   { id: U.lead, name: 'Lena Lead', email: 'lead@example.com', timeZone: 'Europe/Tallinn' },
@@ -151,7 +152,7 @@ export async function seed(db: Database, { now = new Date() }: SeedOptions = {})
           createdAt: at,
           updatedAt: at,
         },
-        ...people.map((p) => ({
+        ...seedUsers.map((p) => ({
           id: p.id,
           name: p.name,
           email: p.email,
@@ -162,7 +163,7 @@ export async function seed(db: Database, { now = new Date() }: SeedOptions = {})
       ])
       // Better Auth's email + password accounts: provider "credential", account id = user id.
       await tx.insert(account).values(
-        people.map((p) => ({
+        seedUsers.map((p) => ({
           id: uuidv7(),
           userId: p.id,
           accountId: p.id,
@@ -174,7 +175,7 @@ export async function seed(db: Database, { now = new Date() }: SeedOptions = {})
       )
       await tx
         .insert(userSettings)
-        .values(people.map((p) => ({ userId: p.id, timeZone: p.timeZone })))
+        .values(seedUsers.map((p) => ({ userId: p.id, timeZone: p.timeZone })))
 
       await tx.insert(organization).values([
         { id: O.northwind, name: 'Northwind Studio', slug: 'northwind', createdAt: at },
