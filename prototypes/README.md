@@ -131,8 +131,9 @@ functions. Do not port prototype JS.
 
 ## Brand font and colors
 
-The prototypes try the draft brand from `design/brand-assets/` (task 029). `src/styles.css`
-still has the neutral Solid-UI theme until task 033 ports these values.
+The prototypes try the draft brand from `design/brand-assets/` (task 029). Task 033 ported
+these values to the app's `src/styles.css`, which loads the font from
+`@fontsource-variable/plus-jakarta-sans`.
 
 UI text uses Plus Jakarta Sans (SIL OFL 1.1), the font the wordmark was outlined from.
 `prototype.css` loads the variable font from `design/brand-assets/fonts/` with `@font-face`

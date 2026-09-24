@@ -4,11 +4,23 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Brand font: Plus Jakarta Sans (SIL OFL 1.1), loaded in src/routes/__root.tsx. Its digits are
+   proportional; times and durations add tabular-nums so they keep one width. */
 body {
   @apply m-0;
   font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    'Plus Jakarta Sans Variable',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -17,26 +29,27 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
+/* Brand colors; prototypes/README.md, "Brand font and colors", gives their contrast ratios. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.871 0.006 286.286);
+  --background: #f4faff;
+  --foreground: #0f1f2e;
+  --card: #ffffff;
+  --card-foreground: #0f1f2e;
+  --popover: #ffffff;
+  --popover-foreground: #0f1f2e;
+  --primary: #2f6797;
+  --primary-foreground: #ffffff;
+  --secondary: #d7ecfc;
+  --secondary-foreground: #0f1f2e;
+  --muted: #e4f1fc;
+  --muted-foreground: #3f6488;
+  --accent: #d7ecfc;
+  --accent-foreground: #0f1f2e;
+  --destructive: #dc0010;
+  --destructive-foreground: #ffffff;
+  --border: #c9e0f3;
+  --input: #6a8cae;
+  --ring: #3b82b8;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -69,25 +82,25 @@ code {
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.141 0.005 285.823);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.141 0.005 285.823);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.274 0.006 286.033);
-  --input: oklch(0.274 0.006 286.033);
-  --ring: oklch(0.442 0.017 285.786);
+  --background: #0b1622;
+  --foreground: #e6f4ff;
+  --card: #142438;
+  --card-foreground: #e6f4ff;
+  --popover: #1e2f45;
+  --popover-foreground: #e6f4ff;
+  --primary: #a7d0fb;
+  --primary-foreground: #0b1622;
+  --secondary: #1e2f45;
+  --secondary-foreground: #e6f4ff;
+  --muted: #1e2f45;
+  --muted-foreground: #9dbbd9;
+  --accent: #2a4160;
+  --accent-foreground: #e6f4ff;
+  --destructive: #ff6467;
+  --destructive-foreground: #0b1622;
+  --border: #263b54;
+  --input: #587ba3;
+  --ring: #4f7fb9;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -194,6 +207,11 @@ code {
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  /* Signed-in pages and the sign-in page tint their frame with bg-muted/40; html keeps the
+     background under the tint instead of the browser's canvas. */
+  html {
+    @apply bg-background;
   }
   body {
     @apply bg-background text-foreground;

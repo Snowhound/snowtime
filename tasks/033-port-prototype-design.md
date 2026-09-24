@@ -1,6 +1,6 @@
 # 033: Port the prototype design to the app
 
-Status: todo
+Status: in-progress
 
 Tasks 029, 031, and 032 changed the prototypes' look after task 023 ported the views: brand
 colors and font, the app icon, the Appearance popover, the seasonal scene with its weather,
@@ -30,6 +30,13 @@ Work in this order, one commit or more per step, and check each in the dev app a
    the title row, and the sign-in page's tagline above the card.
 6. **Intro**: `prototypes/intro.js` on the sign-in page (first visit) and the signed-in pages
    (once a season, Replay intro), after task 032's subtask 01.
+
+## Progress
+
+- 2026-09-25: Step 1a: `src/styles.css` has the brand tokens, the UI font is Plus Jakarta Sans
+  from `@fontsource-variable/plus-jakarta-sans`, and times and durations use it with
+  `tabular-nums` instead of `font-mono`. `html` has the background color and the signed-in frame
+  the `bg-muted/40` tint. Checked at 1440, 850, and 390 px, light and dark.
 
 ## Acceptance criteria
 

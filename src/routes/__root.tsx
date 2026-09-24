@@ -13,7 +13,7 @@ import { HydrationScript, isServer } from 'solid-js/web'
 import { sessionQuery, themeScript } from '~/lib/session'
 import { getLocale, setLocale } from '~/paraglide/runtime.js'
 import styleCss from '~/styles.css?url'
-import '@fontsource/inter/400.css'
+import '@fontsource-variable/plus-jakarta-sans'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   beforeLoad: async ({ context, location }) => {

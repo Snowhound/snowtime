@@ -22,11 +22,11 @@ export function SummaryPanel(props: { summary: Summary; projects: readonly Proje
           <dl class="grid grid-cols-2 gap-3">
             <div>
               <dt class="text-muted-foreground text-xs">{m.timer_today()}</dt>
-              <dd class="font-mono text-lg tabular-nums">{formatHours(props.summary.today)}</dd>
+              <dd class="text-lg tabular-nums">{formatHours(props.summary.today)}</dd>
             </div>
             <div>
               <dt class="text-muted-foreground text-xs">{m.timer_this_week()}</dt>
-              <dd class="font-mono text-lg tabular-nums">{formatHours(props.summary.week)}</dd>
+              <dd class="text-lg tabular-nums">{formatHours(props.summary.week)}</dd>
             </div>
           </dl>
           <Show
@@ -53,7 +53,7 @@ export function SummaryPanel(props: { summary: Summary; projects: readonly Proje
                           </Show>
                           <span class="truncate">{project().name}</span>
                         </span>
-                        <span class="text-muted-foreground font-mono tabular-nums">
+                        <span class="text-muted-foreground tabular-nums">
                           {formatHours(row.total)}
                         </span>
                       </div>

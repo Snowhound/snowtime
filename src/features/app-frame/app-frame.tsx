@@ -20,7 +20,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession }>) {
   })
 
   return (
-    <div class="flex min-h-dvh flex-col">
+    <div class="bg-muted/40 flex min-h-dvh flex-col">
       <AppHeader />
       <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8">{props.children}</main>
     </div>

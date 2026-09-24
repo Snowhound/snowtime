@@ -70,7 +70,7 @@ export function EntryList(
           <Card class="overflow-hidden">
             <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
               <h2 class="font-medium">{dayLabel(date, props.zone, props.now)}</h2>
-              <span class="text-muted-foreground font-mono tabular-nums">
+              <span class="text-muted-foreground tabular-nums">
                 {formatHours(group()?.total ?? 0)}
               </span>
             </header>
@@ -112,7 +112,7 @@ function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
         </div>
         <EntryDuration
           editor={editor}
-          class="row-start-3 w-16 shrink-0 text-right font-mono text-sm tabular-nums"
+          class="row-start-3 w-16 shrink-0 text-right text-sm tabular-nums"
         />
         <div class="col-start-2 row-start-2 justify-self-end">
           <EntryActions

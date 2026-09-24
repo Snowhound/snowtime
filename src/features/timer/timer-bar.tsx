@@ -140,7 +140,7 @@ export function TimerBar(props: {
         </div>
         <Button
           variant="ghost"
-          class={cn('px-2 font-mono tabular-nums', classes().elapsed)}
+          class={cn('px-2 tabular-nums', classes().elapsed)}
           aria-label={m.timer_edit_start()}
           disabled={!props.running || !!props.elsewhere}
           onClick={() => props.onEditStart()}

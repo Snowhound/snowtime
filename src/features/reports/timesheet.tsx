@@ -67,7 +67,7 @@ export function Timesheet(props: {
     return (
       <TableCell
         class={cn(
-          'text-right font-mono whitespace-nowrap tabular-nums',
+          'text-right whitespace-nowrap tabular-nums',
           current(cell.bucket) && 'bg-muted/50',
           !cell.ms && 'text-muted-foreground/50',
           cell.class,
@@ -137,7 +137,7 @@ export function Timesheet(props: {
                   <For each={buckets()}>
                     {(bucket, i) => <Cell ms={row.perBucket[i()]} bucket={bucket} />}
                   </For>
-                  <TableCell class="pr-6 text-right font-mono font-medium tabular-nums">
+                  <TableCell class="pr-6 text-right font-medium tabular-nums">
                     {formatHours(row.total)}
                   </TableCell>
                 </TableRow>
@@ -155,7 +155,7 @@ export function Timesheet(props: {
                   <Cell ms={props.report.perBucket[i()]} bucket={bucket} class="font-medium" />
                 )}
               </For>
-              <TableCell class="pr-6 text-right font-mono tabular-nums">
+              <TableCell class="pr-6 text-right tabular-nums">
                 {formatHours(props.report.total)}
               </TableCell>
             </TableRow>

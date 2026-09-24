@@ -71,7 +71,7 @@ export function EntryTable(
                     >
                       {dayLabel(date, props.zone, props.now)}
                     </th>
-                    <TableCell class="text-right font-mono text-xs tabular-nums">
+                    <TableCell class="text-right text-xs tabular-nums">
                       {formatHours(group()?.total ?? 0)}
                     </TableCell>
                     <TableCell />
@@ -119,7 +119,7 @@ function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
             <NextDayMark editor={editor} />
           </div>
         </TableCell>
-        <TableCell class="text-right font-mono tabular-nums">
+        <TableCell class="text-right tabular-nums">
           <EntryDuration editor={editor} />
         </TableCell>
         <TableCell>
