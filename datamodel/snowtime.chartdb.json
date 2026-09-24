@@ -1396,7 +1396,7 @@
       "name": "user_settings",
       "schema": "main",
       "x": 1984,
-      "y": 282,
+      "y": 314,
       "fields": [
         {
           "id": "t9f0",
@@ -1451,6 +1451,40 @@
         },
         {
           "id": "t9f3",
+          "name": "created_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Epoch ms, set by the database."
+        },
+        {
+          "id": "t9f4",
+          "name": "created_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Audit. Acting user, set by the app per request."
+        },
+        {
+          "id": "t9f5",
           "name": "updated_at",
           "type": {
             "id": "integer",
@@ -1463,15 +1497,32 @@
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Set by the app on update; trigger fallback."
+        },
+        {
+          "id": "t9f6",
+          "name": "updated_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
           "default": null,
-          "comments": null
+          "comments": "Audit. Acting user of the last change, set by the app."
         }
       ],
       "indexes": [],
       "color": "#59A14F",
       "isView": false,
       "createdAt": 1700000000000,
-      "comments": "Per-user preferences, one row per user, shared across organizations. Created on first sign-in with the time zone of the browser.",
+      "comments": "Per-user preferences, one row per user, shared across organizations. Created on first sign-in with the time zone of the browser. Lives as long as the user, so no sys_deleted.",
       "order": 9,
       "parentAreaId": "a2"
     },
@@ -1480,7 +1531,7 @@
       "name": "project",
       "schema": "main",
       "x": 1700,
-      "y": 442,
+      "y": 506,
       "fields": [
         {
           "id": "t10f0",
@@ -1565,10 +1616,27 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Epoch ms. Archived projects cannot receive new entries but keep their history and reports."
+          "comments": "Epoch ms. Domain lifecycle, not deletion: archived projects take no new entries but stay in history and reports."
         },
         {
           "id": "t10f5",
+          "name": "created_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Epoch ms, set by the database."
+        },
+        {
+          "id": "t10f6",
           "name": "created_by",
           "type": {
             "id": "text",
@@ -1582,24 +1650,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
-        },
-        {
-          "id": "t10f6",
-          "name": "created_at",
-          "type": {
-            "id": "integer",
-            "name": "integer"
-          },
-          "primaryKey": false,
-          "unique": false,
-          "nullable": false,
-          "createdAt": 1700000000000,
-          "characterMaximumLength": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comments": null
+          "comments": "Audit. Acting user, set by the app per request."
         },
         {
           "id": "t10f7",
@@ -1615,8 +1666,42 @@
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Set by the app on update; trigger fallback."
+        },
+        {
+          "id": "t10f8",
+          "name": "updated_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
           "default": null,
-          "comments": null
+          "comments": "Audit. Acting user of the last change, set by the app."
+        },
+        {
+          "id": "t10f9",
+          "name": "sys_deleted",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comments": "Audit. Logical delete, CHECK 0 or 1. Deleted rows are excluded everywhere, reports included."
         }
       ],
       "indexes": [
@@ -1630,7 +1715,7 @@
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
-          "comments": null
+          "comments": "Partial: WHERE sys_deleted = 0, so a deleted project frees its name."
         },
         {
           "id": "t10i1",
@@ -1691,7 +1776,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE: deleting a team (Better Auth deletes rows) drops its assignments."
         },
         {
           "id": "t11f2",
@@ -1724,8 +1809,25 @@
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Epoch ms, set by the database."
+        },
+        {
+          "id": "t11f4",
+          "name": "created_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
           "default": null,
-          "comments": null
+          "comments": "Audit. Acting user, set by the app per request."
         }
       ],
       "indexes": [
@@ -1757,7 +1859,7 @@
       "color": "#59A14F",
       "isView": false,
       "createdAt": 1700000000000,
-      "comments": "Assigns a project to a team. A project with no rows here is available to everyone in the organization.",
+      "comments": "Assigns a project to a team. A project with no rows here is available to everyone in the organization. Rows are inserted and deleted, never updated, so only created_* audit columns.",
       "order": 11,
       "parentAreaId": "a2"
     },
@@ -1817,7 +1919,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Whose time this is."
+          "comments": "Whose time this is. May differ from created_by when an admin adds an entry for someone."
         },
         {
           "id": "t12f3",
@@ -1901,11 +2003,28 @@
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
-          "default": null,
-          "comments": null
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Epoch ms, set by the database."
         },
         {
           "id": "t12f8",
+          "name": "created_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Audit. Acting user, set by the app per request."
+        },
+        {
+          "id": "t12f9",
           "name": "updated_at",
           "type": {
             "id": "integer",
@@ -1918,8 +2037,42 @@
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Set by the app on update; trigger fallback."
+        },
+        {
+          "id": "t12f10",
+          "name": "updated_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
           "default": null,
-          "comments": null
+          "comments": "Audit. Acting user of the last change, set by the app."
+        },
+        {
+          "id": "t12f11",
+          "name": "sys_deleted",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comments": "Audit. Logical delete, CHECK 0 or 1. Deleted rows are excluded everywhere, reports included."
         }
       ],
       "indexes": [
@@ -1932,7 +2085,7 @@
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
-          "comments": "Partial: WHERE stopped_at IS NULL. At most one running timer per user across all organizations."
+          "comments": "Partial: WHERE stopped_at IS NULL AND sys_deleted = 0. At most one running timer per user across all organizations."
         },
         {
           "id": "t12i1",
@@ -2151,6 +2304,32 @@
     },
     {
       "id": "r13",
+      "name": "user_settings_created_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t9",
+      "targetTableId": "t0",
+      "sourceFieldId": "t9f4",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r14",
+      "name": "user_settings_updated_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t9",
+      "targetTableId": "t0",
+      "sourceFieldId": "t9f6",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r15",
       "name": "project_organization_id_organization_id",
       "sourceSchema": "main",
       "targetSchema": "main",
@@ -2163,20 +2342,33 @@
       "createdAt": 1700000000000
     },
     {
-      "id": "r14",
+      "id": "r16",
       "name": "project_created_by_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
       "sourceTableId": "t10",
       "targetTableId": "t0",
-      "sourceFieldId": "t10f5",
+      "sourceFieldId": "t10f6",
       "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
     },
     {
-      "id": "r15",
+      "id": "r17",
+      "name": "project_updated_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t10",
+      "targetTableId": "t0",
+      "sourceFieldId": "t10f8",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r18",
       "name": "project_team_project_id_project_id",
       "sourceSchema": "main",
       "targetSchema": "main",
@@ -2189,7 +2381,7 @@
       "createdAt": 1700000000000
     },
     {
-      "id": "r16",
+      "id": "r19",
       "name": "project_team_team_id_team_id",
       "sourceSchema": "main",
       "targetSchema": "main",
@@ -2202,7 +2394,7 @@
       "createdAt": 1700000000000
     },
     {
-      "id": "r17",
+      "id": "r20",
       "name": "project_team_organization_id_organization_id",
       "sourceSchema": "main",
       "targetSchema": "main",
@@ -2215,7 +2407,20 @@
       "createdAt": 1700000000000
     },
     {
-      "id": "r18",
+      "id": "r21",
+      "name": "project_team_created_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t11",
+      "targetTableId": "t0",
+      "sourceFieldId": "t11f4",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r22",
       "name": "time_entry_organization_id_organization_id",
       "sourceSchema": "main",
       "targetSchema": "main",
@@ -2228,7 +2433,7 @@
       "createdAt": 1700000000000
     },
     {
-      "id": "r19",
+      "id": "r23",
       "name": "time_entry_user_id_user_id",
       "sourceSchema": "main",
       "targetSchema": "main",
@@ -2241,7 +2446,7 @@
       "createdAt": 1700000000000
     },
     {
-      "id": "r20",
+      "id": "r24",
       "name": "time_entry_project_id_project_id",
       "sourceSchema": "main",
       "targetSchema": "main",
@@ -2249,6 +2454,32 @@
       "targetTableId": "t10",
       "sourceFieldId": "t12f3",
       "targetFieldId": "t10f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r25",
+      "name": "time_entry_created_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t12",
+      "targetTableId": "t0",
+      "sourceFieldId": "t12f8",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r26",
+      "name": "time_entry_updated_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t12",
+      "targetTableId": "t0",
+      "sourceFieldId": "t12f10",
+      "targetFieldId": "t0f0",
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
@@ -2281,7 +2512,7 @@
       "x": 1668,
       "y": 0,
       "width": 572,
-      "height": 772,
+      "height": 900,
       "color": "#59A14F",
       "order": 2
     }

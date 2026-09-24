@@ -137,12 +137,17 @@ Table invitation [note: 'Pending invitation to an organization, optionally into 
 }
 
 // --- App -------------------------------------------------------------------------------
+// Audit columns (see datamodel/README.md): created_*/updated_* on mutable tables,
+// created_* only on insert-and-delete link tables, sys_deleted on entities users delete.
 
-Table user_settings [note: 'Per-user preferences, one row per user, shared across organizations. Created on first sign-in with the time zone of the browser.'] {
+Table user_settings [note: 'Per-user preferences, one row per user, shared across organizations. Created on first sign-in with the time zone of the browser. Lives as long as the user, so no sys_deleted.'] {
   user_id text [pk, ref: > user.id]
   time_zone text [not null, note: 'IANA zone, e.g. Europe/Tallinn. Drives display and report day/week boundaries.']
   week_start text [not null, default: 'mon', note: 'CHECK: mon, sun.']
-  updated_at integer [not null]
+  created_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Epoch ms, set by the database.']
+  created_by text [not null, ref: > user.id, note: 'Audit. Acting user, set by the app per request.']
+  updated_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Set by the app on update; trigger fallback.']
+  updated_by text [not null, ref: > user.id, note: 'Audit. Acting user of the last change, set by the app.']
 }
 
 Table project [note: 'Owned by the organization. Visible to the whole organization unless assigned to teams.'] {
@@ -150,22 +155,25 @@ Table project [note: 'Owned by the organization. Visible to the whole organizati
   organization_id text [not null, ref: > organization.id]
   name text [not null]
   color text [note: 'Hex color for the UI, e.g. #4E79A7.']
-  archived_at integer [note: 'Epoch ms. Archived projects cannot receive new entries but keep their history and reports.']
-  created_by text [not null, ref: > user.id]
-  created_at integer [not null]
-  updated_at integer [not null]
+  archived_at integer [note: 'Epoch ms. Domain lifecycle, not deletion: archived projects take no new entries but stay in history and reports.']
+  created_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Epoch ms, set by the database.']
+  created_by text [not null, ref: > user.id, note: 'Audit. Acting user, set by the app per request.']
+  updated_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Set by the app on update; trigger fallback.']
+  updated_by text [not null, ref: > user.id, note: 'Audit. Acting user of the last change, set by the app.']
+  sys_deleted integer [not null, default: 0, note: 'Audit. Logical delete, CHECK 0 or 1. Deleted rows are excluded everywhere, reports included.']
 
   indexes {
-    (organization_id, name) [unique]
+    (organization_id, name) [unique, note: 'Partial: WHERE sys_deleted = 0, so a deleted project frees its name.']
     (id, organization_id) [unique, note: 'Target of composite foreign keys, so rows pointing at a project cannot name another organization.']
   }
 }
 
-Table project_team [note: 'Assigns a project to a team. A project with no rows here is available to everyone in the organization.'] {
+Table project_team [note: 'Assigns a project to a team. A project with no rows here is available to everyone in the organization. Rows are inserted and deleted, never updated, so only created_* audit columns.'] {
   project_id text [not null, ref: > project.id]
-  team_id text [not null, ref: > team.id]
+  team_id text [not null, ref: > team.id, note: 'ON DELETE CASCADE: deleting a team (Better Auth deletes rows) drops its assignments.']
   organization_id text [not null, ref: > organization.id, note: 'Tenant key. Composite FKs (project_id, organization_id) to project and (team_id, organization_id) to team make it equal the organization of both.']
-  created_at integer [not null]
+  created_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Epoch ms, set by the database.']
+  created_by text [not null, ref: > user.id, note: 'Audit. Acting user, set by the app per request.']
 
   indexes {
     (project_id, team_id) [pk]
@@ -176,16 +184,19 @@ Table project_team [note: 'Assigns a project to a team. A project with no rows h
 Table time_entry [note: 'A span of tracked time. A row with stopped_at null is the running timer; elapsed time is computed on the client and never written periodically.'] {
   id text [pk, note: 'UUIDv7, generated on the client so optimistic updates keep a stable key.']
   organization_id text [not null, ref: > organization.id]
-  user_id text [not null, ref: > user.id, note: 'Whose time this is.']
+  user_id text [not null, ref: > user.id, note: 'Whose time this is. May differ from created_by when an admin adds an entry for someone.']
   project_id text [ref: > project.id, note: 'Optional. Composite FK (project_id, organization_id) to project keeps it in the same organization.']
   description text [not null, default: '', note: 'What was worked on.']
   started_at integer [not null, note: 'Epoch ms, UTC.']
   stopped_at integer [note: 'Epoch ms, UTC. CHECK stopped_at > started_at. Null while running.']
-  created_at integer [not null]
-  updated_at integer [not null]
+  created_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Epoch ms, set by the database.']
+  created_by text [not null, ref: > user.id, note: 'Audit. Acting user, set by the app per request.']
+  updated_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Set by the app on update; trigger fallback.']
+  updated_by text [not null, ref: > user.id, note: 'Audit. Acting user of the last change, set by the app.']
+  sys_deleted integer [not null, default: 0, note: 'Audit. Logical delete, CHECK 0 or 1. Deleted rows are excluded everywhere, reports included.']
 
   indexes {
-    user_id [unique, note: 'Partial: WHERE stopped_at IS NULL. At most one running timer per user across all organizations.']
+    user_id [unique, note: 'Partial: WHERE stopped_at IS NULL AND sys_deleted = 0. At most one running timer per user across all organizations.']
     (organization_id, user_id, started_at) [note: 'Own entry list and per-member reports.']
     (organization_id, started_at) [note: 'Organization-wide reports by time range.']
     project_id

@@ -52,6 +52,10 @@ without apostrophes. Standalone `Ref:` lines are ignored.
 - References that must stay inside one organization are composite foreign keys on
   `(id, organization_id)`; the target tables carry a matching unique index. The diagram
   draws only the single-column reference, and the note on the column names the composite.
+- Audit columns come last in every app-owned table, in this order: `created_at`,
+  `created_by`, `updated_at`, `updated_by`, `sys_deleted`. Link tables that are only
+  inserted and deleted have `created_*` only; `sys_deleted` is on entities users delete.
+  Rules and reasons: `docs/architecture.md`, "Data conventions".
 - Partial indexes and `CHECK` constraints are described in notes, since DBML cannot
   express them; the migrations implement them.
 

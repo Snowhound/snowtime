@@ -117,7 +117,8 @@ function parseDbml(source) {
                 primaryKey: attributes.includes('pk'),
                 unique: attributes.includes('unique'),
                 notNull: attributes.includes('not null') || attributes.includes('pk'),
-                default: defaultAttribute ? defaultAttribute.slice('default:'.length).trim() : null,
+                // Backticks mark a DBML expression default; ChartDB wants the bare expression.
+                default: defaultAttribute ? defaultAttribute.slice('default:'.length).trim().replace(/^`(.*)`$/, '$1') : null,
                 ref: refAttribute ? parseRef(refAttribute) : null,
                 note: noteOf(attributes),
             });

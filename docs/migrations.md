@@ -51,5 +51,39 @@ These keep the drift check accurate; the spike behind them is summarized in
   introspection cannot see.
 - `CHECK` and composite foreign keys: named with `CONSTRAINT <table>_<what>`.
 - Partial indexes: the drift check cannot see `WHERE` clauses. Reviewers check them by hand.
+  On soft-deleted tables, unique indexes include `sys_deleted = 0`.
+
+### Audit columns
+
+Every app-owned table ends with the audit columns (`docs/architecture.md`, "Data
+conventions" has the reasons):
+
+```sql
+CREATE TABLE my_table (
+  id text PRIMARY KEY NOT NULL,
+  organization_id text NOT NULL REFERENCES organization(id),
+  -- ... domain columns ...
+  created_at integer NOT NULL DEFAULT (CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)),
+  created_by text NOT NULL REFERENCES user(id),
+  updated_at integer NOT NULL DEFAULT (CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)),
+  updated_by text NOT NULL REFERENCES user(id),
+  sys_deleted integer NOT NULL DEFAULT 0 CONSTRAINT my_table_sys_deleted CHECK (sys_deleted IN (0, 1))
+);
+--> statement-breakpoint
+CREATE TRIGGER my_table_updated_at AFTER UPDATE ON my_table FOR EACH ROW
+WHEN NEW.updated_at IS OLD.updated_at
+BEGIN
+  UPDATE my_table SET updated_at = CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)
+  WHERE id = NEW.id;
+END;
+```
+
+- Keep the `ROUND` and `CAST`: without them the value can be stored as a float.
+- Drop `updated_*` and the trigger for insert-and-delete link tables; drop `sys_deleted`
+  for tables that are not soft-deleted.
+- In `schema.ts`, `updated_at` gets `$onUpdate` so the trigger stays a fallback, and
+  `created_by`/`updated_by` get `$defaultFn`/`$onUpdateFn` from the request's actor.
+- Triggers are invisible to the drift check. A table rebuild drops them; recreate them
+  in the same migration.
 - SQLite cannot alter most constraints in place. Changing one means the table-rebuild
   pattern (create new table, copy, drop, rename) with `PRAGMA foreign_keys=OFF` around it.
