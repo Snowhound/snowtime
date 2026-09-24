@@ -240,6 +240,20 @@
     },
     true
   )
+  // Once open, it flips above the trigger when it doesn't fit below, like Kobalte's flip.
+  document.addEventListener(
+    'toggle',
+    (event) => {
+      const pop = event.target
+      if (event.newState !== 'open' || !['popover', 'menu'].includes(pop.dataset?.ui)) return
+      const trigger = document.querySelector(`[popovertarget="${pop.id}"]`)
+      if (!trigger) return
+      const r = trigger.getBoundingClientRect()
+      const h = pop.getBoundingClientRect().height
+      if (r.bottom + 4 + h > innerHeight - 8 && r.top - 4 - h >= 8) pop.style.top = `${r.top - 4 - h}px`
+    },
+    true
+  )
   document.addEventListener(
     'toggle',
     (event) => {

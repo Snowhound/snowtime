@@ -4,7 +4,7 @@ pre-commit:
   jobs:
     - name: lint
       glob: '*.{js,mjs,ts,tsx}'
-      run: ./node_modules/.bin/oxlint --fix {staged_files}
+      run: ./node_modules/.bin/oxlint --fix --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
 
     - name: format

@@ -44,6 +44,19 @@
       .entry-actions {
         @apply flex items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100;
       }
+      /* Inline time fields are typed; the picker button only widens them. */
+      .inline-time::-webkit-calendar-picker-indicator {
+        display: none;
+      }
+      /* Marks a row that moved to another day or was just added. */
+      @keyframes entry-flash {
+        from {
+          background-color: var(--accent);
+        }
+      }
+      .entry-flash {
+        animation: entry-flash 1.6s ease-out;
+      }
     </style>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -56,13 +69,21 @@
         <option value="long">Long content</option>
         <option value="empty">Empty</option>
       </select>
+      <label class="flex items-center gap-2 text-sm" title="Prototype only: inline saves fail and roll back">
+        <input id="fail-saves" type="checkbox" data-ui="checkbox" />Fail saves
+      </label>
     </div>
 
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pt-6 sm:px-8">
       <h1 class="text-2xl font-semibold tracking-tight">Timer</h1>
-      <button data-ui="button" data-variant="outline" data-size="icon" class="size-9" popovertarget="view-settings" aria-label="View settings">
-        <svg class="prototype-icon" aria-hidden="true"><use href="#icon-settings" /></svg>
-      </button>
+      <div class="flex items-center gap-2">
+        <button id="add-entry" type="button" data-ui="button" data-variant="outline" class="h-9">
+          <svg class="prototype-icon" aria-hidden="true"><use href="#icon-plus" /></svg>Add entry
+        </button>
+        <button data-ui="button" data-variant="outline" data-size="icon" class="size-9" popovertarget="view-settings" aria-label="View settings">
+          <svg class="prototype-icon" aria-hidden="true"><use href="#icon-settings" /></svg>
+        </button>
+      </div>
       <div id="view-settings" popover data-ui="popover" class="grid gap-4" role="dialog" aria-labelledby="view-settings-title">
         <h2 id="view-settings-title" class="font-medium leading-none">View</h2>
         <div class="grid gap-2">
@@ -177,7 +198,9 @@
         { id: 'p2', name: 'Client portal', color: 'var(--series-3)' },
         { id: 'p3', name: 'Internal', color: 'var(--series-4)' },
         { id: 'p4', name: 'Nordic Logistics – warehouse management system migration', color: 'var(--series-8)' },
+        { id: 'p5', name: 'Website 2025', color: 'var(--series-6)', archived: true },
       ]
+      const activeProjects = projects.filter((p) => p.id !== 'none' && !p.archived)
 
       const state = { entries: [], running: null }
       let nextId = 1
@@ -204,9 +227,13 @@
             entries: [
               entry(0, 8.5, 55, 'Standup and planning', 'p3'),
               entry(0, 9.5, 95, 'Timer schema and partial unique index', 'p1'),
+              // Crosses midnight into today; grouped under its start day.
+              entry(1, 23, 100, 'Deploy window for the reporting release', 'p1'),
               entry(1, 9, 30, 'Standup and planning', 'p3'),
               entry(1, 9.75, 180, 'Invoice export review', 'p2'),
               entry(1, 13.5, 70, '', 'none'),
+              // Archived project: listed in the picker as "(archived)" so other edits keep it.
+              entry(2, 14, 45, 'Landing page copy fixes', 'p5'),
               entry(3, 10, 240, 'Report time zone boundaries', 'p1'),
             ],
             running: { id: `e${nextId++}`, description: 'Prototype timer layouts', projectId: 'p1', startedAt: Date.now() - 25 * MIN - 12_000 },
@@ -221,6 +248,8 @@
           const entries = []
           for (let day = 0; day < 6; day++)
             for (let i = 0; i < 5; i++) entries.push(entry(day, 8 + i * 1.75, 40 + i * 13, i % 2 ? long : 'Code review', i % 2 ? 'p4' : 'p2'))
+          // A project the user can no longer see (its teams changed).
+          entries.push(entry(1, 18, 35, 'Estimate for the tender', 'p-hidden'))
           return { entries, running: { id: `e${nextId++}`, description: long, projectId: 'p4', startedAt: Date.now() - 9 * HOUR - 3 * MIN } }
         },
         empty() {
@@ -229,7 +258,20 @@
       }
 
       const { escapeHtml, icon } = appFrame
-      const project = (id) => projects.find((p) => p.id === id) ?? projects[0]
+      const project = (id) =>
+        projects.find((p) => p.id === id) ?? { id, name: 'Unavailable project', color: 'var(--muted-foreground)', unavailable: true }
+      // "No project", the active projects, and the entry's archived or unavailable project, as ProjectSelect lists them.
+      function projectChoices(currentId) {
+        const current = project(currentId)
+        const choices = [projects[0], ...activeProjects]
+        if (current.archived) choices.push({ ...current, name: `${current.name} (archived)` })
+        if (current.unavailable) choices.push(current)
+        return choices
+      }
+      const projectOptions = (currentId) =>
+        projectChoices(currentId)
+          .map((p) => `<option value="${p.id}"${p.id === currentId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`)
+          .join('')
       const dot = (p) =>
         p.id === 'none' ? '' : `<span class="inline-block size-2 shrink-0 rounded-full" style="background:${p.color}"></span>`
       const timeFmt = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
@@ -249,6 +291,7 @@
       const entryDuration = (e) => (e.stoppedAt ?? Date.now()) - e.startedAt
       const describe = (e) =>
         e.description ? escapeHtml(e.description) : '<span class="text-muted-foreground italic">No description</span>'
+      const name = (e) => escapeHtml(e.description || 'entry')
 
       function groupByDay(entries) {
         const groups = new Map()
@@ -260,16 +303,12 @@
         return [...groups.entries()].map(([day, items]) => ({ day, items, total: items.reduce((s, e) => s + entryDuration(e), 0) }))
       }
 
+      // data-entry and data-key let a re-render put focus back on the same control.
       function actions(e) {
         return `<div class="entry-actions">
-          <button data-ui="button" data-variant="ghost" data-size="icon" data-edit="${e.id}" aria-label="Edit ${escapeHtml(e.description || 'entry')}">${icon('pencil')}</button>
-          <button data-ui="button" data-variant="ghost" data-size="icon" data-continue="${e.id}" aria-label="Continue ${escapeHtml(e.description || 'entry')}">${icon('play')}</button>
-          <button data-ui="button" data-variant="ghost" data-size="icon" data-delete="${e.id}" aria-label="Delete ${escapeHtml(e.description || 'entry')}">${icon('trash-2')}</button>
+          <button data-ui="button" data-variant="ghost" data-size="icon" data-continue="${e.id}" data-entry="${e.id}" data-key="continue" aria-label="Continue ${name(e)}">${icon('play')}</button>
+          <button data-ui="button" data-variant="ghost" data-size="icon" data-delete="${e.id}" data-entry="${e.id}" data-key="delete" aria-label="Delete ${name(e)}">${icon('trash-2')}</button>
         </div>`
-      }
-
-      function timeButton(e, text) {
-        return `<button type="button" data-edit="${e.id}" class="rounded-sm text-xs tabular-nums text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Edit time of ${escapeHtml(e.description || 'entry')}">${text}</button>`
       }
 
       function emptyState() {
@@ -280,6 +319,93 @@
         </div>`
       }
 
+      // Inline editing. Every field is a control that reads as text until hovered or focused; a
+      // committed field saves on its own. Below 768 px the row's fields stack on three lines.
+      const inline = {
+        // Unsaved values per entry: description, start, end. Invalid times stay here until fixed or Escape.
+        drafts: {},
+        // Per entry: { kind: 'invalid', key, message } or { kind: 'failed', message }.
+        errors: {},
+        flash: null,
+      }
+      const QUIET = 'border-transparent shadow-none hover:border-input focus-visible:border-input'
+      const find = (id) => state.entries.find((x) => x.id === id)
+      const draft = (id, key) => inline.drafts[id]?.[key]
+      function clearDraft(id, ...keys) {
+        for (const key of keys) delete inline.drafts[id]?.[key]
+        if (inline.drafts[id] && !Object.keys(inline.drafts[id]).length) delete inline.drafts[id]
+      }
+
+      function descriptionInput(e) {
+        return `<input data-ui="input" type="text" autocomplete="off" data-entry="${e.id}" data-key="description" aria-label="Description" placeholder="No description"
+          value="${escapeHtml(draft(e.id, 'description') ?? e.description)}" class="h-8 px-2 text-ellipsis ${QUIET}" />`
+      }
+
+      function timeInput(e, key) {
+        const err = inline.errors[e.id]
+        const invalid = err?.kind === 'invalid' && err.key === key
+        const value = draft(e.id, key) ?? toTimeValue(key === 'start' ? e.startedAt : e.stoppedAt)
+        return `<input data-ui="input" type="time" required data-entry="${e.id}" data-key="${key}" aria-label="${key === 'start' ? 'Start' : 'End'}" value="${value}"
+          aria-describedby="error-${e.id}"${invalid ? ' data-invalid aria-invalid="true"' : ''} class="inline-time h-8 w-auto px-1.5 text-xs tabular-nums [field-sizing:content] ${QUIET} data-[invalid]:border-destructive data-[invalid]:text-destructive" />`
+      }
+
+      function nextDayMark(e) {
+        const r = readTimes(e, rowValues(e))
+        return `<span data-next-day="${e.id}" class="w-5 text-xs text-muted-foreground" title="Ends the next day">${!r.error && r.nextDay ? '+1' : ''}</span>`
+      }
+
+      function durationCell(e, cls) {
+        const r = readTimes(e, rowValues(e))
+        return `<span data-duration="${e.id}" class="${cls}">${r.error ? '—' : duration(r.stoppedAt - r.startedAt)}</span>`
+      }
+
+      // The date lives in a popover: moving an entry to another day is rare, and a date field would widen every row.
+      function datePicker(e) {
+        const pop = `date-popover-${e.id}`
+        return `<button type="button" data-ui="button" data-variant="ghost" data-size="icon" popovertarget="${pop}" data-entry="${e.id}" data-key="date"
+            aria-label="Date: ${dayFmt.format(e.startedAt)}" title="Move to another day" class="size-8 text-muted-foreground sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">${icon('calendar')}</button>
+          <div id="${pop}" popover data-ui="popover" data-align="start" role="dialog" aria-label="Date" class="grid w-60 gap-2">
+            <label data-ui="label" for="date-input-${e.id}">Date</label>
+            <input id="date-input-${e.id}" data-ui="input" type="date" required data-date-entry="${e.id}" value="${toDateValue(e.startedAt)}" max="${toDateValue(Date.now())}"
+              aria-describedby="date-error-${e.id}" class="data-[invalid]:border-destructive" />
+            <p id="date-error-${e.id}" data-ui="error-message" role="alert" hidden></p>
+            <p class="text-xs text-muted-foreground">Start and end times stay the same.</p>
+          </div>`
+      }
+
+      function projectMenu(e) {
+        const p = project(e.projectId)
+        const menu = `project-menu-${e.id}`
+        const items = projectChoices(e.projectId)
+          .map(
+            (c) =>
+              `<button type="button" role="menuitemradio" data-ui="menu-radio-item" aria-checked="${c.id === e.projectId}" data-pick="${c.id}" data-pick-entry="${e.id}" class="gap-2">${dot(c)}<span class="min-w-0 truncate">${escapeHtml(c.name)}</span></button>`
+          )
+          .join('')
+        return `<button type="button" data-ui="button" data-variant="ghost" data-size="sm" popovertarget="${menu}" aria-haspopup="menu" data-entry="${e.id}" data-key="project"
+            aria-label="Project: ${escapeHtml(p.name)}" class="h-8 w-full justify-start gap-1.5 px-2 text-xs font-normal ${p.id === 'none' ? 'text-muted-foreground' : ''}">${dot(p)}<span class="min-w-0 truncate">${escapeHtml(p.name)}</span></button>
+          <div id="${menu}" popover data-ui="menu" role="menu" data-align="start" aria-label="Project" class="max-h-80 w-64 overflow-y-auto">${items}</div>`
+      }
+
+      function rowErrorText(e) {
+        const err = inline.errors[e.id]
+        return `<p id="error-${e.id}" data-row-error="${e.id}" data-ui="error-message" role="alert" class="pt-1"${err ? '' : ' hidden'}>${err ? escapeHtml(err.message) : ''}</p>`
+      }
+
+      // One line from 768 px. Below it: description; project and actions; date, times, and duration.
+      function cardRow(e, compact) {
+        return `<li class="group px-4 ${compact ? 'py-2' : 'py-3'}" data-row="${e.id}">
+          <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 md:flex">
+            <div class="col-span-2 -ml-2 min-w-0 md:flex-1">${descriptionInput(e)}</div>
+            <div class="-ml-2 min-w-0 md:ml-0 md:w-36 md:shrink-0">${projectMenu(e)}</div>
+            <div class="row-start-3 -ml-2 flex shrink-0 items-center gap-1 text-muted-foreground md:ml-0">${datePicker(e)}${timeInput(e, 'start')}<span aria-hidden="true">–</span>${timeInput(e, 'end')}${nextDayMark(e)}</div>
+            ${durationCell(e, 'row-start-3 w-16 shrink-0 text-right font-mono text-sm tabular-nums')}
+            <div class="col-start-2 row-start-2 justify-self-end">${actions(e)}</div>
+          </div>
+          ${rowErrorText(e)}
+        </li>`
+      }
+
       function renderDayCards(groups, compact) {
         return groups
           .map(
@@ -288,25 +414,22 @@
                 <h2 class="font-medium">${dayLabel(g.day)}</h2>
                 <span class="font-mono tabular-nums text-muted-foreground">${duration(g.total, false)}</span>
               </header>
-              <ul class="divide-y">${g.items
-                .map((e) => {
-                  const p = project(e.projectId)
-                  return `<li class="group flex flex-col gap-1 px-4 ${compact ? 'py-2' : 'py-3'} sm:flex-row sm:items-center sm:gap-4">
-                    <div class="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
-                      <span class="truncate text-sm">${describe(e)}</span>
-                      ${p.id === 'none' ? '' : `<span class="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground sm:max-w-56">${dot(p)}<span class="truncate">${escapeHtml(p.name)}</span></span>`}
-                    </div>
-                    <div class="flex items-center justify-between gap-3 sm:justify-end">
-                      ${timeButton(e, `${timeFmt.format(e.startedAt)} – ${timeFmt.format(e.stoppedAt)}`)}
-                      <span class="w-16 text-right font-mono text-sm tabular-nums">${duration(entryDuration(e))}</span>
-                      ${actions(e)}
-                    </div>
-                  </li>`
-                })
-                .join('')}</ul>
+              <ul class="divide-y">${g.items.map((e) => cardRow(e, compact)).join('')}</ul>
             </div>`
           )
           .join('')
+      }
+
+      function tableRow(e) {
+        return `<tr data-ui="table-row" class="group" data-row="${e.id}">
+            <td data-ui="table-cell" class="max-w-0"><div class="-ml-2">${descriptionInput(e)}</div></td>
+            <td data-ui="table-cell" class="max-w-0">${projectMenu(e)}</td>
+            <td data-ui="table-cell"><div class="flex items-center gap-1">${datePicker(e)}${timeInput(e, 'start')}</div></td>
+            <td data-ui="table-cell"><div class="flex items-center gap-1">${timeInput(e, 'end')}${nextDayMark(e)}</div></td>
+            <td data-ui="table-cell" class="text-right font-mono tabular-nums">${durationCell(e, '')}</td>
+            <td data-ui="table-cell">${actions(e)}</td>
+          </tr>
+          <tr data-ui="table-row" data-error-row="${e.id}" class="hover:bg-transparent"${inline.errors[e.id] ? '' : ' hidden'}><td data-ui="table-cell" colspan="6" class="pt-0">${rowErrorText(e)}</td></tr>`
       }
 
       function renderTable(groups) {
@@ -317,24 +440,12 @@
                 <td data-ui="table-cell" class="text-right font-mono text-xs tabular-nums">${duration(g.total, false)}</td>
                 <td data-ui="table-cell"></td>
               </tr>
-              ${g.items
-                .map((e) => {
-                  const p = project(e.projectId)
-                  return `<tr data-ui="table-row" class="group">
-                    <td data-ui="table-cell" class="max-w-0"><div class="truncate">${describe(e)}</div></td>
-                    <td data-ui="table-cell" class="max-w-0"><div class="flex items-center gap-1.5 text-muted-foreground">${dot(p)}<span class="truncate">${p.id === 'none' ? '—' : escapeHtml(p.name)}</span></div></td>
-                    <td data-ui="table-cell">${timeButton(e, timeFmt.format(e.startedAt))}</td>
-                    <td data-ui="table-cell">${timeButton(e, timeFmt.format(e.stoppedAt))}</td>
-                    <td data-ui="table-cell" class="text-right font-mono tabular-nums">${duration(entryDuration(e))}</td>
-                    <td data-ui="table-cell">${actions(e)}</td>
-                  </tr>`
-                })
-                .join('')}`
+              ${g.items.map(tableRow).join('')}`
           )
           .join('')
         return `<div class="relative w-full overflow-auto rounded-lg border bg-card">
-          <table data-ui="table" class="min-w-[40rem] table-fixed">
-            <colgroup><col /><col class="w-44" /><col class="w-20" /><col class="w-20" /><col class="w-24" /><col class="w-24" /></colgroup>
+          <table data-ui="table" class="min-w-[44rem] table-fixed">
+            <colgroup><col /><col class="w-40" /><col class="w-28" /><col class="w-28" /><col class="w-24" /><col class="w-24" /></colgroup>
             <thead data-ui="table-header">
               <tr data-ui="table-row"><th data-ui="table-head">Description</th><th data-ui="table-head">Project</th><th data-ui="table-head">Start</th><th data-ui="table-head">End</th><th data-ui="table-head" class="text-right">Duration</th><th data-ui="table-head"><span class="sr-only">Actions</span></th></tr>
             </thead>
@@ -343,14 +454,34 @@
         </div>`
       }
 
+      // The app updates rows in place; the prototype re-renders the list, so it puts back focus,
+      // the caret, and an open project menu.
+      let rendering = false
       function renderEntries() {
+        const active = document.activeElement
+        const focus = active?.dataset?.entry && { entry: active.dataset.entry, key: active.dataset.key, caret: active.type === 'text' ? active.selectionStart : null }
+        const openMenu = document.querySelector('#entries [popover]:popover-open')?.id
         const design = document.body.dataset.design
         const groups = groupByDay(state.entries)
         const el = document.getElementById('entries')
+        rendering = true
         if (!groups.length) el.innerHTML = emptyState()
         else if (design === 'table') el.innerHTML = renderTable(groups)
         else if (design === 'focus') el.innerHTML = renderDayCards(groups.slice(0, 3), true)
         else el.innerHTML = renderDayCards(groups, false)
+        rendering = false
+        if (focus) {
+          const target = el.querySelector(`[data-entry="${focus.entry}"][data-key="${focus.key}"]`)
+          target?.focus({ preventScroll: true })
+          if (focus.caret !== null && target?.type === 'text') target.setSelectionRange(focus.caret, focus.caret)
+        }
+        if (openMenu) document.getElementById(openMenu)?.showPopover()
+        if (inline.flash) {
+          const row = el.querySelector(`[data-row="${inline.flash}"]`)
+          row?.classList.add('entry-flash')
+          row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+          inline.flash = null
+        }
         renderRecent()
       }
 
@@ -438,8 +569,17 @@
         renderTimer()
         renderEntries()
       }
+      function createEntry(values) {
+        const id = `e${nextId++}`
+        state.entries.push({ id, ...values })
+        inline.flash = id
+        renderEntries()
+        renderSummary()
+      }
       function deleteEntry(id) {
         state.entries = state.entries.filter((e) => e.id !== id)
+        clearDraft(id, 'description', 'start', 'end')
+        delete inline.errors[id]
         renderEntries()
         renderSummary()
       }
@@ -448,6 +588,8 @@
         const f = fixtures[name]()
         state.entries = f.entries
         state.running = f.running
+        inline.drafts = {}
+        inline.errors = {}
         setInputs(f.running?.description ?? '', f.running?.projectId ?? 'none')
         renderTimer()
         renderEntries()
@@ -491,18 +633,19 @@
       let editing = null
 
       function openEditor(id) {
-        const running = id === 'running'
-        const e = running ? state.running : state.entries.find((x) => x.id === id)
+        const kind = id
+        const e = kind === 'new' ? { description: '', projectId: 'none', startedAt: Date.now() } : state.running
         if (!e) return
         editing = id
-        document.getElementById('entry-dialog-title').textContent = running ? 'Edit running entry' : 'Edit entry'
+        document.getElementById('entry-dialog-title').textContent = kind === 'new' ? 'Add entry' : 'Edit running entry'
         document.getElementById('entry-dialog-description').textContent = `Times are in ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`
         field('description').value = e.description
+        field('project').innerHTML = projectOptions(e.projectId)
         field('project').value = e.projectId
         field('date').value = toDateValue(e.startedAt)
-        field('start').value = toTimeValue(e.startedAt)
-        field('end').value = running ? '' : toTimeValue(e.stoppedAt)
-        document.getElementById('edit-end-field').hidden = running
+        field('start').value = kind === 'new' ? '' : toTimeValue(e.startedAt)
+        field('end').value = ''
+        document.getElementById('edit-end-field').hidden = kind === 'running'
         showEditorState(readEditor(), false)
         dialog.showModal()
       }
@@ -539,11 +682,224 @@
           setInputs(state.running.description, state.running.projectId)
           renderTimer()
         } else {
-          Object.assign(state.entries.find((x) => x.id === id), patch)
+          Object.assign(find(id), patch)
           renderEntries()
         }
         renderSummary()
       }
+
+      // Inline times, read like the dialog's: the date is the start's, and an end at or before
+      // the start means the next day. A value in the saved minute keeps the saved instant.
+      function rowValues(e) {
+        return { start: draft(e.id, 'start') ?? toTimeValue(e.startedAt), end: draft(e.id, 'end') ?? toTimeValue(e.stoppedAt) }
+      }
+      function readTimes(e, { start, end }, key = 'end') {
+        if (!start) return { error: 'Enter a start time.', key: 'start' }
+        if (!end) return { error: 'Enter an end time.', key: 'end' }
+        const keep = (t, saved) => (Math.floor(t / MIN) === Math.floor(saved / MIN) ? saved : t)
+        const date = toDateValue(e.startedAt)
+        const startedAt = keep(fromValues(date, start), e.startedAt)
+        const sameDay = fromValues(date, end)
+        const stoppedAt = keep(sameDay <= startedAt ? fromValues(date, end, 1) : sameDay, e.stoppedAt)
+        if (stoppedAt > Date.now()) return { error: "An entry can't end in the future.", key }
+        return { startedAt, stoppedAt, nextDay: toDateValue(stoppedAt) !== date }
+      }
+
+      // Updates a row's duration, next-day mark, and validation while the user types, without a re-render.
+      function refreshRow(id) {
+        const e = find(id)
+        if (!e) return
+        const err = inline.errors[id]
+        const r = readTimes(e, rowValues(e), err?.key)
+        if (err?.kind === 'invalid') {
+          if (r.error) inline.errors[id] = { kind: 'invalid', key: r.key, message: r.error }
+          else delete inline.errors[id]
+        }
+        const now = inline.errors[id]
+        const q = (sel) => document.querySelector(sel)
+        if (!q(`[data-duration="${id}"]`)) return
+        q(`[data-duration="${id}"]`).textContent = r.error ? '—' : duration(r.stoppedAt - r.startedAt)
+        q(`[data-next-day="${id}"]`).textContent = !r.error && r.nextDay ? '+1' : ''
+        for (const key of ['start', 'end']) {
+          const input = q(`input[data-entry="${id}"][data-key="${key}"]`)
+          const invalid = now?.kind === 'invalid' && now.key === key
+          input.toggleAttribute('data-invalid', invalid)
+          if (invalid) input.setAttribute('aria-invalid', 'true')
+          else input.removeAttribute('aria-invalid')
+        }
+        const message = q(`[data-row-error="${id}"]`)
+        message.textContent = now?.message ?? ''
+        message.hidden = !now
+        q(`[data-error-row="${id}"]`)?.toggleAttribute('hidden', !now)
+      }
+
+      // updateEntry with only the committed fields, applied at once. With "Fail saves" on, the
+      // simulated server call fails and the fields roll back, with an error on the row.
+      function saveField(id, patch, what, { render = true } = {}) {
+        const e = find(id)
+        const before = Object.fromEntries(Object.keys(patch).map((k) => [k, e[k]]))
+        const fail = document.getElementById('fail-saves').checked
+        if (inline.errors[id]?.kind === 'failed') delete inline.errors[id]
+        Object.assign(e, patch)
+        if (render) renderEntries()
+        else refreshRow(id)
+        renderRecent()
+        renderSummary()
+        setTimeout(() => {
+          const current = find(id)
+          if (!fail || !current) return
+          for (const k of Object.keys(patch)) if (current[k] === patch[k]) current[k] = before[k]
+          inline.errors[id] = { kind: 'failed', message: `Couldn't save the ${what}, so it's back to the saved value. Try again.` }
+          renderEntries()
+          renderSummary()
+        }, 900)
+      }
+
+      function commitDescription(id) {
+        const value = draft(id, 'description')
+        if (value === undefined) return
+        clearDraft(id, 'description')
+        const e = find(id)
+        const description = value.trim()
+        if (description !== e.description) saveField(id, { description }, 'description', { render: false })
+        const input = document.querySelector(`input[data-entry="${id}"][data-key="description"]`)
+        if (input) input.value = description
+      }
+
+      function commitTime(id, key) {
+        const e = find(id)
+        if (!e || (draft(id, 'start') === undefined && draft(id, 'end') === undefined)) return
+        const r = readTimes(e, rowValues(e), key)
+        if (r.error) {
+          inline.errors[id] = { kind: 'invalid', key: r.key, message: r.error }
+          refreshRow(id)
+          return
+        }
+        clearDraft(id, 'start', 'end')
+        if (inline.errors[id]?.kind === 'invalid') delete inline.errors[id]
+        const patch = {}
+        if (r.startedAt !== e.startedAt) patch.startedAt = r.startedAt
+        if (r.stoppedAt !== e.stoppedAt) patch.stoppedAt = r.stoppedAt
+        const keys = Object.keys(patch)
+        if (!keys.length) return refreshRow(id)
+        saveField(id, patch, keys.length === 2 ? 'times' : keys[0] === 'startedAt' ? 'start time' : 'end time')
+      }
+
+      function commit(id, key) {
+        if (key === 'description') commitDescription(id)
+        else commitTime(id, key)
+      }
+
+      // A blur commits after the click that caused it, so re-rendering can't swallow that click.
+      let pointerDown = false
+      const afterPointer = []
+      document.addEventListener('pointerdown', () => (pointerDown = true), true)
+      document.addEventListener(
+        'pointerup',
+        () => {
+          pointerDown = false
+          setTimeout(() => afterPointer.splice(0).forEach((fn) => fn()))
+        },
+        true
+      )
+      const later = (fn) => (pointerDown ? afterPointer.push(fn) : setTimeout(fn))
+
+      const entriesEl = document.getElementById('entries')
+      entriesEl.addEventListener('input', (event) => {
+        const t = event.target
+        if (!t.matches('input[data-entry]')) return
+        inline.drafts[t.dataset.entry] = { ...inline.drafts[t.dataset.entry], [t.dataset.key]: t.value }
+        if (t.dataset.key !== 'description') refreshRow(t.dataset.entry)
+      })
+      entriesEl.addEventListener('focusout', (event) => {
+        const t = event.target
+        if (rendering || !t.matches('input[data-entry]')) return
+        later(() => commit(t.dataset.entry, t.dataset.key))
+      })
+      entriesEl.addEventListener('keydown', (event) => {
+        const t = event.target
+        if (!t.matches('input[data-entry]')) return
+        const { entry: id, key } = t.dataset
+        if (event.key === 'Enter') {
+          event.preventDefault()
+          commit(id, key)
+        } else if (event.key === 'Escape') {
+          event.preventDefault()
+          const e = find(id)
+          clearDraft(id, key)
+          t.value = key === 'description' ? e.description : toTimeValue(key === 'start' ? e.startedAt : e.stoppedAt)
+          if (key !== 'description') refreshRow(id)
+        }
+      })
+      entriesEl.addEventListener('change', (event) => {
+        const t = event.target
+        if (!t.matches('select[data-entry]')) return
+        saveField(t.dataset.entry, { projectId: t.value }, 'project')
+      })
+
+      // The date popover moves the entry to another day, keeping its times and duration. It
+      // saves when it closes or on Enter; Escape or an invalid date leaves the entry as it was.
+      function readDate(e, value) {
+        if (!value) return { error: 'Enter a date.' }
+        const d = new Date(e.startedAt)
+        const [y, m, day] = value.split('-').map(Number)
+        d.setFullYear(y, m - 1, day)
+        const startedAt = d.getTime()
+        const stoppedAt = startedAt + (e.stoppedAt - e.startedAt)
+        if (stoppedAt > Date.now()) return { error: "An entry can't end in the future." }
+        return { startedAt, stoppedAt }
+      }
+      function showDateError(input, error) {
+        const message = document.getElementById(`date-error-${input.dataset.dateEntry}`)
+        input.toggleAttribute('data-invalid', !!error)
+        message.textContent = error ?? ''
+        message.hidden = !error
+      }
+      function commitDate(input) {
+        const e = find(input.dataset.dateEntry)
+        if (!e || input.value === toDateValue(e.startedAt)) return
+        const r = readDate(e, input.value)
+        if (r.error) {
+          input.value = toDateValue(e.startedAt)
+          return showDateError(input, null)
+        }
+        inline.flash = e.id
+        saveField(e.id, { startedAt: r.startedAt, stoppedAt: r.stoppedAt }, 'date')
+      }
+      let dateCancelled = false
+      entriesEl.addEventListener('input', (event) => {
+        const t = event.target
+        if (t.matches('[data-date-entry]')) showDateError(t, readDate(find(t.dataset.dateEntry), t.value).error)
+      })
+      entriesEl.addEventListener('keydown', (event) => {
+        const t = event.target
+        if (!t.matches('[data-date-entry]')) return
+        if (event.key !== 'Enter') return
+        // Otherwise the Enter also reaches the trigger, which gets focus back, and reopens the popover.
+        event.preventDefault()
+        if (!readDate(find(t.dataset.dateEntry), t.value).error) t.closest('[popover]').hidePopover()
+      })
+      document.addEventListener(
+        'keydown',
+        (event) => {
+          if (event.key === 'Escape' && document.querySelector('[id^="date-popover-"]:popover-open')) dateCancelled = true
+        },
+        true
+      )
+      entriesEl.addEventListener(
+        'toggle',
+        (event) => {
+          const input = event.target.querySelector?.('[data-date-entry]')
+          if (!input || rendering) return
+          if (event.newState === 'open') return input.focus()
+          if (dateCancelled) {
+            input.value = toDateValue(find(input.dataset.dateEntry).startedAt)
+            showDateError(input, null)
+          } else commitDate(input)
+          dateCancelled = false
+        },
+        true
+      )
 
       document.getElementById('entry-form').addEventListener('input', () => showEditorState(readEditor()))
       document.getElementById('entry-form').addEventListener('submit', (event) => {
@@ -551,7 +907,9 @@
         const result = readEditor()
         showEditorState(result)
         if (result.error) return
-        updateEntry(editing, { ...result.patch, description: field('description').value.trim(), projectId: field('project').value })
+        const values = { ...result.patch, description: field('description').value.trim(), projectId: field('project').value }
+        if (editing === 'new') createEntry(values)
+        else updateEntry(editing, values)
         dialog.close()
       })
       dialog.querySelectorAll('[data-dialog-cancel]').forEach((b) => b.addEventListener('click', () => dialog.close()))
@@ -562,10 +920,9 @@
         if (!inside) dialog.close()
       })
       document.getElementById('elapsed').addEventListener('click', () => openEditor('running'))
+      document.getElementById('add-entry').addEventListener('click', () => openEditor('new'))
 
-      const projectOptions = projects.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')
-      document.getElementById('project').innerHTML = projectOptions
-      field('project').innerHTML = projectOptions
+      document.getElementById('project').innerHTML = projectOptions('none')
 
       document.getElementById('toggle').addEventListener('click', () => {
         if (state.running) stopTimer()
@@ -584,10 +941,12 @@
       document.addEventListener('click', (event) => {
         const cont = event.target.closest('[data-continue]')
         const del = event.target.closest('[data-delete]')
-        const edit = event.target.closest('[data-edit]')
-        if (edit) openEditor(edit.dataset.edit)
-        else if (cont) {
-          const e = state.entries.find((x) => x.id === cont.dataset.continue)
+        const pick = event.target.closest('[data-pick]')
+        if (pick) {
+          const id = pick.dataset.pickEntry
+          if (find(id)?.projectId !== pick.dataset.pick) saveField(id, { projectId: pick.dataset.pick }, 'project')
+        } else if (cont) {
+          const e = find(cont.dataset.continue)
           if (e) startTimer(e.description, e.projectId)
         } else if (del) deleteEntry(del.dataset.delete)
       })

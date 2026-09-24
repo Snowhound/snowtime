@@ -57,7 +57,7 @@ class strings as Solid-UI, so the look matches and markup ports directly, but Ko
 | `card`, `card-header`, `card-title`, `card-description`, `card-content`, `card-footer` | `Card*` | —                                          |
 | `table`, `table-header`, `table-body`, `table-row`, `table-head`, `table-cell`, `table-caption` | `Table*` | wrap in `relative w-full overflow-auto` like `Table` does |
 | `dialog`, `dialog-header`, `dialog-footer`, `dialog-title`, `dialog-description`, `dialog-close` | `Dialog*` | native modal `<dialog>`; overlay via `::backdrop` |
-| `popover`                                     | `PopoverContent`               | native `[popover]` + `popovertarget`; `ui.js` places it under the trigger |
+| `popover`                                     | `PopoverContent`               | native `[popover]` + `popovertarget`; `ui.js` places it under the trigger, or above when it doesn't fit |
 | `switch`, `switch-thumb`                      | `Switch*`                      | `<button role="switch" aria-checked>`; `ui.js` toggles it and fires `change` |
 | `error-message`                               | `TextFieldErrorMessage`        | mark invalid inputs with `data-invalid`                       |
 | `alert`, `alert-title`, `alert-description`   | `Alert*`                       | default, destructive                                          |
@@ -338,8 +338,9 @@ and Escape, and no browser errors.
 
 ### [timer.html](timer.html) — Timer and entries
 
-Decision: layout of the main tracking view (running timer plus recent entries). All three layouts
-are kept as user-selectable options.
+Decision: layout of the main tracking view (running timer plus recent entries), and whether
+stopped entries are edited in their row or in a dialog. All three layouts are kept as
+user-selectable options.
 
 - **Bar**: Toggl-style single-line timer; entries grouped by day in cards with day totals.
 - **Focus**: large clock, "continue recent" chips, and a compact day list.
@@ -350,22 +351,62 @@ The settings button opens a **View** popover: layout, theme (light / dark / syst
 the summary panel (today / this week, per-project bars) is shown, plus a link to Settings.
 These are user settings, saved through the app frame (`user_settings` in the app).
 
-Entries are edited in a dialog opened from the pencil action or the time range: description,
-project, date, start, and end. An end time at or before the start means the next day. Clicking the
-running timer's clock edits the running entry's start date and time. Validation: all times
-required, no entry ending in the future, no running entry starting in the future; a live line
-shows the resulting duration.
+Stopped entries are edited in their row, with no dialog or edit action (task 027). Each
+row's description, project, date, start, and end are controls that read as text until
+hovered or focused. Description and times save on Enter or blur and restore the saved value
+on Escape; the project saves when picked. Each commit is `updateEntry` with only the changed
+fields, applied at once. A failed save (the prototype bar's "Fail saves") rolls the fields
+back and shows an error under the row. Tab moves through description, project, date, start,
+end, continue, and delete.
 
-Simulated: start/stop, Enter to start, editing the running entry inline or in the dialog, continue
-(stops any running timer first), delete, edit. Fixtures: running, idle, long content, empty. Day
-totals count stopped entries only; the summary includes the running timer. Entries are grouped by
-their start day; splitting at midnight belongs to reports.
+The entry dialog stays for Add entry and for the running entry's start, opened from the
+timer's clock. It has description, project, date, start, and end, with the validation the
+rows use, and a live line with the resulting duration.
 
-Omitted: overlap checks between entries, manual entry, reports, persistence of entries.
+Decisions:
+
+- **Project picker: a `menu` of radio items** behind a ghost button. The trigger shows the dot
+  and name like the read-only row, and every option has its color dot. A native select, even
+  quiet, shows chevrons on every row, can't show dots in its options, and cut "Website 2025
+  (archived)" short. The timer bar and dialog keep `ProjectSelect`.
+- **Times: start and end inputs, read as in the dialog.** The date is the start's, an end at or
+  before the start means the next day, and "+1" marks it. A time in the saved minute keeps the
+  saved instant, so seconds survive.
+- **Duration: read-only**, updating as the user types. Start and end already set it, and an
+  editable duration would be a third way to change the end.
+- **Date: a calendar button with a popover**, shown on row hover or focus like the actions. The
+  popover has a date input and saves when it closes or on Enter; Escape cancels. The times
+  and duration stay, so the entry moves to that day, then the row moves to its new day group
+  and flashes. A date field in the row would widen every row for a rare change.
+- **Validation: as in the dialog, per field**: times required, no end in the future. The field
+  and a line under the row show the error. Nothing saves, and the value stays until fixed or
+  Escape, because saving a half-typed time would write a wrong entry. The date popover shows
+  its error while open and discards an invalid date on close.
+- **Below 768 px: the same fields, stacked.** Description on the first line, project and the
+  actions on the second, date, times, and duration on the third. The Table layout keeps one
+  line and scrolls inside its card.
+- **Add entry: the dialog.** A new entry needs a start and an end before it exists, so it can't
+  save one field at a time.
+
+Inline fields restyle `input` and `select` with `border-transparent shadow-none` plus a
+border on hover and focus; the port makes that a variant. An inline time out of range
+turns the field `destructive`, because the `error-foreground` token that `input` uses for
+`data-invalid` isn't in `src/styles.css`, in the app either.
+
+Simulated: start/stop, Enter to start, editing the running entry inline or in the dialog,
+continue (stops any running timer first), delete, inline edits, and Add entry. Fixtures: running,
+idle, long content, empty. Running and idle include an entry crossing midnight and one on
+the archived Website 2025 project; long content includes one on a project the user can no
+longer see. Day totals count stopped entries only; the summary includes the running timer.
+Entries are grouped by their start day; splitting at midnight belongs to reports.
+
+Omitted: overlap checks between entries, reports, persistence of entries.
 
 Checked in Chromium at 1440, 850, and 390 px, light and dark, all layouts with summary on and off:
-no horizontal page overflow, settings survive reload, dialog validation and saving work, no browser
-errors.
+no horizontal page overflow, settings survive reload, dialog and inline validation and saving
+work, failed saves roll back, focus stays on the edited field across saves, the date popover
+saves on Enter and cancels on Escape, and no browser errors. axe reports color contrast on the page title and prototype bar, as
+for `projects.html`, and on the Add entry and Stop buttons.
 
 ### [auth.html](auth.html) — Sign-in flows
 

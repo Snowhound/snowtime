@@ -17,3 +17,6 @@ switches them. Prototype: `prototypes/timer.html`.
 - [x] The end of the entry list: "Show earlier entries" shows only while the user has
       earlier time (`getFirstEntryStart`); after the earliest entry, a line says so, with
       the date and the total
+
+The Table layout edits entries in the dialog, like the other layouts. Task 030 moves all
+three layouts to inline editing in the row.
