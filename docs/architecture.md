@@ -70,7 +70,7 @@
 
 | Method           | Status   | Needs                                                                 |
 | ---------------- | -------- | --------------------------------------------------------------------- |
-| Email + password | Decided  | Nothing new in the schema (`account.password`); an email sender for password reset |
+| Email + password | Local development only | Nothing new in the schema (`account.password`); seeded users |
 | Google           | Decided  | A Google OAuth client; uses the existing `account` table              |
 | GitHub           | Proposed | A GitHub OAuth app; uses the existing `account` table                 |
 | Microsoft        | Proposed | An Entra ID app registration; uses the existing `account` table       |
@@ -79,8 +79,13 @@
 - Social providers are built into Better Auth and store their link in `account`, so
   adding one is configuration plus an OAuth app and its client ID and secret per
   environment.
-- Password reset and email verification send email through a callback. No email
-  provider is chosen yet (open); password sign-up can't go live without one.
+- The MVP sends no email. OAuth providers supply the verified email address that
+  Better Auth requires before an invitation can be accepted, and admins share
+  invitation links themselves. Password sign-in, which would need email for
+  verification and reset, is enabled only in local development, where seeded users
+  (task 008) sign in with a known password.
+- Email provider when email is added: Brevo (free tier 300 emails a day, EU-based
+  company), optional per deployment through env vars (task 016).
 - Sign-up and sign-in screens are prototyped in `prototypes/auth.html`.
 
 ## Tenancy
