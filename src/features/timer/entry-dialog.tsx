@@ -16,10 +16,11 @@ import { Label } from '~/components/ui/label'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { localDate, localTime } from '~/lib/calendar'
 import { formatHours } from '~/lib/format'
+import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 import { type EntryFormError, readEntryTimes } from './entries'
 import { ProjectSelect } from './project-select'
-import type { Entry, Project } from './queries'
+import type { Entry } from './queries'
 
 export type EntryDialogTarget =
   | { kind: 'new' }

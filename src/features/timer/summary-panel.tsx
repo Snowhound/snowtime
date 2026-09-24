@@ -2,14 +2,14 @@
 // showSummary setting is on: today and this week, and a bar per project for the week.
 // The totals come from summarize, which counts a running timer up to now.
 import { For, Show } from 'solid-js'
+import { ProjectDot } from '~/components/project-dot'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { projectColor } from '~/lib/colors'
 import { formatHours } from '~/lib/format'
+import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 import type { Summary } from './entries'
 import { entryProject } from './entry-list'
-import { ProjectDot } from './project-select'
-import type { Project } from './queries'
 
 export function SummaryPanel(props: { summary: Summary; projects: readonly Project[] }) {
   return (

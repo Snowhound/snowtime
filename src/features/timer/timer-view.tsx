@@ -12,6 +12,7 @@ import { Button } from '~/components/ui/button'
 import { localDate } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatHours, formatIsoDate } from '~/lib/format'
+import { projectsQuery } from '~/lib/projects'
 import { newId } from '~/lib/query'
 import type { Settings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
@@ -23,7 +24,6 @@ import {
   type Entry,
   entriesQuery,
   firstEntryQuery,
-  projectsQuery,
   runningTimerQuery,
   useCreateEntry,
   useDeleteEntry,

@@ -2,11 +2,12 @@
 // work (recentWork), each starting a timer with its description and project.
 import PlayIcon from 'lucide-solid/icons/play'
 import { For, Show } from 'solid-js'
+import { ProjectDot } from '~/components/project-dot'
 import { Button } from '~/components/ui/button'
+import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 import { entryProject } from './entry-list'
-import { ProjectDot } from './project-select'
-import type { Entry, Project } from './queries'
+import type { Entry } from './queries'
 
 export function RecentWork(props: {
   entries: readonly Entry[]

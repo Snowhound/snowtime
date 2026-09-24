@@ -7,15 +7,16 @@ import PencilIcon from 'lucide-solid/icons/pencil'
 import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { For, type JSX, Show } from 'solid-js'
+import { ProjectDot } from '~/components/project-dot'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import { addDays, localDate } from '~/lib/calendar'
 import { formatClock, formatHours, formatIsoDate, formatTime } from '~/lib/format'
+import type { Project } from '~/lib/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'
-import { ProjectDot } from './project-select'
-import type { Entry, Project } from './queries'
+import type { Entry } from './queries'
 
 export function dayLabel(date: string, zone: string, now: number) {
   const today = localDate(now, zone)

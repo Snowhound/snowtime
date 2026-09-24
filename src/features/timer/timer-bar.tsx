@@ -9,11 +9,12 @@ import { Show, createEffect, createSignal, on } from 'solid-js'
 import { Button } from '~/components/ui/button'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { formatClock } from '~/lib/format'
+import type { Project } from '~/lib/projects'
 import type { Settings } from '~/lib/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { ProjectSelect } from './project-select'
-import type { Project, RunningTimer } from './queries'
+import type { RunningTimer } from './queries'
 
 const LAYOUTS: Record<
   Settings['timerLayout'],

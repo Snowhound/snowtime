@@ -1,6 +1,7 @@
 // The Table layout's entries (prototypes/timer.html): one dense table with a subtotal row
 // per day, newest first. It scrolls horizontally inside its border on narrow screens.
 import { For, Show } from 'solid-js'
+import { ProjectDot } from '~/components/project-dot'
 import {
   Table,
   TableBody,
@@ -10,6 +11,7 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { formatClock, formatHours, formatTime } from '~/lib/format'
+import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'
 import {
@@ -19,8 +21,7 @@ import {
   dayLabel,
   entryProject,
 } from './entry-list'
-import { ProjectDot } from './project-select'
-import type { Entry, Project } from './queries'
+import type { Entry } from './queries'
 
 export function EntryTable(props: {
   groups: readonly DayGroup<Entry>[]

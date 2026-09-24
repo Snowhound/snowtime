@@ -1,19 +1,8 @@
-// The project picker of the timer bar and the entry dialog, and the color dot beside a
-// project's name.
+// The project picker of the timer bar and the entry dialog.
 import { For, Show } from 'solid-js'
 import { NativeSelect } from '~/components/ui/native-select'
-import { projectColor } from '~/lib/colors'
+import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
-import type { Project } from './queries'
-
-export function ProjectDot(props: { color: string | null }) {
-  return (
-    <span
-      class="inline-block size-2 shrink-0 rounded-full"
-      style={{ background: projectColor(props.color) }}
-    />
-  )
-}
 
 // Lists "No project" and the active projects. An entry's archived project stays listed, so
 // saving other fields keeps it; one the user can no longer see shows as unavailable.

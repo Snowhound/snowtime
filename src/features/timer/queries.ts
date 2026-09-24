@@ -17,7 +17,6 @@ import type {
   DeleteEntryInput,
   UpdateEntryInput,
 } from '~/server/entries/entries.schemas'
-import { listProjects } from '~/server/projects/projects.functions'
 import { getRunningTimer, startTimer, stopTimer } from '~/server/timer/timer.functions'
 import type { StartTimerInput, StopTimerInput } from '~/server/timer/timer.schemas'
 
@@ -35,20 +34,10 @@ export type RunningTimer = Entry & {
   project: { id: string; name: string; color: string | null } | null
 }
 
-export type Project = Awaited<ReturnType<typeof listProjects>>[number]
-
 export const runningTimerQuery = queryOptions({
   queryKey: ['timer'],
   queryFn: (): Promise<RunningTimer | null> => getRunningTimer(),
 })
-
-// Archived projects too: entries keep theirs, and the view names them.
-export function projectsQuery(organizationId: string) {
-  return queryOptions({
-    queryKey: ['projects', organizationId, { includeArchived: true }],
-    queryFn: () => listProjects({ data: { includeArchived: true } }),
-  })
-}
 
 // The user's own entries overlapping the range, newest first, a running one included.
 export function entriesQuery(organizationId: string, userId: string, range: Range) {
