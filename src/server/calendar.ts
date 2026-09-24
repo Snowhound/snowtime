@@ -156,3 +156,20 @@ export function countedSpan(
   const to = Math.min(entry.stoppedAt?.getTime() ?? now, range.to)
   return to > from ? { from, to } : null
 }
+
+// The instant the zone's clocks read `time` ('HH:MM') on the date. A time skipped when
+// clocks spring forward counts as the same distance past the jump (02:30 becomes 03:30);
+// a repeated time when they fall back is its first occurrence.
+export function atLocalTime(date: IsoDate, time: string, zone: string): number {
+  const [h, min] = time.split(':').map(Number)
+  const wall = dayNumber(date) + (h * 60 + min) * 60_000
+  const offsets = [...new Set([-DAY, 0, DAY].map((d) => offsetAt(wall + d, zone)))]
+  const exact = offsets.map((o) => wall - o).filter((t) => wallClock(t, zone) === wall)
+  if (exact.length > 0) return Math.min(...exact)
+  return wall - offsetAt(wall - DAY, zone)
+}
+
+// The zone's wall-clock time at the instant, as 'HH:MM'.
+export function localTime(ms: number, zone: string): string {
+  return new Date(wallClock(ms, zone)).toISOString().slice(11, 16)
+}

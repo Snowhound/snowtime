@@ -248,6 +248,11 @@
 - Authorization checks live in server functions (SQLite has no RLS).
 - Writes are named mutations (`startTimer`, `stopTimer`, `updateEntry`, …),
   not generic CRUD.
+- The UI applies writes optimistically. `optimistic` in `src/lib/query.ts` updates every
+  cache a mutation touches before the server answers, restores them on error, and
+  refetches either way; the view then shows the error's message. The timer
+  (`src/lib/timer.ts`) sets the pattern: starting a timer updates both the running timer
+  and the entry lists.
 - Business logic lives in TypeScript, not DB triggers. The one trigger kind
   allowed is the `updated_at` safety net above, which is bookkeeping, not
   logic.

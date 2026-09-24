@@ -3,11 +3,13 @@
 import { describe, expect, test } from 'bun:test'
 import {
   addDays,
+  atLocalTime,
   countedSpan,
   datesBetween,
   dayRange,
   daysBetween,
   localDate,
+  localTime,
   offsetAt,
   splitByDay,
   startOfWeek,
@@ -230,5 +232,31 @@ describe('countedSpan', () => {
       countedSpan(entry('2026-09-23T10:00:00Z', '2026-09-24T00:00:00Z'), range, now),
     ).toBeNull()
     expect(countedSpan(entry('2026-09-24T13:00:00Z', null), range, now)).toBeNull()
+  })
+})
+
+describe('atLocalTime', () => {
+  test('reads the time in the zone', () => {
+    expect(new Date(atLocalTime('2026-09-24', '09:30', 'Europe/Tallinn')).toISOString()).toBe(
+      '2026-09-24T06:30:00.000Z',
+    )
+    expect(localTime(at('2026-09-24T06:30:00Z'), 'Europe/Tallinn')).toBe('09:30')
+    expect(localTime(at('2026-09-24T22:05:00Z'), 'Europe/Tallinn')).toBe('01:05')
+  })
+
+  test('moves a skipped time past the jump and takes the first of a repeated one', () => {
+    // Tallinn skips 03:00 to 04:00 on 29 March and repeats 03:00 to 04:00 on 25 October.
+    expect(new Date(atLocalTime('2026-03-29', '03:30', 'Europe/Tallinn')).toISOString()).toBe(
+      '2026-03-29T01:30:00.000Z',
+    )
+    expect(new Date(atLocalTime('2026-10-25', '03:30', 'Europe/Tallinn')).toISOString()).toBe(
+      '2026-10-25T00:30:00.000Z',
+    )
+  })
+
+  test('round-trips with localDate and localTime', () => {
+    const ms = at('2026-01-15T23:45:00Z')
+    const zone = 'America/New_York'
+    expect(atLocalTime(localDate(ms, zone), localTime(ms, zone), zone)).toBe(ms)
   })
 })
