@@ -33,6 +33,14 @@
     size: { default: 'h-9 px-3', sm: 'h-8 px-2', lg: 'h-10 px-3' },
   }
 
+  const alert = {
+    base: 'relative w-full rounded-lg border p-4 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7',
+    variant: {
+      default: 'bg-background text-foreground',
+      destructive: 'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
+    },
+  }
+
   const fixed = {
     'toggle-group': 'flex items-center justify-center gap-1',
     label: 'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
@@ -75,9 +83,15 @@
     'switch-thumb':
       'pointer-events-none block size-5 translate-x-0 rounded-full bg-background shadow-lg ring-0 transition-transform data-[checked]:translate-x-5',
     'error-message': 'text-xs text-destructive',
+    'alert-title': 'mb-1 font-medium leading-none tracking-tight',
+    'alert-description': 'text-sm [&_p]:leading-relaxed',
+    // Horizontal Separator.
+    separator: 'shrink-0 bg-border h-px w-full',
+    avatar: 'relative flex size-10 shrink-0 overflow-hidden rounded-full',
+    'avatar-fallback': 'flex size-full items-center justify-center bg-muted',
   }
 
-  const variants = { button, badge, toggle }
+  const variants = { button, badge, toggle, alert }
 
   function classesFor(el) {
     const name = el.dataset.ui

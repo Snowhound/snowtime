@@ -1,5 +1,12 @@
 # Third-party notices
 
+## Brand logos
+
+The Google and Microsoft logos in `auth.html` are from gilbarbara/logos
+(`@iconify-json/logos` v1.2.14) and the GitHub mark is from simple-icons v16.32.0. Both
+collections are released under CC0 1.0. The marks remain trademarks of their owners and are used
+only on the sign-in buttons for those providers.
+
 ## Lucide icons
 
 Inline SVG paths in the prototypes are copied from `lucide-static` v1.48.0

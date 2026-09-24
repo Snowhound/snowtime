@@ -9,7 +9,7 @@
 | Database        | Turso (libSQL/SQLite) via `@libsql/client`                |
 | ORM             | Drizzle v1 (pinned rc), `"turso"` dialect; query layer only |
 | Migrations      | Hand-written SQL, applied by `drizzle-kit migrate`        |
-| Auth            | Better Auth with the Drizzle adapter; organization plugin with teams |
+| Auth            | Better Auth with the Drizzle adapter; organization plugin with teams (no default team, organization deletion disabled) |
 | Data fetching   | TanStack Query with optimistic updates                    |
 | Forms           | TanStack Form                                             |
 | Validation      | Valibot, shared by forms and server functions             |
@@ -65,6 +65,23 @@
   enforces at most one running entry per user.
 - Elapsed time for the running timer is computed on the client, never
   written periodically.
+
+## Sign-in methods
+
+| Method           | Status   | Needs                                                                 |
+| ---------------- | -------- | --------------------------------------------------------------------- |
+| Email + password | Decided  | Nothing new in the schema (`account.password`); an email sender for password reset |
+| Google           | Decided  | A Google OAuth client; uses the existing `account` table              |
+| GitHub           | Proposed | A GitHub OAuth app; uses the existing `account` table                 |
+| Microsoft        | Proposed | An Entra ID app registration; uses the existing `account` table       |
+| Passkey          | Proposed | `@better-auth/passkey` and one new `passkey` table (additive migration) |
+
+- Social providers are built into Better Auth and store their link in `account`, so
+  adding one is configuration plus an OAuth app and its client ID and secret per
+  environment.
+- Password reset and email verification send email through a callback. No email
+  provider is chosen yet (open); password sign-up can't go live without one.
+- Sign-up and sign-in screens are prototyped in `prototypes/auth.html`.
 
 ## Tenancy
 
@@ -162,7 +179,8 @@ the source of truth. Workflow and rules: `docs/migrations.md`.
   source until the first migration lands; afterwards it is regenerated from
   the schema for documentation only (see `datamodel/README.md`).
 
-**Env vars:** `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`.
+**Env vars:** `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`,
+`BETTER_AUTH_URL`, validated at startup by `src/env.ts` (server-only, Valibot).
 
 ## Deferred / out of scope
 

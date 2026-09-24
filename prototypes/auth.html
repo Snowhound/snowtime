@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign-in flows</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <style type="text/tailwindcss">
+      body[data-layout='card'] .brand-panel {
+        display: none;
+      }
+      body[data-layout='card'] .auth-form {
+        @apply rounded-lg border bg-card p-6 shadow-sm sm:p-8;
+      }
+      body[data-layout='split'] .auth-shell {
+        @apply lg:grid-cols-2;
+      }
+      body[data-layout='split'] .auth-main {
+        @apply bg-background;
+      }
+      body[data-layout='split'] #product-mark {
+        @apply lg:hidden;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body data-layout="card" class="flex min-h-dvh flex-col">
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden">
+      <defs>
+        <symbol id="icon-key-round" viewBox="0 0 24 24">
+          <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" />
+          <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" />
+        </symbol>
+        <symbol id="icon-mail" viewBox="0 0 24 24">
+          <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" />
+          <rect x="2" y="4" width="20" height="16" rx="2" />
+        </symbol>
+        <symbol id="icon-arrow-left" viewBox="0 0 24 24">
+          <path d="m12 19-7-7 7-7" />
+          <path d="M19 12H5" />
+        </symbol>
+        <symbol id="icon-eye" viewBox="0 0 24 24">
+          <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+          <circle cx="12" cy="12" r="3" />
+        </symbol>
+        <symbol id="icon-eye-off" viewBox="0 0 24 24">
+          <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+          <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+          <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+          <path d="m2 2 20 20" />
+        </symbol>
+        <symbol id="icon-loader-circle" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></symbol>
+        <symbol id="icon-circle-alert" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" x2="12" y1="8" y2="12" />
+          <line x1="12" x2="12.01" y1="16" y2="16" />
+        </symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" />
+        </symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+        <!-- Brand marks: Google and Microsoft from gilbarbara/logos, GitHub from simple-icons (both CC0). -->
+        <symbol id="logo-google" viewBox="0 0 256 262">
+          <path fill="#4285f4" d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622l38.755 30.023l2.685.268c24.659-22.774 38.875-56.282 38.875-96.027" />
+          <path fill="#34a853" d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055c-34.523 0-63.824-22.773-74.269-54.25l-1.531.13l-40.298 31.187l-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1" />
+          <path fill="#fbbc05" d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82c0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602z" />
+          <path fill="#eb4335" d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0C79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251" />
+        </symbol>
+        <symbol id="logo-microsoft" viewBox="0 0 256 256">
+          <path fill="#f1511b" d="M121.666 121.666H0V0h121.666z" />
+          <path fill="#80cc28" d="M256 121.666H134.335V0H256z" />
+          <path fill="#00adef" d="M121.663 256.002H0V134.336h121.663z" />
+          <path fill="#fbbc09" d="M256 256.002H134.335V134.336H256z" />
+        </symbol>
+        <symbol id="logo-github" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <header class="border-b bg-background py-3">
+      <div class="mx-auto flex max-w-6xl flex-col gap-3 px-4 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Snowtime prototype</div>
+          <h1 class="mt-1 text-lg font-semibold tracking-tight">Sign-in flows</h1>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div data-ui="toggle-group" role="group" aria-label="Layout">
+            <button data-ui="toggle" data-variant="outline" data-size="sm" data-layout-option="card" aria-pressed="true" data-pressed>01 · Card</button>
+            <button data-ui="toggle" data-variant="outline" data-size="sm" data-layout-option="split" aria-pressed="false">02 · Split</button>
+          </div>
+          <label for="screen-select" class="sr-only">Screen</label>
+          <select id="screen-select" data-ui="select" class="h-9 w-52">
+            <option value="sign-in">Sign in</option>
+            <option value="sign-up">Sign up</option>
+            <option value="verify-email">Verify email</option>
+            <option value="forgot">Forgot password</option>
+            <option value="reset">Reset password</option>
+            <option value="invite">Accept invitation</option>
+            <option value="invite-expired">Expired invitation</option>
+            <option value="create-org">Create organization</option>
+            <option value="done">Signed in</option>
+          </select>
+          <button id="theme-button" data-ui="button" data-variant="outline" data-size="sm">Dark</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="auth-shell grid flex-1 grid-cols-[minmax(0,1fr)]">
+      <aside class="brand-panel relative hidden flex-col justify-between bg-zinc-900 p-10 text-zinc-50 lg:flex" aria-hidden="true">
+        <div class="flex items-center gap-2 text-lg font-medium">
+          <svg class="prototype-icon size-6" aria-hidden="true"><use href="#icon-clock" /></svg>
+          Snowtime
+        </div>
+        <div class="flex flex-col gap-2">
+          <p class="text-2xl font-semibold tracking-tight">Track time without thinking about it.</p>
+          <p class="text-sm text-zinc-400">One click to start, reports by project and team.</p>
+        </div>
+      </aside>
+
+      <main class="auth-main flex items-start justify-center bg-muted/40 px-4 py-10 sm:items-center sm:py-16">
+        <div class="auth-form flex w-full max-w-sm flex-col gap-6">
+          <div class="flex items-center gap-2 text-sm font-medium" id="product-mark">
+            <svg class="prototype-icon size-5" aria-hidden="true"><use href="#icon-clock" /></svg>
+            Snowtime
+          </div>
+          <div id="screen" class="flex flex-col gap-6"></div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const invitation = { inviter: 'Mari Tamm', organization: 'Snowhound', team: 'Platform', role: 'member', email: 'anna@snowhound.eu' }
+      const flow = { email: '', name: '' }
+
+      const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+      const icon = (name, cls = '') => `<svg class="prototype-icon ${cls}" aria-hidden="true"><use href="#icon-${name}" /></svg>`
+      const logo = (name) => `<svg class="size-4" aria-hidden="true"><use href="#logo-${name}" /></svg>`
+      const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+
+      const heading = (title, description) => `<div class="flex flex-col gap-1.5">
+          <h2 class="text-2xl font-semibold tracking-tight">${title}</h2>
+          ${description ? `<p class="text-sm text-muted-foreground">${description}</p>` : ''}
+        </div>`
+
+      const field = ({ id, label, type = 'text', autocomplete = '', value = '', hint = '', aside = '' }) => `<div class="grid gap-2">
+          <div class="flex items-center justify-between gap-2"><label data-ui="label" for="${id}">${label}</label>${aside}</div>
+          ${
+            type === 'password'
+              ? `<div class="relative"><input id="${id}" data-ui="input" class="pr-10" type="password" autocomplete="${autocomplete}" aria-describedby="${id}-hint ${id}-error" />
+                  <button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="absolute right-0 top-0 hover:bg-transparent" data-reveal="${id}" aria-label="Show password" aria-pressed="false">${icon('eye')}</button></div>`
+              : `<input id="${id}" data-ui="input" type="${type}" autocomplete="${autocomplete}" value="${escapeHtml(value)}" aria-describedby="${id}-hint ${id}-error" />`
+          }
+          <p id="${id}-hint" class="text-xs text-muted-foreground empty:hidden">${hint}</p>
+          <p id="${id}-error" data-ui="error-message" class="empty:hidden"></p>
+        </div>`
+
+      const formAlert = () => `<div id="form-alert" data-ui="alert" data-variant="destructive" role="alert" hidden>${icon('circle-alert')}<div data-ui="alert-description"></div></div>`
+
+      const providers = () => `<div class="grid gap-2">
+          <button type="button" data-ui="button" data-variant="outline" data-provider="Google">${logo('google')}Continue with Google</button>
+          <button type="button" data-ui="button" data-variant="outline" data-provider="GitHub">${logo('github')}Continue with GitHub</button>
+          <button type="button" data-ui="button" data-variant="outline" data-provider="Microsoft">${logo('microsoft')}Continue with Microsoft</button>
+        </div>`
+
+      const divider = (text) => `<div class="flex items-center gap-3 text-xs uppercase text-muted-foreground">
+          <div data-ui="separator" class="flex-1"></div><span>${text}</span><div data-ui="separator" class="flex-1"></div>
+        </div>`
+
+      const link = (to, text) => `<button type="button" data-ui="button" data-variant="link" class="h-auto p-0" data-goto="${to}">${text}</button>`
+
+      const screens = {
+        'sign-in': () => `${heading('Sign in', 'Use your work account or email.')}
+          ${providers()}
+          <button type="button" data-ui="button" data-variant="outline" data-passkey>${icon('key-round')}Sign in with a passkey</button>
+          ${divider('or')}
+          <form class="grid gap-4" data-form="sign-in" novalidate>
+            ${formAlert()}
+            ${field({ id: 'email', label: 'Email', type: 'email', autocomplete: 'username webauthn', value: flow.email })}
+            ${field({ id: 'password', label: 'Password', type: 'password', autocomplete: 'current-password', aside: link('forgot', 'Forgot password?') })}
+            <button type="submit" data-ui="button">Sign in</button>
+          </form>
+          <p class="text-center text-sm text-muted-foreground">No account? ${link('sign-up', 'Sign up')}</p>`,
+
+        'sign-up': () => `${heading('Create an account', 'Sign up with a provider or your email.')}
+          ${providers()}
+          ${divider('or')}
+          <form class="grid gap-4" data-form="sign-up" novalidate>
+            ${formAlert()}
+            ${field({ id: 'name', label: 'Name', autocomplete: 'name', value: flow.name })}
+            ${field({ id: 'email', label: 'Email', type: 'email', autocomplete: 'email', value: flow.email })}
+            ${field({ id: 'password', label: 'Password', type: 'password', autocomplete: 'new-password', hint: 'At least 8 characters.' })}
+            <button type="submit" data-ui="button">Create account</button>
+          </form>
+          <p class="text-center text-sm text-muted-foreground">Already have an account? ${link('sign-in', 'Sign in')}</p>`,
+
+        'verify-email': () => `<div class="flex size-12 items-center justify-center rounded-full bg-muted">${icon('mail', 'size-6')}</div>
+          ${heading('Check your email', `We sent a verification link to <span class="font-medium text-foreground">${escapeHtml(flow.email || 'anna@snowhound.eu')}</span>. Open it to finish creating your account.`)}
+          <div class="grid gap-2">
+            <button type="button" data-ui="button" data-variant="outline" data-resend>Resend email</button>
+            <button type="button" data-ui="button" data-variant="ghost" data-goto="create-org">Continue (simulates clicking the link)</button>
+          </div>
+          <p class="text-center text-sm text-muted-foreground">Wrong address? ${link('sign-up', 'Go back')}</p>`,
+
+        forgot: () => `${heading('Reset your password', "Enter your email and we'll send you a reset link.")}
+          <form class="grid gap-4" data-form="forgot" novalidate>
+            ${field({ id: 'email', label: 'Email', type: 'email', autocomplete: 'email', value: flow.email })}
+            <button type="submit" data-ui="button">Send reset link</button>
+          </form>
+          <p class="text-center text-sm">${link('sign-in', 'Back to sign in')}</p>`,
+
+        'forgot-sent': () => `<div class="flex size-12 items-center justify-center rounded-full bg-muted">${icon('mail', 'size-6')}</div>
+          ${heading('Check your email', `If an account exists for <span class="font-medium text-foreground">${escapeHtml(flow.email)}</span>, we sent a link to reset the password. The link expires in 1 hour.`)}
+          <div class="grid gap-2">
+            <button type="button" data-ui="button" data-variant="ghost" data-goto="reset">Continue (simulates clicking the link)</button>
+          </div>
+          <p class="text-center text-sm">${link('sign-in', 'Back to sign in')}</p>`,
+
+        reset: () => `${heading('Choose a new password')}
+          <form class="grid gap-4" data-form="reset" novalidate>
+            ${field({ id: 'password', label: 'New password', type: 'password', autocomplete: 'new-password', hint: 'At least 8 characters.' })}
+            ${field({ id: 'confirm', label: 'Confirm password', type: 'password', autocomplete: 'new-password' })}
+            <button type="submit" data-ui="button">Update password</button>
+          </form>`,
+
+        'reset-done': () => `<div class="flex size-12 items-center justify-center rounded-full bg-muted">${icon('check', 'size-6')}</div>
+          ${heading('Password updated', 'Sign in with your new password.')}
+          <button type="button" data-ui="button" data-goto="sign-in">Sign in</button>`,
+
+        invite: () => `<div class="flex items-center gap-3">
+            <div data-ui="avatar"><div data-ui="avatar-fallback" class="font-medium">${invitation.organization[0]}</div></div>
+            <div class="min-w-0"><p class="truncate font-medium">${escapeHtml(invitation.organization)}</p><p class="truncate text-sm text-muted-foreground">Team ${escapeHtml(invitation.team)}</p></div>
+          </div>
+          ${heading('Join ' + escapeHtml(invitation.organization), `${escapeHtml(invitation.inviter)} invited <span class="font-medium text-foreground">${escapeHtml(invitation.email)}</span> to join as a ${invitation.role}. Sign in or create an account with that email to accept.`)}
+          ${providers()}
+          ${divider('or')}
+          <form class="grid gap-4" data-form="invite" novalidate>
+            ${formAlert()}
+            ${field({ id: 'email', label: 'Email', type: 'email', autocomplete: 'username', value: invitation.email })}
+            ${field({ id: 'password', label: 'Password', type: 'password', autocomplete: 'current-password', hint: 'New here? Choose a password to create your account.' })}
+            <button type="submit" data-ui="button">Accept invitation</button>
+          </form>
+          <p class="text-center text-sm text-muted-foreground">Not you? ${link('sign-in', 'Sign in with another account')}</p>`,
+
+        'invite-expired': () => `<div class="flex size-12 items-center justify-center rounded-full bg-muted">${icon('clock', 'size-6')}</div>
+          ${heading('This invitation has expired', `Invitations are valid for 48 hours. Ask ${escapeHtml(invitation.inviter)} or another admin of ${escapeHtml(invitation.organization)} to send a new one.`)}
+          <button type="button" data-ui="button" data-variant="outline" data-goto="sign-in">Go to sign in</button>`,
+
+        'create-org': () => `${heading('Create your organization', 'An organization holds your projects, teams, and time. You can invite people after this step.')}
+          <form class="grid gap-4" data-form="create-org" novalidate>
+            ${field({ id: 'org-name', label: 'Organization name', autocomplete: 'organization' })}
+            ${field({ id: 'org-slug', label: 'Short name', hint: 'Lowercase letters, numbers, and dashes. Used in links.' })}
+            <button type="submit" data-ui="button">Create organization</button>
+          </form>
+          <div data-ui="alert">${icon('mail')}<div data-ui="alert-title">Joining an existing organization?</div><div data-ui="alert-description">Ask its admin to invite <span class="font-medium">${escapeHtml(flow.email || 'you')}</span>. The invitation appears here when you sign in.</div></div>`,
+
+        done: () => `<div class="flex size-12 items-center justify-center rounded-full bg-muted">${icon('check', 'size-6')}</div>
+          ${heading('Signed in', 'In the app this lands on the timer. The app frame is the next prototype.')}
+          <button type="button" data-ui="button" data-variant="outline" data-goto="sign-in">${icon('arrow-left')}Back to sign in</button>`,
+      }
+
+      function go(name) {
+        document.getElementById('screen').innerHTML = screens[name]()
+        const select = document.getElementById('screen-select')
+        if ([...select.options].some((o) => o.value === name)) select.value = name
+        document.querySelector('#screen input:not([type=hidden])')?.focus({ preventScroll: true })
+      }
+
+      function setError(id, message) {
+        const input = document.getElementById(id)
+        input.toggleAttribute('data-invalid', !!message)
+        input.setAttribute('aria-invalid', String(!!message))
+        document.getElementById(`${id}-error`).textContent = message ?? ''
+      }
+      function showAlert(message) {
+        const alert = document.getElementById('form-alert')
+        alert.hidden = !message
+        alert.querySelector('[data-ui="alert-description"]').textContent = message ?? ''
+      }
+      const value = (id) => document.getElementById(id)?.value.trim() ?? ''
+
+      function busy(button, label) {
+        button.disabled = true
+        button.innerHTML = `${icon('loader-circle', 'animate-spin')}${label}`
+        return new Promise((resolve) => setTimeout(resolve, 700))
+      }
+
+      // Fictional rules: the password "wrong" fails sign-in; "taken@example.com" is already registered.
+      const validators = {
+        'sign-in': () => {
+          const errors = { email: isEmail(value('email')) ? null : 'Enter a valid email address.', password: value('password') ? null : 'Enter your password.' }
+          return { errors, alert: !errors.email && !errors.password && value('password') === 'wrong' ? 'Email or password is incorrect.' : null, next: 'done', label: 'Signing in…' }
+        },
+        'sign-up': () => {
+          const pw = value('password')
+          const errors = {
+            name: value('name') ? null : 'Enter your name.',
+            email: isEmail(value('email')) ? null : 'Enter a valid email address.',
+            password: pw.length >= 8 ? (pw.length <= 128 ? null : 'Use at most 128 characters.') : 'Use at least 8 characters.',
+          }
+          const ok = Object.values(errors).every((e) => !e)
+          return { errors, alert: ok && value('email') === 'taken@example.com' ? 'An account with this email already exists. Sign in instead.' : null, next: 'verify-email', label: 'Creating account…' }
+        },
+        forgot: () => ({ errors: { email: isEmail(value('email')) ? null : 'Enter a valid email address.' }, next: 'forgot-sent', label: 'Sending…' }),
+        reset: () => {
+          const pw = value('password')
+          return {
+            errors: { password: pw.length >= 8 ? null : 'Use at least 8 characters.', confirm: value('confirm') === pw ? null : "Passwords don't match." },
+            next: 'reset-done',
+            label: 'Updating…',
+          }
+        },
+        invite: () => {
+          const errors = { email: value('email') === invitation.email ? null : `Use ${invitation.email}, the address the invitation was sent to.`, password: value('password') ? null : 'Enter a password.' }
+          return { errors, alert: !errors.email && !errors.password && value('password') === 'wrong' ? 'Email or password is incorrect.' : null, next: 'done', label: 'Joining…' }
+        },
+        'create-org': () => {
+          const slug = value('org-slug')
+          return {
+            errors: {
+              'org-name': value('org-name') ? null : 'Enter a name.',
+              'org-slug': /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) ? (slug === 'snowhound' ? 'This short name is taken.' : null) : 'Use lowercase letters, numbers, and dashes.',
+            },
+            next: 'done',
+            label: 'Creating…',
+          }
+        },
+      }
+
+      const slugify = (s) =>
+        s
+          .toLowerCase()
+          .normalize('NFKD')
+          .replace(/[̀-ͯ]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+      let slugEdited = false
+
+      document.addEventListener('submit', async (event) => {
+        const form = event.target.closest('[data-form]')
+        if (!form) return
+        event.preventDefault()
+        const result = validators[form.dataset.form]()
+        for (const [id, message] of Object.entries(result.errors)) setError(id, message)
+        const firstInvalid = Object.entries(result.errors).find(([, m]) => m)?.[0]
+        if (firstInvalid) return document.getElementById(firstInvalid).focus()
+        if (document.getElementById('form-alert')) showAlert(null)
+        flow.email = value('email') || flow.email
+        flow.name = value('name') || flow.name
+        await busy(form.querySelector('[type=submit]'), result.label)
+        if (result.alert) {
+          form.querySelector('[type=submit]').disabled = false
+          go(form.dataset.form)
+          showAlert(result.alert)
+          return
+        }
+        go(result.next)
+      })
+
+      document.addEventListener('input', (event) => {
+        const input = event.target
+        if (input.hasAttribute('data-invalid')) setError(input.id, null)
+        if (input.id === 'org-slug') slugEdited = true
+        if (input.id === 'org-name' && !slugEdited) document.getElementById('org-slug').value = slugify(input.value)
+      })
+
+      document.addEventListener('click', async (event) => {
+        const goto = event.target.closest('[data-goto]')
+        const provider = event.target.closest('[data-provider]')
+        const passkey = event.target.closest('[data-passkey]')
+        const reveal = event.target.closest('[data-reveal]')
+        const resend = event.target.closest('[data-resend]')
+        if (goto) go(goto.dataset.goto)
+        else if (provider) {
+          await busy(provider, `Redirecting to ${provider.dataset.provider}…`)
+          go('done')
+        } else if (passkey) {
+          await busy(passkey, 'Waiting for your passkey…')
+          go('done')
+        } else if (reveal) {
+          const input = document.getElementById(reveal.dataset.reveal)
+          const show = input.type === 'password'
+          input.type = show ? 'text' : 'password'
+          reveal.setAttribute('aria-pressed', String(show))
+          reveal.setAttribute('aria-label', show ? 'Hide password' : 'Show password')
+          reveal.innerHTML = icon(show ? 'eye-off' : 'eye')
+        } else if (resend) {
+          await busy(resend, 'Sending…')
+          resend.innerHTML = `${icon('check')}Sent`
+        }
+      })
+
+      document.getElementById('screen-select').addEventListener('change', (event) => {
+        slugEdited = false
+        go(event.currentTarget.value)
+      })
+      document.querySelectorAll('[data-layout-option]').forEach((b) =>
+        b.addEventListener('click', () => {
+          document.body.dataset.layout = b.dataset.layoutOption
+          document.querySelectorAll('[data-layout-option]').forEach((x) => {
+            const pressed = x === b
+            x.setAttribute('aria-pressed', String(pressed))
+            x.toggleAttribute('data-pressed', pressed)
+          })
+        })
+      )
+
+      // Follow the theme saved by the timer prototype's view settings, like the app would.
+      const savedTheme = (() => {
+        try {
+          return JSON.parse(localStorage.getItem('snowtime.viewSettings') ?? '{}').theme ?? 'system'
+        } catch {
+          return 'system'
+        }
+      })()
+      const themeButton = document.getElementById('theme-button')
+      const setDark = (dark) => {
+        document.documentElement.classList.toggle('dark', dark)
+        themeButton.textContent = dark ? 'Light' : 'Dark'
+      }
+      setDark(savedTheme === 'dark' || (savedTheme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
+      themeButton.addEventListener('click', () => setDark(!document.documentElement.classList.contains('dark')))
+
+      ui.ready.then(() => go('sign-in'))
+    </script>
+  </body>
+</html>
