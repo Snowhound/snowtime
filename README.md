@@ -10,8 +10,27 @@ To run this application:
 ```bash
 bun install
 bun run db:migrate
+bun run db:seed
 bun --bun run dev
 ```
+
+### Seeded users
+
+`bun run db:seed` fills the local database with demo data (`src/db/seed.ts`). It refuses
+any database that is not a local file. Every seeded user signs in with the password
+`snowtime-local`; password sign-in is enabled only in local development.
+
+| Email                | Name         | Role                                                   |
+| -------------------- | ------------ | ------------------------------------------------------ |
+| `owner@example.com`  | Olivia Owner | Owner of Northwind Studio                              |
+| `admin@example.com`  | Adam Admin   | Admin of Northwind Studio, owner of Harbor Consulting  |
+| `lead@example.com`   | Lena Lead    | Member of Northwind Studio, lead of Design             |
+| `member@example.com` | Max Member   | Member in Design, Engineering and Harbor's Delivery; has a running timer |
+| `theo@example.com`   | Theo Lead    | Member of Northwind Studio, lead of Engineering        |
+| `mia@example.com`    | Mia Engineer | Member in Engineering, lead of Delivery in Harbor Consulting |
+| `noah@example.com`   | Noah Solo    | Member of Northwind Studio, in no team                 |
+
+To start over: `rm local.db && bun run db:migrate && bun run db:seed`.
 
 ## Database and data model
 
