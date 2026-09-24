@@ -196,7 +196,7 @@
 - The locale lives in the `PARAGLIDE_LOCALE` cookie, not the URL: the app has no public
   pages that need localized links. Without the cookie, the browser's `Accept-Language`
   picks it, then English. Signed-in pages set the cookie from `user_settings.locale`, so
-  the server renders the next page in the account's language. `src/server.ts` runs
+  the server renders the next page in the account's language. `src/server-entry.ts` runs
   Paraglide's middleware around every request, which scopes the locale per request.
 - The user's language is `user_settings.locale` (see "User settings"). The first
   `getSettings` call sets it from the browser, as it does the time zone.

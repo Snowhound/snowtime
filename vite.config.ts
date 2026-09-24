@@ -16,7 +16,8 @@ export default defineConfig({
     paraglideVitePlugin({ project: './project.inlang' }),
     nitro(),
     tailwindcss(),
-    tanstackStart(),
+    // src/server.ts is Start's default, which would sit beside the src/server/ folder.
+    tanstackStart({ server: { entry: 'server-entry' } }),
     solidPlugin({ ssr: true }),
   ],
 })

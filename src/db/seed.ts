@@ -95,13 +95,13 @@ const teams = [
 ]
 
 const projects = [
-  { id: P.website, org: O.northwind, name: 'Website redesign', color: '#4E79A7', teams: [T.design] },
-  { id: P.mobile, org: O.northwind, name: 'Mobile app', color: '#F28E2B', teams: [T.engineering] },
-  { id: P.internal, org: O.northwind, name: 'Internal', color: '#76B7B2', teams: [] },
-  { id: P.legacy, org: O.northwind, name: 'Legacy CRM', color: '#9C755F', teams: [T.engineering], archived: true },
-  { id: P.scrapped, org: O.northwind, name: 'Scrapped pitch', color: '#BAB0AC', teams: [], deleted: true },
-  { id: P.onboarding, org: O.harbor, name: 'Client onboarding', color: '#59A14F', teams: [] },
-  { id: P.audit, org: O.harbor, name: 'Audit', color: '#E15759', teams: [T.delivery] },
+  { id: P.website, org: O.northwind, name: 'Website redesign', color: '#2a78d6', teams: [T.design] },
+  { id: P.mobile, org: O.northwind, name: 'Mobile app', color: '#eb6834', teams: [T.engineering] },
+  { id: P.internal, org: O.northwind, name: 'Internal', color: '#1baf7a', teams: [] },
+  { id: P.legacy, org: O.northwind, name: 'Legacy CRM', color: '#4a3aa7', teams: [T.engineering], archived: true },
+  { id: P.scrapped, org: O.northwind, name: 'Scrapped pitch', color: '#e87ba4', teams: [], deleted: true },
+  { id: P.onboarding, org: O.harbor, name: 'Client onboarding', color: '#008300', teams: [] },
+  { id: P.audit, org: O.harbor, name: 'Audit', color: '#e34948', teams: [T.delivery] },
 ]
 
 // Northwind projects each user logs time on; Olivia and Adam also use Internal.
