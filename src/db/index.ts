@@ -10,3 +10,7 @@ export const db = drizzle({
 })
 
 export type Database = typeof db
+
+// A transaction handle from db.transaction(); helpers that run inside one accept either.
+export type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0]
+export type Executor = Database | Transaction

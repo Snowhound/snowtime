@@ -20,3 +20,13 @@ export function live(table: SoftDeleted, scope: Pick<Scope, 'organizationId'>): 
 export function liveWhere(scope: Pick<Scope, 'organizationId'>) {
   return { organizationId: scope.organizationId, sysDeleted: false } as const
 }
+
+// The failed constraint of a SQLite constraint violation, e.g. "time_entry.user_id" for a
+// unique index, or null for any other error. Drizzle wraps the libSQL error as its cause.
+export function failedConstraint(error: unknown): string | null {
+  for (let e = error; e instanceof Error; e = e.cause) {
+    const match = /constraint failed: (.+)$/.exec(e.message)
+    if (match) return match[1]
+  }
+  return null
+}
