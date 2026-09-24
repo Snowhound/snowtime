@@ -592,8 +592,12 @@ each, from the 2 to 2.5 MB PNGs).
 
 - **Card layout**: the scene fills the page behind the card. **Split layout**: it fills the brand
   panel, which fades toward the page color behind its text; the form side stays plain.
-- **Intro**: the mock-up's four lines over the scene, always dark, then the page rises into place
-  and the chosen theme returns. It plays on the first visit to this browser
+- **Intro**: about 12 seconds, always dark. It opens on the weather alone over the page color,
+  shows two lines, fades the background in (over 2.6 s) a second after the second line, then
+  shows the last two lines, the last one ("Sign in and get it done.") for 3 seconds. Then the
+  page rises into place and the chosen theme returns. The intro always shows the weather and the
+  background, even when they're off for the page; the page follows the switches once it
+  appears. It plays on the first visit to this browser
   (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay intro plays it any
   time. **Skip intro** or Escape ends it; the rest of the page
   is `inert` while it plays. With reduced motion it doesn't play, and the snow stays off.

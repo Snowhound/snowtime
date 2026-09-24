@@ -184,6 +184,10 @@
         transform: translateY(18px) scale(0.988);
         filter: blur(12px);
       }
+      /* The background fades in slowly during the intro. */
+      body[data-intro] .scene-photo {
+        transition-duration: 2.6s, 3.2s;
+      }
       @media (prefers-reduced-motion: reduce) {
         .intro,
         .intro *,
@@ -260,7 +264,7 @@
         <p class="intro-line intro-line-1">Winter is coming.</p>
         <p class="intro-line intro-line-2">So is the end of the month.</p>
         <p class="intro-line intro-line-3">Before the snow gets deeper, fill in your timesheet.</p>
-        <p class="intro-line intro-line-4">Then sign in and get it done.</p>
+        <p class="intro-line intro-line-4">Sign in and get it done.</p>
       </div>
       <button type="button" id="skip-intro" data-ui="button" data-variant="outline" data-size="sm" class="intro-skip border-white/20 bg-black/40 text-white backdrop-blur hover:bg-black/60 hover:text-white">Skip intro</button>
     </section>
@@ -760,10 +764,15 @@
         brandPanel.toggleAttribute('data-scene-bg', inPanel && sceneCtl.get().background)
       }
 
+      // During the intro the scene ignores the user's switches: the weather shows throughout, and
+      // the background fades in partway (`introBackground`).
+      let introBackground = false
       function applyScene() {
         const user = scene.settings.get()
-        sceneCtl.set({ season: variants.season, strength: user.sceneStrength, background: user.sceneBackground, weather: user.sceneWeather })
-        document.body.dataset.sceneBg = user.sceneBackground ? 'on' : 'off'
+        const intro = !!document.body.dataset.intro
+        const background = intro ? introBackground : user.sceneBackground
+        sceneCtl.set({ season: variants.season, strength: user.sceneStrength, background, weather: intro || user.sceneWeather })
+        document.body.dataset.sceneBg = background ? 'on' : 'off'
         document.body.dataset.card = user.surfaces
         document.body.dataset.tagline = variants.tagline
         document.documentElement.dataset.tone = variants.tone
@@ -823,7 +832,8 @@
         document.getElementById('scene-menu').hidePopover?.()
         if (!document.body.dataset.intro) introDark = document.documentElement.classList.contains('dark')
         document.body.dataset.intro = 'playing'
-        placeScene()
+        introBackground = false
+        applyScene()
         document.documentElement.classList.add('dark')
         introEl.hidden = false
         introEl.classList.remove('intro-done')
@@ -832,17 +842,23 @@
         for (const el of [document.getElementById('auth-header'), document.querySelector('.auth-shell')]) el.inert = true
         document.getElementById('skip-intro').focus()
         const at = (ms, fn) => introTimers.push(setTimeout(fn, ms))
-        at(250, () => introEl.querySelector('.intro-fade').classList.add('reveal'))
-        ;[850, 2050, 3550, 4850].forEach((ms, i) => at(ms, () => introLines[i].classList.add('show')))
-        at(5950, revealPage)
-        at(6150, () => introEl.classList.add('intro-done'))
-        at(6500, () => setDark(introDark))
-        at(7600, endIntro)
+        // The weather alone, then two lines, then the background fades in under the last two lines,
+        // which stay longest.
+        at(300, () => introEl.querySelector('.intro-fade').classList.add('reveal'))
+        ;[2200, 3700, 7000, 9000].forEach((ms, i) => at(ms, () => introLines[i].classList.add('show')))
+        at(5000, () => {
+          introBackground = true
+          applyScene()
+        })
+        at(12000, revealPage)
+        at(12200, () => introEl.classList.add('intro-done'))
+        at(12550, () => setDark(introDark))
+        at(13650, endIntro)
       }
       function revealPage() {
         delete document.body.dataset.intro
         for (const el of [document.getElementById('auth-header'), document.querySelector('.auth-shell')]) el.inert = false
-        placeScene()
+        applyScene()
       }
       function endIntro() {
         introEl.hidden = true
