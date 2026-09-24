@@ -1,4 +1,4 @@
-/* Snowtime theme tokens, copied from src/styles.css. Loaded after Basecoat so they win. */
+/* Snowtime theme tokens, copied from src/styles.css. */
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
@@ -15,6 +15,7 @@
   --accent: oklch(0.967 0.001 286.375);
   --accent-foreground: oklch(0.21 0.006 285.885);
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
   --ring: oklch(0.871 0.006 286.286);
@@ -37,6 +38,7 @@
   --accent: oklch(0.274 0.006 286.033);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.274 0.006 286.033);
   --input: oklch(0.274 0.006 286.033);
   --ring: oklch(0.442 0.017 285.786);
@@ -67,12 +69,14 @@ summary::-webkit-details-marker {
   display: none;
 }
 
-.select > [data-popover] {
-  max-width: calc(100vw - 48px);
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.select > [data-popover][aria-hidden='true'] {
-  display: none;
+/* Native <select> popups follow the theme. */
+.dark {
+  color-scheme: dark;
 }
 
 @media (prefers-reduced-motion: reduce) {

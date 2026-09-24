@@ -19,6 +19,7 @@
       --color-accent: var(--accent);
       --color-accent-foreground: var(--accent-foreground);
       --color-destructive: var(--destructive);
+      --color-destructive-foreground: var(--destructive-foreground);
       --color-border: var(--border);
       --color-input: var(--input);
       --color-ring: var(--ring);
@@ -26,6 +27,15 @@
       --radius-md: calc(var(--radius) - 2px);
       --radius-lg: var(--radius);
       --radius-xl: calc(var(--radius) + 4px);
+    }
+    /* Base layer from src/styles.css. */
+    @layer base {
+      * {
+        @apply border-border outline-ring/50;
+      }
+      body {
+        @apply bg-background text-foreground;
+      }
     }
   `
   document.head.append(style)
