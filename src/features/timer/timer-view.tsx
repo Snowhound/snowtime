@@ -271,7 +271,7 @@ export function TimerView(props: {
                     fallback={
                       <Show when={groups().length > 0 && allTime()}>
                         {(text) => (
-                          <p class="text-muted-foreground flex w-full items-center gap-3 text-sm">
+                          <p class="page-note text-muted-foreground flex w-full items-center gap-3 text-sm">
                             <span class="bg-border h-px flex-1" aria-hidden="true" />
                             {text()}
                             <span class="bg-border h-px flex-1" aria-hidden="true" />
@@ -283,11 +283,13 @@ export function TimerView(props: {
                     <Show
                       when={days() < MAX_DAYS}
                       fallback={
-                        <p class="text-muted-foreground text-sm">{m.timer_earlier_in_reports()}</p>
+                        <p class="page-note text-muted-foreground text-sm">
+                          {m.timer_earlier_in_reports()}
+                        </p>
                       }
                     >
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         disabled={entries.isPlaceholderData}
                         onClick={() => setDays((d) => d + RECENT_DAYS)}

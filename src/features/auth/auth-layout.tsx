@@ -47,7 +47,7 @@ export function AuthLayout(props: { children: JSX.Element }) {
         </div>
         <div class="flex flex-col gap-6">{props.children}</div>
       </div>
-      <p class="text-muted-foreground text-center text-sm">{m.auth_tagline()}</p>
+      <p class="scene-text text-muted-foreground text-center text-sm">{m.auth_tagline()}</p>
     </main>
   )
 }

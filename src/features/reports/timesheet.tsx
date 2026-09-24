@@ -2,7 +2,7 @@
 // column per day or week, with row and column totals and the current day or week shaded.
 // It scrolls inside its card with the first column sticky.
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
-import { For, Show } from 'solid-js'
+import { For, Show, createSignal } from 'solid-js'
 import { ProjectDot } from '~/components/project-dot'
 import {
   Table,
@@ -78,9 +78,20 @@ export function Timesheet(props: {
     )
   }
 
+  const [scrolled, setScrolled] = createSignal(false)
+
   return (
     <Show when={props.rows.length} fallback={<EmptyState />}>
-      <div class="border-t">
+      {/* Marked while scrolled sideways: on glass, the sticky column is see-through like the
+          card until then, and solid after, so the cells scrolling under it don't show. */}
+      <div
+        class="timesheet border-t"
+        data-scrolled={scrolled() ? '' : undefined}
+        on:scroll={{
+          capture: true,
+          handleEvent: (event) => setScrolled((event.target as HTMLElement).scrollLeft > 0),
+        }}
+      >
         <Table>
           <TableHeader>
             <TableRow>

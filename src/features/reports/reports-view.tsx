@@ -167,7 +167,7 @@ export function ReportsView(props: {
     <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div class="flex min-w-0 flex-col gap-1">
         <h1 class="text-2xl font-semibold tracking-tight">{m.nav_reports()}</h1>
-        <p class="text-muted-foreground text-sm">
+        <p class="scene-text text-muted-foreground text-sm">
           {rangeLabel()} · {scopeNote()} {zoneNote()} (
           <Link
             to="/settings"

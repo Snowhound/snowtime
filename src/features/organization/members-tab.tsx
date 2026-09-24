@@ -90,7 +90,9 @@ export function MembersTab(
           </For>
         </ul>
       </Card>
-      <p class="text-muted-foreground mt-3 text-sm">{m.organization_members_footnote()}</p>
+      <p class="page-note text-muted-foreground mt-3 text-sm">
+        {m.organization_members_footnote()}
+      </p>
     </>
   )
 }

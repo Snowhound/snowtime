@@ -252,7 +252,7 @@ export function OrganizationView(props: {
     <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div class="flex min-w-0 flex-col gap-1">
         <h1 class="text-2xl font-semibold tracking-tight">{m.nav_organization()}</h1>
-        <p class="text-muted-foreground min-w-0 truncate text-sm">
+        <p class="scene-text text-muted-foreground min-w-0 truncate text-sm">
           {m.organization_subtitle({
             organization: props.organizationName,
             count: memberList().length,

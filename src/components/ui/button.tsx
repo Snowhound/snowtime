@@ -42,6 +42,8 @@ const Button = <T extends ValidComponent = 'button'>(
   return (
     <ButtonPrimitive.Root
       class={cn(buttonVariants({ variant: local.variant, size: local.size }), local.class)}
+      // Lets the seasonal scene give outline buttons a page-colored fill (src/styles.css).
+      data-variant={local.variant ?? 'default'}
       {...others}
     />
   )

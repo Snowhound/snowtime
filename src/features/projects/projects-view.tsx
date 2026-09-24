@@ -169,7 +169,7 @@ export function ProjectsView(props: {
     <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div class="flex min-w-0 flex-col gap-1">
         <h1 class="text-2xl font-semibold tracking-tight">{m.nav_projects()}</h1>
-        <p class="text-muted-foreground min-w-0 truncate text-sm">{subtitle()}</p>
+        <p class="scene-text text-muted-foreground min-w-0 truncate text-sm">{subtitle()}</p>
       </div>
       <Show when={error()}>
         <Alert variant="destructive">
@@ -241,7 +241,7 @@ export function ProjectsView(props: {
           )}
         </For>
       </Tabs>
-      <p class="text-muted-foreground text-sm">
+      <p class="page-note text-muted-foreground text-sm">
         {props.admin ? m.projects_footnote_admin() : m.projects_footnote_member()}
       </p>
       <Show when={props.admin}>

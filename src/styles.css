@@ -315,6 +315,37 @@ code {
   background-color: var(--background);
 }
 
+/* Reports' timesheet (src/features/reports/timesheet.tsx): on glass, its sticky first column is
+   see-through until the table scrolls sideways. */
+[data-scene-bg='on'][data-surfaces='glass']
+  .timesheet:not([data-scrolled])
+  :is(th, td):first-child {
+  background-color: transparent;
+}
+
+/* Text and controls on the image itself: page titles and page-level notes (`scene-text`, and
+   `page-note`, which is centered) get a glow in the page color, the notes a color between
+   muted-foreground and foreground, and outline buttons a page-colored fill. Popovers and dialogs
+   render outside the frame, so their buttons keep the plain outline. */
+.page-note {
+  text-align: center;
+}
+[data-scene-bg='on'] :is(.scene-text, .page-note) {
+  color: color-mix(in srgb, var(--muted-foreground) 55%, var(--foreground));
+}
+[data-scene-bg='on'] :is(h1, .scene-text, .page-note) {
+  text-shadow:
+    0 0 6px var(--background),
+    0 0 16px var(--background),
+    0 0 32px var(--background);
+}
+[data-scene-bg='on'] [data-variant='outline'] {
+  background-color: color-mix(in srgb, var(--background) 70%, transparent);
+}
+[data-scene-bg='on'] [data-variant='outline']:hover {
+  background-color: var(--accent);
+}
+
 /* Tailwind v4 gives buttons the arrow cursor, as desktop apps do; on the web people expect the
    pointer on anything they can click. Menu items and listbox options get it too, so a menu reads
    like the button that opens it. Unlayered, so it beats the registry components' cursor-default;

@@ -92,6 +92,16 @@ Work in this order, one commit or more per step, and check each in the dev app a
   a 16 px blur, or solid with solid surfaces. Dialogs and popovers stay solid, since they render
   outside the frame. Checked at 1440, 850, and 390 px, light and dark, glass and solid, on every
   signed-in page and the sign-in page: no horizontal scroll and no browser errors.
+- 2026-09-25: Step 3c: over the image, page titles, subtitles (`scene-text`), and page-level
+  notes (`page-note`, centered: the footnotes under Projects' and Members' cards and the timer
+  list's end lines) get the page-color glow, the notes and subtitles a color between
+  `muted-foreground` and `foreground`, and outline buttons a page-colored fill (Solid-UI's
+  `Button` now renders `data-variant`). The sign-in page's tagline is `scene-text` until step 5
+  replaces it. The timer's "Show earlier entries" is an outline button instead of a ghost one,
+  since it was hard to see on the light images; it isn't in the prototypes. Reports' timesheet
+  marks itself `data-scrolled` while scrolled sideways, and on glass its sticky column is
+  see-through until then. The app has no midnight note on Reports, so there's nothing to style.
+  Checked at 1440, 850, and 390 px, light and dark: no horizontal scroll and no browser errors.
 
 ## Acceptance criteria
 
