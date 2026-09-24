@@ -22,6 +22,9 @@ the same change or ask first.
   `bun run icons:check` checks these imports and runs in `bun run test`;
   `bun run icons:fix` renames them. Name hand-written icons the same way, for example
   `GoogleIcon`.
+- Inside `src/`, import with relative paths (`../lib/utils`). Code outside it, in
+  `scripts/` and `datamodel/`, imports from `src/` through the `~/` alias
+  (`~/db/schema`) instead of `../src/`; oxlint checks that.
 - Write named functions as `function` declarations, not arrows assigned to a `const`,
   including derived values inside components (`function total() { ... }`). An arrow is
   fine as an inline callback, or where a type annotation needs a `const`

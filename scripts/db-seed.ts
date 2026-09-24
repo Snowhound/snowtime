@@ -5,10 +5,10 @@
 
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/libsql'
-import { SYSTEM_USER_ID } from '../src/db/actor'
-import { relations } from '../src/db/relations'
-import { user } from '../src/db/schema'
-import { SEED_PASSWORD, seed } from '../src/db/seed'
+import { SYSTEM_USER_ID } from '~/db/actor'
+import { relations } from '~/db/relations'
+import { user } from '~/db/schema'
+import { SEED_PASSWORD, seed } from '~/db/seed'
 
 const url = process.env.TURSO_DATABASE_URL
 if (!url?.startsWith('file:')) {

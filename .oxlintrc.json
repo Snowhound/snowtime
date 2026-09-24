@@ -48,6 +48,12 @@
   ],
   "overrides": [
     {
+      "files": ["scripts/**", "datamodel/**"],
+      "rules": {
+        "import/no-relative-parent-imports": "error"
+      }
+    },
+    {
       "files": ["src/components/ui/**"],
       "rules": {
         "eslint/func-style": "off"
