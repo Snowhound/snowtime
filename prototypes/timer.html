@@ -9,6 +9,7 @@
     <script src="ui.js"></script>
     <script src="app-icon.js"></script>
     <script src="seasons.js"></script>
+    <script src="scene.js"></script>
     <script src="app-frame.js"></script>
     <style type="text/tailwindcss">
       /* Timer controls share one DOM across designs; only layout changes. */
@@ -35,6 +36,10 @@
       }
       body[data-design='table'] .timer-elapsed {
         @apply justify-start text-base sm:w-24 sm:justify-end;
+      }
+      /* Over the scene, the table layout's timer gets a card of its own, like the other layouts'. */
+      body[data-scene-bg='on'][data-design='table'] .timer {
+        @apply rounded-lg border bg-card p-3;
       }
       body:not([data-design='focus']) .focus-only,
       body[data-summary='off'] #summary-panel {
@@ -117,7 +122,7 @@
 
     <main class="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-4 pb-6 pt-4 sm:px-8 lg:grid-cols-[minmax(0,1fr)_auto]">
       <div class="flex min-w-0 flex-col gap-6">
-        <section id="timer" class="timer" aria-label="Timer">
+        <section id="timer" class="timer surface" aria-label="Timer">
           <div class="timer-fields flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
             <label for="description" class="sr-only">What are you working on?</label>
             <input id="description" data-ui="input" class="min-w-0 flex-1" type="text" placeholder="What are you working on?" autocomplete="off" />
@@ -188,7 +193,7 @@
     </dialog>
 
     <script>
-      appFrame.mount({ page: 'timer', title: 'Timer and entries' })
+      appFrame.mount({ page: 'timer', title: 'Timer and entries', scene: true })
 
       const DAY = 86_400_000
       const HOUR = 3_600_000
@@ -314,7 +319,7 @@
       }
 
       function emptyState() {
-        return `<div class="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-background px-6 py-12 text-center">
+        return `<div class="surface flex flex-col items-center gap-2 rounded-xl border border-dashed bg-background px-6 py-12 text-center">
           ${icon('clock', 'size-6 text-muted-foreground')}
           <p class="font-medium">No time tracked yet</p>
           <p class="text-sm text-muted-foreground">Start the timer above. Entries appear here grouped by day.</p>
@@ -445,7 +450,7 @@
               ${g.items.map(tableRow).join('')}`
           )
           .join('')
-        return `<div class="relative w-full overflow-auto rounded-lg border bg-card">
+        return `<div class="surface relative w-full overflow-auto rounded-lg border bg-card">
           <table data-ui="table" class="min-w-[44rem] table-fixed">
             <colgroup><col /><col class="w-40" /><col class="w-28" /><col class="w-28" /><col class="w-24" /><col class="w-24" /></colgroup>
             <thead data-ui="table-header">

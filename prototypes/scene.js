@@ -338,7 +338,8 @@
   }
 
   // One WebGL context for all effects; each effect's program compiles the first time it runs.
-  function renderer(canvas) {
+  // `pace()` returns factors for the point count and the speed, so app pages can run a calmer version.
+  function renderer(canvas, pace) {
     const gl = canvas.getContext('webgl2', { alpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' })
     if (!gl) return null
     const compile = (type, src) => {
@@ -373,7 +374,7 @@
       raf = requestAnimationFrame(frame)
       // About 45 fps is plenty for slow effects and halves the GPU work on 120 Hz screens.
       if (now - last < 22) return
-      elapsed += Math.min(now - (last || now), 100) / 1000
+      elapsed += (Math.min(now - (last || now), 100) / 1000) * pace().speed
       last = now
       const dpr = Math.min(devicePixelRatio || 1, 1.5)
       const w = Math.max(1, Math.floor(canvas.clientWidth * dpr))
@@ -396,7 +397,7 @@
       gl.uniform3f(u.u_colorB, ...b)
       // Point counts scale with the drawn area, relative to a 1440 x 900 viewport.
       const area = (canvas.clientWidth * canvas.clientHeight) / (1440 * 900)
-      gl.drawArrays(gl.POINTS, 0, Math.round(Math.min(fx.max, Math.max(fx.min, fx.density * area))))
+      gl.drawArrays(gl.POINTS, 0, Math.round(Math.min(fx.max, Math.max(fx.min, fx.density * area)) * pace().density))
     }
     return {
       // Throws if the effect's shaders don't compile.
@@ -418,14 +419,15 @@
   }
 
   // --- Controller ------------------------------------------------------------------------------
-  function create({ season = 'winter', strength = 'full', background = true, weather = true } = {}) {
+  // `pace` is `{ density, speed }`, each a factor of the sign-in page's weather.
+  function create({ season = 'winter', strength = 'full', background = true, weather = true, pace = { density: 1, speed: 1 } } = {}) {
     const el = document.createElement('div')
     el.className = 'scene'
     el.setAttribute('aria-hidden', 'true')
     el.innerHTML = `<div class="scene-photo scene-photo-light"></div><div class="scene-photo scene-photo-dark"></div>
       <div class="scene-tint"></div><div class="scene-vignette"></div><canvas></canvas>`
-    const state = { season, strength, background, weather }
-    const fx = renderer(el.querySelector('canvas'))
+    const state = { season, strength, background, weather, pace }
+    const fx = renderer(el.querySelector('canvas'), () => state.pace)
     const failed = new Set()
     const colors = () => EFFECTS[effect()].colors({ dark: isDark(), background: state.background })
     const effect = () => (SEASONS[state.season] ?? SEASONS.winter).weather[isDark() ? 'dark' : 'light']

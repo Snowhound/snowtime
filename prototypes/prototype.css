@@ -142,3 +142,63 @@ body {
   --series-7: #6e68b2;
   --series-8: #c24b49;
 }
+
+/* The season's tagline at the foot of signed-in pages (app-frame.js), over a fade into a deeper
+   tint. */
+#page-tagline {
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--muted) 70%, transparent));
+}
+
+/* Seasonal scene behind signed-in pages that opt in (app-frame.js, scene.js). The body drops its
+   tint so the scene shows; with the background off, the scene's base is the same tint. */
+.app-scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+body[data-scene='on'] {
+  background: transparent;
+}
+body[data-scene='on'] .scene {
+  background: color-mix(in srgb, var(--muted) 40%, var(--background));
+}
+/* Over the image, the header and prototype bar keep a page-colored surface, and the tagline fades
+   into the page color, as on the sign-in page. */
+body[data-scene-bg='on'] #app-header {
+  background-color: color-mix(in srgb, var(--background) 82%, transparent);
+  backdrop-filter: blur(16px);
+}
+body[data-scene-bg='on'][data-surfaces='solid'] #app-header {
+  background-color: var(--background);
+}
+body[data-scene='on'] #prototype-bar {
+  background-color: var(--muted);
+}
+body[data-scene-bg='on'] #page-tagline {
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--background) 88%, transparent));
+  color: var(--foreground);
+  font-weight: 500;
+}
+/* Surfaces: glass cards let the scene show through; solid ones keep bg-card and lift off it with a
+   shadow. `.surface` marks card-like elements that aren't a Card, such as the timer bar. */
+body[data-scene-bg='on'][data-surfaces='glass'] :is([data-ui='card'], .surface) {
+  background-color: color-mix(in srgb, var(--card) 70%, transparent);
+  backdrop-filter: blur(24px);
+}
+body[data-scene-bg='on'] :is([data-ui='card'], .surface) {
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
+}
+/* Text and controls that sit on the image itself: page titles get a glow in the page color, and
+   outline buttons a page-colored fill. */
+body[data-scene-bg='on'] h1 {
+  text-shadow:
+    0 0 6px var(--background),
+    0 0 16px var(--background),
+    0 0 32px var(--background);
+}
+body[data-scene-bg='on'] [data-ui='button'][data-variant='outline'] {
+  background-color: color-mix(in srgb, var(--background) 70%, transparent);
+}
+body[data-scene-bg='on'] [data-ui='button'][data-variant='outline']:hover {
+  background-color: var(--accent);
+}

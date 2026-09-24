@@ -1,7 +1,8 @@
 // App frame shared by the signed-in prototypes: header with organization switcher, navigation and
 // user menu; a prototype bar with the page's fixture controls and a role switcher; the user's
-// settings; the app icon picker; icons and markup helpers. Load after ui.js and app-icon.js and call `appFrame.mount()` first thing in
-// the page script.
+// settings; the app icon picker; the seasonal scene behind pages that opt in; icons and markup
+// helpers. Load after ui.js, app-icon.js, seasons.js, and (for the scene) scene.js, and call
+// `appFrame.mount()` first thing in the page script.
 ;(() => {
   // Lucide icons, copied from lucide-static@1.48.0. Pages can still define their own <symbol>s.
   const ICONS = {
@@ -31,6 +32,7 @@
     'log-out': '<path d="m16 17 5-5-5-5" /><path d="M21 12H9" /><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />',
     'mail': '<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7" /><rect x="2" y="4" width="20" height="16" rx="2" />',
     'monitor': '<rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" />',
+    'mountain-snow': '<path d="m8 3 4 8 5-5 5 15H2L8 3z" /><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19" />',
     'moon': '<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />',
     'pencil': '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" />',
     'play': '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />',
@@ -73,7 +75,8 @@
     design: 'bar', // user_settings.timer_layout
     showSummary: true,
     surfaces: 'glass', // 'glass' | 'solid': whether cards let a background show through
-    // The sign-in page's seasonal scene; see scene.js. The season also picks every page's tagline.
+    // The seasonal scene behind the sign-in page and the app; see scene.js. The season also picks
+    // every page's tagline.
     sceneSeason: 'auto', // 'auto' (by month) | 'winter' | 'spring' | 'summer' | 'autumn'
     sceneBackground: true,
     sceneStrength: 'full', // 'full' | 'dimmed'
@@ -178,6 +181,7 @@
   }
 
   let currentPage = ''
+  let sceneCtl = null
 
   function orgMark(org, cls = 'size-6 text-xs') {
     return `<span class="flex ${cls} shrink-0 items-center justify-center rounded-md bg-primary font-semibold text-primary-foreground" aria-hidden="true">${escapeHtml(org.name[0])}</span>`
@@ -286,7 +290,7 @@
       <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
         <button type="button" data-frame-app-icon class="mr-1 flex shrink-0 items-center gap-2 rounded-md text-base font-bold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-haspopup="dialog" aria-label="Snowtime: change app icon" title="Change app icon">
-          ${appIconImg('small', 'size-7')}<span class="hidden sm:inline">Snowtime</span>
+          ${appIconImg('small', 'size-7')}<span class="hidden sm:inline md:hidden lg:inline">Snowtime</span>
         </button>
         <span class="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden="true"></span>
         <button type="button" data-ui="button" data-variant="ghost" data-size="sm" class="min-w-0 max-w-[13rem] justify-start gap-2 px-2 lg:max-w-[16rem]"
@@ -305,7 +309,12 @@
           <button type="button" role="menuitem" data-ui="menu-item" disabled>${icon('plus')}Create organization</button>
         </div>
         <nav class="ml-2 hidden items-center gap-1 md:flex" aria-label="Main">${navLinks(false)}</nav>
-        <button type="button" class="ml-auto shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        ${
+          sceneCtl
+            ? `<button type="button" data-ui="button" data-variant="ghost" data-size="icon" class="ml-auto size-9 shrink-0" popovertarget="scene-menu" aria-haspopup="dialog" aria-expanded="false" aria-label="Scenery" title="Scenery">${icon('mountain-snow')}</button>`
+            : ''
+        }
+        <button type="button" class="${sceneCtl ? 'ml-1' : 'ml-auto'} shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           popovertarget="user-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Account menu for ${escapeHtml(user.name)}">
           <span data-ui="avatar" class="size-8"><span data-ui="avatar-fallback" class="text-xs font-medium">${escapeHtml(initials(user.name))}</span></span>
         </button>
@@ -373,8 +382,10 @@
     } else if (themeItem) settingsStore.set({ theme: themeItem.dataset.frameTheme })
   })
 
-  function mount({ page, title }) {
+  // `scene: true` puts the seasonal scene behind the page and a Scenery button in the header.
+  function mount({ page, title, scene: withScene = false }) {
     currentPage = page
+    if (withScene && window.scene) mountScene()
     const sprite = `<svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden"><defs>${Object.entries(ICONS)
       .map(([name, body]) => `<symbol id="icon-${name}" viewBox="0 0 24 24">${body}</symbol>`)
       .join('')}</defs></svg>`
@@ -386,6 +397,7 @@
     renderHeader()
     renderIconDialog()
     renderTagline()
+    if (sceneCtl) renderSceneMenu()
     // The page's own prototype controls (fixtures, variants) move into the bar, before the role.
     const controls = document.getElementById('prototype-controls')
     if (controls) document.getElementById('prototype-bar-controls').prepend(...controls.children)
@@ -399,6 +411,142 @@
     syncLinks()
   }
 
+  // --- Seasonal scene --------------------------------------------------------------------------
+  // The sign-in page's scene (scene.js) behind the page: the season's image, the tint, and the
+  // weather, from the same user settings. Cards follow the Surfaces setting through CSS on the body's
+  // data attributes (prototype.css). The weather's pace on app pages is a prototype variant.
+  const SCENE_VARIANTS_KEY = 'snowtime.prototypeAppScene'
+  const PACES = {
+    calm: { label: 'Weather: calm', density: 0.5, speed: 0.7 },
+    'sign-in': { label: 'Weather: as sign-in', density: 1, speed: 1 },
+  }
+  function scenePace() {
+    try {
+      const pace = JSON.parse(localStorage.getItem(SCENE_VARIANTS_KEY) ?? '{}').pace
+      return pace in PACES ? pace : 'calm'
+    } catch {
+      return 'calm'
+    }
+  }
+
+  function mountScene() {
+    const { density, speed } = PACES[scenePace()]
+    sceneCtl = scene.create({ season: seasons.current(), pace: { density, speed } })
+    const holder = document.createElement('div')
+    holder.className = 'app-scene'
+    holder.append(sceneCtl.el)
+    document.body.prepend(holder)
+    document.body.dataset.scene = 'on'
+    applyScene()
+    listeners.settings.push(applyScene)
+    // The weather switch and hint say when reduced motion keeps the weather off.
+    scene.reducedMotion.addEventListener('change', applyScene)
+  }
+
+  function applyScene() {
+    sceneCtl.set({ season: seasons.current(), strength: settings.sceneStrength, background: settings.sceneBackground, weather: settings.sceneWeather })
+    document.body.dataset.sceneBg = settings.sceneBackground ? 'on' : 'off'
+    document.body.dataset.surfaces = settings.surfaces
+    const menu = document.getElementById('scene-menu')
+    if (!menu) return
+    ui.setSwitch(document.getElementById('scene-bg-switch'), settings.sceneBackground)
+    menu.querySelectorAll('[data-scene-option]').forEach((b) => {
+      const pressed = b.dataset.value === settings[b.dataset.sceneOption]
+      b.setAttribute('aria-pressed', String(pressed))
+      b.toggleAttribute('data-pressed', pressed)
+      b.disabled = !settings.sceneBackground
+    })
+    const blocked = sceneCtl.weatherBlocked()
+    const weatherSwitch = document.getElementById('scene-weather-switch')
+    ui.setSwitch(weatherSwitch, settings.sceneWeather)
+    weatherSwitch.disabled = !!blocked
+    document.getElementById('scene-weather-hint').textContent = blocked ?? scene.SEASONS[seasons.current()].hint
+    const seasonSelect = document.getElementById('scene-season')
+    seasonSelect.value = seasons.chosen()
+    seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
+  }
+
+  // The Scenery popover, opened from the header's mountain button: the sign-in page's menu without
+  // the intro, which only plays there. It sits outside the header, which re-renders.
+  function renderSceneMenu() {
+    const row = (label, hint, control, indent = false) => `<div class="flex items-center justify-between gap-4${indent ? ' pl-3' : ''}">
+        <div class="grid gap-0.5">${label}<span class="text-xs text-muted-foreground"${hint.id ? ` id="${hint.id}"` : ''}>${hint.text ?? ''}</span></div>
+        ${control}
+      </div>`
+    const toggles = (key, labelId, options) => `<div data-ui="toggle-group" class="shrink-0" role="group" aria-labelledby="${labelId}">
+        ${options.map(([value, label]) => `<button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-scene-option="${key}" data-value="${value}">${label}</button>`).join('')}
+      </div>`
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<div id="scene-menu" popover data-ui="popover" class="grid w-80 gap-4" role="dialog" aria-labelledby="scene-menu-title">
+        <h2 id="scene-menu-title" class="text-sm font-semibold">Scenery</h2>
+        ${row(
+          '<label data-ui="label" for="scene-season">Season</label>',
+          { text: 'The landscape, weather, and taglines.' },
+          `<div class="shrink-0"><select id="scene-season" data-ui="select" class="h-9 w-36">
+            <option value="auto">Auto</option>${Object.entries(seasons.SEASONS)
+              .map(([id, s]) => `<option value="${id}">${s.label}</option>`)
+              .join('')}
+          </select></div>`
+        )}
+        ${row(
+          '<span data-ui="label" id="scene-bg-label">Background</span>',
+          { text: 'A landscape for the season.' },
+          '<button type="button" id="scene-bg-switch" role="switch" aria-checked="true" aria-labelledby="scene-bg-label" data-ui="switch"><span data-ui="switch-thumb"></span></button>'
+        )}
+        ${row(
+          '<span data-ui="label" id="scene-strength-label">Strength</span>',
+          { text: 'How much the page color covers it.' },
+          toggles('sceneStrength', 'scene-strength-label', [
+            ['full', 'Full'],
+            ['dimmed', 'Dimmed'],
+          ]),
+          true
+        )}
+        ${row(
+          '<span data-ui="label" id="surfaces-label">Surfaces</span>',
+          { text: 'Glass lets it show through cards.' },
+          toggles('surfaces', 'surfaces-label', [
+            ['glass', 'Glass'],
+            ['solid', 'Solid'],
+          ]),
+          true
+        )}
+        ${row(
+          '<span data-ui="label" id="scene-weather-label">Weather</span>',
+          { id: 'scene-weather-hint' },
+          '<button type="button" id="scene-weather-switch" role="switch" aria-checked="true" aria-labelledby="scene-weather-label" aria-describedby="scene-weather-hint" data-ui="switch"><span data-ui="switch-thumb"></span></button>'
+        )}
+        <div data-ui="separator"></div>
+        <a href="${link('settings.html#scenery')}" data-frame-link="settings.html#scenery" data-ui="button" data-variant="link" data-size="sm" class="h-auto justify-start p-0">All scenery settings</a>
+      </div>`
+    )
+    const menu = document.getElementById('scene-menu')
+    menu.querySelector('#scene-season').addEventListener('change', (event) => settingsStore.set({ sceneSeason: event.currentTarget.value }))
+    menu.querySelector('#scene-bg-switch').addEventListener('change', (event) => settingsStore.set({ sceneBackground: event.currentTarget.getAttribute('aria-checked') === 'true' }))
+    menu.querySelector('#scene-weather-switch').addEventListener('change', (event) => settingsStore.set({ sceneWeather: event.currentTarget.getAttribute('aria-checked') === 'true' }))
+    menu.querySelectorAll('[data-scene-option]').forEach((b) => b.addEventListener('click', () => settingsStore.set({ [b.dataset.sceneOption]: b.dataset.value })))
+
+    // Prototype variant: the weather's pace on app pages. Changing it reloads the scene.
+    document.getElementById('prototype-bar-controls').insertAdjacentHTML(
+      'afterbegin',
+      `<label for="scene-pace" class="sr-only">Weather pace (prototype)</label>
+      <select id="scene-pace" data-ui="select" class="h-9 w-48" title="Prototype only: the weather's density and speed on app pages">
+        ${Object.entries(PACES)
+          .map(([id, p]) => `<option value="${id}"${id === scenePace() ? ' selected' : ''}>${p.label}</option>`)
+          .join('')}
+      </select>`
+    )
+    document.getElementById('scene-pace').addEventListener('change', (event) => {
+      try {
+        localStorage.setItem(SCENE_VARIANTS_KEY, JSON.stringify({ pace: event.currentTarget.value }))
+      } catch {}
+      const { density, speed } = PACES[event.currentTarget.value]
+      sceneCtl.set({ pace: { density, speed } })
+    })
+    applyScene()
+  }
+
   // The season's tagline (seasons.js) at the foot of every page, over a fade into a deeper tint. On a
   // short page, `sticky` with a top offset of the viewport minus its height moves it down to the
   // bottom of the full-height body; a flex column would shrink the pages' `mx-auto` blocks.
@@ -408,8 +556,7 @@
     document.body.classList.add('min-h-dvh')
     main.insertAdjacentHTML(
       'afterend',
-      `<p id="page-tagline" class="pointer-events-none sticky top-[calc(100dvh-5.5rem)] h-[5.5rem] px-4 pb-5 pt-12 text-center text-sm text-muted-foreground"
-        style="background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--muted) 70%, transparent))"></p>`
+      `<p id="page-tagline" class="pointer-events-none sticky top-[calc(100dvh-5.5rem)] h-[5.5rem] px-4 pb-5 pt-12 text-center text-sm text-muted-foreground"></p>`
     )
     const update = () => (document.getElementById('page-tagline').textContent = seasons.tagline())
     update()

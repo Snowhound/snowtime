@@ -19,7 +19,7 @@ prototype, include its full absolute `file:///` URL so it can be opened directly
 | [prototype.css](prototype.css)           | Brand font and tokens (ahead of `src/styles.css`), shared styles |
 | [app-icon.js](app-icon.js)               | App icon concepts, header mark images, and the favicon      |
 | [app-frame.js](app-frame.js)             | App frame, user settings, icons, and markup helpers         |
-| [scene.js](scene.js)                     | Seasonal sign-in scene: background, tint, WebGL snow        |
+| [scene.js](scene.js)                     | Seasonal scene: background, tint, WebGL weather             |
 | [app-data.js](app-data.js)               | Shared fictional organization, generated entries, zone helpers |
 | Inline Lucide SVG paths                  | Icons, copied from `lucide-static` (pinned)                 |
 
@@ -29,6 +29,9 @@ Dependency order in `<head>`:
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
 <script src="prototype-theme.js"></script>
 <script src="ui.js"></script>
+<script src="app-icon.js"></script>
+<script src="seasons.js"></script>
+<script src="scene.js"></script> <!-- pages with the seasonal scene -->
 <script src="app-frame.js"></script> <!-- signed-in pages only -->
 <script src="app-data.js"></script> <!-- pages that need members, teams, projects -->
 <!-- view-specific <style type="text/tailwindcss"> -->
@@ -197,7 +200,7 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
 ## App frame
 
 [app-frame.js](app-frame.js) renders the signed-in chrome. Call
-`appFrame.mount({ page, title })` first in the page script. It inserts:
+`appFrame.mount({ page, title, scene })` first in the page script. It inserts:
 
 - A dashed **prototype bar** with the page title, the page's own controls (move them in with a
   `<div id="prototype-controls">`), and a role switcher (member, team lead, admin, owner).
@@ -212,6 +215,8 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
   the bottom of short pages without making the body a flex column, which would shrink the pages'
   `mx-auto` blocks. The season is the user's Season setting (see the Scenery menu below).
   Pages load [seasons.js](seasons.js) before `app-frame.js`.
+- With `scene: true`, the **seasonal scene** behind the page and a **Scenery** button in the
+  header; see [Seasonal scene in the app](#seasonal-scene-in-the-app).
 
 It also provides:
 
@@ -229,6 +234,44 @@ The role and organization live in the URL (`?role=admin&org=snowhound`) so they 
 between prototypes. Frame links with `data-frame-link="<href>"` keep them. Switching the
 organization changes the header only; page data stays the same fictional Snowhound data. The
 signed-in user is Anna Kask (`anna@snowhound.eu`), matching the invitation in `auth.html`.
+
+### Seasonal scene in the app
+
+Task 032 brings the sign-in page's scene (see [Seasonal scene and intro](#seasonal-scene-and-intro))
+to the signed-in pages, starting with the timer. A page opts in with
+`appFrame.mount({ scene: true })` and loads [scene.js](scene.js) before `app-frame.js`. The frame
+puts the scene in a fixed layer behind the page, from the same user settings as the sign-in page:
+the season's image in light and dark, the tint, and the weather.
+
+- **Scenery button**: the mountain button in the header, left of the avatar, opens the Scenery
+  popover: Season, Background with Strength and Surfaces under it, and Weather, as on the sign-in
+  page, plus "All scenery settings". The intro only plays on the sign-in page, so its switch and
+  Replay stay there and in Settings. Settings > Preferences groups all of them under
+  **Scenery**, for the sign-in page and the app. Between 768 and 1024 px the header drops the
+  "Snowtime" wordmark beside the mark, so the organization name still fits next to the button.
+- **Surfaces**: the frame sets `data-scene`, `data-scene-bg`, and `data-surfaces` on the body, and
+  [prototype.css](prototype.css) styles every `card` and every element with the `surface` class
+  (the timer bar, the timesheet's wrapper, the empty state) from them. Glass is `bg-card/70` with
+  a 24 px backdrop blur; solid keeps `bg-card`. Both get a soft shadow over the image. Popovers,
+  menus, and dialogs stay solid, so their text never sits on the picture. With the background
+  off, the page looks as before, with the weather over the page tint.
+- **Over the image**: the header is the page color at 82% with a blur (solid for solid surfaces),
+  the prototype bar is solid, page titles get a glow in the page color, and outline buttons a
+  page-colored fill. The tagline's fade goes into the page color and its text turns
+  `foreground`, as on the sign-in page.
+- **Weather**: behind real work, the sign-in page's weather felt busy, so app pages run it
+  **calm**: half the points and 70% of the speed. The prototype bar's "Weather" select switches
+  to the sign-in page's pace for comparison (`snowtime.prototypeAppScene`). As on the sign-in
+  page, it stops in hidden tabs and stays off with reduced motion; the popover's switch then says
+  why.
+
+The timer page checked on 2026-09-24 in Chrome at 1440, 850, and 390 px, light and dark, every
+season, every layout, glass and solid, full and dimmed, background off, and the running, long,
+and empty fixtures: entry rows, inline project menu, date popover, and the entry dialog stay
+readable; no horizontal scroll; no browser errors. With the long fixture, glass, and the weather
+on, frames held 16.7 ms (p95 16.8 ms) at 1440 × 900 and 2× scale in headless Chrome, the same as
+with the weather off. The weather stopped when the tab was hidden and restarted when shown. At
+768 px the organization name "Snowhound" is 14 px short and truncates.
 
 ### App icon
 
@@ -455,7 +498,7 @@ Two cards, with section links beside them from 1024 px:
 
 | Card        | Stored in         | Fields                                                         |
 | ----------- | ----------------- | -------------------------------------------------------------- |
-| Preferences | `user_settings`   | Language, time zone, week start, theme, timer layout, show summary; each saves on change |
+| Preferences | `user_settings`   | Language, time zone, week start, theme, timer layout, show summary, scenery; each saves on change |
 | Profile     | `user`, `account` | Name with "Save profile"; email read-only; sign-in methods      |
 
 Preferences come first because they change most often. Theme and timer layout moved from
@@ -553,6 +596,8 @@ Entries are grouped by their start day; splitting at midnight belongs to reports
 
 Omitted: overlap checks between entries, reports, persistence of entries.
 
+The page has the seasonal scene behind it; see [Seasonal scene in the app](#seasonal-scene-in-the-app).
+
 Checked in Chromium at 1440, 850, and 390 px, light and dark, all layouts with summary on and off:
 no horizontal page overflow, settings survive reload, dialog and inline validation and saving
 work, failed saves roll back, focus stays on the edited field across saves, the date popover
@@ -626,9 +671,9 @@ each, from the 2 to 2.5 MB PNGs).
   the image, 30 or 55% dark, 20 or 50% light, stronger toward the bottom) and Surfaces (glass,
   `bg-card/70` with a backdrop blur, or solid cards). Then the Weather switch, the Intro switch,
   and Replay intro. These are the user settings `sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`,
-  `sceneWeather`, and `sceneIntro`, shared with Settings > Preferences > Sign-in page, which lays
-  them out the same way. Signed out, the app would keep them on the device. Surfaces is named for
-  every card, so it can apply app-wide once other pages get a background.
+  `sceneWeather`, and `sceneIntro`, shared with Settings > Preferences > Scenery, which lays
+  them out the same way. Signed out, the app would keep them on the device. Surfaces applies to
+  every card, on the signed-in pages too (see [Seasonal scene in the app](#seasonal-scene-in-the-app)).
 - **Weather**: each season's effect, colored for its image in light and dark and for the plain
   page. The canvas blends with premultiplied alpha, so edges don't darken.
 
