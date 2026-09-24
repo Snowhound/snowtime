@@ -164,7 +164,7 @@
         float x = r1*2.0-1.0 + t*.02*(.6+z) + sin(swing) * mix(.03, .08, z) * u_res.y / u_res.x;
         x = -1.15 + mod(x + 1.15, 2.3);
         gl_Position = vec4(x, y, 0.0, 1.0);
-        gl_PointSize = u_dpr * mix(12.0, 30.0, z) * mix(.85, 1.15, r5);
+        gl_PointSize = u_dpr * mix(10.0, 26.0, z) * mix(.85, 1.15, r5);
         v_angle = r1*6.28 + t*mix(-.7, .7, r2) + cos(swing)*.6;
         v_flip = cos(t*mix(.7, 1.8, r4) + r3*6.28);
         v_alpha = mix(.5, .95, z);
