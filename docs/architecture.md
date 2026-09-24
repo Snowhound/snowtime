@@ -253,6 +253,27 @@ such as rate limiting.
   `CHECK`, so adding a value needs no table rebuild. The booleans (`show_summary` and the
   scene's switches) keep the usual 0/1 `CHECK`.
 
+## Seasonal scene
+
+The signed-in pages and the sign-in page show a landscape for the season behind the page, as
+`prototypes/README.md` describes in "Seasonal scene in the app".
+
+- Assets: each season has a light and a dark image as static WebP files in `public/backgrounds/`,
+  1920 and 3840 px wide, copied from `design/backgrounds/`. They are 140 to 650 KB each, so
+  they're files rather than bundled imports, and nothing loads until the page asks for one.
+- Loading (`src/components/scene-layer.tsx`, `photoWidth` in `src/lib/scene.ts`): the 3840 file
+  is for images that cover more than 2400 device pixels across (pixel ratio at most 2), and
+  screens under 768 px always get the 1920 file. The shown theme loads the 1920 file first and
+  swaps to the larger one once it has decoded; the other theme's 1920 file loads after that,
+  for the theme crossfade. Nothing loads while Background is off. The browser loads the images
+  after hydration, since only it knows the screen and a `system` theme.
+- Settings: the layer reads the session's settings, or the device's when signed out (see "User
+  settings"), so a change shows without a reload.
+- Surfaces: the frame around the page carries `data-scene-bg` and `data-surfaces`, which the
+  server renders, and `src/styles.css` styles `surface` elements, the header, and the text over
+  the image from them. Popovers, menus, and dialogs render into `<body>`, outside the frame, so
+  they stay solid.
+
 ## Internationalization
 
 - Languages: English (`en`, default) and Estonian (`et`). The UI translates with

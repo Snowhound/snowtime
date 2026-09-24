@@ -106,6 +106,11 @@ Work in this order, one commit or more per step, and check each in the dev app a
   so the navigation stays in reach down a long entry list; the prototypes' header scrolls away,
   and `prototypes/README.md` records the difference. Checked scrolled at 1440 and 390 px, light and
   dark: the cards scroll under the header's blur, and the organization menu opens above it.
+- 2026-09-25: Step 3 is done; `docs/architecture.md` records the scene's assets, loading, and
+  surfaces ("Seasonal scene"). Still waiting: the weather and the Weather hint's WebGL reasons
+  (step 4; the Weather switch saves but shows nothing yet), the season's tagline in the title row
+  and above the sign-in card (step 5; the sign-in page keeps its old line until then), and the
+  intro with Replay intro and "Replay it" (step 6).
 
 ## Acceptance criteria
 
