@@ -19,7 +19,8 @@ bun run db:verify            # only check that applied migrations are unchanged
    `.env.development`).
 4. Update `src/db/schema.ts` (and relations) by hand to match.
 5. `bun run db:drift` must report no changes.
-6. Until the DBML generator exists, update `datamodel/snowtime.dbml` too.
+6. `bun run datamodel:generate` to regenerate the diagram. Add a new table to a group in
+   `datamodel/notes.ts`, with its notes; the generator warns about tables in no group.
 
 Target another database by setting `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, e.g. in the
 gitignored `.env.local`. Never put tokens in tracked env files.

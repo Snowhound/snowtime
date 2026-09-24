@@ -1,8 +1,11 @@
 # Data model
 
-The database diagram. [`snowtime.dbml`](snowtime.dbml) is the source;
-[`snowtime.chartdb.json`](snowtime.chartdb.json) is generated from it for
-[ChartDB](https://chartdb.io), which runs locally in Docker. Never edit the JSON by hand.
+The database diagram, generated from the Drizzle schema. Never edit either file by hand:
+
+- [`snowtime.dbml`](snowtime.dbml) comes from `src/db/schema.ts` and
+  [`notes.ts`](notes.ts), written by [`generate-dbml.ts`](generate-dbml.ts).
+- [`snowtime.chartdb.json`](snowtime.chartdb.json) comes from the DBML, for
+  [ChartDB](https://chartdb.io), which runs locally in Docker.
 
 ## Viewing the model
 
@@ -18,24 +21,33 @@ diagram, so delete the old one after reimporting.
 
 ## Changing the model
 
-**Now (initial design):** the DBML is where the schema is designed.
+The SQL migrations are the source of truth ([`docs/migrations.md`](../docs/migrations.md)),
+and `db:drift` keeps `schema.ts` in line with them. This folder only documents the model.
 
-1. Edit `snowtime.dbml`.
-2. `bun run datamodel:build` (or `bun run datamodel` if ChartDB is not running).
-3. Reimport the JSON in ChartDB (step 2 above) and review.
-4. Commit the DBML and the regenerated JSON together.
+1. Change the schema through a migration and `schema.ts`.
+2. For a new table, add it to a group in `notes.ts`. Add notes for the table and for any
+   column whose name and type do not say enough.
+3. `bun run datamodel:generate`. It writes the DBML, then the ChartDB JSON.
+4. Commit both files with the migration. `bun run datamodel:check` fails if the DBML is
+   out of date.
 
-**After the first migration:** the SQL migrations are the source of truth (see
-[`docs/migrations.md`](../docs/migrations.md)), and this folder is documentation for
-browsing the model. The DBML will be regenerated from the Drizzle schema; until that
-generator exists, update the DBML by hand in the same change as each migration, then
-rebuild the JSON as above.
+The generator takes columns, types, defaults, keys, indexes and references from
+`schema.ts`. It also writes these notes itself, so `notes.ts` leaves them out:
+
+- ON DELETE rules
+- The `WHERE` clause of a partial index
+- The composite foreign key a column is part of. The diagram draws only the single-column
+  reference; for `(project_id, organization_id)` that is `project_id`.
+
+It warns about tables in no group, tables without a note, and notes for columns or
+indexes that no longer exist. `CHECK` constraints stay in column notes.
 
 dbdiagram.io reads `snowtime.dbml` directly, groups and colors included.
 
 The converter (`datamodel/dbml-to-chartdb.mjs`) understands a subset of DBML: single-line
 columns, inline `ref: >` references, `indexes` blocks, `TableGroup`, and single-quoted notes
-without apostrophes. Standalone `Ref:` lines are ignored.
+without apostrophes. The generator writes only that subset and rejects notes with an
+apostrophe.
 
 ## Conventions
 
@@ -56,8 +68,8 @@ without apostrophes. Standalone `Ref:` lines are ignored.
   `created_by`, `updated_at`, `updated_by`, `sys_deleted`. Link tables that are only
   inserted and deleted have `created_*` only; `sys_deleted` is on entities users delete.
   Rules and reasons: `docs/architecture.md`, "Data conventions".
-- Partial indexes and `CHECK` constraints are described in notes, since DBML cannot
-  express them; the migrations implement them.
+- DBML cannot express partial indexes or `CHECK` constraints, so notes describe them;
+  the migrations implement them.
 
 ## Decisions
 

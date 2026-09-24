@@ -177,7 +177,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE."
         },
         {
           "id": "t1f2",
@@ -375,7 +375,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE."
         },
         {
           "id": "t2f2",
@@ -1087,7 +1087,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE."
         },
         {
           "id": "t6f2",
@@ -1104,7 +1104,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE."
         },
         {
           "id": "t6f3",
@@ -1212,7 +1212,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE."
         },
         {
           "id": "t7f2",
@@ -1355,7 +1355,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE."
         },
         {
           "id": "t8f2",
@@ -1372,7 +1372,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE."
         },
         {
           "id": "t8f3",
@@ -1497,7 +1497,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE."
         },
         {
           "id": "t9f2",
@@ -1548,7 +1548,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Team joined on acceptance, if any."
+          "comments": "Team joined on acceptance, if any. ON DELETE SET NULL."
         },
         {
           "id": "t9f5",
@@ -1599,7 +1599,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "ON DELETE CASCADE."
         },
         {
           "id": "t9f8",
@@ -1644,8 +1644,8 @@
       "id": "t10",
       "name": "user_settings",
       "schema": "main",
-      "x": 2268,
-      "y": 314,
+      "x": 1984,
+      "y": 64,
       "fields": [
         {
           "id": "t10f0",
@@ -2032,7 +2032,7 @@
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
-          "comments": "Partial: WHERE sys_deleted = 0, so a deleted project frees its name."
+          "comments": "Partial: WHERE sys_deleted = 0. A deleted project frees its name."
         },
         {
           "id": "t11i1",
@@ -2076,7 +2076,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": null
+          "comments": "Composite FK (project_id, organization_id) to project (id, organization_id)."
         },
         {
           "id": "t12f1",
@@ -2093,7 +2093,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "ON DELETE CASCADE: deleting a team (Better Auth deletes rows) drops its assignments."
+          "comments": "Deleting a team (Better Auth deletes rows) drops its assignments. Composite FK (team_id, organization_id) to team (id, organization_id). ON DELETE CASCADE."
         },
         {
           "id": "t12f2",
@@ -2110,7 +2110,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Tenant key. Composite FKs (project_id, organization_id) to project and (team_id, organization_id) to team make it equal the organization of both."
+          "comments": "Tenant key. The composite foreign keys to project and team make it equal the organization of both."
         },
         {
           "id": "t12f3",
@@ -2184,8 +2184,8 @@
       "id": "t13",
       "name": "time_entry",
       "schema": "main",
-      "x": 1984,
-      "y": 64,
+      "x": 2268,
+      "y": 314,
       "fields": [
         {
           "id": "t13f0",
@@ -2253,7 +2253,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Optional. Composite FK (project_id, organization_id) to project keeps it in the same organization."
+          "comments": "Optional. Keeps the entry in the organization of its project. Composite FK (project_id, organization_id) to project (id, organization_id)."
         },
         {
           "id": "t13f4",

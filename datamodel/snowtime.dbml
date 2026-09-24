@@ -1,3 +1,6 @@
+// Generated from src/db/schema.ts and datamodel/notes.ts by datamodel/generate-dbml.ts.
+// Do not edit: run `bun run datamodel:generate`.
+
 Project Snowtime {
   database_type: 'SQLite'
   Note: '''
@@ -8,7 +11,7 @@ Project Snowtime {
   '''
 }
 
-// --- Auth (Better Auth core) -----------------------------------------------------------
+// --- Auth (Better Auth core and passkey plugin) ----------------------------------------
 
 Table user [note: 'Better Auth user. One row per human, shared across organizations.'] {
   id text [pk, note: 'UUIDv7.']
@@ -22,7 +25,7 @@ Table user [note: 'Better Auth user. One row per human, shared across organizati
 
 Table session [note: 'Better Auth session. Carries the active organization and team, which every server function reads to scope its queries.'] {
   id text [pk]
-  user_id text [not null, ref: > user.id]
+  user_id text [not null, ref: > user.id, note: 'ON DELETE CASCADE.']
   token text [not null, unique, note: 'Session token held in the cookie.']
   expires_at integer [not null, note: 'Epoch ms, UTC.']
   ip_address text
@@ -39,7 +42,7 @@ Table session [note: 'Better Auth session. Carries the active organization and t
 
 Table account [note: 'Better Auth credential or linked provider. Email/password sign-in stores the password hash here.'] {
   id text [pk]
-  user_id text [not null, ref: > user.id]
+  user_id text [not null, ref: > user.id, note: 'ON DELETE CASCADE.']
   account_id text [not null, note: 'Identifier at the provider; equals user_id for the credential provider.']
   provider_id text [not null, note: 'credential, or an OAuth provider id.']
   access_token text
@@ -88,7 +91,7 @@ Table verification [note: 'Better Auth one-time values: email verification, pass
   }
 }
 
-// --- Tenancy (Better Auth organization plugin, teams enabled) ---------------------------
+// --- Tenancy (Better Auth organization plugin, teams enabled) --------------------------
 
 Table organization [note: 'Tenant. Every app-owned table carries organization_id and every query filters by it.'] {
   id text [pk]
@@ -101,8 +104,8 @@ Table organization [note: 'Tenant. Every app-owned table carries organization_id
 
 Table member [note: 'A user in an organization. A user can be a member of several organizations.'] {
   id text [pk]
-  organization_id text [not null, ref: > organization.id]
-  user_id text [not null, ref: > user.id]
+  organization_id text [not null, ref: > organization.id, note: 'ON DELETE CASCADE.']
+  user_id text [not null, ref: > user.id, note: 'ON DELETE CASCADE.']
   role text [not null, default: 'member', note: 'owner, admin, member (plugin defaults). No CHECK: the plugin can store several roles comma-separated.']
   created_at integer [not null]
 
@@ -114,7 +117,7 @@ Table member [note: 'A user in an organization. A user can be a member of severa
 
 Table team [note: 'A group of members within an organization. Groups people for access and reporting; it owns no data.'] {
   id text [pk]
-  organization_id text [not null, ref: > organization.id]
+  organization_id text [not null, ref: > organization.id, note: 'ON DELETE CASCADE.']
   name text [not null]
   member_count integer [not null, default: 0, note: 'Maintained by Better Auth when members join or leave.']
   created_at integer [not null]
@@ -128,8 +131,8 @@ Table team [note: 'A group of members within an organization. Groups people for 
 
 Table team_member [note: 'A user in a team. A member can be in several teams of the same organization.'] {
   id text [pk]
-  team_id text [not null, ref: > team.id]
-  user_id text [not null, ref: > user.id]
+  team_id text [not null, ref: > team.id, note: 'ON DELETE CASCADE.']
+  user_id text [not null, ref: > user.id, note: 'ON DELETE CASCADE.']
   role text [not null, default: 'member', note: 'App-managed. CHECK: lead, member. A lead reads and reports on the time of the team. Better Auth 1.7 has no additional fields on team members, so it never reads or writes this column; new rows get the default.']
   membership_key text [unique, note: 'Better Auth dedupe key, SHA-256 of team_id and user_id.']
   created_at integer
@@ -142,13 +145,13 @@ Table team_member [note: 'A user in a team. A member can be in several teams of 
 
 Table invitation [note: 'Pending invitation to an organization, optionally into a team.'] {
   id text [pk]
-  organization_id text [not null, ref: > organization.id]
+  organization_id text [not null, ref: > organization.id, note: 'ON DELETE CASCADE.']
   email text [not null, note: 'Invitee address, lowercased.']
   role text [note: 'Organization role granted on acceptance.']
-  team_id text [ref: > team.id, note: 'Team joined on acceptance, if any.']
+  team_id text [ref: > team.id, note: 'Team joined on acceptance, if any. ON DELETE SET NULL.']
   status text [not null, default: 'pending', note: 'pending, accepted, rejected, canceled.']
   expires_at integer [not null]
-  inviter_id text [not null, ref: > user.id]
+  inviter_id text [not null, ref: > user.id, note: 'ON DELETE CASCADE.']
   created_at integer [not null]
 
   indexes {
@@ -187,15 +190,15 @@ Table project [note: 'Owned by the organization. Visible to the whole organizati
   sys_deleted integer [not null, default: 0, note: 'Audit. Logical delete, CHECK 0 or 1. Deleted rows are excluded everywhere, reports included.']
 
   indexes {
-    (organization_id, name) [unique, note: 'Partial: WHERE sys_deleted = 0, so a deleted project frees its name.']
+    (organization_id, name) [unique, note: 'Partial: WHERE sys_deleted = 0. A deleted project frees its name.']
     (id, organization_id) [unique, note: 'Target of composite foreign keys, so rows pointing at a project cannot name another organization.']
   }
 }
 
 Table project_team [note: 'Assigns a project to a team. A project with no rows here is available to everyone in the organization. Rows are inserted and deleted, never updated, so only created_* audit columns.'] {
-  project_id text [not null, ref: > project.id]
-  team_id text [not null, ref: > team.id, note: 'ON DELETE CASCADE: deleting a team (Better Auth deletes rows) drops its assignments.']
-  organization_id text [not null, ref: > organization.id, note: 'Tenant key. Composite FKs (project_id, organization_id) to project and (team_id, organization_id) to team make it equal the organization of both.']
+  project_id text [not null, ref: > project.id, note: 'Composite FK (project_id, organization_id) to project (id, organization_id).']
+  team_id text [not null, ref: > team.id, note: 'Deleting a team (Better Auth deletes rows) drops its assignments. Composite FK (team_id, organization_id) to team (id, organization_id). ON DELETE CASCADE.']
+  organization_id text [not null, ref: > organization.id, note: 'Tenant key. The composite foreign keys to project and team make it equal the organization of both.']
   created_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Epoch ms, set by the database.']
   created_by text [not null, ref: > user.id, note: 'Audit. Acting user, set by the app per request.']
 
@@ -209,7 +212,7 @@ Table time_entry [note: 'A span of tracked time. A row with stopped_at null is t
   id text [pk, note: 'UUIDv7, generated on the client so optimistic updates keep a stable key.']
   organization_id text [not null, ref: > organization.id]
   user_id text [not null, ref: > user.id, note: 'Whose time this is. May differ from created_by when an admin adds an entry for someone.']
-  project_id text [ref: > project.id, note: 'Optional. Composite FK (project_id, organization_id) to project keeps it in the same organization.']
+  project_id text [ref: > project.id, note: 'Optional. Keeps the entry in the organization of its project. Composite FK (project_id, organization_id) to project (id, organization_id).']
   description text [not null, default: '', note: 'What was worked on.']
   started_at integer [not null, note: 'Epoch ms, UTC.']
   stopped_at integer [note: 'Epoch ms, UTC. CHECK stopped_at > started_at. Null while running.']
@@ -244,8 +247,8 @@ TableGroup tenancy [color: #4E79A7] {
 }
 
 TableGroup tracking [color: #59A14F] {
-  time_entry
+  user_settings
   project
   project_team
-  user_settings
+  time_entry
 }
