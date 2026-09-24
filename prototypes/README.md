@@ -20,6 +20,7 @@ prototype, include its full absolute `file:///` URL so it can be opened directly
 | [app-icon.js](app-icon.js)               | App icon concepts, header mark images, and the favicon      |
 | [app-frame.js](app-frame.js)             | App frame, user settings, icons, and markup helpers         |
 | [scene.js](scene.js)                     | Seasonal scene: background, tint, WebGL weather             |
+| [intro.js](intro.js)                     | The seasonal intro over the scene, and when it plays        |
 | [app-data.js](app-data.js)               | Shared fictional organization, generated entries, zone helpers |
 | Inline Lucide SVG paths                  | Icons, copied from `lucide-static` (pinned)                 |
 
@@ -32,6 +33,7 @@ Dependency order in `<head>`:
 <script src="app-icon.js"></script>
 <script src="seasons.js"></script>
 <script src="scene.js"></script> <!-- pages with the seasonal scene -->
+<script src="intro.js"></script> <!-- pages with the seasonal scene -->
 <script src="app-frame.js"></script> <!-- signed-in pages only -->
 <script src="app-data.js"></script> <!-- pages that need members, teams, projects -->
 <!-- view-specific <style type="text/tailwindcss"> -->
@@ -692,22 +694,26 @@ from navigation:
 - **Scene**: it fills the page behind the card. The light and dark images show the same view at
   another time of day, so a theme change only crossfades them; a slight zoom on the shown image
   made the mountains move and was removed.
-- **Intro**: about 13 seconds, always dark. It opens on the weather alone over the page color,
-  shows the first line, pauses, fades the background in (over 2.6 s), pauses again, and then
-  shows the other lines, each once the one before has had time to be read. The last line ("Sign
-  in and get it done!") comes after a longer beat, eases in more slowly, and stays for 3 seconds.
-  Then the page rises into place and the chosen theme returns. The intro always shows the weather
-  and the background, even when they're off for the page; the page follows the switches once it
-  appears. Each season has its own lines and colors, from [seasons.js](seasons.js) (see
+- **Intro**: about 13 seconds, always dark, from [intro.js](intro.js), which the signed-in pages
+  share (see [Seasonal scene in the app](#seasonal-scene-in-the-app)). It opens on the weather
+  alone over the page color, shows the first line, pauses, fades the background in (over 2.6 s),
+  pauses again, and then shows the other lines, each once the one before has had time to be read.
+  The last line ("Sign in and get it done!") comes after a longer beat, eases in more slowly, and
+  stays for 3 seconds. Then the page rises into place and the chosen theme returns. The intro
+  always shows the weather and the background, even when they're off for the page; the page
+  follows the switches once it appears. At the start, the image, the page, and the theme switch
+  at once: a replay with the background on used to fade the image out as the black lifted, so it
+  flashed. Each season has its own lines and colors, from [seasons.js](seasons.js) (see
   "Seasonal copy" below): white and ice in winter, fresh green and meltwater teal in spring,
   firefly yellow and green in summer, and the leaves' amber and rust in autumn, each on the
   headline and the last line. On a first visit to this browser, the intro plays dark in any
   system theme, and after it the page keeps the background (on by default) and follows the system
   theme. When the intro is due, a small script in `<head>` paints the page black until it starts,
-  so a light-mode visitor sees no flash of the light page first. It plays on the first visit to this browser
-  (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay intro plays it any
-  time. **Skip intro** or Escape ends it; the rest of the page
-  is `inert` while it plays. With reduced motion it doesn't play, and the snow stays off.
+  so a light-mode visitor sees no flash of the light page first. It plays on the first visit to
+  this browser (`snowtime.introSeen` in `localStorage`) unless the Intro switch is off; Replay
+  intro plays it any time. **Skip intro** or Escape ends it, and focus returns to the Scenery
+  button; the rest of the page is `inert` while it plays. With reduced motion it doesn't play,
+  the snow stays off, and the Intro switch and Replay are disabled, the switch's hint saying why.
 - **Scenery menu** (the mountain button, top right): Season (Auto, which follows the month and
   names the current season, or winter, spring, summer, or autumn), then the Background switch, with two options
   under it that apply only while it's on: Strength (dimmed, the default, or full: how much page

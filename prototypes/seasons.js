@@ -1,8 +1,9 @@
 // Seasonal copy (task 031): the intro's four lines per season, whose first two are the tagline on
-// every page, plus alternates and timesheet-period lines that the app may rotate in later, and the
-// intro's text colors. `titleLight` is the headline's hue darkened for the tagline on light pages
-// (at least 5:1 on the page, tint, and muted colors). The prototypes show each season's `lines`
-// only. Load before scene.js and app-frame.js.
+// every page and whose last becomes a signed-in sign-off on the signed-in pages, plus alternates
+// and timesheet-period lines that the app may rotate in later, and the intro's text colors.
+// `titleLight` is the headline's hue darkened for the tagline on light pages (at least 5:1 on the
+// page, tint, and muted colors). The prototypes show each season's `lines` only. Load before
+// scene.js, intro.js, and app-frame.js.
 //
 // The season is the `sceneSeason` user setting: 'auto' (by month) or one of the four.
 //
@@ -11,6 +12,8 @@
 ;(() => {
   const SETTINGS_KEY = 'snowtime.prototypeSettings'
   const SIGN_OFF = 'Sign in and get it done!'
+  // The intro's last line on the signed-in pages, which answers the sign-in page's.
+  const SIGNED_IN_SIGN_OFF = "You're in. Get it done!"
   const SEASONS = {
     winter: {
       label: 'Winter',
@@ -64,6 +67,12 @@
     }
   }
   const current = () => (chosen() === 'auto' ? byMonth() : chosen())
+  // The intro's four lines; signed in, the last is the signed-in sign-off.
+  function introLines(season = current(), signedIn = false) {
+    const lines = [...SEASONS[season].lines]
+    if (signedIn) lines[3] = SIGNED_IN_SIGN_OFF
+    return lines
+  }
   const tagline = (season = current()) => `${SEASONS[season].lines[0]} ${SEASONS[season].lines[1]}`
   // The tagline's two lines in the intro's colors, for an element with the `season-tagline` class
   // (prototype.css): the first in the headline color, the second in the second line's.
@@ -73,5 +82,5 @@
     return `<span class="tagline-1" style="--tagline-title: ${colors.title}; --tagline-title-light: ${colors.titleLight}">${esc(lines[0])}</span> <span class="tagline-2" style="--tagline-sub: ${colors.sub}">${esc(lines[1])}</span>`
   }
 
-  window.seasons = { SEASONS, PERIODS, SETTINGS_KEY, byMonth, chosen, current, tagline, taglineHtml }
+  window.seasons = { SEASONS, PERIODS, SETTINGS_KEY, SIGN_OFF, SIGNED_IN_SIGN_OFF, byMonth, chosen, current, introLines, tagline, taglineHtml }
 })()

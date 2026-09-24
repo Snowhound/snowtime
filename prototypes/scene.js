@@ -1,17 +1,17 @@
-// Seasonal scene for the sign-in page: a background image per season and theme, a tint that keeps
-// text readable, and a WebGL weather effect per season. Winter's snow comes from
-// design/backgrounds/snowtime_login_intro_with_backgrounds.html; the others follow its pattern.
+// Seasonal scene behind the sign-in page and the signed-in pages: a background image per season
+// and theme, a tint that keeps text readable, and a WebGL weather effect per season. Winter's snow
+// comes from design/backgrounds/snowtime_login_intro_with_backgrounds.html; the others follow its
+// pattern.
 // `scene.create()` returns a controller; `controller.el` is the element to place.
 //
 // The user's choices are settings in the shared prototype settings key (app-frame.js):
 // `sceneSeason` ('auto' or a season, see seasons.js), `sceneBackground`, `sceneStrength` ('full',
-// 'dimmed'), `sceneWeather`, and `sceneIntro` (play it
-// on the first visit), plus the app-wide `surfaces` ('glass', 'solid'): whether cards let a
-// background show through. `scene.settings` reads and writes them for auth.html, which has no frame.
+// 'dimmed'), `sceneWeather`, and `sceneIntro` (whether the intro plays on its own; see intro.js),
+// plus the app-wide `surfaces` ('glass', 'solid'): whether cards let a background show through.
+// `scene.settings` reads and writes them for auth.html, which has no frame.
 ;(() => {
   const BASE = '../design/backgrounds/'
   const SETTINGS_KEY = 'snowtime.prototypeSettings'
-  const INTRO_SEEN_KEY = 'snowtime.introSeen'
   const DEFAULTS = { sceneSeason: 'auto', sceneBackground: true, sceneStrength: 'dimmed', surfaces: 'glass', sceneWeather: true, sceneIntro: true }
   // `weather` names the effect for light and dark pages. The intro's lines and the tagline are in
   // seasons.js.
@@ -68,25 +68,6 @@
       } catch {}
     },
   }
-  const intro = {
-    seen() {
-      try {
-        return localStorage.getItem(INTRO_SEEN_KEY) === '1'
-      } catch {
-        return false
-      }
-    },
-    markSeen() {
-      try {
-        localStorage.setItem(INTRO_SEEN_KEY, '1')
-      } catch {}
-    },
-    // Whether the intro plays on this visit.
-    due() {
-      return !reducedMotion.matches && settings.get().sceneIntro && !intro.seen()
-    },
-  }
-
   const style = document.createElement('style')
   style.textContent = `
     .scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: var(--background); transition: background-color .6s ease; }
@@ -553,5 +534,5 @@
     }
   }
 
-  window.scene = { create, settings, intro, SEASONS, EFFECTS, STRENGTHS, DEFAULTS, reducedMotion }
+  window.scene = { create, settings, SEASONS, EFFECTS, STRENGTHS, DEFAULTS, reducedMotion }
 })()

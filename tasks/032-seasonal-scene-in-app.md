@@ -48,6 +48,8 @@ Surfaces was named for every card so it can apply app-wide.
   turns solid only while the timesheet scrolls sideways.
 - 2026-09-25: Replay intro no longer flashes the background: at the intro's start the image, the
   page, and the theme switch at once instead of fading out behind the lifting black.
+- 2026-09-25: The intro moved from `auth.html` to `prototypes/intro.js`, with its first-visit
+  memory, so the app frame can play it too.
 
 ## Intro in the app
 

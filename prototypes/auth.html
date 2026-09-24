@@ -10,18 +10,11 @@
     <script src="app-icon.js"></script>
     <script src="seasons.js"></script>
     <script src="scene.js"></script>
+    <script src="intro.js"></script>
     <!-- When the intro will play, the first paint is its black instead of the page in the system
          theme, so a light-mode visitor sees no flash before the intro starts. -->
-    <style>
-      html.intro-pending {
-        background: #05070a;
-      }
-      html.intro-pending body {
-        visibility: hidden;
-      }
-    </style>
     <script>
-      if (new URLSearchParams(location.search).get('intro') === 'replay' || scene.intro.due()) document.documentElement.classList.add('intro-pending')
+      if (new URLSearchParams(location.search).get('intro') === 'replay' || intro.due('sign-in')) intro.hold()
     </script>
     <style type="text/tailwindcss">
       .auth-form {
@@ -88,114 +81,6 @@
         --background: #060c14;
         --card: #0d1929;
       }
-
-      /* Intro, from design/backgrounds/snowtime_login_intro_with_backgrounds.html. */
-      .intro {
-        position: fixed;
-        inset: 0;
-        z-index: 60;
-        display: grid;
-        place-items: center;
-        transition: opacity 1.05s ease;
-        background: linear-gradient(180deg, rgb(0 0 0 / 0.4), rgb(0 0 0 / 0.28));
-      }
-      .intro.intro-done {
-        opacity: 0;
-        pointer-events: none;
-      }
-      .intro-fade {
-        position: absolute;
-        inset: 0;
-        background: #05070a;
-        transition: opacity 1.1s ease;
-      }
-      .intro-fade.reveal {
-        opacity: 0;
-      }
-      .intro-block {
-        position: relative;
-        width: min(760px, calc(100vw - 48px));
-        text-align: center;
-        transform: translateY(-16px);
-      }
-      .intro-line {
-        margin: 0;
-        opacity: 0;
-        transform: translateY(16px);
-        filter: blur(10px);
-        text-wrap: balance;
-        transition: opacity 0.85s ease, transform 0.85s ease, filter 0.85s ease;
-        text-shadow: 0 4px 28px rgb(0 0 0 / 0.45);
-      }
-      .intro-line.show {
-        opacity: 1;
-        transform: none;
-        filter: none;
-      }
-      .intro-line-1 {
-        font-size: clamp(34px, 5vw, 58px);
-        line-height: 1.05;
-        letter-spacing: -0.04em;
-        font-weight: 720;
-        color: var(--intro-title, #f4f8fd);
-      }
-      .intro-line-2 {
-        margin-top: 8px;
-        font-size: clamp(22px, 3vw, 36px);
-        line-height: 1.12;
-        letter-spacing: -0.03em;
-        font-weight: 610;
-        color: var(--intro-sub, #e6eef8);
-      }
-      .intro-line-3 {
-        margin-top: 24px;
-        font-size: clamp(14px, 1.65vw, 19px);
-        line-height: 1.52;
-        font-weight: 450;
-        color: rgb(255 255 255 / 0.78);
-      }
-      .intro-line-4 {
-        margin-top: 12px;
-        transition-duration: 1.2s;
-        font-size: clamp(13px, 1.45vw, 16px);
-        line-height: 1.5;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-        color: var(--intro-accent, #b4d5f4);
-      }
-      .intro-skip {
-        position: absolute;
-        top: 18px;
-        right: 18px;
-      }
-      /* The page waits under the intro, then rises into place. */
-      .auth-shell,
-      #auth-header,
-      .page-tagline {
-        transition: opacity 0.95s ease, transform 0.95s cubic-bezier(0.2, 0.72, 0.2, 1), filter 0.95s ease;
-      }
-      body[data-intro] .auth-shell,
-      body[data-intro] #auth-header,
-      body[data-intro] .page-tagline {
-        opacity: 0;
-        transform: translateY(18px) scale(0.988);
-        filter: blur(12px);
-      }
-      /* The background fades in slowly during the intro. */
-      body[data-intro] .scene-photo {
-        transition-duration: 2.6s;
-      }
-      .intro-cut :is(.scene, .scene *, .auth-shell, #auth-header, .page-tagline) {
-        transition: none !important;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .intro,
-        .intro *,
-        .auth-shell,
-        #auth-header {
-          transition: none !important;
-        }
-      }
     </style>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -257,17 +142,6 @@
     </svg>
 
     <div id="scene-page" class="fixed inset-0"></div>
-
-    <section id="intro" class="intro" aria-label="Intro" hidden>
-      <div class="intro-fade"></div>
-      <div class="intro-block">
-        <p class="intro-line intro-line-1">Winter is coming.</p>
-        <p class="intro-line intro-line-2">So is the end of the month.</p>
-        <p class="intro-line intro-line-3">Before the snow gets deeper, fill in your timesheet.</p>
-        <p class="intro-line intro-line-4">Sign in and get it done!</p>
-      </div>
-      <button type="button" id="skip-intro" data-ui="button" data-variant="outline" data-size="sm" class="intro-skip border-white/20 bg-black/40 text-white backdrop-blur hover:bg-black/60 hover:text-white">Skip intro</button>
-    </section>
 
     <header id="auth-header" class="relative border-b bg-background py-3">
       <div class="mx-auto flex max-w-6xl flex-col gap-3 px-4 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
@@ -385,9 +259,9 @@
           <div class="flex items-center justify-between gap-4">
             <div class="grid gap-0.5">
               <span data-ui="label" id="scene-intro-label">Intro</span>
-              <span class="text-xs text-muted-foreground">Plays on your first visit.</span>
+              <span class="text-xs text-muted-foreground" id="scene-intro-hint">Plays on your first visit.</span>
             </div>
-            <button type="button" id="scene-intro-switch" role="switch" aria-checked="true" aria-labelledby="scene-intro-label" data-ui="switch"><span data-ui="switch-thumb"></span></button>
+            <button type="button" id="scene-intro-switch" role="switch" aria-checked="true" aria-labelledby="scene-intro-label" aria-describedby="scene-intro-hint" data-ui="switch"><span data-ui="switch-thumb"></span></button>
           </div>
           <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-replay-intro>
             <svg class="prototype-icon" aria-hidden="true"><use href="#icon-rotate-ccw" /></svg>Replay intro
@@ -738,20 +612,22 @@
           return defaults
         }
       })()
-      const introEl = document.getElementById('intro')
-      const introLines = [...introEl.querySelectorAll('.intro-line')]
       const sceneCtl = scene.create({ season: seasons.current() })
       document.getElementById('scene-page').prepend(sceneCtl.el)
+      // The intro (intro.js) always plays dark, then hands over to the chosen theme as the page
+      // appears. While it plays, the scene shows the weather and the intro's background.
+      const introPlayer = intro.create({
+        scene: sceneCtl,
+        page: () => [document.getElementById('auth-header'), document.querySelector('.auth-shell'), document.querySelector('.page-tagline')],
+        onChange: applyScene,
+        restoreTheme: setDark,
+      })
 
-      // During the intro the scene ignores the user's switches: the weather shows throughout, and
-      // the background fades in partway (`introBackground`).
-      let introBackground = false
       function applyScene() {
         const user = scene.settings.get()
-        const intro = !!document.body.dataset.intro
-        const background = intro ? introBackground : user.sceneBackground
-        sceneCtl.set({ season: seasons.current(), strength: user.sceneStrength, background, weather: intro || user.sceneWeather })
-        document.body.dataset.sceneBg = background ? 'on' : 'off'
+        const shown = introPlayer.scene({ season: seasons.current(), strength: user.sceneStrength, background: user.sceneBackground, weather: user.sceneWeather })
+        sceneCtl.set(shown)
+        document.body.dataset.sceneBg = shown.background ? 'on' : 'off'
         document.body.dataset.card = user.surfaces
         document.body.dataset.tagline = variants.tagline
         document.documentElement.dataset.tone = variants.tone
@@ -771,12 +647,16 @@
         const seasonSelect = document.getElementById('scene-season')
         seasonSelect.value = user.sceneSeason
         seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
-        // The season's intro lines and colors, and the first two lines as the tagline.
-        seasons.SEASONS[season].lines.forEach((line, i) => (introLines[i].textContent = line))
-        for (const [name, color] of Object.entries(seasons.SEASONS[season].colors)) introEl.style.setProperty(`--intro-${name}`, color)
+        // The season's first two intro lines as the tagline.
         document.querySelectorAll('.card-tagline, .tagline-in-card, .page-tagline').forEach((el) => (el.textContent = seasons.tagline(season)))
         document.querySelector('.top-tagline').innerHTML = seasons.taglineHtml(season)
-        ui.setSwitch(document.getElementById('scene-intro-switch'), user.sceneIntro)
+        // With reduced motion the intro doesn't play, and the switch and Replay say so.
+        const still = intro.reducedMotion.matches
+        const introSwitch = document.getElementById('scene-intro-switch')
+        ui.setSwitch(introSwitch, user.sceneIntro)
+        introSwitch.disabled = still
+        document.getElementById('scene-intro-hint').textContent = still ? 'Off while your device reduces motion.' : 'Plays on your first visit.'
+        document.querySelectorAll('[data-replay-intro]').forEach((b) => (b.disabled = still))
         document.querySelectorAll('[data-variant-key]').forEach((el) => (el.value = variants[el.dataset.variantKey]))
       }
 
@@ -811,73 +691,16 @@
       // Settings changed in another tab, e.g. the signed-in Settings page.
       addEventListener('storage', (event) => event.key === appIcon.SETTINGS_KEY && applyScene())
 
-      // The intro always plays dark, then hands over to the chosen theme as the page appears.
-      let introTimers = []
-      let introDark = false
+      intro.reducedMotion.addEventListener('change', applyScene)
       function playIntro() {
-        introTimers.forEach(clearTimeout)
-        introTimers = []
         document.getElementById('scene-menu').hidePopover?.()
-        if (!document.body.dataset.intro) introDark = document.documentElement.classList.contains('dark')
-        // It opens on the weather alone: the image, the page, and the theme change at once instead
-        // of fading out, which let the image show as the black lifted.
-        document.documentElement.classList.add('intro-cut', 'dark')
-        document.body.dataset.intro = 'playing'
-        introBackground = false
-        applyScene()
-        sceneCtl.preload('dark')
-        getComputedStyle(document.body).opacity
-        document.documentElement.classList.remove('intro-cut')
-        introEl.hidden = false
-        document.documentElement.classList.remove('intro-pending')
-        introEl.classList.remove('intro-done')
-        introEl.querySelector('.intro-fade').classList.remove('reveal')
-        introLines.forEach((l) => l.classList.remove('show'))
-        for (const el of [document.getElementById('auth-header'), document.querySelector('.auth-shell')]) el.inert = true
-        document.getElementById('skip-intro').focus()
-        const at = (ms, fn) => introTimers.push(setTimeout(fn, ms))
-        // The weather alone, the first line, a pause, the background fades in, a pause, then the
-        // other lines, each after the one before has had time to be read. The last one gets a
-        // longer beat before it and stays longest.
-        at(300, () => introEl.querySelector('.intro-fade').classList.add('reveal'))
-        ;[1900, 5400, 7700, 10200].forEach((ms, i) => at(ms, () => introLines[i].classList.add('show')))
-        at(3100, () => {
-          introBackground = true
-          applyScene()
-        })
-        at(13300, revealPage)
-        at(13500, () => introEl.classList.add('intro-done'))
-        at(13850, () => setDark(introDark))
-        at(14950, endIntro)
+        introPlayer.play({ focus: document.getElementById('scene-button') })
       }
-      function revealPage() {
-        delete document.body.dataset.intro
-        for (const el of [document.getElementById('auth-header'), document.querySelector('.auth-shell')]) el.inert = false
-        applyScene()
-      }
-      function endIntro() {
-        introEl.hidden = true
-        scene.intro.markSeen()
-      }
-      function skipIntro() {
-        if (!document.body.dataset.intro) return
-        introTimers.forEach(clearTimeout)
-        introTimers = []
-        introEl.querySelector('.intro-fade').classList.add('reveal')
-        introEl.classList.add('intro-done')
-        setDark(introDark)
-        revealPage()
-        introTimers.push(setTimeout(endIntro, 1100))
-        scene.intro.markSeen()
-        document.getElementById('scene-button').focus({ preventScroll: true })
-      }
-      document.getElementById('skip-intro').addEventListener('click', skipIntro)
-      addEventListener('keydown', (event) => event.key === 'Escape' && skipIntro())
       document.querySelectorAll('[data-replay-intro]').forEach((b) => b.addEventListener('click', playIntro))
 
       applyScene()
       // ?intro=replay (from Settings) plays it regardless of the setting.
-      if (new URLSearchParams(location.search).get('intro') === 'replay' || scene.intro.due()) playIntro()
+      if (new URLSearchParams(location.search).get('intro') === 'replay' || intro.due('sign-in')) playIntro()
 
       ui.ready.then(() => go('sign-in'))
     </script>
