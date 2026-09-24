@@ -265,7 +265,9 @@ the season's image in light and dark, the tint, and the weather.
 - **Settings**: the header's Appearance popover holds the scene settings (see
   [App frame](#app-frame)). Settings > Preferences groups them under **Scenery**, for the
   sign-in page and the app. Defaults: system theme, glass surfaces, and dimmed strength.
-- **Surfaces**: the frame sets `data-scene`, `data-scene-bg`, and `data-surfaces` on the body, and
+- **Surfaces**: the frame sets `data-scene`, `data-scene-bg`, and `data-surfaces` on the body (the
+  app sets them on the frame's wrapper, which the server renders, and popovers and dialogs render
+  outside it), and
   [prototype.css](prototype.css) styles every `card` and every element with the `surface` class
   (the timer bar, the timesheet's wrapper, the empty state) from them. Glass is `bg-card/70` with
   a 24 px backdrop blur; solid keeps `bg-card`. Both get a soft shadow over the image. Popovers,

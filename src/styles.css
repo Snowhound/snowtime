@@ -228,6 +228,68 @@ code {
   }
 }
 
+/* The seasonal scene (src/components/scene-layer.tsx) behind a frame that is `isolate`. With the
+   background off, its base is the page tint the frames had before, bg-muted/40. The light and dark
+   images are the same view at another time of day, so a theme change only crossfades them; a
+   scale would make the mountains move. */
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--muted) 40%, var(--background));
+  --scene-tint: var(--scene-tint-light);
+}
+.dark .scene {
+  --scene-tint: var(--scene-tint-dark);
+}
+.scene > * {
+  position: absolute;
+  inset: 0;
+}
+.scene-photo {
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+.scene[data-background='on'] .scene-photo-light {
+  opacity: 1;
+}
+.dark .scene[data-background='on'] .scene-photo-light {
+  opacity: 0;
+}
+.dark .scene[data-background='on'] .scene-photo-dark {
+  opacity: 1;
+}
+/* The page color over the image, stronger toward the bottom, where the text sits. */
+.scene-tint {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--background) calc(var(--scene-tint) * 70%), transparent),
+    color-mix(in srgb, var(--background) min(100%, calc(var(--scene-tint) * 115%)), transparent)
+  );
+}
+.scene-vignette {
+  background: radial-gradient(
+    circle at 50% 50%,
+    transparent 0 35%,
+    rgb(0 0 0 / 0.14) 75%,
+    rgb(0 0 0 / 0.32) 100%
+  );
+}
+:root:not(.dark) .scene-vignette {
+  background: radial-gradient(circle at 50% 50%, transparent 0 35%, rgb(216 227 239 / 0.28) 100%);
+}
+.scene-tint,
+.scene-vignette {
+  transition: opacity 0.8s ease;
+}
+.scene[data-background='off'] :is(.scene-tint, .scene-vignette) {
+  opacity: 0;
+}
+
 /* Tailwind v4 gives buttons the arrow cursor, as desktop apps do; on the web people expect the
    pointer on anything they can click. Menu items and listbox options get it too, so a menu reads
    like the button that opens it. Unlayered, so it beats the registry components' cursor-default;

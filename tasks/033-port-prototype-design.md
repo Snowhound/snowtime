@@ -73,6 +73,18 @@ Work in this order, one commit or more per step, and check each in the dev app a
   the account's values to the device; at sign-in the account's settings apply. Checked at 1440,
   850, and 390 px, light and dark: settings survive a reload, the device theme wins over the
   system's, broken or invalid storage falls back to the defaults, and no horizontal scroll.
+- 2026-09-25: Step 3a: the season images are in `public/backgrounds/` (1920 and 3840 px WebP),
+  and `SceneLayer` (`src/components/scene-layer.tsx`) puts them behind the signed-in frame and the
+  sign-in page: light and dark crossfade with the theme, the tint follows Strength, and with
+  Background off the page shows the plain `bg-muted/40` tint as before. `photoWidth` in
+  `src/lib/scene.ts` picks the file. The frames carry `data-scene-bg` and `data-surfaces` instead
+  of the body, so the server renders them and portaled popovers and dialogs sit outside them.
+  Checked with the background files throttled to 1.6 Mbps: at 1440 × 900 and 850 × 900 at 2×,
+  the shown theme's 1920 and 3840 files load together and the other theme's 1920 file only after
+  the 3840 one decodes; at 1× and at 390 × 844 at 3×, only 1920 files; with Background off,
+  none. Season, Strength, and Background changes in the Appearance popover show at once. Checked at
+  1440, 850, and 390 px, light and dark, on every signed-in page and the sign-in page: no
+  horizontal scroll and no browser errors.
 
 ## Acceptance criteria
 

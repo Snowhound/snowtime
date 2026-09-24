@@ -13,8 +13,9 @@ scene and intro mock-up is `snowtime_login_intro_with_backgrounds.html`.
 The originals and the masters stay local and out of git (`.gitignore`): new images may replace
 them, and this README records how to make them again. Only the page files are committed.
 
-`prototypes/scene.js` picks the page size for the screen; `prototypes/README.md` records how it
-loads them and the load times.
+`prototypes/scene.js` and, in the app, `src/lib/scene.ts` pick the page size for the screen, and
+the app serves copies of the page files from `public/backgrounds/`; `prototypes/README.md` records
+how it loads them and the load times.
 
 ## Upscaling
 
