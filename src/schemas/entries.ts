@@ -1,4 +1,5 @@
 import * as v from 'valibot'
+import { m } from '../paraglide/messages.js'
 import { Description, Timestamp, Uuidv7 } from './common'
 
 // A manual, finished entry. Admins and owners may log one for another member (userId).
@@ -16,7 +17,7 @@ export const CreateEntryInput = v.pipe(
     v.partialCheck(
       [['startedAt'], ['stoppedAt']],
       (i) => i.stoppedAt > i.startedAt,
-      'The end must be after the start.',
+      () => m.validation_end_before_start(),
     ),
     ['stoppedAt'],
   ),
@@ -42,10 +43,10 @@ export const MAX_LIST_DAYS = 93
 // Entries overlapping [from, to), optionally of one user.
 export const ListEntriesInput = v.pipe(
   v.object({ from: Timestamp, to: Timestamp, userId: v.optional(Uuidv7) }),
-  v.check((i) => i.to > i.from, 'The range must end after it starts.'),
+  v.check((i) => i.to > i.from, () => m.validation_range_end_before_start()),
   v.check(
     (i) => i.to.getTime() - i.from.getTime() <= MAX_LIST_DAYS * 86_400_000,
-    `The range can span at most ${MAX_LIST_DAYS} days.`,
+    () => m.validation_range_too_long({ days: MAX_LIST_DAYS }),
   ),
 )
 export type ListEntriesInput = v.InferOutput<typeof ListEntriesInput>

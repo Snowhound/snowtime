@@ -17,7 +17,9 @@
     "db:verify": "bun scripts/db-verify.ts",
     "db:drift": "bun scripts/db-drift.ts",
     "db:seed": "bun scripts/db-seed.ts",
-    "test": "bun test"
+    "i18n:compile": "paraglide-js compile --project ./project.inlang --silent",
+    "test": "bun run i18n:compile && bun test",
+    "postinstall": "bun run i18n:compile"
   },
   "dependencies": {
     "@better-auth/passkey": "1.7.5",
@@ -35,6 +37,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "1.0.0-rc.4",
+    "lucide-solid": "1.48.0",
     "nitro": "3.0.260610-beta",
     "solid-js": "^1.9.12",
     "tailwind-merge": "^3.0.2",
@@ -44,6 +47,7 @@
     "valibot": "^1.5.0"
   },
   "devDependencies": {
+    "@inlang/paraglide-js": "2.25.4",
     "@tanstack/devtools-vite": "latest",
     "@tanstack/router-cli": "^1.133.21",
     "@types/bun": "1.4.2",

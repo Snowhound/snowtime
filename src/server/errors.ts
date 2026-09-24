@@ -13,7 +13,7 @@ export type AppErrorCode =
   | 'INVALID'
 
 // Every message an AppError can carry, by key. Keys are stable and snake_case, so they
-// can serve as Paraglide message ids (task 012); the English text is the fallback.
+// name the Paraglide message error_<key> (src/lib/errors.ts); the English text is the fallback.
 export const errorMessages = {
   sign_in_required: 'Sign in first.',
   organization_required: 'Select an organization first.',

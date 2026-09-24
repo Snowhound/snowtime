@@ -14,7 +14,7 @@
 | Forms           | TanStack Form                                             |
 | Validation      | Valibot, shared by forms and server functions             |
 | UI              | Solid-UI + Tailwind                                       |
-| i18n            | English and Estonian; Paraglide JS (planned, not yet installed) |
+| i18n            | English and Estonian; Paraglide JS                        |
 | Client state    | No library; Solid signals/stores and URL search params; user settings on the server (see "User settings") |
 
 ## Data conventions
@@ -188,16 +188,26 @@
 ## Internationalization
 
 - Languages: English (`en`, default) and Estonian (`et`). The UI translates with
-  Paraglide JS (task 012).
+  Paraglide JS: messages in `messages/<locale>.json`, options in
+  `project.inlang/paraglide.config.ts`, compiled to `src/paraglide/` (generated, not
+  committed) by the Vite plugin and by `bun run i18n:compile`, which `postinstall` and
+  `bun run test` run.
+- The locale lives in the `PARAGLIDE_LOCALE` cookie, not the URL: the app has no public
+  pages that need localized links. Without the cookie, the browser's `Accept-Language`
+  picks it, then English. Signed-in pages set the cookie from `user_settings.locale`, so
+  the server renders the next page in the account's language. `src/server.ts` runs
+  Paraglide's middleware around every request, which scopes the locale per request.
 - The user's language is `user_settings.locale` (see "User settings"). The first
   `getSettings` call sets it from the browser, as it does the time zone.
 - The server returns keys, dates, and numbers, never display text; the client translates
   and formats them in the user's locale and zone.
   - Each `AppError` carries a stable snake_case message key from the catalog in
     `src/server/errors.ts`. The catalog's English text is the error message, for logs and
-    as the client's fallback; the client looks the key up in Paraglide.
+    as the client's fallback; `errorMessage` in `src/lib/errors.ts` looks the key up as
+    the Paraglide message `error_<key>`.
   - Valibot issues need no server translation: forms run the same schemas in the browser
-    first, so only a faulty or hostile client reaches the server's validation.
+    first, so only a faulty or hostile client reaches the server's validation. Custom
+    messages in `src/schemas/` are Paraglide calls, evaluated when validation runs.
 
 ## Application rules
 

@@ -1,11 +1,12 @@
 import * as v from 'valibot'
+import { m } from '../paraglide/messages.js'
 
 // An IANA zone name such as Europe/Tallinn or UTC. Intl accepts the names the runtime
 // knows; the pattern rejects the offsets ("+02:00") Intl also accepts, because an offset
 // ignores daylight saving time.
 export const TimeZone = v.pipe(
   v.string(),
-  v.regex(/^[A-Za-z][\w+-]*(\/[\w+-]+)*$/, 'Use a time zone such as Europe/Tallinn.'),
+  v.regex(/^[A-Za-z][\w+-]*(\/[\w+-]+)*$/, () => m.validation_time_zone_format()),
   v.check((zone) => {
     try {
       new Intl.DateTimeFormat('en', { timeZone: zone })
@@ -13,7 +14,7 @@ export const TimeZone = v.pipe(
     } catch {
       return false
     }
-  }, 'Unknown time zone.'),
+  }, () => m.validation_time_zone_unknown()),
 )
 
 export const WeekStart = v.picklist(['mon', 'sun'])

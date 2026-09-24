@@ -1,16 +1,17 @@
 import * as v from 'valibot'
+import { m } from '../paraglide/messages.js'
 import { Uuidv7 } from './common'
 
 export const ProjectName = v.pipe(
   v.string(),
   v.trim(),
-  v.minLength(1, 'Enter a name.'),
-  v.maxLength(100),
+  v.minLength(1, () => m.validation_name_required()),
+  v.maxLength(100, (issue) => m.validation_too_long({ max: issue.requirement })),
 )
 
 // A hex color such as #4E79A7; null removes it.
 export const ProjectColor = v.nullable(
-  v.pipe(v.string(), v.regex(/^#[\da-f]{6}$/i, 'Use a color like #4E79A7.')),
+  v.pipe(v.string(), v.regex(/^#[\da-f]{6}$/i, () => m.validation_color_format())),
 )
 
 export const CreateProjectInput = v.object({

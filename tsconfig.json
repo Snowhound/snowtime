@@ -12,6 +12,8 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
+    // Paraglide compiles messages to JSDoc-typed JavaScript in src/paraglide/.
+    "allowJs": true,
     "noEmit": true,
 
     /* Linting */
