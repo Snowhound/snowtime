@@ -36,6 +36,7 @@ export const errorMessages = {
   project_archived: 'The project is archived.',
   project_has_entries: 'This project has time entries. Archive it instead.',
   projects_forbidden: 'Only admins can manage projects.',
+  team_report_forbidden: 'You can report only on teams you lead.',
   settings_not_found: 'Load the settings first.',
 } as const
 

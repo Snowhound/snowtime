@@ -137,7 +137,14 @@
 - Reports: day/week boundaries are computed in TypeScript on the server using
   the user's zone, then queried as UTC ranges. Aggregation happens in
   TypeScript; entries crossing midnight are split there.
-- All of this lives in one tested `reports` module.
+- This lives in one tested reports module: `src/server/calendar.ts` holds the pure zone
+  math (Intl offsets, no library), and `src/server/reports.server.ts` queries and sums.
+  - A day starts at its first instant in the zone: local midnight, its first occurrence
+    when clocks fall back, or the moment clocks spring forward past it.
+  - A running entry counts up to the request's time.
+  - Team totals count each team's current members, so a member in two teams counts in
+    both. Team leads report on the teams they lead; admins and owners on all.
+  - A report returns ids, ISO dates, and milliseconds; the client formats them.
 
 ## User settings
 
