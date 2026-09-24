@@ -7,7 +7,7 @@ already rejected: the card layout is the sign-in page.
 
 ## Acceptance criteria
 
-- [ ] The split layout is gone from `auth.html`: the layout toggle, the brand panel and its
+- [x] The split layout is gone from `auth.html`: the layout toggle, the brand panel and its
       styles, and the scene's panel placement in `placeScene`. `prototypes/README.md` records
       the card layout as the only one.
 

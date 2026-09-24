@@ -10,34 +10,18 @@
     <script src="app-icon.js"></script>
     <script src="scene.js"></script>
     <style type="text/tailwindcss">
-      body[data-layout='card'] .brand-panel {
-        display: none;
-      }
-      body[data-layout='card'] .auth-form {
+      .auth-form {
         @apply rounded-lg border bg-card p-6 shadow-sm sm:p-8;
       }
-      body[data-layout='split'] .auth-shell {
-        @apply lg:grid-cols-2;
-      }
-      body[data-layout='split'] .auth-main {
-        @apply bg-background;
-      }
-      body[data-layout='split'] .card-tagline {
-        display: none;
-      }
-      body[data-layout='split'] #product-mark {
-        @apply lg:hidden;
-      }
 
-      /* Seasonal scene. Card layout: it fills the page behind a glass or solid card. Split layout:
-         it fills the brand panel. */
-      body[data-layout='card'][data-scene-bg='on'] .auth-main {
+      /* Seasonal scene: it fills the page behind a glass or solid card. */
+      body[data-scene-bg='on'] .auth-main {
         background: transparent;
       }
-      body[data-layout='card'][data-scene-bg='on'][data-card='glass'] .auth-form {
+      body[data-scene-bg='on'][data-card='glass'] .auth-form {
         @apply bg-card/70 shadow-xl backdrop-blur-xl;
       }
-      body[data-layout='card'][data-scene-bg='on'][data-card='solid'] .auth-form {
+      body[data-scene-bg='on'][data-card='solid'] .auth-form {
         @apply shadow-xl;
       }
       /* Tagline over the scene (prototype variant): a pill, a glow in the page color, a footer line
@@ -46,42 +30,25 @@
       #tagline-fade {
         display: none;
       }
-      body[data-layout='card'][data-scene-bg='on'][data-tagline='pill'] .card-tagline {
+      body[data-scene-bg='on'][data-tagline='pill'] .card-tagline {
         @apply rounded-full bg-background/70 px-3 py-1 backdrop-blur-md;
       }
-      body[data-layout='card'][data-scene-bg='on'][data-tagline='halo'] .card-tagline {
+      body[data-scene-bg='on'][data-tagline='halo'] .card-tagline {
         @apply font-medium text-foreground;
         text-shadow: 0 0 6px var(--background), 0 0 14px var(--background), 0 0 28px var(--background);
       }
-      body[data-layout='card'][data-tagline='card'] .card-tagline {
+      body[data-tagline='card'] .card-tagline {
         display: none;
       }
-      body[data-layout='card'][data-tagline='card'] .tagline-in-card {
+      body[data-tagline='card'] .tagline-in-card {
         @apply block border-t pt-4 text-center text-sm text-muted-foreground;
       }
-      body[data-layout='card'][data-scene-bg='on'][data-tagline='fade'] .card-tagline {
+      body[data-scene-bg='on'][data-tagline='fade'] .card-tagline {
         @apply fixed inset-x-0 bottom-5 z-[1] px-4 font-medium text-foreground;
       }
-      body[data-layout='card'][data-scene-bg='on'][data-tagline='fade'] #tagline-fade {
+      body[data-scene-bg='on'][data-tagline='fade'] #tagline-fade {
         @apply pointer-events-none absolute inset-x-0 bottom-0 block h-48;
         background: linear-gradient(to top, color-mix(in srgb, var(--background) 88%, transparent), transparent);
-      }
-      .brand-panel[data-scene-bg] {
-        @apply bg-transparent text-foreground dark:bg-transparent;
-      }
-      .brand-panel[data-scene-bg] .brand-panel-sub {
-        @apply text-muted-foreground;
-      }
-      .brand-panel[data-scene-bg] .brand-panel-text {
-        z-index: 1;
-      }
-      /* Fades the image toward the page color behind the name and the tagline. */
-      .brand-panel[data-scene-bg]::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: linear-gradient(180deg, color-mix(in srgb, var(--background) 55%, transparent), transparent 22%, transparent 62%, color-mix(in srgb, var(--background) 88%, transparent));
       }
       .scene[data-background='off'] {
         background: transparent;
@@ -199,7 +166,7 @@
     </style>
     <link rel="stylesheet" href="prototype.css" />
   </head>
-  <body data-layout="card" class="flex min-h-dvh flex-col">
+  <body class="flex min-h-dvh flex-col">
     <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden">
       <defs>
         <symbol id="icon-key-round" viewBox="0 0 24 24">
@@ -277,10 +244,6 @@
         </div>
         <div class="flex flex-col gap-2 lg:items-end">
         <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-          <div data-ui="toggle-group" role="group" aria-label="Layout">
-            <button data-ui="toggle" data-variant="outline" data-size="sm" data-layout-option="card" aria-pressed="true" data-pressed>01 · Card (selected)</button>
-            <button data-ui="toggle" data-variant="outline" data-size="sm" data-layout-option="split" aria-pressed="false">02 · Split</button>
-          </div>
           <div data-ui="toggle-group" role="group" aria-label="Password sign-in">
             <button data-ui="toggle" data-variant="outline" data-size="sm" data-password-option="off" aria-pressed="true" data-pressed>No password</button>
             <button data-ui="toggle" data-variant="outline" data-size="sm" data-password-option="local" aria-pressed="false">Local dev</button>
@@ -332,17 +295,6 @@
     </header>
 
     <div class="auth-shell relative grid flex-1 grid-cols-[minmax(0,1fr)]">
-      <aside class="brand-panel relative hidden flex-col justify-between bg-primary p-10 text-primary-foreground lg:flex dark:bg-card dark:text-card-foreground" aria-hidden="true">
-        <div class="brand-panel-text relative flex items-center gap-3 text-xl font-bold tracking-[-0.02em]">
-          <img data-app-icon="large" src="../design/brand-assets/icons/02-hound-hour.svg" alt="" class="size-10 rounded-[22.5%] ring-1 ring-primary-foreground/25 dark:ring-border" />
-          Snowtime
-        </div>
-        <div class="brand-panel-text relative flex flex-col gap-2">
-          <p class="text-2xl font-semibold tracking-tight">Winter is coming.</p>
-          <p class="brand-panel-sub text-sm text-primary-foreground/75 dark:text-muted-foreground">So is the end of the month. Start the timer.</p>
-        </div>
-      </aside>
-
       <main class="auth-main relative flex flex-col items-center justify-start gap-6 bg-muted/40 px-4 pb-10 pt-16 sm:justify-center sm:py-16">
         <button type="button" id="scene-button" data-ui="button" data-variant="ghost" data-size="icon" class="absolute right-3 top-3 bg-background/50 backdrop-blur"
           popovertarget="scene-menu" aria-haspopup="dialog" aria-expanded="false" aria-label="Scenery" title="Scenery">
@@ -706,17 +658,6 @@
       }
       document.querySelectorAll('[data-password-option]').forEach((b) => b.addEventListener('click', () => setPasswordMode(b.dataset.passwordOption)))
 
-      document.querySelectorAll('[data-layout-option]').forEach((b) =>
-        b.addEventListener('click', () => {
-          document.body.dataset.layout = b.dataset.layoutOption
-          document.querySelectorAll('[data-layout-option]').forEach((x) => {
-            const pressed = x === b
-            x.setAttribute('aria-pressed', String(pressed))
-            x.toggleAttribute('data-pressed', pressed)
-          })
-        })
-      )
-
       // Signed-out pages follow the system theme in the app. The prototype also follows the theme
       // chosen in the signed-in prototypes, so screens can be compared in one theme.
       const savedTheme = (() => {
@@ -753,16 +694,7 @@
         }
       })()
       const sceneCtl = scene.create({ season: variants.season })
-      const brandPanel = document.querySelector('.brand-panel')
-
-      // The page hosts the scene in the card layout and during the intro; the split layout's
-      // brand panel hosts it otherwise.
-      function placeScene() {
-        const inPanel = document.body.dataset.layout === 'split' && !document.body.dataset.intro
-        const host = inPanel ? brandPanel : document.getElementById('scene-page')
-        if (sceneCtl.el.parentElement !== host) host.prepend(sceneCtl.el)
-        brandPanel.toggleAttribute('data-scene-bg', inPanel && sceneCtl.get().background)
-      }
+      document.getElementById('scene-page').prepend(sceneCtl.el)
 
       // During the intro the scene ignores the user's switches: the weather shows throughout, and
       // the background fades in partway (`introBackground`).
@@ -776,7 +708,6 @@
         document.body.dataset.card = user.surfaces
         document.body.dataset.tagline = variants.tagline
         document.documentElement.dataset.tone = variants.tone
-        placeScene()
         ui.setSwitch(document.getElementById('scene-bg-switch'), user.sceneBackground)
         document.querySelectorAll('[data-scene-option]').forEach((b) => {
           const pressed = b.dataset.value === user[b.dataset.sceneOption]
@@ -817,7 +748,6 @@
           applyScene()
         })
       )
-      document.querySelectorAll('[data-layout-option]').forEach((b) => b.addEventListener('click', placeScene))
       // Settings changed in another tab, e.g. the signed-in Settings page.
       addEventListener('storage', (event) => event.key === appIcon.SETTINGS_KEY && applyScene())
 

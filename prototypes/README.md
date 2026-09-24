@@ -183,8 +183,7 @@ The project and chart colors lean toward the brand too; see [App frame](#app-fra
 
 Signed-in pages tint the body with `bg-muted/40`. `prototype.css` gives `html` the
 `background` color, so the tint sits on it instead of the browser's white or dark canvas; the
-page tint is `#eef6fe` light and `#132030` dark. The auth split layout's brand panel uses
-`primary` in light mode and `card` in dark mode.
+page tint is `#eef6fe` light and `#132030` dark.
 
 Checked in Chrome on 2026-09-24, before the blue primary and the brand series colors, at 1440,
 850, and 390 px, light and dark, every page with
@@ -257,7 +256,7 @@ The prototypes reference the exports in place instead of copying them:
 | Use                                   | Path under `design/brand-assets/`         |
 | ------------------------------------- | ----------------------------------------- |
 | Header and auth card mark (28 px)     | `icons-small/<NN-name>.svg`               |
-| Dialog, Settings, auth brand panel    | `icons/<NN-name>.svg`                     |
+| Dialog and Settings                   | `icons/<NN-name>.svg`                     |
 | Favicon                               | `favicon/variants/<NN-name>-16.png`, `-32.png` |
 | Hound Hour on light pages             | the same paths with `02-hound-hour-light`  |
 
@@ -554,8 +553,9 @@ issues since the brand tokens.
 Decision: layout of the signed-out screens, and how the sign-in methods in
 `docs/architecture.md` ("Sign-in methods") appear on them.
 
-- **01 · Card**: the form in a centered card on a muted background. Selected for the app.
-- **02 · Split**: a dark brand panel beside the form on wide screens; kept for comparison.
+The form sits in a centered card on a muted background, or on the seasonal scene. This card layout
+is the one the app uses; a split layout with a brand panel beside the form was tried and removed
+(task 031).
 
 The **password** toggle shows the three stages of password sign-in:
 
@@ -577,8 +577,7 @@ wrong-account screen. Create organization derives the short name from the name u
 edited. The passkey button depends on task 015. Limits match Better Auth defaults: passwords of 8
 to 128 characters, reset links valid for 1 hour, invitations for 48 hours.
 
-The tagline "Winter is coming." sits in the split layout's brand panel and under the card in the
-card layout. The mark is the chosen app icon (see [App icon](#app-icon)).
+The tagline "Winter is coming." sits under the card. The mark is the chosen app icon (see [App icon](#app-icon)).
 
 #### Seasonal scene and intro
 
@@ -590,8 +589,7 @@ the tab is hidden or the weather is off, and scales the flake count to the area 
 the mock-up, flakes cover the full width. The pages load WebP copies of the images (110 to 215 KB
 each, from the 2 to 2.5 MB PNGs).
 
-- **Card layout**: the scene fills the page behind the card. **Split layout**: it fills the brand
-  panel, which fades toward the page color behind its text; the form side stays plain.
+- **Scene**: it fills the page behind the card.
 - **Intro**: about 12 seconds, always dark. It opens on the weather alone over the page color,
   shows two lines, fades the background in (over 2.6 s) a second after the second line, then
   shows the last two lines, the last one ("Sign in and get it done.") for 3 seconds. Then the
@@ -631,8 +629,8 @@ app; the prototype also follows the theme chosen in the signed-in prototypes.
 
 Omitted: two-factor authentication, rate-limit messages, and the real provider consent screens.
 
-Checked in Chromium at 1440, 850, and 390 px, light and dark, both layouts, every password mode,
+Checked in Chromium at 1440, 850, and 390 px, light and dark, every password mode,
 and every screen: no horizontal page overflow, validation messages and focus on the first invalid
 field, and no browser errors. The scene was checked on 2026-09-24 at 1440 and 390 px, light and
-dark, both layouts: the intro's sequence, skip, replay, and first-visit memory, every variant, the
+dark: the intro's sequence, skip, replay, and first-visit memory, every variant, the
 Settings switches reaching an open sign-in tab, reduced motion, and no browser errors.
