@@ -9,3 +9,6 @@ d5617ab6c88ec71f2b68719028e1696500c97bc2
 
 # Group code by feature and domain (task 026): moves and import-path rewrites.
 f50e017a38086f1ff3f3c17fcd2e4c3c8f0f479f
+
+# Move task 032 into a folder for its subtasks.
+2c28cee01ea564b6249343664c47fc03bfdc5e0d

@@ -32,6 +32,9 @@ Surfaces was named for every card so it can apply app-wide.
 - [ ] `prototypes/README.md` records the result, checked at 1440, 850, and 390 px, light and
       dark, with no horizontal scroll and no browser errors.
 
+- [ ] `01-intro-polish.md`: the replay's background flash, no intro on its own in the
+      prototypes, and the full check pass
+
 ## Progress
 
 - 2026-09-24: The timer page has the scene, through `appFrame.mount({ scene: true })`, with a
