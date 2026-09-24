@@ -15,16 +15,6 @@ import {
 } from '~/server/projects/projects.functions'
 import type { ProjectIdInput } from '~/server/projects/projects.schemas'
 import { getReport } from '~/server/reports/reports.functions'
-import { listTeams } from '~/server/teams/teams.functions'
-
-export type Team = Awaited<ReturnType<typeof listTeams>>[number]
-
-export function teamsQuery(organizationId: string) {
-  return queryOptions({
-    queryKey: ['teams', organizationId],
-    queryFn: () => listTeams(),
-  })
-}
 
 // Time per project this month in the user's zone: the organization's for admins and
 // owners, the user's own otherwise. Without a userId a team lead would get their teams'

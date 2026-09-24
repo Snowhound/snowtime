@@ -28,11 +28,12 @@ import { PROJECT_COLORS, leastUsedColor } from '~/lib/colors'
 import { fieldError } from '~/lib/form'
 import type { Project } from '~/lib/projects'
 import { newId } from '~/lib/query'
+import type { Team } from '~/lib/teams'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
 import { ProjectName } from '~/server/projects/projects.schemas'
 import { byName, teamChanges } from './projects'
-import type { SaveProjectInput, Team } from './queries'
+import type { SaveProjectInput } from './queries'
 
 export type ProjectDialogTarget = { kind: 'new' } | { kind: 'edit'; project: Project }
 

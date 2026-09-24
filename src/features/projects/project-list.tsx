@@ -22,10 +22,10 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { formatDateTime, formatHours } from '~/lib/format'
 import type { Project } from '~/lib/projects'
+import type { Team } from '~/lib/teams'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { byName } from './projects'
-import type { Team } from './queries'
 
 const GRID = 'md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_6.5rem_2.25rem]'
 const GRID_READONLY = 'md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_8rem]'

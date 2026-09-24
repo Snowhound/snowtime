@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { errorMessage } from '~/lib/errors'
 import { type Project, projectsQuery } from '~/lib/projects'
+import { teamsQuery } from '~/lib/teams'
 import { m } from '~/paraglide/messages.js'
 import { AppError } from '~/server/errors'
 import { type Confirmation, ConfirmDialog } from './confirm-dialog'
@@ -23,7 +24,6 @@ import {
   type SaveProjectInput,
   deleteProjectKey,
   monthReportQuery,
-  teamsQuery,
   useArchiveProject,
   useDeleteProject,
   useSaveProject,
