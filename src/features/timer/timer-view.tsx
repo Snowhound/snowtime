@@ -9,6 +9,7 @@ import { keepPreviousData, useQuery } from '@tanstack/solid-query'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import PlusIcon from 'lucide-solid/icons/plus'
 import { Match, Show, Switch, createEffect, createMemo, createSignal, onCleanup } from 'solid-js'
+import { PageTitle } from '~/components/page-title'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { localDate } from '~/lib/calendar'
@@ -206,8 +207,8 @@ export function TimerView(props: {
 
   return (
     <div class="grid gap-4">
-      <div class="flex items-center justify-between gap-4">
-        <h1 class="text-2xl font-semibold tracking-tight">{m.nav_timer()}</h1>
+      <div class="relative flex items-center justify-between gap-4">
+        <PageTitle title={m.nav_timer()} />
         <div class="flex items-center gap-2">
           <Button variant="outline" onClick={() => setDialog({ kind: 'new' })}>
             <PlusIcon aria-hidden="true" />

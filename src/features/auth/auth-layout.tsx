@@ -3,6 +3,7 @@ import type { JSX } from 'solid-js'
 import { Show } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
 import { SceneLayer } from '~/components/scene-layer'
+import { SeasonTagline } from '~/components/season-tagline'
 import { Separator } from '~/components/ui/separator'
 import { appIcon } from '~/lib/app-icon'
 import {
@@ -11,14 +12,14 @@ import {
   deviceSettings,
   updateDeviceSettings,
 } from '~/lib/device-settings'
-import { sceneAttributes } from '~/lib/scene'
+import { currentSeason, sceneAttributes } from '~/lib/scene'
 import { sessionQuery } from '~/lib/session'
 import { useUpdateSettings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
 import { AppearanceMenu } from './appearance-menu'
 
 // The signed-out screens' frame: a centered card over the seasonal scene, with the product
-// mark and the tagline (prototypes/auth.html, 01 · Card), and the Appearance menu at the top
+// mark and the season's tagline above it (prototypes/auth.html, 01 · Card), and the Appearance menu at the top
 // right. Signed out, the settings are the device's (src/lib/device-settings.ts); they load after
 // hydration, so the first paint shows the defaults. A signed-in user without an organization
 // yet has the account's.
@@ -35,19 +36,26 @@ export function AuthLayout(props: { children: JSX.Element }) {
 
   return (
     <main
-      class="relative isolate flex min-h-dvh flex-col items-center justify-start gap-6 px-4 pt-16 pb-10 sm:justify-center sm:py-16"
+      class="relative isolate flex min-h-dvh flex-col items-center justify-start gap-6 px-4 pt-32 pb-10 sm:justify-center sm:py-16"
       {...sceneAttributes(settings())}
     >
       <SceneLayer settings={settings()} pace="full" />
       <AppearanceMenu settings={settings()} onDevice={!session.data?.settings} onChange={update} />
-      <div class="surface auth-card bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-lg border p-6 shadow-sm sm:p-8">
-        <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]">
-          <AppMark id={appIcon(settings().appIcon).id} small class="size-7" />
-          {m.app_name()}
+      {/* The tagline sits 32 px above the card, out of the flow, so the card stays centered;
+          on phones the page's top padding makes room for it. */}
+      <div class="relative w-full max-w-sm">
+        <SeasonTagline
+          season={currentSeason(settings().sceneSeason)}
+          class="absolute bottom-[calc(100%+2rem)] left-1/2 w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 text-center text-base font-medium text-balance"
+        />
+        <div class="surface auth-card bg-card text-card-foreground flex w-full flex-col gap-6 rounded-lg border p-6 shadow-sm sm:p-8">
+          <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]">
+            <AppMark id={appIcon(settings().appIcon).id} small class="size-7" />
+            {m.app_name()}
+          </div>
+          <div class="flex flex-col gap-6">{props.children}</div>
         </div>
-        <div class="flex flex-col gap-6">{props.children}</div>
       </div>
-      <p class="scene-text text-muted-foreground text-center text-sm">{m.auth_tagline()}</p>
     </main>
   )
 }

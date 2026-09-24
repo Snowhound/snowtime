@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/solid-query'
 import { useNavigate } from '@tanstack/solid-router'
 import { Show, createSignal, onMount } from 'solid-js'
+import { PageTitle } from '~/components/page-title'
 import { buttonVariants } from '~/components/ui/button'
 import { sessionQuery } from '~/lib/session'
 import { signInMethodsQuery } from '~/lib/sign-in-methods'
@@ -27,8 +28,8 @@ export function SettingsPage(props: { initialError?: string }) {
   })
 
   return (
-    <div class="grid gap-4">
-      <h1 class="text-2xl font-semibold tracking-tight">{m.nav_settings()}</h1>
+    <div class="relative grid gap-4">
+      <PageTitle title={m.nav_settings()} />
       <div class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[12rem_minmax(0,1fr)]">
         <nav class="hidden lg:block" aria-label={m.settings_sections()}>
           <ul class="sticky top-6 flex flex-col gap-1">

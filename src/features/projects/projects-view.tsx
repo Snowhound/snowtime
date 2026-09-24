@@ -8,6 +8,7 @@ import PlusIcon from 'lucide-solid/icons/plus'
 import SearchIcon from 'lucide-solid/icons/search'
 import { For, Show, createMemo, createSignal } from 'solid-js'
 import { type Confirmation, ConfirmDialog } from '~/components/confirm-dialog'
+import { PageTitle } from '~/components/page-title'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
@@ -167,8 +168,8 @@ export function ProjectsView(props: {
 
   return (
     <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
-      <div class="flex min-w-0 flex-col gap-1">
-        <h1 class="text-2xl font-semibold tracking-tight">{m.nav_projects()}</h1>
+      <div class="relative flex min-w-0 flex-col gap-1">
+        <PageTitle title={m.nav_projects()} />
         <p class="scene-text text-muted-foreground min-w-0 truncate text-sm">{subtitle()}</p>
       </div>
       <Show when={error()}>

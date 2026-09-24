@@ -134,6 +134,42 @@ Work in this order, one commit or more per step, and check each in the dev app a
   checked with WebGL stubbed out. Checked at 1440, 850, and 390 px, light and dark, on every
   signed-in page and the sign-in page: no horizontal scroll and no browser errors. The dev app
   sometimes takes 10 to 30 s to hydrate a page; before then, there's no image or weather.
+- 2026-09-25: Step 5 plan: `prototypes/seasons.js`' lines, alternates, sign-offs, and period
+  taglines become Paraglide messages (`season_<season>_line_<n>`, `season_<season>_alt_<n>_line_<n>`,
+  `intro_sign_off`, `intro_sign_off_signed_in`, `tagline_week_end_<n>`, `tagline_month_end_<n>`),
+  and `src/lib/seasons.ts` holds them with each season's colors, `introLines`, and `PERIODS`
+  (not shown yet, as in the prototypes). `SeasonTagline` (`src/components/`) renders the two-toned
+  line; `PageTitle` puts it in each page's title row and places it from 1024 px as `app-frame.js`
+  does, on resize (a `ResizeObserver` on the title area), once fonts load, and when the season
+  changes. The season comes from the frame through a context, so views and their tests don't
+  need the session. The sign-in page's line under the card becomes the tagline above the card.
+  `auth_tagline` goes.
+- 2026-09-25: Step 5: the seasonal copy is in Paraglide messages and `src/lib/seasons.ts`, with
+  the colors, `introLines`, the alternates, and `PERIODS` (the last two not shown yet). Each
+  page's title is `PageTitle` (`src/components/page-title.tsx`), with the two-toned
+  `SeasonTagline`: centered on the title row from 1024 px unless it would come within 24 px of
+  the title or the actions, and under the title otherwise, placed again on resize, once fonts
+  load, and when the season changes. The frame gives it the season through `SeasonProvider`, and
+  the test setup stubs `ResizeObserver`, which jsdom lacks. On the sign-in page the tagline
+  replaced the line under the card and sits 32 px above it, out of the flow; on phones the page's
+  top padding grew from 64 to 128 px to make room. Over the image it gets the title's glow.
+  Checked at 1440, 1100, 1024, 850, and 390 px, light and dark, on every signed-in page and the
+  sign-in page: centered from 1024 px, under the title below it, and a Season change in the
+  Appearance popover swaps and re-centers it; no horizontal scroll and no browser errors. In a
+  long agent-browser session, the first page after a viewport change sometimes stalls for 10 to
+  40 s before it hydrates; in Playwright it hydrates within 400 ms every time, so the stall comes
+  from the tool, not the app.
+  Estonian lines to review (I'm unsure of these):
+  - Spring: "Nagu ka mälestus möödunud nädalast." (So is your memory of last week.)
+  - Summer: "Sinu ajatabel ei pea olema." (Your timesheet doesn't have to be.) The English plays
+    on "long"; the Estonian may need "nii pikk" to read as intended.
+  - Autumn: "Kuu lõpp läheneb samuti." (So is the end of the month.) This one doesn't echo
+    "falling".
+  - Autumn alternates: "Nagu ka sinu kirja panemata tunnid." and "Ööd pikenevad. / Tähtaeg
+    läheneb." (The nights are drawing in. / So is the deadline.)
+  - Periods: "Tähtaeg samuti." (So is the deadline) and "Sinu tunnid ei tohiks puududa." (Your
+    hours shouldn't be [out].)
+  - Sign-offs: "Logi sisse ja tee ära!" and "Oled sees. Tee ära!"
 
 ## Acceptance criteria
 

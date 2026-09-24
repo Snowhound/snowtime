@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/solid-query'
 import { Link, useNavigate } from '@tanstack/solid-router'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import { Show, createMemo, createSignal } from 'solid-js'
+import { PageTitle } from '~/components/page-title'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Card, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { type WeekStart, addDays, localDate } from '~/lib/calendar'
@@ -165,8 +166,8 @@ export function ReportsView(props: {
 
   return (
     <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
-      <div class="flex min-w-0 flex-col gap-1">
-        <h1 class="text-2xl font-semibold tracking-tight">{m.nav_reports()}</h1>
+      <div class="relative flex min-w-0 flex-col gap-1">
+        <PageTitle title={m.nav_reports()} />
         <p class="scene-text text-muted-foreground text-sm">
           {rangeLabel()} · {scopeNote()} {zoneNote()} (
           <Link

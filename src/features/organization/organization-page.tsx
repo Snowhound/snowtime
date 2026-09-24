@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/solid-query'
 import LockIcon from 'lucide-solid/icons/lock'
 import { Show } from 'solid-js'
+import { PageTitle } from '~/components/page-title'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { sessionQuery } from '~/lib/session'
 import { m } from '~/paraglide/messages.js'
@@ -51,8 +52,8 @@ function isAdmin(role: string | null) {
 function NoAccess(props: { organizationName: string }) {
   return (
     <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
-      <div class="flex min-w-0 flex-col gap-1">
-        <h1 class="text-2xl font-semibold tracking-tight">{m.nav_organization()}</h1>
+      <div class="relative flex min-w-0 flex-col gap-1">
+        <PageTitle title={m.nav_organization()} />
         <p class="scene-text text-muted-foreground min-w-0 truncate text-sm">
           {props.organizationName}
         </p>

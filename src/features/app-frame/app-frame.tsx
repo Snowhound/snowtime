@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { type ParentProps, onMount } from 'solid-js'
 import { SceneLayer } from '~/components/scene-layer'
-import { SCENE_DEFAULTS, sceneAttributes } from '~/lib/scene'
+import { SCENE_DEFAULTS, currentSeason, sceneAttributes } from '~/lib/scene'
+import { SeasonProvider } from '~/lib/seasons'
 import { sessionQuery } from '~/lib/session'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { AppSession } from '~/server/auth/auth.functions'
@@ -30,7 +31,9 @@ export function AppFrame(props: ParentProps<{ session: AppSession }>) {
     <div class="isolate flex min-h-dvh flex-col" {...sceneAttributes(scene())}>
       <SceneLayer settings={scene()} pace="calm" />
       <AppHeader />
-      <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8">{props.children}</main>
+      <SeasonProvider value={() => currentSeason(scene().sceneSeason)}>
+        <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8">{props.children}</main>
+      </SeasonProvider>
     </div>
   )
 }
