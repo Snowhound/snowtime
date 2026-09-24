@@ -253,7 +253,10 @@
   cache a mutation touches before the server answers, restores them on error, and
   refetches either way; the view then shows the error's message. The timer
   (`src/features/timer/queries.ts`) sets the pattern: starting a timer updates both the running timer
-  and the entry lists.
+  and the entry lists. A write the server often refuses waits briefly first: deleting a
+  project, refused when it has time entries, shows the row as pending for up to 500 ms
+  and removes it on success or after that. A refusal within that time never makes the
+  row vanish and come back.
 - Business logic lives in TypeScript, not DB triggers. The one trigger kind
   allowed is the `updated_at` safety net above, which is bookkeeping, not
   logic.

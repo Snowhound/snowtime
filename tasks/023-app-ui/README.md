@@ -19,7 +19,7 @@ Estonian can follow in one pass before this task is done.
 - [x] `03-settings.md`
 - [x] `04-timer.md`
 - [x] `05-timer-layouts.md`
-- [ ] `06-projects.md`
+- [x] `06-projects.md`
 - [ ] `07-reports.md`
 - [ ] `08-organization.md`
 - [ ] Every message has an `en` and an `et` translation
