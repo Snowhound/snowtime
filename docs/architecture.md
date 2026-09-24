@@ -185,7 +185,10 @@ the source of truth. Workflow and rules: `docs/migrations.md`.
   the schema for documentation only (see `datamodel/README.md`).
 
 **Env vars:** `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`,
-`BETTER_AUTH_URL`, validated at startup by `src/env.ts` (server-only, Valibot).
+`BETTER_AUTH_URL`, and the optional pair `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`,
+validated at startup by `src/env.ts` (server-only, Valibot). Password sign-in is on only
+when `NODE_ENV` is `development`, which Vite sets for `dev`; an unset `NODE_ENV` counts as
+production.
 
 ## Deferred / out of scope
 

@@ -14,8 +14,16 @@ export const auth = betterAuth({
   advanced: {
     database: { generateId: () => uuidv7() },
   },
+  // Password sign-in is for local development with seeded users only: the MVP sends no
+  // email, so there is no verification or reset (docs/architecture.md, "Sign-in methods").
   emailAndPassword: {
-    enabled: true,
+    enabled: env.NODE_ENV === 'development',
+  },
+  socialProviders: {
+    ...(env.GOOGLE_CLIENT_ID &&
+      env.GOOGLE_CLIENT_SECRET && {
+        google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
+      }),
   },
   plugins: [
     organization({
