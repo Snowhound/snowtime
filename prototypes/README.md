@@ -241,16 +241,15 @@ Inside the app, every place shows the concept's bare mark, with no tile, in its 
 dark-page version: the header, the dialog, the Settings preview, and the sign-in card. Only the
 favicon keeps the tiled icon. Each concept's favicon is on either an ice tile or a navy tile, so
 the dialog groups them by it: **Light tab icons** (01, 03, 06, 08, 09, 11) and **Navy tab icons**
-(04, 05, 07, 10, 12). Each option shows the mark for the page's theme with the tiled icon as a
-small badge, the tab icon it gives. Hound Hour has both tiles and follows the theme: the ice tile
-in a light tab strip, the navy tile in a dark one. It leads both groups, and choosing it in either
-is the same choice, so both copies show as checked.
+(02, 04, 05, 07, 10, 12). Each option shows the mark for the page's theme with the tiled icon as a
+small badge, the tab icon it gives. Hound Hour has both tiles, and its favicon follows the
+system theme: the ice tile in a light tab strip, the navy tile in a dark one. It's listed once,
+first among the navy tab icons.
 
 Each group is its own radio group, so at most one option per group is checked; an option shows
 its number, name, and icon, and `02` has a Default badge. Tab moves between the groups, arrow
 keys move through a group's grid and choose, Home and End jump, Escape or Done closes it, and
-focus returns to the control that opened it. On open, focus goes to the chosen option, in the
-group that matches the page's theme when it's Hound Hour. A choice saves right away,
+focus returns to the control that opened it. On open, focus goes to the chosen option. A choice saves right away,
 like the other settings, and updates the header mark, the Settings preview, and the favicon.
 
 The choice is the `appIcon` setting, `'01'` to `'12'`; an unset or unknown value falls back to

@@ -192,11 +192,11 @@
   // --- App icon picker -----------------------------------------------------------------------
   // Two radio groups in a modal dialog, opened from the header mark and from Settings. Each option
   // shows the bare mark for the page's theme, with the tiled favicon as a badge; the groups are the
-  // favicon's tile, light or navy. Hound Hour is in both, since its tile follows the theme; choosing
-  // it in either group is the same choice. A choice saves right away, like the other settings.
+  // favicon's tile, light or navy. Hound Hour has both tiles (its favicon follows the system theme)
+  // but is listed once, with the navy concepts. A choice saves right away, like the other settings.
   function renderIconDialog() {
     const groups = [
-      { id: 'light', label: 'Light tab icons', dark: false, icons: appIcon.list.filter((i) => i.ice) },
+      { id: 'light', label: 'Light tab icons', dark: false, icons: appIcon.list.filter((i) => i.ice && !i.themed) },
       { id: 'navy', label: 'Navy tab icons', dark: true, icons: appIcon.list.filter((i) => i.navy) },
     ]
     const option = (i, dark) => `<button type="button" role="radio" data-app-icon-option="${i.id}" aria-checked="false" tabindex="-1"
@@ -214,7 +214,7 @@
       `<dialog id="app-icon-dialog" data-ui="dialog" class="max-w-3xl" aria-labelledby="app-icon-title" aria-describedby="app-icon-description">
         <div data-ui="dialog-header">
           <h2 id="app-icon-title" data-ui="dialog-title">App icon</h2>
-          <p id="app-icon-description" data-ui="dialog-description">The mark shows in the app. The small tile is the browser tab icon, grouped by its tile. Hound Hour, in both groups, matches the light or dark theme. Your choice saves right away.</p>
+          <p id="app-icon-description" data-ui="dialog-description">The mark shows in the app. The small tile is the browser tab icon, grouped by its tile. Hound Hour's tab icon follows your system's light or dark theme. Your choice saves right away.</p>
         </div>
         ${groups
           .map(
@@ -266,9 +266,7 @@
     const opener = document.activeElement
     dialog.addEventListener('close', () => opener?.isConnected && opener.focus(), { once: true })
     dialog.showModal()
-    // Hound Hour is checked in both groups; focus the one for the page's theme.
-    const group = document.documentElement.classList.contains('dark') ? 'navy' : 'light'
-    ;(dialog.querySelector(`#app-icon-group-${group} + * [aria-checked="true"]`) ?? dialog.querySelector('[aria-checked="true"]')).focus()
+    dialog.querySelector('[aria-checked="true"]').focus()
   }
 
   function navLinks(mobile) {
