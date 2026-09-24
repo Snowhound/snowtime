@@ -53,10 +53,10 @@ export async function startTimer(db: Database, scope: Scope, input: StartTimerIn
   } catch (error) {
     const constraint = failedConstraint(error)
     if (constraint === 'time_entry.user_id') {
-      throw new AppError('CONFLICT', 'Another timer was started at the same time.')
+      throw new AppError('CONFLICT', 'timer_started_elsewhere')
     }
     if (constraint === 'time_entry.id') {
-      throw new AppError('CONFLICT', 'An entry with this id already exists.')
+      throw new AppError('CONFLICT', 'entry_id_taken')
     }
     throw error
   }
@@ -66,7 +66,7 @@ export async function startTimer(db: Database, scope: Scope, input: StartTimerIn
 // the user's organizations.
 export async function stopTimer(db: Database, userId: string, input: StopTimerInput) {
   const stopped = await stopRunning(db, userId, new Date(), input.id)
-  if (!stopped) throw new AppError('NOT_FOUND', 'This timer is not running.')
+  if (!stopped) throw new AppError('NOT_FOUND', 'timer_not_running')
   return stopped
 }
 

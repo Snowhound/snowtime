@@ -30,14 +30,14 @@ export async function resolveScope(
   organizationId: string | null | undefined,
 ): Promise<Scope> {
   if (!organizationId) {
-    throw new AppError('NO_ACTIVE_ORGANIZATION', 'Select an organization first.')
+    throw new AppError('NO_ACTIVE_ORGANIZATION', 'organization_required')
   }
   const [membership] = await db
     .select({ role: member.role })
     .from(member)
     .where(and(eq(member.organizationId, organizationId), eq(member.userId, userId)))
   if (!membership) {
-    throw new AppError('FORBIDDEN', 'You are not a member of this organization.')
+    throw new AppError('FORBIDDEN', 'not_organization_member')
   }
   const led = await db
     .select({ teamId: teamMember.teamId })

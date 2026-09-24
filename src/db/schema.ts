@@ -11,6 +11,7 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core'
+import { LOCALES } from '../schemas/settings'
 import { currentActor } from './actor'
 
 const nowMs = sql`(CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER))`
@@ -229,6 +230,8 @@ export const userSettings = sqliteTable(
       .notNull(),
     ...createdAudit(),
     ...updatedAudit(),
+    // Added by a later migration, so it follows the audit columns. Validated in the app.
+    locale: text({ enum: LOCALES }).default('en').notNull(),
   },
   () => [check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`)],
 )

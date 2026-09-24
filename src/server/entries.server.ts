@@ -17,7 +17,7 @@ import { isAdmin, readableUserIds, type Scope } from './scope.server'
 
 function assertCanWrite(scope: Scope, userId: string) {
   if (userId !== scope.userId && !isAdmin(scope)) {
-    throw new AppError('FORBIDDEN', "Only admins can change other members' entries.")
+    throw new AppError('FORBIDDEN', 'entry_forbidden')
   }
 }
 
@@ -26,7 +26,7 @@ async function findEntry(db: Database, scope: Scope, id: string) {
     .select()
     .from(timeEntry)
     .where(and(eq(timeEntry.id, id), live(timeEntry, scope)))
-  if (!entry) throw new AppError('NOT_FOUND', 'Entry not found.')
+  if (!entry) throw new AppError('NOT_FOUND', 'entry_not_found')
   return entry
 }
 
@@ -38,7 +38,7 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
       .select({ id: member.id })
       .from(member)
       .where(and(eq(member.organizationId, scope.organizationId), eq(member.userId, userId)))
-    if (!membership) throw new AppError('NOT_FOUND', 'Member not found.')
+    if (!membership) throw new AppError('NOT_FOUND', 'member_not_found')
   }
   if (input.projectId) await assertUsableProject(db, scope, input.projectId)
 
@@ -58,7 +58,7 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
     return entry
   } catch (error) {
     if (failedConstraint(error) === 'time_entry.id') {
-      throw new AppError('CONFLICT', 'An entry with this id already exists.')
+      throw new AppError('CONFLICT', 'entry_id_taken')
     }
     throw error
   }
@@ -71,12 +71,12 @@ export async function updateEntry(db: Database, scope: Scope, input: UpdateEntry
   assertCanWrite(scope, entry.userId)
 
   if (input.stoppedAt && !entry.stoppedAt) {
-    throw new AppError('INVALID', 'Stop a running entry with the timer.')
+    throw new AppError('INVALID', 'entry_running')
   }
   const startedAt = input.startedAt ?? entry.startedAt
   const stoppedAt = input.stoppedAt ?? entry.stoppedAt
   if (stoppedAt && stoppedAt <= startedAt) {
-    throw new AppError('INVALID', 'The end must be after the start.')
+    throw new AppError('INVALID', 'entry_end_before_start')
   }
   // Keeping an archived project is fine; moving time onto one is not.
   if (input.projectId && input.projectId !== entry.projectId) {
@@ -93,7 +93,7 @@ export async function updateEntry(db: Database, scope: Scope, input: UpdateEntry
     })
     .where(and(eq(timeEntry.id, entry.id), live(timeEntry, scope)))
     .returning()
-  if (!updated) throw new AppError('NOT_FOUND', 'Entry not found.')
+  if (!updated) throw new AppError('NOT_FOUND', 'entry_not_found')
   return updated
 }
 
@@ -113,7 +113,7 @@ export async function deleteEntry(db: Database, scope: Scope, input: DeleteEntry
 export async function listEntries(db: Database, scope: Scope, input: ListEntriesInput) {
   const readable = await readableUserIds(db, scope)
   if (input.userId && readable && !readable.includes(input.userId)) {
-    throw new AppError('FORBIDDEN', "You cannot see this member's entries.")
+    throw new AppError('FORBIDDEN', 'entries_forbidden')
   }
   const users = input.userId ? [input.userId] : readable
 

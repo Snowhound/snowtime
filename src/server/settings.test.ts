@@ -29,30 +29,32 @@ async function newUser() {
 }
 
 describe('getSettings', () => {
-  test("the first call creates the settings with the browser's zone; later calls keep them", async () => {
+  test("the first call creates the settings with the browser's zone and locale; later calls keep them", async () => {
     const userId = await newUser()
-    const first = await as({ userId }, () => getSettings(db, userId, { timeZone: 'Asia/Tokyo' }))
-    expect(first).toEqual({ timeZone: 'Asia/Tokyo', weekStart: 'mon' })
-    const again = await as({ userId }, () => getSettings(db, userId, { timeZone: 'Europe/Paris' }))
+    const first = await as({ userId }, () => getSettings(db, userId, { timeZone: 'Asia/Tokyo', locale: 'et' }))
+    expect(first).toEqual({ timeZone: 'Asia/Tokyo', weekStart: 'mon', locale: 'et' })
+    const again = await as({ userId }, () =>
+      getSettings(db, userId, { timeZone: 'Europe/Paris', locale: 'en' }),
+    )
     expect(again).toEqual(first)
   })
 
   test('seeded users get their own settings', async () => {
-    const settings = await as({ userId: U.engLead }, () => getSettings(db, U.engLead, { timeZone: 'UTC' }))
-    expect(settings).toEqual({ timeZone: 'America/New_York', weekStart: 'mon' })
+    const settings = await as({ userId: U.engLead }, () => getSettings(db, U.engLead, { timeZone: 'UTC', locale: 'et' }))
+    expect(settings).toEqual({ timeZone: 'America/New_York', weekStart: 'mon', locale: 'en' })
   })
 })
 
 describe('updateSettings', () => {
   test("changes only the fields present, and only the user's own row", async () => {
     const updated = await as({ userId: U.member }, () => updateSettings(db, U.member, { weekStart: 'sun' }))
-    expect(updated).toEqual({ timeZone: 'Europe/Tallinn', weekStart: 'sun' })
+    expect(updated).toEqual({ timeZone: 'Europe/Tallinn', weekStart: 'sun', locale: 'en' })
     const zone = await as({ userId: U.member }, () =>
-      updateSettings(db, U.member, { timeZone: 'America/Los_Angeles' }),
+      updateSettings(db, U.member, { timeZone: 'America/Los_Angeles', locale: 'et' }),
     )
-    expect(zone).toEqual({ timeZone: 'America/Los_Angeles', weekStart: 'sun' })
-    const other = await as({ userId: U.lead }, () => getSettings(db, U.lead, { timeZone: 'UTC' }))
-    expect(other).toEqual({ timeZone: 'Europe/Tallinn', weekStart: 'mon' })
+    expect(zone).toEqual({ timeZone: 'America/Los_Angeles', weekStart: 'sun', locale: 'et' })
+    const other = await as({ userId: U.lead }, () => getSettings(db, U.lead, { timeZone: 'UTC', locale: 'en' }))
+    expect(other).toEqual({ timeZone: 'Europe/Tallinn', weekStart: 'mon', locale: 'en' })
   })
 
   test('a user without settings is told to load them first', async () => {
@@ -76,5 +78,11 @@ describe('settings input', () => {
   test('the week starts on Monday or Sunday', () => {
     expect(v.safeParse(UpdateSettingsInput, { weekStart: 'sun' }).success).toBe(true)
     expect(v.safeParse(UpdateSettingsInput, { weekStart: 'sat' }).success).toBe(false)
+  })
+
+  test('the locale is a supported language, English by default', () => {
+    expect(v.parse(GetSettingsInput, { timeZone: 'UTC' }).locale).toBe('en')
+    expect(v.safeParse(UpdateSettingsInput, { locale: 'et' }).success).toBe(true)
+    expect(v.safeParse(UpdateSettingsInput, { locale: 'fi' }).success).toBe(false)
   })
 })

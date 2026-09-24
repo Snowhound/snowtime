@@ -16,7 +16,7 @@ export const sessionMiddleware = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
     const session = await auth.api.getSession({ headers: getRequestHeaders() })
     if (!session) {
-      throw new AppError('UNAUTHENTICATED', 'Sign in first.')
+      throw new AppError('UNAUTHENTICATED', 'sign_in_required')
     }
     const { userId, activeOrganizationId } = session.session
     return withActor(userId, () =>

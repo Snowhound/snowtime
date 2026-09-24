@@ -15,8 +15,6 @@ import { AppError } from './errors'
 import { failedConstraint, live } from './queries.server'
 import { isAdmin, type Scope } from './scope.server'
 
-const NAME_TAKEN = 'A project with this name already exists.'
-
 // Projects the scope's user may see: unassigned ones, those assigned to one of the user's
 // teams, and for admins and owners all. Combine it with live(project, scope).
 function visibleProjects(db: Executor, scope: Scope): SQL | undefined {
@@ -35,7 +33,7 @@ function visibleProjects(db: Executor, scope: Scope): SQL | undefined {
 
 function assertAdmin(scope: Scope) {
   if (!isAdmin(scope)) {
-    throw new AppError('FORBIDDEN', 'Only admins can manage projects.')
+    throw new AppError('FORBIDDEN', 'projects_forbidden')
   }
 }
 
@@ -44,7 +42,7 @@ async function findProject(db: Executor, scope: Scope, id: string) {
     .select()
     .from(project)
     .where(and(eq(project.id, id), live(project, scope)))
-  if (!row) throw new AppError('NOT_FOUND', 'Project not found.')
+  if (!row) throw new AppError('NOT_FOUND', 'project_not_found')
   return row
 }
 
@@ -55,8 +53,8 @@ export async function assertUsableProject(db: Executor, scope: Scope, projectId:
     .select({ archivedAt: project.archivedAt })
     .from(project)
     .where(and(eq(project.id, projectId), live(project, scope), visibleProjects(db, scope)))
-  if (!row) throw new AppError('NOT_FOUND', 'Project not found.')
-  if (row.archivedAt) throw new AppError('CONFLICT', 'The project is archived.')
+  if (!row) throw new AppError('NOT_FOUND', 'project_not_found')
+  if (row.archivedAt) throw new AppError('CONFLICT', 'project_archived')
 }
 
 // The projects the user may see, by name, each with the ids of the teams it is assigned
@@ -111,10 +109,10 @@ export async function createProject(db: Database, scope: Scope, input: CreatePro
     // The (id, organization_id) index behind the composite foreign keys fails before the
     // primary key does.
     if (failed === 'project.id' || failed === 'project.id, project.organization_id') {
-      throw new AppError('CONFLICT', 'A project with this id already exists.')
+      throw new AppError('CONFLICT', 'project_id_taken')
     }
     if (failed === 'project.organization_id, project.name') {
-      throw new AppError('CONFLICT', NAME_TAKEN)
+      throw new AppError('CONFLICT', 'project_name_taken')
     }
     throw error
   }
@@ -130,11 +128,11 @@ export async function updateProject(db: Database, scope: Scope, input: UpdatePro
       .set({ name: input.name, color: input.color })
       .where(and(eq(project.id, existing.id), live(project, scope)))
       .returning()
-    if (!updated) throw new AppError('NOT_FOUND', 'Project not found.')
+    if (!updated) throw new AppError('NOT_FOUND', 'project_not_found')
     return updated
   } catch (error) {
     if (failedConstraint(error) === 'project.organization_id, project.name') {
-      throw new AppError('CONFLICT', NAME_TAKEN)
+      throw new AppError('CONFLICT', 'project_name_taken')
     }
     throw error
   }
@@ -151,7 +149,7 @@ async function setArchived(db: Database, scope: Scope, id: string, archived: boo
     .set({ archivedAt: archived ? new Date() : null })
     .where(and(eq(project.id, existing.id), live(project, scope)))
     .returning()
-  if (!updated) throw new AppError('NOT_FOUND', 'Project not found.')
+  if (!updated) throw new AppError('NOT_FOUND', 'project_not_found')
   return updated
 }
 
@@ -168,7 +166,7 @@ async function assertTeamInScope(db: Executor, scope: Scope, teamId: string) {
     .select({ id: team.id })
     .from(team)
     .where(and(eq(team.id, teamId), eq(team.organizationId, scope.organizationId)))
-  if (!row) throw new AppError('NOT_FOUND', 'Team not found.')
+  if (!row) throw new AppError('NOT_FOUND', 'team_not_found')
 }
 
 // Restricts the project to the members of its assigned teams (plus admins and owners).

@@ -142,7 +142,7 @@ Table invitation [note: 'Pending invitation to an organization, optionally into 
 // Audit columns (see datamodel/README.md): created_*/updated_* on mutable tables,
 // created_* only on insert-and-delete link tables, sys_deleted on entities users delete.
 
-Table user_settings [note: 'Per-user preferences, one row per user, shared across organizations. Created on first sign-in with the time zone of the browser. Lives as long as the user, so no sys_deleted.'] {
+Table user_settings [note: 'Per-user preferences, one row per user, shared across organizations. Created on first sign-in with the time zone and language of the browser. Lives as long as the user, so no sys_deleted.'] {
   user_id text [pk, ref: > user.id]
   time_zone text [not null, note: 'IANA zone, e.g. Europe/Tallinn. Drives display and report day/week boundaries.']
   week_start text [not null, default: 'mon', note: 'CHECK: mon, sun.']
@@ -150,6 +150,7 @@ Table user_settings [note: 'Per-user preferences, one row per user, shared acros
   created_by text [not null, ref: > user.id, note: 'Audit. Acting user, set by the app per request.']
   updated_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Set by the app on update; trigger fallback.']
   updated_by text [not null, ref: > user.id, note: 'Audit. Acting user of the last change, set by the app.']
+  locale text [not null, default: 'en', note: 'UI language: en, et. Set from the browser on first sign-in; validated in the app, no CHECK.']
 }
 
 Table project [note: 'Owned by the organization. Visible to the whole organization unless assigned to teams.'] {

@@ -14,7 +14,7 @@
 | Forms           | TanStack Form                                             |
 | Validation      | Valibot, shared by forms and server functions             |
 | UI              | Solid-UI + Tailwind                                       |
-| i18n            | Paraglide JS (planned, not yet installed)                 |
+| i18n            | English and Estonian; Paraglide JS (planned, not yet installed) |
 | Client state    | No library; Solid signals/stores and URL search params; per-device view settings (layout, theme, summary) in localStorage |
 
 ## Data conventions
@@ -132,6 +132,22 @@
   the user's zone, then queried as UTC ranges. Aggregation happens in
   TypeScript; entries crossing midnight are split there.
 - All of this lives in one tested `reports` module.
+
+## Internationalization
+
+- Languages: English (`en`, default) and Estonian (`et`). The UI translates with
+  Paraglide JS (task 012).
+- The user's language is `user_settings.locale`, so it follows them across devices. The
+  first `getSettings` call sets it from the browser, as it does the time zone. The app
+  validates it against `LOCALES` in `src/schemas/settings.ts`; the column has no `CHECK`,
+  because changing one needs a table rebuild and adding a language should not.
+- The server returns keys, dates, and numbers, never display text; the client translates
+  and formats them in the user's locale and zone.
+  - Each `AppError` carries a stable snake_case message key from the catalog in
+    `src/server/errors.ts`. The catalog's English text is the error message, for logs and
+    as the client's fallback; the client looks the key up in Paraglide.
+  - Valibot issues need no server translation: forms run the same schemas in the browser
+    first, so only a faulty or hostile client reaches the server's validation.
 
 ## Application rules
 
