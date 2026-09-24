@@ -171,6 +171,8 @@
   "scene_weather_autumn": "Langevad lehed.",
   "scene_weather_hint": "Talvel lumi, kevadel vihmahood, suvel lendlevad seemned või jaaniussid ja sügisel langevad lehed. Väljas, kui seade vähendab liikumist.",
   "scene_reduced_motion": "Väljas, kui seade vähendab liikumist.",
+  "scene_weather_no_webgl": "Sinu brauser ei toeta WebGL 2-te.",
+  "scene_weather_failed": "Selle aastaaja ilm ei käivitunud sinu brauseris.",
   "scene_intro": "Sissejuhatus",
   "scene_intro_hint_short": "Mängib sinu esimesel külastusel.",
   "scene_intro_hint": "Mängib sisselogimislehel sinu esimesel külastusel ja kord aastaajas, kui rakenduse avad. Väljas, kui seade vähendab liikumist.",

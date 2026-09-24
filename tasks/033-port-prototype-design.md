@@ -111,6 +111,29 @@ Work in this order, one commit or more per step, and check each in the dev app a
   (step 4; the Weather switch saves but shows nothing yet), the season's tagline in the title row
   and above the sign-in card (step 5; the sign-in page keeps its old line until then), and the
   intro with Replay intro and "Replay it" (step 6).
+- 2026-09-25: Step 4 plan: the effects' shaders and the renderer from `prototypes/scene.js` go
+  in `src/lib/weather.ts` (one WebGL 2 context, one draw call per frame, about 45 fps, point
+  counts by area). `SceneLayer` gets the canvas and a `pace` prop: calm (half the points, 70%
+  speed) from `AppFrame`, full from `AuthLayout`. It runs only with the Weather switch on, no
+  reduced motion, and a visible tab, and colors follow the theme and whether the image shows. It
+  publishes why the weather can't run (no WebGL 2, or the effect failed to compile) in a signal
+  that `SceneryFields`' Weather hint reads, beside reduced motion. On unmount it cancels the frame
+  and loses the context. Check: frame times as Mia with a running timer at 1440 × 900 at 2×, and
+  that frames stop in a hidden tab.
+- 2026-09-25: Step 4: the weather is in (`src/lib/weather.ts`, the canvas in `SceneLayer`),
+  calm on app pages and at full pace on the sign-in page. Its colors follow the theme and
+  whether the image shows, and it stops with the Weather switch off, with reduced motion, and in
+  a hidden tab. The Weather hint and switch say why it's off: reduced motion, no WebGL 2, or an
+  effect that didn't compile, which is also logged as a console warning. Unmounting cancels the
+  frame and loses the context. Checked: all four effects in light and dark, over the image and on
+  the plain page, compile and draw. As Mia, with a running timer and the weather on at 1440 × 900
+  at 2× in headless Chrome, frames held 16.7 ms (p95 16.8 ms), the same as with the weather off;
+  the timer's entry was deleted afterwards. Hidden tab: Playwright and agent-browser keep pages
+  visible even headed, so it was checked by faking `document.hidden` and `visibilitychange`: no
+  draws while hidden, and it restarts when shown. The no-WebGL 2 and failed-effect hints were
+  checked with WebGL stubbed out. Checked at 1440, 850, and 390 px, light and dark, on every
+  signed-in page and the sign-in page: no horizontal scroll and no browser errors. The dev app
+  sometimes takes 10 to 30 s to hydrate a page; before then, there's no image or weather.
 
 ## Acceptance criteria
 

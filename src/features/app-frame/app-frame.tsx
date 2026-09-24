@@ -28,7 +28,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession }>) {
 
   return (
     <div class="isolate flex min-h-dvh flex-col" {...sceneAttributes(scene())}>
-      <SceneLayer settings={scene()} />
+      <SceneLayer settings={scene()} pace="calm" />
       <AppHeader />
       <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8">{props.children}</main>
     </div>

@@ -289,6 +289,23 @@ code {
 .scene[data-background='off'] :is(.scene-tint, .scene-vignette) {
   opacity: 0;
 }
+/* The weather's canvas (src/lib/weather.ts) fades in once it runs. */
+.scene-weather {
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.scene-weather[data-on] {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene,
+  .scene * {
+    transition: none !important;
+  }
+}
 
 /* Surfaces over the image: glass lets the scene show through, solid keeps bg-card; both lift off
    it with a shadow. `surface` marks cards and card-like elements, such as the timer bar. Popovers,

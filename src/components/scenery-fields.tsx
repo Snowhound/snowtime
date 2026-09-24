@@ -2,7 +2,7 @@
 // Background switch with Strength and Surfaces under it, Weather, and optionally Intro. The
 // Appearance popover, Settings > Preferences, and the sign-in page's Scenery menu lay them out
 // the same way; `hints` picks how much each row explains. Weather always has a hint: the
-// season's effect, or why it's off.
+// season's effect, or why it's off (reduced motion, no WebGL 2, or an effect that didn't start).
 import type { JSX } from 'solid-js'
 import { For, Show, createUniqueId } from 'solid-js'
 import { Label } from '~/components/ui/label'
@@ -24,6 +24,7 @@ import {
   seasonByMonth,
 } from '~/lib/scene'
 import { cn } from '~/lib/utils'
+import { weatherProblem } from '~/lib/weather'
 import { m } from '~/paraglide/messages.js'
 
 type Hints = 'none' | 'short' | 'long'
@@ -54,8 +55,16 @@ export function SceneryFields(props: {
     if (props.hints === 'long') return long()
     return undefined
   }
-  function weatherHint() {
+  // Why the weather can't show here, or null.
+  function weatherBlocked() {
     if (reducedMotion()) return m.scene_reduced_motion()
+    if (weatherProblem() === 'webgl') return m.scene_weather_no_webgl()
+    if (weatherProblem() === 'failed') return m.scene_weather_failed()
+    return null
+  }
+  function weatherHint() {
+    const blocked = weatherBlocked()
+    if (blocked) return blocked
     return props.hints === 'long'
       ? m.scene_weather_hint()
       : season(currentSeason(props.settings.sceneSeason)).weather()
@@ -117,7 +126,7 @@ export function SceneryFields(props: {
         label={m.scene_weather()}
         hint={weatherHint()}
         checked={props.settings.sceneWeather}
-        disabled={reducedMotion()}
+        disabled={!!weatherBlocked()}
         onChange={(sceneWeather) => props.onChange({ sceneWeather })}
       />
       <Show when={props.intro}>

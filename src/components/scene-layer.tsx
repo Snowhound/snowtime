@@ -1,6 +1,7 @@
 // The seasonal scene behind the signed-in pages and the sign-in page (prototypes/scene.js,
 // prototypes/README.md, "Seasonal scene in the app"): the season's image in light and dark, which
-// crossfade with the theme, and the tint at the Strength setting. The frame that renders it is
+// crossfade with the theme, the tint at the Strength setting, and the season's weather
+// (src/lib/weather.ts) at the page's pace. The frame that renders it is
 // `isolate` and carries sceneAttributes(), so the layer sits behind the frame's content and the
 // surfaces follow the settings (src/styles.css).
 import { createEffect, createSignal, onCleanup, onMount, untrack } from 'solid-js'
@@ -9,21 +10,41 @@ import {
   type PhotoTheme,
   STRENGTHS,
   type SceneSettings,
+  createReducedMotion,
   currentSeason,
   loadPhoto,
   photoReady,
   photoUrl,
   photoWidth,
 } from '~/lib/scene'
+import {
+  EFFECTS,
+  type Effect,
+  PACES,
+  type Pace,
+  SEASON_EFFECTS,
+  createWeatherRenderer,
+  setWeatherProblem,
+} from '~/lib/weather'
 
-type LayerSettings = Pick<SceneSettings, 'sceneSeason' | 'sceneBackground' | 'sceneStrength'>
+type LayerSettings = Pick<
+  SceneSettings,
+  'sceneSeason' | 'sceneBackground' | 'sceneStrength' | 'sceneWeather'
+>
 
 function background(src: string) {
   return src ? `url("${src}")` : undefined
 }
 
-export function SceneLayer(props: { settings: LayerSettings }) {
+export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
   const [dark, setDark] = createSignal(false)
+  const reducedMotion = createReducedMotion()
+  const [visible, setVisible] = createSignal(true)
+  const [weatherOn, setWeatherOn] = createSignal(false)
+  let canvas!: HTMLCanvasElement
+  function visibility() {
+    setVisible(!document.hidden)
+  }
   const [width, setWidth] = createSignal(PHOTO_SMALL)
   // Bumped when a file has decoded, so the layers look again.
   const [loaded, setLoaded] = createSignal(0)
@@ -70,6 +91,37 @@ export function SceneLayer(props: { settings: LayerSettings }) {
         }
       }
     })
+
+    // The weather runs while its switch is on, the device doesn't reduce motion, and the tab
+    // shows. An effect that fails to compile stays off, and the Weather hint says why.
+    const renderer = createWeatherRenderer(canvas, () => PACES[props.pace])
+    setWeatherProblem(renderer ? null : 'webgl')
+    const failed = new Set<Effect>()
+    visibility()
+    document.addEventListener('visibilitychange', visibility)
+    onCleanup(() => {
+      document.removeEventListener('visibilitychange', visibility)
+      renderer?.destroy()
+    })
+    createEffect(() => {
+      const isDark = dark()
+      const background = props.settings.sceneBackground
+      const effect =
+        SEASON_EFFECTS[currentSeason(props.settings.sceneSeason)][isDark ? 'dark' : 'light']
+      let on = props.settings.sceneWeather && !reducedMotion() && visible() && !failed.has(effect)
+      if (renderer && on) {
+        try {
+          renderer.start(effect, () => EFFECTS[effect].colors({ dark: isDark, background }))
+        } catch (error) {
+          console.warn(`Weather effect ${effect} unavailable:`, error)
+          failed.add(effect)
+          on = false
+        }
+      }
+      if (!on) renderer?.stop()
+      if (renderer) setWeatherProblem(failed.has(effect) ? 'failed' : null)
+      setWeatherOn(on && !!renderer)
+    })
   })
 
   return (
@@ -92,6 +144,7 @@ export function SceneLayer(props: { settings: LayerSettings }) {
       />
       <div class="scene-tint" />
       <div class="scene-vignette" />
+      <canvas ref={canvas} class="scene-weather" data-on={weatherOn() ? '' : undefined} />
     </div>
   )
 }

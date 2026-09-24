@@ -38,7 +38,7 @@ export function AuthLayout(props: { children: JSX.Element }) {
       class="relative isolate flex min-h-dvh flex-col items-center justify-start gap-6 px-4 pt-16 pb-10 sm:justify-center sm:py-16"
       {...sceneAttributes(settings())}
     >
-      <SceneLayer settings={settings()} />
+      <SceneLayer settings={settings()} pace="full" />
       <AppearanceMenu settings={settings()} onDevice={!session.data?.settings} onChange={update} />
       <div class="surface auth-card bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-lg border p-6 shadow-sm sm:p-8">
         <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]">

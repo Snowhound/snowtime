@@ -171,6 +171,8 @@
   "scene_weather_autumn": "Falling leaves.",
   "scene_weather_hint": "Snow in winter, showers in spring, drifting seeds or fireflies in summer, and falling leaves in autumn. Off while your device reduces motion.",
   "scene_reduced_motion": "Off while your device reduces motion.",
+  "scene_weather_no_webgl": "Your browser has no WebGL 2.",
+  "scene_weather_failed": "This season's weather didn't start in your browser.",
   "scene_intro": "Intro",
   "scene_intro_hint_short": "Plays on your first visit.",
   "scene_intro_hint": "Plays on the sign-in page on your first visit, and once each season when you open the app. Off while your device reduces motion.",
