@@ -1,6 +1,6 @@
 # 006: Server functions
 
-Status: in-progress
+Status: done
 
 Named mutations and queries the UI calls. Each resolves scope through the tenancy
 helper (task 005), validates input with Valibot and filters by `organization_id`.
@@ -11,4 +11,4 @@ One subtask per area.
 - [x] `01-timer.md`
 - [x] `02-entries.md`
 - [x] `03-projects.md`
-- [ ] `04-settings.md`
+- [x] `04-settings.md`
