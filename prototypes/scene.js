@@ -12,7 +12,7 @@
   const BASE = '../design/backgrounds/'
   const SETTINGS_KEY = 'snowtime.prototypeSettings'
   const INTRO_SEEN_KEY = 'snowtime.introSeen'
-  const DEFAULTS = { sceneSeason: 'auto', sceneBackground: true, sceneStrength: 'full', surfaces: 'glass', sceneWeather: true, sceneIntro: true }
+  const DEFAULTS = { sceneSeason: 'auto', sceneBackground: true, sceneStrength: 'dimmed', surfaces: 'glass', sceneWeather: true, sceneIntro: true }
   // `weather` names the effect for light and dark pages. The intro's lines and the tagline are in
   // seasons.js.
   const SEASONS = {

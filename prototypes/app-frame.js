@@ -79,7 +79,7 @@
     // every page's tagline.
     sceneSeason: 'auto', // 'auto' (by month) | 'winter' | 'spring' | 'summer' | 'autumn'
     sceneBackground: true,
-    sceneStrength: 'full', // 'full' | 'dimmed'
+    sceneStrength: 'dimmed', // 'full' | 'dimmed'
     sceneWeather: true,
     sceneIntro: true, // play the intro on the first visit
     appIcon: appIcon.DEFAULT, // '01' to '12', see app-icon.js
@@ -547,18 +547,17 @@
     applyScene()
   }
 
-  // The season's tagline (seasons.js) at the foot of every page, over a fade into a deeper tint. On a
-  // short page, `sticky` with a top offset of the viewport minus its height moves it down to the
-  // bottom of the full-height body; a flex column would shrink the pages' `mx-auto` blocks.
+  // The season's tagline (seasons.js) in the page's title row, after the h1, in the intro's colors.
+  // From 1024 px it sits beside the title after a divider; below, on its own line under it.
   function renderTagline() {
-    const main = document.querySelector('body > main')
-    if (!main || !window.seasons) return
-    document.body.classList.add('min-h-dvh')
-    main.insertAdjacentHTML(
-      'afterend',
-      `<p id="page-tagline" class="pointer-events-none sticky top-[calc(100dvh-5.5rem)] h-[5.5rem] px-4 pb-5 pt-12 text-center text-sm text-muted-foreground"></p>`
-    )
-    const update = () => (document.getElementById('page-tagline').textContent = seasons.tagline())
+    const h1 = document.querySelector('body h1')
+    if (!h1 || !window.seasons) return
+    const row = document.createElement('div')
+    row.className = 'flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1'
+    h1.replaceWith(row)
+    row.append(h1)
+    row.insertAdjacentHTML('beforeend', '<p id="page-tagline" class="season-tagline min-w-0 basis-full text-sm font-medium lg:basis-auto lg:border-l lg:pl-4"></p>')
+    const update = () => (document.getElementById('page-tagline').innerHTML = seasons.taglineHtml())
     update()
     listeners.settings.push(update)
   }

@@ -38,3 +38,5 @@ Surfaces was named for every card so it can apply app-wide.
   Scenery button in the header and calm weather (half the points, 70% speed). Settings groups the
   scene settings as Scenery. See "Seasonal scene in the app" in `prototypes/README.md`. The other
   pages come next.
+- 2026-09-25: The tagline moved from the foot of the page into the title row, in the intro's
+  colors, and above the card on the sign-in page. Scenery defaults to dimmed.

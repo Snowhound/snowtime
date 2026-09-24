@@ -41,7 +41,8 @@
       /* Tagline over the scene (prototype variant): a pill, a glow in the page color, a footer line
          in the card, or at the foot of the page over a fade, as on the signed-in pages. */
       .tagline-in-card,
-      .page-tagline {
+      .page-tagline,
+      .top-tagline {
         display: none;
       }
       body[data-scene-bg='on'][data-tagline='pill'] .card-tagline {
@@ -50,6 +51,13 @@
       body[data-scene-bg='on'][data-tagline='halo'] .card-tagline {
         @apply font-medium text-foreground;
         text-shadow: 0 0 6px var(--background), 0 0 14px var(--background), 0 0 28px var(--background);
+      }
+      /* Above the card in the intro's colors, as beside the signed-in pages' titles (chosen). */
+      body[data-tagline='top'] .card-tagline {
+        display: none;
+      }
+      body[data-tagline='top'] .top-tagline {
+        @apply block max-w-xl text-balance text-center text-base font-medium;
       }
       body[data-tagline='card'] .card-tagline {
         display: none;
@@ -292,7 +300,8 @@
         </div>
         <div class="flex flex-wrap items-center gap-2 lg:justify-end" title="Prototype variants for the seasonal scene">
           <label for="tagline-select" class="sr-only">Tagline</label>
-          <select id="tagline-select" data-ui="select" class="h-9 w-48" data-variant-key="tagline">
+          <select id="tagline-select" data-ui="select" class="h-9 w-56" data-variant-key="tagline">
+            <option value="top">Tagline: above the card</option>
             <option value="fade">Tagline: bottom fade</option>
             <option value="halo">Tagline: halo</option>
             <option value="card">Tagline: in card</option>
@@ -381,6 +390,7 @@
             <svg class="prototype-icon" aria-hidden="true"><use href="#icon-rotate-ccw" /></svg>Replay intro
           </button>
         </div>
+        <p class="top-tagline season-tagline"></p>
         <div class="auth-form flex w-full max-w-sm flex-col gap-6">
           <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]" id="product-mark">
             <img data-app-mark="small" src="../design/brand-assets/marks-small/02-hound-hour-light.svg" alt="" class="size-7 object-contain" />
@@ -718,7 +728,7 @@
       // tagline treatment and tone are prototype variants, kept in their own key.
       const VARIANTS_KEY = 'snowtime.prototypeAuthScene'
       const variants = (() => {
-        const defaults = { tone: 'deep', tagline: 'fade' }
+        const defaults = { tone: 'deep', tagline: 'top' }
         try {
           return { ...defaults, ...JSON.parse(localStorage.getItem(VARIANTS_KEY) ?? '{}') }
         } catch {
@@ -762,6 +772,7 @@
         seasons.SEASONS[season].lines.forEach((line, i) => (introLines[i].textContent = line))
         for (const [name, color] of Object.entries(seasons.SEASONS[season].colors)) introEl.style.setProperty(`--intro-${name}`, color)
         document.querySelectorAll('.card-tagline, .tagline-in-card, .page-tagline').forEach((el) => (el.textContent = seasons.tagline(season)))
+        document.querySelector('.top-tagline').innerHTML = seasons.taglineHtml(season)
         ui.setSwitch(document.getElementById('scene-intro-switch'), user.sceneIntro)
         document.querySelectorAll('[data-variant-key]').forEach((el) => (el.value = variants[el.dataset.variantKey]))
       }

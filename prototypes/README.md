@@ -210,11 +210,12 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
   only), and a user menu (Profile, Settings, theme, Sign out). Below 768 px the navigation moves
   to a second header row of four equal-width links, so every page stays one tap away without a
   hamburger menu.
-- The season's **tagline** after `<main>`, centered over a fade into a deeper tint, as on the
-  sign-in page. It's `sticky` with a top offset of the viewport minus its height, so it sits at
-  the bottom of short pages without making the body a flex column, which would shrink the pages'
-  `mx-auto` blocks. The season is the user's Season setting (see the Scenery menu below).
-  Pages load [seasons.js](seasons.js) before `app-frame.js`.
+- The season's **tagline** in the page's title row, after the `h1`: beside the title after a
+  divider from 1024 px, on its own line under it below that. It's two-toned like the intro: the
+  first line in the season's headline color, the second in its second line's color (see
+  [Seasonal copy](#seasonal-copy)). The season is the user's Season setting (see the Scenery menu
+  below). Pages load [seasons.js](seasons.js) before `app-frame.js`. It replaced a tagline at
+  the foot of the page over a fade, which covered the end of long lists and read as a footer.
 - With `scene: true`, the **seasonal scene** behind the page and a **Scenery** button in the
   header; see [Seasonal scene in the app](#seasonal-scene-in-the-app).
 
@@ -257,8 +258,7 @@ the season's image in light and dark, the tint, and the weather.
   off, the page looks as before, with the weather over the page tint.
 - **Over the image**: the header is the page color at 82% with a blur (solid for solid surfaces),
   the prototype bar is solid, page titles get a glow in the page color, and outline buttons a
-  page-colored fill. The tagline's fade goes into the page color and its text turns
-  `foreground`, as on the sign-in page.
+  page-colored fill. The tagline gets the same glow as the title.
 - **Weather**: behind real work, the sign-in page's weather felt busy, so app pages run it
   **calm**: half the points and 70% of the speed. The prototype bar's "Weather" select switches
   to the sign-in page's pace for comparison (`snowtime.prototypeAppScene`). As on the sign-in
@@ -634,8 +634,8 @@ edited. The passkey button depends on task 015. Limits match Better Auth default
 to 128 characters, reset links valid for 1 hour, invitations for 48 hours.
 
 The tagline, the season's first two intro lines ("Winter is coming. So is the end of the month."
-in winter), sits at the foot of the page over a fade, as on every signed-in page (see
-[App frame](#app-frame)). The mark is the chosen app icon (see [App icon](#app-icon)).
+in winter), sits above the card in the intro's two colors, as beside every signed-in page's title
+(see [App frame](#app-frame)). The mark is the chosen app icon (see [App icon](#app-icon)).
 
 #### Seasonal scene and intro
 
@@ -667,8 +667,8 @@ each, from the 2 to 2.5 MB PNGs).
   is `inert` while it plays. With reduced motion it doesn't play, and the snow stays off.
 - **Scenery menu** (the mountain button, top right): Season (Auto, which follows the month and
   names the current season, or winter, spring, summer, or autumn), then the Background switch, with two options
-  under it that apply only while it's on: Strength (full or dimmed: how much page color covers
-  the image, 30 or 55% dark, 20 or 50% light, stronger toward the bottom) and Surfaces (glass,
+  under it that apply only while it's on: Strength (dimmed, the default, or full: how much page
+  color covers the image, 55 or 30% dark, 50 or 20% light, stronger toward the bottom) and Surfaces (glass,
   `bg-card/70` with a backdrop blur, or solid cards). Then the Weather switch, the Intro switch,
   and Replay intro. These are the user settings `sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`,
   `sceneWeather`, and `sceneIntro`, shared with Settings > Preferences > Scenery, which lays
@@ -690,7 +690,7 @@ The prototype bar's second row holds variants to compare, kept in `snowtime.prot
 
 | Variant  | Options                                                                          |
 | -------- | -------------------------------------------------------------------------------- |
-| Tagline  | Bottom fade (chosen: at the foot of the page over a fade, in the page flow so it never covers the card), halo (a glow in the page color), in the card (a footer line), or pill |
+| Tagline  | Above the card (chosen: in the intro's two colors, as on the signed-in pages), bottom fade (at the foot of the page over a fade, in the page flow so it never covers the card), halo (a glow in the page color), in the card (a footer line), or pill |
 | Tone     | Deeper (`#060c14` dark with card `#0d1929`, `#fbfdff` light) or the app's tokens |
 
 Over the images, contrast depends on the picture, so axe's color-contrast results don't apply to
@@ -701,6 +701,20 @@ the scene; the card and the tagline's pill keep text on a page-colored surface.
 [seasons.js](seasons.js) holds the copy the sign-in page and the frame share. Every set follows
 the winter line's pattern: the season does something, then the timesheet does the same. The
 fourth intro line is always "Sign in and get it done!", and the first two are the tagline.
+
+The tagline uses the intro's colors: the first line in the headline color, the second in the
+second line's. On light pages the headline colors are too pale, so `titleLight` darkens each hue
+to at least 5:1 on the page, tint, and `muted` colors, and the second line is `foreground`.
+
+| Season | Headline, dark (intro) | Headline, light | Second line, dark |
+| ------ | ---------------------- | --------------- | ----------------- |
+| Winter | `#f4f8fd` (12.7:1)     | `#2265b9`       | `#e6eef8`         |
+| Spring | `#cfeccb` (10.7:1)     | `#33722a`       | `#eef5ee`         |
+| Summer | `#f6e7a1` (10.9:1)     | `#76630b`       | `#f5f2e4`         |
+| Autumn | `#f6c07e` (8.2:1)      | `#94560a`       | `#f3e3d0`         |
+
+Winter's headline is near-white, so in dark mode its tagline barely shows two tones, as in the
+intro.
 
 | Season | Lines 1 to 3 (shown)                                                                                   | Alternates (lines 1 and 2; not shown yet)                                                    |
 | ------ | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |

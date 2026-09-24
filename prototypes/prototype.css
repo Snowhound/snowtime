@@ -143,10 +143,19 @@ body {
   --series-8: #c24b49;
 }
 
-/* The season's tagline at the foot of signed-in pages (app-frame.js), over a fade into a deeper
-   tint. */
-#page-tagline {
-  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--muted) 70%, transparent));
+/* The season's tagline (seasons.taglineHtml) beside page titles and on the sign-in page, in the
+   intro's colors: the headline color, darkened on light pages, then the second line's. */
+.season-tagline .tagline-1 {
+  color: var(--tagline-title-light);
+}
+.dark .season-tagline .tagline-1 {
+  color: var(--tagline-title);
+}
+.season-tagline .tagline-2 {
+  color: var(--foreground);
+}
+.dark .season-tagline .tagline-2 {
+  color: var(--tagline-sub);
 }
 
 /* Seasonal scene behind signed-in pages that opt in (app-frame.js, scene.js). The body drops its
@@ -162,8 +171,7 @@ body[data-scene='on'] {
 body[data-scene='on'] .scene {
   background: color-mix(in srgb, var(--muted) 40%, var(--background));
 }
-/* Over the image, the header and prototype bar keep a page-colored surface, and the tagline fades
-   into the page color, as on the sign-in page. */
+/* Over the image, the header and prototype bar keep a page-colored surface. */
 body[data-scene-bg='on'] #app-header {
   background-color: color-mix(in srgb, var(--background) 82%, transparent);
   backdrop-filter: blur(16px);
@@ -174,11 +182,6 @@ body[data-scene-bg='on'][data-surfaces='solid'] #app-header {
 body[data-scene='on'] #prototype-bar {
   background-color: var(--muted);
 }
-body[data-scene-bg='on'] #page-tagline {
-  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--background) 88%, transparent));
-  color: var(--foreground);
-  font-weight: 500;
-}
 /* Surfaces: glass cards let the scene show through; solid ones keep bg-card and lift off it with a
    shadow. `.surface` marks card-like elements that aren't a Card, such as the timer bar. */
 body[data-scene-bg='on'][data-surfaces='glass'] :is([data-ui='card'], .surface) {
@@ -188,9 +191,9 @@ body[data-scene-bg='on'][data-surfaces='glass'] :is([data-ui='card'], .surface) 
 body[data-scene-bg='on'] :is([data-ui='card'], .surface) {
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
 }
-/* Text and controls that sit on the image itself: page titles get a glow in the page color, and
-   outline buttons a page-colored fill. */
-body[data-scene-bg='on'] h1 {
+/* Text and controls that sit on the image itself: page titles and the tagline get a glow in the
+   page color, and outline buttons a page-colored fill. */
+body[data-scene-bg='on'] :is(h1, .season-tagline) {
   text-shadow:
     0 0 6px var(--background),
     0 0 16px var(--background),
