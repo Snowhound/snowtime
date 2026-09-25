@@ -18,6 +18,7 @@
 | Testing       | `bun test` for server and database code (`*.test.ts`); Vitest with Solid Testing Library in jsdom for components (`*.test.tsx`); `bunfig.toml` and `vitest.config.ts` keep each runner off the other's files |
 | Lint          | oxlint with type-aware rules (`oxlint-tsgolint`) and `eslint-plugin-solid` as a JS plugin; config in `.oxlintrc.json`, warnings fail                                                                         |
 | Format        | oxfmt (Prettier-compatible; the project uses no Prettier); config in `.oxfmtrc.json`; prototypes and generated files are skipped                                                                             |
+| Spreadsheets  | `write-excel-file` (MIT, write-only, one dependency: fflate) for the report's XLSX export, loaded in the browser only when someone exports; CSV is built without a library (see "Report export")             |
 | Client state  | No library; Solid signals/stores and URL search params; user settings on the server (see "User settings")                                                                                                    |
 
 ## Data conventions
@@ -224,6 +225,29 @@ such as rate limiting.
   - Team totals count each team's current members, so a member in two teams counts in
     both. Team leads report on the teams they lead; admins and owners on all.
   - A report returns ids, ISO dates, and milliseconds; the client formats them.
+
+## Report export
+
+Reports exports the report as shown, for the current filters (task 034, `prototypes/README.md`,
+Reports): the timesheet and the entries behind it, as CSV or as one XLSX file with a sheet for
+each.
+
+- Where: the browser builds the files (`src/features/reports/export.ts`). The timesheet comes
+  from the report already on screen, named from the cached lists as the grid is. The entries come
+  from `getReportEntries`, which reads what `getReport` reads under the same role rules, so the
+  server enforces them. Building in the browser keeps the files out of the Vercel functions and
+  their response limits, and the XLSX library loads only when someone exports.
+- Entries: each entry's time on each day, clipped to the range and split at the user's
+  midnights like the totals, with its start and end in the user's zone; a running entry counts up
+  to now and has no end. The entries add up to the report's totals.
+- Durations: decimal hours in CSV (two places), and numbers in XLSX, as fractions of a day with
+  the `[h]:mm` format, so they add up in the spreadsheet. Dates are ISO days, since they're the
+  user's days, not instants.
+- CSV: RFC 4180 with commas and dots, UTF-8 with a byte order mark so Excel reads non-ASCII
+  names, and text starting with `=`, `+`, `-`, `@`, a tab, or a carriage return gets a leading
+  apostrophe against formula injection. XLSX writes text as strings, never formulas.
+- File names: the organization's short name and the range's first and last days, such as
+  `snowhound-2026-09-01-to-2026-09-30.csv`, with `-entries` for the entry list.
 
 ## User settings
 

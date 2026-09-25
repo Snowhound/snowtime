@@ -2,7 +2,8 @@
 // (docs/architecture.md, "Time zones"). The range's days are computed in TypeScript and
 // queried as one UTC range; entries are split at the zone's midnights and summed here.
 // Everyone reports on the entries they may read (readableUserIds); team totals count each
-// team's current members. Results are ids, dates and milliseconds, never display text.
+// team's current members. Results are ids, dates and milliseconds, never display text; the
+// export's entry list adds each entry's own description.
 import { and, eq, gt, inArray, isNull, lt, or } from 'drizzle-orm'
 import type { Database } from '~/db'
 import { team, teamMember, timeEntry, userSettings } from '~/db/schema'
@@ -207,12 +208,9 @@ async function reportUsers(
   return readable
 }
 
-export async function getReport(
-  db: Database,
-  scope: Scope,
-  input: ReportInput,
-  now = new Date(),
-): Promise<Report> {
+// What a report counts, from the user's settings and the scope: its days, teams, and the
+// entries it may read that touch the range.
+async function reportData(db: Database, scope: Scope, input: ReportInput, now: Date) {
   const settings = await settingsOf(db, scope.userId)
   const teams = await reportTeams(db, scope)
   const users = await reportUsers(db, scope, input, teams)
@@ -231,8 +229,10 @@ export async function getReport(
       ? []
       : await db
           .select({
+            id: timeEntry.id,
             userId: timeEntry.userId,
             projectId: timeEntry.projectId,
+            description: timeEntry.description,
             startedAt: timeEntry.startedAt,
             stoppedAt: timeEntry.stoppedAt,
           })
@@ -245,7 +245,16 @@ export async function getReport(
               or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, new Date(range.from))),
             ),
           )
+  return { settings, a, range, entries }
+}
 
+export async function getReport(
+  db: Database,
+  scope: Scope,
+  input: ReportInput,
+  now = new Date(),
+): Promise<Report> {
+  const { settings, a, range, entries } = await reportData(db, scope, input, now)
   return {
     ...aggregate(entries, a),
     timeZone: settings.timeZone,
@@ -255,4 +264,53 @@ export async function getReport(
     to: new Date(range.to),
     now,
   }
+}
+
+// One entry's time on one day of the range, for the export's entry list: clipped to the
+// range, split at the zone's midnights like the report's totals, and a running entry up to now.
+export interface ReportEntryPiece {
+  entryId: string
+  userId: string
+  projectId: string | null
+  description: string
+  date: IsoDate
+  from: Date
+  to: Date
+  // The entry was running at `now`, so `to` is now, not its end.
+  running: boolean
+  ms: number
+}
+
+// The entries behind a report, oldest first, under the same rules as getReport, so their
+// durations add up to its total.
+export async function getReportEntries(
+  db: Database,
+  scope: Scope,
+  input: ReportInput,
+  now = new Date(),
+): Promise<{ timeZone: string; entries: ReportEntryPiece[] }> {
+  const { settings, range, entries } = await reportData(db, scope, input, now)
+  const pieces: ReportEntryPiece[] = []
+  for (const entry of entries) {
+    const span = countedSpan(entry, range, now.getTime())
+    if (!span) continue
+    let from = span.from
+    for (const piece of splitByDay(span.from, span.to, settings.timeZone)) {
+      const to = from + piece.ms
+      pieces.push({
+        entryId: entry.id,
+        userId: entry.userId,
+        projectId: entry.projectId,
+        description: entry.description,
+        date: piece.date,
+        from: new Date(from),
+        to: new Date(to),
+        running: !entry.stoppedAt && to === now.getTime(),
+        ms: piece.ms,
+      })
+      from = to
+    }
+  }
+  pieces.sort((x, y) => x.from.getTime() - y.from.getTime() || x.entryId.localeCompare(y.entryId))
+  return { timeZone: settings.timeZone, entries: pieces }
 }

@@ -235,5 +235,8 @@ Look at these first:
 4. The weather's calm pace on app pages and the tagline's placement between 1024 and 1100 px on
    the timer, where it sits between the title and the actions.
 
+After this task I did task 034 too, the report export (Reports' Export menu, CSV and XLSX); its
+Progress section says what to check.
+
 Not checked: the hidden-tab stop in a real background tab (Playwright and agent-browser keep
 tabs visible, so it was faked through `document.hidden`), and a headed Firefox.

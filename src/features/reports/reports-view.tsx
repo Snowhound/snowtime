@@ -17,6 +17,7 @@ import { teamsQuery } from '~/lib/teams'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
 import { MAX_REPORT_DAYS } from '~/server/reports/reports.schemas'
+import { ExportMenu } from './export-menu'
 import { type FilterActions, ReportFilterBar } from './filter-bar'
 import { type Group, type ReportSearch, type Unit, reportFilters } from './filters'
 import { reportQuery } from './queries'
@@ -39,6 +40,7 @@ const TITLES = {
 
 export function ReportsView(props: {
   organizationId: string
+  organizationSlug: string
   userId: string
   admin: boolean
   zone: string
@@ -50,6 +52,7 @@ export function ReportsView(props: {
   const teams = useQuery(() => teamsQuery(props.organizationId))
   const members = useQuery(() => membersQuery(props.organizationId))
   const [rangeError, setRangeError] = createSignal<string | null>(null)
+  const [exportError, setExportError] = createSignal<string | null>(null)
 
   function today() {
     return localDate(Date.now(), props.zone)
@@ -161,7 +164,7 @@ export function ReportsView(props: {
   }
 
   function error() {
-    return rangeError() ?? (report.error ? errorMessage(report.error) : null)
+    return rangeError() ?? exportError() ?? (report.error ? errorMessage(report.error) : null)
   }
 
   return (
@@ -189,10 +192,26 @@ export function ReportsView(props: {
       </Show>
       <section class="min-w-0" aria-label={m.reports_timesheet()}>
         <Card class="min-w-0 overflow-hidden">
-          <CardHeader class="pb-4">
-            <CardTitle class="text-base">{TITLES[filters().group][filters().unit]()}</CardTitle>
-            <Show when={filters().group === 'team'}>
-              <CardDescription>{m.reports_team_note()}</CardDescription>
+          <CardHeader class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
+            <div class="grid min-w-0 gap-1.5">
+              <CardTitle class="text-base">{TITLES[filters().group][filters().unit]()}</CardTitle>
+              <Show when={filters().group === 'team'}>
+                <CardDescription>{m.reports_team_note()}</CardDescription>
+              </Show>
+            </div>
+            <Show when={report.data}>
+              {(data) => (
+                <ExportMenu
+                  report={data()}
+                  rows={rows()}
+                  group={filters().group}
+                  input={filters().input}
+                  organizationSlug={props.organizationSlug}
+                  projects={projects.data ?? []}
+                  members={members.data ?? []}
+                  onError={setExportError}
+                />
+              )}
             </Show>
           </CardHeader>
           <Show when={report.data}>

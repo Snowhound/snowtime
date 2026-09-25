@@ -15,6 +15,9 @@ export function ReportsPage(props: { search: ReportSearch }) {
           {(organizationId) => (
             <ReportsView
               organizationId={organizationId}
+              organizationSlug={
+                data().organizations.find((o) => o.id === organizationId)?.slug ?? 'snowtime'
+              }
               userId={data().user.id}
               admin={data().role === 'owner' || data().role === 'admin'}
               zone={data().settings!.timeZone}

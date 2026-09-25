@@ -9,7 +9,13 @@ import { seedIds } from '~/db/seed'
 import { listEntries } from '../entries/entries.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
-import { aggregate, getReport, type Aggregation, type Report } from './reports.server'
+import {
+  aggregate,
+  getReport,
+  getReportEntries,
+  type Aggregation,
+  type Report,
+} from './reports.server'
 
 const { users: U, orgs: O, projects: P, teams: T } = seedIds
 const HOUR = 3_600_000
@@ -302,5 +308,65 @@ describe('getReport', () => {
     const after = await getReport(db, scopes.admin, input, NOW)
     expect(designOf(after)).toBe(totalOf(after, U.lead))
     expect(after.total).toBe(before.total)
+  })
+})
+
+describe('getReportEntries', () => {
+  const input = { from: '2026-09-14', to: '2026-09-24', unit: 'day' } as const
+
+  test("adds up to the report's totals per member, day, and project, running timer included", async () => {
+    for (const scope of [scopes.member, scopes.lead, scopes.admin]) {
+      const report = await getReport(db, scope, input, NOW)
+      const { entries } = await getReportEntries(db, scope, input, NOW)
+      expect(sum(entries.map((e) => e.ms))).toBe(report.total)
+      for (const m of report.members) {
+        expect(sum(entries.filter((e) => e.userId === m.userId).map((e) => e.ms))).toBe(m.total)
+      }
+      report.buckets.forEach((date, i) => {
+        expect(sum(entries.filter((e) => e.date === date).map((e) => e.ms))).toBe(
+          report.perBucket[i],
+        )
+      })
+      for (const p of report.projects) {
+        const ms = entries.filter((e) => e.projectId === p.projectId).map((e) => e.ms)
+        expect(sum(ms)).toBe(p.total)
+      }
+      for (const e of entries) expect(e.to.getTime() - e.from.getTime()).toBe(e.ms)
+    }
+    const { entries } = await getReportEntries(db, scopes.admin, input, NOW)
+    const running = entries.filter((e) => e.running)
+    expect(running).toHaveLength(1)
+    expect(running[0].to).toEqual(NOW)
+    expect(entries.map((e) => e.from.getTime())).toEqual(
+      entries.map((e) => e.from.getTime()).sort((a, b) => a - b),
+    )
+  })
+
+  test('follows the report’s role rules', async () => {
+    const member = await getReportEntries(db, scopes.member, input, NOW)
+    expect([...new Set(member.entries.map((e) => e.userId))]).toEqual([U.member])
+    await expect(
+      getReportEntries(db, scopes.lead, { ...input, userId: U.engineer }, NOW),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
+    await expect(
+      getReportEntries(db, scopes.member, { ...input, teamId: T.design }, NOW),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'team_report_forbidden' })
+  })
+
+  test("splits an entry at the user's midnight into a piece per day", async () => {
+    // 23:00 to 02:00 in London.
+    await logFor(scopes.loner, '2026-10-02T22:00:00Z', '2026-10-03T01:00:00Z')
+    const { timeZone, entries } = await getReportEntries(
+      db,
+      scopes.loner,
+      { from: '2026-10-02', to: '2026-10-04', unit: 'day' },
+      NOW,
+    )
+    expect(timeZone).toBe('Europe/London')
+    expect(entries.map((e) => [e.date, e.from.toISOString(), e.to.toISOString()])).toEqual([
+      ['2026-10-02', '2026-10-02T22:00:00.000Z', '2026-10-02T23:00:00.000Z'],
+      ['2026-10-03', '2026-10-02T23:00:00.000Z', '2026-10-03T01:00:00.000Z'],
+    ])
+    expect(entries[0].entryId).toBe(entries[1].entryId)
   })
 })

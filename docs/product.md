@@ -14,15 +14,15 @@ companies can use it too.
 
 ## MVP scope
 
-| Area     | Included                                                     |
-| -------- | ------------------------------------------------------------ |
-| Auth     | Sign up / sign in via Better Auth                            |
-| Tenancy  | Organizations, teams, members, invitations; org switcher     |
-| Timer    | Start / stop a single running timer with a description       |
-| Entries  | List, edit, delete, and manually add past entries            |
-| Projects | Org-level projects, optionally assigned to teams; CRUD       |
-| Reports  | Totals per day / week / project / team / member, user's zone |
-| Settings | Time zone and week start                                     |
+| Area     | Included                                                                                               |
+| -------- | ------------------------------------------------------------------------------------------------------ |
+| Auth     | Sign up / sign in via Better Auth                                                                      |
+| Tenancy  | Organizations, teams, members, invitations; org switcher                                               |
+| Timer    | Start / stop a single running timer with a description                                                 |
+| Entries  | List, edit, delete, and manually add past entries                                                      |
+| Projects | Org-level projects, optionally assigned to teams; CRUD                                                 |
+| Reports  | Totals per day / week / project / team / member, user's zone; CSV and XLSX export of a report as shown |
+| Settings | Time zone and week start                                                                               |
 
 ## Not in MVP
 
@@ -30,7 +30,8 @@ companies can use it too.
 - Tags, clients, custom roles beyond owner / admin / member
 - Integrations, browser extension, mobile app
 - Offline / local-first sync
-- Exports beyond what is trivial
+- Exports beyond a report as shown and its entries (for example payroll formats or scheduled
+  exports)
 
 ## Tenancy
 
