@@ -3,14 +3,15 @@
 // parent, level with the title, unless it would come within 24 px of the title or the area's
 // other content, such as the row's actions; otherwise, and on narrower screens, it sits under
 // the title. It's placed again when the area resizes, once the fonts load, and when the season
-// changes. The title's parent must be `relative`.
+// changes. The title's parent must be `relative`. `centerOn` centers it on part of the area
+// instead, such as the settings page's cards beside their section links.
 import { createEffect, on, onCleanup, onMount } from 'solid-js'
 import { useSeason } from '~/lib/seasons'
 import { SeasonTagline } from './season-tagline'
 
 const GAP = 24
 
-export function PageTitle(props: { title: string }) {
+export function PageTitle(props: { title: string; centerOn?: () => HTMLElement | undefined }) {
   const season = useSeason()
   let row!: HTMLDivElement
   let title!: HTMLHeadingElement
@@ -20,11 +21,14 @@ export function PageTitle(props: { title: string }) {
     const area = row.parentElement
     tagline.classList.remove('page-tagline-centered')
     tagline.style.top = ''
+    tagline.style.left = ''
     if (!area || innerWidth < 1024) return
     tagline.classList.add('page-tagline-centered')
     const a = area.getBoundingClientRect()
     const h = title.getBoundingClientRect()
     tagline.style.top = `${h.top - a.top + (h.height - tagline.offsetHeight) / 2}px`
+    const center = props.centerOn?.()?.getBoundingClientRect()
+    if (center?.width) tagline.style.left = `${center.left + center.width / 2 - a.left}px`
     const t = tagline.getBoundingClientRect()
     const blockers = [title, ...[...area.children].filter((el) => el !== row)]
     const touches = blockers.some((el) => {
@@ -40,12 +44,18 @@ export function PageTitle(props: { title: string }) {
     if (touches) {
       tagline.classList.remove('page-tagline-centered')
       tagline.style.top = ''
+      tagline.style.left = ''
     }
   }
 
   onMount(() => {
     const observer = new ResizeObserver(place)
     if (row.parentElement) observer.observe(row.parentElement)
+    // The element to center on may render later, so it is observed once it does.
+    createEffect(() => {
+      const el = props.centerOn?.()
+      if (el) observer.observe(el)
+    })
     onCleanup(() => observer.disconnect())
     void document.fonts?.ready.then(place)
     createEffect(on(season, () => queueMicrotask(place)))

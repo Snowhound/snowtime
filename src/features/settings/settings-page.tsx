@@ -27,9 +27,12 @@ export function SettingsPage(props: { initialError?: string }) {
     document.getElementById('sign-in-methods')?.scrollIntoView()
   })
 
+  // The tagline centers on the cards, not the section links beside them.
+  const [cards, setCards] = createSignal<HTMLDivElement>()
+
   return (
     <div class="relative grid gap-4">
-      <PageTitle title={m.nav_settings()} />
+      <PageTitle title={m.nav_settings()} centerOn={cards} />
       <div class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[12rem_minmax(0,1fr)]">
         <nav class="hidden lg:block" aria-label={m.settings_sections()}>
           <ul class="sticky top-6 flex flex-col gap-1">
@@ -53,7 +56,7 @@ export function SettingsPage(props: { initialError?: string }) {
         </nav>
         <Show when={session.data}>
           {(data) => (
-            <div class="flex max-w-3xl min-w-0 flex-col gap-6">
+            <div ref={setCards} class="flex max-w-3xl min-w-0 flex-col gap-6">
               <Show when={data().settings}>
                 {(settings) => <PreferencesCard settings={settings()} />}
               </Show>
