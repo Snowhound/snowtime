@@ -273,6 +273,28 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   server renders, and `src/styles.css` styles `surface` elements, the header, and the text over
   the image from them. Popovers, menus, and dialogs render into `<body>`, outside the frame, so
   they stay solid.
+- Weather (`src/lib/weather.ts`): each season's effect is a WebGL 2 program that draws all its
+  points in one call with no buffers, on one canvas in the scene layer, at about 45 fps, with
+  point counts scaled to the screen's area. App pages run it calm (half the points, 70% speed),
+  and the sign-in page at full pace. It runs only with the Weather switch on, without reduced
+  motion, and in a visible tab. Without WebGL 2, or when an effect's shaders don't compile, it
+  stays off and the Weather hint says why. Unmounting cancels the frame and loses the context.
+- Tagline (`src/lib/seasons.ts`, `src/components/page-title.tsx`): the seasonal copy is
+  Paraglide messages. Each signed-in page's title row places the tagline in the browser, from
+  its measured size, so it moves under the title when it doesn't fit.
+- Intro (`src/lib/intro.ts`, `src/components/intro.tsx`): module-level signals hold its state,
+  so the frames, the scene layer, and the Replay buttons share one player. The page under it
+  stays mounted, hidden and `inert`. While it plays, `<html data-intro>` holds the page dark:
+  the theme script in `<head>` treats it as dark and applies the saved theme once it goes.
+  When the intro is due, the same script sets `data-intro="pending"`, which paints the page
+  black before hydration. It decides from the device's settings, since the account's aren't
+  loaded yet; the frame clears it if the account's Intro switch is off, and a timeout clears
+  it if nothing mounts.
+- Storage keys in `localStorage`: `snowtime.settings` (the device's settings; see "User
+  settings"), `snowtime.introSeen` (the sign-in page's intro has played in this browser), and
+  `snowtime.introSeason` (the calendar season the intro last played in, so app pages play it
+  once a season). Every access is guarded, and blocked storage only means the intro may play
+  again.
 
 ## Internationalization
 

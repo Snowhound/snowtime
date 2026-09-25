@@ -259,6 +259,12 @@ signed-in user is Anna Kask (`anna@snowhound.eu`), matching the invitation in `a
 
 ### Seasonal scene in the app
 
+Task 033 ported this design to the Solid app: the brand, the Appearance popover, the scene with
+its weather, the surfaces, the tagline, and the intro. The app differs where this README says
+so. The header sticks, the frame rather than the body carries the scene's data attributes, and
+the sign-in page drops the hidden line under the card, so the card is centered with the tagline
+above it. `docs/architecture.md` ("Seasonal scene") records how the app builds it.
+
 Task 032 brings the sign-in page's scene (see [Seasonal scene and intro](#seasonal-scene-and-intro))
 to the signed-in pages. Every signed-in page has it. A page opts in with
 `appFrame.mount({ scene: true })` and loads [scene.js](scene.js) before `app-frame.js`. The frame

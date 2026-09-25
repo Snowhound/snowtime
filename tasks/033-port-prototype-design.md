@@ -1,6 +1,6 @@
 # 033: Port the prototype design to the app
 
-Status: in-progress
+Status: done
 
 Tasks 029, 031, and 032 changed the prototypes' look after task 023 ported the views: brand
 colors and font, the app icon, the Appearance popover, the seasonal scene with its weather,
@@ -213,9 +213,27 @@ Work in this order, one commit or more per step, and check each in the dev app a
 
 ## Acceptance criteria
 
-- [ ] Each step above is in the app and matches its prototype in light and dark
-- [ ] The scene settings are user settings, with a migration, and apply without a reload
-- [ ] Reduced motion keeps the weather and the intro off
-- [ ] No horizontal scroll at 390 px and no browser errors on any view
-- [ ] `docs/architecture.md` records the scene (assets, WebGL, settings), and `prototypes/README.md`
+- [x] Each step above is in the app and matches its prototype in light and dark
+- [x] The scene settings are user settings, with a migration, and apply without a reload
+- [x] Reduced motion keeps the weather and the intro off
+- [x] No horizontal scroll at 390 px and no browser errors on any view
+- [x] `docs/architecture.md` records the scene (assets, WebGL, settings), and `prototypes/README.md`
       notes that the design is ported
+
+## For the morning
+
+Look at these first:
+
+1. The intro. Replay it from the header's Appearance popover and from Settings > Scenery ("Replay
+   it"). To see it play on its own, set `snowtime.introSeason` in `localStorage` to another
+   season and reload a signed-in page, or open the sign-in page in a private window for the
+   first-visit intro. The first paint should be black, with no flash of the light page.
+2. The Estonian seasonal lines listed under step 5. They're my translations, and a few puns may
+   not carry over.
+3. Firefox, headed: the replay flash is gone in Playwright's headless Firefox, but a real
+   Firefox window wasn't checked.
+4. The weather's calm pace on app pages and the tagline's placement between 1024 and 1100 px on
+   the timer, where it sits between the title and the actions.
+
+Not checked: the hidden-tab stop in a real background tab (Playwright and agent-browser keep
+tabs visible, so it was faked through `document.hidden`), and a headed Firefox.
