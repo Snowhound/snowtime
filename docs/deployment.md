@@ -76,11 +76,22 @@ provider redirects to `https://<host>/api/auth/callback/<id>`.
 | Google    | Google Cloud console, APIs & Services > Credentials   | `https://<host>/api/auth/callback/google`    |
 | Microsoft | Microsoft Entra admin center, App registrations (Web) | `https://<host>/api/auth/callback/microsoft` |
 
-A GitHub OAuth app has one callback URL, so each environment needs its own app. Google
-and Microsoft can list several redirect URLs in one app. For Microsoft account types and
-`MICROSOFT_TENANT_ID`, see `architecture.md` ("Sign-in methods").
+For GitHub, create an **OAuth App**, not a GitHub App: the GitHub App form asks for a
+webhook URL and permissions, which sign-in doesn't use. In the OAuth App form:
 
-Copy each provider's client ID and secret.
+- Homepage URL: `https://<host>`.
+- Redirect URIs: `https://<host>/api/auth/callback/github`. The form takes up to 10, so
+  one app can also list `http://localhost:3000/api/auth/callback/github` for local
+  development.
+- Leave **Allow wildcard matching** and **Enable Device Flow** off. **Expire user access
+  tokens** can stay on: the app uses GitHub's token only at sign-in and then keeps its
+  own session.
+
+Google and Microsoft also list several redirect URLs in one app. For Microsoft account
+types and `MICROSOFT_TENANT_ID`, see `architecture.md` ("Sign-in methods").
+
+Copy each provider's client ID and secret. GitHub shows a client secret only once, right
+after you generate it.
 
 ## 5. Let CI migrate the database
 
@@ -149,8 +160,8 @@ before its migration applies. Keep migrations backward compatible (`migrations.m
 Moving from `<project>.vercel.app` to your own domain, for example, takes a few minutes:
 
 1. Add the new domain in Vercel and wait for its certificate.
-2. Change the redirect URL in each OAuth app to the new host. GitHub, Google, and
-   Microsoft all let you edit it.
+2. Add the new host's redirect URL to each OAuth app. GitHub, Google, and Microsoft all
+   take several, so you can remove the old one once the move works.
 3. Set `BETTER_AUTH_URL` to the new host and redeploy.
 
 OAuth accounts and all data carry over. Passkeys don't: a passkey is bound to the host it

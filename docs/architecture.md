@@ -97,7 +97,9 @@
   registered in advance: local, the staging host, and production. A
   preview deployment on its own generated URL cannot use OAuth.
   - Google: one OAuth client can list the redirect URLs of every environment.
-  - GitHub: an OAuth app has one callback URL, so each environment needs its own app.
+  - GitHub: an OAuth app lists up to 10 redirect URIs, so one app can serve every
+    environment. A separate app per environment keeps a staging secret from signing in
+    to production.
   - Microsoft: one Entra ID app registration can list several redirect URLs (web
     platform). Non-localhost URLs must use HTTPS. For the default `common` tenant, the
     app must accept accounts in any organizational directory and personal Microsoft

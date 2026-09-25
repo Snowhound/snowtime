@@ -23,6 +23,7 @@
     "datamodel/*.dbml",
     "datamodel/*.chartdb.json",
     "bun.lock",
-    "prototypes/**"
+    "prototypes/**",
+    "design/**"
   ]
 }
