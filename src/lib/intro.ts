@@ -1,5 +1,5 @@
 // The seasonal intro (prototypes/intro.js, prototypes/README.md, "Seasonal scene and intro"):
-// about 13 seconds, always dark, over the page's scene. It opens on the weather alone, shows the
+// about 11 seconds, always dark, over the page's scene. It opens on the weather alone, shows the
 // season's lines (src/lib/seasons.ts), fades the background in, then hands back to the page,
 // which rises into place in its own theme. The page stays mounted under it, so a running timer
 // keeps counting. src/components/intro.tsx renders it from the state here.
@@ -122,7 +122,7 @@ function handFocus() {
 }
 
 // Returns false when it can't play: with reduced motion. `focus` gets the focus back afterwards.
-export function playIntro(options: { season: Season; signedIn: boolean; focus?: HTMLElement }) {
+export function playIntro(options: { season: Season; focus?: HTMLElement }) {
   const root = document.documentElement
   if (reducedMotion()) {
     releaseIntroPending()
@@ -131,7 +131,7 @@ export function playIntro(options: { season: Season; signedIn: boolean; focus?: 
   clearTimers()
   returnFocus = options.focus ?? null
   setSeason(options.season)
-  setLines(introLines(options.season, options.signedIn))
+  setLines(introLines(options.season))
 
   // At the start the image, the page, and the theme switch at once, with transitions off:
   // fading them let the image show as the black lifted. Solid updates the DOM as the signals
@@ -157,18 +157,17 @@ export function playIntro(options: { season: Season; signedIn: boolean; focus?: 
   })
 
   // The weather alone, the first line, a pause, the background fades in, a pause, then the
-  // other lines, each after the one before has had time to be read. The last one gets a longer
-  // beat before it and stays longest.
+  // other lines, each after the one before has had time to be read. The last one stays longest.
   at(300, () => setRevealed(true))
-  for (const [i, ms] of [1900, 5400, 7700, 10200].entries()) at(ms, () => setShown(i + 1))
+  for (const [i, ms] of [1900, 5400, 7700].entries()) at(ms, () => setShown(i + 1))
   at(3100, () => setBackground(true))
-  at(13300, revealPage)
-  at(13500, () => setDone(true))
-  at(13850, () => {
+  at(11300, revealPage)
+  at(11500, () => setDone(true))
+  at(11850, () => {
     releaseTheme()
     handFocus()
   })
-  at(14950, end)
+  at(12950, end)
   return true
 }
 

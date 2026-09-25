@@ -55,7 +55,6 @@ export function AppearanceMenu(props: {
         <SceneryFields settings={props.settings} hints="short" intro onChange={props.onChange} />
         <ReplayIntroButton
           season={currentSeason(props.settings.sceneSeason)}
-          signedIn={!props.onDevice}
           focus={() => trigger}
           onPlay={() => setOpen(false)}
           class="justify-self-start"

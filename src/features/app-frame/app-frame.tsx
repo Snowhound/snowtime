@@ -26,7 +26,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession }>) {
   // The intro plays on the first page opened in a calendar season it hasn't played in.
   onMount(() => {
     if (introDue('app', scene().sceneIntro)) {
-      playIntro({ season: currentSeason(scene().sceneSeason), signedIn: true })
+      playIntro({ season: currentSeason(scene().sceneSeason) })
     } else releaseIntroPending()
   })
 

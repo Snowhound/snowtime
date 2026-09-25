@@ -106,7 +106,6 @@ export function AppearancePopover(props: { settings: Settings }) {
             </Link>
             <ReplayIntroButton
               season={currentSeason(props.settings.sceneSeason)}
-              signedIn
               focus={() => trigger}
               onPlay={() => setOpen(false)}
             />

@@ -342,7 +342,7 @@ export function PreferencesCard(props: { settings: Settings }) {
             hints="long"
             intro
             onChange={update}
-            onReplay={(focus) => playIntro({ season: season(), signedIn: true, focus })}
+            onReplay={(focus) => playIntro({ season: season(), focus })}
           />
         </div>
       </CardContent>

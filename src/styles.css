@@ -382,15 +382,6 @@ html[data-intro='pending'] body {
   font-weight: 450;
   color: rgb(255 255 255 / 0.78);
 }
-.intro-line-4 {
-  margin-top: 12px;
-  transition-duration: 1.2s;
-  font-size: clamp(13px, 1.45vw, 16px);
-  line-height: 1.5;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--intro-accent);
-}
 .intro-skip {
   position: absolute;
   top: 18px;

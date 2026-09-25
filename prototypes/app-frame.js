@@ -439,7 +439,6 @@
       // Everything but the scene, popovers, and dialogs hides under the intro and is inert.
       introPlayer = intro.create({
         scene: sceneCtl,
-        signedIn: true,
         page: () => [...document.body.children].filter((el) => !el.matches('.app-scene, .intro, [popover], dialog, script, style, svg')),
         onChange: applyScene,
         restoreTheme: applyTheme,

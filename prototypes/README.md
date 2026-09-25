@@ -289,8 +289,8 @@ the season's image in light and dark, the tint, and the weather.
   muted text was hard to read on the light images: subtitles and Reports' midnight note
   (`scene-text`), and the footnotes under Projects' and Organization's main cards (`page-note`,
   which are also centered, like the tagline).
-- **Intro**: the sign-in page's intro ([intro.js](intro.js)) plays over the scene, with the
-  signed-in sign-off "You're in. Get it done!" as its last line (`seasons.SIGNED_IN_SIGN_OFF`).
+- **Intro**: the sign-in page's intro ([intro.js](intro.js)) plays over the scene, with the same
+  lines.
   It plays once at the change of season: on the first page opened in a season by month it hasn't
   played in (`snowtime.introSeason` in `localStorage`, which the sign-in page's intro sets too),
   under the Intro switch. It keys on the calendar season, not the Season setting, so changing
@@ -746,12 +746,12 @@ from navigation:
 - **Scene**: it fills the page behind the card. The light and dark images show the same view at
   another time of day, so a theme change only crossfades them; a slight zoom on the shown image
   made the mountains move and was removed.
-- **Intro**: about 13 seconds, always dark, from [intro.js](intro.js), which the signed-in pages
+- **Intro**: about 11 seconds, always dark, from [intro.js](intro.js), which the signed-in pages
   share (see [Seasonal scene in the app](#seasonal-scene-in-the-app)). It opens on the weather
   alone over the page color, shows the first line, pauses, fades the background in (over 2.6 s),
   pauses again, and then shows the other lines, each once the one before has had time to be read.
-  The last line ("Sign in and get it done!") comes after a longer beat, eases in more slowly, and
-  stays for 3 seconds. Then the page rises into place and the chosen theme returns. The intro
+  The third and last line stays for 3.6 seconds; a fourth, "Sign in and get it done!", was dropped
+  as unneeded. Then the page rises into place and the chosen theme returns. The intro
   always shows the weather and the background, even when they're off for the page; the page
   follows the switches once it appears. At the start, the image, the page, and the theme switch
   at once: a replay with the background on used to fade the image out as the black lifted, so it
@@ -760,7 +760,7 @@ from navigation:
   subtask 01, has the details and a fix to try in the app). Each season has its own lines and colors, from [seasons.js](seasons.js) (see
   "Seasonal copy" below): white and ice in winter, fresh green and meltwater teal in spring,
   firefly yellow and green in summer, and the leaves' amber and rust in autumn, each on the
-  headline and the last line. On a first visit to this browser, the intro plays dark in any
+  headline and the second line. On a first visit to this browser, the intro plays dark in any
   system theme, and after it the page keeps the background (on by default) and follows the system
   theme. When the intro is due, a small script in `<head>` paints the page black until it starts,
   so a light-mode visitor sees no flash of the light page first. It plays on the first visit to
@@ -809,7 +809,7 @@ the scene; the card and the tagline's pill keep text on a page-colored surface.
 
 [seasons.js](seasons.js) holds the copy the sign-in page and the frame share. Every set follows
 the winter line's pattern: the season does something, then the timesheet does the same. The
-fourth intro line is always "Sign in and get it done!", and the first two are the tagline.
+first two of the intro's three lines are the tagline.
 
 The tagline uses the intro's colors: the first line in the headline color, the second in the
 second line's. On light pages the headline colors are too pale, so `titleLight` darkens each hue

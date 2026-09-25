@@ -46,7 +46,7 @@ export function AuthLayout(props: { children: JSX.Element; firstVisitIntro?: boo
   onMount(() => {
     loadDeviceSettings()
     if (props.firstVisitIntro && introDue('sign-in', settings().sceneIntro)) {
-      playIntro({ season: currentSeason(settings().sceneSeason), signedIn: !!session.data })
+      playIntro({ season: currentSeason(settings().sceneSeason) })
     } else releaseIntroPending()
   })
 

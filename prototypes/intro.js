@@ -1,5 +1,5 @@
 // The seasonal intro (task 031), shared by the sign-in page and the signed-in pages (task 032):
-// about 13 seconds, always dark, over the page's scene (scene.js). It opens on the weather alone,
+// about 11 seconds, always dark, over the page's scene (scene.js). It opens on the weather alone,
 // shows the season's lines from seasons.js, fades the background in, then hands back to the page,
 // which rises into place in its own theme. Load after seasons.js and scene.js.
 //
@@ -12,7 +12,7 @@
 // a prototype switch (`snowtime.prototypeIntro`, from `intro.prototypeSwitch()`) turns the
 // first-visit and once-a-season intros back on. Replay intro always works. The app keeps both.
 //
-// `intro.create({ scene, page, signedIn, onChange, restoreTheme })` returns a player. While it
+// `intro.create({ scene, page, onChange, restoreTheme })` returns a player. While it
 // plays, the page applies its scene through `player.scene(patch)`, which shows the weather and the
 // intro's background whatever the user's switches say, and re-applies it on `onChange`.
 ;(() => {
@@ -82,8 +82,6 @@
     .intro-line-1 { font-size: clamp(34px, 5vw, 58px); line-height: 1.05; letter-spacing: -.04em; font-weight: 720; color: var(--intro-title, #f4f8fd); }
     .intro-line-2 { margin-top: 8px; font-size: clamp(22px, 3vw, 36px); line-height: 1.12; letter-spacing: -.03em; font-weight: 610; color: var(--intro-sub, #e6eef8); }
     .intro-line-3 { margin-top: 24px; font-size: clamp(14px, 1.65vw, 19px); line-height: 1.52; font-weight: 450; color: rgb(255 255 255 / .78); }
-    .intro-line-4 { margin-top: 12px; transition-duration: 1.2s; font-size: clamp(13px, 1.45vw, 16px); line-height: 1.5; letter-spacing: .03em;
-      text-transform: uppercase; color: var(--intro-accent, #b4d5f4); }
     .intro-skip { position: absolute; top: 18px; right: 18px; }
     /* The page waits under the intro, then rises into place. The class is only there while the
        intro runs, so it doesn't override the page's own transitions. */
@@ -99,13 +97,13 @@
 
   // `page()` returns the elements the intro hides and makes inert. `restoreTheme(wasDark)` puts the
   // page's theme back as the intro hands over; by default the dark class returns to what it was.
-  function create({ scene: sceneCtl, page, signedIn = false, onChange = () => {}, restoreTheme }) {
+  function create({ scene: sceneCtl, page, onChange = () => {}, restoreTheme }) {
     const el = document.createElement('section')
     el.className = 'intro'
     el.setAttribute('aria-label', 'Intro')
     el.hidden = true
     el.innerHTML = `<div class="intro-fade"></div>
-      <div class="intro-block">${[1, 2, 3, 4].map((n) => `<p class="intro-line intro-line-${n}"></p>`).join('')}</div>
+      <div class="intro-block">${[1, 2, 3].map((n) => `<p class="intro-line intro-line-${n}"></p>`).join('')}</div>
       <button type="button" data-ui="button" data-variant="outline" data-size="sm" class="intro-skip border-white/20 bg-black/40 text-white backdrop-blur hover:bg-black/60 hover:text-white">Skip intro</button>`
     document.body.append(el)
     const fade = el.querySelector('.intro-fade')
@@ -162,7 +160,7 @@
       returnFocus = focus ?? null
       if (!darkHeld) wasDark = document.documentElement.classList.contains('dark')
       const season = seasons.current()
-      seasons.introLines(season, signedIn).forEach((line, i) => (lines[i].textContent = line))
+      seasons.introLines(season).forEach((line, i) => (lines[i].textContent = line))
       for (const [name, color] of Object.entries(seasons.SEASONS[season].colors)) el.style.setProperty(`--intro-${name}`, color)
 
       pageEls.forEach((p) => p.classList.remove('intro-page'))
@@ -187,18 +185,17 @@
 
       const at = (ms, fn) => timers.push(setTimeout(fn, ms))
       // The weather alone, the first line, a pause, the background fades in, a pause, then the
-      // other lines, each after the one before has had time to be read. The last one gets a longer
-      // beat before it and stays longest.
+      // other lines, each after the one before has had time to be read. The last one stays longest.
       at(300, () => fade.classList.add('reveal'))
-      ;[1900, 5400, 7700, 10200].forEach((ms, i) => at(ms, () => lines[i].classList.add('show')))
+      ;[1900, 5400, 7700].forEach((ms, i) => at(ms, () => lines[i].classList.add('show')))
       at(3100, () => setBackground(true))
-      at(13300, revealPage)
-      at(13500, () => el.classList.add('intro-done'))
-      at(13850, () => {
+      at(11300, revealPage)
+      at(11500, () => el.classList.add('intro-done'))
+      at(11850, () => {
         releaseTheme()
         handFocus()
       })
-      at(14950, end)
+      at(12950, end)
       return true
     }
     function skip() {
