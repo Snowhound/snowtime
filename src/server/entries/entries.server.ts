@@ -1,7 +1,7 @@
 // Time entries in the scope's organization. Everyone writes their own entries; admins and
 // owners also write other members' entries; team leads only read their teams' entries
 // (docs/architecture.md, "Tenancy").
-import { and, count, desc, eq, gt, inArray, isNull, lt, min, or } from 'drizzle-orm'
+import { and, count, desc, eq, gt, inArray, isNull, lt, min, ne, or } from 'drizzle-orm'
 import type { Database, Executor } from '~/db'
 import { member, timeEntry } from '~/db/schema'
 import { AppError } from '../errors'
@@ -36,13 +36,15 @@ async function findEntry(db: Database, scope: Scope, id: string) {
 const day = 24 * 60 * 60 * 1000
 
 // Refuses a new entry when the user already has limits.entriesPerMemberPerDay entries in
-// the organization starting within a day of it. The (organization_id, user_id, started_at)
-// index makes this one short range read.
+// the organization starting within a day of it. Moving an entry checks the same, without
+// counting the entry itself. The (organization_id, user_id, started_at) index makes this
+// one short range read.
 export async function assertEntryRoom(
   db: Executor,
   organizationId: string,
   userId: string,
   startedAt: Date,
+  movingId?: string,
 ) {
   const [{ total }] = await db
     .select({ total: count() })
@@ -53,6 +55,7 @@ export async function assertEntryRoom(
         eq(timeEntry.userId, userId),
         gt(timeEntry.startedAt, new Date(startedAt.getTime() - day)),
         lt(timeEntry.startedAt, new Date(startedAt.getTime() + day)),
+        movingId ? ne(timeEntry.id, movingId) : undefined,
       ),
     )
   if (total >= limits.entriesPerMemberPerDay) {
@@ -116,19 +119,35 @@ export async function updateEntry(db: Database, scope: Scope, input: UpdateEntry
   if (input.projectId && input.projectId !== entry.projectId) {
     await assertUsableProject(db, scope, input.projectId)
   }
+  if (input.startedAt && input.startedAt.getTime() !== entry.startedAt.getTime()) {
+    await assertEntryRoom(db, scope.organizationId, entry.userId, input.startedAt, entry.id)
+  }
 
-  const [updated] = await db
-    .update(timeEntry)
-    .set({
-      projectId: input.projectId,
-      description: input.description,
-      startedAt: input.startedAt,
-      stoppedAt: input.stoppedAt,
-    })
-    .where(and(eq(timeEntry.id, entry.id), live(timeEntry, scope)))
-    .returning()
-  if (!updated) throw new AppError('NOT_FOUND', 'entry_not_found')
-  return updated
+  // The checks above read the entry before the update, so a concurrent edit of the other
+  // end can still make it too long or end before it starts. The database refuses both
+  // (time_entry_stopped_after_started, time_entry_max_length).
+  try {
+    const [updated] = await db
+      .update(timeEntry)
+      .set({
+        projectId: input.projectId,
+        description: input.description,
+        startedAt: input.startedAt,
+        stoppedAt: input.stoppedAt,
+      })
+      .where(and(eq(timeEntry.id, entry.id), live(timeEntry, scope)))
+      .returning()
+    if (!updated) throw new AppError('NOT_FOUND', 'entry_not_found')
+    return updated
+  } catch (error) {
+    if (failedConstraint(error) === 'time_entry_stopped_after_started') {
+      throw new AppError('INVALID', 'entry_end_before_start')
+    }
+    if (failedConstraint(error) === 'time_entry_max_length') {
+      throw new AppError('INVALID', 'entry_too_long')
+    }
+    throw error
+  }
 }
 
 // Logical delete: the row stays, with sys_deleted set and updated_by recording who.

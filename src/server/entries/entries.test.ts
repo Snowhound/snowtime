@@ -8,6 +8,7 @@ import { SYSTEM_USER_ID } from '~/db/actor'
 import { timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
 import { limits } from '../limits.server'
+import { failedConstraint } from '../queries.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
 import { CreateEntryInput, MAX_ENTRY_HOURS } from './entries.schemas'
@@ -262,6 +263,79 @@ describe('updateEntry', () => {
     await expect(
       as(scopes.member, () => updateEntry(db, scopes.member, { id: entry.id, startedAt })),
     ).rejects.toMatchObject({ code: 'INVALID', key: 'entry_too_long' })
+  })
+
+  test('two edits, one to each end, cannot together make an entry too long', async () => {
+    const entry = await newEntry(scopes.member)
+    const shift = (MAX_ENTRY_HOURS - 2) * 3_600_000
+    const results = await Promise.allSettled([
+      as(scopes.member, () =>
+        updateEntry(db, scopes.member, {
+          id: entry.id,
+          startedAt: new Date(entry.startedAt.getTime() - shift),
+        }),
+      ),
+      as(scopes.member, () =>
+        updateEntry(db, scopes.member, {
+          id: entry.id,
+          stoppedAt: new Date(entry.stoppedAt!.getTime() + shift),
+        }),
+      ),
+    ])
+    const rejected = results.filter((r) => r.status === 'rejected')
+    expect(rejected).toHaveLength(1)
+    expect(rejected[0].reason).toMatchObject({ code: 'INVALID', key: 'entry_too_long' })
+  })
+
+  test('the database refuses an entry longer than the maximum', async () => {
+    const start = NOW.getTime() - 60 * DAY
+    const write = as(scopes.member, async () => {
+      await db.insert(timeEntry).values({
+        id: uuidv7(),
+        organizationId: O.northwind,
+        userId: U.member,
+        startedAt: new Date(start),
+        stoppedAt: new Date(start + MAX_ENTRY_HOURS * 3_600_000 + 1),
+      })
+    })
+    expect(await write.then(() => null, failedConstraint)).toBe('time_entry_max_length')
+  })
+
+  test('moving an entry into a full day is refused; moving one within it is not', async () => {
+    // Clear of the seed and of the createEntry limit test.
+    const start = NOW.getTime() + 500 * DAY
+    const ids = Array.from({ length: limits.entriesPerMemberPerDay }, () => uuidv7())
+    await as(scopes.loner, async () => {
+      await db.insert(timeEntry).values(
+        ids.map((id, i) => ({
+          id,
+          organizationId: O.northwind,
+          userId: U.loner,
+          startedAt: new Date(start + i * 60_000),
+          stoppedAt: new Date(start + i * 60_000 + 30_000),
+        })),
+      )
+    })
+    const outside = await as(scopes.loner, () =>
+      createEntry(db, scopes.loner, {
+        id: uuidv7(),
+        description: '',
+        startedAt: new Date(start + 3 * DAY),
+        stoppedAt: new Date(start + 3 * DAY + 60_000),
+      }),
+    )
+    await expect(
+      as(scopes.loner, () =>
+        updateEntry(db, scopes.loner, {
+          id: outside.id,
+          startedAt: new Date(start - 3_600_000),
+          stoppedAt: new Date(start - 3_600_000 + 60_000),
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'LIMIT_REACHED', key: 'entry_limit' })
+    await as(scopes.loner, () =>
+      updateEntry(db, scopes.loner, { id: ids[0], startedAt: new Date(start - 60_000) }),
+    )
   })
 
   test('time cannot move onto an archived project, but an entry already on one stays editable', async () => {

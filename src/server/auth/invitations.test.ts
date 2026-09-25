@@ -55,19 +55,23 @@ describe('invitationPreview', () => {
   test('an invitation without a team or role joins as a member', async () => {
     const id = await invite({ role: null })
     const preview = await invitationPreview(db, id, NOW)
-    expect(preview?.teamName).toBeNull()
-    expect(preview?.role).toBe('member')
+    expect(preview).toMatchObject({ state: 'pending', teamName: null, role: 'member' })
   })
 
-  test('an invitation past its expiry is expired', async () => {
-    const id = await invite({ expiresAt: NOW })
-    expect((await invitationPreview(db, id, NOW))?.state).toBe('expired')
+  test('an expired invitation names only its inviter and organization', async () => {
+    const id = await invite({ expiresAt: NOW, teamId: T.design })
+    expect(await invitationPreview(db, id, NOW)).toEqual({
+      id,
+      state: 'expired',
+      organizationName: 'Northwind Studio',
+      inviterName: 'Olivia Owner',
+    })
   })
 
-  test('accepted, rejected, and canceled invitations are closed, even when expired', async () => {
+  test('accepted, rejected, and canceled invitations are closed and show nothing', async () => {
     for (const status of ['accepted', 'rejected', 'canceled']) {
       const id = await invite({ status, expiresAt: new Date(NOW.getTime() - HOUR) })
-      expect((await invitationPreview(db, id, NOW))?.state).toBe('closed')
+      expect(await invitationPreview(db, id, NOW)).toEqual({ id, state: 'closed' })
     }
   })
 

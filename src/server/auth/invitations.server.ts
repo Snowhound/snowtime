@@ -2,14 +2,13 @@
 // the invited user's session, but the invitation screen names the organization, team,
 // inviter, and invited address to whoever opens the link, so they know which account to
 // sign in with. The link's id is the only secret, as in Better Auth; accepting still goes
-// through Better Auth, which checks the address.
+// through Better Auth, which checks the address. Once the invitation can't be accepted, the
+// link shows less: an expired one only who to ask for a new one, a closed one nothing.
 import { eq } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
 import type { Database } from '~/db'
 import { invitation, organization, team, user } from '~/db/schema'
 import { strongestRole } from '../scope.server'
-
-export type InvitationState = 'pending' | 'expired' | 'closed'
 
 export async function invitationPreview(db: Database, id: string, now = new Date()) {
   const inviter = alias(user, 'inviter')
@@ -33,16 +32,23 @@ export async function invitationPreview(db: Database, id: string, now = new Date
   if (!row) return null
 
   // Accepted, rejected, and canceled invitations are closed; the screen only says so.
-  const state: InvitationState =
-    row.status !== 'pending' ? 'closed' : row.expiresAt <= now ? 'expired' : 'pending'
+  if (row.status !== 'pending') return { id: row.id, state: 'closed' as const }
+  if (row.expiresAt <= now) {
+    return {
+      id: row.id,
+      state: 'expired' as const,
+      organizationName: row.organizationName,
+      inviterName: row.inviterName,
+    }
+  }
   return {
     id: row.id,
+    state: 'pending' as const,
     email: row.email,
     role: strongestRole(row.role ?? 'member'),
     organizationId: row.organizationId,
     organizationName: row.organizationName,
     teamName: row.teamName,
     inviterName: row.inviterName,
-    state,
   }
 }

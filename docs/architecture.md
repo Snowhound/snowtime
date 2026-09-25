@@ -71,6 +71,9 @@
   longer ends it 24 hours after its start, and until then it counts up to there. The bound
   lets queries of a range read from `started_at` 24 hours before it, on the `started_at`
   indexes, instead of from the user's or the organization's first entry.
+  - The server checks the bound before a write, and the database enforces it with the
+    `time_entry_max_length` triggers, since two concurrent edits, one to each end, can
+    each pass the check. A `CHECK` constraint would have needed a table rebuild.
 - Elapsed time for the running timer is computed on the client, never
   written periodically.
 
@@ -143,6 +146,10 @@
   which account to use. `getInvitation` returns those details signed out. The id is
   the link's only secret, as in Better Auth, and accepting still goes through Better
   Auth, which checks the address.
+  - Once the invitation can't be accepted, a leaked or old link reveals less: an expired
+    one returns only the inviter and organization names, so the screen can say whom to
+    ask for a new link, and an accepted, rejected, or canceled one returns only that it
+    is closed.
 - Links last 48 hours (`invitationExpiresIn`). Better Auth ignores expired invitations
   when it checks for an open one, so a new link for an expired invitation is a new
   invitation; the Organization view then cancels the expired one. The view builds the
@@ -207,7 +214,8 @@ the database, and the Turso quotas in `docs/hosting.md`, without bound. The valu
   teams per organization.
 - `createProject` caps projects per organization, archived ones included.
 - `createEntry` and `startTimer` cap a member's entries starting within 24 hours of the
-  new one, either side. The count is one range read on the
+  new one, either side. `updateEntry` checks the same when an entry's start moves,
+  without counting the entry itself. The count is one range read on the
   `(organization_id, user_id, started_at)` index, so it stays cheap in Turso rows read.
   A day cap bounds entries per day, not in total; rate limiting covers a script spreading
   entries across years.

@@ -39,9 +39,17 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
   function user() {
     return session.data?.user
   }
+  function expired() {
+    const data = invitation.data
+    return data?.state === 'expired' ? data : null
+  }
+  function pending() {
+    const data = invitation.data
+    return data?.state === 'pending' ? data : null
+  }
   // Better Auth accepts only from the invited address, compared case-insensitively.
   function isRecipient() {
-    return user()?.email.toLowerCase() === invitation.data?.email.toLowerCase()
+    return user()?.email.toLowerCase() === pending()?.email.toLowerCase()
   }
 
   async function refreshSession() {
@@ -50,7 +58,7 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
   }
 
   async function accept() {
-    const data = invitation.data!
+    const data = pending()!
     setError(null)
     setAccepting(true)
     const { error } = await authClient.organization.acceptInvitation({ invitationId: data.id })
@@ -72,13 +80,10 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
 
   return (
     <AuthLayout>
-      <Show when={invitation.data} fallback={<Closed signedIn={!!user()} />}>
-        {(data) => (
-          <Switch>
-            <Match when={data().state === 'closed'}>
-              <Closed signedIn={!!user()} />
-            </Match>
-            <Match when={data().state === 'expired'}>
+      <Switch fallback={<Closed signedIn={!!user()} />}>
+        <Match when={expired()}>
+          {(data) => (
+            <>
               <AuthIcon>
                 <ClockIcon aria-hidden="true" />
               </AuthIcon>
@@ -92,109 +97,115 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
               <Button variant="outline" onClick={() => navigate({ to: '/' })}>
                 {user() ? m.auth_continue() : m.auth_go_to_sign_in()}
               </Button>
-            </Match>
-            <Match when={user() && !isRecipient()}>
-              <AuthIcon>
-                <CircleAlertIcon aria-hidden="true" />
-              </AuthIcon>
-              <AuthHeading
-                title={m.invitation_wrong_title()}
-                description={m.invitation_wrong_description({
-                  current: user()!.email,
-                  inviter: data().inviterName,
-                  email: data().email,
-                })}
-              />
-              <div class="grid gap-2">
-                <Button onClick={signOut}>{m.invitation_wrong_switch()}</Button>
-                <Button variant="outline" onClick={() => navigate({ to: '/' })}>
-                  <span class="truncate">
-                    {m.invitation_wrong_continue({ email: user()!.email })}
-                  </span>
-                </Button>
-              </div>
-              <p class="text-muted-foreground text-sm">
-                {m.invitation_wrong_hint({ inviter: data().inviterName })}
-              </p>
-            </Match>
-            <Match when={true}>
-              <div class="flex items-center gap-3">
-                <Avatar>
-                  <AvatarFallback class="font-medium">
-                    {data().organizationName.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div class="min-w-0">
-                  <p class="truncate font-medium">{data().organizationName}</p>
-                  <Show when={data().teamName}>
-                    {(team) => (
-                      <p class="text-muted-foreground truncate text-sm">
-                        {m.invitation_team({ team: team() })}
-                      </p>
-                    )}
-                  </Show>
+            </>
+          )}
+        </Match>
+        <Match when={pending()}>
+          {(data) => (
+            <Switch>
+              <Match when={user() && !isRecipient()}>
+                <AuthIcon>
+                  <CircleAlertIcon aria-hidden="true" />
+                </AuthIcon>
+                <AuthHeading
+                  title={m.invitation_wrong_title()}
+                  description={m.invitation_wrong_description({
+                    current: user()!.email,
+                    inviter: data().inviterName,
+                    email: data().email,
+                  })}
+                />
+                <div class="grid gap-2">
+                  <Button onClick={signOut}>{m.invitation_wrong_switch()}</Button>
+                  <Button variant="outline" onClick={() => navigate({ to: '/' })}>
+                    <span class="truncate">
+                      {m.invitation_wrong_continue({ email: user()!.email })}
+                    </span>
+                  </Button>
                 </div>
-              </div>
-              <AuthHeading
-                title={m.invitation_title({ organization: data().organizationName })}
-                description={m.invitation_description({
-                  inviter: data().inviterName,
-                  email: data().email,
-                  as: AS_ROLE[data().role](),
-                })}
-              />
-              <FormAlert message={error()} />
-              <Show
-                when={user()}
-                fallback={
-                  <>
-                    <ProviderButtons
-                      methods={methods.data ?? []}
-                      callbackURL={path()}
-                      errorCallbackURL={path()}
-                      onError={setError}
-                    />
-                    <Show when={methods.data?.includes('password')}>
-                      <PasswordSignIn
-                        email={data().email}
-                        submitLabel={m.sign_in_submit()}
-                        submittingLabel={m.sign_in_submitting()}
-                        onSuccess={refreshSession}
-                      />
+                <p class="text-muted-foreground text-sm">
+                  {m.invitation_wrong_hint({ inviter: data().inviterName })}
+                </p>
+              </Match>
+              <Match when={true}>
+                <div class="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarFallback class="font-medium">
+                      {data().organizationName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div class="min-w-0">
+                    <p class="truncate font-medium">{data().organizationName}</p>
+                    <Show when={data().teamName}>
+                      {(team) => (
+                        <p class="text-muted-foreground truncate text-sm">
+                          {m.invitation_team({ team: team() })}
+                        </p>
+                      )}
                     </Show>
-                  </>
-                }
-              >
-                <Button onClick={accept} disabled={accepting()}>
-                  <Show when={accepting()} fallback={m.invitation_accept()}>
-                    <LoaderCircleIcon class="animate-spin" aria-hidden="true" />
-                    {m.invitation_accepting()}
-                  </Show>
-                </Button>
-              </Show>
-              <p class="text-muted-foreground text-center text-sm">
-                {m.auth_not_you()}{' '}
+                  </div>
+                </div>
+                <AuthHeading
+                  title={m.invitation_title({ organization: data().organizationName })}
+                  description={m.invitation_description({
+                    inviter: data().inviterName,
+                    email: data().email,
+                    as: AS_ROLE[data().role](),
+                  })}
+                />
+                <FormAlert message={error()} />
                 <Show
                   when={user()}
                   fallback={
-                    <Button
-                      variant="link"
-                      class="h-auto p-0"
-                      onClick={() => navigate({ to: '/sign-in' })}
-                    >
-                      {m.invitation_other_account()}
-                    </Button>
+                    <>
+                      <ProviderButtons
+                        methods={methods.data ?? []}
+                        callbackURL={path()}
+                        errorCallbackURL={path()}
+                        onError={setError}
+                      />
+                      <Show when={methods.data?.includes('password')}>
+                        <PasswordSignIn
+                          email={data().email}
+                          submitLabel={m.sign_in_submit()}
+                          submittingLabel={m.sign_in_submitting()}
+                          onSuccess={refreshSession}
+                        />
+                      </Show>
+                    </>
                   }
                 >
-                  <Button variant="link" class="h-auto p-0" onClick={signOut}>
-                    {m.auth_sign_out()}
+                  <Button onClick={accept} disabled={accepting()}>
+                    <Show when={accepting()} fallback={m.invitation_accept()}>
+                      <LoaderCircleIcon class="animate-spin" aria-hidden="true" />
+                      {m.invitation_accepting()}
+                    </Show>
                   </Button>
                 </Show>
-              </p>
-            </Match>
-          </Switch>
-        )}
-      </Show>
+                <p class="text-muted-foreground text-center text-sm">
+                  {m.auth_not_you()}{' '}
+                  <Show
+                    when={user()}
+                    fallback={
+                      <Button
+                        variant="link"
+                        class="h-auto p-0"
+                        onClick={() => navigate({ to: '/sign-in' })}
+                      >
+                        {m.invitation_other_account()}
+                      </Button>
+                    }
+                  >
+                    <Button variant="link" class="h-auto p-0" onClick={signOut}>
+                      {m.auth_sign_out()}
+                    </Button>
+                  </Show>
+                </p>
+              </Match>
+            </Switch>
+          )}
+        </Match>
+      </Switch>
     </AuthLayout>
   )
 }
