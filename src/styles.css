@@ -430,6 +430,21 @@ html[data-intro='pending'] body {
     0 20px 25px -5px rgb(0 0 0 / 0.1),
     0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
+/* The signed-in header is sticky (src/features/app-frame/app-header.tsx). Its height with its
+   borders keeps anchored sections and sticky elements below it; under md it has a second row
+   for the navigation. */
+:root {
+  --app-header-height: calc(6.5rem + 2px);
+}
+@media (width >= 48rem) {
+  :root {
+    --app-header-height: calc(3.5rem + 1px);
+  }
+}
+html:has(.scene-header) {
+  scroll-padding-top: var(--app-header-height);
+}
+
 /* Over the image, the header keeps a page-colored surface. */
 [data-scene-bg='on'] .scene-header {
   background-color: color-mix(in srgb, var(--background) 82%, transparent);

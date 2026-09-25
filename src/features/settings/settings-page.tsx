@@ -35,7 +35,7 @@ export function SettingsPage(props: { initialError?: string }) {
       <PageTitle title={m.nav_settings()} centerOn={cards} />
       <div class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[12rem_minmax(0,1fr)]">
         <nav class="hidden lg:block" aria-label={m.settings_sections()}>
-          <ul class="sticky top-6 flex flex-col gap-1">
+          <ul class="sticky top-[calc(var(--app-header-height)+1.5rem)] flex flex-col gap-1">
             <li>
               <a
                 href="#preferences"
