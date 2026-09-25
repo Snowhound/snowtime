@@ -8,11 +8,20 @@
 import { keepPreviousData, useQuery } from '@tanstack/solid-query'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import PlusIcon from 'lucide-solid/icons/plus'
-import { Match, Show, Switch, createEffect, createMemo, createSignal, onCleanup } from 'solid-js'
+import {
+  Match,
+  Show,
+  Switch,
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+  onMount,
+} from 'solid-js'
 import { PageTitle } from '~/components/page-title'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
-import { localDate, runningMs } from '~/lib/calendar'
+import { addDays, localDate, runningMs, startOfDay } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
@@ -64,10 +73,41 @@ export function TimerView(props: {
     return props.settings.timerLayout
   }
 
-  const [days, setDays] = createSignal(RECENT_DAYS)
-  const range = createMemo(() => recentRange(zone(), days()))
-
   const running = useQuery(() => runningTimerQuery)
+
+  // The elapsed time ticks on the client only; nothing is written while the timer runs.
+  const [now, setNow] = createSignal(Date.now())
+  createEffect(() => {
+    if (!running.data) return
+    setNow(Date.now())
+    const tick = setInterval(() => setNow(Date.now()), 1000)
+    onCleanup(() => clearInterval(tick))
+  })
+  // Today moves on at the zone's midnight, running timer or not, and the days listed, their
+  // labels, and the summary with it. A timeout can fire late after the device sleeps, so
+  // the time is read again when the tab shows.
+  const today = createMemo(() => localDate(now(), zone()))
+  createEffect(() => {
+    let wait: ReturnType<typeof setTimeout> | undefined
+    function waitFor(midnight: number) {
+      const time = Date.now()
+      if (time < midnight) wait = setTimeout(() => waitFor(midnight), midnight - time)
+      else setNow(time)
+    }
+    waitFor(startOfDay(addDays(today(), 1), zone()))
+    onCleanup(() => clearTimeout(wait))
+  })
+  function onVisible() {
+    if (document.visibilityState === 'visible') setNow(Date.now())
+  }
+  onMount(() => {
+    document.addEventListener('visibilitychange', onVisible)
+    onCleanup(() => document.removeEventListener('visibilitychange', onVisible))
+  })
+
+  const [days, setDays] = createSignal(RECENT_DAYS)
+  const range = createMemo(() => recentRange(zone(), days(), startOfDay(today(), zone())))
+
   const projects = useQuery(() => projectsQuery(props.organizationId))
   const entries = useQuery(() => ({
     ...entriesQuery(props.organizationId, props.userId, range()),
@@ -92,15 +132,6 @@ export function TimerView(props: {
   function toggleEditor(target: EntryPopoverTarget, anchor: HTMLElement) {
     setEditor((current) => (current?.target.kind === target.kind ? null : { target, anchor }))
   }
-
-  // The elapsed time ticks on the client only; nothing is written while the timer runs.
-  const [now, setNow] = createSignal(Date.now())
-  createEffect(() => {
-    if (!running.data) return
-    setNow(Date.now())
-    const tick = setInterval(() => setNow(Date.now()), 1000)
-    onCleanup(() => clearInterval(tick))
-  })
 
   const title = `${m.nav_timer()} · ${m.app_name()}`
   createEffect(() => {

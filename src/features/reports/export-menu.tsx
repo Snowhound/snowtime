@@ -1,6 +1,8 @@
-// The timesheet card's Export menu (prototypes/reports.html): the report as shown, for the
-// current filters, as XLSX with the timesheet and the entries, or either one as CSV. The entries
-// load when chosen; see export.ts for the files.
+// The timesheet card's Export menu (prototypes/reports.html): the report for the current
+// filters, as XLSX with the timesheet and the entries, or either one as CSV. The timesheet CSV
+// is the report as shown. The entries load when chosen, together with the report they add up
+// to, which the XLSX's timesheet then shows, so a running timer counts alike in both sheets.
+// See export.ts for the files.
 import DownloadIcon from 'lucide-solid/icons/download'
 import FileSpreadsheetIcon from 'lucide-solid/icons/file-spreadsheet'
 import FileTextIcon from 'lucide-solid/icons/file-text'
@@ -17,7 +19,7 @@ import { type IsoDate, addDays } from '~/lib/calendar'
 import type { Member } from '~/lib/members'
 import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
-import { getReportEntries } from '~/server/reports/reports.functions'
+import { getReportExport } from '~/server/reports/reports.functions'
 import type { ReportInput } from '~/server/reports/reports.schemas'
 import {
   type ExportKind,
@@ -60,7 +62,7 @@ const ITEMS: {
 
 export function ExportMenu(props: {
   report: Report
-  rows: Row[]
+  rowsOf: (report: Report) => Row[]
   group: Group
   input: ReportInput
   organizationSlug: string
@@ -75,25 +77,27 @@ export function ExportMenu(props: {
     return exportFileName(props.organizationSlug, props.input.from, last, kind)
   }
 
-  async function entries() {
-    const data = await getReportEntries({ data: props.input })
-    return entriesTable(data, { projects: props.projects, members: props.members })
+  function timesheet(report: Report) {
+    return timesheetTable(report, props.rowsOf(report), props.group)
   }
 
   async function run(kind: ExportKind) {
     props.onError(null)
     setBusy(true)
     try {
-      const timesheet = timesheetTable(props.report, props.rows, props.group)
       let blob: Blob
-      if (kind === 'csv') blob = new Blob([toCsv(timesheet)], { type: 'text/csv;charset=utf-8' })
-      else if (kind === 'entries') {
-        blob = new Blob([toCsv(await entries())], { type: 'text/csv;charset=utf-8' })
+      if (kind === 'csv') {
+        blob = new Blob([toCsv(timesheet(props.report))], { type: 'text/csv;charset=utf-8' })
       } else {
-        blob = await toXlsx([
-          { name: m.reports_timesheet(), table: timesheet },
-          { name: m.export_sheet_entries(), table: await entries() },
-        ])
+        const data = await getReportExport({ data: props.input })
+        const entries = entriesTable(data, { projects: props.projects, members: props.members })
+        blob =
+          kind === 'entries'
+            ? new Blob([toCsv(entries)], { type: 'text/csv;charset=utf-8' })
+            : await toXlsx([
+                { name: m.reports_timesheet(), table: timesheet(data.report) },
+                { name: m.export_sheet_entries(), table: entries },
+              ])
       }
       downloadFile(blob, fileName(kind))
     } catch {

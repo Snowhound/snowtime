@@ -10,8 +10,8 @@ export const getReport = createServerFn({ method: 'GET' })
   .validator(ReportInput)
   .handler(({ data, context }) => reports.getReport(db, context.scope, data))
 
-// The entries behind a report, for its export.
-export const getReportEntries = createServerFn({ method: 'GET' })
+// The report and the entries behind it, from one read, for its export.
+export const getReportExport = createServerFn({ method: 'GET' })
   .middleware([scopeMiddleware])
   .validator(ReportInput)
-  .handler(({ data, context }) => reports.getReportEntries(db, context.scope, data))
+  .handler(({ data, context }) => reports.getReportExport(db, context.scope, data))

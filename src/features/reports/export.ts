@@ -1,17 +1,20 @@
-// The report's export (task 034, prototypes/reports.html): the timesheet as shown and the
-// entries behind it, as CSV or as one XLSX file with a sheet for each. The server's report and
-// getReportEntries apply the role rules; the browser names the rows from the cached lists, as the
-// timesheet does, and builds the files, so the XLSX library loads only when someone exports.
+// The report's export (task 034, prototypes/reports.html): the timesheet and the entries
+// behind it, as CSV or as one XLSX file with a sheet for each. getReport and getReportExport
+// apply the role rules; the browser names the rows from the cached lists, as the timesheet
+// does, and builds the files, so the XLSX library loads only when someone exports.
 import { type IsoDate, localTime } from '~/lib/calendar'
 import type { Member } from '~/lib/members'
 import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
-import type { getReportEntries } from '~/server/reports/reports.functions'
+import type { getReportExport } from '~/server/reports/reports.functions'
 import type { Group } from './filters'
 import type { Report } from './queries'
 import type { Row } from './rows'
 
-export type ReportEntries = Awaited<ReturnType<typeof getReportEntries>>
+export type ReportEntries = Pick<
+  Awaited<ReturnType<typeof getReportExport>>,
+  'timeZone' | 'entries'
+>
 export type ExportKind = 'xlsx' | 'csv' | 'entries'
 
 const HOUR = 3_600_000

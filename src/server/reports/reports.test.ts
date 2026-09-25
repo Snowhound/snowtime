@@ -12,7 +12,7 @@ import { as, createSeededDatabase, scopeOf } from '../testing'
 import {
   aggregate,
   getReport,
-  getReportEntries,
+  getReportExport,
   type Aggregation,
   type Report,
 } from './reports.server'
@@ -311,13 +311,13 @@ describe('getReport', () => {
   })
 })
 
-describe('getReportEntries', () => {
+describe('getReportExport', () => {
   const input = { from: '2026-09-14', to: '2026-09-24', unit: 'day' } as const
 
   test("adds up to the report's totals per member, day, and project, running timer included", async () => {
     for (const scope of [scopes.member, scopes.lead, scopes.admin]) {
-      const report = await getReport(db, scope, input, NOW)
-      const { entries } = await getReportEntries(db, scope, input, NOW)
+      const { report, entries } = await getReportExport(db, scope, input, NOW)
+      expect(report).toEqual(await getReport(db, scope, input, NOW))
       expect(sum(entries.map((e) => e.ms))).toBe(report.total)
       for (const m of report.members) {
         expect(sum(entries.filter((e) => e.userId === m.userId).map((e) => e.ms))).toBe(m.total)
@@ -333,7 +333,7 @@ describe('getReportEntries', () => {
       }
       for (const e of entries) expect(e.to.getTime() - e.from.getTime()).toBe(e.ms)
     }
-    const { entries } = await getReportEntries(db, scopes.admin, input, NOW)
+    const { entries } = await getReportExport(db, scopes.admin, input, NOW)
     const running = entries.filter((e) => e.running)
     expect(running).toHaveLength(1)
     expect(running[0].to).toEqual(NOW)
@@ -343,20 +343,20 @@ describe('getReportEntries', () => {
   })
 
   test('follows the report’s role rules', async () => {
-    const member = await getReportEntries(db, scopes.member, input, NOW)
+    const member = await getReportExport(db, scopes.member, input, NOW)
     expect([...new Set(member.entries.map((e) => e.userId))]).toEqual([U.member])
     await expect(
-      getReportEntries(db, scopes.lead, { ...input, userId: U.engineer }, NOW),
+      getReportExport(db, scopes.lead, { ...input, userId: U.engineer }, NOW),
     ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
     await expect(
-      getReportEntries(db, scopes.member, { ...input, teamId: T.design }, NOW),
+      getReportExport(db, scopes.member, { ...input, teamId: T.design }, NOW),
     ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'team_report_forbidden' })
   })
 
   test("splits an entry at the user's midnight into a piece per day", async () => {
     // 23:00 to 02:00 in London.
     await logFor(scopes.loner, '2026-10-02T22:00:00Z', '2026-10-03T01:00:00Z')
-    const { timeZone, entries } = await getReportEntries(
+    const { timeZone, entries } = await getReportExport(
       db,
       scopes.loner,
       { from: '2026-10-02', to: '2026-10-04', unit: 'day' },

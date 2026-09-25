@@ -20,7 +20,7 @@ import { MAX_REPORT_DAYS } from '~/server/reports/reports.schemas'
 import { ExportMenu } from './export-menu'
 import { type FilterActions, ReportFilterBar } from './filter-bar'
 import { type Group, type ReportSearch, type Unit, reportFilters } from './filters'
-import { reportQuery } from './queries'
+import { type Report, reportQuery } from './queries'
 import {
   type Range,
   type RangePreset,
@@ -72,17 +72,18 @@ export function ReportsView(props: {
     ...reportQuery(props.organizationId, filters().input),
     enabled: teams.isSuccess && members.isSuccess,
   }))
-  const rows = createMemo(() =>
-    report.data
-      ? reportRows(report.data, filters().group, {
-          userId: props.userId,
-          admin: props.admin,
-          projects: projects.data ?? [],
-          teams: teams.data ?? [],
-          members: members.data ?? [],
-        })
-      : [],
-  )
+  // A report's timesheet rows, named from the cached lists: the one on screen, or the one
+  // an export reads.
+  function rowsOf(data: Report) {
+    return reportRows(data, filters().group, {
+      userId: props.userId,
+      admin: props.admin,
+      projects: projects.data ?? [],
+      teams: teams.data ?? [],
+      members: members.data ?? [],
+    })
+  }
+  const rows = createMemo(() => (report.data ? rowsOf(report.data) : []))
 
   // Only values that differ from the defaults go in the URL.
   function go(next: {
@@ -220,7 +221,7 @@ export function ReportsView(props: {
               {(data) => (
                 <ExportMenu
                   report={data()}
-                  rows={rows()}
+                  rowsOf={rowsOf}
                   group={filters().group}
                   input={filters().input}
                   organizationSlug={props.organizationSlug}

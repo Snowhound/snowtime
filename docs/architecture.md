@@ -296,6 +296,9 @@ anyway, since each one renders the signed-in user's session.
   - A day starts at its first instant in the zone: local midnight, its first occurrence
     when clocks fall back, or the moment clocks spring forward past it.
   - A running entry counts up to the request's time.
+  - The timer view's today moves on at the user's midnight, while the page stays open, and its
+    list, day labels, and summary with it. A report keeps the day it was requested on, like its
+    totals, until its filters change.
   - Team totals count each team's current members, so a member in two teams counts in
     both. Team leads report on the teams they lead; admins and owners on all.
   - A report returns ids, ISO dates, and milliseconds; the client formats them.
@@ -306,11 +309,14 @@ Reports exports the report as shown, for the current filters (task 034, `prototy
 Reports): the timesheet and the entries behind it, as CSV or as one XLSX file with a sheet for
 each.
 
-- Where: the browser builds the files (`src/features/reports/export.ts`). The timesheet comes
-  from the report already on screen, named from the cached lists as the grid is. The entries come
-  from `getReportEntries`, which reads what `getReport` reads under the same role rules, so the
-  server enforces them. Building in the browser keeps the files out of the Vercel functions and
-  their response limits, and the XLSX library loads only when someone exports.
+- Where: the browser builds the files (`src/features/reports/export.ts`), naming the rows from
+  the cached lists as the grid does. The timesheet CSV is the report already on screen, counted
+  up to when it loaded. The entry list and the XLSX come from `getReportExport`, which reads
+  what `getReport` reads under the same role rules, so the server enforces them. It returns the
+  report and its entries from one read, counted up to the same moment, and the XLSX's timesheet
+  is that report, so its two sheets agree while a timer runs. Building in the browser keeps the
+  files out of the Vercel functions and their response limits, and the XLSX library loads only
+  when someone exports.
 - Entries: each entry's time on each day, clipped to the range and split at the user's
   midnights like the totals, with its start and end in the user's zone; a running entry counts up
   to now and has no end. The entries add up to the report's totals.

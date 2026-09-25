@@ -598,6 +598,40 @@ describe('TimerView', () => {
     expect(screen.queryByRole('complementary', { name: 'Summary' })).not.toBeInTheDocument()
   })
 
+  test('moves on to the next day at midnight while no timer runs', async () => {
+    // 23:59 on Thursday 24 September 2026 in Tallinn. The clock runs, so the view's midnight
+    // timeout fires when the test advances it.
+    vi.useFakeTimers({
+      toFake: ['Date', 'setTimeout', 'clearTimeout'],
+      shouldAdvanceTime: true,
+      now: Date.parse('2026-09-24T20:59:00Z'),
+    })
+    server.settings.showSummary = true
+    server.entries = [entry(0, '09:00', '10:30', 'Invoice export review')]
+    fn.listEntries.mockImplementation(async ({ data }: { data: { from: Date; to: Date } }) =>
+      server.entries
+        .filter((e) => e.startedAt < data.to && (!e.stoppedAt || e.stoppedAt > data.from))
+        .map((e) => ({ ...e })),
+    )
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    expect(screen.getByRole('heading', { name: 'Today' })).toBeInTheDocument()
+    const summary = screen.getByRole('complementary', { name: 'Summary' })
+    expect(within(summary).getByText('Today').nextSibling).toHaveTextContent('1:30')
+
+    // Logged on another device just after midnight.
+    server.entries.push({
+      ...entry(0, '09:00', '10:00', 'After midnight'),
+      startedAt: new Date('2026-09-24T21:00:00Z'),
+      stoppedAt: new Date('2026-09-24T21:00:20Z'),
+    })
+    await vi.advanceTimersByTimeAsync(90_000)
+
+    expect(await screen.findByDisplayValue('After midnight')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Yesterday' })).toBeInTheDocument()
+    expect(within(summary).getByText('Today').nextSibling).toHaveTextContent('0:00')
+  })
+
   test('the View popover turns compact rows on', async () => {
     fn.updateSettings.mockImplementation(async (input: { data: UpdateSettingsInput }) => {
       Object.assign(server.settings, input.data)

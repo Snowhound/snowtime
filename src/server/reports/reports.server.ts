@@ -249,22 +249,27 @@ async function reportData(db: Database, scope: Scope, input: ReportInput, now: D
   return { settings, a, range, entries }
 }
 
+type ReportData = Awaited<ReturnType<typeof reportData>>
+
+function reportOf({ settings, a, range, entries }: ReportData, now: Date): Report {
+  return {
+    ...aggregate(entries, a),
+    timeZone: settings.timeZone,
+    weekStart: settings.weekStart,
+    unit: a.unit,
+    from: new Date(range.from),
+    to: new Date(range.to),
+    now,
+  }
+}
+
 export async function getReport(
   db: Database,
   scope: Scope,
   input: ReportInput,
   now = new Date(),
 ): Promise<Report> {
-  const { settings, a, range, entries } = await reportData(db, scope, input, now)
-  return {
-    ...aggregate(entries, a),
-    timeZone: settings.timeZone,
-    weekStart: settings.weekStart,
-    unit: input.unit,
-    from: new Date(range.from),
-    to: new Date(range.to),
-    now,
-  }
+  return reportOf(await reportData(db, scope, input, now), now)
 }
 
 // One entry's time on one day of the range, for the export's entry list: clipped to the
@@ -282,15 +287,8 @@ export interface ReportEntryPiece {
   ms: number
 }
 
-// The entries behind a report, oldest first, under the same rules as getReport, so their
-// durations add up to its total.
-export async function getReportEntries(
-  db: Database,
-  scope: Scope,
-  input: ReportInput,
-  now = new Date(),
-): Promise<{ timeZone: string; entries: ReportEntryPiece[] }> {
-  const { settings, range, entries } = await reportData(db, scope, input, now)
+// The entries behind a report, oldest first.
+function piecesOf({ settings, range, entries }: ReportData, now: Date): ReportEntryPiece[] {
   const pieces: ReportEntryPiece[] = []
   for (const entry of entries) {
     const span = countedSpan(entry, range, now.getTime())
@@ -313,5 +311,22 @@ export async function getReportEntries(
     }
   }
   pieces.sort((x, y) => x.from.getTime() - y.from.getTime() || x.entryId.localeCompare(y.entryId))
-  return { timeZone: settings.timeZone, entries: pieces }
+  return pieces
+}
+
+// The report and the entries behind it, for its export, under getReport's rules. Both come
+// from one read and count a running entry up to the same moment, so the entries add up to
+// the report's totals.
+export async function getReportExport(
+  db: Database,
+  scope: Scope,
+  input: ReportInput,
+  now = new Date(),
+): Promise<{ report: Report; timeZone: string; entries: ReportEntryPiece[] }> {
+  const data = await reportData(db, scope, input, now)
+  return {
+    report: reportOf(data, now),
+    timeZone: data.settings.timeZone,
+    entries: piecesOf(data, now),
+  }
 }
