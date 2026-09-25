@@ -51,13 +51,11 @@ const DURATION_FORMATS = [
 ] as const
 
 const DATE_FORMATS = [
-  { value: 'auto', label: m.settings_format_auto },
   { value: 'dmy', label: () => '30.09.2026' },
   { value: 'mdy', label: () => '09/30/2026' },
 ] as const
 
 const TIME_FORMATS = [
-  { value: 'auto', label: m.settings_format_auto },
   { value: '24h', label: () => '15:30' },
   { value: '12h', label: () => '3:30 PM' },
 ] as const

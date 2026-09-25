@@ -123,7 +123,6 @@
   "settings_duration_format": "Kestused",
   "settings_date_format": "Kuupäevad",
   "settings_time_format": "Kellaajad",
-  "settings_format_auto": "Keele järgi",
   "duration_hours_minutes": "{hours} h {minutes} min",
   "duration_hours": "{hours} h",
   "duration_minutes": "{minutes} min",

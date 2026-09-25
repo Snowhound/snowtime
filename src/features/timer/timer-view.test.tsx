@@ -84,8 +84,8 @@ function defaultSettings(): Settings {
     sceneWeather: true,
     sceneIntro: true,
     durationFormat: 'clock',
-    dateFormat: 'auto',
-    timeFormat: 'auto',
+    dateFormat: 'dmy',
+    timeFormat: '24h',
   }
 }
 

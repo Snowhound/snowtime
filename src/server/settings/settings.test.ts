@@ -37,8 +37,8 @@ const DEFAULTS = {
   sceneWeather: true,
   sceneIntro: true,
   durationFormat: 'clock',
-  dateFormat: 'auto',
-  timeFormat: 'auto',
+  dateFormat: 'dmy',
+  timeFormat: '24h',
 } as const
 
 // A signed-up user who has not loaded the app yet, so has no settings row.

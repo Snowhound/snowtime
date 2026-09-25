@@ -257,8 +257,8 @@ each.
   (`app_icon`, the header mark and favicon), the seasonal scene (`scene_season`,
   `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`), and
   how durations, dates, and times show (`duration_format`, `date_format`, `time_format`).
-  Date and time formats default to `auto`, the UI language's. Exports keep the formats
-  spreadsheets read, whatever the duration format.
+  They default to 11:10, 30.09.2026, and 15:30 in every language. Exports keep the
+  formats spreadsheets read, whatever the duration format.
 - The server renders the theme class from the session user's settings, so the first
   paint uses the right theme with no flash. This is the main reason view settings moved
   here from `localStorage`. Signed-out pages (sign-in, invitations) use the theme, app

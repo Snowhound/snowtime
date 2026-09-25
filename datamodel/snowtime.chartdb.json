@@ -2001,8 +2001,8 @@
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
-          "default": "'auto'",
-          "comments": "auto (by language), dmy (30.09.2026), mdy (09/30/2026). Numeric dates. Validated in the app, no CHECK."
+          "default": "'dmy'",
+          "comments": "dmy (30.09.2026), mdy (09/30/2026), default dmy. Numeric dates. Validated in the app, no CHECK."
         },
         {
           "id": "t10f21",
@@ -2018,8 +2018,8 @@
           "characterMaximumLength": null,
           "precision": null,
           "scale": null,
-          "default": "'auto'",
-          "comments": "auto (by language), 24h, 12h. Clock times and the time picker. Validated in the app, no CHECK."
+          "default": "'24h'",
+          "comments": "24h, 12h, default 24h. Clock times and the time picker. Validated in the app, no CHECK."
         }
       ],
       "indexes": [],

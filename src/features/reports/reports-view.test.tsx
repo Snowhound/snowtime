@@ -317,8 +317,8 @@ describe('ReportsView', () => {
     await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-09-24', to: '2026-09-25' }))
     await userEvent.click(screen.getByRole('button', { name: 'Previous range' }))
     await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-09-23', to: '2026-09-24' }))
-    expect(screen.getByLabelText('From')).toHaveValue('09/23/2026')
-    expect(screen.getByLabelText('To')).toHaveValue('09/23/2026')
+    expect(screen.getByLabelText('From')).toHaveValue('23.09.2026')
+    expect(screen.getByLabelText('To')).toHaveValue('23.09.2026')
   })
 
   test('ranges over 35 days total per week', async () => {

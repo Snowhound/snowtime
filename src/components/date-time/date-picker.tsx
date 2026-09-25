@@ -1,5 +1,5 @@
 // A date field that looks the same in every browser, in place of <input type="date">: a text
-// input in the UI language's date format (src/lib/date-input.ts) and a calendar. Typing takes
+// input in the user's date format (src/lib/date-input.ts, the dateFormat setting) and a calendar. Typing takes
 // short forms (25.9, 25/9/26), ArrowUp and ArrowDown move a day, and Alt+ArrowDown opens the
 // calendar. The value is an ISO date, or '' for none.
 //
@@ -14,9 +14,9 @@ import { Button } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { type IsoDate, type WeekStart, addDays } from '~/lib/calendar'
 import { dateFormat, formatDateInput, parseDateInput } from '~/lib/date-input'
+import { useDateLocale } from '~/lib/display-format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { getLocale } from '~/paraglide/runtime.js'
 import { Calendar } from './calendar'
 import { FIELD_CLASS } from './field-class'
 
@@ -28,10 +28,6 @@ const PLACEHOLDER_PARTS = { day: m.picker_day, month: m.picker_month, year: m.pi
 function placeholder(locale: string) {
   const { order, separator } = dateFormat(locale)
   return order.map((part) => PLACEHOLDER_PARTS[part]()).join(separator)
-}
-
-function format(value: IsoDate) {
-  return formatDateInput(value, getLocale())
 }
 
 export function DatePicker(props: {
@@ -52,6 +48,10 @@ export function DatePicker(props: {
   class?: string
 }) {
   const fallbackId = createUniqueId()
+  const locale = useDateLocale()
+  function format(value: IsoDate) {
+    return formatDateInput(value, locale())
+  }
   // oxlint-disable-next-line solid/reactivity -- the text starts from the value; an effect follows it.
   const [text, setText] = createSignal(format(props.value))
   const [open, setOpen] = createSignal(false)
@@ -62,7 +62,7 @@ export function DatePicker(props: {
     return props.id ?? fallbackId
   }
   function parse(value: string) {
-    return parseDateInput(value, getLocale(), props.today)
+    return parseDateInput(value, locale(), props.today)
   }
 
   // A value set from outside replaces the text, unless the text already reads as it.
@@ -75,6 +75,8 @@ export function DatePicker(props: {
       { defer: true },
     ),
   )
+  // A new date format rewrites the text.
+  createEffect(on(locale, () => setText(format(props.value)), { defer: true }))
 
   function commit(how: DateCommit) {
     const parsed = parse(text())
@@ -132,7 +134,7 @@ export function DatePicker(props: {
       type="text"
       autocomplete="off"
       spellcheck={false}
-      placeholder={placeholder(getLocale())}
+      placeholder={placeholder(locale())}
       value={text()}
       required={props.required}
       aria-invalid={props.invalid || undefined}

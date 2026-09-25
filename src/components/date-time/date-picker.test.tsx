@@ -1,14 +1,30 @@
-import { fireEvent, render, screen, within } from '@solidjs/testing-library'
+import { fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
+import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
-import { createSignal } from 'solid-js'
+import { type JSX, createSignal } from 'solid-js'
 import { describe, expect, test, vi } from 'vitest'
 import { DatePicker } from './date-picker'
 import { TimeInput } from './time-input'
 
+// The session query's server function, which the settings are read through; the tests put the
+// session in the cache instead.
+vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
+
+// A client whose session carries these settings, as the app's root loads it.
+function withSettings(settings: object, children: () => JSX.Element) {
+  const queryClient = new QueryClient()
+  queryClient.setQueryData(['session'], { settings })
+  return {
+    queryClient,
+    ui: () => <QueryClientProvider client={queryClient}>{children()}</QueryClientProvider>,
+  }
+}
+
 function renderPicker(initial: string, options: { live?: boolean; max?: string } = {}) {
   const onChange = vi.fn()
   const [value, setValue] = createSignal(initial)
-  render(() => (
+  // Month first, so the short forms below read as in the US.
+  const { ui } = withSettings({ dateFormat: 'mdy' }, () => (
     <>
       <label for="d">Date</label>
       <DatePicker
@@ -25,6 +41,7 @@ function renderPicker(initial: string, options: { live?: boolean; max?: string }
       />
     </>
   ))
+  render(ui)
   return { input: screen.getByLabelText('Date') as HTMLInputElement, onChange }
 }
 
@@ -104,6 +121,32 @@ describe('DatePicker', () => {
     expect(late).toHaveAttribute('aria-disabled', 'true')
     await user.click(late)
     expect(onChange).not.toHaveBeenCalled()
+  })
+
+  test('shows day first by default, and follows the date format setting as it changes', async () => {
+    const onChange = vi.fn()
+    const { queryClient, ui } = withSettings({}, () => (
+      <>
+        <label for="d">Date</label>
+        <DatePicker
+          id="d"
+          value="2026-09-05"
+          onChange={onChange}
+          weekStart="mon"
+          today="2026-09-25"
+        />
+      </>
+    ))
+    render(ui)
+    const input = screen.getByLabelText('Date') as HTMLInputElement
+    expect(input).toHaveValue('05.09.2026')
+    expect(input).toHaveAttribute('placeholder', 'dd.mm.yyyy')
+    fireEvent.input(input, { target: { value: '7.9' } })
+    fireEvent.blur(input)
+    expect(onChange).toHaveBeenLastCalledWith('2026-09-07', 'blur')
+
+    queryClient.setQueryData(['session'], { settings: { dateFormat: 'mdy' } })
+    await waitFor(() => expect(input).toHaveValue('09/05/2026'))
   })
 })
 

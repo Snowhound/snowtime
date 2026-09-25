@@ -307,8 +307,8 @@ export const userSettings = sqliteTable(
       .default(sql`1`)
       .notNull(),
     durationFormat: text('duration_format', { enum: DURATION_FORMATS }).default('clock').notNull(),
-    dateFormat: text('date_format', { enum: DATE_FORMATS }).default('auto').notNull(),
-    timeFormat: text('time_format', { enum: TIME_FORMATS }).default('auto').notNull(),
+    dateFormat: text('date_format', { enum: DATE_FORMATS }).default('dmy').notNull(),
+    timeFormat: text('time_format', { enum: TIME_FORMATS }).default('24h').notNull(),
   },
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),

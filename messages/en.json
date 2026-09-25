@@ -123,7 +123,6 @@
   "settings_duration_format": "Durations",
   "settings_date_format": "Dates",
   "settings_time_format": "Times",
-  "settings_format_auto": "By language",
   "duration_hours_minutes": "{hours}h {minutes}m",
   "duration_hours": "{hours}h",
   "duration_minutes": "{minutes}m",
