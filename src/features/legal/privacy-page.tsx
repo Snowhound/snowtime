@@ -141,7 +141,8 @@ function PrivacyEn() {
         <li>A language cookie that remembers your language for about a year.</li>
         <li>
           Browser storage that remembers, on this device, your appearance choices (theme, app icon,
-          and scenery) and whether you've seen the intro.
+          and scenery), whether you've seen the intro, and whether you've dismissed the offer to add
+          a passkey.
         </li>
       </ul>
 
@@ -311,7 +312,7 @@ function PrivacyEt() {
         <li>
           brauseri kohalik salvestusruum (localStorage), mis jätab selles seadmes meelde
           kujunduseelistused (teema, rakenduse ikoon ja maastik) ning selle, kas oled tutvustust
-          näinud.
+          näinud ja pääsuvõtme lisamise pakkumisest loobunud.
         </li>
       </ul>
 

@@ -9,8 +9,9 @@ banner, since it stores only:
 
 - Better Auth's sign-in cookies
 - Paraglide's language cookie, which lasts about 400 days
-- localStorage for the device's appearance settings and whether the intro was seen
-  (`src/lib/device-settings.ts`, `src/lib/intro.ts`)
+- localStorage for the device's appearance settings, whether the intro was seen, and
+  whether the prompt to add a passkey was dismissed (`src/lib/device-settings.ts`,
+  `src/lib/intro.ts`, `src/features/app-frame/passkey-prompt.tsx`)
 
 The EU data protection authorities' guidance (Article 29 Working Party, Opinion 04/2012)
 exempts authentication cookies and user-interface customization, such as a chosen
