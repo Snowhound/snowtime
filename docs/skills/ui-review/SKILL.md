@@ -59,9 +59,11 @@ Wait for a visible control or another readiness condition before snapshotting. P
 to become quiet, since polling can prevent it from resolving. Do not read an immediate empty
 snapshot as a broken page.
 
-There is no dev login shortcut yet; sign in with a local test account the user provides. Session
-cookies survive within one agent-browser session, so log in once and keep navigating. Take a fresh
-`snapshot -i -c` and click real refs if an accessible name does not match.
+In local development, the sign-in page lists seeded test users; selecting one fills in the
+credentials. Use those accounts when the local database has been seeded. Otherwise, ask the user
+for a test account. Session cookies survive within one agent-browser session, so log in once and
+keep navigating. Take a fresh `snapshot -i -c` and click real refs if an accessible name does not
+match.
 
 A page that loads but shows empty lists or failing calls usually means the database or auth state
 is off, not that the UI is broken — check `network requests --status 400-599` before editing
