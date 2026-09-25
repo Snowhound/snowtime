@@ -48,6 +48,15 @@ export async function startTimer(db: Database, scope: Scope, input: StartTimerIn
   const now = new Date()
   try {
     return await db.transaction(async (tx) => {
+      // The scope was resolved before this transaction. A member removed since would get a
+      // timer the removal hook has already missed, running on in an organization they left.
+      const [membership] = await tx
+        .select({ id: member.id })
+        .from(member)
+        .where(
+          and(eq(member.organizationId, scope.organizationId), eq(member.userId, scope.userId)),
+        )
+      if (!membership) throw new AppError('FORBIDDEN', 'not_organization_member')
       if (input.projectId) await assertUsableProject(tx, scope, input.projectId)
       await assertEntryRoom(tx, scope.organizationId, scope.userId, now)
       const stopped = await stopRunning(tx, scope.userId, now)
@@ -79,6 +88,9 @@ export async function startTimer(db: Database, scope: Scope, input: StartTimerIn
     }
     if (constraint === 'time_entry.id') {
       throw new AppError('CONFLICT', 'entry_id_taken')
+    }
+    if (constraint === 'time_entry_live_project') {
+      throw new AppError('NOT_FOUND', 'project_not_found')
     }
     throw error
   }

@@ -58,7 +58,10 @@
   `sys_deleted` (0/1). Deleted rows are excluded from every query and report;
   `updated_at`/`updated_by` record when and by whom. Partial unique indexes
   include `sys_deleted = 0`. `sys_deleted` is administrative removal, distinct
-  from domain lifecycle such as `project.archived_at`. Insert-and-delete link
+  from domain lifecycle such as `project.archived_at`. A live entry never points at a
+  deleted project: `deleteProject` refuses a project with live entries, and the
+  `time_entry_live_project` and `project_deleted_with_entries` triggers hold the rule
+  when a delete lands between another request's check and its write. Insert-and-delete link
   rows (`project_team`) and per-user rows (`user_settings`) are not
   soft-deleted.
 - Users are never hard-deleted, so audit and ownership foreign keys to `user`
@@ -204,7 +207,9 @@
 | Admin/owner | read/write  | read/write, reports   | read/write      |
 
 - One running timer per user, across all organizations. The timer functions see only
-  entries in organizations the user still belongs to. Removing a member, or a member
+  entries in organizations the user still belongs to. `startTimer` checks membership
+  again inside its transaction, because a removal between `resolveScope` and the insert
+  would leave a timer the removal hook has already missed. Removing a member, or a member
   leaving, stops their running timer in that organization at that moment: a Better Auth
   `after` hook on `/organization/remove-member` and `/organization/leave` does it, since
   the plugin's `afterRemoveMember` hook does not fire on leave.
@@ -464,9 +469,13 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
   project, refused when it has time entries, shows the row as pending for up to 500 ms
   and removes it on success or after that. A refusal within that time never makes the
   row vanish and come back.
-- Business logic lives in TypeScript, not DB triggers. The one trigger kind
-  allowed is the `updated_at` safety net above, which is bookkeeping, not
-  logic.
+- Business logic lives in TypeScript, not DB triggers. Two trigger kinds are allowed:
+  the `updated_at` safety net above, which is bookkeeping, and a guard for a rule that
+  concurrent requests could break between the server's check and its write, where a
+  `CHECK` would need a table rebuild (`time_entry_max_length`,
+  `time_entry_live_project`, `project_deleted_with_entries`). The server still checks
+  first, so the usual refusal has its own message, and maps a guard's failure to the
+  same error.
 - Queries on soft-deleted tables filter `sys_deleted = 0` through shared
   helpers, not ad hoc in each server function.
 - Server code is grouped by domain: `auth`, `entries`, `timer`, `projects`, `reports`,

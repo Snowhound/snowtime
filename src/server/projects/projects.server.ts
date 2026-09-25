@@ -187,11 +187,21 @@ export async function deleteProject(db: Database, scope: Scope, input: ProjectId
           eq(projectTeam.organizationId, scope.organizationId),
         ),
       )
-    const [deleted] = await tx
-      .update(project)
-      .set({ sysDeleted: true })
-      .where(and(eq(project.id, existing.id), live(project, scope)))
-      .returning({ id: project.id })
+    // An entry logged since the check above makes the database refuse the delete
+    // (project_deleted_with_entries).
+    let deleted: { id: string } | undefined
+    try {
+      ;[deleted] = await tx
+        .update(project)
+        .set({ sysDeleted: true })
+        .where(and(eq(project.id, existing.id), live(project, scope)))
+        .returning({ id: project.id })
+    } catch (error) {
+      if (failedConstraint(error) === 'project_deleted_with_entries') {
+        throw new AppError('CONFLICT', 'project_has_entries')
+      }
+      throw error
+    }
     if (!deleted) throw new AppError('NOT_FOUND', 'project_not_found')
     return deleted
   })

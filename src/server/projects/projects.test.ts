@@ -7,6 +7,7 @@ import type { Database } from '~/db'
 import { project, projectTeam, timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
 import { limits } from '../limits.server'
+import { failedConstraint } from '../queries.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
 import {
@@ -289,6 +290,15 @@ describe('deleteProject', () => {
     await expect(
       as(scopes.admin, () => deleteProject(db, scopes.admin, { id: P.mobile })),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
+  })
+
+  test('the database refuses to delete a project with live entries', async () => {
+    const created = await newProject(scopes.admin, 'Deleted by hand')
+    await logOn(created.id)
+    const write = as(scopes.admin, async () => {
+      await db.update(project).set({ sysDeleted: true }).where(eq(project.id, created.id))
+    })
+    expect(await write.then(() => null, failedConstraint)).toBe('project_deleted_with_entries')
   })
 
   test('only admins and owners delete; other organizations’ projects are not found', async () => {

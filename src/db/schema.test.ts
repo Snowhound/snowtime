@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { eq, sql } from 'drizzle-orm'
 import type { Database } from '.'
 import { withActor } from './actor'
-import { organization, project, teamMember, team, timeEntry, user } from './schema'
+import { organization, project, projectTeam, teamMember, team, timeEntry, user } from './schema'
 import { createTestDatabase } from './testing'
 
 let db: Database
@@ -83,6 +83,21 @@ describe('tenancy', () => {
         }),
       ),
     ).rejects.toThrow()
+  })
+
+  test("a project can't be assigned to a team of another organization", async () => {
+    await db
+      .insert(team)
+      .values({ id: 't-b', organizationId: 'org-b', name: 'B team', createdAt: now })
+    await withActor(alice, async () =>
+      db.insert(project).values({ id: 'p-a', organizationId: 'org-a', name: 'A project' }),
+    )
+    for (const organizationId of ['org-a', 'org-b']) {
+      const error = await withActor(alice, async () =>
+        db.insert(projectTeam).values({ projectId: 'p-a', teamId: 't-b', organizationId }),
+      ).catch((e: Error) => e)
+      expect(String((error as Error).cause)).toContain('FOREIGN KEY constraint failed')
+    }
   })
 
   test('team members default to the member role', async () => {

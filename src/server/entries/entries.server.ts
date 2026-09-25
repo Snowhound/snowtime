@@ -94,6 +94,10 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
     if (failedConstraint(error) === 'time_entry.id') {
       throw new AppError('CONFLICT', 'entry_id_taken')
     }
+    // Deleted since assertUsableProject found it.
+    if (failedConstraint(error) === 'time_entry_live_project') {
+      throw new AppError('NOT_FOUND', 'project_not_found')
+    }
     throw error
   }
 }
@@ -124,8 +128,9 @@ export async function updateEntry(db: Database, scope: Scope, input: UpdateEntry
   }
 
   // The checks above read the entry before the update, so a concurrent edit of the other
-  // end can still make it too long or end before it starts. The database refuses both
-  // (time_entry_stopped_after_started, time_entry_max_length).
+  // end can still make it too long or end before it starts, and the new project can be
+  // deleted in between. The database refuses all three (time_entry_stopped_after_started,
+  // time_entry_max_length, time_entry_live_project).
   try {
     const [updated] = await db
       .update(timeEntry)
@@ -145,6 +150,9 @@ export async function updateEntry(db: Database, scope: Scope, input: UpdateEntry
     }
     if (failedConstraint(error) === 'time_entry_max_length') {
       throw new AppError('INVALID', 'entry_too_long')
+    }
+    if (failedConstraint(error) === 'time_entry_live_project') {
+      throw new AppError('NOT_FOUND', 'project_not_found')
     }
     throw error
   }

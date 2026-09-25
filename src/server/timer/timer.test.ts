@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
 import type { Database } from '~/db'
 import { member, timeEntry } from '~/db/schema'
@@ -109,6 +109,30 @@ describe('timer', () => {
       await start(U.admin, P.mobile)
       await start(U.lead, P.internal)
     })
+  })
+
+  test('a member removed after their scope was read cannot leave a timer running there', async () => {
+    const { db: fresh, cleanup: freshCleanup } = await createSeededDatabase()
+    try {
+      // The middleware resolves the scope, then Better Auth removes the member and its hook
+      // stops their timer, all before startTimer writes.
+      const scope = await scopeOf(fresh, U.engineer, O.harbor)
+      await fresh
+        .delete(member)
+        .where(and(eq(member.organizationId, O.harbor), eq(member.userId, U.engineer)))
+      await as({ userId: U.owner }, () => stopTimerOfRemovedMember(fresh, U.engineer, O.harbor))
+
+      await expect(
+        as(scope, () => startTimer(fresh, scope, { id: uuidv7(), description: '' })),
+      ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'not_organization_member' })
+      const running = await fresh
+        .select()
+        .from(timeEntry)
+        .where(and(eq(timeEntry.userId, U.engineer), isNull(timeEntry.stoppedAt)))
+      expect(running).toEqual([])
+    } finally {
+      freshCleanup()
+    }
   })
 
   describe('a member removed from an organization', () => {

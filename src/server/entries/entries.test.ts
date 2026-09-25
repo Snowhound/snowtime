@@ -1,6 +1,7 @@
 /// <reference types="bun" />
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { eq } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
 import * as v from 'valibot'
 import type { Database } from '~/db'
@@ -8,9 +9,10 @@ import { SYSTEM_USER_ID } from '~/db/actor'
 import { timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
 import { limits } from '../limits.server'
+import { createProject, deleteProject } from '../projects/projects.server'
 import { failedConstraint } from '../queries.server'
 import type { Scope } from '../scope.server'
-import { as, createSeededDatabase, scopeOf } from '../testing'
+import { as, createSeededDatabase, interleaved, scopeOf } from '../testing'
 import { CreateEntryInput, MAX_ENTRY_HOURS } from './entries.schemas'
 import {
   createEntry,
@@ -212,6 +214,27 @@ describe('createEntry', () => {
     ).rejects.toMatchObject({ code: 'LIMIT_REACHED', key: 'entry_limit' })
     await as(scopes.loner, () => createEntry(db, scopes.loner, at(start.getTime() + 2 * DAY)))
   })
+
+  test('a project deleted between the check and the insert takes no entry', async () => {
+    const project = await as(scopes.admin, () =>
+      createProject(db, scopes.admin, { id: uuidv7(), name: 'Deleted mid-write', color: null }),
+    )
+    // Another request deletes the project after createEntry has found it usable.
+    const racing = interleaved(db, /^insert into "time_entry"/, () =>
+      as(scopes.admin, () => deleteProject(db, scopes.admin, { id: project.id })),
+    )
+    const write = as(scopes.admin, () =>
+      createEntry(racing, scopes.admin, {
+        id: uuidv7(),
+        description: '',
+        projectId: project.id,
+        ...past(70),
+      }),
+    )
+    await expect(write).rejects.toMatchObject({ code: 'NOT_FOUND', key: 'project_not_found' })
+    const onIt = await db.select().from(timeEntry).where(eq(timeEntry.projectId, project.id))
+    expect(onIt).toEqual([])
+  })
 })
 
 describe('updateEntry', () => {
@@ -362,6 +385,23 @@ describe('updateEntry', () => {
     await expect(
       as(scopes.admin, () => updateEntry(db, scopes.admin, { id: E.harbor, description: 'x' })),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  })
+
+  test('time cannot move onto a project deleted between the check and the update', async () => {
+    const entry = await newEntry(scopes.admin)
+    const project = await as(scopes.admin, () =>
+      createProject(db, scopes.admin, { id: uuidv7(), name: 'Deleted mid-move', color: null }),
+    )
+    const racing = interleaved(db, /^update "time_entry"/, () =>
+      as(scopes.admin, () => deleteProject(db, scopes.admin, { id: project.id })),
+    )
+    await expect(
+      as(scopes.admin, () =>
+        updateEntry(racing, scopes.admin, { id: entry.id, projectId: project.id }),
+      ),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND', key: 'project_not_found' })
+    const [kept] = await db.select().from(timeEntry).where(eq(timeEntry.id, entry.id))
+    expect(kept.projectId).toBeNull()
   })
 })
 
