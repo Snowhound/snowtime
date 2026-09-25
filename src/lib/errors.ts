@@ -31,6 +31,7 @@ const errorText: Record<AppErrorKey, () => string> = {
   projects_forbidden: m.error_projects_forbidden,
   team_report_forbidden: m.error_team_report_forbidden,
   settings_not_found: m.error_settings_not_found,
+  rate_limited: m.error_rate_limited,
 }
 
 // Refusals from Better Auth's client calls, by the code its error carries (unwrap in
@@ -76,6 +77,10 @@ function authErrorCode(error: unknown): string | undefined {
 // message; anything else is unexpected and gets a generic message instead of internals.
 export function errorMessage(error: unknown): string {
   if (error instanceof AppError) return errorText[error.key]?.() ?? error.message
+  // Better Auth's rate limiter answers 429 without a code.
+  if (typeof error === 'object' && error !== null && 'status' in error && error.status === 429) {
+    return m.error_rate_limited()
+  }
   const code = authErrorCode(error)
   return (code && authErrorText[code]?.()) || m.error_unexpected()
 }

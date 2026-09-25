@@ -193,8 +193,7 @@
 
 Anyone who can sign in can create an organization, so caps keep one account from growing
 the database, and the Turso quotas in `docs/hosting.md`, without bound. The values live in
-`src/server/limits.server.ts` and sit far above honest use. Task 028 tracks the rest,
-such as rate limiting.
+`src/server/limits.server.ts` and sit far above honest use. Task 028 tracks the rest.
 
 - The organization plugin enforces organizations per user (`organizationLimit`, which
   counts every organization the user belongs to), members, pending invitations, and
@@ -207,6 +206,24 @@ such as rate limiting.
   entries across years.
 - A refused write throws `AppError` with code `LIMIT_REACHED`. Two concurrent writes can
   both pass a count and exceed a cap by one; a cap is a bound, not an exact number.
+
+Rate limits bound how fast one user or address can write, which the caps don't. The rates
+are `rateLimits` in `src/server/limits.server.ts`.
+
+- `sessionMiddleware` counts every POST server function against the user's write rate,
+  across all their organizations, and throws `AppError` with code `RATE_LIMITED` past it.
+  Every write is a POST, so a new write function is covered without extra code.
+- Better Auth limits `/api/auth/*` per IP address and path, in production only, with
+  stricter rules for creating organizations and inviting members. Its per-IP rules stay
+  loose because an office may share one address.
+- Both keep their counts in one store (`src/server/rate-limit.server.ts`): a fixed
+  window per key, counted and checked in one atomic step. With `UPSTASH_REDIS_REST_URL`
+  and `UPSTASH_REDIS_REST_TOKEN` set, the store is Upstash Redis, one Lua script per
+  counted request. Unset, the counts live in the process's memory. That is enough on one
+  long-running server but not on Vercel, where each function instance counts on its own.
+- Upstash was chosen over Better Auth's `storage: 'database'`, which would cost a Turso
+  write per counted request, and over Vercel Firewall rules, which limit only per IP.
+  Upstash is Redis over HTTP, so it doesn't tie the app to Vercel.
 
 ## Content security policy
 

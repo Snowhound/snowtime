@@ -27,6 +27,7 @@
   "error_projects_forbidden": "Projekte saavad hallata ainult administraatorid.",
   "error_team_report_forbidden": "Aruandeid saad vaadata ainult meeskondade kohta, mida juhid.",
   "error_settings_not_found": "Laadi kõigepealt seaded.",
+  "error_rate_limited": "Liiga palju muudatusi lühikese ajaga. Oota minut ja proovi uuesti.",
   "error_unexpected": "Midagi läks valesti. Proovi uuesti.",
   "validation_invalid_id": "Vigane ID.",
   "validation_too_long": "Kasuta kõige rohkem {max} märki.",

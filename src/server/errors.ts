@@ -13,6 +13,8 @@ export type AppErrorCode =
   | 'INVALID'
   // A cap in src/server/limits.server.ts.
   | 'LIMIT_REACHED'
+  // A rate in rateLimits (src/server/limits.server.ts).
+  | 'RATE_LIMITED'
 
 // Every message an AppError can carry, by key. Keys are stable and snake_case, so they
 // name the Paraglide message error_<key> (src/lib/errors.ts); the English text is the fallback.
@@ -45,6 +47,7 @@ export const errorMessages = {
   projects_forbidden: 'Only admins can manage projects.',
   team_report_forbidden: 'You can report only on teams you lead.',
   settings_not_found: 'Load the settings first.',
+  rate_limited: 'Too many changes in a short time. Wait a minute and try again.',
 } as const
 
 export type AppErrorKey = keyof typeof errorMessages

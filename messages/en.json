@@ -27,6 +27,7 @@
   "error_projects_forbidden": "Only admins can manage projects.",
   "error_team_report_forbidden": "You can report only on teams you lead.",
   "error_settings_not_found": "Load the settings first.",
+  "error_rate_limited": "Too many changes in a short time. Wait a minute and try again.",
   "error_unexpected": "Something went wrong. Try again.",
   "validation_invalid_id": "Invalid id.",
   "validation_too_long": "Use at most {max} characters.",

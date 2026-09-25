@@ -9,13 +9,17 @@ import { db } from '~/db'
 import { withActor } from '~/db/actor'
 import * as schema from '~/db/schema'
 import { env } from '~/env'
-import { limits } from '../limits.server'
+import { limits, rateLimits } from '../limits.server'
+import { createRateLimitStore } from '../rate-limit.server'
 import { stopTimerOfRemovedMember } from '../timer/timer.server'
 import { passwordEnabled, socialProviders } from './sign-in.server'
 
 // Passkeys are bound to the app's domain, so each environment's relying party follows its
 // BETTER_AUTH_URL; the plugin would otherwise default to localhost.
 const appUrl = new URL(env.BETTER_AUTH_URL)
+
+// Shared with sessionMiddleware, which limits server-function writes with it.
+export const rateLimitStore = createRateLimitStore(env)
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
@@ -29,6 +33,16 @@ export const auth = betterAuth({
   // stays usable that long on a device that has the cookie (docs/architecture.md, "Sign-in
   // methods"). Membership is still read on every call (resolveScope).
   session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
+  // On in production only, per IP address and path. The counts go where the server
+  // functions' go: Upstash Redis when configured, else memory (docs/architecture.md,
+  // "Abuse limits").
+  rateLimit: {
+    customStorage: rateLimitStore,
+    customRules: {
+      '/organization/create': rateLimits.createOrganization,
+      '/organization/invite-member': rateLimits.inviteMember,
+    },
+  },
   // Password sign-in is for local development with seeded users only: the MVP sends no
   // email, so there is no verification or reset (docs/architecture.md, "Sign-in methods").
   emailAndPassword: {

@@ -26,6 +26,10 @@ export const env = createEnv({
     MICROSOFT_CLIENT_SECRET: v.optional(secret),
     // Restricts Microsoft sign-in to one Entra ID tenant; unset allows any account.
     MICROSOFT_TENANT_ID: v.optional(secret),
+    // Upstash Redis for rate-limit counts shared by every function instance; unset keeps
+    // them in memory (docs/architecture.md, "Abuse limits").
+    UPSTASH_REDIS_REST_URL: v.optional(v.pipe(v.string(), v.url())),
+    UPSTASH_REDIS_REST_TOKEN: v.optional(secret),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -37,6 +41,10 @@ for (const provider of ['GOOGLE', 'GITHUB', 'MICROSOFT'] as const) {
   if (!env[id] !== !env[clientSecret]) {
     throw new Error(`Set both ${id} and ${clientSecret}, or neither.`)
   }
+}
+
+if (!env.UPSTASH_REDIS_REST_URL !== !env.UPSTASH_REDIS_REST_TOKEN) {
+  throw new Error('Set both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN, or neither.')
 }
 
 if (env.MICROSOFT_TENANT_ID && !env.MICROSOFT_CLIENT_ID) {
