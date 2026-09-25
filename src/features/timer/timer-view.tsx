@@ -1,10 +1,10 @@
 // The timer view (prototypes/timer.html): the timer, the user's recent entries by day, the
 // summary, and the entry dialog, in the layout of the user's settings. Bar lists day
 // cards; Focus has a large clock, "continue recent" chips, and the last three days;
-// Table has one table with day subtotals. The compactRows setting makes the rows of every
-// layout shorter. Entries are edited in their rows; the dialog adds an entry or edits the
-// running one's start. Every write is optimistic and rolls back on error (queries.ts),
-// with the error shown under the edited row or above the timer.
+// Table has one table with day subtotals. The compactRows setting makes the timer and the
+// rows of every layout shorter. Entries are edited in their rows; the dialog adds an entry
+// or edits the running one's start. Every write is optimistic and rolls back on error
+// (queries.ts), with the error shown under the edited row or above the timer.
 import { keepPreviousData, useQuery } from '@tanstack/solid-query'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import PlusIcon from 'lucide-solid/icons/plus'
@@ -18,6 +18,7 @@ import { formatClock, formatHours, formatIsoDate } from '~/lib/format'
 import { projectsQuery } from '~/lib/projects'
 import { newId } from '~/lib/query'
 import type { Settings } from '~/lib/settings'
+import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { groupByDay, recentRange, recentWork, summarize } from './entries'
 import { EntryDialog, type EntryDialogTarget, type EntryDialogValues } from './entry-dialog'
@@ -256,7 +257,7 @@ export function TimerView(props: {
             : 'grid grid-cols-[minmax(0,1fr)] gap-6'
         }
       >
-        <div class="flex min-w-0 flex-col gap-6">
+        <div class={cn('flex min-w-0 flex-col', props.settings.compactRows ? 'gap-4' : 'gap-6')}>
           <Show when={error()}>
             <Alert variant="destructive">
               <CircleAlertIcon aria-hidden="true" />
@@ -265,6 +266,7 @@ export function TimerView(props: {
           </Show>
           <TimerBar
             layout={layout()}
+            compact={props.settings.compactRows}
             running={running.data ?? null}
             projects={projects.data ?? []}
             elsewhere={elsewhere()}

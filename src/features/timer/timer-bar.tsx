@@ -2,7 +2,8 @@
 // Stop. Enter in the description starts the timer. While it runs, the fields edit the
 // running entry, and the elapsed time opens its start in the entry dialog. The layouts
 // share these controls and differ only in their classes: one line in Bar, a large clock
-// in Focus, and a plain row above the table in Table.
+// in Focus, and a plain row above the table in Table. With the compactRows setting, the
+// controls are shorter and the padding smaller.
 import PlayIcon from 'lucide-solid/icons/play'
 import SquareIcon from 'lucide-solid/icons/square'
 import { Show, createEffect, createSignal, on } from 'solid-js'
@@ -39,8 +40,22 @@ const LAYOUTS: Record<
   },
 }
 
+// Overrides for the compactRows setting; cn lets them replace the layout's classes.
+const COMPACT: typeof LAYOUTS = {
+  bar: { timer: 'gap-2 p-2', elapsed: 'h-9 text-base' },
+  focus: {
+    timer: 'gap-3 p-4',
+    elapsed: 'h-auto text-4xl sm:text-5xl',
+    toggle: 'h-10',
+  },
+  table: { timer: 'pb-3', elapsed: 'h-9' },
+}
+// Controls the layouts leave at their default height.
+const COMPACT_CONTROL = 'h-9'
+
 export function TimerBar(props: {
   layout: Settings['timerLayout']
+  compact: boolean
   running: RunningTimer | null
   projects: readonly Project[]
   // The organization the running timer is in, when it isn't the active one. Entries
@@ -92,7 +107,19 @@ export function TimerBar(props: {
   }
 
   function classes() {
-    return LAYOUTS[props.layout]
+    const layout = LAYOUTS[props.layout]
+    if (!props.compact) return layout
+    const compact = COMPACT[props.layout]
+    return {
+      timer: cn(layout.timer, compact.timer),
+      fields: layout.fields,
+      elapsed: cn(layout.elapsed, compact.elapsed),
+      toggle: cn(COMPACT_CONTROL, layout.toggle, compact.toggle),
+    }
+  }
+
+  function control() {
+    return props.compact ? COMPACT_CONTROL : undefined
   }
 
   return (
@@ -112,6 +139,7 @@ export function TimerBar(props: {
           >
             <TextFieldLabel class="sr-only">{m.timer_description_placeholder()}</TextFieldLabel>
             <TextFieldInput
+              class={control()}
               placeholder={m.timer_description_placeholder()}
               autocomplete="off"
               onBlur={saveDescription}
@@ -128,7 +156,7 @@ export function TimerBar(props: {
           </label>
           <ProjectSelect
             id="timer-project"
-            class="sm:w-48"
+            class={cn('sm:w-48', control())}
             projects={projects()}
             value={projectId()}
             disabled={!!props.elsewhere}
