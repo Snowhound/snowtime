@@ -12,6 +12,7 @@ import { For, Show, createSignal } from 'solid-js'
 import { GitHubIcon, GoogleIcon, MicrosoftIcon } from '~/components/brand-logos'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
+import { Separator } from '~/components/ui/separator'
 import {
   TextField,
   TextFieldErrorMessage,
@@ -24,7 +25,6 @@ import { m } from '~/paraglide/messages.js'
 import { getDevUsers } from '~/server/auth/auth.functions'
 import type { SignInMethod } from '~/server/auth/auth.functions'
 import { SignInForm } from '~/server/auth/auth.schemas'
-import { AuthDivider } from './auth-layout'
 
 type SocialProvider = 'google' | 'github' | 'microsoft'
 
@@ -33,6 +33,16 @@ const PROVIDERS: { id: SocialProvider; name: string; label: () => string; Icon: 
   { id: 'github', name: 'GitHub', label: m.sign_in_github, Icon: GitHubIcon },
   { id: 'microsoft', name: 'Microsoft', label: m.sign_in_microsoft, Icon: MicrosoftIcon },
 ]
+
+function AuthDivider() {
+  return (
+    <div class="text-muted-foreground flex items-center gap-3 text-xs uppercase">
+      <Separator class="flex-1" />
+      <span>{m.auth_or()}</span>
+      <Separator class="flex-1" />
+    </div>
+  )
+}
 
 // A button's label while it waits, with a spinner.
 function Busy(props: { label: string }) {

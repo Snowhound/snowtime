@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/solid-router'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import MailIcon from 'lucide-solid/icons/mail'
 import { Show, createSignal } from 'solid-js'
+import { AuthHeading, AuthLayout } from '~/components/auth-layout/auth-layout'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import {
@@ -19,7 +20,6 @@ import { fieldError } from '~/lib/form'
 import { forgetSignedInUser, sessionQuery } from '~/lib/session'
 import { m } from '~/paraglide/messages.js'
 import { CreateOrganizationForm, slugify } from '~/server/auth/auth.schemas'
-import { AuthHeading, AuthLayout } from './auth-layout'
 import { FormAlert } from './sign-in-methods'
 
 export function CreateOrganizationPage(props: { email: string }) {

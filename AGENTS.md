@@ -29,7 +29,7 @@ Edit their source files at the paths above so both agents use the same instructi
   `bun run icons:fix` renames them. Name hand-written icons the same way, for example
   `GoogleIcon`.
 - Frontend code is grouped by feature in `src/features/<name>/` (`timer`, `settings`,
-  `auth`, `app-frame`). A feature holds its page component (`<Name>Page` in
+  `auth`, `reports`). A feature holds its page component (`<Name>Page` in
   `<name>-page.tsx`), subcomponents, queries and mutations, helpers, and tests, so one
   folder holds what a change to that view touches.
 - Route files in `src/routes/` only wire the route: search params, `beforeLoad`, loader,

@@ -430,7 +430,7 @@ html[data-intro='pending'] body {
     0 20px 25px -5px rgb(0 0 0 / 0.1),
     0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
-/* The signed-in header is sticky (src/features/app-frame/app-header.tsx). Its height with its
+/* The signed-in header is sticky (src/components/app-frame/app-header.tsx). Its height with its
    borders keeps anchored sections and sticky elements below it; under md it has a second row
    for the navigation. */
 :root {

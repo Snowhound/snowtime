@@ -6,7 +6,6 @@ import { Intro, IntroPage } from '~/components/intro'
 import { LegalLinks } from '~/components/legal-links'
 import { SceneLayer } from '~/components/scene-layer'
 import { SeasonTagline } from '~/components/season-tagline'
-import { Separator } from '~/components/ui/separator'
 import { appIcon } from '~/lib/app-icon'
 import {
   DEVICE_DEFAULTS,
@@ -100,16 +99,6 @@ export function AuthIcon(props: { children: JSX.Element }) {
   return (
     <div class="bg-muted flex size-12 items-center justify-center rounded-full [&_svg]:size-6">
       {props.children}
-    </div>
-  )
-}
-
-export function AuthDivider() {
-  return (
-    <div class="text-muted-foreground flex items-center gap-3 text-xs uppercase">
-      <Separator class="flex-1" />
-      <span>{m.auth_or()}</span>
-      <Separator class="flex-1" />
     </div>
   )
 }

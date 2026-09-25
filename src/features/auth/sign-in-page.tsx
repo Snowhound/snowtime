@@ -1,11 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { useNavigate } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
+import { AuthHeading, AuthLayout } from '~/components/auth-layout/auth-layout'
 import { safeRedirect } from '~/lib/redirect'
 import { sessionQuery } from '~/lib/session'
 import { signInMethodsQuery } from '~/lib/sign-in-methods'
 import { m } from '~/paraglide/messages.js'
-import { AuthHeading, AuthLayout } from './auth-layout'
 import { FormAlert, PasskeyButton, PasswordSignIn, ProviderButtons } from './sign-in-methods'
 
 export function SignInPage(props: { redirect?: string; initialError?: string }) {
