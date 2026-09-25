@@ -3,6 +3,7 @@
 // It scrolls inside its card with the first and last columns sticky.
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
+import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
 import {
   Table,
@@ -13,7 +14,6 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { type IsoDate, type WeekStart, startOfWeek } from '~/lib/calendar'
-import { useFormatHours } from '~/lib/display-format'
 import { formatIsoDate } from '~/lib/format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
@@ -38,7 +38,6 @@ export function Timesheet(props: {
   today: IsoDate
   weekStart: WeekStart
 }) {
-  const formatHours = useFormatHours()
   function buckets() {
     return props.report.buckets
   }
@@ -75,7 +74,7 @@ export function Timesheet(props: {
           cell.class,
         )}
       >
-        {cell.ms ? formatHours(cell.ms) : '·'}
+        {cell.ms ? <Duration ms={cell.ms} /> : '·'}
       </TableCell>
     )
   }
@@ -168,7 +167,7 @@ export function Timesheet(props: {
                     {(bucket, i) => <Cell ms={row.perBucket[i()]} bucket={bucket} />}
                   </For>
                   <TableCell class="bg-card sticky right-0 z-10 pr-6 text-right font-medium tabular-nums">
-                    {formatHours(row.total)}
+                    <Duration ms={row.total} />
                   </TableCell>
                 </TableRow>
               )}
@@ -186,7 +185,7 @@ export function Timesheet(props: {
                 )}
               </For>
               <TableCell class="bg-card sticky right-0 z-10 pr-6 text-right tabular-nums">
-                {formatHours(props.report.total)}
+                <Duration ms={props.report.total} />
               </TableCell>
             </TableRow>
           </TableBody>

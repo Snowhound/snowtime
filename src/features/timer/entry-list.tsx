@@ -9,6 +9,7 @@ import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'
 import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { For, Show, createEffect, on } from 'solid-js'
+import { Duration } from '~/components/duration'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import {
@@ -18,7 +19,6 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { type WeekStart, addDays, localDate } from '~/lib/calendar'
-import { useFormatHours } from '~/lib/display-format'
 import { formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import { cn } from '~/lib/utils'
@@ -95,7 +95,6 @@ export function EntryList(
     focus?: boolean
   },
 ) {
-  const formatHours = useFormatHours()
   return (
     <For each={groupDates(props.groups)}>
       {(date) => {
@@ -107,7 +106,7 @@ export function EntryList(
             <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
               <h2 class="font-medium">{dayLabel(date, props.zone, props.now)}</h2>
               <span class="text-muted-foreground tabular-nums">
-                {formatHours(group()?.total ?? 0)}
+                <Duration ms={group()?.total ?? 0} />
               </span>
             </header>
             <ul class="divide-y">

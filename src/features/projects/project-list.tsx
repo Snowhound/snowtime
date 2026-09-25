@@ -9,6 +9,7 @@ import PencilIcon from 'lucide-solid/icons/pencil'
 import PlusIcon from 'lucide-solid/icons/plus'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { For, Show } from 'solid-js'
+import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -20,7 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
-import { useFormatHours } from '~/lib/display-format'
 import { formatDateTime } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import type { Team } from '~/lib/teams'
@@ -100,7 +100,6 @@ function Row(
     pending: boolean
   },
 ) {
-  const formatHours = useFormatHours()
   function ms() {
     return props.totals.get(props.project.id) ?? 0
   }
@@ -164,7 +163,7 @@ function Row(
         <span class="sr-only">
           {props.admin ? m.projects_time_label() : m.projects_time_label_own()}{' '}
         </span>
-        {ms() ? formatHours(ms()) : '–'}
+        {ms() ? <Duration ms={ms()} /> : '–'}
       </div>
       <Show when={props.admin}>
         <div class="col-start-3 row-start-1 flex justify-end md:col-start-auto md:row-start-auto">

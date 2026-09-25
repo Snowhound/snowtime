@@ -2,17 +2,16 @@
 // showSummary setting is on: today and this week, and a bar per project for the week.
 // The totals come from summarize, which counts a running timer up to now.
 import { For, Show } from 'solid-js'
+import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { projectColor } from '~/lib/colors'
-import { useFormatHours } from '~/lib/display-format'
 import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 import type { Summary } from './entries'
 import { entryProject } from './entry-fields'
 
 export function SummaryPanel(props: { summary: Summary; projects: readonly Project[] }) {
-  const formatHours = useFormatHours()
   return (
     <aside class="w-full lg:w-72" aria-labelledby="summary-heading">
       <Card>
@@ -23,11 +22,15 @@ export function SummaryPanel(props: { summary: Summary; projects: readonly Proje
           <dl class="grid grid-cols-2 gap-3">
             <div>
               <dt class="text-muted-foreground text-xs">{m.timer_today()}</dt>
-              <dd class="text-lg tabular-nums">{formatHours(props.summary.today)}</dd>
+              <dd class="text-lg tabular-nums">
+                <Duration ms={props.summary.today} />
+              </dd>
             </div>
             <div>
               <dt class="text-muted-foreground text-xs">{m.timer_this_week()}</dt>
-              <dd class="text-lg tabular-nums">{formatHours(props.summary.week)}</dd>
+              <dd class="text-lg tabular-nums">
+                <Duration ms={props.summary.week} />
+              </dd>
             </div>
           </dl>
           <Show
@@ -55,7 +58,7 @@ export function SummaryPanel(props: { summary: Summary; projects: readonly Proje
                           <span class="truncate">{project().name}</span>
                         </span>
                         <span class="text-muted-foreground tabular-nums">
-                          {formatHours(row.total)}
+                          <Duration ms={row.total} />
                         </span>
                       </div>
                       <div class="bg-muted h-1.5 rounded-full" aria-hidden="true">

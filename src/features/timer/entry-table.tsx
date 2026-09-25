@@ -2,6 +2,7 @@
 // per day, newest first, and the entry fields (entry-fields.tsx) in the cells. It scrolls
 // horizontally inside its border on narrow screens. Compact rows pad their cells less.
 import { For, Show } from 'solid-js'
+import { Duration } from '~/components/duration'
 import {
   Table,
   TableBody,
@@ -10,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import { useFormatHours } from '~/lib/display-format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'
@@ -41,7 +41,6 @@ export function EntryTable(
     now: number
   },
 ) {
-  const formatHours = useFormatHours()
   return (
     <div class="surface bg-card overflow-hidden rounded-lg border">
       <Table class="min-w-[48rem] table-fixed">
@@ -82,7 +81,7 @@ export function EntryTable(
                       {dayLabel(date, props.zone, props.now)}
                     </th>
                     <TableCell class="text-right text-xs tabular-nums">
-                      {formatHours(group()?.total ?? 0)}
+                      <Duration ms={group()?.total ?? 0} />
                     </TableCell>
                     <TableCell />
                   </TableRow>

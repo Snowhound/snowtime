@@ -17,6 +17,12 @@ function useSettings(): () => Settings | null | undefined {
   return () => session.data?.settings
 }
 
+// The user's duration format.
+export function useDurationFormat() {
+  const settings = useSettings()
+  return () => settings()?.durationFormat ?? 'clock'
+}
+
 // formatHours in the user's duration format.
 export function useFormatHours() {
   const settings = useSettings()
