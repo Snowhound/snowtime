@@ -1,8 +1,8 @@
 // The timesheet grid (prototypes/reports.html, 02 · Timesheet): a row per group and a
 // column per day or week, with row and column totals and the current day or week shaded.
-// It scrolls inside its card with the first column sticky.
+// It scrolls inside its card with the first and last columns sticky.
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
-import { For, Show, createSignal } from 'solid-js'
+import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 import { ProjectDot } from '~/components/project-dot'
 import {
   Table,
@@ -78,18 +78,35 @@ export function Timesheet(props: {
     )
   }
 
+  // Whether cells are hidden left and right of the sticky columns.
   const [scrolled, setScrolled] = createSignal(false)
+  const [more, setMore] = createSignal(false)
+  function measure(scroller: HTMLElement) {
+    setScrolled(scroller.scrollLeft > 0)
+    setMore(scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 1)
+  }
 
   return (
     <Show when={props.rows.length} fallback={<EmptyState />}>
-      {/* Marked while scrolled sideways: on glass, the sticky column is see-through like the
-          card until then, and solid after, so the cells scrolling under it don't show. */}
+      {/* Marked while cells hide under a sticky column: on glass, that column is see-through
+          like the card until then, and solid after, so the cells under it don't show. */}
       <div
+        ref={(el) =>
+          onMount(() => {
+            // The Table's scrolling wrapper, measured again as it or its columns resize.
+            const scroller = el.firstElementChild as HTMLElement
+            const observer = new ResizeObserver(() => measure(scroller))
+            observer.observe(scroller)
+            if (scroller.firstElementChild) observer.observe(scroller.firstElementChild)
+            onCleanup(() => observer.disconnect())
+          })
+        }
         class="timesheet border-t"
         data-scrolled={scrolled() ? '' : undefined}
+        data-more={more() ? '' : undefined}
         on:scroll={{
           capture: true,
-          handleEvent: (event) => setScrolled((event.target as HTMLElement).scrollLeft > 0),
+          handleEvent: (event) => measure(event.target as HTMLElement),
         }}
       >
         <Table>
@@ -120,7 +137,7 @@ export function Timesheet(props: {
                   </TableHead>
                 )}
               </For>
-              <TableHead scope="col" class="pr-6 text-right">
+              <TableHead scope="col" class="bg-card sticky right-0 z-10 pr-6 text-right">
                 {m.reports_total()}
               </TableHead>
             </TableRow>
@@ -148,7 +165,7 @@ export function Timesheet(props: {
                   <For each={buckets()}>
                     {(bucket, i) => <Cell ms={row.perBucket[i()]} bucket={bucket} />}
                   </For>
-                  <TableCell class="pr-6 text-right font-medium tabular-nums">
+                  <TableCell class="bg-card sticky right-0 z-10 pr-6 text-right font-medium tabular-nums">
                     {formatHours(row.total)}
                   </TableCell>
                 </TableRow>
@@ -166,7 +183,7 @@ export function Timesheet(props: {
                   <Cell ms={props.report.perBucket[i()]} bucket={bucket} class="font-medium" />
                 )}
               </For>
-              <TableCell class="pr-6 text-right tabular-nums">
+              <TableCell class="bg-card sticky right-0 z-10 pr-6 text-right tabular-nums">
                 {formatHours(props.report.total)}
               </TableCell>
             </TableRow>

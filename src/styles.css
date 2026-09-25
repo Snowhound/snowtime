@@ -438,11 +438,10 @@ html[data-intro='pending'] body {
   background-color: var(--background);
 }
 
-/* Reports' timesheet (src/features/reports/timesheet.tsx): on glass, its sticky first column is
-   see-through until the table scrolls sideways. */
-[data-scene-bg='on'][data-surfaces='glass']
-  .timesheet:not([data-scrolled])
-  :is(th, td):first-child {
+/* Reports' timesheet (src/features/reports/timesheet.tsx): on glass, its sticky first and last
+   columns are see-through until cells scroll under them. */
+[data-scene-bg='on'][data-surfaces='glass'] .timesheet:not([data-scrolled]) :is(th, td):first-child,
+[data-scene-bg='on'][data-surfaces='glass'] .timesheet:not([data-more]) :is(th, td):last-child {
   background-color: transparent;
 }
 
