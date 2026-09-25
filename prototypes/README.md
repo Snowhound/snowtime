@@ -64,7 +64,8 @@ class strings as Solid-UI, so the look matches and markup ports directly, but Ko
 | `card`, `card-header`, `card-title`, `card-description`, `card-content`, `card-footer` | `Card*` | —                                          |
 | `table`, `table-header`, `table-body`, `table-row`, `table-head`, `table-cell`, `table-caption` | `Table*` | wrap in `relative w-full overflow-auto` like `Table` does |
 | `dialog`, `dialog-header`, `dialog-footer`, `dialog-title`, `dialog-description`, `dialog-close` | `Dialog*` | native modal `<dialog>`; overlay via `::backdrop` |
-| `popover`                                     | `PopoverContent`               | native `[popover]` + `popovertarget`; `ui.js` places it under the trigger, or above when it doesn't fit |
+| `popover`                                     | `PopoverContent`               | native `[popover]` + `popovertarget`; `ui.js` places it under the trigger, or above when it doesn't fit; with several triggers, under the one clicked |
+| `listbox`, `option`                           | `ComboboxContent`, `ComboboxItem` | native manual `[popover]` with `role="listbox"`, placed by the page; highlight via `aria-selected="true"` |
 | `switch`, `switch-thumb`                      | `Switch*`                      | `<button role="switch" aria-checked>`; `ui.js` toggles it and fires `change` |
 | `error-message`                               | `TextFieldErrorMessage`        | mark invalid inputs with `data-invalid`                       |
 | `alert`, `alert-title`, `alert-description`   | `Alert*`                       | default, destructive                                          |
@@ -626,9 +627,10 @@ fields, applied at once. A failed save (the prototype bar's "Fail saves") rolls 
 back and shows an error under the row. Tab moves through description, project, date, start,
 end, continue, and delete.
 
-The entry dialog stays for Add entry and for the running entry's start, opened from the
-timer's clock. It has description, project, date, start, and end, with the validation the
-rows use, and a live line with the resulting duration.
+The entry popover is for Add entry and for the running entry's start. It opens under the Add
+entry button, or under the timer's clock for the running entry. It has description, project,
+date, start, and end, with the validation the rows use, and a live line with the resulting
+duration. Errors show once Save was tried, then follow the input.
 
 Decisions:
 
@@ -652,8 +654,22 @@ Decisions:
 - **Below 768 px: the same fields, stacked.** Description on the first line, project and the
   actions on the second, date, times, and duration on the third. The Table layout keeps one
   line and scrolls inside its card.
-- **Add entry: the dialog.** A new entry needs a start and an end before it exists, so it can't
-  save one field at a time.
+- **Add entry: a form in a popover under the button.** A new entry needs a start and an end
+  before it exists, so it can't save one field at a time. A popover keeps the form next to
+  what opened it and leaves the entries in view, which a modal dialog covered. It is 28rem
+  wide and fills the width below that, with the date on its own line under 640 px. Escape
+  and a click outside close it but keep what was typed for the next Add entry; Cancel and
+  Save clear it. A new entry's start defaults to the end of today's last entry, so filling a
+  gap needs only the end.
+- **Description: a combobox of recent work** in the popover and the timer bar. It lists the
+  newest 8 distinct description and project pairs whose description contains the typed text,
+  with the match in bold, the project's dot, and its name. It opens on focus, so an empty
+  field shows the newest work. Arrows move through it, Enter or a click picks, and Escape
+  closes only the list. Picking fills in the description and the project; typing never
+  changes the project. Archived and unavailable projects are left out, and so is the pair
+  already in the fields. Picking in the timer bar doesn't start the timer; Enter then does,
+  and while a timer runs, picking updates it. The Focus layout keeps its one-click Continue
+  recent chips.
 
 Inline fields add `border-transparent shadow-none` to `input` and `button`, with the border
 back on hover and focus; the app passes the same classes at the call site
@@ -661,8 +677,9 @@ back on hover and focus; the app passes the same classes at the call site
 it. Invalid inputs use Solid-UI's `error-foreground`, which `src/styles.css` and
 [prototype-theme.js](prototype-theme.js) map to `destructive`.
 
-Simulated: start/stop, Enter to start, editing the running entry inline or in the dialog,
-continue (stops any running timer first), delete, inline edits, and Add entry. Fixtures: running,
+Simulated: start/stop, Enter to start, editing the running entry inline or in the popover,
+continue (stops any running timer first), delete, inline edits, Add entry, and picking recent
+work in both description fields. Fixtures: running,
 idle, long content, empty. Running and idle include an entry crossing midnight and one on
 the archived Website 2025 project; long content includes one on a project the user can no
 longer see. Day totals count stopped entries only; the summary includes the running timer.
@@ -673,10 +690,12 @@ Omitted: overlap checks between entries, reports, persistence of entries.
 The page has the seasonal scene behind it; see [Seasonal scene in the app](#seasonal-scene-in-the-app).
 
 Checked in Chromium at 1440, 850, and 390 px, light and dark, all layouts with summary on and off:
-no horizontal page overflow, settings survive reload, dialog and inline validation and saving
+no horizontal page overflow, settings survive reload, popover and inline validation and saving
 work, failed saves roll back, focus stays on the edited field across saves, the date popover
 saves on Enter and cancels on Escape, and no browser errors. axe reports no color-contrast
-issues since the brand tokens.
+issues since the brand tokens. The entry popover and the recent-work combobox were checked in
+Chrome on 2026-09-25 at 1440, 850, and 390 px, light and dark: placement under either trigger,
+focus on open, keyboard picking, Escape closing only the list, the kept draft, and no errors.
 
 ### [auth.html](auth.html) — Sign-in flows
 

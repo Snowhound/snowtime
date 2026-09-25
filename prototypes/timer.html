@@ -85,7 +85,7 @@
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pt-6 sm:px-8">
       <h1 class="text-2xl font-semibold tracking-tight">Timer</h1>
       <div class="flex items-center gap-2">
-        <button id="add-entry" type="button" data-ui="button" data-variant="outline" class="h-9">
+        <button id="add-entry" type="button" data-ui="button" data-variant="outline" class="h-9" popovertarget="entry-popover">
           <svg class="prototype-icon" aria-hidden="true"><use href="#icon-plus" /></svg>Add entry
         </button>
         <button data-ui="button" data-variant="outline" data-size="icon" class="size-9" popovertarget="view-settings" aria-label="View settings">
@@ -122,7 +122,7 @@
             <label for="project" class="sr-only">Project</label>
             <select id="project" data-ui="select" class="sm:w-48"></select>
           </div>
-          <button id="elapsed" type="button" data-ui="button" data-variant="ghost" class="timer-elapsed px-2 tabular-nums" aria-label="Edit start time" disabled>0:00:00</button>
+          <button id="elapsed" type="button" data-ui="button" data-variant="ghost" class="timer-elapsed px-2 tabular-nums" aria-label="Edit start time" popovertarget="entry-popover" disabled>0:00:00</button>
           <button id="toggle" data-ui="button" class="timer-toggle" type="button"></button>
         </section>
 
@@ -142,48 +142,42 @@
       </aside>
     </main>
 
-    <dialog id="entry-dialog" data-ui="dialog" aria-labelledby="entry-dialog-title" aria-describedby="entry-dialog-description">
+    <div id="entry-popover" popover data-ui="popover" role="dialog" aria-labelledby="entry-popover-title" aria-describedby="entry-popover-description" class="max-h-[calc(100dvh-16px)] w-[28rem] overflow-y-auto">
       <form id="entry-form" class="grid gap-4" novalidate>
-        <div data-ui="dialog-header">
-          <h2 id="entry-dialog-title" data-ui="dialog-title">Edit entry</h2>
-          <p id="entry-dialog-description" data-ui="dialog-description"></p>
+        <div class="grid gap-1.5">
+          <h2 id="entry-popover-title" class="font-medium leading-none">Add entry</h2>
+          <p id="entry-popover-description" class="text-sm text-muted-foreground"></p>
         </div>
-        <div class="grid gap-4">
-          <div class="grid gap-1.5">
-            <label data-ui="label" for="edit-description">Description</label>
-            <input id="edit-description" data-ui="input" type="text" autocomplete="off" placeholder="What did you work on?" />
-          </div>
-          <div class="grid gap-1.5">
-            <label data-ui="label" for="edit-project">Project</label>
-            <select id="edit-project" data-ui="select"></select>
-          </div>
-          <div class="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
-            <div class="grid gap-1.5">
-              <label data-ui="label" for="edit-date">Date</label>
-              <input id="edit-date" data-ui="input" type="date" required />
-            </div>
-            <div class="grid gap-1.5">
-              <label data-ui="label" for="edit-start">Start</label>
-              <input id="edit-start" data-ui="input" type="time" required />
-            </div>
-            <div class="grid gap-1.5" id="edit-end-field">
-              <label data-ui="label" for="edit-end">End</label>
-              <input id="edit-end" data-ui="input" type="time" required />
-            </div>
-          </div>
-          <p id="edit-summary" class="text-sm text-muted-foreground" aria-live="polite"></p>
-          <p id="edit-error" data-ui="error-message" role="alert" hidden></p>
+        <div class="grid gap-1.5">
+          <label data-ui="label" for="edit-description">Description</label>
+          <input id="edit-description" data-ui="input" type="text" autocomplete="off" placeholder="What did you work on?" />
         </div>
-        <div data-ui="dialog-footer">
-          <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
-          <button type="submit" data-ui="button">Save</button>
+        <div class="grid gap-1.5">
+          <label data-ui="label" for="edit-project">Project</label>
+          <select id="edit-project" data-ui="select"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div class="col-span-2 grid gap-1.5 sm:col-span-1">
+            <label data-ui="label" for="edit-date">Date</label>
+            <input id="edit-date" data-ui="input" type="date" required />
+          </div>
+          <div class="grid gap-1.5">
+            <label data-ui="label" for="edit-start">Start</label>
+            <input id="edit-start" data-ui="input" type="time" required />
+          </div>
+          <div class="grid gap-1.5" id="edit-end-field">
+            <label data-ui="label" for="edit-end">End</label>
+            <input id="edit-end" data-ui="input" type="time" required />
+          </div>
+        </div>
+        <p id="edit-summary" class="-mt-1 text-sm text-muted-foreground" aria-live="polite"></p>
+        <p id="edit-error" data-ui="error-message" class="-mt-3" role="alert" hidden></p>
+        <div class="flex justify-end gap-2">
+          <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-entry-cancel>Cancel</button>
+          <button type="submit" data-ui="button" data-size="sm">Save</button>
         </div>
       </form>
-      <button type="button" data-ui="dialog-close" data-dialog-cancel>
-        <svg class="prototype-icon" aria-hidden="true"><use href="#icon-x" /></svg>
-        <span class="sr-only">Close</span>
-      </button>
-    </dialog>
+    </div>
 
     <script>
       appFrame.mount({ page: 'timer', title: 'Timer and entries', scene: true })
@@ -613,8 +607,9 @@
         renderSummary()
       }
 
-      // Entry editor. Times are entered in the browser zone (the user's zone in the app).
-      const dialog = document.getElementById('entry-dialog')
+      // Entry editor, a popover under Add entry or the timer's clock. Times are entered in the
+      // browser zone (the user's zone in the app).
+      const editor = document.getElementById('entry-popover')
       const field = (id) => document.getElementById(`edit-${id}`)
       const pad = (n) => String(n).padStart(2, '0')
       const toDateValue = (t) => {
@@ -631,23 +626,40 @@
         return new Date(y, m - 1, d + addDays, h, min).getTime()
       }
       let editing = null
+      // What was typed into Add entry, kept when the popover closes by Escape or a click outside;
+      // Cancel and Save clear it.
+      let newDraft = null
+      // Like the app, errors show once saving was tried, then follow the input.
+      let saveTried = false
 
-      function openEditor(id) {
-        const kind = id
+      // A new entry starts where today's last one ended, so filling a gap needs only the end.
+      function lastEndToday() {
+        const ends = state.entries.map((e) => e.stoppedAt).filter((t) => t >= startOfDay(Date.now()))
+        return ends.length ? toTimeValue(Math.max(...ends)) : ''
+      }
+
+      function openEditor(kind) {
         const e = kind === 'new' ? { description: '', projectId: 'none', startedAt: Date.now() } : state.running
-        if (!e) return
-        editing = id
-        document.getElementById('entry-dialog-title').textContent = kind === 'new' ? 'Add entry' : 'Edit running entry'
-        document.getElementById('entry-dialog-description').textContent = `Times are in ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`
-        field('description').value = e.description
-        field('project').innerHTML = projectOptions(e.projectId)
-        field('project').value = e.projectId
-        field('date').value = toDateValue(e.startedAt)
-        field('start').value = kind === 'new' ? '' : toTimeValue(e.startedAt)
-        field('end').value = ''
+        editing = kind
+        document.getElementById('entry-popover-title').textContent = kind === 'new' ? 'Add entry' : 'Edit running entry'
+        document.getElementById('entry-popover-description').textContent = `Times are in ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`
+        const values = (kind === 'new' && newDraft) || {
+          description: e.description,
+          project: e.projectId,
+          date: toDateValue(e.startedAt),
+          start: kind === 'new' ? lastEndToday() : toTimeValue(e.startedAt),
+          end: '',
+        }
+        field('project').innerHTML = projectOptions(values.project)
+        for (const [id, value] of Object.entries(values)) field(id).value = value
         document.getElementById('edit-end-field').hidden = kind === 'running'
+        saveTried = false
         showEditorState(readEditor(), false)
-        dialog.showModal()
+      }
+      function closeEditor({ discard }) {
+        if (discard && editing === 'new') newDraft = null
+        editing = discard ? null : editing
+        editor.hidePopover()
       }
 
       function readEditor() {
@@ -688,7 +700,7 @@
         renderSummary()
       }
 
-      // Inline times, read like the dialog's: the date is the start's, and an end at or before
+      // Inline times, read like the editor's: the date is the start's, and an end at or before
       // the start means the next day. A value in the saved minute keeps the saved instant.
       function rowValues(e) {
         return { start: draft(e.id, 'start') ?? toTimeValue(e.startedAt), end: draft(e.id, 'end') ?? toTimeValue(e.stoppedAt) }
@@ -901,26 +913,173 @@
         true
       )
 
-      document.getElementById('entry-form').addEventListener('input', () => showEditorState(readEditor()))
+      document.getElementById('entry-form').addEventListener('input', () => showEditorState(readEditor(), saveTried))
       document.getElementById('entry-form').addEventListener('submit', (event) => {
         event.preventDefault()
+        saveTried = true
         const result = readEditor()
         showEditorState(result)
         if (result.error) return
         const values = { ...result.patch, description: field('description').value.trim(), projectId: field('project').value }
         if (editing === 'new') createEntry(values)
         else updateEntry(editing, values)
-        dialog.close()
+        closeEditor({ discard: true })
       })
-      dialog.querySelectorAll('[data-dialog-cancel]').forEach((b) => b.addEventListener('click', () => dialog.close()))
-      dialog.addEventListener('click', (event) => {
-        if (event.target !== dialog) return
-        const r = dialog.getBoundingClientRect()
-        const inside = event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom
-        if (!inside) dialog.close()
+      editor.querySelector('[data-entry-cancel]').addEventListener('click', () => closeEditor({ discard: true }))
+      // The clicked button says which form opens: it fires before the popover toggles.
+      let opener = 'new'
+      document.getElementById('elapsed').addEventListener('click', () => {
+        opener = 'running'
+        editor.dataset.align = 'start'
       })
-      document.getElementById('elapsed').addEventListener('click', () => openEditor('running'))
-      document.getElementById('add-entry').addEventListener('click', () => openEditor('new'))
+      document.getElementById('add-entry').addEventListener('click', () => {
+        opener = 'new'
+        delete editor.dataset.align
+      })
+      editor.addEventListener('beforetoggle', (event) => {
+        if (event.newState === 'open') return openEditor(opener)
+        if (editing !== 'new') return
+        newDraft = Object.fromEntries(['description', 'project', 'date', 'start', 'end'].map((id) => [id, field(id).value]))
+      })
+      editor.addEventListener('toggle', (event) => {
+        if (event.newState === 'open') field(editing === 'running' ? 'start' : 'description').focus()
+      })
+
+      // Recent work under a description field, as Kobalte's Combobox will list it: the newest
+      // distinct description and project pairs whose description contains the typed text,
+      // leaving out archived and unavailable projects and the pair already in the fields.
+      function suggestions(text, projectId) {
+        const query = text.trim().toLowerCase()
+        const seen = new Set()
+        const found = []
+        for (const e of [...state.entries].sort((a, b) => b.startedAt - a.startedAt)) {
+          const p = project(e.projectId)
+          const key = `${e.description}|${e.projectId}`
+          if (!e.description || p.archived || p.unavailable || seen.has(key)) continue
+          seen.add(key)
+          if (!e.description.toLowerCase().includes(query)) continue
+          if (e.description === text.trim() && e.projectId === projectId) continue
+          found.push(e)
+          if (found.length === 8) break
+        }
+        return found
+      }
+      function highlight(text, query) {
+        const at = query ? text.toLowerCase().indexOf(query.toLowerCase()) : -1
+        if (at < 0) return escapeHtml(text)
+        const end = at + query.length
+        return `${escapeHtml(text.slice(0, at))}<span class="font-semibold">${escapeHtml(text.slice(at, end))}</span>${escapeHtml(text.slice(end))}`
+      }
+
+      // Turns a description input into a combobox. The list opens on focus and typing; arrows
+      // move through it, Enter or a click picks, and Escape closes only the list. Picking fills
+      // in the description and project; typing never changes the project.
+      function combobox(input, select, onPick) {
+        const list = document.createElement('div')
+        list.id = `${input.id}-suggestions`
+        list.popover = 'manual'
+        list.dataset.ui = 'listbox'
+        list.setAttribute('role', 'listbox')
+        list.setAttribute('aria-label', 'Recent entries')
+        input.after(list)
+        input.setAttribute('role', 'combobox')
+        input.setAttribute('aria-autocomplete', 'list')
+        input.setAttribute('aria-controls', list.id)
+        input.setAttribute('aria-expanded', 'false')
+        let items = []
+        let active = -1
+
+        function setActive(index) {
+          active = index
+          list.querySelectorAll('[role="option"]').forEach((o, i) => o.setAttribute('aria-selected', String(i === index)))
+          if (index < 0) input.removeAttribute('aria-activedescendant')
+          else {
+            input.setAttribute('aria-activedescendant', `${list.id}-${index}`)
+            document.getElementById(`${list.id}-${index}`).scrollIntoView({ block: 'nearest' })
+          }
+        }
+        function place() {
+          const r = input.getBoundingClientRect()
+          const w = Math.min(Math.max(r.width, 288), innerWidth - 16)
+          const h = list.getBoundingClientRect().height
+          list.style.inset = 'auto'
+          list.style.width = `${w}px`
+          list.style.left = `${Math.max(8, Math.min(r.left, innerWidth - w - 8))}px`
+          const below = r.bottom + 4 + h <= innerHeight - 8 || r.top - 4 - h < 8
+          list.style.top = `${below ? r.bottom + 4 : r.top - 4 - h}px`
+        }
+        function open() {
+          items = suggestions(input.value, select.value)
+          if (!items.length) return close()
+          const query = input.value.trim()
+          list.innerHTML = items
+            .map((e, i) => {
+              const p = project(e.projectId)
+              return `<div id="${list.id}-${i}" role="option" data-ui="option" aria-selected="false" data-index="${i}" class="gap-2">
+                ${dot(p)}<span class="min-w-0 flex-1 truncate">${highlight(e.description, query)}</span>
+                ${p.id === 'none' ? '' : `<span class="max-w-[40%] shrink-0 truncate text-xs text-muted-foreground">${escapeHtml(p.name)}</span>`}
+              </div>`
+            })
+            .join('')
+          if (!list.matches(':popover-open')) list.showPopover()
+          input.setAttribute('aria-expanded', 'true')
+          setActive(-1)
+          place()
+        }
+        function close() {
+          if (list.matches(':popover-open')) list.hidePopover()
+          input.setAttribute('aria-expanded', 'false')
+          input.removeAttribute('aria-activedescendant')
+          active = -1
+        }
+        function pick(index) {
+          const e = items[index]
+          input.value = e.description
+          select.value = e.projectId
+          close()
+          onPick(e)
+        }
+
+        input.addEventListener('focus', open)
+        input.addEventListener('input', open)
+        input.addEventListener('blur', close)
+        input.addEventListener('keydown', (event) => {
+          const shown = list.matches(':popover-open')
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault()
+            if (!shown) return open()
+            // Past either end, the highlight goes back to the input.
+            const next = active + (event.key === 'ArrowDown' ? 1 : -1)
+            setActive(next >= items.length ? -1 : next < -1 ? items.length - 1 : next)
+          } else if (event.key === 'Enter' && shown && active >= 0) {
+            event.preventDefault()
+            pick(active)
+          } else if (event.key === 'Escape' && shown) {
+            // Keeps an open entry popover from closing too.
+            event.preventDefault()
+            event.stopPropagation()
+            close()
+          }
+        })
+        // Keeps focus in the input, so a click doesn't blur it and close the list first.
+        list.addEventListener('mousedown', (event) => event.preventDefault())
+        list.addEventListener('click', (event) => {
+          const option = event.target.closest('[role="option"]')
+          if (option) pick(Number(option.dataset.index))
+        })
+        list.addEventListener('mousemove', (event) => {
+          const option = event.target.closest('[role="option"]')
+          if (option && Number(option.dataset.index) !== active) setActive(Number(option.dataset.index))
+        })
+        addEventListener('resize', () => list.matches(':popover-open') && place())
+        addEventListener('scroll', () => list.matches(':popover-open') && place(), true)
+        return { close }
+      }
+
+      combobox(document.getElementById('description'), document.getElementById('project'), (e) => {
+        if (state.running) updateEntry('running', { description: e.description, projectId: e.projectId })
+      })
+      combobox(field('description'), field('project'), () => showEditorState(readEditor(), saveTried))
 
       document.getElementById('project').innerHTML = projectOptions('none')
 
@@ -929,7 +1088,7 @@
         else startTimer(document.getElementById('description').value.trim(), selectedProject())
       })
       document.getElementById('description').addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' && !state.running) startTimer(event.currentTarget.value.trim(), selectedProject())
+        if (event.key === 'Enter' && !event.defaultPrevented && !state.running) startTimer(event.currentTarget.value.trim(), selectedProject())
       })
       document.getElementById('description').addEventListener('input', (event) => {
         if (state.running) state.running.description = event.currentTarget.value // updateEntry

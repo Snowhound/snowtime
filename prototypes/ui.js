@@ -104,6 +104,14 @@
     'menu-radio-item':
       'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-left',
     'menu-label': 'px-2 py-1.5 text-sm font-semibold',
+    // ComboboxContent and its Listbox (`p-1`) on a native manual [popover] with role="listbox",
+    // without `relative`, which would override the popover's `position: fixed`. Not in the pinned
+    // copy above: taken from the Combobox registry file, so check them against it when porting.
+    listbox:
+      'z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md m-0',
+    // ComboboxItem; `aria-selected="true"` stands in for `data-highlighted`.
+    option:
+      'relative flex cursor-default select-none items-center justify-between rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:opacity-50',
     'menu-separator': '-mx-1 my-1 h-px bg-muted',
     // Checkbox Control classes on a native <input type="checkbox">: `checked:` replaces
     // `data-[checked]:`, `focus-visible:` replaces `peer-focus-visible:`. ui.js adds the check icon.
@@ -220,13 +228,18 @@
   })
 
   // Place an opening popover or menu under its trigger, kept inside the viewport. It aligns to the
-  // trigger's end, or its start with `data-align="start"` on the popover.
+  // trigger's end, or its start with `data-align="start"` on the popover. When several buttons
+  // open one popover, the trigger is the one last clicked.
+  let invoker = null
+  document.addEventListener('click', (event) => (invoker = event.target.closest?.('[popovertarget]') ?? null), true)
+  const triggerOf = (pop) =>
+    invoker?.getAttribute('popovertarget') === pop.id ? invoker : document.querySelector(`[popovertarget="${pop.id}"]`)
   document.addEventListener(
     'beforetoggle',
     (event) => {
       const pop = event.target
       if (event.newState !== 'open' || !['popover', 'menu'].includes(pop.dataset?.ui)) return
-      const trigger = document.querySelector(`[popovertarget="${pop.id}"]`)
+      const trigger = triggerOf(pop)
       if (!trigger) return
       trigger.setAttribute('aria-expanded', 'true')
       // A closed popover still reports its specified width (e.g. `w-72`) through computed style.
@@ -246,7 +259,7 @@
     (event) => {
       const pop = event.target
       if (event.newState !== 'open' || !['popover', 'menu'].includes(pop.dataset?.ui)) return
-      const trigger = document.querySelector(`[popovertarget="${pop.id}"]`)
+      const trigger = triggerOf(pop)
       if (!trigger) return
       const r = trigger.getBoundingClientRect()
       const h = pop.getBoundingClientRect().height
@@ -258,7 +271,7 @@
     'toggle',
     (event) => {
       if (event.newState === 'closed' && event.target.id)
-        document.querySelector(`[popovertarget="${event.target.id}"]`)?.setAttribute('aria-expanded', 'false')
+        document.querySelectorAll(`[popovertarget="${event.target.id}"]`).forEach((b) => b.setAttribute('aria-expanded', 'false'))
     },
     true
   )
