@@ -548,7 +548,14 @@ each entry once.
 Charts fold projects past seven into "Other". Fixtures: populated, empty, and long content (long
 project, member, and team names, twelve projects).
 
-Omitted: exports, filters by project or description, saved reports, and billable rates.
+**Export** (task 034), an outline button at the right of the timesheet's card header, opens a menu
+with the report as shown for the current filters: **Excel (XLSX)**, with the timesheet and the
+entries as two sheets; **Timesheet (CSV)**, in decimal hours; and **Entries (CSV)**, each entry
+behind the report. The file name is the organization's short name and the range's first and last
+days, such as `snowhound-2026-09-21-to-2026-09-27.xlsx`, with `-entries` before `.csv` for the
+entries. In the prototype an item only names the file the app would download.
+
+Omitted: filters by project or description, saved reports, and billable rates.
 
 Checked in Chromium at 1440, 850, and 390 px, light and dark, every layout and fixture, as
 member, team lead, and admin: no horizontal page overflow, tooltip within the viewport, and no

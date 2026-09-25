@@ -150,10 +150,20 @@
       <!-- 02 · Timesheet -->
       <section class="timesheet-only min-w-0" aria-label="Timesheet">
         <div data-ui="card" class="min-w-0 overflow-hidden">
-          <div data-ui="card-header" class="pb-4">
-            <h2 id="timesheet-title" data-ui="card-title" class="text-base"></h2>
-            <p id="timesheet-note" data-ui="card-description" class="empty:hidden"></p>
+          <div data-ui="card-header" class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
+            <div class="grid min-w-0 gap-1.5">
+              <h2 id="timesheet-title" data-ui="card-title" class="text-base"></h2>
+              <p id="timesheet-note" data-ui="card-description" class="empty:hidden"></p>
+            </div>
+            <!-- Export: the report as shown, for the current filters. -->
+            <button type="button" id="export-button" data-ui="button" data-variant="outline" data-size="sm" popovertarget="export-menu" aria-haspopup="menu"></button>
+            <div id="export-menu" popover data-ui="menu" class="w-60" role="menu" aria-label="Export">
+              <button type="button" role="menuitem" data-ui="menu-item" data-export="xlsx"></button>
+              <button type="button" role="menuitem" data-ui="menu-item" data-export="csv"></button>
+              <button type="button" role="menuitem" data-ui="menu-item" data-export="entries"></button>
+            </div>
           </div>
+          <p id="export-status" class="px-6 pb-3 text-xs text-muted-foreground empty:hidden" role="status"></p>
           <div id="timesheet"></div>
         </div>
       </section>
@@ -630,6 +640,10 @@
         document.getElementById('range-preset').value = state.preset
         document.getElementById('range-from').value = dateValue(state.from)
         document.getElementById('range-to').value = dateValue(Z.addDays(state.to, -1, state.zone))
+        document.getElementById('export-button').innerHTML = `${icon('download')}Export`
+        document.querySelector('[data-export="xlsx"]').innerHTML = `${icon('file-spreadsheet')}<span class="grid"><span>Excel (XLSX)</span><span class="text-xs text-muted-foreground">Timesheet and entries</span></span>`
+        document.querySelector('[data-export="csv"]').innerHTML = `${icon('file-text')}<span class="grid"><span>Timesheet (CSV)</span><span class="text-xs text-muted-foreground">As shown, in decimal hours</span></span>`
+        document.querySelector('[data-export="entries"]').innerHTML = `${icon('file-text')}<span class="grid"><span>Entries (CSV)</span><span class="text-xs text-muted-foreground">Each entry behind the report</span></span>`
         document.getElementById('range-prev').innerHTML = icon('chevron-left')
         document.getElementById('range-next').innerHTML = icon('chevron-right')
         document.querySelectorAll('[data-unit]').forEach((b) => {
@@ -655,6 +669,7 @@
       }
 
       function render() {
+        document.getElementById('export-status').textContent = ''
         renderControls()
         const { segs, split } = segments()
         const splitNote = document.getElementById('split-note')
@@ -737,6 +752,20 @@
         loadOrg()
         render()
       })
+
+      // Export (prototype only): names the file the app would download. The file name is the
+      // organization's short name and the range's first and last days.
+      function exportName(kind) {
+        const day = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: state.zone }).format(ms)
+        const range = `${day(state.from)}-to-${day(Z.addDays(state.to, -1, state.zone))}`
+        const base = `${appFrame.org.id}-${range}`
+        return kind === 'xlsx' ? `${base}.xlsx` : kind === 'entries' ? `${base}-entries.csv` : `${base}.csv`
+      }
+      document.querySelectorAll('[data-export]').forEach((item) =>
+        item.addEventListener('click', () => {
+          document.getElementById('export-status').textContent = `Prototype: the app downloads ${exportName(item.dataset.export)}.`
+        })
+      )
 
       ui.ready.then(() => {
         loadOrg()
