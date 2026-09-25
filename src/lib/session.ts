@@ -1,5 +1,5 @@
-import { type QueryClient, queryOptions } from '@tanstack/solid-query'
-import { getAppSession } from '~/server/auth/auth.functions'
+import { type Query, type QueryClient, queryOptions } from '@tanstack/solid-query'
+import { type AppSession, getAppSession } from '~/server/auth/auth.functions'
 import { DEVICE_SETTINGS_KEY } from './device-settings'
 import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from './intro'
 import { seasonByMonth } from './scene'
@@ -12,15 +12,52 @@ export const sessionQuery = queryOptions({
   queryFn: () => getAppSession(),
 })
 
+function isSession(query: Query) {
+  return query.queryKey[0] === sessionQuery.queryKey[0]
+}
+
+// The user whose data each client's cache holds, once known; null once it holds none.
+const cachedUser = new WeakMap<QueryClient, string | null>()
+
 // After signing out: the session becomes null and every other query, all of them the user's
 // data, is dropped. The session query itself stays in the cache, because the root watches it:
 // clearing it would leave the root on a query the cache no longer holds, and the next sign-in's
 // invalidation wouldn't refetch the session, so the new user stayed on the sign-in page.
 export function forgetSignedInUser(queryClient: QueryClient) {
+  cachedUser.set(queryClient, null)
   queryClient.setQueryData(sessionQuery.queryKey, null)
-  queryClient.removeQueries({
-    predicate: (query) => query.queryKey[0] !== sessionQuery.queryKey[0],
+  queryClient.removeQueries({ predicate: (query) => !isSession(query) })
+}
+
+// Keeps one user's data in the cache. Signing out here drops it (forgetSignedInUser), but a
+// sign-out in another tab, or an expired session, leaves it behind, and many keys hold only
+// the organization: projects, teams, members, and reports show what the user may see. When
+// the session turns out to be another user's, every other query starts over: those in use
+// load again as the new user, and the rest lose their data. The root's query client calls
+// this once.
+export function followSessionUser(queryClient: QueryClient) {
+  return queryClient.getQueryCache().subscribe(({ query }) => {
+    if (!isSession(query)) return
+    const userId = (query.state.data as AppSession | null | undefined)?.user.id
+    if (!userId) return
+    const previous = cachedUser.get(queryClient)
+    cachedUser.set(queryClient, userId)
+    if (previous && previous !== userId) {
+      void queryClient.resetQueries({ predicate: (other) => !isSession(other) })
+    }
   })
+}
+
+// After the session's active organization changes. The keys of organization-scoped queries
+// hold the organization's id second (['projects', organizationId, ...]), but the server
+// answers for the session's organization, so refetching the old organization's queries now
+// would store the new one's data under the old id, and show it there. They are dropped
+// instead; the views of the new organization load their own, and the rest (the session, the
+// running timer) load again.
+export async function forgetOrganization(queryClient: QueryClient, organizationId: string) {
+  await queryClient.cancelQueries({ predicate: (query) => query.queryKey[1] === organizationId })
+  queryClient.removeQueries({ predicate: (query) => query.queryKey[1] === organizationId })
+  await queryClient.invalidateQueries()
 }
 
 // The season of each month, for the head script.

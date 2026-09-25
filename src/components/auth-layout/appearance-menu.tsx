@@ -18,6 +18,8 @@ export function AppearanceMenu(props: {
   settings: DeviceSettings
   onDevice: boolean
   onChange: (patch: Partial<DeviceSettings>) => void
+  // Why the account refused the last change, which has gone back.
+  error?: string | null
 }) {
   const [open, setOpen] = createSignal(false)
   let trigger: HTMLButtonElement | undefined
@@ -48,6 +50,9 @@ export function AppearanceMenu(props: {
           <Show when={props.onDevice}>
             <p class="text-muted-foreground text-xs">{m.scene_device_note()}</p>
           </Show>
+          <p class="text-destructive text-xs empty:hidden" aria-live="polite">
+            <Show when={props.error}>{props.error}</Show>
+          </p>
         </div>
         <ThemeToggle value={props.settings.theme} onChange={(theme) => props.onChange({ theme })} />
         <Separator />

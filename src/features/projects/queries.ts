@@ -3,7 +3,7 @@
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import { localDate, monthDates } from '~/lib/calendar'
 import type { Project } from '~/lib/projects'
-import { cacheUpdate, optimistic } from '~/lib/query'
+import { cacheUpdate, optimistic, reportsKey } from '~/lib/query'
 import {
   archiveProject,
   assignProjectToTeam,
@@ -22,7 +22,7 @@ import { getReport } from '~/server/reports/reports.functions'
 export function monthReportQuery(organizationId: string, zone: string, userId: string | null) {
   const { from, to } = monthDates(localDate(Date.now(), zone))
   return queryOptions({
-    queryKey: ['report', organizationId, { from, to, userId }],
+    queryKey: [...reportsKey, organizationId, { from, to, userId }],
     queryFn: () => getReport({ data: { from, to, ...(userId ? { userId } : {}) } }),
   })
 }

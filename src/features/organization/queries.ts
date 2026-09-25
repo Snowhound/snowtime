@@ -7,7 +7,7 @@ import { isServer } from 'solid-js/web'
 import { authClient, unwrap } from '~/lib/auth-client'
 import type { Member } from '~/lib/members'
 import type { Project } from '~/lib/projects'
-import { cacheUpdate, newId, optimistic } from '~/lib/query'
+import { cacheUpdate, newId, optimistic, reportsKey } from '~/lib/query'
 import type { Team } from '~/lib/teams'
 import { type AppSession, getAppUrl } from '~/server/auth/auth.functions'
 import { setTeamRole } from '~/server/teams/teams.functions'
@@ -68,6 +68,10 @@ export function invitationsQuery(organizationId: string) {
 
 type Keys = { organizationId: string }
 
+// Reports total a team's time from its current members, so a change to who is in a team
+// changes them.
+const teamTotals = { invalidate: [reportsKey] }
+
 function membersKey(organizationId: string) {
   return ['members', organizationId]
 }
@@ -109,14 +113,18 @@ export function useRemoveMember(keys: Keys) {
   return useMutation(() => ({
     mutationFn: ({ memberId }: MemberInput) =>
       unwrap(authClient.organization.removeMember({ memberIdOrEmail: memberId })),
-    ...optimistic(queryClient, [
-      cacheUpdate<Member[], MemberInput>(membersKey(keys.organizationId), (members, input) =>
-        members.filter((m) => m.memberId !== input.memberId),
-      ),
-      cacheUpdate<Team[], MemberInput>(teamsKey(keys.organizationId), (teams, input) =>
-        teams.map((t) => ({ ...t, members: t.members.filter((m) => m.userId !== input.userId) })),
-      ),
-    ]),
+    ...optimistic(
+      queryClient,
+      [
+        cacheUpdate<Member[], MemberInput>(membersKey(keys.organizationId), (members, input) =>
+          members.filter((m) => m.memberId !== input.memberId),
+        ),
+        cacheUpdate<Team[], MemberInput>(teamsKey(keys.organizationId), (teams, input) =>
+          teams.map((t) => ({ ...t, members: t.members.filter((m) => m.userId !== input.userId) })),
+        ),
+      ],
+      teamTotals,
+    ),
   }))
 }
 
@@ -228,17 +236,21 @@ export function useDeleteTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (teamId: string) => unwrap(authClient.organization.removeTeam({ teamId })),
-    ...optimistic(queryClient, [
-      cacheUpdate<Team[], string>(teamsKey(keys.organizationId), (teams, teamId) =>
-        teams.filter((t) => t.id !== teamId),
-      ),
-      cacheUpdate<Member[], string>(membersKey(keys.organizationId), (members, teamId) =>
-        members.map((m) => ({ ...m, teams: m.teams.filter((t) => t.teamId !== teamId) })),
-      ),
-      cacheUpdate<Project[], string>(['projects', keys.organizationId], (projects, teamId) =>
-        projects.map((p) => ({ ...p, teamIds: p.teamIds.filter((t) => t !== teamId) })),
-      ),
-    ]),
+    ...optimistic(
+      queryClient,
+      [
+        cacheUpdate<Team[], string>(teamsKey(keys.organizationId), (teams, teamId) =>
+          teams.filter((t) => t.id !== teamId),
+        ),
+        cacheUpdate<Member[], string>(membersKey(keys.organizationId), (members, teamId) =>
+          members.map((m) => ({ ...m, teams: m.teams.filter((t) => t.teamId !== teamId) })),
+        ),
+        cacheUpdate<Project[], string>(['projects', keys.organizationId], (projects, teamId) =>
+          projects.map((p) => ({ ...p, teamIds: p.teamIds.filter((t) => t !== teamId) })),
+        ),
+      ],
+      teamTotals,
+    ),
   }))
 }
 
@@ -280,10 +292,14 @@ export function useAddTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(true)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) => unwrap(authClient.organization.addTeamMember(input)),
-    ...optimistic(queryClient, [
-      cacheUpdate(teamsKey(keys.organizationId), teams),
-      cacheUpdate(membersKey(keys.organizationId), members),
-    ]),
+    ...optimistic(
+      queryClient,
+      [
+        cacheUpdate(teamsKey(keys.organizationId), teams),
+        cacheUpdate(membersKey(keys.organizationId), members),
+      ],
+      teamTotals,
+    ),
   }))
 }
 
@@ -292,10 +308,14 @@ export function useRemoveTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(false)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) => unwrap(authClient.organization.removeTeamMember(input)),
-    ...optimistic(queryClient, [
-      cacheUpdate(teamsKey(keys.organizationId), teams),
-      cacheUpdate(membersKey(keys.organizationId), members),
-    ]),
+    ...optimistic(
+      queryClient,
+      [
+        cacheUpdate(teamsKey(keys.organizationId), teams),
+        cacheUpdate(membersKey(keys.organizationId), members),
+      ],
+      teamTotals,
+    ),
   }))
 }
 

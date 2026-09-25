@@ -44,7 +44,11 @@ export function ProfileCard(props: {
         setStatus(m.error_unexpected())
         return
       }
-      await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })
+      // The member lists name the user too, and would otherwise wait out their stale time.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: ['members'] }),
+      ])
       formApi.reset({ name })
       setStatus(m.settings_saved())
     },

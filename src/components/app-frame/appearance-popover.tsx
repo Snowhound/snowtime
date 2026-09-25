@@ -5,7 +5,7 @@
 // saves right away through useUpdateSettings.
 import { Link } from '@tanstack/solid-router'
 import MountainSnowIcon from 'lucide-solid/icons/mountain-snow'
-import { createSignal } from 'solid-js'
+import { Show, createSignal } from 'solid-js'
 import { AppIconDialog } from '~/components/app-icon-dialog'
 import { AppMark } from '~/components/app-mark'
 import { ReplayIntroButton } from '~/components/intro'
@@ -15,6 +15,7 @@ import { Button, buttonVariants } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { Separator } from '~/components/ui/separator'
 import { appIcon } from '~/lib/app-icon'
+import { errorMessage } from '~/lib/errors'
 import { currentSeason } from '~/lib/scene'
 import { type Settings, useUpdateSettings } from '~/lib/settings'
 import { cn } from '~/lib/utils'
@@ -62,6 +63,10 @@ export function AppearancePopover(props: { settings: Settings }) {
           <h2 id="appearance-title" class="text-sm font-semibold">
             {m.settings_appearance()}
           </h2>
+          {/* A refused change goes back at once; this says why. */}
+          <p class="text-destructive text-xs empty:hidden" aria-live="polite">
+            <Show when={save.isError}>{errorMessage(save.error)}</Show>
+          </p>
           <ThemeToggle value={props.settings.theme} onChange={(theme) => save.mutate({ theme })} />
           <div class="mb-2 flex items-center justify-between gap-3">
             <div class="flex min-w-0 items-center gap-2.5">

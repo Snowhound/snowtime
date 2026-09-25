@@ -12,18 +12,24 @@ export function newId() {
   return uuidv7()
 }
 
+// Reports and the Projects view's month totals live under this key. A write that changes
+// logged time or who counts in a team marks them stale (`invalidate` below): their views
+// are usually closed while it happens, and would open on the old totals.
+export const reportsKey = ['report']
+
 // One cache a mutation updates before the server answers. `update` runs on every cached
-// query under `queryKey` (for example each loaded range of entries).
+// query under `queryKey` (for example each loaded range of entries) and gets that query's
+// full key, so it can leave out the ones the change doesn't belong in.
 export interface CacheUpdate<TVariables> {
   queryKey: QueryKey
-  update: (data: unknown, variables: TVariables) => unknown
+  update: (data: unknown, variables: TVariables, queryKey: QueryKey) => unknown
 }
 
 export function cacheUpdate<TData, TVariables>(
   queryKey: QueryKey,
-  update: (data: TData, variables: TVariables) => TData,
+  update: (data: TData, variables: TVariables, queryKey: QueryKey) => TData,
 ): CacheUpdate<TVariables> {
-  return { queryKey, update: (data, variables) => update(data as TData, variables) }
+  return { queryKey, update: (data, variables, key) => update(data as TData, variables, key) }
 }
 
 // Callbacks for a mutation that updates cached data before the server answers. On error
@@ -44,12 +50,15 @@ export function cacheUpdate<TData, TVariables>(
 // it at once, an error leaves the caches as they were, and without an answer by then it
 // applies anyway. For writes the server often refuses, such as deleting a project with
 // time, so a refusal doesn't make the item vanish and come back.
+//
+// `invalidate` lists more keys to refetch after, for caches the write changes but that
+// can't be updated here, such as reports.
 export function optimistic<TData, TVariables>(
   queryClient: QueryClient,
   options:
     | { queryKey: QueryKey; update: (data: TData, variables: TVariables) => TData }
     | CacheUpdate<TVariables>[],
-  { delay = 0 }: { delay?: number } = {},
+  { delay = 0, invalidate = [] }: { delay?: number; invalidate?: QueryKey[] } = {},
 ) {
   const updates = Array.isArray(options)
     ? options
@@ -62,9 +71,9 @@ export function optimistic<TData, TVariables>(
 
   function apply(variables: TVariables) {
     for (const { queryKey, update } of updates) {
-      queryClient.setQueriesData({ queryKey }, (data: unknown) =>
-        data === undefined ? data : update(data, variables),
-      )
+      for (const [key, data] of queryClient.getQueriesData({ queryKey })) {
+        if (data !== undefined) queryClient.setQueryData(key, update(data, variables, key))
+      }
     }
   }
 
@@ -93,8 +102,10 @@ export function optimistic<TData, TVariables>(
       for (const [key, data] of context?.snapshot ?? []) queryClient.setQueryData(key, data)
     },
     onSettled: () =>
-      Promise.all(updates.map(({ queryKey }) => queryClient.invalidateQueries({ queryKey }))).then(
-        () => undefined,
-      ),
+      Promise.all(
+        [...updates.map(({ queryKey }) => queryKey), ...invalidate].map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        ),
+      ).then(() => undefined),
   }
 }

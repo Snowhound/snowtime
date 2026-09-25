@@ -31,7 +31,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { appIcon } from '~/lib/app-icon'
 import { authClient } from '~/lib/auth-client'
-import { forgetSignedInUser, sessionQuery } from '~/lib/session'
+import { forgetOrganization, forgetSignedInUser, sessionQuery } from '~/lib/session'
 import { cn, initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { AppSession } from '~/server/auth/auth.functions'
@@ -128,12 +128,18 @@ function OrganizationSwitcher(props: { session: AppSession }) {
     return props.session.organizations.find((o) => o.id === props.session.activeOrganizationId)!
   }
 
-  // Every organization-scoped query belongs to the old organization, so all of them load
-  // again, and the routes check the role in the new one.
+  // The old organization's queries go, the rest load again, and the routes check the role
+  // in the new one. A refused switch, such as to an organization the user has just left,
+  // stays on this one with the list read again.
   async function switchTo(organizationId: string) {
-    if (organizationId === props.session.activeOrganizationId) return
-    await authClient.organization.setActive({ organizationId })
-    await queryClient.invalidateQueries()
+    const previous = props.session.activeOrganizationId!
+    if (organizationId === previous) return
+    const { error } = await authClient.organization.setActive({ organizationId })
+    if (error) {
+      await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })
+      return
+    }
+    await forgetOrganization(queryClient, previous)
     await router.invalidate()
   }
 

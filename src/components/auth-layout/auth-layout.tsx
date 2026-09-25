@@ -14,6 +14,7 @@ import {
   loadDeviceSettings,
   updateDeviceSettings,
 } from '~/lib/device-settings'
+import { errorMessage } from '~/lib/errors'
 import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/intro'
 import { currentSeason, sceneAttributes } from '~/lib/scene'
 import { sessionQuery } from '~/lib/session'
@@ -59,6 +60,7 @@ export function AuthLayout(props: { children: JSX.Element; firstVisitIntro?: boo
             settings={settings()}
             onDevice={!session.data?.settings}
             onChange={update}
+            error={save.isError ? errorMessage(save.error) : null}
           />
           {/* The tagline sits 32 px above the card, out of the flow, so the card stays centered;
               on phones the page's top padding makes room for it. */}
