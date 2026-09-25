@@ -208,6 +208,28 @@ such as rate limiting.
 - A refused write throws `AppError` with code `LIMIT_REACHED`. Two concurrent writes can
   both pass a count and exceed a cap by one; a cap is a bound, not an exact number.
 
+## Content security policy
+
+Every HTML response carries a Content-Security-Policy with a fresh nonce, so markup an
+attacker gets into a page can't run scripts. `src/server-entry.ts` generates the nonce,
+passes it to Start as request context, and sets the header; the policy itself is in
+`src/server/csp.server.ts`.
+
+- `script-src` allows only the nonce plus `'strict-dynamic'`. `getRouter` hands the
+  nonce to the router (`ssr.nonce`), which puts it on its own scripts and Solid's, and
+  the root route puts it on the theme script. A nonce was chosen over hashes because
+  the router's hydration scripts differ on every page.
+- `style-src` allows `'unsafe-inline'`: components render `style` attributes on the
+  server, and a nonce can't cover attributes. Injected styles can restyle a page but
+  not run code.
+- `img-src` allows any `https:` host, for avatars from the sign-in providers.
+  `font-src` allows `data:`, because the build inlines small font files.
+- `frame-ancestors 'none'` stops other sites from framing the app (clickjacking).
+
+The cost is one 16-byte random value and a header, about 2 µs per page. A per-page nonce
+rules out caching the HTML in a shared cache, which none of the app's pages can do
+anyway, since each one renders the signed-in user's session.
+
 ## Deployment model
 
 - Default: one shared multi-tenant deployment.

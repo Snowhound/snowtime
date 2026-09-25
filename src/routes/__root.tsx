@@ -7,6 +7,7 @@ import {
   Scripts,
   createRootRouteWithContext,
   redirect,
+  useRouter,
 } from '@tanstack/solid-router'
 import { TanStackRouterDevtools } from '@tanstack/solid-router-devtools'
 import { For, Show, Suspense, createEffect, createMemo, on, onMount } from 'solid-js'
@@ -52,6 +53,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 })
 
 function RootComponent() {
+  const router = useRouter()
   const session = useQuery(() => sessionQuery)
   // Signed out, the device's settings apply (src/lib/device-settings.ts). They load after
   // hydration; until then data-theme is unset and the head script applies the device's theme.
@@ -92,7 +94,7 @@ function RootComponent() {
     <html lang={locale()} data-theme={theme()}>
       <head>
         {/* oxlint-disable-next-line solid/no-innerhtml -- themeScript is a constant. */}
-        <script innerHTML={themeScript} />
+        <script nonce={router.options.ssr?.nonce} innerHTML={themeScript} />
         <HydrationScript />
         <HeadContent />
         <For each={faviconLinks(appIconId())}>
