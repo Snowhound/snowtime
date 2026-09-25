@@ -497,7 +497,11 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
 
 Production runs in Vercel's `dub1` (Dublin) with Turso's `aws-eu-west-1` (Ireland), the
 only EU region Turso offers. A page makes several database round trips, so the functions
-sit beside the database rather than nearer to users in Estonia.
+sit beside the database rather than nearer to users in Estonia. Postgres nearer to
+Estonia was rejected for now: Supabase in Stockholm (with Vercel `arn1`) or Neon in
+Frankfurt (`fra1`) would save roughly 20–30 ms per request, but both mean porting the
+schema, migrations, and tooling from SQLite, and the free tiers pause idle databases. If
+this changes, switch before production holds real data.
 
 **Migrations:** CI runs `db:migrate` after the checks pass on a push to the environment's
 branch. Migrations never run in the Vercel build or on app start. A database only
