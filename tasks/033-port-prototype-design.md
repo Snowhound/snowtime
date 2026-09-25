@@ -170,6 +170,46 @@ Work in this order, one commit or more per step, and check each in the dev app a
   - Periods: "Tähtaeg samuti." (So is the deadline) and "Sinu tunnid ei tohiks puududa." (Your
     hours shouldn't be [out].)
   - Sign-offs: "Logi sisse ja tee ära!" and "Oled sees. Tee ära!"
+- 2026-09-25: Step 6 plan: `src/lib/intro.ts` holds the intro's state and timeline from
+  `prototypes/intro.js` (signals the frames and the scene layer read), `introDue` (the sign-in
+  page on the first visit, `snowtime.introSeen`; app pages once per calendar season,
+  `snowtime.introSeason`; both under the Intro switch and never with reduced motion), and
+  `playIntro`/`skipIntro`. While it plays, `<html data-intro>` keeps the page dark (the theme
+  script treats it as dark and releases the theme when it goes), the scene shows the weather and
+  the intro's background whatever the switches say, and the dark sharp image preloads.
+  `src/components/intro.tsx` has the overlay (portaled to `<body>`, so the frames' outline-button
+  fill doesn't reach Skip) and `IntroPage`, the wrapper each frame puts around its page: hidden,
+  `inert`, and rising into place at the end, but always mounted. Skip and Escape end it; focus
+  returns to the Appearance button or the Replay link. The head script sets `data-intro="pending"`
+  (black page, hidden body) when the intro is due on this path by the device's settings, and the
+  frame clears it if the account's settings say otherwise; a timeout clears it too, in case
+  nothing mounts. Replay intro goes in both Appearance menus and "Replay it" in Settings'
+  Intro hint, disabled with reduced motion. The flush that applies the start's cut reads the
+  scene's photo layers' opacity instead of the body's, subtask 01's fix for Firefox.
+- 2026-09-25: Step 6: the intro is in (`src/lib/intro.ts`, `src/components/intro.tsx`). It plays on
+  the sign-in page on the first visit and on the first signed-in page of a calendar season, ends
+  with "You're in. Get it done!" signed in, and can be replayed from both Appearance menus
+  (Replay intro) and from Settings > Scenery ("Replay it"), all disabled with reduced motion. The
+  frames wrap their page in `IntroPage`, and `AuthLayout` moved `isolate` and the scene
+  attributes to an outer wrapper for it. The head script paints the page black when the intro
+  is due. Checked in Chrome through Playwright:
+  - First visit in a light system theme: the first paint is black (`data-intro="pending"`), then
+    the weather alone, the lines at their cues, the background from 3.1 s, and the page rising in
+    the light theme at 13.3 s. `snowtime.introSeen` and `snowtime.introSeason` are then set, and
+    a reload doesn't play it.
+  - As Mia with `snowtime.introSeason` at another season: it played on the timer, and Escape
+    stored the month's season. A running timer kept counting under a replay (0:00:01 before,
+    0:00:05 during, 0:00:07 after); the entry was deleted afterwards.
+  - Focus: on Skip while it plays; after Replay intro, on the Appearance button; after "Replay
+    it", on the link; after the intro on its own, on the body. Reduced motion: no intro, and Replay
+    is disabled.
+  - Replay flash: sampled every frame from the click, the dark photo layer's opacity went from 1
+    to 0 in one frame with no fade, in Chrome and in Playwright's Firefox (headless), with the page
+    already dark. Flushing on the photo layers, subtask 01's fix, works in the app. A headed
+    Firefox wasn't checked.
+  - At 1440, 850, and 390 px, light and dark: the intro, both Appearance menus (the header's ends
+    at 546 px on a 390 × 844 screen, the sign-in page's at 647 px), every signed-in page and the
+    sign-in page. The header still sticks, with no horizontal scroll and no browser errors.
 
 ## Acceptance criteria
 

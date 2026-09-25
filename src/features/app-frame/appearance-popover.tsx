@@ -1,18 +1,21 @@
 // The header's Appearance popover (prototypes/app-frame.js), from the mountain button left of the
 // avatar on every page: the theme, the app icon with Change, and the scenery, compact, with
-// hints only where the label doesn't say enough, so it fits a 390 × 844 screen. Each change
+// hints only where the label doesn't say enough, so it fits a 390 × 844 screen, and All settings
+// with Replay intro. Each change
 // saves right away through useUpdateSettings.
 import { Link } from '@tanstack/solid-router'
 import MountainSnowIcon from 'lucide-solid/icons/mountain-snow'
 import { createSignal } from 'solid-js'
 import { AppIconDialog } from '~/components/app-icon-dialog'
 import { AppMark } from '~/components/app-mark'
+import { ReplayIntroButton } from '~/components/intro'
 import { SceneryFields } from '~/components/scenery-fields'
 import { ThemeToggle } from '~/components/theme-toggle'
 import { Button, buttonVariants } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { Separator } from '~/components/ui/separator'
 import { appIcon } from '~/lib/app-icon'
+import { currentSeason } from '~/lib/scene'
 import { type Settings, useUpdateSettings } from '~/lib/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
@@ -89,14 +92,25 @@ export function AppearancePopover(props: { settings: Settings }) {
             onChange={(patch) => save.mutate(patch)}
           />
           <Separator />
-          <Link
-            to="/settings"
-            hash="preferences"
-            class={cn(buttonVariants({ variant: 'link', size: 'sm' }), 'h-auto justify-start p-0')}
-            onClick={() => setOpen(false)}
-          >
-            {m.appearance_all_settings()}
-          </Link>
+          <div class="flex items-center justify-between gap-3">
+            <Link
+              to="/settings"
+              hash="preferences"
+              class={cn(
+                buttonVariants({ variant: 'link', size: 'sm' }),
+                'h-auto justify-start p-0',
+              )}
+              onClick={() => setOpen(false)}
+            >
+              {m.appearance_all_settings()}
+            </Link>
+            <ReplayIntroButton
+              season={currentSeason(props.settings.sceneSeason)}
+              signedIn
+              focus={() => trigger}
+              onPlay={() => setOpen(false)}
+            />
+          </div>
         </PopoverContent>
       </Popover>
       <AppIconDialog

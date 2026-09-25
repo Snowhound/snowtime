@@ -25,6 +25,8 @@ import { appIcon } from '~/lib/app-icon'
 import { addDays, localDate, startOfWeek } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatIsoDate } from '~/lib/format'
+import { playIntro } from '~/lib/intro'
+import { useSeason } from '~/lib/seasons'
 import { type Settings, useUpdateSettings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
@@ -66,6 +68,7 @@ function weekDay(date: string) {
 
 export function PreferencesCard(props: { settings: Settings }) {
   const save = useUpdateSettings()
+  const season = useSeason()
   const [saved, setSaved] = createSignal(false)
   let savedTimer: ReturnType<typeof setTimeout> | undefined
   onCleanup(() => clearTimeout(savedTimer))
@@ -319,7 +322,13 @@ export function PreferencesCard(props: { settings: Settings }) {
             <h4 class="text-sm font-medium">{m.scene_title()}</h4>
             <p class="text-muted-foreground text-sm">{m.scene_description()}</p>
           </div>
-          <SceneryFields settings={props.settings} hints="long" intro onChange={update} />
+          <SceneryFields
+            settings={props.settings}
+            hints="long"
+            intro
+            onChange={update}
+            onReplay={(focus) => playIntro({ season: season(), signedIn: true, focus })}
+          />
         </div>
       </CardContent>
     </Card>

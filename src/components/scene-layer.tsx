@@ -5,6 +5,7 @@
 // `isolate` and carries sceneAttributes(), so the layer sits behind the frame's content and the
 // surfaces follow the settings (src/styles.css).
 import { createEffect, createSignal, onCleanup, onMount, untrack } from 'solid-js'
+import { intro } from '~/lib/intro'
 import {
   PHOTO_SMALL,
   type PhotoTheme,
@@ -83,7 +84,10 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
           setSrc(sharp)
           continue
         }
-        if (on && theme === shown) void loadPhoto(sharp).then(() => setLoaded((n) => n + 1))
+        // The intro opens without the background and fades the dark image in later, so its
+        // sharp file loads meanwhile.
+        const wanted = (on && theme === shown) || (intro.playing() && theme === 'dark')
+        if (wanted) void loadPhoto(sharp).then(() => setLoaded((n) => n + 1))
         const due = theme === shown || shownReady
         const current = untrack(src)
         if (on && due && !current.includes(`/${season}-${theme}-`)) {
@@ -129,6 +133,7 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
       class="scene"
       aria-hidden="true"
       data-background={props.settings.sceneBackground ? 'on' : 'off'}
+      data-intro={intro.playing() ? '' : undefined}
       style={{
         '--scene-tint-light': STRENGTHS[props.settings.sceneStrength].light,
         '--scene-tint-dark': STRENGTHS[props.settings.sceneStrength].dark,

@@ -1,15 +1,17 @@
 // The signed-out pages' Appearance menu (prototypes/auth.html, "Scenery menu"), from the
-// mountain button at the top right: the theme and the scenery with short hints and the Intro
-// switch. Signed out it saves on this device; on a signed-in page without an organization yet it
+// mountain button at the top right: the theme and the scenery with short hints, the Intro
+// switch, and Replay intro. Signed out it saves on this device; on a signed-in page without an organization yet it
 // saves to the account, like the header's popover.
 import MountainSnowIcon from 'lucide-solid/icons/mountain-snow'
 import { Show, createSignal } from 'solid-js'
+import { ReplayIntroButton } from '~/components/intro'
 import { SceneryFields } from '~/components/scenery-fields'
 import { ThemeToggle } from '~/components/theme-toggle'
 import { Button } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { Separator } from '~/components/ui/separator'
 import type { DeviceSettings } from '~/lib/device-settings'
+import { currentSeason } from '~/lib/scene'
 import { m } from '~/paraglide/messages.js'
 
 export function AppearanceMenu(props: {
@@ -18,10 +20,12 @@ export function AppearanceMenu(props: {
   onChange: (patch: Partial<DeviceSettings>) => void
 }) {
   const [open, setOpen] = createSignal(false)
+  let trigger: HTMLButtonElement | undefined
   return (
     <Popover placement="bottom-end" open={open()} onOpenChange={setOpen}>
       <PopoverTrigger
         as={Button<'button'>}
+        ref={trigger}
         variant="ghost"
         size="icon"
         class="bg-background/50 absolute top-3 right-3 size-9 backdrop-blur"
@@ -49,6 +53,13 @@ export function AppearanceMenu(props: {
         <Separator />
         <h3 class="text-muted-foreground -mb-1 text-xs font-medium">{m.scene_title()}</h3>
         <SceneryFields settings={props.settings} hints="short" intro onChange={props.onChange} />
+        <ReplayIntroButton
+          season={currentSeason(props.settings.sceneSeason)}
+          signedIn={!props.onDevice}
+          focus={() => trigger}
+          onPlay={() => setOpen(false)}
+          class="justify-self-start"
+        />
       </PopoverContent>
     </Popover>
   )

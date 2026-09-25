@@ -29,7 +29,7 @@ export function SignInPage(props: { redirect?: string; initialError?: string }) 
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout firstVisitIntro>
       <AuthHeading title={m.sign_in_title()} description={m.sign_in_description()} />
       <FormAlert message={error()} />
       <ProviderButtons

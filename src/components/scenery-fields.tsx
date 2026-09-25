@@ -1,7 +1,8 @@
 // The scenery settings (prototypes/app-frame.js, settings.html, and auth.html): Season, the
 // Background switch with Strength and Surfaces under it, Weather, and optionally Intro. The
 // Appearance popover, Settings > Preferences, and the sign-in page's Scenery menu lay them out
-// the same way; `hints` picks how much each row explains. Weather always has a hint: the
+// the same way; `hints` picks how much each row explains, and Settings adds "Replay it" to the
+// Intro hint. Weather always has a hint: the
 // season's effect, or why it's off (reduced motion, no WebGL 2, or an effect that didn't start).
 import type { JSX } from 'solid-js'
 import { For, Show, createUniqueId } from 'solid-js'
@@ -44,6 +45,8 @@ export function SceneryFields(props: {
   onChange: (patch: Partial<SceneSettings>) => void
   hints: Hints
   intro?: boolean
+  // Settings' "Replay it" at the end of the Intro hint; it passes itself back for the focus.
+  onReplay?: (button: HTMLButtonElement) => void
 }) {
   const id = createUniqueId()
   const reducedMotion = createReducedMotion()
@@ -141,6 +144,21 @@ export function SceneryFields(props: {
           checked={props.settings.sceneIntro}
           disabled={reducedMotion()}
           onChange={(sceneIntro) => props.onChange({ sceneIntro })}
+          hintEnd={
+            props.onReplay && (
+              <>
+                {' '}
+                <button
+                  type="button"
+                  class="hover:text-foreground underline underline-offset-4 disabled:no-underline disabled:opacity-50"
+                  disabled={reducedMotion()}
+                  onClick={(event) => props.onReplay?.(event.currentTarget)}
+                >
+                  {m.intro_replay_it()}
+                </button>
+              </>
+            )
+          }
         />
       </Show>
     </>
@@ -181,6 +199,7 @@ function SwitchRow(props: {
   checked: boolean
   disabled?: boolean
   onChange: (checked: boolean) => void
+  hintEnd?: JSX.Element
 }) {
   return (
     <Switch
@@ -199,6 +218,7 @@ function SwitchRow(props: {
             class={cn('text-muted-foreground', props.hints === 'long' ? 'text-sm' : 'text-xs')}
           >
             {props.hint}
+            {props.hintEnd}
           </SwitchDescription>
         </Show>
       </div>
