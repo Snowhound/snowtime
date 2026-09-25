@@ -94,7 +94,7 @@
 - Each provider's OAuth app redirects to `<BETTER_AUTH_URL>/api/auth/callback/<id>`, for
   example `http://localhost:3000/api/auth/callback/github` locally. Providers match the
   redirect URL exactly and allow no wildcards, so OAuth sign-in works only on hosts
-  registered in advance: local, a stable staging host for previews, and production. A
+  registered in advance: local, the staging host, and production. A
   preview deployment on its own generated URL cannot use OAuth.
   - Google: one OAuth client can list the redirect URLs of every environment.
   - GitHub: an OAuth app has one callback URL, so each environment needs its own app.
@@ -489,15 +489,32 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
 
 ## Environments and deployment
 
-| Environment | Database                                                   |
-| ----------- | ---------------------------------------------------------- |
-| Local       | `file:local.db`, no token                                  |
-| Preview     | One shared `staging` Turso database                        |
-| Production  | `prod` Turso database, same region as the Vercel functions |
+| Environment | Branch    | Database                                                   |
+| ----------- | --------- | ---------------------------------------------------------- |
+| Local       |           | `file:local.db`, no token                                  |
+| Staging     | `develop` | `staging` Turso database (planned)                         |
+| Production  | `main`    | `prod` Turso database, same region as the Vercel functions |
 
-**Migrations:** `drizzle-kit migrate` runs in CI — staging on PRs, prod on
-merge to main before promotion — never in the Vercel build or on app start.
-Prefer backward-compatible migrations.
+Production runs in Vercel's `dub1` (Dublin) with Turso's `aws-eu-west-1` (Ireland), the
+only EU region Turso offers. A page makes several database round trips, so the functions
+sit beside the database rather than nearer to users in Estonia.
+
+**Migrations:** CI runs `db:migrate` after the checks pass on a push to the environment's
+branch. Migrations never run in the Vercel build or on app start. A database only
+receives merged migrations, because `db:verify` rejects an applied migration that a PR
+later edits, and two open PRs would mix their migrations in one shared database. PRs
+test their migrations on throwaway local databases only (`db:drift`).
+
+- Staging is planned, not set up. When added, the `develop` branch deploys to a stable
+  host such as `staging.<domain>`, with branch-scoped Preview env vars, so OAuth
+  callbacks and passkeys can be registered for it once. Other preview deployments have
+  generated URLs and no sign-in.
+- Vercel deploys a push in parallel with CI, so new code can go live a minute before its
+  migration applies. That is accepted for now, and backward-compatible migrations keep
+  it safe. Later, Vercel can wait for the migrate check before promoting a deployment.
+- Planned: CI also applies `main`'s migrations to a throwaway database, seeds it, and
+  then applies the PR's migrations, to catch a migration that fails on existing rows
+  (for example a `NOT NULL` column without a default).
 
 ## Schema and migrations
 

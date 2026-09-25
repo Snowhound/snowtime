@@ -79,9 +79,10 @@ changing the schema. The data model, its diagram, and how to view it are in
 
 ## Deployment
 
-Snowtime runs on Vercel with a Turso database per environment: a shared `staging`
-database for previews and `prod` for production. CI applies migrations; the Vercel build
-and app start never do.
+Snowtime runs on Vercel with a Turso database per environment: `prod` for `main`, and a
+planned `staging` for `develop`. The Vercel build and app start never apply migrations.
+Until CI does, run `bun run db:migrate` with the target database's `TURSO_DATABASE_URL`
+and `TURSO_AUTH_TOKEN` set.
 
 1. Import the repository into Vercel. `vercel.json` selects the TanStack Start framework.
 2. Under **Settings > Environment Variables**, set the variables from `.env.example`.
