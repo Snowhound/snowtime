@@ -43,12 +43,12 @@ export function EntryTable(
 ) {
   return (
     <div class="surface bg-card overflow-hidden rounded-lg border">
-      <Table class="min-w-[44rem] table-fixed">
+      <Table class="min-w-[48rem] table-fixed">
         <colgroup>
           <col />
           <col class="w-40" />
-          <col class="w-28" />
-          <col class="w-28" />
+          <col class="w-40" />
+          <col class="w-36" />
           <col class="w-24" />
           <col class="w-24" />
         </colgroup>

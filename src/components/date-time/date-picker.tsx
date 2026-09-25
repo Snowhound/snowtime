@@ -175,6 +175,9 @@ export function DatePicker(props: {
             ref={content}
             class="w-auto p-3"
             aria-label={m.picker_choose_date()}
+            // Kobalte's top layer: a modal dialog around the field neither hides the popover from
+            // screen readers nor pulls focus back out of it, as it does for its toasts.
+            data-kb-top-layer
             onOpenAutoFocus={(event: Event) => {
               event.preventDefault()
               content?.querySelector<HTMLElement>('[data-date][tabindex="0"]')?.focus()

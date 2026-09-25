@@ -19,13 +19,11 @@ import { Label } from '~/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { type WeekStart, atLocalTime, localDate, localTime } from '~/lib/calendar'
-import { uses12Hours } from '~/lib/date-input'
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { getLocale } from '~/paraglide/runtime.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
 import { readEntryTimes } from './entries'
 import { projectChoices } from './project-select'
@@ -238,12 +236,11 @@ export function TimeField(props: { editor: EntryEditor; field: TimeKey }) {
       required
       aria-label={props.field === 'start' ? m.entry_start() : m.entry_end()}
       aria-describedby={props.editor.errorId}
-      class={cn(
-        QUIET,
-        'px-1.5 text-xs',
-        uses12Hours(getLocale()) ? 'w-[calc(9ch+14px)]' : 'w-[calc(5ch+14px)]',
-      )}
-      onBlur={() => props.editor.commitTimes(props.field)}
+      class="w-fit shrink-0"
+      inputClass={cn(QUIET, 'pr-7')}
+      textClass="pl-1.5 text-xs"
+      buttonClass={cn('ml-0.5 size-6 [&_svg]:size-3.5', REVEAL)}
+      onCommit={() => props.editor.commitTimes(props.field)}
       onKeyDown={commitKeys(
         () => props.editor.commitTimes(props.field),
         () => props.editor.resetTime(props.field),
@@ -378,7 +375,6 @@ export function DateField(props: { editor: EntryEditor; zone: string; weekStart:
             </p>
           </Show>
         </div>
-        <p class="text-muted-foreground text-xs">{m.entry_row_date_hint()}</p>
       </PopoverContent>
     </Popover>
   )

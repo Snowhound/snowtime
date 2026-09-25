@@ -330,7 +330,11 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
 - `DatePicker` is a text input with a calendar button. The calendar opens in a popover (inline in
   the entry row's date popover) and follows the WAI-ARIA date picker dialog pattern, with keyboard
   navigation by day, week, month, and year. Weeks start on the user's week start.
-- `TimeInput` is a text input. ArrowUp and ArrowDown move the hour or minute under the caret.
+- `TimeInput` is a text input with a clock button. The button opens a column of hours and one of
+  minutes in 5-minute steps, as Firefox's picker does; a typed time can be any minute. ArrowUp and
+  ArrowDown in the input move the hour or minute under the caret.
+- Both popovers carry Kobalte's `data-kb-top-layer`, so the entry dialog's focus trap and
+  `aria-hidden` leave them usable from the keyboard and by screen readers.
 - Both show text in the UI language's format and read short forms back
   (`src/lib/date-input.ts`): `25.9` or `25092026` for a date in Estonian, and `930`, `9.30`, or
   `9:30pm` for a time. Their values stay ISO dates and `HH:MM` times, read in the user's zone as

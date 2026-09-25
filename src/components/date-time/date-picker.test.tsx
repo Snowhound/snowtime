@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@solidjs/testing-library'
+import { fireEvent, render, screen, within } from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import { createSignal } from 'solid-js'
 import { describe, expect, test, vi } from 'vitest'
@@ -110,6 +110,7 @@ describe('DatePicker', () => {
 describe('TimeInput', () => {
   function renderTime(initial: string) {
     const onChange = vi.fn()
+    const onCommit = vi.fn()
     const [value, setValue] = createSignal(initial)
     render(() => (
       <TimeInput
@@ -119,9 +120,10 @@ describe('TimeInput', () => {
           setValue(next)
           onChange(next)
         }}
+        onCommit={onCommit}
       />
     ))
-    return { input: screen.getByLabelText('Start') as HTMLInputElement, onChange }
+    return { input: screen.getByLabelText('Start') as HTMLInputElement, onChange, onCommit }
   }
 
   function text(input: HTMLInputElement) {
@@ -148,5 +150,55 @@ describe('TimeInput', () => {
     fireEvent.keyDown(input, { key: 'ArrowDown' })
     expect(onChange).toHaveBeenLastCalledWith('10:29')
     expect(text(input)).toBe('10:29 AM')
+  })
+
+  test('the clock opens hours and 5-minute steps, and a minute finishes the pick', async () => {
+    const user = userEvent.setup()
+    const { input, onChange, onCommit } = renderTime('09:30')
+    await user.click(screen.getByRole('button', { name: 'Choose time' }))
+    const hours = await screen.findByRole('listbox', { name: 'Hours' })
+    const minutes = screen.getByRole('listbox', { name: 'Minutes' })
+    expect(within(hours).getAllByRole('option')).toHaveLength(24)
+    expect(
+      within(minutes)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'])
+    expect(within(hours).getByRole('option', { name: '09' })).toHaveFocus()
+
+    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}')
+    expect(onChange).toHaveBeenLastCalledWith('11:30')
+    expect(screen.getByRole('listbox', { name: 'Hours' })).toBeInTheDocument()
+    expect(onCommit).not.toHaveBeenCalled()
+
+    await user.click(within(minutes).getByRole('option', { name: '45' }))
+    expect(onChange).toHaveBeenLastCalledWith('11:45')
+    expect(text(input)).toBe('11:45 AM')
+    expect(screen.queryByRole('listbox', { name: 'Hours' })).not.toBeInTheDocument()
+    expect(onCommit).toHaveBeenCalledTimes(1)
+  })
+
+  test('a typed minute off the steps shows as picked', async () => {
+    const user = userEvent.setup()
+    renderTime('09:33')
+    await user.click(screen.getByRole('button', { name: 'Choose time' }))
+    const minutes = await screen.findByRole('listbox', { name: 'Minutes' })
+    expect(within(minutes).getByRole('option', { name: '33' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+  })
+
+  test('Escape in the columns puts back the time they opened on', async () => {
+    const user = userEvent.setup()
+    const { input, onChange, onCommit } = renderTime('09:30')
+    await user.click(screen.getByRole('button', { name: 'Choose time' }))
+    await screen.findByRole('listbox', { name: 'Hours' })
+    await user.keyboard('{ArrowDown}{Enter}')
+    expect(onChange).toHaveBeenLastCalledWith('10:30')
+    await user.keyboard('{Escape}')
+    expect(onChange).toHaveBeenLastCalledWith('09:30')
+    expect(text(input)).toBe('09:30 AM')
+    expect(onCommit).not.toHaveBeenCalled()
   })
 })
