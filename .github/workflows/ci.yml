@@ -1,5 +1,5 @@
-# Checks every PR and push to main. Needs no secrets: tests and db:drift use throwaway
-# local databases. Migrating staging and prod waits on Turso access (task 009).
+# Checks every PR and push to main; tests and db:drift use throwaway local databases. A push
+# to main then migrates prod (docs/architecture.md, "Environments and deployment").
 name: CI
 
 on:
@@ -10,9 +10,10 @@ on:
 permissions:
   contents: read
 
+# A newer push cancels checks on a PR, never on main, where it would stop a migration.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -54,3 +55,36 @@ jobs:
 
       - name: Data model diagram is current
         run: bun run datamodel:check
+
+  migrate-prod:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Secrets live in the GitHub environment "production". One migration at a time.
+    environment: production
+    concurrency:
+      group: migrate-prod
+      cancel-in-progress: false
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      # db:migrate runs db:verify first, so an edited applied migration stops it. Until the
+      # secrets are set, the step skips visibly rather than fail every push to main.
+      - name: Migrate prod
+        run: |
+          if [ -z "$TURSO_DATABASE_URL" ] || [ -z "$TURSO_AUTH_TOKEN" ]; then
+            echo "::notice title=Prod migration skipped::Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in the production environment."
+            exit 0
+          fi
+          bun run db:migrate
