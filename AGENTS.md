@@ -16,6 +16,11 @@
 Follow the recorded decisions; if a change contradicts one, update the doc in
 the same change or ask first.
 
+## Shared skills
+
+Codex discovers the writing and UI review skills through symlinks in `.agents/skills/`.
+Edit their source files at the paths above so both agents use the same instructions.
+
 ## Code conventions
 
 - Icon components end in `Icon`, so JSX shows what they are. Import a Lucide icon as its
