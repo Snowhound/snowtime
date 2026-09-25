@@ -31,6 +31,7 @@ import {
 import { sessionQuery, themeScript } from '~/lib/session'
 import { getLocale, setLocale } from '~/paraglide/runtime.js'
 import styleCss from '~/styles.css?url'
+import '~/lib/locale-cookie'
 import '@fontsource-variable/plus-jakarta-sans'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({

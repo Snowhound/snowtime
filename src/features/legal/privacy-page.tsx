@@ -135,14 +135,27 @@ function PrivacyEn() {
       </p>
 
       <h2>Cookies and browser storage</h2>
-      <p>We use only what the service needs to work, so we don't ask for consent:</p>
+      <p>
+        We store only what the service you asked for needs to work: signing you in, and the language
+        and appearance you chose. EU and Estonian law don't require consent for these, so we don't
+        ask for it. We use no analytics, advertising, or third-party scripts.
+      </p>
       <ul>
-        <li>Sign-in cookies that keep you signed in.</li>
-        <li>A language cookie that remembers your language for about a year.</li>
         <li>
-          Browser storage that remembers, on this device, your appearance choices (theme, app icon,
-          and scenery), whether you've seen the intro, and whether you've dismissed the offer to add
-          a passkey.
+          Sign-in cookies keep you signed in on this device until you sign out, or for a week after
+          you last use Snowtime. Short-lived ones, for up to 5 minutes, protect a sign-in or passkey
+          step in progress and save rereading your session on every request.
+        </li>
+        <li>
+          A language cookie holds your account's language, when it differs from your browser's. It
+          lasts 30 days after you last open Snowtime, so the sign-in page also shows in that
+          language.
+        </li>
+        <li>
+          Browser storage on this device keeps your appearance choices (theme, app icon, and
+          scenery), which season you last saw the intro in, and whether you've dismissed the offer
+          to add a passkey. It stays until you clear your browser's site data, and it never leaves
+          your device.
         </li>
       </ul>
 
@@ -305,14 +318,27 @@ function PrivacyEt() {
       </p>
 
       <h2>Küpsised ja brauseri salvestusruum</h2>
-      <p>Kasutame ainult seda, mida teenus töötamiseks vajab, seega nõusolekut me ei küsi:</p>
+      <p>
+        Salvestame ainult seda, mida sinu soovitud teenus töötamiseks vajab: sisselogimise ning sinu
+        valitud keele ja kujunduse. Euroopa Liidu ja Eesti õigus ei nõua nende jaoks nõusolekut,
+        seega me seda ei küsi. Me ei kasuta analüütikat, reklaami ega kolmandate osapoolte skripte.
+      </p>
       <ul>
-        <li>sisselogimisküpsised, mis hoiavad sind sisselogituna;</li>
-        <li>keeleküpsis, mis jätab sinu keele meelde umbes aastaks;</li>
         <li>
-          brauseri kohalik salvestusruum (localStorage), mis jätab selles seadmes meelde
-          kujunduseelistused (teema, rakenduse ikoon ja maastik) ning selle, kas oled tutvustust
-          näinud ja pääsuvõtme lisamise pakkumisest loobunud.
+          Sisselogimisküpsised hoiavad sind selles seadmes sisselogituna, kuni logid välja või nädal
+          pärast seda, kui Snowtime'i viimati kasutasid. Lühiajalised, kuni 5 minutit kehtivad
+          küpsised kaitsevad pooleliolevat sisselogimist või pääsuvõtme lisamist ja hoiavad ära
+          seansi uuesti lugemise igal päringul.
+        </li>
+        <li>
+          Keeleküpsis hoiab sinu konto keelt, kui see erineb brauseri keelest. See kehtib 30 päeva
+          pärast seda, kui Snowtime'i viimati avasid, nii et ka sisselogimisleht on selles keeles.
+        </li>
+        <li>
+          Brauseri kohalik salvestusruum (localStorage) jätab selles seadmes meelde
+          kujunduseelistused (teema, rakenduse ikoon ja maastik), selle, millisel aastaajal oled
+          tutvustust viimati näinud, ja selle, kas oled pääsuvõtme lisamise pakkumisest loobunud.
+          Need jäävad alles, kuni kustutad brauseri saidiandmed, ega lahku kunagi sinu seadmest.
         </li>
       </ul>
 

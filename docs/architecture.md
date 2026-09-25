@@ -257,6 +257,51 @@ are `rateLimits` in `src/server/limits.server.ts`.
   write per counted request, and over Vercel Firewall rules, which limit only per IP.
   Upstash is Redis over HTTP, so it doesn't tie the app to Vercel.
 
+## Cookies and consent
+
+Snowtime asks for no cookie consent (task 038). The ePrivacy Directive, Article 5(3)
+(in Estonia, the Electronic Communications Act § 102¹), requires consent to store anything
+on a device unless it is strictly necessary for a service the user asked for. Everything
+below is exempt under Criterion B of the Article 29 Working Party's Opinion 04/2012: sign-in
+cookies as authentication, and the rest as user-interface customization. CNIL's 2020
+guidelines (Délibération 2020-091, Article 5) also exempt customization that is an
+intrinsic, expected part of the service, which covers the intro and the passkey prompt's
+state. The privacy policy (`src/features/legal/privacy-page.tsx`) lists these items, and
+must change with them.
+
+| Item                                         | Where        | Purpose                               | Lifetime                           |
+| -------------------------------------------- | ------------ | ------------------------------------- | ---------------------------------- |
+| `better-auth.session_token`                  | Cookie       | The session                           | 7 days, renewed daily while used   |
+| `better-auth.session_data`                   | Cookie       | Session cache (see "Sign-in methods") | 5 minutes                          |
+| `better-auth.state`                          | Cookie       | Checks the OAuth callback             | 5 minutes, during sign-in          |
+| `better-auth-passkey`                        | Cookie       | The WebAuthn challenge                | 5 minutes, during a passkey step   |
+| `PARAGLIDE_LOCALE`                           | Cookie       | The account's language                | 30 days, renewed on each page load |
+| `snowtime.settings`                          | localStorage | Theme, app icon, and scene            | Until cleared                      |
+| `snowtime.introSeen`, `snowtime.introSeason` | localStorage | Where the intro last played           | Until cleared                      |
+| `snowtime.passkeyPromptDismissed`            | localStorage | "Not now" on the passkey prompt       | Until cleared                      |
+
+On HTTPS, Better Auth prefixes its cookies with `__Secure-`.
+
+- The session cookie outlives the browser session. Opinion 04/2012 exempts such a
+  persistent login cookie only when sign-in announces it, for example "remember me (uses
+  cookies)". Snowtime relies on the privacy policy, linked below the sign-in card, because
+  users expect a web app to keep them signed in, and CNIL's guidelines exempt
+  authentication cookies without that condition. If a regulator's view calls for it, a
+  line under the sign-in buttons is the fix, not a consent prompt.
+- The language cookie holds only a chosen language. Paraglide's `getLocale` writes the
+  cookie on its first call in the browser, even when the language came from the browser's
+  preference; `src/lib/locale-cookie.ts` skips that write while there is no cookie and the
+  language matches the browser's. So a visitor who never signs in, or whose account
+  language matches the browser, gets no cookie. Its 30 days (Paraglide's default is 400)
+  outlast the 7-day session, so the sign-in page still shows in the last user's language
+  after a lapsed session.
+- `snowtime.settings` holds choices made in an Appearance menu, or the account's copy of
+  them (see "User settings"), with no identifier. The intro and passkey keys hold one flag
+  or season each.
+- Adding analytics, error reporting that stores anything in the browser, a third-party
+  script or embed, or any other cookie or storage key requires revisiting task 038 first:
+  it may need a consent prompt, and the privacy policy lists every item.
+
 ## Content security policy
 
 Every HTML response carries a Content-Security-Policy with a fresh nonce, so markup an
@@ -448,8 +493,10 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
   pages that need localized links. Without the cookie, the browser's `Accept-Language`
   picks it, then English. Signed-in pages set the cookie from `user_settings.locale`:
   when the account's language differs from the request's, `getAppSession` sets the
-  cookie and the page loads again, so the user sees only the account's language. `src/server-entry.ts` runs
-  Paraglide's middleware around every request, which scopes the locale per request.
+  cookie and the page loads again, so the user sees only the account's language. The
+  cookie never holds anything but the account's language (see "Cookies and consent").
+  `src/server-entry.ts` runs Paraglide's middleware around every request, which scopes
+  the locale per request.
 - The user's language is `user_settings.locale` (see "User settings"). The first
   `getSettings` call sets it from the browser, as it does the time zone.
 - The server returns keys, dates, and numbers, never display text; the client translates

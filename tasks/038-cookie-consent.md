@@ -1,6 +1,6 @@
 # 038: Cookie consent
 
-Status: todo
+Status: done
 
 The ePrivacy Directive (in Estonia, the Electronic Communications Act § 1021) requires
 consent before storing anything on a device, unless it is strictly necessary for a service
@@ -19,15 +19,19 @@ language, which covers all three. MinuPatsient
 (<https://www.minupatsient.ee/terms/data>) instead treats its preference cookies as
 consent-based (GDPR Article 6(1)(a)). Confirm the exemption holds, or add consent.
 
+The exemption holds; `docs/architecture.md`, "Cookies and consent", records the check.
+The language cookie is now written only for an account language that differs from the
+browser's, and lasts 30 days.
+
 ## Acceptance criteria
 
-- [ ] Each cookie and storage key is listed with its purpose and lifetime, and checked
+- [x] Each cookie and storage key is listed with its purpose and lifetime, and checked
       against the exemption, including whether the appearance settings count as
       customization the user asked for
-- [ ] Either the privacy policy's cookie section states the exemption and lists the
+- [x] Either the privacy policy's cookie section states the exemption and lists the
       items, or a consent prompt gates what isn't exempt, and the app works when it is
       declined
-- [ ] The language cookie's lifetime is set deliberately rather than left at Paraglide's
+- [x] The language cookie's lifetime is set deliberately rather than left at Paraglide's
       default, if the check calls for it
-- [ ] Adding analytics or any third-party script later requires revisiting this task;
+- [x] Adding analytics or any third-party script later requires revisiting this task;
       `docs/architecture.md` records that
