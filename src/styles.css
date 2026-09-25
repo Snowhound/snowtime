@@ -489,6 +489,18 @@ html[data-intro='pending'] body {
 [data-scene-bg='on'] [data-variant='outline']:hover {
   background-color: var(--accent);
 }
+/* Fields on the image itself, outside a card, such as the Reports filters: their labels glow
+   like the page notes, and the inputs and selects get the outline buttons' fill, so neither
+   reads against a busy part of the image. */
+[data-scene-bg='on'] main label:not(.surface *) {
+  text-shadow:
+    0 0 6px var(--background),
+    0 0 16px var(--background),
+    0 0 32px var(--background);
+}
+[data-scene-bg='on'] main :is(input, select):not(.surface *) {
+  background-color: color-mix(in srgb, var(--background) 70%, transparent);
+}
 
 /* Tailwind v4 gives buttons the arrow cursor, as desktop apps do; on the web people expect the
    pointer on anything they can click. Menu items and listbox options get it too, so a menu reads
