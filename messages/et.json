@@ -59,6 +59,7 @@
   "nav_projects": "Projektid",
   "nav_organization": "Ettevõte",
   "nav_settings": "Seaded",
+  "page_loading": "Laadimine…",
   "org_switcher_label": "Ettevõte: {name}",
   "org_menu_title": "Ettevõtted",
   "org_menu_create": "Loo ettevõte",

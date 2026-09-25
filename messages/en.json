@@ -59,6 +59,7 @@
   "nav_projects": "Projects",
   "nav_organization": "Organization",
   "nav_settings": "Settings",
+  "page_loading": "Loading…",
   "org_switcher_label": "Organization: {name}",
   "org_menu_title": "Organizations",
   "org_menu_create": "Create organization",

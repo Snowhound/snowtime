@@ -92,10 +92,32 @@ export interface ReportFilters {
   input: ReportInput
 }
 
+function rangeAndUnit(search: ReportSearch, today: IsoDate, weekStart: WeekStart) {
+  const { preset, range } = resolveRange(search, today, weekStart)
+  const unit: Unit = rangeDays(range) > MAX_DAY_COLUMNS ? 'week' : (search.unit ?? 'day')
+  return { preset, range, unit }
+}
+
+// The report the URL asks for, before the teams and members that tell what the user may
+// choose have loaded, so the route can load it alongside them. It equals reportFilters'
+// input unless the URL names a member or team outside the user's choices; the view then
+// asks for the narrowed report, and getReport refuses this one.
+export function requestedInput(
+  search: ReportSearch,
+  c: Pick<ReportContext, 'today' | 'weekStart'>,
+): ReportInput {
+  const { range, unit } = rangeAndUnit(search, c.today, c.weekStart)
+  return {
+    from: range.from,
+    to: range.to,
+    unit,
+    ...(search.member ? { userId: search.member } : search.team ? { teamId: search.team } : {}),
+  }
+}
+
 // The filters the URL asks for, within what the user may choose.
 export function reportFilters(search: ReportSearch, c: ReportContext): ReportFilters {
-  const { preset, range } = resolveRange(search, c.today, c.weekStart)
-  const unit = rangeDays(range) > MAX_DAY_COLUMNS ? 'week' : (search.unit ?? 'day')
+  const { preset, range, unit } = rangeAndUnit(search, c.today, c.weekStart)
   const access = accessOf(c.userId, c.admin, c.teams)
   const people = peopleOptions(access, c.userId, c.teams, c.members)
   const group =

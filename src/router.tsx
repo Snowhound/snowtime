@@ -20,6 +20,12 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
+
+    // A route whose loader waits on the server shows its pendingComponent after 100 ms, so
+    // a link opens at once rather than holding the previous page; once shown, it stays
+    // 300 ms, so it doesn't flash. Loaders that read the cache finish before either.
+    defaultPendingMs: 100,
+    defaultPendingMinMs: 300,
   })
 
   // Provides the query client to components and hands queries loaded on the server to the

@@ -154,31 +154,26 @@ async function settingsOf(db: Database, userId: string) {
 }
 
 // Teams the scope reports on (all for admins and owners, else those the user leads), with
-// their current members.
+// their current members, in one read.
 async function reportTeams(db: Database, scope: Scope) {
-  const teams = await db
-    .select({ id: team.id })
+  if (!isAdmin(scope) && scope.ledTeamIds.length === 0) return []
+  const rows = await db
+    .select({ teamId: team.id, userId: teamMember.userId })
     .from(team)
+    .leftJoin(teamMember, eq(teamMember.teamId, team.id))
     .where(
       and(
         eq(team.organizationId, scope.organizationId),
         isAdmin(scope) ? undefined : inArray(team.id, scope.ledTeamIds),
       ),
     )
-  if (teams.length === 0) return []
-  const memberships = await db
-    .select({ teamId: teamMember.teamId, userId: teamMember.userId })
-    .from(teamMember)
-    .where(
-      inArray(
-        teamMember.teamId,
-        teams.map((t) => t.id),
-      ),
-    )
-  return teams.map((t) => ({
-    teamId: t.id,
-    userIds: memberships.filter((m) => m.teamId === t.id).map((m) => m.userId),
-  }))
+  const teams = new Map<string, string[]>()
+  for (const { teamId, userId } of rows) {
+    const userIds = teams.get(teamId) ?? []
+    teams.set(teamId, userIds)
+    if (userId) userIds.push(userId)
+  }
+  return [...teams].map(([teamId, userIds]) => ({ teamId, userIds }))
 }
 
 // The users whose entries the report counts: the readable ones, narrowed to one member or
@@ -188,8 +183,8 @@ async function reportUsers(
   scope: Scope,
   input: ReportInput,
   teams: { teamId: string; userIds: string[] }[],
+  readable: string[] | null,
 ): Promise<string[] | null> {
-  const readable = await readableUserIds(db, scope)
   if (input.userId) {
     if (readable && !readable.includes(input.userId)) {
       throw new AppError('FORBIDDEN', 'entries_forbidden')
@@ -210,11 +205,15 @@ async function reportUsers(
 }
 
 // What a report counts, from the user's settings and the scope: its days, teams, and the
-// entries it may read that touch the range.
+// entries it may read that touch the range. The reads that don't depend on each other run
+// together, since each is a round trip to the database.
 async function reportData(db: Database, scope: Scope, input: ReportInput, now: Date) {
-  const settings = await settingsOf(db, scope.userId)
-  const teams = await reportTeams(db, scope)
-  const users = await reportUsers(db, scope, input, teams)
+  const [settings, teams, readable] = await Promise.all([
+    settingsOf(db, scope.userId),
+    reportTeams(db, scope),
+    readableUserIds(db, scope),
+  ])
+  const users = await reportUsers(db, scope, input, teams, readable)
   const a: Aggregation = {
     ...settings,
     unit: input.unit,

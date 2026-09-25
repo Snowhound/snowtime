@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { ProjectsPage } from '~/features/projects/projects-page'
+import { ProjectsPending } from '~/features/projects/projects-pending'
 import { monthReportQuery } from '~/features/projects/queries'
 import { projectsQuery } from '~/lib/projects'
 import { teamsQuery } from '~/lib/teams'
@@ -21,6 +22,7 @@ export const Route = createFileRoute('/_app/projects')({
         ),
     ])
   },
+  pendingComponent: ProjectsPending,
   head: () => ({ meta: [{ title: `${m.nav_projects()} · ${m.app_name()}` }] }),
   component: ProjectsPage,
 })

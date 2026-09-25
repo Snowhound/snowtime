@@ -35,24 +35,28 @@ export async function resolveScope(
   if (!organizationId) {
     throw new AppError('NO_ACTIVE_ORGANIZATION', 'organization_required')
   }
-  const [membership] = await db
-    .select({ role: member.role })
-    .from(member)
-    .where(and(eq(member.organizationId, organizationId), eq(member.userId, userId)))
+  // Both reads run together: every server function resolves its scope first, so each
+  // round trip here delays all of them.
+  const [[membership], led] = await Promise.all([
+    db
+      .select({ role: member.role })
+      .from(member)
+      .where(and(eq(member.organizationId, organizationId), eq(member.userId, userId))),
+    db
+      .select({ teamId: teamMember.teamId })
+      .from(teamMember)
+      .innerJoin(team, eq(team.id, teamMember.teamId))
+      .where(
+        and(
+          eq(teamMember.userId, userId),
+          eq(teamMember.role, 'lead'),
+          eq(team.organizationId, organizationId),
+        ),
+      ),
+  ])
   if (!membership) {
     throw new AppError('FORBIDDEN', 'not_organization_member')
   }
-  const led = await db
-    .select({ teamId: teamMember.teamId })
-    .from(teamMember)
-    .innerJoin(team, eq(team.id, teamMember.teamId))
-    .where(
-      and(
-        eq(teamMember.userId, userId),
-        eq(teamMember.role, 'lead'),
-        eq(team.organizationId, organizationId),
-      ),
-    )
   return {
     userId,
     organizationId,

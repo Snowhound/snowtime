@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/solid-router'
 import { RECENT_DAYS, recentRange } from '~/features/timer/entries'
 import { entriesQuery, firstEntryQuery, runningTimerQuery } from '~/features/timer/queries'
 import { TimerPage } from '~/features/timer/timer-page'
+import { TimerPending } from '~/features/timer/timer-pending'
 import { projectsQuery } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 
@@ -21,6 +22,7 @@ export const Route = createFileRoute('/_app/timer')({
         ),
     ])
   },
+  pendingComponent: TimerPending,
   head: () => ({ meta: [{ title: `${m.nav_timer()} · ${m.app_name()}` }] }),
   component: TimerPage,
 })

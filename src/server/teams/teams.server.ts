@@ -2,7 +2,7 @@
 // teams, team membership and invitations, and the UI calls it for those; these rules cover
 // what the plugin cannot: team roles (team_member.role is an app column) and lists that
 // include them (docs/architecture.md, "Tenancy").
-import { and, asc, eq, inArray } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import type { Database } from '~/db'
 import { member, team, teamMember, user } from '~/db/schema'
 import { AppError } from '../errors'
@@ -27,40 +27,37 @@ export async function setTeamRole(db: Database, scope: Scope, input: SetTeamRole
   return updated
 }
 
-async function teamMemberships(db: Database, teamIds: string[]) {
-  if (teamIds.length === 0) return []
+// Every team membership in the organization. It needs no team ids, so it runs alongside
+// the read it completes: each read is a round trip to the database.
+function teamMemberships(db: Database, scope: Scope) {
   return db
     .select({ teamId: teamMember.teamId, userId: teamMember.userId, role: teamMember.role })
     .from(teamMember)
-    .where(inArray(teamMember.teamId, teamIds))
+    .innerJoin(team, eq(team.id, teamMember.teamId))
+    .where(eq(team.organizationId, scope.organizationId))
 }
 
 // The organization's members by name, each with their organization role and their teams.
 // Any member may list them, as with the plugin's own member list. `memberId` is what the
 // plugin's member calls take (updateMemberRole, removeMember).
 export async function listMembers(db: Database, scope: Scope) {
-  const rows = await db
-    .select({
-      memberId: member.id,
-      userId: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image,
-      role: member.role,
-      joinedAt: member.createdAt,
-    })
-    .from(member)
-    .innerJoin(user, eq(user.id, member.userId))
-    .where(eq(member.organizationId, scope.organizationId))
-    .orderBy(asc(user.name))
-  const teams = await db
-    .select({ id: team.id })
-    .from(team)
-    .where(eq(team.organizationId, scope.organizationId))
-  const memberships = await teamMemberships(
-    db,
-    teams.map((t) => t.id),
-  )
+  const [rows, memberships] = await Promise.all([
+    db
+      .select({
+        memberId: member.id,
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: member.role,
+        joinedAt: member.createdAt,
+      })
+      .from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(eq(member.organizationId, scope.organizationId))
+      .orderBy(asc(user.name)),
+    teamMemberships(db, scope),
+  ])
   return rows.map(({ role, ...m }) => ({
     ...m,
     orgRole: strongestRole(role),
@@ -72,15 +69,14 @@ export async function listMembers(db: Database, scope: Scope) {
 
 // The organization's teams by name, each with its members and their team roles.
 export async function listTeams(db: Database, scope: Scope) {
-  const teams = await db
-    .select({ id: team.id, name: team.name })
-    .from(team)
-    .where(eq(team.organizationId, scope.organizationId))
-    .orderBy(asc(team.name))
-  const memberships = await teamMemberships(
-    db,
-    teams.map((t) => t.id),
-  )
+  const [teams, memberships] = await Promise.all([
+    db
+      .select({ id: team.id, name: team.name })
+      .from(team)
+      .where(eq(team.organizationId, scope.organizationId))
+      .orderBy(asc(team.name)),
+    teamMemberships(db, scope),
+  ])
   return teams.map((t) => ({
     ...t,
     members: memberships

@@ -33,9 +33,12 @@ Edit their source files at the paths above so both agents use the same instructi
   `<name>-page.tsx`), subcomponents, queries and mutations, helpers, and tests, so one
   folder holds what a change to that view touches.
 - Route files in `src/routes/` only wire the route: search params, `beforeLoad`, loader,
-  and head. They render the feature's page and pass it search params and route context
-  as props. A prop read once for an initial value is named `initial<Name>`
-  (`initialError`), which Solid's reactivity lint accepts.
+  pending component, and head. They render the feature's page and pass it search params
+  and route context as props. A prop read once for an initial value is named
+  `initial<Name>` (`initialError`), which Solid's reactivity lint accepts.
+- A page whose loader waits on the server has a `<Name>Pending` (`<name>-pending.tsx`,
+  built on `src/components/page-pending.tsx`) that the router shows while it loads, so a
+  link opens at once.
 - Features don't import from each other. Code starts in its feature and moves once a
   second feature needs it: components to `src/components/`, everything else to
   `src/lib/`. `src/lib/` also holds generic helpers and code the server shares, such as
