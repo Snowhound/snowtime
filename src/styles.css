@@ -409,6 +409,11 @@ html[data-intro='pending'] body {
   transform: translateY(18px) scale(0.988);
   filter: blur(12px);
 }
+/* Hide the page's photo immediately when the intro starts. Otherwise its normal fade-out can
+   show through the opening before the photo's scheduled fade-in. */
+.scene[data-intro][data-background='off'] .scene-photo {
+  transition: none;
+}
 /* The background fades in slowly during the intro. */
 .scene[data-intro] .scene-photo {
   transition-duration: 2.6s;
