@@ -3,7 +3,8 @@
 // outside a query client, the defaults apply: 11:10, 30.09.2026, and 15:30.
 import { QueryClientContext, useQuery } from '@tanstack/solid-query'
 import { useContext } from 'solid-js'
-import type { DateFormat } from '~/server/settings/settings.schemas'
+import { getLocale } from '~/paraglide/runtime.js'
+import type { DateFormat, TimeFormat } from '~/server/settings/settings.schemas'
 import { formatHours } from './format'
 import { sessionQuery } from './session'
 import type { Settings } from './settings'
@@ -33,4 +34,22 @@ export function dateLocale(format: DateFormat = 'dmy'): string {
 export function useDateLocale() {
   const settings = useSettings()
   return () => dateLocale(settings()?.dateFormat)
+}
+
+// Intl's hour cycle for the time format: h23 for 15:30 (the default), h12 for 3:30 PM.
+export function hourCycle(format: TimeFormat = '24h'): 'h23' | 'h12' {
+  return format === '12h' ? 'h12' : 'h23'
+}
+
+// The hour cycle, for formatDateTime's options where a date shows with its time.
+export function useHourCycle() {
+  const settings = useSettings()
+  return () => hourCycle(settings()?.timeFormat)
+}
+
+// The UI language with the hour cycle as its Unicode extension (en-u-hc-h23), which the time
+// fields read and write times in.
+export function useTimeLocale() {
+  const cycle = useHourCycle()
+  return () => `${getLocale()}-u-hc-${cycle()}`
 }

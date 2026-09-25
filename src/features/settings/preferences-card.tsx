@@ -23,12 +23,15 @@ import {
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { appIcon } from '~/lib/app-icon'
 import { addDays, localDate, startOfWeek } from '~/lib/calendar'
+import { formatTimeInput } from '~/lib/date-input'
+import { hourCycle } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatHours, formatIsoDate } from '~/lib/format'
 import { playIntro } from '~/lib/intro'
 import { useSeason } from '~/lib/seasons'
 import { type Settings, useUpdateSettings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
+import { getLocale } from '~/paraglide/runtime.js'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
 
 // Languages by their own names, so each reads the same in every UI language.
@@ -56,8 +59,8 @@ const DATE_FORMATS = [
 ] as const
 
 const TIME_FORMATS = [
-  { value: '24h', label: () => '15:30' },
-  { value: '12h', label: () => '3:30 PM' },
+  { value: '24h', label: () => formatTimeInput('15:30', `${getLocale()}-u-hc-h23`) },
+  { value: '12h', label: () => formatTimeInput('15:30', `${getLocale()}-u-hc-h12`) },
 ] as const
 
 const THEMES = [
@@ -260,6 +263,7 @@ export function PreferencesCard(props: { settings: Settings }) {
                       month: 'long',
                       hour: '2-digit',
                       minute: '2-digit',
+                      hourCycle: hourCycle(props.settings.timeFormat),
                     })}
                   </p>
                   <p>

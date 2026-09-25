@@ -151,11 +151,11 @@ describe('DatePicker', () => {
 })
 
 describe('TimeInput', () => {
-  function renderTime(initial: string) {
+  function renderTime(initial: string, timeFormat: '24h' | '12h' = '24h') {
     const onChange = vi.fn()
     const onCommit = vi.fn()
     const [value, setValue] = createSignal(initial)
-    render(() => (
+    const { ui } = withSettings({ timeFormat }, () => (
       <TimeInput
         aria-label="Start"
         value={value()}
@@ -166,6 +166,7 @@ describe('TimeInput', () => {
         onCommit={onCommit}
       />
     ))
+    render(ui)
     return { input: screen.getByLabelText('Start') as HTMLInputElement, onChange, onCommit }
   }
 
@@ -181,7 +182,7 @@ describe('TimeInput', () => {
     expect(onChange).toHaveBeenLastCalledWith('')
     fireEvent.input(input, { target: { value: '9.30' } })
     fireEvent.blur(input)
-    expect(text(input)).toBe('09:30 AM')
+    expect(text(input)).toBe('09:30')
   })
 
   test('arrow keys move the hour or the minute, by the caret', () => {
@@ -192,7 +193,7 @@ describe('TimeInput', () => {
     input.setSelectionRange(4, 4)
     fireEvent.keyDown(input, { key: 'ArrowDown' })
     expect(onChange).toHaveBeenLastCalledWith('10:29')
-    expect(text(input)).toBe('10:29 AM')
+    expect(text(input)).toBe('10:29')
   })
 
   test('the clock opens hours and 5-minute steps, and a minute finishes the pick', async () => {
@@ -216,7 +217,7 @@ describe('TimeInput', () => {
 
     await user.click(within(minutes).getByRole('option', { name: '45' }))
     expect(onChange).toHaveBeenLastCalledWith('11:45')
-    expect(text(input)).toBe('11:45 AM')
+    expect(text(input)).toBe('11:45')
     expect(screen.queryByRole('listbox', { name: 'Hours' })).not.toBeInTheDocument()
     expect(onCommit).toHaveBeenCalledTimes(1)
   })
@@ -241,7 +242,33 @@ describe('TimeInput', () => {
     expect(onChange).toHaveBeenLastCalledWith('10:30')
     await user.keyboard('{Escape}')
     expect(onChange).toHaveBeenLastCalledWith('09:30')
-    expect(text(input)).toBe('09:30 AM')
+    expect(text(input)).toBe('09:30')
     expect(onCommit).not.toHaveBeenCalled()
+  })
+
+  test('in the 12-hour format, shows AM and PM and picks them in a third column', async () => {
+    const user = userEvent.setup()
+    const { input, onChange } = renderTime('09:30', '12h')
+    expect(text(input)).toBe('09:30 AM')
+    await user.click(screen.getByRole('button', { name: 'Choose time' }))
+    const hours = await screen.findByRole('listbox', { name: 'Hours' })
+    expect(
+      within(hours)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'])
+    const period = screen.getByRole('listbox', { name: 'AM or PM' })
+    expect(within(period).getByRole('option', { name: 'AM' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+
+    await user.click(within(period).getByRole('option', { name: 'PM' }))
+    expect(onChange).toHaveBeenLastCalledWith('21:30')
+    await user.click(within(hours).getByRole('option', { name: '12' }))
+    expect(onChange).toHaveBeenLastCalledWith('12:30')
+    await user.click(screen.getByRole('option', { name: '45' }))
+    expect(onChange).toHaveBeenLastCalledWith('12:45')
+    expect(text(input)).toBe('12:45 PM')
   })
 })

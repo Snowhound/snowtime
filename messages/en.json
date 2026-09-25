@@ -617,6 +617,7 @@
   "picker_choose_time": "Choose time",
   "picker_hours": "Hours",
   "picker_minutes": "Minutes",
+  "picker_period": "AM or PM",
   "picker_day": "dd",
   "picker_month": "mm",
   "picker_year": "yyyy",

@@ -28,6 +28,7 @@ import {
   TextFieldInput,
   TextFieldLabel,
 } from '~/components/ui/text-field'
+import { useHourCycle } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { fieldError } from '~/lib/form'
 import { formatDateTime } from '~/lib/format'
@@ -237,6 +238,7 @@ function InviteLink(props: {
   zone: string
   onClose: () => void
 }) {
+  const hourCycle = useHourCycle()
   const [copied, setCopied] = createSignal(false)
   let timer: ReturnType<typeof setTimeout> | undefined
   onCleanup(() => clearTimeout(timer))
@@ -265,6 +267,7 @@ function InviteLink(props: {
       month: 'short',
       hour: '2-digit',
       minute: '2-digit',
+      hourCycle: hourCycle(),
     })
     return m.organization_invite_link_description({ email: invitation.email, until })
   }

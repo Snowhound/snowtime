@@ -1,7 +1,7 @@
 // A time field that looks the same in every browser, in place of <input type="time">: a text
-// input in the UI language's hour cycle (src/lib/date-input.ts) that takes short forms such as
-// 930, 9.30, or 9:30pm, and a clock button that opens columns of hours and 5-minute steps
-// (time-columns.tsx), as Firefox's picker does. ArrowUp and ArrowDown move the hour when the
+// input in the user's hour cycle (src/lib/date-input.ts, the timeFormat setting) that takes short forms such as
+// 930, 9.30, or 9:30pm, and a clock button that opens columns of hours and 5-minute steps,
+// and AM and PM in the 12-hour format (time-columns.tsx), as Firefox's picker does. ArrowUp and ArrowDown move the hour when the
 // caret is in it and the minute otherwise, and Alt+ArrowDown opens the columns.
 //
 // The value is 'HH:MM', or '' while the text isn't a time, and `onChange` runs on every
@@ -13,15 +13,11 @@ import { createEffect, createSignal, on } from 'solid-js'
 import { Button } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { formatTimeInput, parseTimeInput, shiftTime, uses12Hours } from '~/lib/date-input'
+import { useTimeLocale } from '~/lib/display-format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { getLocale } from '~/paraglide/runtime.js'
 import { FIELD_CLASS } from './field-class'
 import { TimeColumns, type TimePart } from './time-columns'
-
-function format(value: string) {
-  return formatTimeInput(value, getLocale())
-}
 
 export function TimeInput(props: {
   id?: string
@@ -41,6 +37,10 @@ export function TimeInput(props: {
   buttonClass?: string
   class?: string
 }) {
+  const locale = useTimeLocale()
+  function format(value: string) {
+    return formatTimeInput(value, locale())
+  }
   // oxlint-disable-next-line solid/reactivity -- the text starts from the value; an effect follows it.
   const [text, setText] = createSignal(format(props.value))
   const [open, setOpen] = createSignal(false)
@@ -60,6 +60,8 @@ export function TimeInput(props: {
       { defer: true },
     ),
   )
+  // A new time format rewrites the text.
+  createEffect(on(locale, () => setText(format(props.value)), { defer: true }))
 
   function set(value: string) {
     setText(format(value))
@@ -125,7 +127,7 @@ export function TimeInput(props: {
         id={props.id}
         type="text"
         size={1}
-        inputmode={uses12Hours(getLocale()) ? 'text' : 'decimal'}
+        inputmode={uses12Hours(locale()) ? 'text' : 'decimal'}
         autocomplete="off"
         spellcheck={false}
         placeholder={m.picker_time()}
@@ -183,7 +185,11 @@ export function TimeInput(props: {
               picked = false
             }}
           >
-            <TimeColumns value={parseTimeInput(text()) ?? props.value} onSelect={pick} />
+            <TimeColumns
+              value={parseTimeInput(text()) ?? props.value}
+              locale={locale()}
+              onSelect={pick}
+            />
           </PopoverContent>
         </Popover>
       </div>

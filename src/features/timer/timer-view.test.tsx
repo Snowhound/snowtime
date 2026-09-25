@@ -317,7 +317,7 @@ describe('TimerView', () => {
     expect(fn.updateEntry).not.toHaveBeenCalled()
 
     fireEvent.keyDown(end, { key: 'Escape' })
-    expect((end as HTMLInputElement).value.replace(/\s/g, ' ')).toBe('12:01 AM')
+    expect((end as HTMLInputElement).value.replace(/\s/g, ' ')).toBe('00:01')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
