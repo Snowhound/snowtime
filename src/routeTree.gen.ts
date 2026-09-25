@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as CreateOrganizationRouteImport } from './routes/create-organization'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppOrganizationRouteImport } from './routes/_app/organization'
 import { Route as AppProjectsRouteImport } from './routes/_app/projects'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
@@ -35,9 +37,19 @@ const CreateOrganizationRoute = CreateOrganizationRouteImport.update({
   path: '/create-organization',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppOrganizationRoute = AppOrganizationRouteImport.update({
@@ -79,7 +91,9 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/create-organization': typeof CreateOrganizationRoute
+  '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/terms': typeof TermsRoute
   '/organization': typeof AppOrganizationRoute
   '/projects': typeof AppProjectsRoute
   '/reports': typeof AppReportsRoute
@@ -91,7 +105,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/create-organization': typeof CreateOrganizationRoute
+  '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/terms': typeof TermsRoute
   '/organization': typeof AppOrganizationRoute
   '/projects': typeof AppProjectsRoute
   '/reports': typeof AppReportsRoute
@@ -105,7 +121,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/create-organization': typeof CreateOrganizationRoute
+  '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/terms': typeof TermsRoute
   '/_app/organization': typeof AppOrganizationRoute
   '/_app/projects': typeof AppProjectsRoute
   '/_app/reports': typeof AppReportsRoute
@@ -119,7 +137,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/create-organization'
+    | '/privacy'
     | '/sign-in'
+    | '/terms'
     | '/organization'
     | '/projects'
     | '/reports'
@@ -131,7 +151,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/create-organization'
+    | '/privacy'
     | '/sign-in'
+    | '/terms'
     | '/organization'
     | '/projects'
     | '/reports'
@@ -144,7 +166,9 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/create-organization'
+    | '/privacy'
     | '/sign-in'
+    | '/terms'
     | '/_app/organization'
     | '/_app/projects'
     | '/_app/reports'
@@ -158,7 +182,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   CreateOrganizationRoute: typeof CreateOrganizationRoute
+  PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
+  TermsRoute: typeof TermsRoute
   InvitationIdRoute: typeof InvitationIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -186,11 +212,25 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof CreateOrganizationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-in': {
       id: '/sign-in'
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/organization': {
@@ -267,7 +307,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   CreateOrganizationRoute: CreateOrganizationRoute,
+  PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
+  TermsRoute: TermsRoute,
   InvitationIdRoute: InvitationIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

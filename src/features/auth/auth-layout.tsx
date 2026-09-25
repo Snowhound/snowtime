@@ -3,6 +3,7 @@ import type { JSX } from 'solid-js'
 import { Show, onMount } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
 import { Intro, IntroPage } from '~/components/intro'
+import { LegalLinks } from '~/components/legal-links'
 import { SceneLayer } from '~/components/scene-layer'
 import { SeasonTagline } from '~/components/season-tagline'
 import { Separator } from '~/components/ui/separator'
@@ -74,6 +75,7 @@ export function AuthLayout(props: { children: JSX.Element; firstVisitIntro?: boo
               </div>
               <div class="flex flex-col gap-6">{props.children}</div>
             </div>
+            <LegalLinks class="surface bg-card/80 mx-auto mt-4 w-fit rounded-md px-3 py-1" />
           </div>
         </main>
       </IntroPage>

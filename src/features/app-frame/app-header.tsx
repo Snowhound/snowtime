@@ -6,10 +6,12 @@ import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/solid-ro
 import BuildingComplexIcon from 'lucide-solid/icons/building-complex'
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
 import ChevronsUpDownIcon from 'lucide-solid/icons/chevrons-up-down'
+import FileTextIcon from 'lucide-solid/icons/file-text'
 import FolderKanbanIcon from 'lucide-solid/icons/folder-kanban'
 import LogOutIcon from 'lucide-solid/icons/log-out'
 import PlusIcon from 'lucide-solid/icons/plus'
 import SettingsIcon from 'lucide-solid/icons/settings'
+import ShieldIcon from 'lucide-solid/icons/shield'
 import TimerIcon from 'lucide-solid/icons/timer'
 import UserIcon from 'lucide-solid/icons/user'
 import { For, Show } from 'solid-js'
@@ -210,6 +212,15 @@ function UserMenu(props: { session: AppSession }) {
         <DropdownMenuItem onSelect={() => navigate({ to: '/settings' })}>
           <SettingsIcon class="size-4" aria-hidden="true" />
           {m.nav_settings()}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => navigate({ to: '/privacy' })}>
+          <ShieldIcon class="size-4" aria-hidden="true" />
+          {m.legal_privacy_title()}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate({ to: '/terms' })}>
+          <FileTextIcon class="size-4" aria-hidden="true" />
+          {m.legal_terms_title()}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={signOut}>

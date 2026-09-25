@@ -93,6 +93,12 @@ webhook URL and permissions, which sign-in doesn't use. In the OAuth App form:
 Google and Microsoft also list several redirect URLs in one app. For Microsoft account
 types and `MICROSOFT_TENANT_ID`, see `architecture.md` ("Sign-in methods").
 
+Google publishes an External app only with a privacy policy link. Under **Google Auth
+Platform > Branding**, enter `https://<host>/privacy` and `https://<host>/terms`, and add
+the host's domain under **Authorized domains**. Both pages name Snowhound OÜ as the
+operator, so a stack someone else runs changes `COMPANY` in
+`src/features/legal/legal-layout.tsx` and the documents' text first.
+
 Copy each provider's client ID and secret. GitHub shows a client secret only once, right
 after you generate it.
 
