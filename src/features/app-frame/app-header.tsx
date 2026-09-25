@@ -14,7 +14,7 @@ import TimerIcon from 'lucide-solid/icons/timer'
 import UserIcon from 'lucide-solid/icons/user'
 import { For, Show } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
-import { Avatar, AvatarFallback } from '~/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { Button, buttonVariants } from '~/components/ui/button'
 import {
   DropdownMenu,
@@ -189,6 +189,9 @@ function UserMenu(props: { session: AppSession }) {
         aria-label={m.user_menu_label({ name: props.session.user.name })}
       >
         <Avatar class="size-8">
+          <Show when={props.session.user.image}>
+            {(image) => <AvatarImage src={image()} alt="" />}
+          </Show>
           <AvatarFallback class="text-xs font-medium">
             {initials(props.session.user.name)}
           </AvatarFallback>
