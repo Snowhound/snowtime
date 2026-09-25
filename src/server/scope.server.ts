@@ -65,6 +65,30 @@ export async function resolveScope(
   }
 }
 
+// The scope of the session's active organization. Better Auth's cookie cache can still hold
+// the session as it was before getAppSession saved an organization in the same request: a
+// new session has none, and one the user left is replaced. The loaders that call server
+// functions during that page's render send the old cookie, so when it gives no scope, the
+// session is read again from the database (`reread`), and its organization tried once.
+export async function resolveSessionScope(
+  db: Database,
+  userId: string,
+  activeOrganizationId: string | null,
+  reread: () => Promise<string | null | undefined>,
+): Promise<Scope> {
+  try {
+    return await resolveScope(db, userId, activeOrganizationId)
+  } catch (error) {
+    const stale =
+      error instanceof AppError &&
+      (error.key === 'organization_required' || error.key === 'not_organization_member')
+    if (!stale) throw error
+    const stored = await reread()
+    if (!stored || stored === activeOrganizationId) throw error
+    return resolveScope(db, userId, stored)
+  }
+}
+
 export function isAdmin(scope: Scope): boolean {
   return scope.orgRole === 'owner' || scope.orgRole === 'admin'
 }

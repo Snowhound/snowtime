@@ -11,7 +11,7 @@ import { withActor } from '~/db/actor'
 import { auth, rateLimitStore } from './auth/better-auth.server'
 import { AppError } from './errors'
 import { rateLimits } from './limits.server'
-import { resolveScope } from './scope.server'
+import { resolveSessionScope } from './scope.server'
 
 export const sessionMiddleware = createMiddleware({ type: 'function' }).server(
   async ({ next, method }) => {
@@ -34,6 +34,19 @@ export const sessionMiddleware = createMiddleware({ type: 'function' }).server(
 export const scopeMiddleware = createMiddleware({ type: 'function' })
   .middleware([sessionMiddleware])
   .server(async ({ next, context }) => {
-    const scope = await resolveScope(db, context.userId, context.activeOrganizationId)
+    const scope = await resolveSessionScope(
+      db,
+      context.userId,
+      context.activeOrganizationId,
+      async () => {
+        const session = await auth.api.getSession({
+          headers: getRequestHeaders(),
+          query: { disableCookieCache: true },
+        })
+        return session?.session.userId === context.userId
+          ? session.session.activeOrganizationId
+          : null
+      },
+    )
     return next({ context: { scope } })
   })

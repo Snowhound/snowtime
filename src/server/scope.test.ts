@@ -1,10 +1,16 @@
 /// <reference types="bun" />
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, mock, test } from 'bun:test'
 import type { Database } from '~/db'
 import { member, organization, team, teamMember, user } from '~/db/schema'
 import { createTestDatabase } from '~/db/testing'
-import { isAdmin, readableUserIds, resolveScope, strongestRole } from './scope.server'
+import {
+  isAdmin,
+  readableUserIds,
+  resolveScope,
+  resolveSessionScope,
+  strongestRole,
+} from './scope.server'
 
 let db: Database
 let cleanup: () => void
@@ -100,5 +106,36 @@ describe('strongestRole', () => {
     // and its permission check reads as a plain member.
     expect(strongestRole('member, owner')).toBe('member')
     expect(strongestRole(' admin')).toBe('member')
+  })
+})
+
+describe('resolveSessionScope', () => {
+  // getAppSession has saved an organization since the request's cookie was cached.
+  test('reads the session again when the cached one has no organization', async () => {
+    const reread = mock(async () => 'org-a')
+    const scope = await resolveSessionScope(db, 'member', null, reread)
+    expect(scope.organizationId).toBe('org-a')
+    expect(reread).toHaveBeenCalledTimes(1)
+  })
+
+  test('reads the session again when the cached organization is one the user left', async () => {
+    const scope = await resolveSessionScope(db, 'member', 'org-b', async () => 'org-a')
+    expect(scope.organizationId).toBe('org-a')
+  })
+
+  test('keeps a cached organization the user belongs to, without reading again', async () => {
+    const reread = mock(async () => 'org-b')
+    const scope = await resolveSessionScope(db, 'lead', 'org-a', reread)
+    expect(scope.organizationId).toBe('org-a')
+    expect(reread).not.toHaveBeenCalled()
+  })
+
+  test('refuses as before when the stored session has nothing better', async () => {
+    await expect(resolveSessionScope(db, 'member', null, async () => null)).rejects.toMatchObject({
+      code: 'NO_ACTIVE_ORGANIZATION',
+    })
+    await expect(
+      resolveSessionScope(db, 'member', 'org-b', async () => 'org-b'),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
   })
 })

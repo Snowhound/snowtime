@@ -176,6 +176,12 @@
   organization, or one the user has left, it saves the first by name to the session.
   A signed-in user with no organization goes to their open invitation, or to create
   an organization.
+- The loaders on that page call their server functions in the same request, which still
+  carries the cached session cookie from before the save. When that cached session gives no
+  scope, `scopeMiddleware` reads the session once more from the database and uses its
+  organization (`resolveSessionScope`). Without that, every provider sign-in, which returns
+  with a full page load, failed on its first page (task 048). The extra read happens only
+  on that path, so the cookie cache still saves it on every other call.
 - Organization roles: owner / admin / member (plugin defaults).
   - `member.role` can hold several roles, comma-separated. `strongestRole` reads the list
     as Better Auth's permission check does, without trimming, so the app never grants

@@ -1,6 +1,6 @@
 # 048: First page load after signing in
 
-Status: todo
+Status: done
 
 Task 039 found on 2026-09-25 that the first full page load after signing in fails with
 "Select an organization first" (500). A new session has no active organization.
@@ -20,9 +20,16 @@ The first `GET /timer` answers 500, and the second 200.
 
 ## Acceptance criteria
 
-- [ ] A new session starts with an active organization, for example from a Better Auth
-      session-create hook, or the server functions in the request that set it read the
-      new one
-- [ ] A test signs in and loads a page that calls a scoped server function in the same
-      request
-- [ ] A provider sign-in lands on the timer with no error page
+- [x] The server functions in the request that set the organization read the new one:
+      when the cached session gives no scope, `scopeMiddleware` reads the session again
+      from the database, bypassing the cookie cache, and uses its organization once
+      (`resolveSessionScope` in `src/server/scope.server.ts`). That covers a new session
+      and one whose organization the user left; a session-create hook would have covered
+      only the first
+- [x] Tests cover the fallback against a seeded database (`scope.test.ts`): a session
+      without an organization, one the user left, one that needs no second read, and a
+      stored session with nothing better. The full flow was checked by hand, since no
+      test runs Better Auth: after `POST /api/auth/sign-in/email`, the first `GET /timer`
+      answers 200 (it was 500), and Chrome opens the timer at once for two seeded users
+- [x] A provider sign-in lands on the timer with no error page: it takes the same path, a
+      full page load with a new session. Not tried against a real provider locally

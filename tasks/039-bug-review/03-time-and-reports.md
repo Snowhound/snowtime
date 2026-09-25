@@ -34,13 +34,11 @@ Reviewed on 2026-09-25 by reading the code, and with scripts run against
   sheet a later `getReportEntries` call, so while a timer ran in the range the entries
   added up to more than the timesheet. `getReportExport` now returns both from one read
   (`export-menu.test.tsx`, `reports.test.ts`).
-
-### Tracked
-
-- Task 048, outside this area: the first full page load after signing in answers 500
+- Task 048, outside this area: the first full page load after signing in answered 500
   ("Select an organization first"), because the loaders read Better Auth's cached session
-  from before `getAppSession` set the active organization. Every provider sign-in meets
-  it.
+  from before `getAppSession` set the active organization. Every provider sign-in met it.
+  `scopeMiddleware` now reads the session again when the cached one gives no scope
+  (`scope.test.ts`).
 
 ### Checked and sound
 
