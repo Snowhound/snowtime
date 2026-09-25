@@ -134,26 +134,28 @@ function TermsEt() {
   return (
     <>
       <p>
-        Need tingimused kehtivad, kui kasutad Snowtime'i aadressil {COMPANY.site}. Snowtime on
-        ajaarvestuse rakendus, mida pakub {COMPANY.name} (registrikood {COMPANY.registryCode}),{' '}
-        {COMPANY.address}, Eesti. Sisse logides nõustud nende tingimustega.{' '}
-        <Link to="/privacy">Privaatsuspoliitika</Link> selgitab, kuidas me isikuandmeid käsitleme.
+        Käesolevad kasutustingimused reguleerivad ajaarvestuse teenuse Snowtime kasutamist aadressil{' '}
+        {COMPANY.site}. Teenust pakub {COMPANY.name} (registrikood {COMPANY.registryCode}),{' '}
+        {COMPANY.address}, Eesti. Teenusesse sisse logides nõustud nende tingimustega.{' '}
+        <Link to="/privacy">Privaatsuspoliitika</Link> selgitab, kuidas me isikuandmeid töötleme ja
+        kaitseme.
       </p>
 
       <h2>Teenus</h2>
       <p>
         Snowtime on tasuta. Võime hiljem lisada tasulisi pakette või funktsioone; anname neist
-        rakenduses teada vähemalt 30 päeva enne, kui need sind puudutavad, et saaksid otsustada, kas
-        jätkata. Võime ka funktsioone lisada, muuta või eemaldada.
+        rakenduses teada vähemalt 30 päeva enne nende jõustumist, et saaksid otsustada, kas soovid
+        teenuse kasutamist jätkata. Samuti võime funktsioone lisada, muuta või eemaldada.
       </p>
 
       <h2>Sinu konto</h2>
       <ul>
         <li>
-          Logid sisse Google'i, GitHubi, Microsofti või pääsuvõtmega. Hoia neid kontosid ja seadmeid
-          turvaliselt; vastutad selle eest, mida sinu Snowtime'i kontoga tehakse.
+          Sisselogimiseks kasutad Google'i, GitHubi või Microsofti kontot või pääsuvõtit. Hoia neid
+          kontosid ja seadmeid turvaliselt; vastutad kõigi oma Snowtime'i konto alt tehtavate
+          toimingute eest.
         </li>
-        <li>Pead olema vähemalt 13-aastane.</li>
+        <li>Teenuse kasutaja peab olema vähemalt 13-aastane.</li>
       </ul>
 
       <h2>Organisatsioonid</h2>
@@ -164,67 +166,70 @@ function TermsEt() {
         </li>
         <li>
           Kui seadistad Snowtime'i organisatsioonile, näiteks oma tööandjale, kinnitad, et sul on
-          õigus lisada selle liikmeid ja andmeid. Organisatsioon vastutab selle eest, kuidas ta
-          liikmete ajakandeid kasutab, sealhulgas liikmete teavitamise eest.
+          volitus lisada vastavaid liikmeid ja andmeid. Organisatsioon vastutab selle eest, kuidas
+          ta oma liikmete ajakandeid kasutab, sealhulgas liikmete teavitamise eest.
         </li>
-        <li>Kui lahkud organisatsioonist, jäävad seal salvestatud kanded organisatsioonile.</li>
+        <li>
+          Organisatsioonist lahkumisel jäävad sinu salvestatud kanded organisatsiooni andmete hulka.
+        </li>
       </ul>
 
       <h2>Sinu sisu</h2>
       <p>
-        Kõik õigused sisestatud sisule jäävad sulle. Lubad meil seda hoida, töödelda ja näidata
-        üksnes selleks, et pakkuda Snowtime'i sulle ja sinu organisatsioonidele. Kandeid saad
-        aruannete vaatest igal ajal alla laadida.
+        Kõik õigused sisestatud sisule jäävad sulle. Annad meile loa seda sisu säilitada, töödelda
+        ja kuvada üksnes Snowtime'i teenuse osutamiseks sulle ja sinu organisatsioonidele. Oma
+        kandeid saad aruannete vaatest igal ajal alla laadida (eksportida).
       </p>
 
       <h2>Lubatud kasutus</h2>
-      <p>Ära:</p>
+      <p>Keelatud on:</p>
       <ul>
-        <li>riku seadust ega hoia sisu, mis rikub teiste õigusi;</li>
+        <li>rikkuda seadust või hoida teenuses sisu, mis rikub teiste isikute õigusi;</li>
         <li>
-          püüa pääseda kontodele või organisatsioonidesse, kuhu sa ei kuulu, ega katsu läbi või
-          murra teenuse turvalisust;
+          üritada omavoliliselt pääseda ligi kontodele või organisatsioonidele, kuhu sa ei kuulu,
+          või testida, rünnata ja murda teenuse turvasüsteeme;
         </li>
         <li>
-          koorma teenust üle, mööda selle piirangutest ega automatiseeri seda üle tavapärase
-          kasutuse;
+          koormata teenust üle, hiilida mööda kehtestatud piirangutest või teha automatiseeritud
+          päringuid üle mõistliku tavakasutuse;
         </li>
-        <li>kasuta Snowtime'i rämpsposti saatmiseks ega teiste ahistamiseks.</li>
+        <li>kasutada Snowtime'i rämpsposti saatmiseks või teiste ahistamiseks.</li>
       </ul>
       <p>
-        Võime peatada või sulgeda kontod ja organisatsioonid, mis neid reegleid rikuvad. Anname
-        põhjusest teada, kui seadus või turvalisus seda ei takista.
+        Võime peatada või sulgeda kontod ja organisatsioonid, mis neid reegleid rikuvad. Teavitame
+        sind peatamise või sulgemise põhjusest, välja arvatud juhul, kui seadus või turvakaalutlused
+        seda keelavad.
       </p>
 
       <h2>Kättesaadavus</h2>
       <p>
-        Hoiame Snowtime'i hoolikalt töös, kuid ei garanteeri katkestusteta tööd ning võime selle
-        hoolduseks peatada. Teeme varukoopiaid, kuid laadi alla andmed, mida ei tohi kaotada. Kui
-        otsustame Snowtime'i sulgeda, anname sellest rakenduses teada vähemalt 30 päeva ette, et
-        saaksid oma andmed alla laadida.
+        Pakume Snowtime'i teenust hoolsalt ja heas usus, kuid ei taga selle katkestusteta toimimist
+        ning võime teenuse hoolduseks ajutiselt peatada. Teeme varukoopiaid, kuid soovitame olulised
+        andmed regulaarselt ka ise alla laadida. Kui otsustame Snowtime'i sulgeda, anname sellest
+        rakenduses teada vähemalt 30 päeva ette, et saaksid oma andmed alla laadida.
       </p>
 
       <h2>Kasutamise lõpetamine</h2>
       <p>
-        Võid Snowtime'i kasutamise igal ajal lõpetada ja paluda oma konto kustutada, nagu{' '}
-        <Link to="/privacy">privaatsuspoliitika</Link> kirjeldab.
+        Võid Snowtime'i kasutamise igal ajal lõpetada ja paluda oma konto kustutada, nagu on
+        kirjeldatud <Link to="/privacy">privaatsuspoliitikas</Link>.
       </p>
 
       <h2>Avatud lähtekood</h2>
       <p>
         Snowtime'i lähtekood on avalik MIT litsentsi alusel aadressil{' '}
-        <a href={REPOSITORY}>github.com/Snowhound/snowtime</a>. Need tingimused kehtivad teenusele
-        aadressil {COMPANY.site}, litsents aga koodile. Kui käitad oma koopiat, määrad selle
-        kasutajatele tingimused ise.
+        <a href={REPOSITORY}>github.com/Snowhound/snowtime</a>. Käesolevad tingimused reguleerivad
+        teenuse kasutamist aadressil {COMPANY.site}, tarkvara litsents aga lähtekoodi kasutamist.
+        Kui käitad oma eraldiseisvat koopiat, määrad selle kasutajatele tingimused ise.
       </p>
 
       <h2>Vastutus</h2>
       <p>
-        Snowtime'i pakutakse sellisena, nagu see on, ilma garantiideta, niivõrd kui seadus seda
-        lubab. Me ei vastuta kaudse kahju, näiteks saamata jäänud tulu või kaotatud andmete eest, ja
-        meie vastutus on kokku piiratud 100 euroga. Need piirangud ei kehti, kui seadus neid ei
-        luba, näiteks tahtlikult või raske hooletuse tõttu tekitatud kahju puhul või kui need
-        võtaksid sinult tarbijana õigusi.
+        Snowtime'i pakutakse „nagu on“ põhimõttel ilma mis tahes garantiita ulatuses, milles see on
+        seadusega lubatud. Me ei vastuta kaudse kahju, sealhulgas saamata jäänud tulu ega kaotatud
+        andmete eest, ning meie koguvastutus on piiratud 100 euroga. Need piirangud ei kehti juhul,
+        kui kahju on tekitatud tahtlikult või raske hooletuse tõttu, ega piira tarbija seadusest
+        tulenevaid kohustuslikke õigusi.
       </p>
 
       <h2>Muudatused</h2>
@@ -243,7 +248,7 @@ function TermsEt() {
 
       <h2>Kontakt</h2>
       <p>
-        Kirjuta aadressil <ContactEmail />.
+        Kirjuta aadressile <ContactEmail />.
       </p>
     </>
   )

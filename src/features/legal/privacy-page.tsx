@@ -174,56 +174,62 @@ function PrivacyEt() {
   return (
     <>
       <p>
-        See poliitika selgitab, milliseid isikuandmeid Snowtime kogub, miks ja mida saad nendega
-        teha. Snowtime on ajaarvestuse rakendus, mida {COMPANY.name} pakub aadressil {COMPANY.site}.
+        See privaatsuspoliitika selgitab, milliseid isikuandmeid Snowtime kogub, mis eesmärgil ning
+        millised on sinu õigused seoses oma andmetega. Snowtime on ajaarvestuse rakendus, mida pakub{' '}
+        {COMPANY.name} aadressil {COMPANY.site}.
       </p>
 
       <h2>Kes me oleme</h2>
       <p>
         Siin kirjeldatud isikuandmete vastutav töötleja on {COMPANY.name} (registrikood{' '}
-        {COMPANY.registryCode}), {COMPANY.address}, Eesti. Kõigis selle poliitika ja sinu andmetega
-        seotud küsimustes kirjuta aadressil <ContactEmail />.
+        {COMPANY.registryCode}), {COMPANY.address}, Eesti. Kõigi selle privaatsuspoliitika või oma
+        andmetega seotud küsimuste korral kirjuta aadressile <ContactEmail />.
       </p>
       <p>
         Kui organisatsioon kasutab Snowtime'i oma liikmete töö arvestamiseks, otsustab
-        organisatsioon, mida tema liikmed salvestavad, ja meie töötleme neid andmeid tema nimel.
-        Organisatsiooni andmete kohta võid küsida ka organisatsioonilt. Kui su organisatsioon vajab
-        meiega andmetöötluslepingut, kirjuta meile.
+        organisatsioon, mida tema liikmed salvestavad, ja meie töötleme neid andmeid volitatud
+        töötlejana tema nimel. Organisatsiooni andmete kohta saad lisainfot küsida otse vastavalt
+        organisatsioonilt. Kui sinu organisatsioon vajab meiega andmetöötluslepingut (DPA), võta
+        meiega ühendust.
       </p>
 
       <h2>Mida me kogume</h2>
       <ul>
         <li>
           Konto: sinu nimi, e-posti aadress ja profiilipildi link, mille sisselogimisteenus (Google,
-          GitHub või Microsoft) meile saadab, ning teenuse tunnus sinu konto jaoks. Hoiame ka
-          sisselogimisel väljastatud juurdepääsulube, kuid ei kasuta neid sinu kontolt muude andmete
-          lugemiseks.
+          GitHub või Microsoft) meile saadab, ning teenusepakkuja unikaalne kasutajatunnus.
+          Säilitame ka sisselogimisel väljastatud pääsutõendeid (tokens), kuid ei kasuta neid sinu
+          kontolt muude andmete lugemiseks.
         </li>
         <li>
           Pääsuvõtmed: iga lisatud pääsuvõtme avalik võti ja seadme andmed. Privaatvõti ei lahku
           kunagi sinu seadmest.
         </li>
-        <li>Seansid: iga sisselogitud seadme IP-aadress, brauser ja seansi aegumise aeg.</li>
-        <li>Seaded: ajavöönd, nädala algus, keel ja välimuse valikud.</li>
+        <li>
+          Seansid: iga sisselogitud seadme IP-aadress, veebilehitseja info ja seansi aegumisaeg.
+        </li>
+        <li>Seaded: ajavöönd, nädala alguspäev, keel ja kujunduseelistused.</li>
         <li>
           Organisatsioonid: organisatsioonid, tiimid ja projektid, kuhu kuulud või mille lood, sinu
-          roll igas neist ning kutsed koos kutsutava e-posti aadressiga.
+          roll igas neist ning kutsed koos kutsutud isiku e-posti aadressiga.
         </li>
         <li>Ajakanded: salvestatud kirjeldused, projektid ning algus- ja lõpuajad.</li>
         <li>
           Tehnilised andmed: majutusteenuse pakkuja salvestab päringud koos IP-aadressidega
-          lühiajalistesse logidesse ning me loeme päringuid IP-aadressi ja konto kaupa, et
-          kuritarvitusi piirata.
+          lühiajalistesse logidesse ning loendame päringuid IP-aadressi ja konto lõikes, et teenuse
+          kuritarvitamist tõkestada.
         </li>
       </ul>
-      <p>Me ei kasuta analüütikat, reklaami ega jälgimist ning ei müü isikuandmeid.</p>
+      <p>
+        Me ei kasuta analüütika-, reklaami- ega muid jälgimisteenuseid ning me ei müü isikuandmeid.
+      </p>
 
       <h2>Milleks me andmeid kasutame</h2>
       <ul>
         <li>
-          Snowtime'i pakkumiseks: sisselogimine, kannete salvestamine ja aruannete näitamine neile,
-          kellele su organisatsioon seda lubab. Õiguslik alus: meievaheline leping (isikuandmete
-          kaitse üldmääruse artikli 6 lõike 1 punkt b).
+          Snowtime'i pakkumiseks: sisselogimine, kannete salvestamine ja aruannete kuvamine
+          isikutele, kellele sinu organisatsioon on selleks õiguse andnud. Õiguslik alus:
+          meievaheline leping (isikuandmete kaitse üldmääruse / IKÜM artikli 6 lõike 1 punkt b).
         </li>
         <li>
           Teenuse turvalisuse tagamiseks ja kuritarvituste tõkestamiseks seansside,
@@ -244,16 +250,18 @@ function PrivacyEt() {
           administraatorid ja omanikud näevad ja saavad muuta kõiki organisatsiooni kandeid.
         </li>
         <li>
-          Volitatud töötlejad, kes käitavad Snowtime'i meie eest andmetöötlustingimuste alusel:
+          Volitatud töötlejad, kes tagavad Snowtime'i tehnilise toimimise andmetöötlustingimuste
+          alusel:
           <ul>
-            <li>Vercel majutab rakendust, mis töötab Dublinis Iirimaal.</li>
-            <li>Turso hoiab andmebaasi Iirimaal.</li>
-            <li>Upstash hoiab lühiajalisi päringuloendureid Iirimaal.</li>
+            <li>Vercel majutab rakendust, mille serverid asuvad Iirimaal Dublinis.</li>
+            <li>Turso majutab andmebaasi Iirimaal.</li>
+            <li>Upstash haldab lühiajalisi päringupiirangu loendureid Iirimaal.</li>
           </ul>
         </li>
         <li>
           Sisselogimisteenused: Google, GitHub ja Microsoft töötlevad sisselogimist oma
-          privaatsuspoliitika alusel. Sinu brauser laadib profiilipildi teenuse serveritest.
+          privaatsuspoliitika alusel. Sinu brauser laadib profiilipildi vastava teenusepakkuja
+          serveritest.
         </li>
         <li>Ametiasutused, kui seadus seda nõuab.</li>
       </ul>
@@ -261,17 +269,18 @@ function PrivacyEt() {
       <h2>Andmete edastamine väljapoole EL-i</h2>
       <p>
         Hoiame andmeid Euroopa Liidus, Iirimaal. Vercel, Turso ja Upstash on USA ettevõtted, seega
-        võidakse andmetele ligi pääseda ka USA-st, näiteks kasutajatoe käigus. Need edastused
-        põhinevad Euroopa Komisjoni tüüptingimustel või kaitse piisavuse otsusel, näiteks ELi–USA
-        andmekaitseraamistikul.
+        võidakse andmetele ligi pääseda ka USA-st, näiteks klienditoe või tehnilise toe osutamisel.
+        Need edastused põhinevad Euroopa Komisjoni lepingu tüüptingimustel (standard contractual
+        clauses) või kaitse piisavuse otsusel, näiteks ELi–USA andmekaitseraamistikul.
       </p>
 
       <h2>Kui kaua me andmeid hoiame</h2>
       <ul>
-        <li>Konto, seaded, organisatsioonid ja kanded: seni, kuni sinu konto on olemas.</li>
-        <li>Seansid: kuni väljalogimiseni või umbes nädal pärast viimast kasutamist.</li>
+        <li>Konto, seaded, organisatsioonid ja kanded: kuni konto kustutamiseni.</li>
+        <li>Seansid: kuni väljalogimiseni või ligikaudu nädal pärast viimast tegevust.</li>
         <li>
-          Päringuloendurid: mõni minut. Logid: lühikest aega, mille määrab majutusteenuse pakkuja.
+          Päringuloendurid: mõni minut. Logid: lühiajaliselt, vastavalt majutusteenuse pakkuja
+          tingimustele.
         </li>
         <li>
           Kustutatud ajakanne või projekt kaob rakendusest kohe, kuid jääb andmebaasi kustutatuks
@@ -279,18 +288,19 @@ function PrivacyEt() {
           kustutamist, kirjuta meile.
         </li>
         <li>
-          Varukoopiad: Turso hoiab andmebaasi varukoopiaid piiratud aja, pärast mida kaovad
+          Varukoopiad: Turso säilitab andmebaasi varukoopiaid piiratud aja, pärast mida kustuvad
           kustutatud andmed ka neist.
         </li>
       </ul>
 
       <h2>Konto kustutamine</h2>
       <p>
-        Snowtime'is pole veel kustutamisnuppu. Kirjuta oma konto e-posti aadressilt aadressil{' '}
-        <ContactEmail /> ja kustutame konto ühe kuu jooksul. Asendame sinu nime, e-posti aadressi ja
-        pildi ning eemaldame seansid, pääsuvõtmed ja sisselogimisühendused. Organisatsioonis
-        salvestatud ajakanded jäävad selle andmete hulka, kuid ei ole enam sinuga seotud. Enne seda
-        saad kanded aruannete vaates CSV- või XLSX-failina alla laadida.
+        Snowtime'is pole veel kustutamisnuppu. Kirjuta oma konto e-posti aadressilt aadressile{' '}
+        <ContactEmail /> ja kustutame konto ühe kuu jooksul. Anonümiseerime või eemaldame sinu nime,
+        e-posti aadressi ja profiilipildi ning kustutame seansid, pääsuvõtmed ja
+        sisselogimisühendused. Organisatsioonis salvestatud ajakanded jäävad selle andmete hulka,
+        kuid ei ole enam sinuga seostatavad. Enne konto sulgemist saad soovi korral oma kanded
+        aruannete vaates CSV- või XLSX-failina alla laadida.
       </p>
 
       <h2>Küpsised ja brauseri salvestusruum</h2>
@@ -299,21 +309,23 @@ function PrivacyEt() {
         <li>sisselogimisküpsised, mis hoiavad sind sisselogituna;</li>
         <li>keeleküpsis, mis jätab sinu keele meelde umbes aastaks;</li>
         <li>
-          brauseri salvestusruum, mis jätab selles seadmes meelde välimuse valikud (teema, rakenduse
-          ikoon ja maastik) ning selle, kas oled tutvustust näinud.
+          brauseri kohalik salvestusruum (localStorage), mis jätab selles seadmes meelde
+          kujunduseelistused (teema, rakenduse ikoon ja maastik) ning selle, kas oled tutvustust
+          näinud.
         </li>
       </ul>
 
       <h2>Sinu õigused</h2>
       <p>
-        Isikuandmete kaitse üldmääruse alusel võid taotleda oma andmetega tutvumist, nende
-        parandamist, kustutamist, töötlemise piiramist ja ülekandmist ning esitada vastuväite meie
-        õigustatud huvil põhinevale töötlemisele. Kirjuta aadressil <ContactEmail />; vastame ühe
-        kuu jooksul. Nime saad ise muuta seadetes ja kanded alla laadida aruannetest.
+        Isikuandmete kaitse üldmääruse (IKÜM) alusel on sul õigus taotleda oma andmetega tutvumist,
+        nende parandamist, kustutamist, töötlemise piiramist ja ülekandmist ning esitada
+        vastuväiteid meie õigustatud huvil põhinevale töötlemisele. Kirjuta aadressile{' '}
+        <ContactEmail />; vastame ühe kuu jooksul. Oma nime saad ise muuta seadetes ning kanded alla
+        laadida aruannetest.
       </p>
       <p>
-        Kaebuse saad esitada Andmekaitse Inspektsioonile (
-        <a href="https://www.aki.ee">www.aki.ee</a>) või oma riigi andmekaitseasutusele.
+        Kaebuse esitamiseks on sul õigus pöörduda Andmekaitse Inspektsiooni (
+        <a href="https://www.aki.ee">www.aki.ee</a>) või oma asukohariigi andmekaitseasutuse poole.
       </p>
 
       <h2>Lapsed</h2>
@@ -321,8 +333,8 @@ function PrivacyEt() {
 
       <h2>Muudatused</h2>
       <p>
-        Kui meie tavad muutuvad, uuendame seda lehte ja selle kuupäeva. Olulistest muudatustest
-        anname rakenduses teada enne nende jõustumist.
+        Andmetöötluse põhimõtete muutumisel uuendame seda lehte ja selle kuupäeva. Olulistest
+        muudatustest anname rakenduses teada enne nende jõustumist.
       </p>
     </>
   )
