@@ -40,9 +40,8 @@
       label: 'Autumn',
       // The leaves' amber and rust, lightened to read on the dark scene.
       colors: { title: '#f6c07e', sub: '#f3e3d0', accent: '#e8a062', titleLight: '#94560a' },
-      lines: ['The leaves are falling.', 'So is the end of the month.', 'Before the last one lands, fill in your timesheet.', SIGN_OFF],
+      lines: ['The leaves are falling.', 'So are your unlogged hours.', 'Before the last one lands, fill in your timesheet.', SIGN_OFF],
       alternates: [
-        ['The leaves are falling.', 'So are your unlogged hours.', 'Before the last one lands, fill in your timesheet.', SIGN_OFF],
         ['The nights are drawing in.', 'So is the deadline.', 'Before it gets dark, fill in your timesheet.', SIGN_OFF],
       ],
     },

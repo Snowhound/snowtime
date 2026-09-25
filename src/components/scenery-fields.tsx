@@ -82,7 +82,7 @@ export function SceneryFields(props: {
         <div class="shrink-0">
           <NativeSelect
             id={`${id}-season`}
-            class={cn('w-36', compact() ? 'h-8 py-1' : 'h-9')}
+            class={cn('w-44', compact() ? 'h-8 py-1' : 'h-9')}
             value={props.settings.sceneSeason}
             onChange={(event) =>
               props.onChange({
@@ -165,12 +165,13 @@ export function SceneryFields(props: {
   )
 }
 
+// With hints, the control wraps below its text when both don't fit on one line, as on a phone.
 function Row(props: { hints: Hints; indent?: boolean; children: JSX.Element }) {
   return (
     <div
       class={cn(
         'flex items-center justify-between',
-        props.hints === 'none' ? 'min-h-8 gap-3' : 'gap-4',
+        props.hints === 'none' ? 'min-h-8 gap-3' : 'flex-wrap gap-x-4 gap-y-2',
         props.indent && 'pl-3',
       )}
     >
@@ -181,7 +182,14 @@ function Row(props: { hints: Hints; indent?: boolean; children: JSX.Element }) {
 
 function RowText(props: { hints: Hints; hint?: string; children: JSX.Element }) {
   return (
-    <div class={cn('grid min-w-0', props.hints === 'long' ? 'gap-1' : 'gap-0.5')}>
+    // A hint keeps at least 10rem, so it doesn't narrow to a word per line.
+    <div
+      class={cn(
+        'grid min-w-0',
+        props.hints === 'long' ? 'gap-1' : 'gap-0.5',
+        props.hint && 'flex-1 basis-40',
+      )}
+    >
       {props.children}
       <Show when={props.hint}>
         <span class={cn('text-muted-foreground', props.hints === 'long' ? 'text-sm' : 'text-xs')}>

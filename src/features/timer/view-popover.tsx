@@ -69,20 +69,20 @@ export function ViewPopover(props: { settings: Settings; onError: (error: unknow
         </div>
         <Switch
           class="flex items-center justify-between gap-4"
-          checked={props.settings.showSummary}
-          onChange={(showSummary) => update({ showSummary })}
+          checked={props.settings.compactRows}
+          onChange={(compactRows) => update({ compactRows })}
         >
-          <SwitchLabel>{m.settings_show_summary()}</SwitchLabel>
+          <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
           <SwitchControl>
             <SwitchThumb />
           </SwitchControl>
         </Switch>
         <Switch
           class="flex items-center justify-between gap-4"
-          checked={props.settings.compactRows}
-          onChange={(compactRows) => update({ compactRows })}
+          checked={props.settings.showSummary}
+          onChange={(showSummary) => update({ showSummary })}
         >
-          <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
+          <SwitchLabel>{m.settings_show_summary()}</SwitchLabel>
           <SwitchControl>
             <SwitchThumb />
           </SwitchControl>

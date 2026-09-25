@@ -53,7 +53,7 @@ export function AppearancePopover(props: { settings: Settings }) {
           <MountainSnowIcon aria-hidden="true" />
         </PopoverTrigger>
         <PopoverContent
-          class="grid w-80 gap-3"
+          class="grid w-88 gap-3"
           aria-labelledby="appearance-title"
           // Kobalte's toggle groups take Escape to clear their selection and block the popover's
           // dismiss, so the popover closes here, which runs first.

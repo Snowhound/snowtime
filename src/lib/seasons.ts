@@ -48,7 +48,6 @@ export const SEASON_COPY: Record<Season, SeasonCopy> = {
     lines: [m.season_autumn_line_1, m.season_autumn_line_2, m.season_autumn_line_3],
     alternates: [
       [m.season_autumn_alt_1_line_1, m.season_autumn_alt_1_line_2, m.season_autumn_alt_1_line_3],
-      [m.season_autumn_alt_2_line_1, m.season_autumn_alt_2_line_2, m.season_autumn_alt_2_line_3],
     ],
   },
 }

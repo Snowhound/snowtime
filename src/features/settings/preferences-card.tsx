@@ -302,13 +302,13 @@ export function PreferencesCard(props: { settings: Settings }) {
           </div>
           <Switch
             class="flex items-center justify-between gap-4"
-            checked={props.settings.showSummary}
-            onChange={(showSummary) => update({ showSummary })}
+            checked={props.settings.compactRows}
+            onChange={(compactRows) => update({ compactRows })}
           >
             <div class="grid gap-1">
-              <SwitchLabel>{m.settings_show_summary()}</SwitchLabel>
+              <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
               <SwitchDescription class="text-muted-foreground text-sm">
-                {m.settings_show_summary_description()}
+                {m.settings_compact_rows_description()}
               </SwitchDescription>
             </div>
             <SwitchControl>
@@ -317,13 +317,13 @@ export function PreferencesCard(props: { settings: Settings }) {
           </Switch>
           <Switch
             class="flex items-center justify-between gap-4"
-            checked={props.settings.compactRows}
-            onChange={(compactRows) => update({ compactRows })}
+            checked={props.settings.showSummary}
+            onChange={(showSummary) => update({ showSummary })}
           >
             <div class="grid gap-1">
-              <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
+              <SwitchLabel>{m.settings_show_summary()}</SwitchLabel>
               <SwitchDescription class="text-muted-foreground text-sm">
-                {m.settings_compact_rows_description()}
+                {m.settings_show_summary_description()}
               </SwitchDescription>
             </div>
             <SwitchControl>
