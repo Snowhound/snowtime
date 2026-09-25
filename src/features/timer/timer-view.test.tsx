@@ -214,14 +214,15 @@ describe('TimerView', () => {
     expect(await screen.findByText('The project is archived.')).toBeInTheDocument()
   })
 
-  test('deletes an entry at once', async () => {
+  test('deletes an entry from its menu at once', async () => {
     renderView()
     await screen.findByDisplayValue('Invoice export review')
     fn.deleteEntry.mockImplementation(async () => {
       server.entries = []
     })
 
-    await userEvent.click(screen.getByRole('button', { name: 'Delete Invoice export review' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Actions for Invoice export review' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }))
     expect(fn.deleteEntry).toHaveBeenCalledWith({ data: { id: expect.any(String) } })
     expect(screen.queryByDisplayValue('Invoice export review')).not.toBeInTheDocument()
     expect(await screen.findByText('No time tracked yet')).toBeInTheDocument()

@@ -3,11 +3,18 @@
 // continue and delete actions. Rows are one line from 768 px and three below it. Focus
 // shows them compact. The parts the Table layout shares are exported.
 import ClockIcon from 'lucide-solid/icons/clock'
+import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'
 import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { For } from 'solid-js'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
 import { addDays, localDate } from '~/lib/calendar'
 import { formatHours, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/projects'
@@ -136,7 +143,7 @@ export function EntryActions(props: {
     return props.entry.description
   }
   return (
-    <div class={cn('flex items-center gap-1', REVEAL)}>
+    <div class={cn('flex items-center gap-1', REVEAL, 'sm:has-data-expanded:opacity-100')}>
       <Button
         variant="ghost"
         size="icon"
@@ -149,16 +156,29 @@ export function EntryActions(props: {
       >
         <PlayIcon aria-hidden="true" />
       </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label={
-          description() ? m.timer_delete({ description: description() }) : m.timer_delete_unnamed()
-        }
-        onClick={() => props.onDelete(props.entry)}
-      >
-        <TrashIcon aria-hidden="true" />
-      </Button>
+      <DropdownMenu placement="bottom-end">
+        <DropdownMenuTrigger
+          as={Button<'button'>}
+          variant="ghost"
+          size="icon"
+          aria-label={
+            description()
+              ? m.timer_entry_actions({ description: description() })
+              : m.timer_entry_actions_unnamed()
+          }
+        >
+          <EllipsisVerticalIcon aria-hidden="true" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent class="w-40">
+          <DropdownMenuItem
+            class="text-destructive focus:text-destructive gap-2"
+            onSelect={() => props.onDelete(props.entry)}
+          >
+            <TrashIcon class="size-4" aria-hidden="true" />
+            {m.timer_delete()}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   )
 }
