@@ -58,7 +58,10 @@ doesn't read.
    `iad1` (Washington, D.C.).
 3. Under **Settings > Domains**, note the production host. Vercel generates
    `<project>.vercel.app`, with a suffix if that name is taken. To use your own domain
-   instead, add it here and create the DNS record Vercel shows, usually a CNAME.
+   instead, add it here and create the DNS record Vercel shows, usually a CNAME. On
+   Cloudflare, set the record to **DNS only**: its proxy can block the certificate, and
+   Vercel would see Cloudflare's addresses instead of the users', which merges everyone
+   into a few per-IP rate limits.
 
 The next steps write this host as `<host>`. OAuth callbacks and passkeys are bound to it
 through `BETTER_AUTH_URL`; to change it later, see
@@ -101,7 +104,10 @@ Until its secrets are set, the job skips and leaves a notice in the run summary.
 
 1. In the GitHub repository, open **Settings > Environments** and create `production`
    (the first CI run on `main` may already have created it).
-2. Add the secrets `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from step 1.
+2. Add the secrets `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from step 1. Repository
+   secrets (**Settings > Secrets and variables > Actions**) also work, because a job
+   reads them as well as its environment's. Environment secrets add a branch rule: under
+   **Deployment branches and tags**, allow only `main`.
 3. Re-run the latest workflow on `main`, or push to it. The `migrate-prod` job applies
    every migration to the empty database.
 
