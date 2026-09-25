@@ -227,7 +227,30 @@ export function DescriptionField(props: { editor: EntryEditor }) {
   )
 }
 
+// From 640 px the start time's clock takes no room until the pointer or focus is on that field,
+// so the range reads "09:30 – 17:00" rather than with a gap before the dash. A row keeps the
+// room after the range instead (ClockRoom), which the clock takes when it shows, so only the end
+// time moves. The end time's clock keeps its room, as the row's other hover controls do.
+const START_CLOCK =
+  'sm:hidden sm:group-hover/start:inline-flex sm:group-focus-within/start:inline-flex sm:group-has-data-expanded/start:inline-flex'
+const START_CLOCK_ROOM =
+  'sm:pr-0 sm:group-hover/start:pr-7 sm:group-focus-within/start:pr-7 sm:group-has-data-expanded/start:pr-7'
+
+// The start clock's room at the end of a row's range: the clock's size-6 and ml-0.5, less the
+// row's gap-1, which goes with it.
+export function ClockRoom() {
+  return (
+    <span
+      aria-hidden="true"
+      class="hidden w-5.5 shrink-0 sm:block sm:peer-focus-within/start:hidden sm:peer-hover/start:hidden sm:peer-has-data-expanded/start:hidden"
+    />
+  )
+}
+
 export function TimeField(props: { editor: EntryEditor; field: TimeKey }) {
+  function start() {
+    return props.field === 'start'
+  }
   return (
     <TimeInput
       value={props.editor.time(props.field)}
@@ -236,10 +259,10 @@ export function TimeField(props: { editor: EntryEditor; field: TimeKey }) {
       required
       aria-label={props.field === 'start' ? m.entry_start() : m.entry_end()}
       aria-describedby={props.editor.errorId}
-      class="w-fit shrink-0"
-      inputClass={cn(QUIET, 'pr-7')}
+      class={cn('w-fit shrink-0', start() && 'peer/start group/start')}
+      inputClass={cn(QUIET, 'pr-7', start() && START_CLOCK_ROOM)}
       textClass="pl-1.5 text-xs"
-      buttonClass={cn('ml-0.5 size-6 [&_svg]:size-3.5', REVEAL)}
+      buttonClass={cn('ml-0.5 size-6 [&_svg]:size-3.5', start() ? START_CLOCK : REVEAL)}
       onCommit={() => props.editor.commitTimes(props.field)}
       onKeyDown={commitKeys(
         () => props.editor.commitTimes(props.field),

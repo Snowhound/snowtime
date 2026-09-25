@@ -29,6 +29,7 @@ import {
   EntryDuration,
   NextDayMark,
   ProjectField,
+  ClockRoom,
   REVEAL,
   RowError,
   type SaveEntry,
@@ -150,6 +151,7 @@ function EntryRow(props: EntryRowProps & { entry: Entry; focus?: boolean }) {
           <span aria-hidden="true">–</span>
           <TimeField editor={editor} field="end" />
           <NextDayMark editor={editor} />
+          <ClockRoom />
         </div>
         <EntryDuration
           editor={editor}
