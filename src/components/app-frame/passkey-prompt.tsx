@@ -64,13 +64,13 @@ export function PasskeyPrompt(props: { signedInAt: Date | string }) {
 
   return (
     <Show when={shown()}>
-      <Alert class="mb-6 flex flex-col gap-3 py-3 sm:flex-row sm:items-center [&>svg]:top-3 sm:[&>svg]:top-1/2 sm:[&>svg]:-translate-y-1/2">
-        <KeyRoundIcon aria-hidden="true" />
+      <Alert class="mb-6 flex flex-col gap-3 py-3 sm:flex-row sm:items-center [&>svg]:top-3 sm:[&>svg]:top-1/2 sm:[&>svg]:-translate-y-1/2 [&>svg~*]:pl-8">
+        <KeyRoundIcon class="size-5" aria-hidden="true" />
         <div class="flex-1">
-          <AlertTitle>
+          <AlertTitle class="text-sm">
             {added() ? m.passkey_prompt_added_title() : m.passkey_prompt_title()}
           </AlertTitle>
-          <AlertDescription class="text-muted-foreground">
+          <AlertDescription class="text-muted-foreground text-[13px]">
             <Show
               when={added()}
               fallback={
