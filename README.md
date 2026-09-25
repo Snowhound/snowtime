@@ -1,11 +1,31 @@
 # Snowtime
 
-Minimal multi-tenant time tracker. Start with `docs/product.md` and
-`docs/architecture.md`.
+A minimal, multi-tenant time tracker in the spirit of Toggl. Snowhound built it for its
+own teams, and it can host other organizations from the same deployment.
 
-# Getting Started
+- One-click timer with a description and project
+- Organizations, teams, members, and invitations, with owner, admin, member, and team
+  lead roles
+- Projects per organization, optionally assigned to teams
+- Reports per day, week, project, team, and member in the user's time zone, with CSV and
+  XLSX export
+- Sign-in with Google, GitHub, Microsoft, or a passkey
+- English and Estonian
 
-To run this application:
+The scope and what is left out on purpose are in [docs/product.md](docs/product.md).
+
+## Stack
+
+[TanStack Start](https://tanstack.com/start) with [Solid](https://www.solidjs.com),
+[Turso](https://turso.tech) (libSQL) through [Drizzle](https://orm.drizzle.team),
+[Better Auth](https://www.better-auth.com), [Solid-UI](https://www.solid-ui.com) with
+Tailwind CSS, and [Paraglide JS](https://inlang.com/m/gerre34r/library-inlang-paraglideJs).
+It is deployed to [Vercel](https://vercel.com). Each choice and its reason is recorded in
+[docs/architecture.md](docs/architecture.md).
+
+## Getting started
+
+Requires [Bun](https://bun.sh) 1.3 or later.
 
 ```bash
 bun install
@@ -13,6 +33,10 @@ bun run db:migrate
 bun run db:seed
 bun --bun run dev
 ```
+
+The app runs on http://localhost:3000 against a local SQLite file, `local.db`. Put local
+overrides, such as OAuth credentials, in `.env.local`; `.env.example` lists every
+variable.
 
 ### Seeded users
 
@@ -32,189 +56,62 @@ any database that is not a local file. Every seeded user signs in with the passw
 
 To start over: `rm local.db && bun run db:migrate && bun run db:seed`.
 
-## Database and data model
+## Scripts
 
-- **Schema changes** are hand-written SQL migrations: `bun run db:generate <name>`, write
-  the SQL, `bun run db:migrate`, then update `src/db/schema.ts` to match and check with
-  `bun run db:drift`. Full workflow and rules: [`docs/migrations.md`](docs/migrations.md).
-- **Viewing the data model:** `bun run datamodel` starts ChartDB on
-  http://localhost:8080; import `datamodel/snowtime.chartdb.json` via
-  **Actions > Import > .json** (not the `.dbml`). Details and the edit flow:
-  [`datamodel/README.md`](datamodel/README.md).
+| Command                      | What it does                                       |
+| ---------------------------- | -------------------------------------------------- |
+| `bun --bun run dev`          | Starts the dev server on port 3000                 |
+| `bun run build`              | Builds for production                              |
+| `bun run test`               | Runs server tests (`bun test`) and component tests |
+| `bun run lint`               | Runs oxlint                                        |
+| `bun run format`             | Formats with oxfmt                                 |
+| `bun run db:generate <name>` | Creates an empty SQL migration                     |
+| `bun run db:migrate`         | Verifies and applies migrations                    |
+| `bun run db:drift`           | Compares the Drizzle schema with the migrations    |
+| `bun run datamodel`          | Opens the data model in ChartDB (needs Docker)     |
 
-# Building For Production
+## Database
 
-To build this application for production:
+The SQL migrations in `drizzle/` define the schema; they are written by hand, and
+`src/db/schema.ts` follows them. Read [docs/migrations.md](docs/migrations.md) before
+changing the schema. The data model, its diagram, and how to view it are in
+[datamodel/README.md](datamodel/README.md).
 
-```bash
-bun --bun run build
-```
+## Deployment
 
-## Styling
+Snowtime runs on Vercel with a Turso database per environment: a shared `staging`
+database for previews and `prod` for production. CI applies migrations; the Vercel build
+and app start never do.
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+1. Import the repository into Vercel. `vercel.json` selects the TanStack Start framework.
+2. Under **Settings > Environment Variables**, set the variables from `.env.example`.
+   Variables prefixed with `VITE_` reach the browser bundle, so keep secrets unprefixed.
+3. Deploy.
 
-### Removing Tailwind CSS
+The same codebase can also run as a dedicated stack per client, configured only through
+environment variables. Free-tier limits and region choice are in
+[docs/hosting.md](docs/hosting.md).
 
-If you prefer not to use Tailwind CSS:
+## Documentation
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
+- [Product](docs/product.md): purpose, MVP scope, and tenancy
+- [Architecture](docs/architecture.md): recorded decisions and their reasons
+- [Hosting](docs/hosting.md): Vercel and Turso constraints
+- [Migrations](docs/migrations.md): how to change the schema
+- [Data model](datamodel/README.md): the DBML diagram and its conventions
+- [Prototypes](prototypes/README.md): HTML prototypes of each view and the brand
+- [Design process](docs/design-process.md): how the design took shape
+- [Tasks](tasks/README.md): open work; finished tasks are in `tasks/000-archive/`
 
-## Deploy to Vercel
+## Contributing
 
-1. Push this repo to GitHub, GitLab, or Bitbucket
-2. In Vercel, choose **Add New > Project** and import the repo
-3. Keep the detected TanStack Start framework settings
-4. Add production values from `.env.example` under **Settings > Environment Variables**
-5. Deploy
+Code is grouped by feature in `src/features/` and by domain in `src/server/`. The
+conventions are in [AGENTS.md](AGENTS.md). A pre-commit hook runs oxlint and oxfmt on
+staged files, and CI checks formatting, lint, types, tests, and schema drift on every
+pull request.
 
-Vercel runs the build script and deploys Nitro's output as Vercel Functions and
-static assets. The included `vercel.json` makes framework detection explicit.
+## License
 
-Variables prefixed with `VITE_` are included in the browser bundle. Keep secrets
-unprefixed so they remain server-only.
-
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
-
-   ```bash
-   bunx --bun @better-auth/cli secret
-   ```
-
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
-
-### Adding a Database (Optional)
-
-Better Auth can work in stateless mode, but to persist user data, add a database:
-
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from 'better-auth'
-import { Pool } from 'pg'
-
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-  }),
-  // ... rest of config
-})
-```
-
-Then run migrations:
-
-```bash
-bunx --bun @better-auth/cli migrate
-```
-
-## Solid-UI
-
-This installation of Solid-UI follows the manual instructions but was modified to work with Tailwind V4.
-
-To install the components, run the following command (this install button):
-
-```bash
-bunx --bun solidui-cli@latest add button
-```
-
-## T3Env
-
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
-
-```ts
-import { env } from '@/env'
-
-console.log(env.VITE_APP_TITLE)
-```
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/solid-router`.
-
-```tsx
-import { Link } from '@tanstack/solid-router'
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/solid/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes.
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/solid/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/solid-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/solid-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      <For each={data().results}>{(person) => <li>{person.name}</li>}</For>
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/solid/guide/data-loading#loader-parameters).
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+[MIT](LICENSE). Third-party assets keep their own licenses; see
+[prototypes/THIRD_PARTY_NOTICES.md](prototypes/THIRD_PARTY_NOTICES.md) and the font
+license in `design/brand-assets/fonts/`.

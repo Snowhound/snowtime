@@ -1,6 +1,7 @@
 {
   "name": "snowhound-kaitk",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
