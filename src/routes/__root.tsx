@@ -3,14 +3,22 @@ import type { QueryClient } from '@tanstack/solid-query'
 import { useQuery } from '@tanstack/solid-query'
 import {
   HeadContent,
-  Outlet,
   Scripts,
   createRootRouteWithContext,
   redirect,
   useRouter,
 } from '@tanstack/solid-router'
 import { TanStackRouterDevtools } from '@tanstack/solid-router-devtools'
-import { For, Show, Suspense, createEffect, createMemo, on, onMount } from 'solid-js'
+import {
+  For,
+  type ParentProps,
+  Show,
+  Suspense,
+  createEffect,
+  createMemo,
+  on,
+  onMount,
+} from 'solid-js'
 import { HydrationScript, isServer } from 'solid-js/web'
 import { appIcon, faviconLinks, setFavicon } from '~/lib/app-icon'
 import {
@@ -52,7 +60,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   shellComponent: RootComponent,
 })
 
-function RootComponent() {
+function RootComponent(props: ParentProps) {
   const router = useRouter()
   const session = useQuery(() => sessionQuery)
   // Signed out, the device's settings apply (src/lib/device-settings.ts). They load after
@@ -111,8 +119,10 @@ function RootComponent() {
       </head>
       <body>
         <Suspense>
+          {/* The root's match, inside the error and not-found boundaries it has from the
+              router's defaults (src/router.tsx). */}
           <Show when={locale()} keyed>
-            <Outlet />
+            {props.children}
           </Show>
           <TanStackRouterDevtools />
         </Suspense>

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { useMatches } from '@tanstack/solid-router'
-import { type ParentProps, onMount } from 'solid-js'
+import { type ParentProps, createContext, onMount, useContext } from 'solid-js'
 import { Intro, IntroPage } from '~/components/intro'
 import { SceneLayer } from '~/components/scene-layer'
 import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/intro'
@@ -13,6 +13,14 @@ import type { AppSession } from '~/server/auth/auth.functions'
 import { getSettings } from '~/server/settings/settings.functions'
 import { AppHeader } from './app-header'
 import { PasskeyPrompt } from './passkey-prompt'
+
+// Whether a component renders inside the app frame, so a page that picks its own frame, such
+// as the error page, doesn't add a second one.
+const InAppFrame = createContext(false)
+
+export function useInAppFrame() {
+  return useContext(InAppFrame)
+}
 
 export function AppFrame(props: ParentProps<{ session: AppSession }>) {
   const queryClient = useQueryClient()
@@ -53,7 +61,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession }>) {
         <SeasonProvider value={() => currentSeason(scene().sceneSeason)}>
           <main class={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-8', !wide() && 'max-w-6xl')}>
             <PasskeyPrompt signedInAt={props.session.signedInAt} />
-            {props.children}
+            <InAppFrame.Provider value={true}>{props.children}</InAppFrame.Provider>
           </main>
         </SeasonProvider>
       </IntroPage>

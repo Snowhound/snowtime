@@ -1,6 +1,8 @@
 import { createRouter as createTanStackRouter } from '@tanstack/solid-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/solid-router-ssr-query'
 import { getGlobalStartContext } from '@tanstack/solid-start'
+import { ErrorPage } from '~/features/errors/error-page'
+import { NotFoundPage } from '~/features/errors/not-found-page'
 import { getContext } from '~/integrations/tanstack-query/provider'
 import { routeTree } from './routeTree.gen'
 
@@ -26,6 +28,12 @@ export function getRouter() {
     // 300 ms, so it doesn't flash. Loaders that read the cache finish before either.
     defaultPendingMs: 100,
     defaultPendingMinMs: 300,
+
+    // What a route shows in place of its page when it throws, while loading or rendering,
+    // or when it throws notFound() or the path matches no route. Every route needs its own:
+    // the server renders a route's error with that route's component, not a parent's.
+    defaultErrorComponent: ErrorPage,
+    defaultNotFoundComponent: NotFoundPage,
   })
 
   // Provides the query client to components and hands queries loaded on the server to the

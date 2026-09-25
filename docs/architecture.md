@@ -454,6 +454,34 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
     first, so only a faulty or hostile client reaches the server's validation. Custom
     messages in the `*.schemas.ts` files are Paraglide calls, evaluated when validation runs.
 
+## Error and not-found pages
+
+- `ErrorPage` and `NotFoundPage` (`src/features/errors/`) are the router's
+  `defaultErrorComponent` and `defaultNotFoundComponent` (`src/router.tsx`). Every route
+  gets them, not only the root route, because on the server TanStack's Solid router renders
+  a failed route's error with that route's own component, not a parent's.
+- Under the signed-in layout, the page shows inside the app frame. Elsewhere, such as an
+  unknown path or a failed layout, it picks the frame from the session: the app frame for
+  a member of an organization, otherwise the auth layout. The root route's shell renders
+  its match as children, so the root's boundaries catch errors in `beforeLoad`.
+- The error page shows `errorMessage` of the error (see "Internationalization"): an
+  `AppError`'s message, or the generic one for anything else. It offers a retry, which
+  reloads the routes, and a link home.
+- An unknown path answers 404. A route whose loader reads one record named in the URL
+  throws `notFound()` when the record is missing, so the reader gets the not-found page
+  and a 404 rather than an error. No route does so yet: the invitation page shows a missing
+  invitation as closed.
+- For a loader's error, the router renders the error component in place of the route on
+  the server but as the error boundary's fallback on the client, so hydration would add a
+  second page. `ErrorPage` therefore throws again during the server's first render, which
+  has no `reset`, so that Solid's boundary renders it on both sides. Solid sends that error
+  to the client before Start's serialization adapters load, so it is a plain `Error`
+  carrying only the message to show. Remove the workaround once the router renders both
+  sides alike.
+- The router's dehydrated state still carries a loader error's own message in the page
+  source, though the page never shows it. Start already sends a server function's error
+  message to the browser, so this adds no new exposure.
+
 ## Application rules
 
 - All DB access goes through server functions; the Turso token never reaches
