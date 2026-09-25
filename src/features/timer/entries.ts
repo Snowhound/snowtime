@@ -1,6 +1,6 @@
 // Time entry rules the timer view applies on the client (prototypes/timer.html): grouping
 // by day in the user's zone, the recent work and the summary, and reading the entry
-// dialog's date and times.
+// popover's date and times.
 import {
   type IsoDate,
   type Range,
@@ -10,6 +10,7 @@ import {
   countedSpan,
   dayRange,
   localDate,
+  localTime,
   startOfDay,
   weekRange,
 } from '~/lib/calendar'
@@ -71,6 +72,43 @@ export function recentWork<
   return recent
 }
 
+// Recent work whose description contains the typed text, for the description fields'
+// suggestions (prototypes/timer.html): newest first, leaving out the pair already in the
+// fields and work whose project can't be picked any more.
+export function suggestWork<
+  T extends EntryTimes & { description: string; projectId: string | null },
+>(
+  entries: readonly T[],
+  typed: { description: string; projectId: string | null },
+  pickable: (projectId: string | null) => boolean,
+  limit = 8,
+) {
+  const text = typed.description.trim()
+  const query = text.toLocaleLowerCase()
+  return recentWork(entries, Infinity)
+    .filter(
+      (e) =>
+        pickable(e.projectId) &&
+        e.description.toLocaleLowerCase().includes(query) &&
+        !(e.description === text && e.projectId === typed.projectId),
+    )
+    .slice(0, limit)
+}
+
+// A new entry's default start: the end of today's last stopped entry in the zone, so
+// filling the gap after it needs only an end. Empty when nothing ended today.
+export function lastEndToday(entries: readonly EntryTimes[], zone: string, now = Date.now()) {
+  const today = localDate(now, zone)
+  let last: number | null = null
+  for (const { stoppedAt } of entries) {
+    const end = stoppedAt?.getTime()
+    if (end !== undefined && localDate(end, zone) === today && (last === null || end > last)) {
+      last = end
+    }
+  }
+  return last === null ? '' : localTime(last, zone)
+}
+
 export interface Summary {
   today: number
   week: number
@@ -123,7 +161,7 @@ function keep(ms: number, original: Date | null | undefined) {
   return exact !== undefined && exact - (exact % 60_000) === ms ? exact : ms
 }
 
-// Reads the dialog's date, start, and end (values of date and time inputs) as instants in
+// Reads the entry popover's date, start, and end (values of date and time inputs) as instants in
 // the zone. A running entry has no end. An end at or before the start means the next day.
 // Neither may lie in the future: a running entry can't start there, and an entry can't
 // end there. The inputs hold whole minutes, so a time left as it was keeps the seconds of

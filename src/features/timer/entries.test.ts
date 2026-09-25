@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test'
-import { groupByDay, readEntryTimes, recentRange, recentWork, summarize } from './entries'
+import {
+  groupByDay,
+  lastEndToday,
+  readEntryTimes,
+  recentRange,
+  recentWork,
+  suggestWork,
+  summarize,
+} from './entries'
 
 const zone = 'Europe/Tallinn'
 const now = Date.parse('2026-09-24T12:00:00Z') // 15:00 in Tallinn
@@ -46,6 +54,46 @@ describe('recentWork', () => {
   test('stops at the limit', () => {
     const entries = ['a', 'b', 'c'].map((d, i) => work(`2026-09-2${i}T09:00:00Z`, d, null))
     expect(recentWork(entries, 2).map((e) => e.description)).toEqual(['c', 'b'])
+  })
+})
+
+describe('suggestWork', () => {
+  function work(start: string, description: string, projectId: string | null) {
+    return { ...entry(start, start), description, projectId }
+  }
+  const review = work('2026-09-24T09:00:00Z', 'Code review', 'p1')
+  const archived = work('2026-09-24T08:00:00Z', 'Review copy', 'old')
+  const planning = work('2026-09-23T09:00:00Z', 'Planning', null)
+  function pickable(id: string | null) {
+    return id !== 'old'
+  }
+
+  test('newest work containing the text in any case, without unpickable projects', () => {
+    const entries = [planning, archived, review]
+    expect(suggestWork(entries, { description: ' REV', projectId: null }, pickable)).toEqual([
+      review,
+    ])
+    expect(suggestWork(entries, { description: '', projectId: null }, pickable)).toEqual([
+      review,
+      planning,
+    ])
+  })
+
+  test('leaves out the pair already in the fields, but not the same text elsewhere', () => {
+    const other = work('2026-09-22T09:00:00Z', 'Code review', 'p2')
+    const typed = { description: 'Code review', projectId: 'p1' }
+    expect(suggestWork([review, other], typed, pickable)).toEqual([other])
+  })
+})
+
+describe('lastEndToday', () => {
+  test('the latest end today in the zone, or empty when nothing ended today', () => {
+    const morning = entry('2026-09-24T06:00:00Z', '2026-09-24T07:30:00Z') // ends 10:30
+    const noon = entry('2026-09-24T08:00:00Z', '2026-09-24T09:15:00Z') // ends 12:15
+    const yesterday = entry('2026-09-23T19:00:00Z', '2026-09-23T20:00:00Z') // 23:00 on the 23rd
+    const running = entry('2026-09-24T10:00:00Z', null)
+    expect(lastEndToday([morning, noon, yesterday, running], zone, now)).toBe('12:15')
+    expect(lastEndToday([yesterday, running], zone, now)).toBe('')
   })
 })
 

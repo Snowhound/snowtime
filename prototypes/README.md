@@ -637,7 +637,9 @@ Decisions:
 - **Project picker: a `menu` of radio items** behind a ghost button. The trigger shows the dot
   and name like the read-only row, and every option has its color dot. A native select, even
   quiet, shows chevrons on every row, can't show dots in its options, and cut "Website 2025
-  (archived)" short. The timer bar and dialog keep `ProjectSelect`.
+  (archived)" short. The timer bar and entry popover keep a field of their own,
+  `ProjectSelect`; the prototype draws it as a native select, and the app uses Kobalte's
+  Select so the field and its options show the color dot too.
 - **Times: start and end inputs, read as in the dialog.** The date is the start's, an end at or
   before the start means the next day, and "+1" marks it. A time in the saved minute keeps the
   saved instant, so seconds survive.
@@ -669,7 +671,9 @@ Decisions:
   changes the project. Archived and unavailable projects are left out, and so is the pair
   already in the fields. Picking in the timer bar doesn't start the timer; Enter then does,
   and while a timer runs, picking updates it. The Focus layout keeps its one-click Continue
-  recent chips.
+  recent chips. The app's `DescriptionCombobox` follows the WAI-ARIA combobox pattern itself:
+  Kobalte's Combobox has no controlled input value and clears or resets free text on Escape
+  and blur.
 
 Inline fields add `border-transparent shadow-none` to `input` and `button`, with the border
 back on hover and focus; the app passes the same classes at the call site

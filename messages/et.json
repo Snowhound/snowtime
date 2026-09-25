@@ -287,6 +287,7 @@
   "entry_dialog_zone": "Ajad on ajavööndis {zone}.",
   "entry_description": "Kirjeldus",
   "entry_description_placeholder": "Millega tegelesid?",
+  "entry_suggestions": "Hiljutised kirjed",
   "entry_date": "Kuupäev",
   "entry_start": "Algus",
   "entry_end": "Lõpp",

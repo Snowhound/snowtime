@@ -1,8 +1,17 @@
-// The project picker of the timer bar and the entry dialog, and the choices it and the
+// The project picker of the timer bar and the entry popover, and the choices it and the
 // entry rows' project menu list.
-import { For } from 'solid-js'
-import { NativeSelect } from '~/components/ui/native-select'
+import { Show, createMemo } from 'solid-js'
+import { ProjectDot } from '~/components/project-dot'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select'
 import type { Project } from '~/lib/projects'
+import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 
 export interface ProjectChoice {
@@ -35,30 +44,70 @@ export function projectChoices(
   return choices
 }
 
+// Kobalte's Select rather than a native one, so the field and every option show the
+// project's color dot, as the rows' project menu does. Its own label names it.
 export function ProjectSelect(props: {
   id: string
   class?: string
+  label: string
+  labelClass?: string
+  triggerClass?: string
   projects: readonly Pick<Project, 'id' | 'name' | 'archivedAt' | 'color'>[]
   // The project id, or '' for none.
   value: string
   disabled?: boolean
   onChange: (projectId: string) => void
 }) {
+  // Kobalte keys options by value, so "No project" gets a key of its own.
+  const options = createMemo(() =>
+    projectChoices(props.projects, props.value).map((choice) => ({
+      ...choice,
+      key: choice.value || NO_PROJECT,
+    })),
+  )
+  function selected() {
+    return options().find((o) => o.value === props.value) ?? options()[0]
+  }
+
   return (
-    <NativeSelect
-      id={props.id}
+    <Select<ProjectOption>
       class={props.class}
-      value={props.value}
+      options={options()}
+      optionValue="key"
+      optionTextValue="label"
+      value={selected()}
+      onChange={(option) => option && option.value !== props.value && props.onChange(option.value)}
       disabled={props.disabled}
-      onChange={(event) => props.onChange(event.currentTarget.value)}
+      disallowEmptySelection
+      gutter={4}
+      itemComponent={(item) => (
+        <SelectItem item={item.item}>
+          <ChoiceLabel choice={item.item.rawValue} />
+        </SelectItem>
+      )}
     >
-      <For each={projectChoices(props.projects, props.value)}>
-        {(choice) => (
-          <option value={choice.value} selected={choice.value === props.value}>
-            {choice.label}
-          </option>
-        )}
-      </For>
-    </NativeSelect>
+      <SelectLabel class={props.labelClass}>{props.label}</SelectLabel>
+      <SelectTrigger id={props.id} class={cn('min-w-0 gap-2 text-left', props.triggerClass)}>
+        <SelectValue<ProjectOption> class="min-w-0">
+          {(state) => <ChoiceLabel choice={state.selectedOption()} />}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent class="max-h-80 overflow-y-auto" />
+    </Select>
+  )
+}
+
+type ProjectOption = ProjectChoice & { key: string }
+
+const NO_PROJECT = 'none'
+
+function ChoiceLabel(props: { choice: ProjectChoice }) {
+  return (
+    <span class="flex min-w-0 items-center gap-2">
+      <Show when={props.choice.value}>
+        <ProjectDot color={props.choice.color} />
+      </Show>
+      <span class="min-w-0 truncate">{props.choice.label}</span>
+    </span>
   )
 }

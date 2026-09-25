@@ -171,7 +171,9 @@ describe('TimerView', () => {
     const started = deferred<unknown>()
     fn.startTimer.mockReturnValue(started.promise)
 
-    await userEvent.selectOptions(within(timer()).getByLabelText('Project'), 'Snowtime')
+    await userEvent.click(within(timer()).getByLabelText('Project'))
+    await userEvent.click(await screen.findByRole('option', { name: 'Snowtime' }))
+    expect(within(timer()).getByLabelText('Project')).toHaveTextContent('Snowtime')
     await userEvent.type(
       within(timer()).getByPlaceholderText('What are you working on?'),
       'Timer view{Enter}',
@@ -400,6 +402,81 @@ describe('TimerView', () => {
       }),
     })
     expect(await screen.findByDisplayValue('Planning')).toBeInTheDocument()
+  })
+
+  test('picking recent work in the timer fills in its project without starting', async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const description = within(timer()).getByPlaceholderText('What are you working on?')
+
+    await userEvent.type(description, 'EXPORT')
+    const suggestions = await within(timer()).findByRole('listbox', { name: 'Recent entries' })
+    await userEvent.click(
+      within(suggestions).getByRole('option', { name: /Invoice export review/ }),
+    )
+
+    expect(description).toHaveValue('Invoice export review')
+    expect(within(timer()).getByLabelText('Project')).toHaveTextContent('Snowtime')
+    expect(within(timer()).queryByRole('listbox')).not.toBeInTheDocument()
+    expect(fn.startTimer).not.toHaveBeenCalled()
+    await userEvent.type(description, '{Enter}')
+    expect(fn.startTimer).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        description: 'Invoice export review',
+        projectId: snowtime.id,
+      }),
+    })
+  })
+
+  test('Add entry picks recent work from the keyboard and starts after today’s last entry', async () => {
+    server.entries = [...server.entries, entry(0, '08:00', '09:15', 'Standup')]
+    renderView()
+    await screen.findByDisplayValue('Standup')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+    const popover = await screen.findByRole('dialog', { name: 'Add entry' })
+    expect(within(popover).getByLabelText('Start')).toHaveValue('09:15')
+    const description = within(popover).getByLabelText('Description')
+    expect(description).toHaveFocus()
+
+    await userEvent.type(description, 'inv{ArrowDown}{Enter}')
+    expect(description).toHaveValue('Invoice export review')
+    expect(within(popover).getByLabelText('Project')).toHaveTextContent('Snowtime')
+    expect(popover).toBeInTheDocument()
+
+    // Escape with the list open closes only the list.
+    await userEvent.type(description, '{ArrowDown}')
+    await userEvent.clear(description)
+    expect(within(popover).getByRole('listbox')).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    expect(within(popover).queryByRole('listbox')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Add entry' })).toBeInTheDocument()
+  })
+
+  test('Add entry keeps a dismissed draft and clears it on Cancel', async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const add = screen.getByRole('button', { name: 'Add entry' })
+
+    await userEvent.click(add)
+    let popover = await screen.findByRole('dialog', { name: 'Add entry' })
+    await userEvent.type(within(popover).getByLabelText('Description'), 'Draft')
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(add).toHaveFocus()
+
+    await userEvent.click(add)
+    popover = await screen.findByRole('dialog', { name: 'Add entry' })
+    expect(within(popover).getByLabelText('Description')).toHaveValue('Draft')
+    await userEvent.click(within(popover).getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    await userEvent.click(add)
+    popover = await screen.findByRole('dialog', { name: 'Add entry' })
+    expect(within(popover).getByLabelText('Description')).toHaveValue('')
+    // A second click on the button closes the popover.
+    await userEvent.click(add)
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
   test('saves a layout from the View popover and shows it at once', async () => {

@@ -141,11 +141,12 @@ export function TimeInput(props: {
         onKeyDown={onKeyDown}
         onBlur={onBlur}
       />
-      {/* The clock follows the text, as in Firefox: an unseen copy of the text, in the input's
-          padding and font, puts the button right after it. */}
+      {/* The clock sits at the field's end, like the date picker's calendar. An unseen copy of
+          the text, in the input's padding and font, keeps room for the text before it, so a
+          field with `w-fit` is as wide as its text and clock. */}
       <div
         class={cn(
-          'pointer-events-none col-start-1 row-start-1 flex items-center border border-transparent pr-1 pl-3 text-sm tabular-nums',
+          'pointer-events-none col-start-1 row-start-1 flex items-center justify-between border border-transparent pr-1 pl-3 text-sm tabular-nums',
           props.textClass,
         )}
       >

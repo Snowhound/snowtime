@@ -51,7 +51,7 @@ export function entryProject(projects: readonly Project[], id: string | null) {
 
 export type EntryEditor = ReturnType<typeof createEntryEditor>
 
-// The row's unsaved values and errors. Times are read like the entry dialog's: on the
+// The row's unsaved values and errors. Times are read like the entry popover's: on the
 // start's date, with an end at or before the start on the next day.
 export function createEntryEditor(props: { entry: Entry; zone: string; onSave: SaveEntry }) {
   const errorId = createUniqueId()

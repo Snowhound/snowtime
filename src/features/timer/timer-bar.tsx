@@ -1,6 +1,7 @@
 // The timer (prototypes/timer.html): description, project, the elapsed time, and Start or
-// Stop. Enter in the description starts the timer. While it runs, the fields edit the
-// running entry, and the elapsed time opens its start in the entry dialog. The layouts
+// Stop. The description suggests recent work, and Enter in it starts the timer. While it
+// runs, the fields edit the running entry, and the elapsed time opens its start in the
+// entry popover. The layouts
 // share these controls and differ only in their classes: one line in Bar, a large clock
 // in Focus, and a plain row above the table in Table. With the compactRows setting, the
 // controls are shorter and the padding smaller.
@@ -8,14 +9,14 @@ import PlayIcon from 'lucide-solid/icons/play'
 import SquareIcon from 'lucide-solid/icons/square'
 import { Show, createEffect, createSignal, on } from 'solid-js'
 import { Button } from '~/components/ui/button'
-import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { formatClock } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import type { Settings } from '~/lib/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import { DescriptionCombobox } from './description-combobox'
 import { ProjectSelect } from './project-select'
-import type { RunningTimer } from './queries'
+import type { Entry, RunningTimer } from './queries'
 
 const LAYOUTS: Record<
   Settings['timerLayout'],
@@ -58,6 +59,8 @@ export function TimerBar(props: {
   compact: boolean
   running: RunningTimer | null
   projects: readonly Project[]
+  // Stopped entries, for the description's suggestions.
+  entries: readonly Entry[]
   // The organization the running timer is in, when it isn't the active one. Entries
   // there are edited from that organization.
   elsewhere: string | null
@@ -65,7 +68,7 @@ export function TimerBar(props: {
   onStart: (description: string, projectId: string | null) => void
   onStop: () => void
   onUpdate: (patch: { description?: string; projectId?: string | null }) => void
-  onEditStart: () => void
+  onEditStart: (anchor: HTMLElement) => void
 }) {
   const [description, setDescription] = createSignal('')
   const [projectId, setProjectId] = createSignal('')
@@ -99,6 +102,14 @@ export function TimerBar(props: {
     props.onStart(description().trim(), projectId() || null)
   }
 
+  function pick(entry: Entry) {
+    setDescription(entry.description)
+    setProjectId(entry.projectId ?? '')
+    if (props.running) {
+      props.onUpdate({ description: entry.description, projectId: entry.projectId })
+    }
+  }
+
   function saveDescription() {
     const running = props.running
     if (running && description().trim() !== running.description) {
@@ -123,7 +134,9 @@ export function TimerBar(props: {
   }
 
   return (
-    <div class="grid gap-2">
+    // Above the entries, so the description's suggestions aren't covered by the cards,
+    // whose backdrop filter stacks them over earlier elements.
+    <div class="z-10 grid gap-2">
       <section class={classes().timer} aria-label={m.timer_label()}>
         <div
           class={cn(
@@ -131,32 +144,33 @@ export function TimerBar(props: {
             classes().fields,
           )}
         >
-          <TextField
-            class="min-w-0 flex-1"
+          <DescriptionCombobox
+            class="flex-1"
+            label={m.timer_description_placeholder()}
+            labelClass="sr-only"
+            inputClass={control()}
+            placeholder={m.timer_description_placeholder()}
             value={description()}
-            onChange={setDescription}
+            projectId={projectId()}
+            entries={props.entries}
+            projects={props.projects}
             disabled={!!props.elsewhere}
-          >
-            <TextFieldLabel class="sr-only">{m.timer_description_placeholder()}</TextFieldLabel>
-            <TextFieldInput
-              class={control()}
-              placeholder={m.timer_description_placeholder()}
-              autocomplete="off"
-              onBlur={saveDescription}
-              onKeyDown={(event: KeyboardEvent) => {
-                if (event.key !== 'Enter' || event.isComposing) return
-                event.preventDefault()
-                if (props.running) saveDescription()
-                else start()
-              }}
-            />
-          </TextField>
-          <label for="timer-project" class="sr-only">
-            {m.timer_project()}
-          </label>
+            onChange={setDescription}
+            onPick={pick}
+            onBlur={saveDescription}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter') return
+              event.preventDefault()
+              if (props.running) saveDescription()
+              else start()
+            }}
+          />
           <ProjectSelect
             id="timer-project"
-            class={cn('sm:w-48', control())}
+            class="sm:w-48"
+            label={m.timer_project()}
+            labelClass="sr-only"
+            triggerClass={control()}
             projects={projects()}
             value={projectId()}
             disabled={!!props.elsewhere}
@@ -171,7 +185,8 @@ export function TimerBar(props: {
           class={cn('px-2 tabular-nums', classes().elapsed)}
           aria-label={m.timer_edit_start()}
           disabled={!props.running || !!props.elsewhere}
-          onClick={() => props.onEditStart()}
+          data-entry-trigger
+          onClick={(event: MouseEvent) => props.onEditStart(event.currentTarget as HTMLElement)}
         >
           {formatClock(props.running ? props.now - props.running.startedAt.getTime() : 0)}
         </Button>

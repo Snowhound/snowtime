@@ -1,8 +1,8 @@
 // The timer view (prototypes/timer.html): the timer, the user's recent entries by day, the
-// summary, and the entry dialog, in the layout of the user's settings. Bar lists day
+// summary, and the entry popover, in the layout of the user's settings. Bar lists day
 // cards; Focus has a large clock, "continue recent" chips, and the last three days;
 // Table has one table with day subtotals. The compactRows setting makes the timer and the
-// rows of every layout shorter. Entries are edited in their rows; the dialog adds an entry
+// rows of every layout shorter. Entries are edited in their rows; the popover adds an entry
 // or edits the running one's start. Every write is optimistic and rolls back on error
 // (queries.ts), with the error shown under the edited row or above the timer.
 import { keepPreviousData, useQuery } from '@tanstack/solid-query'
@@ -22,9 +22,9 @@ import type { Settings } from '~/lib/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { groupByDay, recentRange, recentWork, summarize } from './entries'
-import { EntryDialog, type EntryDialogTarget, type EntryDialogValues } from './entry-dialog'
 import type { EntryPatch } from './entry-fields'
 import { EmptyState, EntryList } from './entry-list'
+import { EntryPopover, type EntryPopoverTarget, type EntryPopoverValues } from './entry-popover'
 import { EntryTable } from './entry-table'
 import {
   type Entry,
@@ -83,7 +83,16 @@ export function TimerView(props: {
   const createEntry = useCreateEntry()
 
   const [error, setError] = createSignal<string | null>(null)
-  const [dialog, setDialog] = createSignal<EntryDialogTarget | null>(null)
+  // The entry popover's form and the button it opens under.
+  const [editor, setEditor] = createSignal<{
+    target: EntryPopoverTarget
+    anchor: HTMLElement
+  } | null>(null)
+
+  // A click on the button that opened the popover closes it; on the other, it moves there.
+  function toggleEditor(target: EntryPopoverTarget, anchor: HTMLElement) {
+    setEditor((current) => (current?.target.kind === target.kind ? null : { target, anchor }))
+  }
 
   // The elapsed time ticks on the client only; nothing is written while the timer runs.
   const [now, setNow] = createSignal(Date.now())
@@ -178,9 +187,9 @@ export function TimerView(props: {
     deleteEntry.mutate({ id: entry.id }, options)
   }
 
-  function save(values: EntryDialogValues) {
-    const target = dialog()
-    setDialog(null)
+  function save(values: EntryPopoverValues) {
+    const target = editor()?.target
+    setEditor(null)
     setError(null)
     if (!target) return
     if (target.kind === 'new') {
@@ -248,7 +257,8 @@ export function TimerView(props: {
           <Button
             variant="secondary"
             class="border-input text-primary h-9 border px-3"
-            onClick={() => setDialog({ kind: 'new' })}
+            data-entry-trigger
+            onClick={(event) => toggleEditor({ kind: 'new' }, event.currentTarget)}
           >
             <PlusIcon aria-hidden="true" />
             {m.timer_add_entry()}
@@ -275,12 +285,15 @@ export function TimerView(props: {
             compact={props.settings.compactRows}
             running={running.data ?? null}
             projects={projects.data ?? []}
+            entries={stopped()}
             elsewhere={elsewhere()}
             now={now()}
             onStart={start}
             onStop={stop}
             onUpdate={(patch) => running.data && update(running.data.id, patch)}
-            onEditStart={() => running.data && setDialog({ kind: 'running', entry: running.data })}
+            onEditStart={(anchor) =>
+              running.data && toggleEditor({ kind: 'running', entry: running.data }, anchor)
+            }
           />
           <Show when={layout() === 'focus' && entries.data}>
             <RecentWork
@@ -344,13 +357,15 @@ export function TimerView(props: {
           <SummaryPanel summary={summary()} projects={projects.data ?? []} />
         </Show>
       </div>
-      <EntryDialog
-        target={dialog()}
+      <EntryPopover
+        target={editor()?.target ?? null}
+        anchor={editor()?.anchor}
         zone={zone()}
         weekStart={props.settings.weekStart}
         projects={projects.data ?? []}
+        entries={stopped()}
         onSave={save}
-        onClose={() => setDialog(null)}
+        onClose={() => setEditor(null)}
       />
     </div>
   )

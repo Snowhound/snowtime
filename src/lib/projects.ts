@@ -1,4 +1,4 @@
-// The organization's projects, as the timer, the entry dialog and the Projects view read
+// The organization's projects, as the timer, the entry popover and the Projects view read
 // them. They share one cache, so a change in Projects shows in the timer's pickers too.
 import { queryOptions } from '@tanstack/solid-query'
 import { listProjects } from '~/server/projects/projects.functions'

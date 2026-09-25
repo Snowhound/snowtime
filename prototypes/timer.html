@@ -945,7 +945,7 @@
         if (event.newState === 'open') field(editing === 'running' ? 'start' : 'description').focus()
       })
 
-      // Recent work under a description field, as Kobalte's Combobox will list it: the newest
+      // Recent work under a description field, as the app's DescriptionCombobox lists it: the newest
       // distinct description and project pairs whose description contains the typed text,
       // leaving out archived and unavailable projects and the pair already in the fields.
       function suggestions(text, projectId) {
