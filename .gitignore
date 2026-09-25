@@ -19,3 +19,5 @@ local.db*
 design/backgrounds/*.png
 design/backgrounds/masters/
 .vercel
+
+.playwright-mcp
