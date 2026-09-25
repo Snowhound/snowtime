@@ -1,8 +1,23 @@
-# Snowtime
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="design/brand-assets/lockups/02-hound-hour-dark.svg" />
+    <img src="design/brand-assets/lockups/02-hound-hour.svg" alt="Snowtime" height="80" />
+  </picture>
+</h1>
 
-A minimal, multi-tenant time tracker in the spirit of Toggl. Snowhound built it for its
-own teams, and it can host other organizations from the same deployment. It runs at
-[snowtime.snowhound.eu](https://snowtime.snowhound.eu).
+<p align="center">
+  A minimal, multi-tenant time tracker in the spirit of Toggl.<br />
+  <a href="https://snowtime.snowhound.eu"><strong>snowtime.snowhound.eu</strong></a>
+</p>
+
+<p align="center">
+  <img src="docs/images/timer-dark-winter.webp" alt="The timer view in the dark theme over the winter scene: a running timer, yesterday's entries, and the week's summary by project" width="760" />
+</p>
+
+Snowhound built Snowtime for its own teams, and it can host other organizations from the
+same deployment.
+
+## Features
 
 - One-click timer with a description and project
 - Organizations, teams, members, and invitations, with owner, admin, member, and team
