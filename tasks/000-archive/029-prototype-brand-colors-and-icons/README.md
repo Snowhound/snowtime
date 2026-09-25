@@ -1,6 +1,6 @@
 # 029: Prototype brand font, colors, and icons
 
-Status: in-progress
+Status: done
 
 Try the draft brand from `design/brand-assets/` in the prototypes: first the font and
 color scheme on every page, then the app icon and a picker for the 12 concepts. The font
@@ -19,6 +19,6 @@ convention isn't applied backwards.
 
 ## Acceptance criteria
 
-- [ ] All subtasks are done.
+- [x] All subtasks are done.
 - [x] `prototypes/README.md` records the brand font, the token mapping, the icon setting,
       and that the prototype tokens are a proposal ahead of `src/styles.css`.

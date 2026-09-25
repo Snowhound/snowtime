@@ -1,6 +1,6 @@
 # 031: Seasonal sign-in scene
 
-Status: in-progress
+Status: done
 
 Try a seasonal scene on the sign-in page in the prototypes: a background image per season in
 light and dark, a weather effect, and an intro on the first visit. The draft images and the
@@ -21,6 +21,6 @@ scene may want a deeper dark and a brighter light base than today's tokens.
 
 ## Acceptance criteria
 
-- [ ] All subtasks are done.
-- [ ] `prototypes/README.md` records the chosen variants and removes the rejected ones from the
+- [x] All subtasks are done.
+- [x] `prototypes/README.md` records the chosen variants and removes the rejected ones from the
       prototype bar.

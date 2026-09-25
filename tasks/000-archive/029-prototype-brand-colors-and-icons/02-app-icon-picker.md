@@ -1,6 +1,6 @@
 # 02: App icon and picker
 
-Status: in-progress
+Status: done
 
 Replace the prototypes' Lucide clock mark with concept `02`, Hound Hour, and let users pick
 any of the 12 concepts. Start after subtask 01, so the picker is judged on the new font and
@@ -31,7 +31,7 @@ images from a parent folder.
       to `'02'` when the value is unset or invalid. Choosing updates the header mark and
       the real browser favicon immediately, on every open prototype tab, and survives
       reload and navigation. The auth page reads the same setting.
-- [ ] The picker and header are checked in light and dark mode at 1440, 850, and 390 px:
+- [x] The picker and header are checked in light and dark mode at 1440, 850, and 390 px:
       icon sizes, dialog overflow on mobile, the favicon at 16 px in the tab, and no
       browser errors.
 - [x] `prototypes/README.md` documents the `appIcon` setting, the dialog, and the asset

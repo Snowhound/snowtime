@@ -1,6 +1,6 @@
 # 03: Weather for spring, summer, and autumn
 
-Status: in-progress
+Status: done
 
 Give the other seasons a weather effect that suits their images, built like the snow in
 `prototypes/scene.js`: points in one draw call, about 45 fps, stopped when the tab is hidden, off
@@ -27,4 +27,4 @@ images, tune the ones worth keeping, and drop or rework the rest.
 - [x] The Weather hint in the Scenery menu and Settings names each season's effect.
 - [x] The intro lines fit each season, not only winter.
 - [x] Effects keep the snow's performance budget: one draw call, no work while hidden or off.
-- [ ] The effects are compared and tuned, or dropped, after a review in the browser.
+- [x] The effects are compared and tuned, or dropped, after a review in the browser.

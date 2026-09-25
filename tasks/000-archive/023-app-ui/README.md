@@ -1,6 +1,6 @@
 # 023: App UI
 
-Status: in-progress
+Status: done
 
 Build the MVP pages in Solid from the prototypes in `prototypes/` (task 013), on the
 server functions from task 006. One subtask per view, in the order below: the foundation
@@ -26,6 +26,6 @@ Estonian can follow in one pass before this task is done.
 - [x] Component tests (task 014) cover the interactions that carry rules, added in the
       subtask that builds them: for example the timer's start and stop, the entry dialog's
       validation, and role-dependent actions
-- [ ] Each view passes the prototype checks in `prototypes/README.md`: 1440, 850, and
+- [x] Each view passes the prototype checks in `prototypes/README.md`: 1440, 850, and
       390 px, light and dark, every state its prototype has fixtures for, keyboard
       access, and no browser errors
