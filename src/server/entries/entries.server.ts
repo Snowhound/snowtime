@@ -9,6 +9,7 @@ import { limits } from '../limits.server'
 import { assertUsableProject } from '../projects/projects.server'
 import { failedConstraint, live } from '../queries.server'
 import { isAdmin, readableUserIds, type Scope } from '../scope.server'
+import { MAX_ENTRY_MS } from './entries.schemas'
 import type {
   CreateEntryInput,
   GetFirstEntryStartInput,
@@ -108,6 +109,9 @@ export async function updateEntry(db: Database, scope: Scope, input: UpdateEntry
   if (stoppedAt && stoppedAt <= startedAt) {
     throw new AppError('INVALID', 'entry_end_before_start')
   }
+  if (stoppedAt && stoppedAt.getTime() - startedAt.getTime() > MAX_ENTRY_MS) {
+    throw new AppError('INVALID', 'entry_too_long')
+  }
   // Keeping an archived project is fine; moving time onto one is not.
   if (input.projectId && input.projectId !== entry.projectId) {
     await assertUsableProject(db, scope, input.projectId)
@@ -175,6 +179,7 @@ export async function listEntries(db: Database, scope: Scope, input: ListEntries
       and(
         live(timeEntry, scope),
         users ? inArray(timeEntry.userId, users) : undefined,
+        gt(timeEntry.startedAt, new Date(input.from.getTime() - MAX_ENTRY_MS)),
         lt(timeEntry.startedAt, input.to),
         or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, input.from)),
       ),

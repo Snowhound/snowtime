@@ -30,6 +30,7 @@ export const errorMessages = {
   entries_forbidden: "You cannot see this member's entries.",
   entry_running: 'Stop a running entry with the timer.',
   entry_end_before_start: 'The end must be after the start.',
+  entry_too_long: 'An entry can be at most 24 hours long.',
   entry_limit: 'You have too many entries around this time. Delete some first.',
   timer_not_running: 'This timer is not running.',
   timer_started_elsewhere: 'Another timer was started at the same time.',

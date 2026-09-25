@@ -3,7 +3,7 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { organization } from 'better-auth/plugins'
-import { tanstackStartCookies } from 'better-auth/tanstack-start'
+import { tanstackStartCookies } from 'better-auth/tanstack-start/solid'
 import { v7 as uuidv7 } from 'uuid'
 import { db } from '~/db'
 import { withActor } from '~/db/actor'
@@ -24,6 +24,11 @@ export const auth = betterAuth({
   advanced: {
     database: { generateId: () => uuidv7() },
   },
+  // The session and user ride in a signed cookie for 5 minutes, so a server function call
+  // doesn't read them from the database. A session revoked elsewhere, or a deleted account,
+  // stays usable that long on a device that has the cookie (docs/architecture.md, "Sign-in
+  // methods"). Membership is still read on every call (resolveScope).
+  session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
   // Password sign-in is for local development with seeded users only: the MVP sends no
   // email, so there is no verification or reset (docs/architecture.md, "Sign-in methods").
   emailAndPassword: {

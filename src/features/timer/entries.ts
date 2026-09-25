@@ -45,6 +45,10 @@ export function groupByDay<T extends EntryTimes>(entries: readonly T[], zone: st
   return [...groups.values()]
 }
 
+// Days of entries the timer shows at first, and adds with "Show earlier entries". The
+// route's loader loads them, so it lives here rather than in the view.
+export const RECENT_DAYS = 14
+
 // The last `days` days up to the end of today in the zone, for listEntries.
 export function recentRange(zone: string, days: number, now = Date.now()): Range {
   const today = localDate(now, zone)

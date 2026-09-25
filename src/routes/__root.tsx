@@ -1,3 +1,4 @@
+import fontLatin from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url'
 import type { QueryClient } from '@tanstack/solid-query'
 import { useQuery } from '@tanstack/solid-query'
 import {
@@ -41,7 +42,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'Snowtime' },
     ],
-    links: [{ rel: 'stylesheet', href: styleCss }],
+    links: [
+      { rel: 'stylesheet', href: styleCss },
+      // The stylesheet names the font, so without this it would load only once the CSS has.
+      { rel: 'preload', href: fontLatin, as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' },
+    ],
   }),
   shellComponent: RootComponent,
 })

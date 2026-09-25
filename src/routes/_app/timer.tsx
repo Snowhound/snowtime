@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/solid-router'
-import { recentRange } from '~/features/timer/entries'
+import { RECENT_DAYS, recentRange } from '~/features/timer/entries'
 import { entriesQuery, firstEntryQuery, runningTimerQuery } from '~/features/timer/queries'
 import { TimerPage } from '~/features/timer/timer-page'
-import { RECENT_DAYS } from '~/features/timer/timer-view'
 import { projectsQuery } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 

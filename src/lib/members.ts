@@ -2,6 +2,7 @@
 // them.
 import { queryOptions } from '@tanstack/solid-query'
 import { listMembers } from '~/server/teams/teams.functions'
+import { ORGANIZATION_STALE_TIME } from './query'
 
 export type Member = Awaited<ReturnType<typeof listMembers>>[number]
 
@@ -12,5 +13,6 @@ export function membersQuery(organizationId: string) {
     queryKey: ['members', organizationId],
     queryFn: () => listMembers(),
     reconcile: 'userId',
+    staleTime: ORGANIZATION_STALE_TIME,
   })
 }

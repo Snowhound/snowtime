@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import * as v from 'valibot'
-import { InvitationPage, invitationQuery } from '~/features/auth/invitation-page'
+import { InvitationPage } from '~/features/auth/invitation-page'
+import { invitationQuery } from '~/features/auth/queries'
 import { signInMethodsQuery } from '~/lib/sign-in-methods'
 import { m } from '~/paraglide/messages.js'
 

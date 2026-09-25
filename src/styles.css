@@ -254,13 +254,14 @@ code {
   opacity: 0;
   transition: opacity 0.9s ease;
 }
-.scene[data-background='on'] .scene-photo-light {
+/* A layer shows once its file has decoded (data-ready), so the image fades in whole. */
+.scene[data-background='on'] .scene-photo-light[data-ready] {
   opacity: 1;
 }
 .dark .scene[data-background='on'] .scene-photo-light {
   opacity: 0;
 }
-.dark .scene[data-background='on'] .scene-photo-dark {
+.dark .scene[data-background='on'] .scene-photo-dark[data-ready] {
   opacity: 1;
 }
 /* The page color over the image, stronger toward the bottom, where the text sits. */

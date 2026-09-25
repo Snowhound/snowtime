@@ -576,6 +576,18 @@
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
           "comments": null
+        },
+        {
+          "id": "t2i1",
+          "name": "account_provider_id_account_id_idx",
+          "unique": false,
+          "fieldIds": [
+            "t2f3",
+            "t2f2"
+          ],
+          "createdAt": 1700000000000,
+          "isPrimaryKey": false,
+          "comments": null
         }
       ],
       "color": "#BAB0AC",

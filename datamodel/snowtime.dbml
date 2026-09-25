@@ -57,6 +57,7 @@ Table account [note: 'Better Auth credential or linked provider. Email/password 
 
   indexes {
     user_id
+    (provider_id, account_id)
   }
 }
 

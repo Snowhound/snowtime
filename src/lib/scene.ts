@@ -86,8 +86,27 @@ export function photoWidth(viewport: { width: number; height: number; dpr: numbe
   return needed > PHOTO_SMALL * 1.25 ? PHOTO_LARGE : PHOTO_SMALL
 }
 
-export function photoUrl(season: Season, theme: PhotoTheme, width: number) {
-  return `/backgrounds/${season}-${theme}-01-${width}.webp`
+// Each file comes as AVIF, about 30% smaller at the same quality, and as WebP for browsers
+// without AVIF (Safari before 16.4). Decoding a 1 × 1 AVIF tells which, once per page.
+export type PhotoFormat = 'avif' | 'webp'
+const AVIF_PROBE =
+  'data:image/avif;base64,AAAAHGZ0eXBhdmlmAAAAAG1pZjFhdmlmbWlhZgAAANZtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAACJpbG9jAAAAAERAAAEAAQAAAAAA+gABAAAAAAAAACEAAAAjaWluZgAAAAAAAQAAABVpbmZlAgAAAAABAABhdjAxAAAAAA5waXRtAAAAAAABAAAAVmlwcnAAAAA4aXBjbwAAAAxhdjFDgUBsAAAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwwMDAAAABZpcG1hAAAAAAAAAAEAAQOBAgMAAAApbWRhdBIACghYAAa0BDQbhDITGUeHhiGJpppmgAAAkD+bDGCKZg=='
+let format: Promise<PhotoFormat> | undefined
+
+export function photoFormat(): Promise<PhotoFormat> {
+  if (!format) {
+    const img = new Image()
+    img.src = AVIF_PROBE
+    format = img.decode().then(
+      (): PhotoFormat => 'avif',
+      (): PhotoFormat => 'webp',
+    )
+  }
+  return format
+}
+
+export function photoUrl(season: Season, theme: PhotoTheme, width: number, format: PhotoFormat) {
+  return `/backgrounds/${season}-${theme}-01-${width}.${format}`
 }
 
 // Files loaded and decoded, so a layer only switches to an image that's ready to paint. Each file

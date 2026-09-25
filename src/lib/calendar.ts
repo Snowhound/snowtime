@@ -2,6 +2,8 @@
 // zones"). Calendar days are ISO dates such as '2026-03-29'; instants are epoch
 // milliseconds. Pure: Intl supplies the zone offsets, so tests need no database.
 
+import { MAX_ENTRY_MS } from '~/server/entries/entries.schemas'
+
 export type IsoDate = string
 export type WeekStart = 'mon' | 'sun'
 
@@ -154,15 +156,24 @@ export function splitByDay(start: number, end: number, zone: string): DayPiece[]
   return pieces
 }
 
-// The span an entry counts for: a running entry (no stoppedAt) runs up to now, and an
-// entry is clipped to the range. Null when nothing of it falls inside.
+// How long a running entry has run at `now`, up to the longest an entry runs, where stopping
+// it would end it.
+export function runningMs(startedAt: Date, now: number) {
+  return Math.min(now, startedAt.getTime() + MAX_ENTRY_MS) - startedAt.getTime()
+}
+
+// The span an entry counts for: a running entry (no stoppedAt) runs up to now, or up to the
+// longest an entry runs, where stopping it would end it, and an entry is clipped to the
+// range. Null when nothing of it falls inside.
 export function countedSpan(
   entry: { startedAt: Date; stoppedAt: Date | null },
   range: Range,
   now: number,
 ): Range | null {
   const from = Math.max(entry.startedAt.getTime(), range.from)
-  const to = Math.min(entry.stoppedAt?.getTime() ?? now, range.to)
+  const end =
+    entry.stoppedAt?.getTime() ?? entry.startedAt.getTime() + runningMs(entry.startedAt, now)
+  const to = Math.min(end, range.to)
   return to > from ? { from, to } : null
 }
 

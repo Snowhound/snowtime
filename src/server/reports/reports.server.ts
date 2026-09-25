@@ -18,6 +18,7 @@ import {
   startOfWeek,
   type WeekStart,
 } from '~/lib/calendar'
+import { MAX_ENTRY_MS } from '../entries/entries.schemas'
 import { AppError } from '../errors'
 import { live } from '../queries.server'
 import { isAdmin, readableUserIds, type Scope } from '../scope.server'
@@ -241,6 +242,7 @@ async function reportData(db: Database, scope: Scope, input: ReportInput, now: D
             and(
               live(timeEntry, scope),
               users ? inArray(timeEntry.userId, users) : undefined,
+              gt(timeEntry.startedAt, new Date(range.from - MAX_ENTRY_MS)),
               lt(timeEntry.startedAt, new Date(range.to)),
               or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, new Date(range.from))),
             ),

@@ -160,7 +160,11 @@ export const account = sqliteTable(
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),
   },
-  (t) => [index('account_user_id_idx').on(t.userId)],
+  (t) => [
+    index('account_user_id_idx').on(t.userId),
+    // Better Auth finds an OAuth account by these at each sign-in.
+    index('account_provider_id_account_id_idx').on(t.providerId, t.accountId),
+  ],
 )
 
 // @better-auth/passkey's table (task 015). The key credentialID matches the plugin's

@@ -6,6 +6,7 @@ import { v7 as uuidv7 } from 'uuid'
 import type { Database } from '~/db'
 import { member, timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
+import { MAX_ENTRY_HOURS, MAX_ENTRY_MS } from '../entries/entries.schemas'
 import { as, createSeededDatabase, scopeOf } from '../testing'
 import { getRunningTimer, startTimer, stopTimer, stopTimerOfRemovedMember } from './timer.server'
 
@@ -76,6 +77,16 @@ describe('timer', () => {
     })
     // The failed start rolled back: the first timer is still running.
     expect((await getRunningTimer(db, U.owner))?.id).toBe(id)
+  })
+
+  test(`a timer left running ends ${MAX_ENTRY_HOURS} hours after its start`, async () => {
+    const running = await getRunningTimer(db, U.owner)
+    const startedAt = new Date(Date.now() - 30 * 3_600_000)
+    await as({ userId: U.owner }, async () => {
+      await db.update(timeEntry).set({ startedAt }).where(eq(timeEntry.id, running!.id))
+    })
+    const stopped = await as({ userId: U.owner }, () => stopTimer(db, U.owner, { id: running!.id }))
+    expect(stopped.stoppedAt!.getTime() - startedAt.getTime()).toBe(MAX_ENTRY_MS)
   })
 
   describe('projects', () => {

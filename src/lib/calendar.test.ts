@@ -5,6 +5,7 @@ import {
   addDays,
   atLocalTime,
   countedSpan,
+  runningMs,
   datesBetween,
   dayRange,
   daysBetween,
@@ -221,6 +222,19 @@ describe('countedSpan', () => {
       from: range.from,
       to: now,
     })
+  })
+
+  test('a running entry counts up to the longest an entry runs, where stopping it ends it', () => {
+    expect(countedSpan(entry('2026-09-23T06:00:00Z', null), range, now)).toEqual({
+      from: range.from,
+      to: at('2026-09-24T06:00:00Z'),
+    })
+    expect(countedSpan(entry('2026-09-22T12:00:00Z', null), range, now)).toBeNull()
+  })
+
+  test('runningMs stops counting at the longest an entry runs', () => {
+    expect(runningMs(new Date('2026-09-24T10:00:00Z'), now)).toBe(2 * 3_600_000)
+    expect(runningMs(new Date('2026-09-22T12:00:00Z'), now)).toBe(24 * 3_600_000)
   })
 
   test('an entry is clipped to the range', () => {

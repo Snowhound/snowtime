@@ -17,3 +17,4 @@ local.db*
 # Background originals and upscaled masters stay local; design/backgrounds/README.md records how to make them
 design/backgrounds/*.png
 design/backgrounds/masters/
+.vercel

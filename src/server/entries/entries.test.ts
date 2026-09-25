@@ -2,6 +2,7 @@
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { v7 as uuidv7 } from 'uuid'
+import * as v from 'valibot'
 import type { Database } from '~/db'
 import { SYSTEM_USER_ID } from '~/db/actor'
 import { timeEntry } from '~/db/schema'
@@ -9,6 +10,7 @@ import { seedIds } from '~/db/seed'
 import { limits } from '../limits.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
+import { CreateEntryInput, MAX_ENTRY_HOURS } from './entries.schemas'
 import {
   createEntry,
   deleteEntry,
@@ -132,6 +134,12 @@ describe('createEntry', () => {
     })
   })
 
+  test(`an entry is at most ${MAX_ENTRY_HOURS} hours long`, () => {
+    const entry = { id: uuidv7(), ...past(48, MAX_ENTRY_HOURS) }
+    expect(v.is(CreateEntryInput, entry)).toBe(true)
+    expect(v.is(CreateEntryInput, { ...entry, ...past(48, MAX_ENTRY_HOURS + 1) })).toBe(false)
+  })
+
   test('only admins and owners log entries for other members', async () => {
     function forMax() {
       return { id: uuidv7(), userId: U.member, description: '', ...past(40) }
@@ -246,6 +254,14 @@ describe('updateEntry', () => {
     await expect(
       as(scopes.member, () => updateEntry(db, scopes.member, { id: E.running, stoppedAt: NOW })),
     ).rejects.toMatchObject({ code: 'INVALID' })
+  })
+
+  test(`an entry stays at most ${MAX_ENTRY_HOURS} hours long`, async () => {
+    const entry = await newEntry(scopes.member)
+    const startedAt = new Date(entry.stoppedAt!.getTime() - (MAX_ENTRY_HOURS + 1) * 3_600_000)
+    await expect(
+      as(scopes.member, () => updateEntry(db, scopes.member, { id: entry.id, startedAt })),
+    ).rejects.toMatchObject({ code: 'INVALID', key: 'entry_too_long' })
   })
 
   test('time cannot move onto an archived project, but an entry already on one stays editable', async () => {

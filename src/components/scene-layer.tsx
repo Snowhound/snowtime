@@ -8,6 +8,7 @@ import { createEffect, createSignal, onCleanup, onMount, untrack } from 'solid-j
 import { intro } from '~/lib/intro'
 import {
   PHOTO_SMALL,
+  type PhotoFormat,
   type PhotoTheme,
   STRENGTHS,
   type SceneSettings,
@@ -15,6 +16,7 @@ import {
   currentSeason,
   loadPhoto,
   photoReady,
+  photoFormat,
   photoUrl,
   photoWidth,
 } from '~/lib/scene'
@@ -49,8 +51,13 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
   const [width, setWidth] = createSignal(PHOTO_SMALL)
   // Bumped when a file has decoded, so the layers look again.
   const [loaded, setLoaded] = createSignal(0)
+  async function load(url: string) {
+    await loadPhoto(url)
+    if (photoReady(url)) setLoaded((n) => n + 1)
+  }
   const [lightSrc, setLightSrc] = createSignal('')
   const [darkSrc, setDarkSrc] = createSignal('')
+  const [format, setFormat] = createSignal<PhotoFormat>()
 
   onMount(() => {
     const root = document.documentElement
@@ -67,32 +74,36 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
       removeEventListener('resize', update)
     })
 
-    // The shown theme gets the small file at once and the file for this screen once it has
-    // decoded, so the picture sharpens without moving. The other theme gets its small file after
-    // that, for the crossfade. Nothing loads while the background is off. It starts once the
-    // theme and the screen are known.
+    // The shown theme loads its small file first, on its own, so a picture shows as soon as
+    // possible, then the file for this screen, so it sharpens without moving. The other theme
+    // gets its small file after that, for the crossfade. A layer shows a file only once it has
+    // decoded, and fades it in. Nothing loads while the background is off. It starts once the
+    // theme, the screen, and the file format are known.
+    void photoFormat().then(setFormat)
     createEffect(() => {
       loaded()
+      const f = format()
+      if (!f) return
       const season = currentSeason(props.settings.sceneSeason)
       const on = props.settings.sceneBackground
       const shown: PhotoTheme = dark() ? 'dark' : 'light'
-      const shownReady = photoReady(photoUrl(season, shown, width()))
+      const shownReady = photoReady(photoUrl(season, shown, width(), f))
       for (const theme of ['light', 'dark'] as const) {
         const [src, setSrc] = theme === 'light' ? [lightSrc, setLightSrc] : [darkSrc, setDarkSrc]
-        const sharp = photoUrl(season, theme, width())
+        const sharp = photoUrl(season, theme, width(), f)
         if (photoReady(sharp)) {
           setSrc(sharp)
           continue
         }
+        const small = photoUrl(season, theme, PHOTO_SMALL, f)
+        const due = on && (theme === shown || shownReady)
         // The intro opens without the background and fades the dark image in later, so its
         // sharp file loads meanwhile.
         const wanted = (on && theme === shown) || (intro.playing() && theme === 'dark')
-        if (wanted) void loadPhoto(sharp).then(() => setLoaded((n) => n + 1))
-        const due = theme === shown || shownReady
-        const current = untrack(src)
-        if (on && due && !current.includes(`/${season}-${theme}-`)) {
-          setSrc(photoUrl(season, theme, PHOTO_SMALL))
-        }
+        if (wanted && (photoReady(small) || !due)) void load(sharp)
+        if (!due) continue
+        if (!photoReady(small)) void load(small)
+        else if (!untrack(src).includes(`/${season}-${theme}-`)) setSrc(small)
       }
     })
 
@@ -141,10 +152,12 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     >
       <div
         class="scene-photo scene-photo-light"
+        data-ready={lightSrc() ? '' : undefined}
         style={{ 'background-image': background(lightSrc()) }}
       />
       <div
         class="scene-photo scene-photo-dark"
+        data-ready={darkSrc() ? '' : undefined}
         style={{ 'background-image': background(darkSrc()) }}
       />
       <div class="scene-tint" />

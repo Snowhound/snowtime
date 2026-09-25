@@ -17,6 +17,7 @@ const errorText: Record<AppErrorKey, () => string> = {
   entries_forbidden: m.error_entries_forbidden,
   entry_running: m.error_entry_running,
   entry_end_before_start: m.error_entry_end_before_start,
+  entry_too_long: m.error_entry_too_long,
   entry_limit: m.error_entry_limit,
   timer_not_running: m.error_timer_not_running,
   timer_started_elsewhere: m.error_timer_started_elsewhere,

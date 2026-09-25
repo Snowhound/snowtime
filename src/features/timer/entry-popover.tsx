@@ -11,7 +11,7 @@ import { TimeInput } from '~/components/date-time/time-input'
 import { Button } from '~/components/ui/button'
 import { Label } from '~/components/ui/label'
 import { Popover, PopoverContent } from '~/components/ui/popover'
-import { type IsoDate, type WeekStart, localDate, localTime } from '~/lib/calendar'
+import { type IsoDate, type WeekStart, localDate, localTime, runningMs } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
 import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
@@ -197,7 +197,7 @@ function EntryForm(props: {
     const result = times()
     if (result.error) return ''
     if (!result.stoppedAt) {
-      return m.entry_running_for({ duration: formatHours(Date.now() - result.startedAt.getTime()) })
+      return m.entry_running_for({ duration: formatHours(runningMs(result.startedAt, Date.now())) })
     }
     const duration = formatHours(result.stoppedAt.getTime() - result.startedAt.getTime())
     return result.nextDay ? m.entry_duration_next_day({ duration }) : m.entry_duration({ duration })

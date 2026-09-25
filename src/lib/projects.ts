@@ -2,6 +2,7 @@
 // them. They share one cache, so a change in Projects shows in the timer's pickers too.
 import { queryOptions } from '@tanstack/solid-query'
 import { listProjects } from '~/server/projects/projects.functions'
+import { ORGANIZATION_STALE_TIME } from './query'
 
 type ListedProject = Awaited<ReturnType<typeof listProjects>>[number]
 
@@ -14,5 +15,6 @@ export function projectsQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['projects', organizationId, { includeArchived: true }],
     queryFn: (): Promise<Project[]> => listProjects({ data: { includeArchived: true } }),
+    staleTime: ORGANIZATION_STALE_TIME,
   })
 }

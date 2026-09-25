@@ -2,6 +2,12 @@ import * as v from 'valibot'
 import { m } from '~/paraglide/messages.js'
 import { Description, Timestamp, Uuidv7 } from '../schemas'
 
+// The longest an entry runs. Stopping a timer ends it here at the latest, so the queries of
+// a range can start reading entries this long before it, on the started_at index, instead of
+// from the user's first entry.
+export const MAX_ENTRY_HOURS = 24
+export const MAX_ENTRY_MS = MAX_ENTRY_HOURS * 3_600_000
+
 // A manual, finished entry. Admins and owners may log one for another member (userId).
 export const CreateEntryInput = v.pipe(
   v.object({
@@ -18,6 +24,14 @@ export const CreateEntryInput = v.pipe(
       [['startedAt'], ['stoppedAt']],
       (i) => i.stoppedAt > i.startedAt,
       () => m.validation_end_before_start(),
+    ),
+    ['stoppedAt'],
+  ),
+  v.forward(
+    v.partialCheck(
+      [['startedAt'], ['stoppedAt']],
+      (i) => i.stoppedAt.getTime() - i.startedAt.getTime() <= MAX_ENTRY_MS,
+      () => m.validation_entry_too_long({ hours: MAX_ENTRY_HOURS }),
     ),
     ['stoppedAt'],
   ),

@@ -67,6 +67,10 @@
   Organization deletion through Better Auth is disabled for the same reason.
 - Running timer: a time entry with `stopped_at` NULL. A partial unique index
   enforces at most one running entry per user.
+- An entry is at most 24 hours long (`MAX_ENTRY_HOURS`). Stopping a timer left running
+  longer ends it 24 hours after its start, and until then it counts up to there. The bound
+  lets queries of a range read from `started_at` 24 hours before it, on the `started_at`
+  indexes, instead of from the user's or the organization's first entry.
 - Elapsed time for the running timer is computed on the client, never
   written periodically.
 
@@ -99,6 +103,11 @@
     app must accept accounts in any organizational directory and personal Microsoft
     accounts. `MICROSOFT_TENANT_ID` restricts sign-in to one tenant, for example in a
     dedicated stack for one client.
+- Better Auth caches the session and user in a signed cookie for 5 minutes
+  (`cookieCache`), so a server function call doesn't read them from the database, which
+  was 2 of its reads. The cost: a session revoked on another device, or an erased user,
+  stays usable for up to 5 minutes where the cookie is. Organization access is still
+  checked on every call, because `resolveScope` reads the `member` row.
 - Profile edits go straight through the Better Auth client, as organization management
   does (see "Tenancy"): changing the name, linking and unlinking providers, and adding
   and removing passkeys. Better Auth checks that the session owns the account, and no
@@ -285,15 +294,20 @@ each.
 The signed-in pages and the sign-in page show a landscape for the season behind the page, as
 `prototypes/README.md` describes in "Seasonal scene in the app".
 
-- Assets: each season has a light and a dark image as static WebP files in `public/backgrounds/`,
-  1920 and 3840 px wide, copied from `design/backgrounds/`. They are 140 to 650 KB each, so
-  they're files rather than bundled imports, and nothing loads until the page asks for one.
+- Assets: each season has a light and a dark image as static files in `public/backgrounds/`,
+  1920 and 3840 px wide, as AVIF and WebP, copied from `design/backgrounds/`. The layer uses
+  AVIF, about 30% smaller at the same quality, when the browser decodes a 1 × 1 probe, and WebP
+  otherwise. The AVIF files are 110 to 405 KB each, so they're files rather than bundled imports,
+  and nothing loads until the page asks for one.
 - Loading (`src/components/scene-layer.tsx`, `photoWidth` in `src/lib/scene.ts`): the 3840 file
   is for images that cover more than 2400 device pixels across (pixel ratio at most 2), and
-  screens under 768 px always get the 1920 file. The shown theme loads the 1920 file first and
-  swaps to the larger one once it has decoded; the other theme's 1920 file loads after that,
-  for the theme crossfade. Nothing loads while Background is off. The browser loads the images
-  after hydration, since only it knows the screen and a `system` theme.
+  screens under 768 px always get the 1920 file. The shown theme loads the 1920 file first, on
+  its own so it arrives sooner, fades it in once it has decoded, then loads the larger one and
+  swaps to it; the other theme's 1920 file loads after that, for the theme crossfade. Nothing
+  loads while Background is off. The browser loads the images after hydration, since only it
+  knows the screen and a `system` theme, so they don't compete with the scripts. The files in
+  `public/` are cached for a week (`routeRules` in `vite.config.ts`), so a changed image
+  needs a new name.
 - Settings: the layer reads the session's settings, or the device's when signed out (see "User
   settings"), so a change shows without a reload.
 - Surfaces: the frame around the page carries `data-scene-bg` and `data-surfaces`, which the

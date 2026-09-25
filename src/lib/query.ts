@@ -1,6 +1,11 @@
 import type { QueryClient, QueryKey } from '@tanstack/solid-query'
 import { v7 as uuidv7 } from 'uuid'
 
+// How long the organization's projects, teams and members stay fresh. This app's own changes
+// update their caches at once, so the wait only delays other people's changes. Each refetch is a
+// server call with its database reads, and a tab regaining focus refetches every stale query.
+export const ORGANIZATION_STALE_TIME = 5 * 60_000
+
 // Ids for app-owned rows, generated on the client so an optimistic row keeps its key once
 // the server confirms it (docs/architecture.md, "Data conventions").
 export function newId() {

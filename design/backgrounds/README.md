@@ -9,6 +9,8 @@ scene and intro mock-up is `snowtime_login_intro_with_backgrounds.html`.
 | `masters/<season>-<theme>-01-3840.webp` | Upscaled masters, 3840 × 2161 px, lossless WebP. |
 | `<season>-<theme>-01-1920.webp`         | For the pages, 1920 px wide, 140 to 285 KB.      |
 | `<season>-<theme>-01-3840.webp`         | For the pages, 3840 px wide, 305 to 650 KB.      |
+| `<season>-<theme>-01-1920.avif`         | For the pages, 1920 px wide, 110 to 200 KB.      |
+| `<season>-<theme>-01-3840.avif`         | For the pages, 3840 px wide, 215 to 405 KB.      |
 
 The originals and the masters stay local and out of git (`.gitignore`): new images may replace
 them, and this README records how to make them again. Only the page files are committed.
@@ -36,7 +38,14 @@ magick x4-3840.png lanczos-3840.png -compose blend -define compose:args=60,40 -c
 cwebp -lossless -z 9 master.png -o masters/<name>-3840.webp
 cwebp -q 82 -m 6 -sharp_yuv master.png -o <name>-3840.webp
 magick master.png -filter Lanczos -resize 1920x png:- | cwebp -q 82 -m 6 -sharp_yuv -o <name>-1920.webp -- -
+magick master.png -quality 60 -define heic:speed=2 <name>-3840.avif
+magick master.png -filter Lanczos -resize 1920x png:- | magick - -quality 65 -define heic:speed=2 <name>-1920.avif
 ```
+
+The AVIF files (ImageMagick's libheif encoder) are 17 to 37% smaller than the WebP files and at
+least as close to the master by SSIM, checked for all 16 on 2026-09-25; at 100% crops they look
+the same. The 1920 files need quality 65: at 60, two of them came out slightly below their WebP.
+Browsers without AVIF get the WebP files.
 
 Pass `-n` every time: the binary's default model, `realesr-animevideov3`, is for video frames.
 `realesrgan-x4plus-anime` was also tried and rejected: it turns distant tree lines into flat

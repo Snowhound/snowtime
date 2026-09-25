@@ -9,6 +9,7 @@ import PlayIcon from 'lucide-solid/icons/play'
 import SquareIcon from 'lucide-solid/icons/square'
 import { Show, createEffect, createSignal, on } from 'solid-js'
 import { Button } from '~/components/ui/button'
+import { runningMs } from '~/lib/calendar'
 import { formatClock } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import type { Settings } from '~/lib/settings'
@@ -188,7 +189,7 @@ export function TimerBar(props: {
           data-entry-trigger
           onClick={(event: MouseEvent) => props.onEditStart(event.currentTarget as HTMLElement)}
         >
-          {formatClock(props.running ? props.now - props.running.startedAt.getTime() : 0)}
+          {formatClock(props.running ? runningMs(props.running.startedAt, props.now) : 0)}
         </Button>
         <Show
           when={props.running}

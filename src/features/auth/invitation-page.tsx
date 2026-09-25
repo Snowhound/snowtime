@@ -1,10 +1,9 @@
-import { queryOptions, useQuery, useQueryClient } from '@tanstack/solid-query'
+import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { useNavigate, useRouter } from '@tanstack/solid-router'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import ClockIcon from 'lucide-solid/icons/clock'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import { Match, Show, Switch, createSignal } from 'solid-js'
-import * as v from 'valibot'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
 import { authClient } from '~/lib/auth-client'
@@ -12,18 +11,9 @@ import { errorMessage } from '~/lib/errors'
 import { sessionQuery } from '~/lib/session'
 import { signInMethodsQuery } from '~/lib/sign-in-methods'
 import { m } from '~/paraglide/messages.js'
-import { getInvitation } from '~/server/auth/auth.functions'
-import { Uuidv7 } from '~/server/schemas'
 import { AuthHeading, AuthIcon, AuthLayout } from './auth-layout'
+import { invitationQuery } from './queries'
 import { FormAlert, PasswordSignIn, ProviderButtons } from './sign-in-methods'
-
-// A malformed id can't match an invitation, so it shows as closed without asking.
-export function invitationQuery(id: string) {
-  return queryOptions({
-    queryKey: ['invitation', id],
-    queryFn: () => (v.is(Uuidv7, id) ? getInvitation({ data: { id } }) : null),
-  })
-}
 
 const AS_ROLE = {
   member: m.invitation_as_member,

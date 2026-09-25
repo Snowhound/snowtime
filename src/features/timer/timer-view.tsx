@@ -12,7 +12,7 @@ import { Match, Show, Switch, createEffect, createMemo, createSignal, onCleanup 
 import { PageTitle } from '~/components/page-title'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
-import { localDate } from '~/lib/calendar'
+import { localDate, runningMs } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
@@ -21,7 +21,7 @@ import { newId } from '~/lib/query'
 import type { Settings } from '~/lib/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { groupByDay, recentRange, recentWork, summarize } from './entries'
+import { RECENT_DAYS, groupByDay, recentRange, recentWork, summarize } from './entries'
 import type { EntryPatch } from './entry-fields'
 import { EmptyState, EntryList } from './entry-list'
 import { EntryPopover, type EntryPopoverTarget, type EntryPopoverValues } from './entry-popover'
@@ -42,9 +42,8 @@ import { SummaryPanel } from './summary-panel'
 import { TimerBar } from './timer-bar'
 import { ViewPopover } from './view-popover'
 
-// Days of entries shown at first, and added by "Show earlier entries", up to the most
-// listEntries returns in one call (MAX_LIST_DAYS). Older time is in Reports.
-export const RECENT_DAYS = 14
+// Days of entries shown at most, as listEntries returns in one call (MAX_LIST_DAYS). Older
+// time is in Reports.
 const MAX_DAYS = 84
 // Days Focus shows.
 const FOCUS_DAYS = 3
@@ -106,7 +105,7 @@ export function TimerView(props: {
   const title = `${m.nav_timer()} · ${m.app_name()}`
   createEffect(() => {
     const timer = running.data
-    document.title = timer ? `${formatClock(now() - timer.startedAt.getTime())} · ${title}` : title
+    document.title = timer ? `${formatClock(runningMs(timer.startedAt, now()))} · ${title}` : title
   })
   onCleanup(() => {
     if (typeof document !== 'undefined') document.title = title

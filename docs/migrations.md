@@ -53,6 +53,9 @@ These keep the drift check accurate; the spike behind them is summarized in
 - `CHECK` and composite foreign keys: named with `CONSTRAINT <table>_<what>`.
 - Partial indexes: the drift check cannot see `WHERE` clauses. Reviewers check them by hand.
   On soft-deleted tables, unique indexes include `sys_deleted = 0`.
+- Queries compare `sys_deleted` with a literal `0` (`notDeleted` in
+  `src/server/queries.server.ts`), not a bound parameter. SQLite uses a partial index only
+  when it can prove the query matches its `WHERE`, so `sys_deleted = ?` scans the table.
 
 ### Audit columns
 
