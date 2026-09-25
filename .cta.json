@@ -1,5 +1,5 @@
 {
-  "projectName": "snowhound-kaitk",
+  "projectName": "snowtime",
   "mode": "file-router",
   "typescript": true,
   "packageManager": "bun",
