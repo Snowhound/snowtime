@@ -182,6 +182,29 @@
   organization (`resolveSessionScope`). Without that, every provider sign-in, which returns
   with a full page load, failed on its first page (task 048). The extra read happens only
   on that path, so the cookie cache still saves it on every other call.
+- Tabs share the session, so they share its active organization. A switch in one tab
+  moves every other tab once it reads the session again (task 049). Until then, a tab
+  shows the old organization while the server answers for the new one. To keep a tab from
+  showing or writing another organization's data under its own, `scopeMiddleware`'s client
+  part sends the organization the tab shows (the active one of its cached session), and the
+  server refuses a call for any other with `ORGANIZATION_CHANGED`. The server reads the
+  session from the database before refusing, in case the cookie cache lags. The client
+  answers the refusal by reading the session again. When a tab's session shows another
+  organization, it drops the old one's queries, loads the routes again, and says so above
+  the page (`OrganizationNotice`).
+  - Rejected: each tab keeping its own organization, with the server acting on whichever
+    the call names after checking membership. Tabs would work side by side, but the active
+    organization would stop being the session's alone. A `BroadcastChannel` telling other
+    tabs about a switch narrows the window but can't close it, since a call can be in
+    flight during the switch.
+  - Server rendering sends the page's organization too, so a switch during a page load
+    can't put one organization's data in the other's page.
+  - The Organization view's Better Auth calls name the organization the view shows
+    (`organizationId`), so they act on it whatever the session holds. Canceling an
+    invitation takes the invitation's organization.
+  - The running timer spans organizations, so `getRunningTimer` and `stopTimer` check no
+    organization. `startTimer` creates an entry in one, so it goes through
+    `scopeMiddleware` like every other organization-scoped call.
 - Organization roles: owner / admin / member (plugin defaults).
   - `member.role` can hold several roles, comma-separated. `strongestRole` reads the list
     as Better Auth's permission check does, without trimming, so the app never grants
@@ -570,9 +593,9 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
   hold what the user may see. An organization-scoped key holds the organization's id
   second (`['projects', organizationId, ...]`), and switching organization removes those
   of the old one. The server answers for the session's organization, so refetching them
-  would store the new organization's data under the old id. Tabs share the session, so
-  another tab's switch still leaves this one on the old organization until it reads the
-  session again (task 049).
+  would store the new organization's data under the old id. When the session shows
+  another organization because another tab switched, the old one's queries go the same
+  way ("Tenancy").
 - Business logic lives in TypeScript, not DB triggers. Two trigger kinds are allowed:
   the `updated_at` safety net above, which is bookkeeping, and a guard for a rule that
   concurrent requests could break between the server's check and its write, where a
@@ -598,8 +621,8 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
   - `<domain>.test.ts`: tests of the rules.
 - Code that several domains share sits directly in `src/server/`:
   - `middleware.ts`: `sessionMiddleware` resolves the Better Auth session;
-    `scopeMiddleware` adds the tenancy scope of the active organization. Both run the
-    call inside `withActor()`.
+    `scopeMiddleware` adds the tenancy scope of the active organization, and refuses a
+    call from a tab that shows another. Both run the call inside `withActor()`.
   - `scope.server.ts`, `queries.server.ts`, and `testing.ts`: the tenancy scope, the
     soft-delete query helpers, and the seeded test databases.
   - `schemas.ts`: Valibot building blocks (`Uuidv7`, `Description`, `Timestamp`) for

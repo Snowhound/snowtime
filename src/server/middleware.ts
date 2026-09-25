@@ -1,13 +1,16 @@
 // Server-function middleware. Every server function uses one of these:
 // - sessionMiddleware: a signed-in user, for calls that are not tied to an organization
 //   (the running timer spans organizations). Adds context.userId.
-// - scopeMiddleware: the tenancy scope of the active organization. Adds context.scope.
+// - scopeMiddleware: the tenancy scope of the active organization. Adds context.scope. The
+//   client sends the organization its tab shows, and a call for another is refused
+//   (resolveSessionScope), since tabs share the session's organization.
 // Both run the rest of the call inside withActor(userId), so writes record the user in
 // created_by/updated_by, and both count a POST call against the user's write rate.
-import { createMiddleware } from '@tanstack/solid-start'
+import { createMiddleware, getRouterInstance } from '@tanstack/solid-start'
 import { getRequestHeaders } from '@tanstack/solid-start/server'
 import { db } from '~/db'
 import { withActor } from '~/db/actor'
+import { callInShownOrganization } from '~/lib/session'
 import { auth, rateLimitStore } from './auth/better-auth.server'
 import { AppError } from './errors'
 import { rateLimits } from './limits.server'
@@ -33,7 +36,17 @@ export const sessionMiddleware = createMiddleware({ type: 'function' }).server(
 
 export const scopeMiddleware = createMiddleware({ type: 'function' })
   .middleware([sessionMiddleware])
+  // The organization the caller's cache shows: in the browser the tab's, during server
+  // rendering the page's.
+  .client(async ({ next }) => {
+    const { queryClient } = (await getRouterInstance()).options.context
+    return callInShownOrganization(queryClient, (shownOrganizationId) =>
+      next({ sendContext: { shownOrganizationId } }),
+    )
+  })
   .server(async ({ next, context }) => {
+    // Sent by the client, so checked like any input.
+    const shown = context.shownOrganizationId
     const scope = await resolveSessionScope(
       db,
       context.userId,
@@ -47,6 +60,7 @@ export const scopeMiddleware = createMiddleware({ type: 'function' })
           ? session.session.activeOrganizationId
           : null
       },
+      typeof shown === 'string' ? shown : undefined,
     )
     return next({ context: { scope } })
   })

@@ -278,7 +278,11 @@ describe('OrganizationView', () => {
     ).toEqual(['Member', 'Admin', 'Owner'])
     await userEvent.selectOptions(select, 'owner')
     const adam = server.members.find((mb) => mb.userId === ids.admin)!
-    expect(org.updateMemberRole).toHaveBeenCalledWith({ memberId: adam.memberId, role: 'owner' })
+    expect(org.updateMemberRole).toHaveBeenCalledWith({
+      memberId: adam.memberId,
+      role: 'owner',
+      organizationId,
+    })
     // Two owners now, so the viewer's row is locked as their own rather than the last one.
     await waitFor(() =>
       expect(within(own).getByText(/You can't change your own role/)).toBeInTheDocument(),
@@ -328,7 +332,7 @@ describe('OrganizationView', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Remove Max Member?' })
     expect(within(dialog).getByText(/They lose access to Snowhound/)).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Remove member' }))
-    expect(org.removeMember).toHaveBeenCalledWith({ memberIdOrEmail: memberId })
+    expect(org.removeMember).toHaveBeenCalledWith({ memberIdOrEmail: memberId, organizationId })
     await waitFor(() =>
       expect(screen.queryByText('Max Member', { selector: 'p' })).not.toBeInTheDocument(),
     )
@@ -392,6 +396,7 @@ describe('OrganizationView', () => {
     expect(org.inviteMember).toHaveBeenCalledWith({
       email: 'helena@example.com',
       role: 'member',
+      organizationId,
       teamId: ids.design,
     })
 
@@ -426,7 +431,11 @@ describe('OrganizationView', () => {
     await userEvent.click(
       within(expired).getByRole('button', { name: 'New link for priit@example.com' }),
     )
-    expect(org.inviteMember).toHaveBeenCalledWith({ email: 'priit@example.com', role: 'admin' })
+    expect(org.inviteMember).toHaveBeenCalledWith({
+      email: 'priit@example.com',
+      role: 'admin',
+      organizationId,
+    })
     await waitFor(() => expect(org.cancelInvitation).toHaveBeenCalledWith({ invitationId: old }))
     const renewed = server.invitations.find((i) => i.email === 'priit@example.com')!
     expect(await screen.findByLabelText('Invitation link')).toHaveValue(
@@ -486,7 +495,7 @@ describe('OrganizationView', () => {
       ),
     ).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Delete team' }))
-    expect(org.removeTeam).toHaveBeenCalledWith({ teamId: ids.platform })
+    expect(org.removeTeam).toHaveBeenCalledWith({ teamId: ids.platform, organizationId })
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: 'Platform' })).not.toBeInTheDocument(),
     )

@@ -1,6 +1,8 @@
 // The Organization view's queries and its optimistic mutations. Members, teams and
 // invitations are written through Better Auth's organization client; team roles through
-// setTeamRole (docs/architecture.md, "Tenancy"). Members, teams and projects live in the
+// setTeamRole (docs/architecture.md, "Tenancy"). Each Better Auth call names the organization
+// the view shows, since the session's active one can change in another tab. Canceling an
+// invitation takes the invitation's organization. Members, teams and projects live in the
 // caches Reports, Projects and the timer read too, so each change shows there as well.
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import { isServer } from 'solid-js/web'
@@ -93,7 +95,13 @@ export function useUpdateMemberRole(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: ({ memberId, role }: MemberRoleInput) =>
-      unwrap(authClient.organization.updateMemberRole({ memberId, role })),
+      unwrap(
+        authClient.organization.updateMemberRole({
+          memberId,
+          role,
+          organizationId: keys.organizationId,
+        }),
+      ),
     ...optimistic(queryClient, [
       cacheUpdate<Member[], MemberRoleInput>(membersKey(keys.organizationId), (members, input) =>
         members.map((m) => (m.memberId === input.memberId ? { ...m, orgRole: input.role } : m)),
@@ -112,7 +120,12 @@ export function useRemoveMember(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: ({ memberId }: MemberInput) =>
-      unwrap(authClient.organization.removeMember({ memberIdOrEmail: memberId })),
+      unwrap(
+        authClient.organization.removeMember({
+          memberIdOrEmail: memberId,
+          organizationId: keys.organizationId,
+        }),
+      ),
     ...optimistic(
       queryClient,
       [
@@ -149,6 +162,7 @@ export function useInviteMember(keys: Keys & { userId: string }) {
         authClient.organization.inviteMember({
           email: input.email,
           role: input.role,
+          organizationId: keys.organizationId,
           ...(input.teamId ? { teamId: input.teamId } : {}),
         }),
       )
@@ -202,7 +216,8 @@ export function useCreateTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationKey: ['create-team'],
-    mutationFn: ({ name }: CreateTeamInput) => unwrap(authClient.organization.createTeam({ name })),
+    mutationFn: ({ name }: CreateTeamInput) =>
+      unwrap(authClient.organization.createTeam({ name, organizationId: keys.organizationId })),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], CreateTeamInput>(teamsKey(keys.organizationId), (teams, { id, name }) => [
         ...teams,
@@ -221,7 +236,12 @@ export function useRenameTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: ({ teamId, name }: RenameTeamInput) =>
-      unwrap(authClient.organization.updateTeam({ teamId, data: { name } })),
+      unwrap(
+        authClient.organization.updateTeam({
+          teamId,
+          data: { name, organizationId: keys.organizationId },
+        }),
+      ),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], RenameTeamInput>(teamsKey(keys.organizationId), (teams, input) =>
         teams.map((t) => (t.id === input.teamId ? { ...t, name: input.name } : t)),
@@ -235,7 +255,8 @@ export function useRenameTeam(keys: Keys) {
 export function useDeleteTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (teamId: string) => unwrap(authClient.organization.removeTeam({ teamId })),
+    mutationFn: (teamId: string) =>
+      unwrap(authClient.organization.removeTeam({ teamId, organizationId: keys.organizationId })),
     ...optimistic(
       queryClient,
       [
@@ -291,7 +312,10 @@ export function useAddTeamMember(keys: Keys) {
   const queryClient = useQueryClient()
   const [teams, members] = withTeamMember(true)
   return useMutation(() => ({
-    mutationFn: (input: TeamMemberInput) => unwrap(authClient.organization.addTeamMember(input)),
+    mutationFn: (input: TeamMemberInput) =>
+      unwrap(
+        authClient.organization.addTeamMember({ ...input, organizationId: keys.organizationId }),
+      ),
     ...optimistic(
       queryClient,
       [
@@ -307,7 +331,13 @@ export function useRemoveTeamMember(keys: Keys) {
   const queryClient = useQueryClient()
   const [teams, members] = withTeamMember(false)
   return useMutation(() => ({
-    mutationFn: (input: TeamMemberInput) => unwrap(authClient.organization.removeTeamMember(input)),
+    mutationFn: (input: TeamMemberInput) =>
+      unwrap(
+        authClient.organization.removeTeamMember({
+          ...input,
+          organizationId: keys.organizationId,
+        }),
+      ),
     ...optimistic(
       queryClient,
       [

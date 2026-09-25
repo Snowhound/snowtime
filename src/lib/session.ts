@@ -1,5 +1,6 @@
 import { type Query, type QueryClient, queryOptions } from '@tanstack/solid-query'
 import { type AppSession, getAppSession } from '~/server/auth/auth.functions'
+import { AppError } from '~/server/errors'
 import { DEVICE_SETTINGS_KEY } from './device-settings'
 import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from './intro'
 import { seasonByMonth } from './scene'
@@ -16,48 +17,102 @@ function isSession(query: Query) {
   return query.queryKey[0] === sessionQuery.queryKey[0]
 }
 
-// The user whose data each client's cache holds, once known; null once it holds none.
-const cachedUser = new WeakMap<QueryClient, string | null>()
+// The user and organization whose data each client's cache holds, once known; a null user
+// once it holds none.
+const cached = new WeakMap<QueryClient, { userId: string | null; organizationId?: string }>()
 
 // After signing out: the session becomes null and every other query, all of them the user's
 // data, is dropped. The session query itself stays in the cache, because the root watches it:
 // clearing it would leave the root on a query the cache no longer holds, and the next sign-in's
 // invalidation wouldn't refetch the session, so the new user stayed on the sign-in page.
 export function forgetSignedInUser(queryClient: QueryClient) {
-  cachedUser.set(queryClient, null)
+  cached.set(queryClient, { userId: null })
   queryClient.setQueryData(sessionQuery.queryKey, null)
   queryClient.removeQueries({ predicate: (query) => !isSession(query) })
 }
 
-// Keeps one user's data in the cache. Signing out here drops it (forgetSignedInUser), but a
-// sign-out in another tab, or an expired session, leaves it behind, and many keys hold only
-// the organization: projects, teams, members, and reports show what the user may see. When
-// the session turns out to be another user's, every other query starts over: those in use
-// load again as the new user, and the rest lose their data. The root's query client calls
-// this once.
-export function followSessionUser(queryClient: QueryClient) {
+// Keeps one user's data in the cache, in one organization. Signing out here drops it
+// (forgetSignedInUser), but a sign-out in another tab, or an expired session, leaves it
+// behind, and many keys hold only the organization: projects, teams, members, and reports
+// show what the user may see. When the session turns out to be another user's, every other
+// query starts over: those in use load again as the new user, and the rest lose their data.
+//
+// Tabs share the session, so another tab can switch its organization. When this tab's
+// session shows another organization, the old one's queries go, as after a switch here
+// (forgetOrganization), and the pages, keyed by organization, load the new one's. The root's
+// query client calls this once.
+export function followSession(queryClient: QueryClient) {
   return queryClient.getQueryCache().subscribe(({ query }) => {
     if (!isSession(query)) return
-    const userId = (query.state.data as AppSession | null | undefined)?.user.id
-    if (!userId) return
-    const previous = cachedUser.get(queryClient)
-    cachedUser.set(queryClient, userId)
-    if (previous && previous !== userId) {
+    const session = query.state.data as AppSession | null | undefined
+    if (!session) return
+    const userId = session.user.id
+    const organizationId = session.activeOrganizationId ?? undefined
+    const previous = cached.get(queryClient)
+    cached.set(queryClient, { userId, organizationId })
+    if (previous?.userId && previous.userId !== userId) {
       void queryClient.resetQueries({ predicate: (other) => !isSession(other) })
+    } else if (previous?.organizationId && previous.organizationId !== organizationId) {
+      queryClient.removeQueries({
+        predicate: (other) => other.queryKey[1] === previous.organizationId,
+      })
     }
   })
 }
 
-// After the session's active organization changes. The keys of organization-scoped queries
-// hold the organization's id second (['projects', organizationId, ...]), but the server
-// answers for the session's organization, so refetching the old organization's queries now
-// would store the new one's data under the old id, and show it there. They are dropped
+// The organization each client last switched away from itself, so a change of the session's
+// organization can tell a switch here from one in another tab.
+const switchedFrom = new WeakMap<QueryClient, string>()
+
+// After the session's active organization changes here. The keys of organization-scoped
+// queries hold the organization's id second (['projects', organizationId, ...]), but the
+// server answers for the session's organization, so refetching the old organization's queries
+// now would store the new one's data under the old id, and show it there. They are dropped
 // instead; the views of the new organization load their own, and the rest (the session, the
 // running timer) load again.
 export async function forgetOrganization(queryClient: QueryClient, organizationId: string) {
+  switchedFrom.set(queryClient, organizationId)
   await queryClient.cancelQueries({ predicate: (query) => query.queryKey[1] === organizationId })
   queryClient.removeQueries({ predicate: (query) => query.queryKey[1] === organizationId })
   await queryClient.invalidateQueries()
+}
+
+// Whether the session's organization changed from `organizationId` by a switch in this tab,
+// rather than in another tab. It answers once per switch.
+export function switchedHere(queryClient: QueryClient, organizationId: string) {
+  const here = switchedFrom.get(queryClient) === organizationId
+  switchedFrom.delete(queryClient)
+  return here
+}
+
+// The organization this tab shows: the active one of the session in its cache, which the
+// header and every page read. scopeMiddleware sends it with each organization-scoped call.
+export function shownOrganization(queryClient: QueryClient) {
+  return (
+    queryClient.getQueryData<AppSession | null>(sessionQuery.queryKey)?.activeOrganizationId ??
+    undefined
+  )
+}
+
+// Makes an organization-scoped call for the organization this tab shows. The server refuses
+// it when the session has another (ORGANIZATION_CHANGED): another tab switched. This tab then
+// reads the session again, and followSession drops the old organization's queries. Refusals
+// of calls made together share one read.
+export async function callInShownOrganization<T>(
+  queryClient: QueryClient,
+  call: (organizationId: string | undefined) => Promise<T>,
+) {
+  try {
+    return await call(shownOrganization(queryClient))
+  } catch (error) {
+    if (error instanceof AppError && error.code === 'ORGANIZATION_CHANGED') {
+      void queryClient.invalidateQueries(
+        { queryKey: sessionQuery.queryKey },
+        { cancelRefetch: false },
+      )
+    }
+    throw error
+  }
 }
 
 // The season of each month, for the head script.

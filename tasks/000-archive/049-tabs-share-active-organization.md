@@ -1,6 +1,6 @@
 # 049: Tabs that disagree on the active organization
 
-Status: todo
+Status: done
 
 Task 039 found on 2026-09-25 that a tab can show one organization while its server calls
 act on another. The active organization lives on the session, which every tab shares.
@@ -29,8 +29,19 @@ it, since a call can be in flight during the switch.
 
 ## Acceptance criteria
 
-- [ ] A tab showing an organization never stores or shows another organization's data
+- [x] A tab showing an organization never stores or shows another organization's data
       under it, and never writes to another organization
-- [ ] After another tab switches, this tab either follows the switch or refuses its next
+- [x] After another tab switches, this tab either follows the switch or refuses its next
       call with a message, and shows the right organization after either
-- [ ] A test covers a scoped call made with a stale organization
+- [x] A test covers a scoped call made with a stale organization
+
+## Outcome
+
+Done on 2026-09-25 with the first option ("Tenancy" in `docs/architecture.md`).
+`scopeMiddleware` sends the organization the tab shows and refuses a call for another
+with `ORGANIZATION_CHANGED`. The tab then reads the session again, drops the old
+organization's queries, and shows a notice. The Organization view's Better Auth calls name
+their organization. Tests: `scope.test.ts`, `session.test.tsx`, `app-header.test.tsx`. In
+Chrome, the repro's edit in tab 1 is refused, and tab 1 moves to Northwind with the notice
+and Northwind's entries. A tab that regains focus after its session goes stale follows the
+same way.

@@ -7,6 +7,7 @@ const errorText: Record<AppErrorKey, () => string> = {
   sign_in_required: m.error_sign_in_required,
   organization_required: m.error_organization_required,
   not_organization_member: m.error_not_organization_member,
+  organization_changed: m.error_organization_changed,
   member_not_found: m.error_member_not_found,
   team_not_found: m.error_team_not_found,
   team_member_not_found: m.error_team_member_not_found,

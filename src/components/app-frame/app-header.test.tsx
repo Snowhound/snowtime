@@ -5,8 +5,9 @@ import { For, type JSX, Show, createEffect } from 'solid-js'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { type Project, projectsQuery } from '~/lib/projects'
 import { newId } from '~/lib/query'
-import { sessionQuery } from '~/lib/session'
+import { followSession, sessionQuery } from '~/lib/session'
 import { AppHeader } from './app-header'
+import { OrganizationNotice } from './organization-notice'
 
 // The server answers for the session's active organization, as scopeMiddleware does, and
 // the Better Auth client's setActive changes it.
@@ -45,14 +46,16 @@ const projects: Record<string, Project[]> = {
   [northwind.id]: [project('Website redesign')],
   [harbor.id]: [project('Client onboarding')],
 }
-const server = { activeOrganizationId: northwind.id }
+const server = { activeOrganizationId: northwind.id, organizations: [northwind, harbor] }
+
+const maxId = newId()
 
 function session() {
   return {
-    user: { id: newId(), name: 'Max Member', email: 'member@example.com', image: null },
+    user: { id: maxId, name: 'Max Member', email: 'member@example.com', image: null },
     role: 'member',
     activeOrganizationId: server.activeOrganizationId,
-    organizations: [northwind, harbor],
+    organizations: server.organizations,
     settings: null,
   }
 }
@@ -77,10 +80,12 @@ function ProjectsPage() {
 
 function renderHeader() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  followSession(queryClient)
   queryClient.setQueryData(sessionQuery.queryKey, session() as never)
   render(() => (
     <QueryClientProvider client={queryClient}>
       <AppHeader />
+      <OrganizationNotice />
       <ProjectsPage />
     </QueryClientProvider>
   ))
@@ -102,6 +107,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   shown.length = 0
   server.activeOrganizationId = northwind.id
+  server.organizations = [northwind, harbor]
   fn.getAppSession.mockImplementation(async () => session())
   fn.listProjects.mockImplementation(async () => projects[server.activeOrganizationId])
   fn.setActive.mockImplementation(async ({ organizationId }: { organizationId: string }) => {
@@ -142,5 +148,49 @@ describe('OrganizationSwitcher', () => {
     expect(screen.getByText('Website redesign')).toBeInTheDocument()
     expect(switcher()).toHaveAccessibleName('Organization: Northwind')
     expect(fn.invalidate).not.toHaveBeenCalled()
+  })
+})
+
+// Tabs share the session: another tab's switch reaches this one when it reads the session
+// again, on focus or after the server refuses a call for the old organization.
+describe('OrganizationNotice', () => {
+  test('follows a switch made in another tab and says so', async () => {
+    const queryClient = renderHeader()
+    expect(await screen.findByText('Website redesign')).toBeInTheDocument()
+
+    server.activeOrganizationId = harbor.id
+    await queryClient.refetchQueries({ queryKey: sessionQuery.queryKey })
+
+    expect(await screen.findByText('Client onboarding')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Now in Harbor')
+    expect(screen.getByRole('alert')).toHaveTextContent('You switched to it in another tab')
+    expect(queryClient.getQueryData(projectsQuery(northwind.id).queryKey)).toBeUndefined()
+    expect(fn.invalidate).toHaveBeenCalledTimes(1)
+
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  test('stays quiet about a switch made here', async () => {
+    renderHeader()
+    expect(await screen.findByText('Website redesign')).toBeInTheDocument()
+
+    await switchTo('Harbor')
+    expect(await screen.findByText('Client onboarding')).toBeInTheDocument()
+    await waitFor(() => expect(fn.invalidate).toHaveBeenCalledTimes(1))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  test('names the organization the user no longer belongs to', async () => {
+    const queryClient = renderHeader()
+    expect(await screen.findByText('Website redesign')).toBeInTheDocument()
+
+    server.organizations = [harbor]
+    server.activeOrganizationId = harbor.id
+    await queryClient.refetchQueries({ queryKey: sessionQuery.queryKey })
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'You are no longer a member of Northwind.',
+    )
   })
 })

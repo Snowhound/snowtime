@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/solid-query'
-import { followSessionUser } from '~/lib/session'
+import { followSession } from '~/lib/session'
 
 export function getContext() {
   const queryClient = new QueryClient({
@@ -11,7 +11,7 @@ export function getContext() {
       },
     },
   })
-  followSessionUser(queryClient)
+  followSession(queryClient)
   return {
     queryClient,
   }

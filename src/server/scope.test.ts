@@ -138,4 +138,38 @@ describe('resolveSessionScope', () => {
       resolveSessionScope(db, 'member', 'org-b', async () => 'org-b'),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' })
   })
+
+  // Task 049: another tab switched the session to org-b while this one still shows org-a.
+  test('refuses a call for an organization the tab shows but the session left', async () => {
+    const reread = mock(async () => 'org-b')
+    await expect(resolveSessionScope(db, 'lead', 'org-b', reread, 'org-a')).rejects.toMatchObject({
+      code: 'ORGANIZATION_CHANGED',
+    })
+    // The cookie cache may lag behind the stored session, so the refusal is checked there.
+    expect(reread).toHaveBeenCalledTimes(1)
+  })
+
+  test('takes the organization the tab shows when the stored session agrees', async () => {
+    const scope = await resolveSessionScope(db, 'lead', 'org-b', async () => 'org-a', 'org-a')
+    expect(scope.organizationId).toBe('org-a')
+    const cached = await resolveSessionScope(db, 'member', null, async () => 'org-a', 'org-a')
+    expect(cached.organizationId).toBe('org-a')
+  })
+
+  test('never answers for another organization than the one the tab shows', async () => {
+    // The session's organization is one the user left, and the stored one differs.
+    await expect(
+      resolveSessionScope(db, 'member', 'org-b', async () => 'org-a', 'org-b'),
+    ).rejects.toMatchObject({ code: 'ORGANIZATION_CHANGED' })
+    await expect(
+      resolveSessionScope(db, 'member', null, async () => null, 'org-a'),
+    ).rejects.toMatchObject({ code: 'ORGANIZATION_CHANGED' })
+  })
+
+  test('checks nothing more when the call names no organization', async () => {
+    const reread = mock(async () => 'org-b')
+    const scope = await resolveSessionScope(db, 'lead', 'org-a', reread, undefined)
+    expect(scope.organizationId).toBe('org-a')
+    expect(reread).not.toHaveBeenCalled()
+  })
 })
