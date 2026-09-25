@@ -4,9 +4,13 @@
 // other content, such as the row's actions; otherwise, and on narrower screens, it sits under
 // the title. It's placed again when the area resizes, once the fonts load, and when the season
 // changes. The title's parent must be `relative`. `centerOn` centers it on part of the area
-// instead, such as the settings page's cards beside their section links.
+// instead, such as the settings page's cards beside their section links. Until it is first
+// placed, such as in the server's HTML, CSS centers it from 1024 px as the script usually does
+// (`page-tagline`), so it doesn't show under the title and then move; with `centerOn`, which
+// CSS can't follow, it is hidden until then.
 import { createEffect, on, onCleanup, onMount } from 'solid-js'
 import { useSeason } from '~/lib/seasons'
+import { cn } from '~/lib/utils'
 import { SeasonTagline } from './season-tagline'
 
 const GAP = 24
@@ -48,8 +52,13 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
     }
   }
 
+  function placeAndShow() {
+    place()
+    if (!props.centerOn || props.centerOn()) tagline.dataset.placed = ''
+  }
+
   onMount(() => {
-    const observer = new ResizeObserver(place)
+    const observer = new ResizeObserver(placeAndShow)
     if (row.parentElement) observer.observe(row.parentElement)
     // The element to center on may render later, so it is observed once it does.
     createEffect(() => {
@@ -69,7 +78,10 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
       <SeasonTagline
         ref={(el) => (tagline = el)}
         season={season()}
-        class="min-w-0 basis-full text-sm font-medium"
+        class={cn(
+          'page-tagline min-w-0 basis-full text-sm font-medium',
+          props.centerOn && 'page-tagline-deferred',
+        )}
       />
     </div>
   )

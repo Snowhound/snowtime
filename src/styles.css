@@ -463,12 +463,27 @@ html:has(.scene-header) {
 
 /* The season's tagline (src/components/season-tagline.tsx) in the intro's colors: the headline
    color, darkened on light pages, then the second line's. From 1024 px PageTitle centers it on
-   the title row (`page-tagline-centered`). */
+   the title row (`page-tagline-centered`). Until it has, it starts where it usually goes, on
+   the page's center level with the title, or hidden if it centers on something else. */
 .page-tagline-centered {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
+}
+@media (width >= 1024px) {
+  /* Without `top`, it stays level with the title row's top; the margin centers its 1.25rem line
+     on the title's 2rem one, as the script does. */
+  .page-tagline:not([data-placed]) {
+    position: absolute;
+    margin-top: 0.375rem;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+  .page-tagline-deferred:not([data-placed]) {
+    visibility: hidden;
+  }
 }
 .season-tagline .tagline-1 {
   color: var(--tagline-title-light);
