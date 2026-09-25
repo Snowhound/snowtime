@@ -287,6 +287,9 @@ export const userSettings = sqliteTable(
     showSummary: integer('show_summary', { mode: 'boolean' })
       .default(sql`1`)
       .notNull(),
+    compactRows: integer('compact_rows', { mode: 'boolean' })
+      .default(sql`0`)
+      .notNull(),
     appIcon: text('app_icon', { enum: APP_ICON_IDS }).default(DEFAULT_APP_ICON).notNull(),
     sceneSeason: text('scene_season', { enum: SCENE_SEASONS }).default('auto').notNull(),
     sceneBackground: integer('scene_background', { mode: 'boolean' })
@@ -304,6 +307,7 @@ export const userSettings = sqliteTable(
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),
     check('user_settings_show_summary', sql`show_summary IN (0, 1)`),
+    check('user_settings_compact_rows', sql`compact_rows IN (0, 1)`),
     check('user_settings_scene_background', sql`scene_background IN (0, 1)`),
     check('user_settings_scene_weather', sql`scene_weather IN (0, 1)`),
     check('user_settings_scene_intro', sql`scene_intro IN (0, 1)`),

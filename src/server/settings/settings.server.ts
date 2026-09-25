@@ -14,6 +14,7 @@ const columns = {
   theme: userSettings.theme,
   timerLayout: userSettings.timerLayout,
   showSummary: userSettings.showSummary,
+  compactRows: userSettings.compactRows,
   appIcon: userSettings.appIcon,
   sceneSeason: userSettings.sceneSeason,
   sceneBackground: userSettings.sceneBackground,

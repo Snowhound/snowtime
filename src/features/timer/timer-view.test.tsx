@@ -75,6 +75,7 @@ function defaultSettings(): Settings {
     theme: 'system',
     timerLayout: 'bar',
     showSummary: false,
+    compactRows: false,
     appIcon: '02',
     sceneSeason: 'auto',
     sceneBackground: true,
@@ -463,6 +464,21 @@ describe('TimerView', () => {
     await userEvent.click(within(await openView()).getByRole('switch', { name: 'Show summary' }))
     expect(fn.updateSettings).toHaveBeenCalledWith({ data: { showSummary: false } })
     expect(screen.queryByRole('complementary', { name: 'Summary' })).not.toBeInTheDocument()
+  })
+
+  test('the View popover turns compact rows on', async () => {
+    fn.updateSettings.mockImplementation(async (input: { data: UpdateSettingsInput }) => {
+      Object.assign(server.settings, input.data)
+      return server.settings
+    })
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+
+    const toggle = within(await openView()).getByRole('switch', { name: 'Compact rows' })
+    expect(toggle).not.toBeChecked()
+    await userEvent.click(toggle)
+    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { compactRows: true } })
+    expect(toggle).toBeChecked()
   })
 
   test('Focus continues recent work from a chip', async () => {

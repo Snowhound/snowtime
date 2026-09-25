@@ -1,7 +1,8 @@
 // The day cards of the Bar and Focus layouts (prototypes/timer.html): a card per day,
 // newest first, with the day's total, and per entry its fields (entry-fields.tsx) and the
 // continue and delete actions. Rows are one line from 768 px and three below it. Focus
-// shows them compact. The parts the Table layout shares are exported.
+// pads them less, and compact rows (the compactRows setting) least, with smaller action
+// buttons. The parts the Table layout shares are exported.
 import CheckIcon from 'lucide-solid/icons/check'
 import ClockIcon from 'lucide-solid/icons/clock'
 import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'
@@ -47,6 +48,8 @@ export interface EntryRowProps {
   projects: readonly Project[]
   zone: string
   weekStart: WeekStart
+  // The compactRows setting.
+  compact: boolean
   onSave: SaveEntry
   // Whether the entry's last save was confirmed a moment ago.
   justSaved: (id: string) => boolean
@@ -87,7 +90,7 @@ export function EntryList(
   props: EntryRowProps & {
     groups: readonly DayGroup<Entry>[]
     now: number
-    compact?: boolean
+    focus?: boolean
   },
 ) {
   return (
@@ -110,7 +113,7 @@ export function EntryList(
                   <EntryRow
                     {...props}
                     entry={group()!.entries.find((e) => e.id === id)!}
-                    compact={props.compact}
+                    focus={props.focus}
                   />
                 )}
               </For>
@@ -122,7 +125,7 @@ export function EntryList(
   )
 }
 
-function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
+function EntryRow(props: EntryRowProps & { entry: Entry; focus?: boolean }) {
   const editor = createEntryEditor(props)
   const ref = revealWhenSaved(props)
   return (
@@ -130,7 +133,7 @@ function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
       ref={ref}
       class={cn(
         'group px-4',
-        props.compact ? 'py-2' : 'py-3',
+        props.compact ? 'py-1' : props.focus ? 'py-2' : 'py-3',
         savedTint(props.justSaved(props.entry.id)),
       )}
     >
@@ -156,6 +159,7 @@ function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
           <EntryActions
             entry={props.entry}
             saved={props.justSaved(props.entry.id)}
+            compact={props.compact}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
           />
@@ -168,9 +172,11 @@ function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
 
 // The row's continue and more actions. After a confirmed save, "Saved" takes their place for
 // a moment; they stay mounted underneath, so a button being tabbed to keeps its focus.
+// Compact buttons match the fields' height.
 export function EntryActions(props: {
   entry: Entry
   saved: boolean
+  compact: boolean
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
 }) {
@@ -191,6 +197,7 @@ export function EntryActions(props: {
         <Button
           variant="ghost"
           size="icon"
+          class={cn(props.compact && 'size-8')}
           aria-label={
             description()
               ? m.timer_continue({ description: description() })
@@ -205,6 +212,7 @@ export function EntryActions(props: {
             as={Button<'button'>}
             variant="ghost"
             size="icon"
+            class={cn(props.compact && 'size-8')}
             aria-label={
               description()
                 ? m.timer_entry_actions({ description: description() })

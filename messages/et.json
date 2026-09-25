@@ -139,6 +139,8 @@
   "settings_layout_table": "Tabel",
   "settings_show_summary": "Näita kokkuvõtet",
   "settings_show_summary_description": "Tänane ja selle nädala aeg taimeri kõrval.",
+  "settings_compact_rows": "Kompaktsed read",
+  "settings_compact_rows_description": "Madalamad ajakirjete read, et ekraanile mahuks neid rohkem.",
   "appearance_all_settings": "Kõik seaded",
   "scene_title": "Maastik",
   "scene_description": "Aastaaja vaade sisselogimislehe ja rakenduse taustal.",

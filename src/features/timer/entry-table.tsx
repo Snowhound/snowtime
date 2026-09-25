@@ -1,6 +1,6 @@
 // The Table layout's entries (prototypes/timer.html): one dense table with a subtotal row
 // per day, newest first, and the entry fields (entry-fields.tsx) in the cells. It scrolls
-// horizontally inside its border on narrow screens.
+// horizontally inside its border on narrow screens. Compact rows pad their cells less.
 import { For, Show } from 'solid-js'
 import {
   Table,
@@ -108,7 +108,10 @@ function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
   const ref = revealWhenSaved(props)
   return (
     <>
-      <TableRow ref={ref} class={cn('group', savedTint(props.justSaved(props.entry.id)))}>
+      <TableRow
+        ref={ref}
+        class={cn('group', props.compact && '*:py-0.5', savedTint(props.justSaved(props.entry.id)))}
+      >
         <TableCell class="max-w-0">
           <div class="-ml-2">
             <DescriptionField editor={editor} />
@@ -136,6 +139,7 @@ function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
           <EntryActions
             entry={props.entry}
             saved={props.justSaved(props.entry.id)}
+            compact={props.compact}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
           />

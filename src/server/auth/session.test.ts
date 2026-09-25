@@ -63,6 +63,7 @@ describe('appSession', () => {
       theme: 'system',
       timerLayout: 'bar',
       showSummary: true,
+      compactRows: false,
       appIcon: '02',
       sceneSeason: 'auto',
       sceneBackground: true,

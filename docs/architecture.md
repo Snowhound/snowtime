@@ -253,7 +253,7 @@ each.
 
 - All of a user's settings live in `user_settings`, one row per user, so they follow the
   user across devices: time zone, week start, language (`locale`), theme, timer layout,
-  whether the summary shows, the app icon (`app_icon`, the header mark and favicon), and
+  whether the summary shows, compact entry rows (`compact_rows`), the app icon (`app_icon`, the header mark and favicon), and
   the seasonal scene (`scene_season`, `scene_background`, `scene_strength`, `surfaces`,
   `scene_weather`, `scene_intro`).
 - The server renders the theme class from the session user's settings, so the first
@@ -274,8 +274,8 @@ each.
   wherever the settings are read. A new language applies without a reload: the root
   passes it to Paraglide, which sets the cookie, and renders the page again.
 - The app validates the text values (`src/server/settings/settings.schemas.ts`); their columns have no
-  `CHECK`, so adding a value needs no table rebuild. The booleans (`show_summary` and the
-  scene's switches) keep the usual 0/1 `CHECK`.
+  `CHECK`, so adding a value needs no table rebuild. The booleans (`show_summary`,
+  `compact_rows`, and the scene's switches) keep the usual 0/1 `CHECK`.
 
 ## Seasonal scene
 

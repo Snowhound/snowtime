@@ -139,6 +139,8 @@
   "settings_layout_table": "Table",
   "settings_show_summary": "Show summary",
   "settings_show_summary_description": "Today and this week beside the timer.",
+  "settings_compact_rows": "Compact rows",
+  "settings_compact_rows_description": "Shorter entry rows, so more of them fit on the screen.",
   "appearance_all_settings": "All settings",
   "scene_title": "Scenery",
   "scene_description": "The seasonal scene behind the sign-in page and the app.",

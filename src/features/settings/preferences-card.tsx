@@ -315,6 +315,21 @@ export function PreferencesCard(props: { settings: Settings }) {
               <SwitchThumb />
             </SwitchControl>
           </Switch>
+          <Switch
+            class="flex items-center justify-between gap-4"
+            checked={props.settings.compactRows}
+            onChange={(compactRows) => update({ compactRows })}
+          >
+            <div class="grid gap-1">
+              <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
+              <SwitchDescription class="text-muted-foreground text-sm">
+                {m.settings_compact_rows_description()}
+              </SwitchDescription>
+            </div>
+            <SwitchControl>
+              <SwitchThumb />
+            </SwitchControl>
+          </Switch>
         </div>
         <Separator />
         <div id="scenery" class="grid scroll-mt-6 gap-5">

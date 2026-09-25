@@ -65,6 +65,7 @@ export const UpdateSettingsInput = v.object({
   theme: v.optional(Theme),
   timerLayout: v.optional(TimerLayout),
   showSummary: v.optional(v.boolean()),
+  compactRows: v.optional(v.boolean()),
   appIcon: v.optional(AppIcon),
   sceneSeason: v.optional(SceneSeason),
   sceneBackground: v.optional(v.boolean()),

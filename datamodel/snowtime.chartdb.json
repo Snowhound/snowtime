@@ -1836,6 +1836,23 @@
         },
         {
           "id": "t10f11",
+          "name": "compact_rows",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comments": "Boolean 0/1 (CHECK), default 0. Whether the timer shows entry rows compact."
+        },
+        {
+          "id": "t10f12",
           "name": "app_icon",
           "type": {
             "id": "text",
@@ -1852,7 +1869,7 @@
           "comments": "Brand concept 01 to 12 (src/lib/app-icon.ts), default 02. Header mark and favicon. Validated in the app, no CHECK."
         },
         {
-          "id": "t10f12",
+          "id": "t10f13",
           "name": "scene_season",
           "type": {
             "id": "text",
@@ -1869,7 +1886,7 @@
           "comments": "auto (by month), winter, spring, summer, autumn. The scene, weather, and tagline. Validated in the app, no CHECK."
         },
         {
-          "id": "t10f13",
+          "id": "t10f14",
           "name": "scene_background",
           "type": {
             "id": "integer",
@@ -1886,7 +1903,7 @@
           "comments": "Boolean 0/1 (CHECK). Whether the season image shows behind the pages."
         },
         {
-          "id": "t10f14",
+          "id": "t10f15",
           "name": "scene_strength",
           "type": {
             "id": "text",
@@ -1903,7 +1920,7 @@
           "comments": "dimmed, full: how much page color covers the image. Validated in the app, no CHECK."
         },
         {
-          "id": "t10f15",
+          "id": "t10f16",
           "name": "surfaces",
           "type": {
             "id": "text",
@@ -1920,7 +1937,7 @@
           "comments": "glass, solid: whether cards let the image show through. Validated in the app, no CHECK."
         },
         {
-          "id": "t10f16",
+          "id": "t10f17",
           "name": "scene_weather",
           "type": {
             "id": "integer",
@@ -1937,7 +1954,7 @@
           "comments": "Boolean 0/1 (CHECK). Whether the season weather effect runs."
         },
         {
-          "id": "t10f17",
+          "id": "t10f18",
           "name": "scene_intro",
           "type": {
             "id": "integer",

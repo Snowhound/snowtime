@@ -1,10 +1,10 @@
 // The timer view (prototypes/timer.html): the timer, the user's recent entries by day, the
 // summary, and the entry dialog, in the layout of the user's settings. Bar lists day
-// cards; Focus has a large clock, "continue recent" chips, and the last three days
-// compact; Table has one table with day subtotals. Entries are edited in their rows; the
-// dialog adds an entry or edits the running one's start. Every write is optimistic and
-// rolls back on error (queries.ts), with the error shown under the edited row or above
-// the timer.
+// cards; Focus has a large clock, "continue recent" chips, and the last three days;
+// Table has one table with day subtotals. The compactRows setting makes the rows of every
+// layout shorter. Entries are edited in their rows; the dialog adds an entry or edits the
+// running one's start. Every write is optimistic and rolls back on error (queries.ts),
+// with the error shown under the edited row or above the timer.
 import { keepPreviousData, useQuery } from '@tanstack/solid-query'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import PlusIcon from 'lucide-solid/icons/plus'
@@ -223,6 +223,9 @@ export function TimerView(props: {
     get now() {
       return now()
     },
+    get compact() {
+      return props.settings.compactRows
+    },
     // A row shows its own error, so this one resolves or rejects instead of using the alert.
     onSave: async (entry: Entry, patch: EntryPatch) => {
       setError(null)
@@ -286,11 +289,7 @@ export function TimerView(props: {
                     <EntryTable groups={groups()} {...listProps} />
                   </Match>
                   <Match when={layout() !== 'table'}>
-                    <EntryList
-                      groups={shownGroups()}
-                      compact={layout() === 'focus'}
-                      {...listProps}
-                    />
+                    <EntryList groups={shownGroups()} focus={layout() === 'focus'} {...listProps} />
                   </Match>
                 </Switch>
               </Show>
