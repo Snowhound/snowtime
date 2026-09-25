@@ -1,4 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "tanstack-start"
+  "framework": "tanstack-start",
+  "installCommand": "npm install --global bun@$(node -p \"require('./package.json').packageManager.split('@')[1]\") && \"$(npm prefix --global)/bin/bun\" install --frozen-lockfile"
 }
