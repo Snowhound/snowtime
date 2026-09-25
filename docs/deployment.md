@@ -1,7 +1,7 @@
 # Deployment
 
 This runbook sets up one production stack from scratch: a Turso database, optional
-Upstash Redis, one or more OAuth apps, a Vercel project, and the GitHub environment CI
+Upstash Redis, a Vercel project, one or more OAuth apps, and the GitHub environment CI
 migrates from. Follow it for your own deployment or for a dedicated stack per client. The
 reasons behind the choices are in `architecture.md` ("Environments and deployment"), and
 the free-tier limits are in `hosting.md`.
@@ -18,13 +18,6 @@ Staging (the `develop` branch) is planned and not covered here.
   whether Turso offers a region closer to your users, and pick the Vercel region in the
   same AWS region (the [Vercel region list](https://vercel.com/docs/regions) names each
   one's AWS region).
-- Pick the production host, for example `time.example.com`, before you register OAuth
-  apps. OAuth callbacks and passkeys are bound to the host in `BETTER_AUTH_URL`, so
-  changing it later means updating every OAuth app, and passkeys registered on the old
-  host stop working. The generated `<project>.vercel.app` host works if you have no
-  domain yet.
-
-The steps below write the host as `<host>`.
 
 ## 1. Create the Turso database
 
@@ -55,7 +48,23 @@ Create the database in the Upstash console rather than through the Vercel Market
 The Marketplace integration sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`, which the app
 doesn't read.
 
-## 3. Register the OAuth apps
+## 3. Create the Vercel project and find its host
+
+1. Import the repository into Vercel. `vercel.json` selects the TanStack Start
+   framework, so leave the build settings at their defaults. The first deployment
+   fails or shows an error page until step 6 sets the environment variables.
+2. Under **Settings > Functions**, set the function region to the one from
+   [Before you start](#before-you-start), for example `dub1`. Vercel's default is
+   `iad1` (Washington, D.C.).
+3. Under **Settings > Domains**, note the production host. Vercel generates
+   `<project>.vercel.app`, with a suffix if that name is taken. To use your own domain
+   instead, add it here and create the DNS record Vercel shows, usually a CNAME.
+
+The next steps write this host as `<host>`. OAuth callbacks and passkeys are bound to it
+through `BETTER_AUTH_URL`; to change it later, see
+[Changing the host later](#changing-the-host-later).
+
+## 4. Register the OAuth apps
 
 Production has no password sign-in, and a passkey can only be added to an existing
 account, so at least one OAuth provider must be configured or nobody can sign in. Each
@@ -73,41 +82,7 @@ and Microsoft can list several redirect URLs in one app. For Microsoft account t
 
 Copy each provider's client ID and secret.
 
-## 4. Generate the auth secret
-
-```bash
-bunx --bun @better-auth/cli secret     # BETTER_AUTH_SECRET, at least 32 characters
-```
-
-Better Auth signs sessions with it. Changing it later signs everyone out.
-
-## 5. Create the Vercel project
-
-1. Import the repository into Vercel. `vercel.json` selects the TanStack Start
-   framework, so leave the build settings at their defaults.
-2. Under **Settings > Functions**, set the function region to the one from
-   [Before you start](#before-you-start), for example `dub1`. Vercel's default is
-   `iad1` (Washington, D.C.).
-3. Under **Settings > Environment Variables**, add these for the Production environment
-   and mark the secrets sensitive:
-
-   | Variable                                             | Value                                 |
-   | ---------------------------------------------------- | ------------------------------------- |
-   | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`             | Step 1                                |
-   | `BETTER_AUTH_SECRET`                                 | Step 4                                |
-   | `BETTER_AUTH_URL`                                    | `https://<host>`, no trailing slash   |
-   | `<PROVIDER>_CLIENT_ID`, `<PROVIDER>_CLIENT_SECRET`   | Step 3, both or neither per provider  |
-   | `MICROSOFT_TENANT_ID`                                | Optional, restricts Microsoft sign-in |
-   | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Step 2, both or neither               |
-
-   `.env.example` lists the same variables. `src/env.ts` checks them when the app starts
-   and names the variable that is missing or set without its pair. Don't prefix a secret
-   with `VITE_`: those variables reach the browser bundle.
-
-4. Leave Preview environment variables unset. Preview deployments have generated hosts,
-   where OAuth and passkeys can't work (`architecture.md`, "Sign-in methods").
-
-## 6. Let CI migrate the database
+## 5. Let CI migrate the database
 
 After the checks pass on a push to `main`, the `migrate-prod` job in
 `.github/workflows/ci.yml` runs `bun run db:migrate` against the production database.
@@ -128,16 +103,37 @@ TURSO_DATABASE_URL=libsql://... TURSO_AUTH_TOKEN=... bun run db:migrate
 Vercel deploys a push while CI is still running, so new code can go live about a minute
 before its migration applies. Keep migrations backward compatible (`migrations.md`).
 
-## 7. Deploy and add the domain
+## 6. Set the environment variables and redeploy
 
-1. Redeploy the latest `main` deployment, so it runs with the region and variables from
-   step 5.
-2. To use your own domain, add it under **Settings > Domains** and create the DNS record
-   Vercel shows, usually a CNAME. Vercel issues the certificate.
-3. If `BETTER_AUTH_URL` still names another host, change it, update the redirect URL in
-   every OAuth app, and redeploy.
+1. Generate the auth secret. Better Auth signs sessions with it, so changing it later
+   signs everyone out.
 
-## 8. Check the deployment
+   ```bash
+   bunx --bun @better-auth/cli secret     # BETTER_AUTH_SECRET, at least 32 characters
+   ```
+
+2. In the Vercel project, under **Settings > Environment Variables**, add these for the
+   Production environment and mark the secrets sensitive:
+
+   | Variable                                             | Value                                 |
+   | ---------------------------------------------------- | ------------------------------------- |
+   | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`             | Step 1                                |
+   | `BETTER_AUTH_SECRET`                                 | Above                                 |
+   | `BETTER_AUTH_URL`                                    | `https://<host>`, no trailing slash   |
+   | `<PROVIDER>_CLIENT_ID`, `<PROVIDER>_CLIENT_SECRET`   | Step 4, both or neither per provider  |
+   | `MICROSOFT_TENANT_ID`                                | Optional, restricts Microsoft sign-in |
+   | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Step 2, both or neither               |
+
+   `.env.example` lists the same variables. `src/env.ts` checks them when the app starts
+   and names the variable that is missing or set without its pair. Don't prefix a secret
+   with `VITE_`: those variables reach the browser bundle.
+
+3. Leave Preview environment variables unset. Preview deployments have generated hosts,
+   where OAuth and passkeys can't work (`architecture.md`, "Sign-in methods").
+4. Redeploy the latest production deployment, so it runs with the region and variables.
+   Vercel applies both only to deployments made after the change.
+
+## 7. Check the deployment
 
 - Sign in with each configured provider, and create an organization.
 - Add a passkey in Settings, sign out, and sign in with it.
@@ -150,8 +146,12 @@ before its migration applies. Keep migrations backward compatible (`migrations.m
 
 ## Changing the host later
 
+Moving from `<project>.vercel.app` to your own domain, for example, takes a few minutes:
+
 1. Add the new domain in Vercel and wait for its certificate.
-2. Add the new redirect URL to each OAuth app. For GitHub, create a new app or change the
-   existing one's callback.
+2. Change the redirect URL in each OAuth app to the new host. GitHub, Google, and
+   Microsoft all let you edit it.
 3. Set `BETTER_AUTH_URL` to the new host and redeploy.
-4. Users register their passkeys again on the new host. OAuth accounts carry over.
+
+OAuth accounts and all data carry over. Passkeys don't: a passkey is bound to the host it
+was registered on, so users add theirs again on the new host.
