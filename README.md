@@ -1,7 +1,8 @@
 # Snowtime
 
 A minimal, multi-tenant time tracker in the spirit of Toggl. Snowhound built it for its
-own teams, and it can host other organizations from the same deployment.
+own teams, and it can host other organizations from the same deployment. It runs at
+[snowtime.snowhound.eu](https://snowtime.snowhound.eu).
 
 - One-click timer with a description and project
 - Organizations, teams, members, and invitations, with owner, admin, member, and team
