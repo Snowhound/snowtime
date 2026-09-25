@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import { formatHours } from '~/lib/format'
+import { useFormatHours } from '~/lib/display-format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'
@@ -41,6 +41,7 @@ export function EntryTable(
     now: number
   },
 ) {
+  const formatHours = useFormatHours()
   return (
     <div class="surface bg-card overflow-hidden rounded-lg border">
       <Table class="min-w-[48rem] table-fixed">

@@ -18,7 +18,8 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { type WeekStart, addDays, localDate } from '~/lib/calendar'
-import { formatHours, formatIsoDate } from '~/lib/format'
+import { useFormatHours } from '~/lib/display-format'
+import { formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
@@ -94,6 +95,7 @@ export function EntryList(
     focus?: boolean
   },
 ) {
+  const formatHours = useFormatHours()
   return (
     <For each={groupDates(props.groups)}>
       {(date) => {

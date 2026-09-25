@@ -13,8 +13,9 @@ import { PageTitle } from '~/components/page-title'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { localDate } from '~/lib/calendar'
+import { useFormatHours } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
-import { formatClock, formatHours, formatIsoDate } from '~/lib/format'
+import { formatClock, formatIsoDate } from '~/lib/format'
 import { projectsQuery } from '~/lib/projects'
 import { newId } from '~/lib/query'
 import type { Settings } from '~/lib/settings'
@@ -56,6 +57,7 @@ export function TimerView(props: {
   settings: Settings
   organizations: readonly { id: string; name: string }[]
 }) {
+  const formatHours = useFormatHours()
   function zone() {
     return props.settings.timeZone
   }

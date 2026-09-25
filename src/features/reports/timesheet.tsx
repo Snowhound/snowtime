@@ -13,7 +13,8 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { type IsoDate, type WeekStart, startOfWeek } from '~/lib/calendar'
-import { formatHours, formatIsoDate } from '~/lib/format'
+import { useFormatHours } from '~/lib/display-format'
+import { formatIsoDate } from '~/lib/format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { Group, Unit } from './filters'
@@ -37,6 +38,7 @@ export function Timesheet(props: {
   today: IsoDate
   weekStart: WeekStart
 }) {
+  const formatHours = useFormatHours()
   function buckets() {
     return props.report.buckets
   }

@@ -24,7 +24,7 @@ import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { appIcon } from '~/lib/app-icon'
 import { addDays, localDate, startOfWeek } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
-import { formatDateTime, formatIsoDate } from '~/lib/format'
+import { formatDateTime, formatHours, formatIsoDate } from '~/lib/format'
 import { playIntro } from '~/lib/intro'
 import { useSeason } from '~/lib/seasons'
 import { type Settings, useUpdateSettings } from '~/lib/settings'
@@ -42,10 +42,12 @@ const WEEK_STARTS = [
   { value: 'sun', label: m.settings_week_sunday },
 ] as const
 
-// The formats show as examples, which read the same in every UI language but "By language".
+// The formats show as examples. 11 hours 10 minutes:
+const EXAMPLE_DURATION = 40_200_000
+
 const DURATION_FORMATS = [
-  { value: 'clock', label: () => '11:10' },
-  { value: 'units', label: () => '11h 10m' },
+  { value: 'clock', label: () => formatHours(EXAMPLE_DURATION, 'clock') },
+  { value: 'units', label: () => formatHours(EXAMPLE_DURATION, 'units') },
 ] as const
 
 const DATE_FORMATS = [

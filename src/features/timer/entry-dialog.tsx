@@ -17,7 +17,7 @@ import {
 import { Label } from '~/components/ui/label'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { type WeekStart, localDate, localTime } from '~/lib/calendar'
-import { formatHours } from '~/lib/format'
+import { useFormatHours } from '~/lib/display-format'
 import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 import { type EntryFormError, readEntryTimes } from './entries'
@@ -84,6 +84,7 @@ function EntryForm(props: {
   onSave: (values: EntryDialogValues) => void
   onClose: () => void
 }) {
+  const formatHours = useFormatHours()
   // oxlint-disable-next-line solid/reactivity -- the form starts from the target it opened with.
   const target = props.target
   const entry = target.kind === 'new' ? null : target.entry

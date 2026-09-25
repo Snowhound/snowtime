@@ -20,7 +20,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
-import { formatDateTime, formatHours } from '~/lib/format'
+import { useFormatHours } from '~/lib/display-format'
+import { formatDateTime } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import type { Team } from '~/lib/teams'
 import { cn } from '~/lib/utils'
@@ -99,6 +100,7 @@ function Row(
     pending: boolean
   },
 ) {
+  const formatHours = useFormatHours()
   function ms() {
     return props.totals.get(props.project.id) ?? 0
   }

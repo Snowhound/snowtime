@@ -1,4 +1,6 @@
+import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
+import type { DurationFormat } from '~/server/settings/settings.schemas'
 
 // Display formatting in the user's language and time zone. The server returns instants
 // and milliseconds; only the client turns them into text (docs/architecture.md,
@@ -13,10 +15,20 @@ export function formatClock(ms: number): string {
   return `${h}:${m}:${s}`
 }
 
-// A total in hours and minutes, rounded to the minute: 12:05.
-export function formatHours(ms: number): string {
-  const minutes = Math.round(Math.max(0, ms) / 60_000)
-  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
+// A total in hours and minutes, rounded to the minute: 12:05, or with units (the
+// durationFormat setting) 12h 5m, 12h, or 45m in the UI language.
+export function formatHours(ms: number, format: DurationFormat = 'clock'): string {
+  const total = Math.round(Math.max(0, ms) / 60_000)
+  const hours = Math.floor(total / 60)
+  const minutes = total % 60
+  if (format === 'clock') return `${hours}:${String(minutes).padStart(2, '0')}`
+  const text = !hours
+    ? m.duration_minutes({ minutes })
+    : !minutes
+      ? m.duration_hours({ hours })
+      : m.duration_hours_minutes({ hours, minutes })
+  // Non-breaking spaces, so a duration never wraps in a narrow column.
+  return text.replaceAll(' ', '\u00a0')
 }
 
 const formatters = new Map<string, Intl.DateTimeFormat>()
