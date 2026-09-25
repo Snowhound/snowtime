@@ -12,6 +12,7 @@ import { getLocale } from '~/paraglide/runtime.js'
 import type { AppSession } from '~/server/auth/auth.functions'
 import { getSettings } from '~/server/settings/settings.functions'
 import { AppHeader } from './app-header'
+import { PasskeyPrompt } from './passkey-prompt'
 
 export function AppFrame(props: ParentProps<{ session: AppSession }>) {
   const queryClient = useQueryClient()
@@ -51,6 +52,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession }>) {
         <AppHeader />
         <SeasonProvider value={() => currentSeason(scene().sceneSeason)}>
           <main class={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-8', !wide() && 'max-w-6xl')}>
+            <PasskeyPrompt signedInAt={props.session.signedInAt} />
             {props.children}
           </main>
         </SeasonProvider>

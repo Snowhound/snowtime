@@ -52,6 +52,7 @@ export const getAppSession = createServerFn({ method: 'GET' }).handler(async () 
 
   return {
     user: { id: user.id, name: user.name, email: user.email, image: user.image ?? null },
+    signedInAt: session.session.createdAt,
     ...state,
     localeChanged,
   }

@@ -23,28 +23,23 @@ import {
 } from '~/components/ui/dialog'
 import { authClient, unwrap } from '~/lib/auth-client'
 import { formatDateTime } from '~/lib/format'
+import { passkeysQuery } from '~/lib/passkeys'
 import { m } from '~/paraglide/messages.js'
 import type { SignInMethod } from '~/server/auth/auth.functions'
 
 type SocialProvider = 'google' | 'github' | 'microsoft'
 
-const PROVIDERS: { id: SocialProvider; name: string; Icon: Component }[] = [
+const PROVIDERS: { id: SocialProvider; name: string; Icon: Component<{ class?: string }> }[] = [
   { id: 'google', name: 'Google', Icon: GoogleIcon },
   { id: 'github', name: 'GitHub', Icon: GitHubIcon },
   { id: 'microsoft', name: 'Microsoft', Icon: MicrosoftIcon },
 ]
 
-// Both lists come from the browser: the Better Auth client can't call itself during
+// The list comes from the browser: the Better Auth client can't call itself during
 // server rendering.
 export const accountsQuery = queryOptions({
   queryKey: ['auth', 'accounts'],
   queryFn: () => unwrap(authClient.listAccounts()),
-  enabled: !isServer,
-})
-
-export const passkeysQuery = queryOptions({
-  queryKey: ['auth', 'passkeys'],
-  queryFn: () => unwrap(authClient.passkey.listUserPasskeys()),
   enabled: !isServer,
 })
 
@@ -213,7 +208,7 @@ export function SignInMethodsList(props: {
                 when={linked(provider.id)}
                 fallback={
                   <MethodRow
-                    icon={<provider.Icon />}
+                    icon={<provider.Icon class="size-5 shrink-0" />}
                     name={provider.name}
                     detail={m.settings_not_connected()}
                   >
@@ -233,7 +228,7 @@ export function SignInMethodsList(props: {
               >
                 {(account) => (
                   <MethodRow
-                    icon={<provider.Icon />}
+                    icon={<provider.Icon class="size-5 shrink-0" />}
                     name={provider.name}
                     badge={<Badge variant="secondary">{m.settings_connected()}</Badge>}
                     detail={m.settings_connected_since({ date: date(account().createdAt) })}

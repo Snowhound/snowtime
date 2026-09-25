@@ -126,6 +126,11 @@
   where password sign-in is enabled.
 - Passkeys are added to an existing account: a signed-in user registers one, then signs
   in with it instead of their provider. Nobody signs up with a passkey alone.
+  - After sign-in, the app frame offers to add one: above every signed-in page, for a day
+    after sign-in (while Better Auth still lets the session add a passkey), to a user
+    without a passkey, in a browser with WebAuthn. Adding one or choosing "Not now" hides
+    it on that device (`snowtime.passkeyPromptDismissed` in localStorage), so a user is
+    asked again on a new device, where a passkey helps.
 - A passkey is bound to its relying party, the host of `BETTER_AUTH_URL`, so it works
   only in the environment where it was registered. A preview deployment with its own
   URL needs its own passkeys.
