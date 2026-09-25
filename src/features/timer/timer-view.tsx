@@ -243,7 +243,11 @@ export function TimerView(props: {
       <div class="relative flex items-center justify-between gap-4">
         <PageTitle title={m.nav_timer()} />
         <div class="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setDialog({ kind: 'new' })}>
+          <Button
+            variant="secondary"
+            class="border-input text-primary h-9 border px-3"
+            onClick={() => setDialog({ kind: 'new' })}
+          >
             <PlusIcon aria-hidden="true" />
             {m.timer_add_entry()}
           </Button>

@@ -129,7 +129,7 @@ export function ReportFilterBar(
             <Label for="report-from">{m.reports_from()}</Label>
             <DatePicker
               id="report-from"
-              class="w-[9.5rem]"
+              class="w-36"
               inputClass="h-9"
               value={props.filters.range.from}
               onChange={(value) => pickDate('from', value)}
@@ -141,7 +141,7 @@ export function ReportFilterBar(
             <Label for="report-to">{m.reports_to()}</Label>
             <DatePicker
               id="report-to"
-              class="w-[9.5rem]"
+              class="w-36"
               inputClass="h-9"
               value={last()}
               onChange={(value) => pickDate('to', value)}
@@ -158,7 +158,7 @@ export function ReportFilterBar(
               <Label for="report-people">{m.reports_people()}</Label>
               <NativeSelect
                 id="report-people"
-                class="h-9 w-44"
+                class="h-9 w-40"
                 value={peopleValue()}
                 onChange={(event) => onPeople(event.currentTarget.value)}
               >
