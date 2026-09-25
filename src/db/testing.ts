@@ -5,11 +5,17 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Database } from '.'
+import { BUSY_TIMEOUT_MS } from './connection'
 import { relations } from './relations'
 
-export async function createTestDatabase(): Promise<{ db: Database; cleanup: () => void }> {
+export async function createTestDatabase(): Promise<{
+  db: Database
+  url: string
+  cleanup: () => void
+}> {
   const dir = mkdtempSync(join(tmpdir(), 'snowtime-test-'))
-  const db = drizzle({ connection: { url: `file:${join(dir, 'test.db')}` }, relations })
+  const url = `file:${join(dir, 'test.db')}`
+  const db = drizzle({ connection: { url, timeout: BUSY_TIMEOUT_MS }, relations })
   await migrate(db, { migrationsFolder: 'drizzle' })
-  return { db, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
+  return { db, url, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
 }
