@@ -5,13 +5,30 @@ import { type IsoDate, type WeekStart, addDays, startOfWeek } from './calendar'
 
 type DatePart = 'day' | 'month' | 'year'
 
+// One formatter per locale for dates and one for times: every date and time field formats
+// with them as it renders, and building an Intl formatter is slow.
+const dateFormatters = new Map<string, Intl.DateTimeFormat>()
+const timeFormatters = new Map<string, Intl.DateTimeFormat>()
+
+function cached(
+  formatters: Map<string, Intl.DateTimeFormat>,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+) {
+  let f = formatters.get(locale)
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', ...options })
+    formatters.set(locale, f)
+  }
+  return f
+}
+
 function dateFormatter(locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: 'UTC',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
+  return cached(dateFormatters, locale, { year: 'numeric', month: '2-digit', day: '2-digit' })
+}
+
+function timeFormatter(locale: string) {
+  return cached(timeFormatters, locale, { hour: '2-digit', minute: '2-digit' })
 }
 
 // The order of day, month, and year in the locale's numeric dates, and the separator
@@ -79,7 +96,7 @@ export function parseDateInput(text: string, locale: string, today: IsoDate): Is
 
 // Whether the locale writes times with AM and PM.
 export function uses12Hours(locale: string): boolean {
-  return new Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hour12 === true
+  return timeFormatter(locale).resolvedOptions().hour12 === true
 }
 
 // The 'HH:MM' time as the locale writes it, as formatTime shows times: 09:30 AM in en, 09:30
@@ -87,11 +104,7 @@ export function uses12Hours(locale: string): boolean {
 export function formatTimeInput(time: string, locale: string): string {
   if (!time) return ''
   const [h, min] = time.split(':').map(Number)
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: 'UTC',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(Date.UTC(2026, 0, 1, h, min))
+  return timeFormatter(locale).format(Date.UTC(2026, 0, 1, h, min))
 }
 
 // Reads a typed time: 9, 930, 0930, 9:30, 9.30, or 9 30, with an optional am or pm

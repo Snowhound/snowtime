@@ -1,20 +1,41 @@
 // The user's display formats (the durationFormat, dateFormat, and timeFormat settings) for
 // the formatters in format.ts and date-input.ts. Signed out, before the settings load, or
 // outside a query client, the defaults apply: 11:10, 30.09.2026, and 15:30.
-import { QueryClientContext, useQuery } from '@tanstack/solid-query'
-import { useContext } from 'solid-js'
+import { type QueryClient, QueryClientContext, hashKey } from '@tanstack/solid-query'
+import { createSignal, useContext } from 'solid-js'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { DateFormat, TimeFormat } from '~/server/settings/settings.schemas'
 import { formatHours } from './format'
 import { sessionQuery } from './session'
 import type { Settings } from './settings'
 
-// The session's settings, read without fetching: the root keeps the session fresh, and a
-// fetch as each row mounts would undo an optimistic settings change until the server answers.
-function useSettings(): () => Settings | null | undefined {
-  if (!useContext(QueryClientContext)) return () => undefined
-  const session = useQuery(() => ({ ...sessionQuery, refetchOnMount: false }))
-  return () => session.data?.settings
+type SettingsSignal = () => Settings | null | undefined
+
+// One signal per query client, following the cached session: every duration, date and time
+// field reads the formats, and a query observer each made the timer's rows slow to render.
+const signals = new WeakMap<QueryClient, SettingsSignal>()
+
+function settingsSignal(client: QueryClient): SettingsSignal {
+  let signal = signals.get(client)
+  if (signal) return signal
+  function read() {
+    return client.getQueryData(sessionQuery.queryKey)?.settings
+  }
+  const [settings, setSettings] = createSignal(read())
+  const hash = hashKey(sessionQuery.queryKey)
+  client.getQueryCache().subscribe((event) => {
+    if (event.query.queryHash === hash) setSettings(read())
+  })
+  signal = settings
+  signals.set(client, signal)
+  return signal
+}
+
+// The session's settings, read from the cache without fetching: the root keeps the session
+// fresh, and an optimistic settings change shows at once.
+function useSettings(): SettingsSignal {
+  const client = useContext(QueryClientContext)?.()
+  return client ? settingsSignal(client) : () => undefined
 }
 
 // The user's duration format.
