@@ -8,8 +8,11 @@
 // keystroke and pick, as a native input's input event does. `onCommit` runs when the change is
 // done: on blur, and when the columns close after a pick. Escape in the columns puts back the
 // time they opened on.
+//
+// While `idle`, the clock is a plain button that looks the same, without its popover, so a list
+// of fields can mount the popover only where it is being used.
 import ClockIcon from 'lucide-solid/icons/clock'
-import { createEffect, createSignal, on } from 'solid-js'
+import { Show, createEffect, createSignal, on } from 'solid-js'
 import { Button } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { formatTimeInput, parseTimeInput, shiftTime, uses12Hours } from '~/lib/date-input'
@@ -36,6 +39,7 @@ export function TimeInput(props: {
   // The clock button's, such as revealing it on hover.
   buttonClass?: string
   class?: string
+  idle?: boolean
 }) {
   const locale = useTimeLocale()
   function format(value: string) {
@@ -102,6 +106,17 @@ export function TimeInput(props: {
     props.onCommit?.()
   }
 
+  const clock = {
+    variant: 'ghost',
+    size: 'icon',
+    get class() {
+      return cn('text-muted-foreground pointer-events-auto ml-1 size-7', props.buttonClass)
+    },
+    get 'aria-label'() {
+      return m.picker_choose_time()
+    },
+  } as const
+
   function openChange(next: boolean) {
     if (next) {
       opened = props.value
@@ -155,44 +170,47 @@ export function TimeInput(props: {
           <span class="col-start-1 row-start-1">{text()}</span>
           <span class="col-start-1 row-start-1">{m.picker_time()}</span>
         </span>
-        <Popover
-          open={open()}
-          onOpenChange={openChange}
-          placement="bottom-start"
-          anchorRef={() => anchor}
+        <Show
+          when={!props.idle}
+          fallback={
+            <Button {...clock} aria-haspopup="dialog" aria-expanded={false}>
+              <ClockIcon aria-hidden="true" />
+            </Button>
+          }
         >
-          <PopoverTrigger
-            as={Button<'button'>}
-            variant="ghost"
-            size="icon"
-            class={cn('text-muted-foreground pointer-events-auto ml-1 size-7', props.buttonClass)}
-            aria-label={m.picker_choose_time()}
+          <Popover
+            open={open()}
+            onOpenChange={openChange}
+            placement="bottom-start"
+            anchorRef={() => anchor}
           >
-            <ClockIcon aria-hidden="true" />
-          </PopoverTrigger>
-          <PopoverContent
-            ref={content}
-            class="w-auto p-1"
-            aria-label={m.picker_choose_time()}
-            // Kobalte's top layer: a modal dialog around the field neither hides the popover from
-            // screen readers nor pulls focus back out of it, as it does for its toasts.
-            data-kb-top-layer
-            onOpenAutoFocus={(event: Event) => {
-              event.preventDefault()
-              content?.querySelector<HTMLElement>('[data-part="hour"][tabindex="0"]')?.focus()
-            }}
-            onEscapeKeyDown={() => {
-              if (picked) set(opened)
-              picked = false
-            }}
-          >
-            <TimeColumns
-              value={parseTimeInput(text()) ?? props.value}
-              locale={locale()}
-              onSelect={pick}
-            />
-          </PopoverContent>
-        </Popover>
+            <PopoverTrigger as={Button<'button'>} {...clock}>
+              <ClockIcon aria-hidden="true" />
+            </PopoverTrigger>
+            <PopoverContent
+              ref={content}
+              class="w-auto p-1"
+              aria-label={m.picker_choose_time()}
+              // Kobalte's top layer: a modal dialog around the field neither hides the popover from
+              // screen readers nor pulls focus back out of it, as it does for its toasts.
+              data-kb-top-layer
+              onOpenAutoFocus={(event: Event) => {
+                event.preventDefault()
+                content?.querySelector<HTMLElement>('[data-part="hour"][tabindex="0"]')?.focus()
+              }}
+              onEscapeKeyDown={() => {
+                if (picked) set(opened)
+                picked = false
+              }}
+            >
+              <TimeColumns
+                value={parseTimeInput(text()) ?? props.value}
+                locale={locale()}
+                onSelect={pick}
+              />
+            </PopoverContent>
+          </Popover>
+        </Show>
       </div>
     </div>
   )

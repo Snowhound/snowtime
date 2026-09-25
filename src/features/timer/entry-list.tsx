@@ -38,6 +38,7 @@ import {
   createEntryEditor,
 } from './entry-fields'
 import type { Entry } from './queries'
+import { createRowActivation } from './row-activation'
 
 export function dayLabel(date: string, zone: string, now: number) {
   const today = localDate(now, zone)
@@ -129,10 +130,14 @@ export function EntryList(
 
 function EntryRow(props: EntryRowProps & { entry: Entry; focus?: boolean }) {
   const editor = createEntryEditor(props)
+  const activation = createRowActivation()
   const ref = revealWhenSaved(props)
   return (
     <li
-      ref={ref}
+      ref={(el) => {
+        ref(el)
+        activation.ref(el)
+      }}
       class={cn(
         'group px-4',
         props.compact ? 'py-1' : props.focus ? 'py-2' : 'py-3',
@@ -144,13 +149,23 @@ function EntryRow(props: EntryRowProps & { entry: Entry; focus?: boolean }) {
           <DescriptionField editor={editor} />
         </div>
         <div class="-ml-2 min-w-0 md:ml-0 md:w-36 md:shrink-0">
-          <ProjectField editor={editor} entry={props.entry} projects={props.projects} />
+          <ProjectField
+            editor={editor}
+            entry={props.entry}
+            projects={props.projects}
+            active={activation.active()}
+          />
         </div>
         <div class="text-muted-foreground row-start-3 -ml-2 flex shrink-0 items-center gap-1 md:ml-0">
-          <DateField editor={editor} zone={props.zone} weekStart={props.weekStart} />
-          <TimeField editor={editor} field="start" />
+          <DateField
+            editor={editor}
+            zone={props.zone}
+            weekStart={props.weekStart}
+            active={activation.active()}
+          />
+          <TimeField editor={editor} field="start" active={activation.active()} />
           <span aria-hidden="true">–</span>
-          <TimeField editor={editor} field="end" />
+          <TimeField editor={editor} field="end" active={activation.active()} />
           <NextDayMark editor={editor} />
           <ClockRoom />
         </div>
@@ -163,6 +178,7 @@ function EntryRow(props: EntryRowProps & { entry: Entry; focus?: boolean }) {
             entry={props.entry}
             saved={props.justSaved(props.entry.id)}
             compact={props.compact}
+            active={activation.active()}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
           />
@@ -175,17 +191,30 @@ function EntryRow(props: EntryRowProps & { entry: Entry; focus?: boolean }) {
 
 // The row's continue and more actions. After a confirmed save, "Saved" takes their place for
 // a moment; they stay mounted underneath, so a button being tabbed to keeps its focus.
-// Compact buttons match the fields' height.
+// Compact buttons match the fields' height. The menu mounts while the row is `active`.
 export function EntryActions(props: {
   entry: Entry
   saved: boolean
   compact: boolean
+  active: boolean
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
 }) {
   function description() {
     return props.entry.description
   }
+  const more = {
+    variant: 'ghost',
+    size: 'icon',
+    get class() {
+      return cn(props.compact && 'size-8')
+    },
+    get 'aria-label'() {
+      return description()
+        ? m.timer_entry_actions({ description: description() })
+        : m.timer_entry_actions_unnamed()
+    },
+  } as const
   return (
     <div class="relative">
       <div
@@ -210,30 +239,29 @@ export function EntryActions(props: {
         >
           <PlayIcon aria-hidden="true" />
         </Button>
-        <DropdownMenu placement="bottom-end">
-          <DropdownMenuTrigger
-            as={Button<'button'>}
-            variant="ghost"
-            size="icon"
-            class={cn(props.compact && 'size-8')}
-            aria-label={
-              description()
-                ? m.timer_entry_actions({ description: description() })
-                : m.timer_entry_actions_unnamed()
-            }
-          >
-            <EllipsisVerticalIcon aria-hidden="true" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent class="w-40">
-            <DropdownMenuItem
-              class="text-destructive focus:text-destructive gap-2"
-              onSelect={() => props.onDelete(props.entry)}
-            >
-              <TrashIcon class="size-4" aria-hidden="true" />
-              {m.timer_delete()}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Show
+          when={props.active}
+          fallback={
+            <Button {...more} aria-haspopup="menu" aria-expanded={false}>
+              <EllipsisVerticalIcon aria-hidden="true" />
+            </Button>
+          }
+        >
+          <DropdownMenu placement="bottom-end">
+            <DropdownMenuTrigger as={Button<'button'>} {...more}>
+              <EllipsisVerticalIcon aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="w-40">
+              <DropdownMenuItem
+                class="text-destructive focus:text-destructive gap-2"
+                onSelect={() => props.onDelete(props.entry)}
+              >
+                <TrashIcon class="size-4" aria-hidden="true" />
+                {m.timer_delete()}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Show>
       </div>
       <p
         role="status"

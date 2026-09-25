@@ -1,6 +1,8 @@
 // Inline editing of a stopped entry (prototypes/timer.html): the entry rows' description,
 // project, date, start, and end are fields that read as text until hovered or focused.
-// Each field saves on its own, with only what changed. The mutation applies the change at
+// Their popovers and menus mount only while the row is `active` (row-activation.ts); until
+// then, their triggers are plain buttons that look the same. Each field saves on its own,
+// with only what changed. The mutation applies the change at
 // once and rolls it back on error (queries.ts); the error then shows under the row.
 import CalendarIcon from 'lucide-solid/icons/calendar'
 import { For, Show, createEffect, createMemo, createSignal, createUniqueId, on } from 'solid-js'
@@ -247,7 +249,7 @@ export function ClockRoom() {
   )
 }
 
-export function TimeField(props: { editor: EntryEditor; field: TimeKey }) {
+export function TimeField(props: { editor: EntryEditor; field: TimeKey; active: boolean }) {
   function start() {
     return props.field === 'start'
   }
@@ -263,6 +265,7 @@ export function TimeField(props: { editor: EntryEditor; field: TimeKey }) {
       inputClass={cn(QUIET, 'pr-7', start() && START_CLOCK_ROOM)}
       textClass="pl-1.5 text-xs"
       buttonClass={cn('ml-0.5 size-6 [&_svg]:size-3.5', start() ? START_CLOCK : REVEAL)}
+      idle={!props.active}
       onCommit={() => props.editor.commitTimes(props.field)}
       onKeyDown={commitKeys(
         () => props.editor.commitTimes(props.field),
@@ -278,6 +281,7 @@ export function ProjectField(props: {
   editor: EntryEditor
   entry: Entry
   projects: readonly Project[]
+  active: boolean
 }) {
   function current() {
     return entryProject(props.projects, props.entry.projectId)
@@ -285,48 +289,73 @@ export function ProjectField(props: {
   function name() {
     return current()?.name ?? m.timer_no_project()
   }
-  return (
-    <DropdownMenu placement="bottom-start">
-      <DropdownMenuTrigger
-        as={Button<'button'>}
-        variant="ghost"
-        size="sm"
-        class={cn(
-          'h-8 w-full min-w-0 justify-start gap-1.5 px-2 text-xs font-normal',
-          !current() && 'text-muted-foreground',
-        )}
-        aria-label={m.entry_row_project({ project: name() })}
-      >
+  const trigger = {
+    variant: 'ghost',
+    size: 'sm',
+    get class() {
+      return cn(
+        'h-8 w-full min-w-0 justify-start gap-1.5 px-2 text-xs font-normal',
+        !current() && 'text-muted-foreground',
+      )
+    },
+    get 'aria-label'() {
+      return m.entry_row_project({ project: name() })
+    },
+  } as const
+  function Name() {
+    return (
+      <>
         <Show when={current()}>{(p) => <ProjectDot color={p().color} />}</Show>
         <span class="min-w-0 truncate">{name()}</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent class="max-h-80 w-64 overflow-y-auto">
-        <DropdownMenuRadioGroup
-          value={props.entry.projectId ?? NO_PROJECT}
-          onChange={(value) => {
-            const projectId = value === NO_PROJECT ? null : value
-            if (projectId !== props.entry.projectId) props.editor.save({ projectId })
-          }}
-        >
-          <For each={projectChoices(props.projects, props.entry.projectId ?? '')}>
-            {(choice) => (
-              <DropdownMenuRadioItem value={choice.value || NO_PROJECT} class="gap-2">
-                <Show when={choice.value}>
-                  <ProjectDot color={choice.color} />
-                </Show>
-                <span class="min-w-0 truncate">{choice.label}</span>
-              </DropdownMenuRadioItem>
-            )}
-          </For>
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </>
+    )
+  }
+  return (
+    <Show
+      when={props.active}
+      fallback={
+        <Button {...trigger} aria-haspopup="menu" aria-expanded={false}>
+          <Name />
+        </Button>
+      }
+    >
+      <DropdownMenu placement="bottom-start">
+        <DropdownMenuTrigger as={Button<'button'>} {...trigger}>
+          <Name />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent class="max-h-80 w-64 overflow-y-auto">
+          <DropdownMenuRadioGroup
+            value={props.entry.projectId ?? NO_PROJECT}
+            onChange={(value) => {
+              const projectId = value === NO_PROJECT ? null : value
+              if (projectId !== props.entry.projectId) props.editor.save({ projectId })
+            }}
+          >
+            <For each={projectChoices(props.projects, props.entry.projectId ?? '')}>
+              {(choice) => (
+                <DropdownMenuRadioItem value={choice.value || NO_PROJECT} class="gap-2">
+                  <Show when={choice.value}>
+                    <ProjectDot color={choice.color} />
+                  </Show>
+                  <span class="min-w-0 truncate">{choice.label}</span>
+                </DropdownMenuRadioItem>
+              )}
+            </For>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Show>
   )
 }
 
 // Moves the entry to another day, a rare change that would otherwise widen every row. It
 // saves when the popover closes or on Enter; Escape or an invalid date changes nothing.
-export function DateField(props: { editor: EntryEditor; zone: string; weekStart: WeekStart }) {
+export function DateField(props: {
+  editor: EntryEditor
+  zone: string
+  weekStart: WeekStart
+  active: boolean
+}) {
   const inputId = createUniqueId()
   const errorId = createUniqueId()
   const [open, setOpen] = createSignal(false)
@@ -352,54 +381,66 @@ export function DateField(props: { editor: EntryEditor; zone: string; weekStart:
     setOpen(next)
   }
 
+  const trigger = {
+    variant: 'ghost',
+    size: 'icon',
+    class: cn('text-muted-foreground size-8', REVEAL),
+    get 'aria-label'() {
+      return m.entry_row_date({
+        date: formatIsoDate(props.editor.date(), {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+        }),
+      })
+    },
+  } as const
+
   return (
-    <Popover open={open()} onOpenChange={openChange} placement="bottom-start">
-      <PopoverTrigger
-        as={Button<'button'>}
-        variant="ghost"
-        size="icon"
-        class={cn('text-muted-foreground size-8', REVEAL)}
-        aria-label={m.entry_row_date({
-          date: formatIsoDate(props.editor.date(), {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short',
-          }),
-        })}
-      >
-        <CalendarIcon aria-hidden="true" />
-      </PopoverTrigger>
-      <PopoverContent
-        class="grid w-auto gap-2 p-3"
-        onEscapeKeyDown={() => {
-          cancelled = true
-        }}
-      >
-        <div class="grid gap-1.5">
-          <Label for={inputId}>{m.entry_date()}</Label>
-          <DatePicker
-            id={inputId}
-            value={value()}
-            onChange={(next, how) => {
-              setValue(next)
-              if ((how === 'enter' || how === 'pick') && !error()) openChange(false)
-            }}
-            weekStart={props.weekStart}
-            today={today()}
-            max={today()}
-            invalid={!!error()}
-            aria-describedby={errorId}
-            live
-            inline
-          />
-          <Show when={error()}>
-            <p id={errorId} class="text-destructive text-xs">
-              {error()}
-            </p>
-          </Show>
-        </div>
-      </PopoverContent>
-    </Popover>
+    <Show
+      when={props.active}
+      fallback={
+        <Button {...trigger} aria-haspopup="dialog" aria-expanded={false}>
+          <CalendarIcon aria-hidden="true" />
+        </Button>
+      }
+    >
+      <Popover open={open()} onOpenChange={openChange} placement="bottom-start">
+        <PopoverTrigger as={Button<'button'>} {...trigger}>
+          <CalendarIcon aria-hidden="true" />
+        </PopoverTrigger>
+        <PopoverContent
+          class="grid w-auto gap-2 p-3"
+          onEscapeKeyDown={() => {
+            cancelled = true
+          }}
+        >
+          <div class="grid gap-1.5">
+            <Label for={inputId}>{m.entry_date()}</Label>
+            <DatePicker
+              id={inputId}
+              value={value()}
+              onChange={(next, how) => {
+                setValue(next)
+                if ((how === 'enter' || how === 'pick') && !error()) openChange(false)
+              }}
+              weekStart={props.weekStart}
+              today={today()}
+              max={today()}
+              invalid={!!error()}
+              aria-describedby={errorId}
+              live
+              inline
+            />
+            <Show when={error()}>
+              <p id={errorId} class="text-destructive text-xs">
+                {error()}
+              </p>
+            </Show>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </Show>
   )
 }
 

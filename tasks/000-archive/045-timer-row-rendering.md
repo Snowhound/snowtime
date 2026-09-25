@@ -1,6 +1,6 @@
 # 045: Timer row rendering
 
-Status: todo
+Status: done
 
 Opening the timer blocks the main thread for one frame of about 100 ms on a fast Mac, and
 several times that on slower devices, because every entry row mounts a full inline editor.
@@ -22,12 +22,36 @@ The likely approach: render a row's fields as plain text and buttons that look t
 mount its editor when the row is hovered or focused, keeping the focused field's focus.
 Touch needs care, since a tap that swaps the element under it can be lost.
 
+## Result
+
+Each row now mounts its editor only while the pointer or focus is in it, or after a tap
+(`src/features/timer/row-activation.ts`). Until then, the project, date, clock, and actions
+triggers are plain buttons that look the same, and `TimeInput` takes `idle` for the clock.
+When a row activates, focus on a swapped button moves to the trigger that replaced it, and
+a tap on one is replayed there. Inputs aren't swapped, so a field being typed in
+keeps its caret. A row unmounts its editor once the pointer and focus leave it, unless one
+of its popovers is open.
+
+Measured on 2026-09-25 on a local production build as the seeded owner (35 rows over 14
+days), in headless Chrome, five runs each. The table gives the longest animation frame after
+clicking Timer on the Reports page, and its blocking time, in milliseconds:
+
+| Navigation                | Before: frame | Before: blocking | After: frame | After: blocking |
+| ------------------------- | ------------- | ---------------- | ------------ | --------------- |
+| Not cached (after a load) | 105–124       | 49–72            | 71–87        | 15–29           |
+| Cached (a second visit)   | 101–114       | 48–56            | 74–92        | 18–26           |
+
+At rest the rows mount no Kobalte triggers; before, they mounted 175 (5 per row). The rows'
+elements match the old build in position, size, color, and visibility in both layouts, with
+and without compact rows, at 1440, 850, and 390 px. With Chrome's touch emulation, the first
+tap on a row's project, date, or actions button opens it.
+
 ## Acceptance criteria
 
-- [ ] Before and after timings of navigating from Reports to the timer, cached and not,
+- [x] Before and after timings of navigating from Reports to the timer, cached and not,
       on a production build (the long animation frame's duration and blocking time)
-- [ ] Rows that aren't being edited don't mount popovers, selects, comboboxes, or menus
-- [ ] Editing works as before with mouse, keyboard (Tab into a row lands on the same field,
+- [x] Rows that aren't being edited don't mount popovers, selects, comboboxes, or menus
+- [x] Editing works as before with mouse, keyboard (Tab into a row lands on the same field,
       and the field keeps focus), and touch (the first tap on a field acts)
-- [ ] Both layouts, list and table, and compact rows keep their look
-- [ ] `timer-view.test.tsx` passes, with tests for activating a row by focus and by pointer
+- [x] Both layouts, list and table, and compact rows keep their look
+- [x] `timer-view.test.tsx` passes, with tests for activating a row by focus and by pointer

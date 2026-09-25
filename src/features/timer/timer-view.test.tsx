@@ -132,6 +132,18 @@ function renderView() {
   ))
 }
 
+// A row mounts its menus and popovers once the pointer is over it, as a mouse is before it
+// clicks, so the button is found again after the hover.
+async function clickInRow(name: string | RegExp) {
+  await userEvent.hover(screen.getByRole('button', { name }))
+  await userEvent.click(screen.getByRole('button', { name }))
+}
+
+// Kobalte's triggers, which a row has only while its editor is mounted.
+function mountedTriggers(row: HTMLElement) {
+  return row.querySelectorAll('[data-closed], [data-expanded]').length
+}
+
 function timer() {
   return screen.getByRole('region', { name: 'Timer' })
 }
@@ -227,7 +239,7 @@ describe('TimerView', () => {
       server.entries = []
     })
 
-    await userEvent.click(screen.getByRole('button', { name: 'Actions for Invoice export review' }))
+    await clickInRow('Actions for Invoice export review')
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }))
     expect(fn.deleteEntry).toHaveBeenCalledWith({ data: { id: expect.any(String) } })
     expect(screen.queryByDisplayValue('Invoice export review')).not.toBeInTheDocument()
@@ -342,7 +354,7 @@ describe('TimerView', () => {
     const { id } = server.entries[0]
     fn.updateEntry.mockResolvedValue({})
 
-    await userEvent.click(screen.getByRole('button', { name: 'Project: Snowtime' }))
+    await clickInRow('Project: Snowtime')
     await userEvent.click(await screen.findByRole('menuitemradio', { name: 'No project' }))
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({ data: { id, projectId: null } }),
@@ -355,7 +367,7 @@ describe('TimerView', () => {
     const { id } = server.entries[0]
     fn.updateEntry.mockResolvedValue({})
 
-    await userEvent.click(screen.getByRole('button', { name: /^Date: / }))
+    await clickInRow(/^Date: /)
     const date = addDays(localDate(Date.now(), zone), -3)
     const input = await screen.findByLabelText('Date')
     fireEvent.input(input, { target: { value: date } })
@@ -370,6 +382,46 @@ describe('TimerView', () => {
         },
       }),
     )
+  })
+
+  test('mounts a row’s menus and popovers only while the pointer is over it', async () => {
+    renderView()
+    const row = (await screen.findByDisplayValue('Invoice export review')).closest('li')!
+    expect(mountedTriggers(row)).toBe(0)
+
+    await userEvent.hover(within(row).getByRole('button', { name: 'Project: Snowtime' }))
+    expect(mountedTriggers(row)).toBe(5)
+    await userEvent.unhover(row)
+    expect(mountedTriggers(row)).toBe(0)
+  })
+
+  test('a row focused from the keyboard keeps focus on the same field', async () => {
+    renderView()
+    const row = (await screen.findByDisplayValue('Invoice export review')).closest('li')!
+
+    within(row).getByRole('button', { name: 'Actions for Invoice export review' }).focus()
+    expect(mountedTriggers(row)).toBe(5)
+    expect(document.activeElement).toHaveAccessibleName('Actions for Invoice export review')
+    expect(document.activeElement).toHaveAttribute('data-closed')
+
+    await userEvent.keyboard('{Enter}')
+    expect(await screen.findByRole('menuitem', { name: 'Delete' })).toBeInTheDocument()
+  })
+
+  test('the first tap on a row’s field opens it', async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const date = screen.getByRole('button', { name: /^Date: / })
+
+    // A tap focuses the button before its click; the row waits for the click.
+    fireEvent.pointerDown(date, { pointerType: 'touch' })
+    fireEvent.pointerUp(date, { pointerType: 'touch' })
+    date.focus()
+    expect(date).toBeInTheDocument()
+    fireEvent.click(date)
+
+    expect(await screen.findByLabelText('Date')).toBeInTheDocument()
+    expect(document.activeElement).not.toBe(date)
   })
 
   test('adds a past entry by hand once its times are valid', async () => {

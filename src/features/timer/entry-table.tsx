@@ -34,6 +34,7 @@ import {
   savedTint,
 } from './entry-list'
 import type { Entry } from './queries'
+import { createRowActivation } from './row-activation'
 
 export function EntryTable(
   props: EntryRowProps & {
@@ -105,11 +106,15 @@ export function EntryTable(
 
 function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
   const editor = createEntryEditor(props)
+  const activation = createRowActivation()
   const ref = revealWhenSaved(props)
   return (
     <>
       <TableRow
-        ref={ref}
+        ref={(el: HTMLTableRowElement) => {
+          ref(el)
+          activation.ref(el)
+        }}
         class={cn('group', props.compact && '*:py-0.5', savedTint(props.justSaved(props.entry.id)))}
       >
         <TableCell class="max-w-0">
@@ -118,17 +123,27 @@ function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
           </div>
         </TableCell>
         <TableCell class="max-w-0">
-          <ProjectField editor={editor} entry={props.entry} projects={props.projects} />
+          <ProjectField
+            editor={editor}
+            entry={props.entry}
+            projects={props.projects}
+            active={activation.active()}
+          />
         </TableCell>
         <TableCell>
           <div class="flex items-center gap-1">
-            <DateField editor={editor} zone={props.zone} weekStart={props.weekStart} />
-            <TimeField editor={editor} field="start" />
+            <DateField
+              editor={editor}
+              zone={props.zone}
+              weekStart={props.weekStart}
+              active={activation.active()}
+            />
+            <TimeField editor={editor} field="start" active={activation.active()} />
           </div>
         </TableCell>
         <TableCell>
           <div class="flex items-center gap-1">
-            <TimeField editor={editor} field="end" />
+            <TimeField editor={editor} field="end" active={activation.active()} />
             <NextDayMark editor={editor} />
           </div>
         </TableCell>
@@ -140,6 +155,7 @@ function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
             entry={props.entry}
             saved={props.justSaved(props.entry.id)}
             compact={props.compact}
+            active={activation.active()}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
           />
