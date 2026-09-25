@@ -155,98 +155,101 @@ export function PreferencesCard(props: { settings: Settings }) {
           </Show>
         </p>
       </CardHeader>
-      <CardContent class="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <CardContent class="@container grid grid-cols-[minmax(0,1fr)] gap-6">
         <div class="grid gap-5">
           <h4 class="text-sm font-medium">{m.settings_language_and_region()}</h4>
-          <div class="grid gap-2">
-            <Label for="locale">{m.settings_language()}</Label>
-            <div class="sm:w-56">
-              <NativeSelect
-                id="locale"
-                value={props.settings.locale}
-                onChange={(event) =>
-                  update({ locale: event.currentTarget.value as Settings['locale'] })
-                }
-              >
-                <For each={LANGUAGES}>
-                  {(language) => (
-                    <option value={language.value} lang={language.value}>
-                      {language.label}
-                    </option>
-                  )}
-                </For>
-              </NativeSelect>
+          {/* Two columns once the card is wide enough for the date formats' three toggles. */}
+          <div class="grid items-start gap-x-6 gap-y-5 @2xl:grid-cols-2">
+            <div class="grid gap-2">
+              <Label for="locale">{m.settings_language()}</Label>
+              <div class="sm:w-56">
+                <NativeSelect
+                  id="locale"
+                  value={props.settings.locale}
+                  onChange={(event) =>
+                    update({ locale: event.currentTarget.value as Settings['locale'] })
+                  }
+                >
+                  <For each={LANGUAGES}>
+                    {(language) => (
+                      <option value={language.value} lang={language.value}>
+                        {language.label}
+                      </option>
+                    )}
+                  </For>
+                </NativeSelect>
+              </div>
             </div>
-          </div>
-          <div class="grid gap-2">
-            <Label for="time-zone">{m.settings_time_zone()}</Label>
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <NativeSelect
-                id="time-zone"
-                class="sm:w-80"
-                value={props.settings.timeZone}
-                onChange={(event) => update({ timeZone: event.currentTarget.value })}
-              >
-                <For each={zones().length ? zones() : [props.settings.timeZone]}>
-                  {(zone) => (
-                    <option value={zone} selected={zone === props.settings.timeZone}>
-                      {zoneLabel(zone)}
-                    </option>
-                  )}
-                </For>
-              </NativeSelect>
-              <Button
+            <div class="grid gap-2">
+              <Label for="time-zone">{m.settings_time_zone()}</Label>
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center @2xl:flex-col @2xl:items-stretch">
+                <NativeSelect
+                  id="time-zone"
+                  class="sm:w-80 @2xl:w-full"
+                  value={props.settings.timeZone}
+                  onChange={(event) => update({ timeZone: event.currentTarget.value })}
+                >
+                  <For each={zones().length ? zones() : [props.settings.timeZone]}>
+                    {(zone) => (
+                      <option value={zone} selected={zone === props.settings.timeZone}>
+                        {zoneLabel(zone)}
+                      </option>
+                    )}
+                  </For>
+                </NativeSelect>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="self-start sm:self-auto @2xl:self-start"
+                  disabled={!device() || device()!.zone === props.settings.timeZone}
+                  title={device()?.zone}
+                  onClick={() => update({ timeZone: device()!.zone })}
+                >
+                  <GlobeIcon aria-hidden="true" />
+                  {m.settings_use_device_zone()}
+                </Button>
+              </div>
+            </div>
+            <div class="grid gap-2">
+              <span class="text-sm leading-none font-medium" id="week-start-label">
+                {m.settings_week_start()}
+              </span>
+              <ToggleGroup
                 variant="outline"
-                size="sm"
-                class="self-start sm:self-auto"
-                disabled={!device() || device()!.zone === props.settings.timeZone}
-                title={device()?.zone}
-                onClick={() => update({ timeZone: device()!.zone })}
+                class="justify-start"
+                aria-labelledby="week-start-label"
+                value={props.settings.weekStart}
+                onChange={(value) => value && update({ weekStart: value as Settings['weekStart'] })}
               >
-                <GlobeIcon aria-hidden="true" />
-                {m.settings_use_device_zone()}
-              </Button>
+                <For each={WEEK_STARTS}>
+                  {(option) => (
+                    <ToggleGroupItem value={option.value}>{option.label()}</ToggleGroupItem>
+                  )}
+                </For>
+              </ToggleGroup>
             </div>
+            <Choice
+              id="duration-format"
+              label={m.settings_duration_format()}
+              options={DURATION_FORMATS}
+              value={props.settings.durationFormat}
+              onChange={(durationFormat) => update({ durationFormat })}
+            />
+            <Choice
+              id="date-format"
+              label={m.settings_date_format()}
+              options={DATE_FORMATS}
+              value={props.settings.dateFormat}
+              onChange={(dateFormat) => update({ dateFormat })}
+            />
+            <Choice
+              id="time-format"
+              label={m.settings_time_format()}
+              options={TIME_FORMATS}
+              value={props.settings.timeFormat}
+              onChange={(timeFormat) => update({ timeFormat })}
+            />
           </div>
-          <div class="grid gap-2">
-            <span class="text-sm leading-none font-medium" id="week-start-label">
-              {m.settings_week_start()}
-            </span>
-            <ToggleGroup
-              variant="outline"
-              class="justify-start"
-              aria-labelledby="week-start-label"
-              value={props.settings.weekStart}
-              onChange={(value) => value && update({ weekStart: value as Settings['weekStart'] })}
-            >
-              <For each={WEEK_STARTS}>
-                {(option) => (
-                  <ToggleGroupItem value={option.value}>{option.label()}</ToggleGroupItem>
-                )}
-              </For>
-            </ToggleGroup>
-          </div>
-          <Choice
-            id="duration-format"
-            label={m.settings_duration_format()}
-            options={DURATION_FORMATS}
-            value={props.settings.durationFormat}
-            onChange={(durationFormat) => update({ durationFormat })}
-          />
-          <Choice
-            id="date-format"
-            label={m.settings_date_format()}
-            options={DATE_FORMATS}
-            value={props.settings.dateFormat}
-            onChange={(dateFormat) => update({ dateFormat })}
-          />
-          <Choice
-            id="time-format"
-            label={m.settings_time_format()}
-            options={TIME_FORMATS}
-            value={props.settings.timeFormat}
-            onChange={(timeFormat) => update({ timeFormat })}
-          />
           <div class="bg-muted/60 grid gap-1 rounded-md px-3 py-2.5 text-sm">
             <Show when={device()} fallback={<p aria-hidden="true">&nbsp;</p>}>
               {(device) => (
@@ -303,43 +306,45 @@ export function PreferencesCard(props: { settings: Settings }) {
               onClose={() => setIconDialogOpen(false)}
             />
           </div>
-          <div class="grid gap-2">
-            <span class="text-sm leading-none font-medium" id="theme-label">
-              {m.user_menu_theme()}
-            </span>
-            <ToggleGroup
-              variant="outline"
-              class="justify-start"
-              aria-labelledby="theme-label"
-              value={props.settings.theme}
-              onChange={(value) => value && update({ theme: value as Settings['theme'] })}
-            >
-              <For each={THEMES}>
-                {(option) => (
-                  <ToggleGroupItem value={option.value}>{option.label()}</ToggleGroupItem>
-                )}
-              </For>
-            </ToggleGroup>
-          </div>
-          <div class="grid gap-2">
-            <span class="text-sm leading-none font-medium" id="layout-label">
-              {m.settings_timer_layout()}
-            </span>
-            <ToggleGroup
-              variant="outline"
-              class="justify-start"
-              aria-labelledby="layout-label"
-              value={props.settings.timerLayout}
-              onChange={(value) =>
-                value && update({ timerLayout: value as Settings['timerLayout'] })
-              }
-            >
-              <For each={LAYOUTS}>
-                {(option) => (
-                  <ToggleGroupItem value={option.value}>{option.label()}</ToggleGroupItem>
-                )}
-              </For>
-            </ToggleGroup>
+          <div class="grid items-start gap-x-6 gap-y-5 @2xl:grid-cols-2">
+            <div class="grid gap-2">
+              <span class="text-sm leading-none font-medium" id="theme-label">
+                {m.user_menu_theme()}
+              </span>
+              <ToggleGroup
+                variant="outline"
+                class="justify-start"
+                aria-labelledby="theme-label"
+                value={props.settings.theme}
+                onChange={(value) => value && update({ theme: value as Settings['theme'] })}
+              >
+                <For each={THEMES}>
+                  {(option) => (
+                    <ToggleGroupItem value={option.value}>{option.label()}</ToggleGroupItem>
+                  )}
+                </For>
+              </ToggleGroup>
+            </div>
+            <div class="grid gap-2">
+              <span class="text-sm leading-none font-medium" id="layout-label">
+                {m.settings_timer_layout()}
+              </span>
+              <ToggleGroup
+                variant="outline"
+                class="justify-start"
+                aria-labelledby="layout-label"
+                value={props.settings.timerLayout}
+                onChange={(value) =>
+                  value && update({ timerLayout: value as Settings['timerLayout'] })
+                }
+              >
+                <For each={LAYOUTS}>
+                  {(option) => (
+                    <ToggleGroupItem value={option.value}>{option.label()}</ToggleGroupItem>
+                  )}
+                </For>
+              </ToggleGroup>
+            </div>
           </div>
           <Switch
             class="flex items-center justify-between gap-4"
