@@ -413,15 +413,15 @@
   "reports_no_team": "No team",
   "reports_empty_title": "No time tracked in this range.",
   "reports_empty_description": "Pick another range or other people.",
-  "reports_scope_member": "Your own time.",
-  "reports_scope_admin": "Everyone in the organization.",
+  "reports_scope_member": "Your own time",
+  "reports_scope_admin": "Everyone in the organization",
   "reports_scope_lead": [
     {
       "declarations": ["input count", "input teams", "local countPlural = count: plural"],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "Your time and the time of the {teams} team, which you lead.",
-        "countPlural=*": "Your time and the time of the {teams} teams, which you lead."
+        "countPlural=one": "Your time and the time of the {teams} team, which you lead",
+        "countPlural=*": "Your time and the time of the {teams} teams, which you lead"
       }
     }
   ],

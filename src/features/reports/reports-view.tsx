@@ -169,34 +169,45 @@ export function ReportsView(props: {
 
   return (
     <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
-      <div class="relative flex min-w-0 flex-col gap-1">
-        <PageTitle title={m.nav_reports()} />
-        <p class="scene-text text-muted-foreground text-sm">
-          {rangeLabel()} · {scopeNote()} {zoneNote()} (
-          <Link
-            to="/settings"
-            hash="preferences"
-            class="hover:text-foreground underline underline-offset-4"
-          >
-            {m.reports_change_settings()}
-          </Link>
-          ).
-        </p>
+      {/* The page is wide (the route's staticData): all but the timesheet keep the header's
+          width, and the timesheet widens with its columns, up to the window's. */}
+      <div class="mx-auto grid w-full max-w-[68rem] grid-cols-[minmax(0,1fr)] gap-4">
+        <div class="relative flex min-w-0 flex-col gap-1">
+          <PageTitle title={m.nav_reports()} />
+          <p class="scene-text text-muted-foreground text-sm">
+            {rangeLabel()}
+            <Dot />
+            {scopeNote()}
+            <Dot />
+            {zoneNote()} (
+            <Link
+              to="/settings"
+              hash="preferences"
+              class="hover:text-foreground underline underline-offset-4"
+            >
+              {m.reports_change_settings()}
+            </Link>
+            )
+          </p>
+        </div>
+        <ReportFilterBar
+          {...actions}
+          filters={filters()}
+          userId={props.userId}
+          weekStart={props.weekStart}
+          today={today()}
+        />
+        <Show when={error()}>
+          <Alert variant="destructive">
+            <CircleAlertIcon aria-hidden="true" />
+            <AlertDescription>{error()}</AlertDescription>
+          </Alert>
+        </Show>
       </div>
-      <ReportFilterBar
-        {...actions}
-        filters={filters()}
-        userId={props.userId}
-        weekStart={props.weekStart}
-        today={today()}
-      />
-      <Show when={error()}>
-        <Alert variant="destructive">
-          <CircleAlertIcon aria-hidden="true" />
-          <AlertDescription>{error()}</AlertDescription>
-        </Alert>
-      </Show>
-      <section class="min-w-0" aria-label={m.reports_timesheet()}>
+      <section
+        class="mx-auto w-fit max-w-full min-w-[min(100%,68rem)]"
+        aria-label={m.reports_timesheet()}
+      >
         <Card class="min-w-0 overflow-hidden">
           <CardHeader class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
             <div class="grid min-w-0 gap-1.5">
@@ -236,4 +247,8 @@ export function ReportsView(props: {
       </section>
     </div>
   )
+}
+
+function Dot() {
+  return <span class="text-foreground/70 mx-1.5 font-bold">·</span>
 }

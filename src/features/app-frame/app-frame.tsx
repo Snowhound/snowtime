@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
+import { useMatches } from '@tanstack/solid-router'
 import { type ParentProps, onMount } from 'solid-js'
 import { Intro, IntroPage } from '~/components/intro'
 import { SceneLayer } from '~/components/scene-layer'
@@ -6,6 +7,7 @@ import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/intr
 import { SCENE_DEFAULTS, currentSeason, sceneAttributes } from '~/lib/scene'
 import { SeasonProvider } from '~/lib/seasons'
 import { sessionQuery } from '~/lib/session'
+import { cn } from '~/lib/utils'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { AppSession } from '~/server/auth/auth.functions'
 import { getSettings } from '~/server/settings/settings.functions'
@@ -14,6 +16,8 @@ import { AppHeader } from './app-header'
 export function AppFrame(props: ParentProps<{ session: AppSession }>) {
   const queryClient = useQueryClient()
   const session = useQuery(() => sessionQuery)
+  // A wide page, such as Reports, lays out its own width within the whole window.
+  const wide = useMatches({ select: (matches) => matches.some((m) => m.staticData.wide) })
   // The session query, not the route's copy, so a saved setting shows at once.
   function scene() {
     return session.data?.settings ?? SCENE_DEFAULTS
@@ -46,7 +50,9 @@ export function AppFrame(props: ParentProps<{ session: AppSession }>) {
       <IntroPage class="flex flex-1 flex-col">
         <AppHeader />
         <SeasonProvider value={() => currentSeason(scene().sceneSeason)}>
-          <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8">{props.children}</main>
+          <main class={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-8', !wide() && 'max-w-6xl')}>
+            {props.children}
+          </main>
         </SeasonProvider>
       </IntroPage>
       <Intro />

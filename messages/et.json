@@ -413,15 +413,15 @@
   "reports_no_team": "Meeskonnata",
   "reports_empty_title": "Valitud perioodil pole aega märgitud.",
   "reports_empty_description": "Vali teine periood või teised inimesed.",
-  "reports_scope_member": "Sinu enda aeg.",
-  "reports_scope_admin": "Kogu ettevõte.",
+  "reports_scope_member": "Sinu enda aeg",
+  "reports_scope_admin": "Kogu ettevõte",
   "reports_scope_lead": [
     {
       "declarations": ["input count", "input teams", "local countPlural = count: plural"],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "Sinu aeg ja sinu juhitud meeskonna {teams} aeg.",
-        "countPlural=*": "Sinu aeg ja sinu juhitud meeskondade {teams} aeg."
+        "countPlural=one": "Sinu aeg ja sinu juhitud meeskonna {teams} aeg",
+        "countPlural=*": "Sinu aeg ja sinu juhitud meeskondade {teams} aeg"
       }
     }
   ],

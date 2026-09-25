@@ -9,8 +9,9 @@ import { teamsQuery } from '~/lib/teams'
 import { m } from '~/paraglide/messages.js'
 
 // Day and week totals (prototypes/reports.html, 02 · Timesheet). Bad or missing search
-// params fall back to this week by project.
+// params fall back to this month by project.
 export const Route = createFileRoute('/_app/reports')({
+  staticData: { wide: true },
   validateSearch: ReportSearch,
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps }) => {

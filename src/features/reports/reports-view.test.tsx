@@ -126,7 +126,9 @@ function session() {
   }
 }
 
-function renderView(initial: ReportSearch = {}) {
+// This week by default, whose four days the server's rows fill; the page's default is this
+// month.
+function renderView(initial: ReportSearch = { range: 'this-week' }) {
   const [search, setSearch] = createSignal<ReportSearch>(initial)
   fn.navigate.mockImplementation(async (options: { search: ReportSearch }) =>
     setSearch(options.search),
@@ -194,7 +196,7 @@ describe('ReportsView', () => {
     expect(lastInput()).toEqual({ from: '2026-09-21', to: '2026-09-28', unit: 'day' })
     expect(screen.queryByLabelText('People')).not.toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
-    expect(screen.getByText(/Your own time\./)).toBeInTheDocument()
+    expect(screen.getByText(/Your own time/)).toBeInTheDocument()
     expect(
       screen.getByText(/Days and weeks in Europe\/Tallinn, starting Monday/),
     ).toBeInTheDocument()
@@ -246,7 +248,7 @@ describe('ReportsView', () => {
 
   test('a team outside the led teams is dropped, not sent', async () => {
     server.lead = true
-    renderView({ team: design.id, group: 'team' })
+    renderView({ range: 'this-week', team: design.id, group: 'team' })
     await waitFor(() => expect(fn.getReport).toHaveBeenCalled())
     expect(lastInput()).toEqual({ from: '2026-09-21', to: '2026-09-28', unit: 'day' })
   })
@@ -257,7 +259,7 @@ describe('ReportsView', () => {
       { kind: 'member', id: liis, ms: [HOUR] },
       { kind: 'team', id: platform.id, ms: [2.5 * HOUR] },
     )
-    renderView({ group: 'team' })
+    renderView({ range: 'this-week', group: 'team' })
     const people = await screen.findByLabelText('People')
     await waitFor(() =>
       expect(options(people)).toEqual([
@@ -270,7 +272,7 @@ describe('ReportsView', () => {
         'Mart Kask',
       ]),
     )
-    expect(screen.getByText(/Everyone in the organization\./)).toBeInTheDocument()
+    expect(screen.getByText(/Everyone in the organization/)).toBeInTheDocument()
     expect(screen.getByText(/Teams count the time of their current members/)).toBeInTheDocument()
     const grid = await screen.findByRole('table')
     // Liis is in no team.
@@ -303,12 +305,13 @@ describe('ReportsView', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Next range' }))
     await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-09-01', to: '2026-10-01' }))
     expect(preset).toHaveValue('this-month')
+    expect(search()).toEqual({})
 
     await userEvent.selectOptions(preset, 'Last week')
     await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-09-14', to: '2026-09-21' }))
     await userEvent.click(screen.getByRole('button', { name: 'Next range' }))
     await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-09-21', to: '2026-09-28' }))
-    expect(search()).toEqual({})
+    expect(search()).toEqual({ range: 'this-week' })
 
     await userEvent.selectOptions(preset, 'Today')
     await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-09-24', to: '2026-09-25' }))
@@ -354,13 +357,13 @@ describe('ReportsView', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
-  test('bad or missing search params fall back to this week by project', async () => {
+  test('bad or missing search params fall back to this month by project', async () => {
     expect(
       v.parse(ReportSearch, { range: 'someday', from: '2026-02-30', group: 'x', unit: 'hour' }),
     ).toEqual({})
     renderView({ range: 'custom', from: '2026-09-10' })
     await screen.findByRole('table')
-    expect(lastInput()).toEqual({ from: '2026-09-21', to: '2026-09-28', unit: 'day' })
-    expect(screen.getByLabelText('Range')).toHaveValue('this-week')
+    expect(lastInput()).toEqual({ from: '2026-09-01', to: '2026-10-01', unit: 'day' })
+    expect(screen.getByLabelText('Range')).toHaveValue('this-month')
   })
 })

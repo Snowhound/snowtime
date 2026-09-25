@@ -75,7 +75,7 @@ export function pickedRange(a: IsoDate, b: IsoDate): Range | null {
 }
 
 // The range the URL asks for: a preset, or a custom range whose days are valid and in
-// order. Anything else is this week.
+// order. Anything else is this month.
 export function resolveRange(
   search: { range?: RangePreset; from?: IsoDate; to?: IsoDate },
   today: IsoDate,
@@ -89,14 +89,14 @@ export function resolveRange(
   } else if (search.range) {
     return { preset: search.range, range: presetRange(search.range, today, weekStart) }
   }
-  return { preset: 'this-week', range: presetRange('this-week', today, weekStart) }
+  return { preset: 'this-month', range: presetRange('this-month', today, weekStart) }
 }
 
 // The search params for a range: only the preset when it is one, and nothing for this
-// week, the default.
+// month, the default.
 export function rangeSearch(range: Range, today: IsoDate, weekStart: WeekStart) {
   const preset = matchPreset(range, today, weekStart)
-  if (preset === 'this-week') return {}
+  if (preset === 'this-month') return {}
   if (preset !== 'custom') return { range: preset }
   return { range: preset, from: range.from, to: addDays(range.to, -1) }
 }

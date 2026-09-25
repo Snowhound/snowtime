@@ -27,4 +27,8 @@ declare module '@tanstack/solid-router' {
   interface Register {
     router: ReturnType<typeof getRouter>
   }
+  interface StaticDataRouteOption {
+    // The page's content may be wider than the header (AppFrame).
+    wide?: boolean
+  }
 }
