@@ -3,6 +3,8 @@
 // before the start means the next day, and a live line shows the resulting duration.
 import { createForm } from '@tanstack/solid-form'
 import { Show, createMemo } from 'solid-js'
+import { DatePicker } from '~/components/date-time/date-picker'
+import { TimeInput } from '~/components/date-time/time-input'
 import { Button } from '~/components/ui/button'
 import {
   Dialog,
@@ -14,7 +16,7 @@ import {
 } from '~/components/ui/dialog'
 import { Label } from '~/components/ui/label'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
-import { localDate, localTime } from '~/lib/calendar'
+import { type WeekStart, localDate, localTime } from '~/lib/calendar'
 import { formatHours } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
@@ -47,6 +49,7 @@ const TITLES = {
 export function EntryDialog(props: {
   target: EntryDialogTarget | null
   zone: string
+  weekStart: WeekStart
   projects: readonly Project[]
   onSave: (values: EntryDialogValues) => void
   onClose: () => void
@@ -61,6 +64,7 @@ export function EntryDialog(props: {
             <EntryForm
               target={target}
               zone={props.zone}
+              weekStart={props.weekStart}
               projects={props.projects}
               onSave={props.onSave}
               onClose={props.onClose}
@@ -75,6 +79,7 @@ export function EntryDialog(props: {
 function EntryForm(props: {
   target: EntryDialogTarget
   zone: string
+  weekStart: WeekStart
   projects: readonly Project[]
   onSave: (values: EntryDialogValues) => void
   onClose: () => void
@@ -83,6 +88,8 @@ function EntryForm(props: {
   const target = props.target
   const entry = target.kind === 'new' ? null : target.entry
   const running = target.kind === 'running'
+  // oxlint-disable-next-line solid/reactivity -- the latest day to pick, as of opening.
+  const today = localDate(Date.now(), props.zone)
 
   const form = createForm(() => ({
     defaultValues: {
@@ -174,45 +181,49 @@ function EntryForm(props: {
         <div class="grid grid-cols-[minmax(0,1fr)] gap-4 sm:grid-cols-3">
           <form.Field name="date">
             {(field) => (
-              <TextField
-                class="grid gap-1.5"
-                value={field().state.value}
-                onChange={field().handleChange}
-                validationState={error() ? 'invalid' : 'valid'}
-                required
-              >
-                <TextFieldLabel>{m.entry_date()}</TextFieldLabel>
-                <TextFieldInput type="date" />
-              </TextField>
+              <div class="grid gap-1.5">
+                <Label for="entry-date">{m.entry_date()}</Label>
+                <DatePicker
+                  id="entry-date"
+                  value={field().state.value}
+                  onChange={(value) => field().handleChange(value)}
+                  weekStart={props.weekStart}
+                  today={today}
+                  max={today}
+                  invalid={!!error()}
+                  live
+                  required
+                />
+              </div>
             )}
           </form.Field>
           <form.Field name="start">
             {(field) => (
-              <TextField
-                class="grid gap-1.5"
-                value={field().state.value}
-                onChange={field().handleChange}
-                validationState={error() ? 'invalid' : 'valid'}
-                required
-              >
-                <TextFieldLabel>{m.entry_start()}</TextFieldLabel>
-                <TextFieldInput type="time" />
-              </TextField>
+              <div class="grid gap-1.5">
+                <Label for="entry-start">{m.entry_start()}</Label>
+                <TimeInput
+                  id="entry-start"
+                  value={field().state.value}
+                  onChange={(value) => field().handleChange(value)}
+                  invalid={!!error()}
+                  required
+                />
+              </div>
             )}
           </form.Field>
           <Show when={!running}>
             <form.Field name="end">
               {(field) => (
-                <TextField
-                  class="grid gap-1.5"
-                  value={field().state.value}
-                  onChange={field().handleChange}
-                  validationState={error() ? 'invalid' : 'valid'}
-                  required
-                >
-                  <TextFieldLabel>{m.entry_end()}</TextFieldLabel>
-                  <TextFieldInput type="time" />
-                </TextField>
+                <div class="grid gap-1.5">
+                  <Label for="entry-end">{m.entry_end()}</Label>
+                  <TimeInput
+                    id="entry-end"
+                    value={field().state.value}
+                    onChange={(value) => field().handleChange(value)}
+                    invalid={!!error()}
+                    required
+                  />
+                </div>
               )}
             </form.Field>
           </Show>

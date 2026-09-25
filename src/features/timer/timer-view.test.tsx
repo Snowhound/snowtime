@@ -249,6 +249,31 @@ describe('TimerView', () => {
     expect(fn.updateEntry).toHaveBeenCalledTimes(1)
   })
 
+  test('shows Saved on the row once the server confirms the change, not before', async () => {
+    renderView()
+    const input = await screen.findByDisplayValue('Invoice export review')
+    let confirm: (() => void) | undefined
+    fn.updateEntry.mockImplementation(
+      ({ data }: { data: Partial<Entry> }) =>
+        new Promise<void>((resolve) => {
+          confirm = () => {
+            Object.assign(server.entries[0], data)
+            resolve()
+          }
+        }),
+    )
+
+    await userEvent.type(input, ' 2{Enter}')
+    await waitFor(() => expect(fn.updateEntry).toHaveBeenCalled())
+    expect(screen.queryByText('Saved')).not.toBeInTheDocument()
+
+    confirm!()
+    expect(await screen.findByText('Saved')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Saved')).not.toBeInTheDocument(), {
+      timeout: 2000,
+    })
+  })
+
   test('reads an end before the start as the next day, and saves what that changes', async () => {
     server.entries = [entry(2, '09:00', '10:30', 'Invoice export review')]
     renderView()
@@ -288,7 +313,7 @@ describe('TimerView', () => {
     expect(fn.updateEntry).not.toHaveBeenCalled()
 
     fireEvent.keyDown(end, { key: 'Escape' })
-    expect(end).toHaveValue('00:01')
+    expect((end as HTMLInputElement).value.replace(/\s/g, ' ')).toBe('12:01 AM')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 

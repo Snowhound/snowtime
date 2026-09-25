@@ -4,6 +4,8 @@
 // once and rolls it back on error (queries.ts); the error then shows under the row.
 import CalendarIcon from 'lucide-solid/icons/calendar'
 import { For, Show, createEffect, createMemo, createSignal, createUniqueId, on } from 'solid-js'
+import { DatePicker } from '~/components/date-time/date-picker'
+import { TimeInput } from '~/components/date-time/time-input'
 import { ProjectDot } from '~/components/project-dot'
 import { Button } from '~/components/ui/button'
 import {
@@ -13,19 +15,17 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { Label } from '~/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
-import {
-  TextField,
-  TextFieldErrorMessage,
-  TextFieldInput,
-  TextFieldLabel,
-} from '~/components/ui/text-field'
-import { atLocalTime, localDate, localTime } from '~/lib/calendar'
+import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
+import { type WeekStart, atLocalTime, localDate, localTime } from '~/lib/calendar'
+import { uses12Hours } from '~/lib/date-input'
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import { getLocale } from '~/paraglide/runtime.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
 import { readEntryTimes } from './entries'
 import { projectChoices } from './project-select'
@@ -231,29 +231,24 @@ export function DescriptionField(props: { editor: EntryEditor }) {
 
 export function TimeField(props: { editor: EntryEditor; field: TimeKey }) {
   return (
-    <TextField
+    <TimeInput
       value={props.editor.time(props.field)}
       onChange={(value) => props.editor.setTime(props.field, value)}
-      validationState={props.editor.invalid() === props.field ? 'invalid' : 'valid'}
+      invalid={props.editor.invalid() === props.field}
       required
-    >
-      <TextFieldLabel class="sr-only">
-        {props.field === 'start' ? m.entry_start() : m.entry_end()}
-      </TextFieldLabel>
-      <TextFieldInput
-        type="time"
-        aria-describedby={props.editor.errorId}
-        class={cn(
-          QUIET,
-          'w-auto px-1.5 text-xs tabular-nums [field-sizing:content] [&::-webkit-calendar-picker-indicator]:hidden',
-        )}
-        onBlur={() => props.editor.commitTimes(props.field)}
-        onKeyDown={commitKeys(
-          () => props.editor.commitTimes(props.field),
-          () => props.editor.resetTime(props.field),
-        )}
-      />
-    </TextField>
+      aria-label={props.field === 'start' ? m.entry_start() : m.entry_end()}
+      aria-describedby={props.editor.errorId}
+      class={cn(
+        QUIET,
+        'px-1.5 text-xs',
+        uses12Hours(getLocale()) ? 'w-[calc(9ch+14px)]' : 'w-[calc(5ch+14px)]',
+      )}
+      onBlur={() => props.editor.commitTimes(props.field)}
+      onKeyDown={commitKeys(
+        () => props.editor.commitTimes(props.field),
+        () => props.editor.resetTime(props.field),
+      )}
+    />
   )
 }
 
@@ -311,7 +306,9 @@ export function ProjectField(props: {
 
 // Moves the entry to another day, a rare change that would otherwise widen every row. It
 // saves when the popover closes or on Enter; Escape or an invalid date changes nothing.
-export function DateField(props: { editor: EntryEditor; zone: string }) {
+export function DateField(props: { editor: EntryEditor; zone: string; weekStart: WeekStart }) {
+  const inputId = createUniqueId()
+  const errorId = createUniqueId()
   const [open, setOpen] = createSignal(false)
   const [value, setValue] = createSignal('')
   let cancelled = false
@@ -319,6 +316,10 @@ export function DateField(props: { editor: EntryEditor; zone: string }) {
   function error() {
     const result = props.editor.readDate(value())
     return 'error' in result ? result.error : null
+  }
+
+  function today() {
+    return localDate(Date.now(), props.zone)
   }
 
   function openChange(next: boolean) {
@@ -349,29 +350,34 @@ export function DateField(props: { editor: EntryEditor; zone: string }) {
         <CalendarIcon aria-hidden="true" />
       </PopoverTrigger>
       <PopoverContent
-        class="grid w-60 gap-2"
+        class="grid w-auto gap-2 p-3"
         onEscapeKeyDown={() => {
           cancelled = true
         }}
       >
-        <TextField
-          class="grid gap-1.5"
-          value={value()}
-          onChange={setValue}
-          validationState={error() ? 'invalid' : 'valid'}
-        >
-          <TextFieldLabel>{m.entry_date()}</TextFieldLabel>
-          <TextFieldInput
-            type="date"
-            max={localDate(Date.now(), props.zone)}
-            onKeyDown={(event: KeyboardEvent) => {
-              if (event.key !== 'Enter') return
-              event.preventDefault()
-              if (!error()) openChange(false)
+        <div class="grid gap-1.5">
+          <Label for={inputId}>{m.entry_date()}</Label>
+          <DatePicker
+            id={inputId}
+            value={value()}
+            onChange={(next, how) => {
+              setValue(next)
+              if ((how === 'enter' || how === 'pick') && !error()) openChange(false)
             }}
+            weekStart={props.weekStart}
+            today={today()}
+            max={today()}
+            invalid={!!error()}
+            aria-describedby={errorId}
+            live
+            inline
           />
-          <TextFieldErrorMessage>{error()}</TextFieldErrorMessage>
-        </TextField>
+          <Show when={error()}>
+            <p id={errorId} class="text-destructive text-xs">
+              {error()}
+            </p>
+          </Show>
+        </div>
         <p class="text-muted-foreground text-xs">{m.entry_row_date_hint()}</p>
       </PopoverContent>
     </Popover>

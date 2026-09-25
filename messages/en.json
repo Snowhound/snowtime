@@ -262,6 +262,7 @@
   "timer_delete": "Delete",
   "timer_entry_actions": "Actions for {description}",
   "timer_entry_actions_unnamed": "Entry actions",
+  "timer_entry_saved": "Saved",
   "timer_empty_title": "No time tracked yet",
   "timer_empty_description": "Start the timer above. Entries appear here grouped by day.",
   "timer_show_earlier": "Show earlier entries",
@@ -607,5 +608,12 @@
   "organization_slug_hint": "Set when the organization was created. It can't change.",
   "organization_no_delete": "Organizations can't be deleted, so their time history and audit trail stay intact.",
   "organization_save": "Save",
-  "organization_saved": "Saved."
+  "organization_saved": "Saved.",
+  "picker_choose_date": "Choose date",
+  "picker_previous_month": "Previous month",
+  "picker_next_month": "Next month",
+  "picker_day": "dd",
+  "picker_month": "mm",
+  "picker_year": "yyyy",
+  "picker_time": "hh:mm"
 }

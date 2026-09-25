@@ -320,6 +320,25 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   once a season). Every access is guarded, and blocked storage only means the intro may play
   again.
 
+## Date and time fields
+
+The app's date and time fields are its own components in `src/components/date-time/`, not
+native `<input type="date">` and `<input type="time">` (task 035). Each browser draws the native
+inputs its own way, so they looked out of place next to the other controls and differed between
+Chrome, Firefox, and Safari. The prototypes keep the native inputs.
+
+- `DatePicker` is a text input with a calendar button. The calendar opens in a popover (inline in
+  the entry row's date popover) and follows the WAI-ARIA date picker dialog pattern, with keyboard
+  navigation by day, week, month, and year. Weeks start on the user's week start.
+- `TimeInput` is a text input. ArrowUp and ArrowDown move the hour or minute under the caret.
+- Both show text in the UI language's format and read short forms back
+  (`src/lib/date-input.ts`): `25.9` or `25092026` for a date in Estonian, and `930`, `9.30`, or
+  `9:30pm` for a time. Their values stay ISO dates and `HH:MM` times, read in the user's zone as
+  before. English follows `Intl`'s `en`, so dates are month first and times use AM and PM, as the
+  rest of the app formats them.
+- Mobile uses the same components, not the native wheels: the calendar works by touch, and a time
+  field asks for the number pad in 24-hour locales.
+
 ## Internationalization
 
 - Languages: English (`en`, default) and Estonian (`et`). The UI translates with

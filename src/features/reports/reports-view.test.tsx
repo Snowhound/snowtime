@@ -180,6 +180,13 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+// Types into a date field and leaves it, which commits the date.
+function typeDate(label: string, value: string) {
+  const input = screen.getByLabelText(label)
+  fireEvent.input(input, { target: { value } })
+  fireEvent.blur(input)
+}
+
 describe('ReportsView', () => {
   test('members see their own time by project, with row and column totals', async () => {
     renderView()
@@ -307,14 +314,14 @@ describe('ReportsView', () => {
     await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-09-24', to: '2026-09-25' }))
     await userEvent.click(screen.getByRole('button', { name: 'Previous range' }))
     await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-09-23', to: '2026-09-24' }))
-    expect(screen.getByLabelText('From')).toHaveValue('2026-09-23')
-    expect(screen.getByLabelText('To')).toHaveValue('2026-09-23')
+    expect(screen.getByLabelText('From')).toHaveValue('09/23/2026')
+    expect(screen.getByLabelText('To')).toHaveValue('09/23/2026')
   })
 
   test('ranges over 35 days total per week', async () => {
     renderView()
     await screen.findByRole('table')
-    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-06-01' } })
+    typeDate('From', '2026-06-01')
     await waitFor(() =>
       expect(lastInput()).toEqual({ from: '2026-06-01', to: '2026-09-28', unit: 'week' }),
     )
@@ -322,7 +329,7 @@ describe('ReportsView', () => {
     expect(screen.getByRole('button', { name: 'Day' })).toBeDisabled()
 
     // Back to 35 days, the unit is the user's again.
-    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-08-24' } })
+    typeDate('From', '2026-08-24')
     await waitFor(() =>
       expect(lastInput()).toEqual({ from: '2026-08-24', to: '2026-09-28', unit: 'day' }),
     )
@@ -332,10 +339,10 @@ describe('ReportsView', () => {
   test('the To date may come before From, and a year and more is refused', async () => {
     renderView()
     await screen.findByRole('table')
-    fireEvent.change(screen.getByLabelText('To'), { target: { value: '2026-09-10' } })
+    typeDate('To', '2026-09-10')
     await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-09-10', to: '2026-09-22' }))
 
-    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2024-01-01' } })
+    typeDate('From', '2024-01-01')
     expect(await screen.findByText('The range can span at most 371 days.')).toBeInTheDocument()
     expect(lastInput()).toMatchObject({ from: '2026-09-10' })
   })

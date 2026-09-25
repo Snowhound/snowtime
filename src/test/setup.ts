@@ -7,6 +7,8 @@ afterEach(cleanup)
 
 // jsdom has no layout, so it leaves scrollTo unimplemented; Kobalte's popovers call it.
 window.scrollTo = () => {}
+// Nor scrollIntoView; the timer's rows call it when a save is confirmed.
+Element.prototype.scrollIntoView = () => {}
 
 // Nor ResizeObserver; PageTitle places the tagline with it.
 globalThis.ResizeObserver ??= class {

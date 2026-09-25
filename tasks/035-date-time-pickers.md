@@ -1,6 +1,6 @@
 # 035: Date and time pickers that fit the design
 
-Status: todo
+Status: in-progress
 
 The app's date and time fields are native `<input type="date">` and `<input type="time">`
 through `TextFieldInput`: the entry dialog, the timer's inline entry fields

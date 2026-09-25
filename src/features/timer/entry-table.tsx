@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { formatHours } from '~/lib/format'
+import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'
 import {
@@ -23,7 +24,15 @@ import {
   TimeField,
   createEntryEditor,
 } from './entry-fields'
-import { EntryActions, type EntryRowProps, dayLabel, groupDates, groupIds } from './entry-list'
+import {
+  EntryActions,
+  type EntryRowProps,
+  dayLabel,
+  groupDates,
+  groupIds,
+  revealWhenSaved,
+  savedTint,
+} from './entry-list'
 import type { Entry } from './queries'
 
 export function EntryTable(
@@ -96,9 +105,10 @@ export function EntryTable(
 
 function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
   const editor = createEntryEditor(props)
+  const ref = revealWhenSaved(props)
   return (
     <>
-      <TableRow class="group">
+      <TableRow ref={ref} class={cn('group', savedTint(props.justSaved(props.entry.id)))}>
         <TableCell class="max-w-0">
           <div class="-ml-2">
             <DescriptionField editor={editor} />
@@ -109,7 +119,7 @@ function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
         </TableCell>
         <TableCell>
           <div class="flex items-center gap-1">
-            <DateField editor={editor} zone={props.zone} />
+            <DateField editor={editor} zone={props.zone} weekStart={props.weekStart} />
             <TimeField editor={editor} field="start" />
           </div>
         </TableCell>
@@ -125,6 +135,7 @@ function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
         <TableCell>
           <EntryActions
             entry={props.entry}
+            saved={props.justSaved(props.entry.id)}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
           />

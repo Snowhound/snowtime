@@ -2,11 +2,12 @@
 // newest first, with the day's total, and per entry its fields (entry-fields.tsx) and the
 // continue and delete actions. Rows are one line from 768 px and three below it. Focus
 // shows them compact. The parts the Table layout shares are exported.
+import CheckIcon from 'lucide-solid/icons/check'
 import ClockIcon from 'lucide-solid/icons/clock'
 import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'
 import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
-import { For } from 'solid-js'
+import { For, Show, createEffect, on } from 'solid-js'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import {
@@ -15,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
-import { addDays, localDate } from '~/lib/calendar'
+import { type WeekStart, addDays, localDate } from '~/lib/calendar'
 import { formatHours, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/projects'
 import { cn } from '~/lib/utils'
@@ -45,9 +46,31 @@ export function dayLabel(date: string, zone: string, now: number) {
 export interface EntryRowProps {
   projects: readonly Project[]
   zone: string
+  weekStart: WeekStart
   onSave: SaveEntry
+  // Whether the entry's last save was confirmed a moment ago.
+  justSaved: (id: string) => boolean
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
+}
+
+// Brings a row the server just confirmed into view, such as one a new date moved to
+// another day. Returns the row's ref.
+export function revealWhenSaved(props: EntryRowProps & { entry: Entry }) {
+  let row: HTMLElement | undefined
+  createEffect(
+    on(
+      () => props.justSaved(props.entry.id),
+      (saved) => saved && row?.scrollIntoView({ block: 'nearest' }),
+      { defer: true },
+    ),
+  )
+  return (el: HTMLElement) => (row = el)
+}
+
+// The row's tint while it shows "Saved".
+export function savedTint(saved: boolean) {
+  return cn('transition-colors duration-700', saved && 'bg-primary/10')
 }
 
 // Rows are keyed by date and id, not by object: every save replaces the entry objects,
@@ -101,8 +124,16 @@ export function EntryList(
 
 function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
   const editor = createEntryEditor(props)
+  const ref = revealWhenSaved(props)
   return (
-    <li class={cn('group px-4', props.compact ? 'py-2' : 'py-3')}>
+    <li
+      ref={ref}
+      class={cn(
+        'group px-4',
+        props.compact ? 'py-2' : 'py-3',
+        savedTint(props.justSaved(props.entry.id)),
+      )}
+    >
       <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 md:flex">
         <div class="col-span-2 -ml-2 min-w-0 md:flex-1">
           <DescriptionField editor={editor} />
@@ -111,7 +142,7 @@ function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
           <ProjectField editor={editor} entry={props.entry} projects={props.projects} />
         </div>
         <div class="text-muted-foreground row-start-3 -ml-2 flex shrink-0 items-center gap-1 md:ml-0">
-          <DateField editor={editor} zone={props.zone} />
+          <DateField editor={editor} zone={props.zone} weekStart={props.weekStart} />
           <TimeField editor={editor} field="start" />
           <span aria-hidden="true">–</span>
           <TimeField editor={editor} field="end" />
@@ -124,6 +155,7 @@ function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
         <div class="col-start-2 row-start-2 justify-self-end">
           <EntryActions
             entry={props.entry}
+            saved={props.justSaved(props.entry.id)}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
           />
@@ -134,8 +166,11 @@ function EntryRow(props: EntryRowProps & { entry: Entry; compact?: boolean }) {
   )
 }
 
+// The row's continue and more actions. After a confirmed save, "Saved" takes their place for
+// a moment; they stay mounted underneath, so a button being tabbed to keeps its focus.
 export function EntryActions(props: {
   entry: Entry
+  saved: boolean
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
 }) {
@@ -143,42 +178,64 @@ export function EntryActions(props: {
     return props.entry.description
   }
   return (
-    <div class={cn('flex items-center gap-1', REVEAL, 'sm:has-data-expanded:opacity-100')}>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label={
-          description()
-            ? m.timer_continue({ description: description() })
-            : m.timer_continue_unnamed()
-        }
-        onClick={() => props.onContinue(props.entry)}
+    <div class="relative">
+      <div
+        class={cn(
+          'flex items-center gap-1',
+          REVEAL,
+          'sm:has-data-expanded:opacity-100',
+          props.saved &&
+            'pointer-events-none opacity-0 sm:opacity-0 sm:group-focus-within:opacity-0 sm:group-hover:opacity-0',
+        )}
       >
-        <PlayIcon aria-hidden="true" />
-      </Button>
-      <DropdownMenu placement="bottom-end">
-        <DropdownMenuTrigger
-          as={Button<'button'>}
+        <Button
           variant="ghost"
           size="icon"
           aria-label={
             description()
-              ? m.timer_entry_actions({ description: description() })
-              : m.timer_entry_actions_unnamed()
+              ? m.timer_continue({ description: description() })
+              : m.timer_continue_unnamed()
           }
+          onClick={() => props.onContinue(props.entry)}
         >
-          <EllipsisVerticalIcon aria-hidden="true" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent class="w-40">
-          <DropdownMenuItem
-            class="text-destructive focus:text-destructive gap-2"
-            onSelect={() => props.onDelete(props.entry)}
+          <PlayIcon aria-hidden="true" />
+        </Button>
+        <DropdownMenu placement="bottom-end">
+          <DropdownMenuTrigger
+            as={Button<'button'>}
+            variant="ghost"
+            size="icon"
+            aria-label={
+              description()
+                ? m.timer_entry_actions({ description: description() })
+                : m.timer_entry_actions_unnamed()
+            }
           >
-            <TrashIcon class="size-4" aria-hidden="true" />
-            {m.timer_delete()}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <EllipsisVerticalIcon aria-hidden="true" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent class="w-40">
+            <DropdownMenuItem
+              class="text-destructive focus:text-destructive gap-2"
+              onSelect={() => props.onDelete(props.entry)}
+            >
+              <TrashIcon class="size-4" aria-hidden="true" />
+              {m.timer_delete()}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <p
+        role="status"
+        class={cn(
+          'text-primary pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 text-xs font-medium whitespace-nowrap transition-opacity duration-300',
+          props.saved ? 'opacity-100' : 'opacity-0',
+        )}
+      >
+        <Show when={props.saved}>
+          <CheckIcon class="size-3.5" aria-hidden="true" />
+          {m.timer_entry_saved()}
+        </Show>
+      </p>
     </div>
   )
 }

@@ -5,13 +5,13 @@
 import ChevronLeftIcon from 'lucide-solid/icons/chevron-left'
 import ChevronRightIcon from 'lucide-solid/icons/chevron-right'
 import { For, Show } from 'solid-js'
+import { DatePicker } from '~/components/date-time/date-picker'
 import { Button } from '~/components/ui/button'
 import { Label } from '~/components/ui/label'
 import { NativeSelect } from '~/components/ui/native-select'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
-import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
-import { addDays } from '~/lib/calendar'
+import { type IsoDate, type WeekStart, addDays } from '~/lib/calendar'
 import { m } from '~/paraglide/messages.js'
 import { type Group, type ReportFilters, type Unit, groupOptions } from './filters'
 import { MAX_DAY_COLUMNS, type RangePreset, rangeDays } from './range'
@@ -41,7 +41,14 @@ export interface FilterActions {
   onUnit: (unit: Unit) => void
 }
 
-export function ReportFilterBar(props: FilterActions & { filters: ReportFilters; userId: string }) {
+export function ReportFilterBar(
+  props: FilterActions & {
+    filters: ReportFilters
+    userId: string
+    weekStart: WeekStart
+    today: IsoDate
+  },
+) {
   function last() {
     return addDays(props.filters.range.to, -1)
   }
@@ -118,26 +125,30 @@ export function ReportFilterBar(props: FilterActions & { filters: ReportFilters;
           </Button>
         </div>
         <div class="flex items-end gap-2">
-          <TextField class="grid gap-1.5" value={props.filters.range.from}>
-            <TextFieldLabel>{m.reports_from()}</TextFieldLabel>
-            <TextFieldInput
-              type="date"
-              class="h-9 w-[8.75rem]"
-              onChange={(event: Event) =>
-                pickDate('from', (event.currentTarget as HTMLInputElement).value)
-              }
+          <div class="grid gap-1.5">
+            <Label for="report-from">{m.reports_from()}</Label>
+            <DatePicker
+              id="report-from"
+              class="w-[9.5rem]"
+              inputClass="h-9"
+              value={props.filters.range.from}
+              onChange={(value) => pickDate('from', value)}
+              weekStart={props.weekStart}
+              today={props.today}
             />
-          </TextField>
-          <TextField class="grid gap-1.5" value={last()}>
-            <TextFieldLabel>{m.reports_to()}</TextFieldLabel>
-            <TextFieldInput
-              type="date"
-              class="h-9 w-[8.75rem]"
-              onChange={(event: Event) =>
-                pickDate('to', (event.currentTarget as HTMLInputElement).value)
-              }
+          </div>
+          <div class="grid gap-1.5">
+            <Label for="report-to">{m.reports_to()}</Label>
+            <DatePicker
+              id="report-to"
+              class="w-[9.5rem]"
+              inputClass="h-9"
+              value={last()}
+              onChange={(value) => pickDate('to', value)}
+              weekStart={props.weekStart}
+              today={props.today}
             />
-          </TextField>
+          </div>
         </div>
       </div>
       <div class="flex flex-wrap items-end gap-2 lg:ml-auto">

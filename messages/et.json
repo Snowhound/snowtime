@@ -262,6 +262,7 @@
   "timer_delete": "Kustuta",
   "timer_entry_actions": "Toimingud: {description}",
   "timer_entry_actions_unnamed": "Kirje toimingud",
+  "timer_entry_saved": "Salvestatud",
   "timer_empty_title": "Aega pole veel mõõdetud",
   "timer_empty_description": "Käivita ülal taimer. Kirjed ilmuvad siia päevade kaupa.",
   "timer_show_earlier": "Näita varasemaid kirjeid",
@@ -607,5 +608,12 @@
   "organization_slug_hint": "Määratud organisatsiooni loomisel. Seda ei saa muuta.",
   "organization_no_delete": "Organisatsioone ei saa kustutada, et nende ajalugu ja muudatuste logi säiliksid.",
   "organization_save": "Salvesta",
-  "organization_saved": "Salvestatud."
+  "organization_saved": "Salvestatud.",
+  "picker_choose_date": "Vali kuupäev",
+  "picker_previous_month": "Eelmine kuu",
+  "picker_next_month": "Järgmine kuu",
+  "picker_day": "pp",
+  "picker_month": "kk",
+  "picker_year": "aaaa",
+  "picker_time": "tt:mm"
 }

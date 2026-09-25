@@ -183,7 +183,13 @@ export function ReportsView(props: {
           ).
         </p>
       </div>
-      <ReportFilterBar {...actions} filters={filters()} userId={props.userId} />
+      <ReportFilterBar
+        {...actions}
+        filters={filters()}
+        userId={props.userId}
+        weekStart={props.weekStart}
+        today={today()}
+      />
       <Show when={error()}>
         <Alert variant="destructive">
           <CircleAlertIcon aria-hidden="true" />

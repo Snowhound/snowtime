@@ -46,6 +46,8 @@ export const RECENT_DAYS = 14
 const MAX_DAYS = 84
 // Days Focus shows.
 const FOCUS_DAYS = 3
+// How long a row shows "Saved" after the server confirms its change.
+const SAVED_MS = 1200
 
 export function TimerView(props: {
   organizationId: string
@@ -186,6 +188,28 @@ export function TimerView(props: {
     }
   }
 
+  // Rows whose save the server confirmed a moment ago; they show "Saved" (EntryActions).
+  // Kept here, not in the row, because a new date moves the entry to another day's row.
+  const [savedIds, setSavedIds] = createSignal<ReadonlySet<string>>(new Set())
+  const savedTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  onCleanup(() => savedTimers.forEach(clearTimeout))
+
+  function markSaved(id: string) {
+    clearTimeout(savedTimers.get(id))
+    savedTimers.set(
+      id,
+      setTimeout(() => {
+        savedTimers.delete(id)
+        setSavedIds((ids) => {
+          const next = new Set(ids)
+          next.delete(id)
+          return next
+        })
+      }, SAVED_MS),
+    )
+    setSavedIds((ids) => new Set(ids).add(id))
+  }
+
   const listProps = {
     get projects() {
       return projects.data ?? []
@@ -193,14 +217,19 @@ export function TimerView(props: {
     get zone() {
       return zone()
     },
+    get weekStart() {
+      return props.settings.weekStart
+    },
     get now() {
       return now()
     },
     // A row shows its own error, so this one resolves or rejects instead of using the alert.
-    onSave: (entry: Entry, patch: EntryPatch) => {
+    onSave: async (entry: Entry, patch: EntryPatch) => {
       setError(null)
-      return updateEntry.mutateAsync({ id: entry.id, ...patch })
+      await updateEntry.mutateAsync({ id: entry.id, ...patch })
+      markSaved(entry.id)
     },
+    justSaved: (id: string) => savedIds().has(id),
     onContinue: (entry: Entry) => start(entry.description, entry.projectId),
     onDelete: remove,
   }
@@ -311,6 +340,7 @@ export function TimerView(props: {
       <EntryDialog
         target={dialog()}
         zone={zone()}
+        weekStart={props.settings.weekStart}
         projects={projects.data ?? []}
         onSave={save}
         onClose={() => setDialog(null)}
