@@ -85,20 +85,17 @@ planned `staging` for `develop`. After the checks pass on a push to `main`, CI m
 `production`, and skips with a notice while they are unset. The Vercel build and app start
 never apply migrations.
 
-1. Import the repository into Vercel. `vercel.json` selects the TanStack Start framework.
-2. Under **Settings > Environment Variables**, set the variables from `.env.example`.
-   Variables prefixed with `VITE_` reach the browser bundle, so keep secrets unprefixed.
-3. Deploy.
+[docs/deployment.md](docs/deployment.md) sets up a production stack step by step.
 
 The same codebase can also run as a dedicated stack per client, configured only through
-environment variables. Free-tier limits and region choice are in
-[docs/hosting.md](docs/hosting.md).
+environment variables. Free-tier limits are in [docs/hosting.md](docs/hosting.md).
 
 ## Documentation
 
 - [Product](docs/product.md): purpose, MVP scope, and tenancy
 - [Architecture](docs/architecture.md): recorded decisions and their reasons
 - [Hosting](docs/hosting.md): Vercel and Turso constraints
+- [Deployment](docs/deployment.md): setting up a production stack
 - [Migrations](docs/migrations.md): how to change the schema
 - [Data model](datamodel/README.md): the DBML diagram and its conventions
 - [Prototypes](prototypes/README.md): HTML prototypes of each view and the brand

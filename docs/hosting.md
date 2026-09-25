@@ -1,6 +1,7 @@
 # Hosting
 
-Goal: run initially on the Vercel and Turso free tiers.
+Goal: run initially on the Vercel and Turso free tiers. Setup steps are in
+`deployment.md`.
 
 ## Vercel (Hobby)
 
