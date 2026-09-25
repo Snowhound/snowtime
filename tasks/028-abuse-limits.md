@@ -27,10 +27,19 @@ open.
       default).
 - [x] Server functions that write (entries, projects, teams) have a per-user limit.
       Better Auth's limiter covers only `/api/auth/*`.
-- [ ] Names written through the Better Auth client (organization, team) are
-      length-checked on the server too, for example in the plugin's
-      `organizationHooks`. The form schemas run only in the browser there; server
-      functions already check theirs, such as the 500-character `Description`.
+- [ ] Names written through the Better Auth client (organization, team, and the user's
+      own name from the profile) are length-checked on the server too, for example in
+      the plugin's `organizationHooks` and a `user.update.before` database hook. The
+      form schemas run only in the browser there; server functions already check
+      theirs, such as the 500-character `Description`. Task 039 confirmed that
+      `/api/auth/update-user` stores a 3,000-character name. The organization's slug
+      needs its format checked there too (`Slug` in `src/server/auth/auth.schemas.ts`),
+      because the report export puts it in file names.
+- [ ] Reads have a rate too. `sessionMiddleware` counts only POST calls, so a signed-in
+      script can call `getReport` or `listEntries` without pause. Each call reads up
+      to a year of the organization's entries, which spends the Turso "rows read" quota
+      rather than growing the database. Either count GET calls against a looser rate,
+      or count only the reads that cover long ranges.
 - [ ] Vercel Firewall: bot protection and a rate-limit rule on the app, if the plan
       in use allows them (check against the plan decided in `docs/hosting.md`).
 - [x] The limits (done) and the storage choice are recorded in `docs/architecture.md`.

@@ -121,8 +121,10 @@
     user's. Unlinking and passkey changes need a session from the last day, and the last
     account can't be unlinked; passkeys don't count as accounts.
 - The MVP sends no email. OAuth providers supply the verified email address that
-  Better Auth requires before an invitation can be accepted, and admins share
-  invitation links themselves. Password sign-in, which would need email for
+  Better Auth requires before an invitation can be accepted
+  (`requireEmailVerificationOnInvitation`), and admins share invitation links
+  themselves. Microsoft and GitHub may report an address as unverified, which task 042
+  tracks. Password sign-in, which would need email for
   verification and reset, is enabled only in local development, where seeded users
   (task 008) sign in with a known password. The sign-in form lists the seeded users, and
   picking one fills in the email and password; `getDevUsers` returns the list only
@@ -172,6 +174,10 @@
   A signed-in user with no organization goes to their open invitation, or to create
   an organization.
 - Organization roles: owner / admin / member (plugin defaults).
+  - `member.role` can hold several roles, comma-separated. `strongestRole` reads the list
+    as Better Auth's permission check does, without trimming, so the app never grants
+    more than the plugin. An admin can store `member, owner` through invite-member,
+    whose owner check doesn't trim, and the plugin grants that member rights only.
 - Team role: `lead` or `member`, stored per team membership. The plugin has
   no team roles and (as of Better Auth 1.7) no additional fields on team
   members, so `team_member.role` is an extra column Better Auth never reads or

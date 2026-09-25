@@ -84,6 +84,9 @@ export const auth = betterAuth({
       // Admins share invitation links themselves; a link works for 48 hours
       // (docs/architecture.md, "Sign-in methods").
       invitationExpiresIn: 48 * 60 * 60,
+      // Only a verified address accepts or rejects an invitation to it. Better Auth turns
+      // this on by itself only because generateId isn't its default, so it stays explicit.
+      requireEmailVerificationOnInvitation: true,
       // Organizations own time entries and are never hard-deleted (docs/architecture.md).
       disableOrganizationDeletion: true,
     }),

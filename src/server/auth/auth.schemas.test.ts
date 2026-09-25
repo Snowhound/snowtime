@@ -41,6 +41,10 @@ describe('safeRedirect', () => {
       'https://evil.example',
       '//evil.example',
       '/\\evil.example',
+      // Browsers drop tabs and newlines from a URL, which turns these into //evil.example.
+      '/\t/evil.example',
+      '/\n/evil.example',
+      '/\r\n\\evil.example',
     ]) {
       expect(safeRedirect(target)).toBe('/')
     }

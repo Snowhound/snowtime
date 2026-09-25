@@ -16,9 +16,12 @@ export interface Scope {
   ledTeamIds: string[]
 }
 
-// Better Auth stores several roles as a comma-separated list; the strongest one wins.
+// Better Auth stores several roles as a comma-separated list; the strongest one wins. The
+// list is split as Better Auth's permission check splits it, without trimming: its
+// invite-member owner check doesn't trim either, so an admin can store "member, owner",
+// which Better Auth grants only member rights, and so must the app.
 export function strongestRole(role: string): OrgRole {
-  const roles = role.split(',').map((r) => r.trim())
+  const roles = role.split(',')
   if (roles.includes('owner')) return 'owner'
   if (roles.includes('admin')) return 'admin'
   return 'member'

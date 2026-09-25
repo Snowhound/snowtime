@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import type { Database } from '~/db'
 import { member, organization, team, teamMember, user } from '~/db/schema'
 import { createTestDatabase } from '~/db/testing'
-import { isAdmin, readableUserIds, resolveScope } from './scope.server'
+import { isAdmin, readableUserIds, resolveScope, strongestRole } from './scope.server'
 
 let db: Database
 let cleanup: () => void
@@ -89,5 +89,16 @@ describe('resolveScope', () => {
 
   test('the strongest of several roles wins', async () => {
     expect((await resolveScope(db, 'multi', 'org-a')).orgRole).toBe('admin')
+  })
+})
+
+describe('strongestRole', () => {
+  test('reads a role list as Better Auth does, so a padded role grants nothing', () => {
+    expect(strongestRole('member,owner')).toBe('owner')
+    expect(strongestRole('admin')).toBe('admin')
+    // An admin can invite with "member, owner", which Better Auth's owner check misses
+    // and its permission check reads as a plain member.
+    expect(strongestRole('member, owner')).toBe('member')
+    expect(strongestRole(' admin')).toBe('member')
   })
 })
