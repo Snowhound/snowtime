@@ -49,6 +49,16 @@ export const SceneStrength = v.picklist(SCENE_STRENGTHS)
 export const SURFACES = ['glass', 'solid'] as const
 export const Surfaces = v.picklist(SURFACES)
 
+// How durations show: 11:10 or 11h 10m. Exports keep their own formats.
+export const DURATION_FORMATS = ['clock', 'units'] as const
+export const DurationFormat = v.picklist(DURATION_FORMATS)
+// Numeric dates, in the date fields: by the UI language, 30.09.2026, or 09/30/2026.
+export const DATE_FORMATS = ['auto', 'dmy', 'mdy'] as const
+export const DateFormat = v.picklist(DATE_FORMATS)
+// Clock times: by the UI language, 24-hour, or 12-hour with AM and PM.
+export const TIME_FORMATS = ['auto', '24h', '12h'] as const
+export const TimeFormat = v.picklist(TIME_FORMATS)
+
 // The browser's zone (Intl.DateTimeFormat().resolvedOptions().timeZone) and the supported
 // locale that best matches its languages, used only when the user has no settings yet.
 export const GetSettingsInput = v.object({
@@ -73,5 +83,8 @@ export const UpdateSettingsInput = v.object({
   surfaces: v.optional(Surfaces),
   sceneWeather: v.optional(v.boolean()),
   sceneIntro: v.optional(v.boolean()),
+  durationFormat: v.optional(DurationFormat),
+  dateFormat: v.optional(DateFormat),
+  timeFormat: v.optional(TimeFormat),
 })
 export type UpdateSettingsInput = v.InferOutput<typeof UpdateSettingsInput>

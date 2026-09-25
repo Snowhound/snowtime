@@ -47,6 +47,9 @@ export async function appSession(
         surfaces: userSettings.surfaces,
         sceneWeather: userSettings.sceneWeather,
         sceneIntro: userSettings.sceneIntro,
+        durationFormat: userSettings.durationFormat,
+        dateFormat: userSettings.dateFormat,
+        timeFormat: userSettings.timeFormat,
       })
       .from(userSettings)
       .where(eq(userSettings.userId, user.id))

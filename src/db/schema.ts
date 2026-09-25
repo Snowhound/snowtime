@@ -13,11 +13,14 @@ import {
 } from 'drizzle-orm/sqlite-core'
 import { APP_ICON_IDS, DEFAULT_APP_ICON } from '~/lib/app-icon'
 import {
+  DATE_FORMATS,
+  DURATION_FORMATS,
   LOCALES,
   SCENE_SEASONS,
   SCENE_STRENGTHS,
   SURFACES,
   THEMES,
+  TIME_FORMATS,
   TIMER_LAYOUTS,
 } from '~/server/settings/settings.schemas'
 import { currentActor } from './actor'
@@ -303,6 +306,9 @@ export const userSettings = sqliteTable(
     sceneIntro: integer('scene_intro', { mode: 'boolean' })
       .default(sql`1`)
       .notNull(),
+    durationFormat: text('duration_format', { enum: DURATION_FORMATS }).default('clock').notNull(),
+    dateFormat: text('date_format', { enum: DATE_FORMATS }).default('auto').notNull(),
+    timeFormat: text('time_format', { enum: TIME_FORMATS }).default('auto').notNull(),
   },
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),

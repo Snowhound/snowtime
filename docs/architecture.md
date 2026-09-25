@@ -253,9 +253,12 @@ each.
 
 - All of a user's settings live in `user_settings`, one row per user, so they follow the
   user across devices: time zone, week start, language (`locale`), theme, timer layout,
-  whether the summary shows, compact entry rows (`compact_rows`), the app icon (`app_icon`, the header mark and favicon), and
-  the seasonal scene (`scene_season`, `scene_background`, `scene_strength`, `surfaces`,
-  `scene_weather`, `scene_intro`).
+  whether the summary shows, compact entry rows (`compact_rows`), the app icon
+  (`app_icon`, the header mark and favicon), the seasonal scene (`scene_season`,
+  `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`), and
+  how durations, dates, and times show (`duration_format`, `date_format`, `time_format`).
+  Date and time formats default to `auto`, the UI language's. Exports keep the formats
+  spreadsheets read, whatever the duration format.
 - The server renders the theme class from the session user's settings, so the first
   paint uses the right theme with no flash. This is the main reason view settings moved
   here from `localStorage`. Signed-out pages (sign-in, invitations) use the theme, app

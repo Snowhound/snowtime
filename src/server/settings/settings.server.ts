@@ -22,6 +22,9 @@ const columns = {
   surfaces: userSettings.surfaces,
   sceneWeather: userSettings.sceneWeather,
   sceneIntro: userSettings.sceneIntro,
+  durationFormat: userSettings.durationFormat,
+  dateFormat: userSettings.dateFormat,
+  timeFormat: userSettings.timeFormat,
 }
 
 async function findSettings(db: Database, userId: string) {

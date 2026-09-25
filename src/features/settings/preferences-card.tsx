@@ -42,6 +42,24 @@ const WEEK_STARTS = [
   { value: 'sun', label: m.settings_week_sunday },
 ] as const
 
+// The formats show as examples, which read the same in every UI language but "By language".
+const DURATION_FORMATS = [
+  { value: 'clock', label: () => '11:10' },
+  { value: 'units', label: () => '11h 10m' },
+] as const
+
+const DATE_FORMATS = [
+  { value: 'auto', label: m.settings_format_auto },
+  { value: 'dmy', label: () => '30.09.2026' },
+  { value: 'mdy', label: () => '09/30/2026' },
+] as const
+
+const TIME_FORMATS = [
+  { value: 'auto', label: m.settings_format_auto },
+  { value: '24h', label: () => '15:30' },
+  { value: '12h', label: () => '3:30 PM' },
+] as const
+
 const THEMES = [
   { value: 'light', label: m.theme_light },
   { value: 'dark', label: m.theme_dark },
@@ -206,6 +224,27 @@ export function PreferencesCard(props: { settings: Settings }) {
               </For>
             </ToggleGroup>
           </div>
+          <Choice
+            id="duration-format"
+            label={m.settings_duration_format()}
+            options={DURATION_FORMATS}
+            value={props.settings.durationFormat}
+            onChange={(durationFormat) => update({ durationFormat })}
+          />
+          <Choice
+            id="date-format"
+            label={m.settings_date_format()}
+            options={DATE_FORMATS}
+            value={props.settings.dateFormat}
+            onChange={(dateFormat) => update({ dateFormat })}
+          />
+          <Choice
+            id="time-format"
+            label={m.settings_time_format()}
+            options={TIME_FORMATS}
+            value={props.settings.timeFormat}
+            onChange={(timeFormat) => update({ timeFormat })}
+          />
           <div class="bg-muted/60 grid gap-1 rounded-md px-3 py-2.5 text-sm">
             <Show when={device()} fallback={<p aria-hidden="true">&nbsp;</p>}>
               {(device) => (
@@ -347,5 +386,33 @@ export function PreferencesCard(props: { settings: Settings }) {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+// A labelled row of toggles for one setting.
+function Choice<T extends string>(props: {
+  id: string
+  label: string
+  options: readonly { value: T; label: () => string }[]
+  value: T
+  onChange: (value: T) => void
+}) {
+  return (
+    <div class="grid gap-2">
+      <span class="text-sm leading-none font-medium" id={`${props.id}-label`}>
+        {props.label}
+      </span>
+      <ToggleGroup
+        variant="outline"
+        class="justify-start"
+        aria-labelledby={`${props.id}-label`}
+        value={props.value}
+        onChange={(value) => value && props.onChange(value as T)}
+      >
+        <For each={props.options}>
+          {(option) => <ToggleGroupItem value={option.value}>{option.label()}</ToggleGroupItem>}
+        </For>
+      </ToggleGroup>
+    </div>
   )
 }

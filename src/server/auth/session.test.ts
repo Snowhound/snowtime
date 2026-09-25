@@ -71,6 +71,9 @@ describe('appSession', () => {
       surfaces: 'glass',
       sceneWeather: true,
       sceneIntro: true,
+      durationFormat: 'clock',
+      dateFormat: 'auto',
+      timeFormat: 'auto',
     })
     expect(session.invitationId).toBeNull()
   })

@@ -83,6 +83,9 @@ function defaultSettings(): Settings {
     surfaces: 'glass',
     sceneWeather: true,
     sceneIntro: true,
+    durationFormat: 'clock',
+    dateFormat: 'auto',
+    timeFormat: 'auto',
   }
 }
 
