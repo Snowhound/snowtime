@@ -12,3 +12,6 @@ f50e017a38086f1ff3f3c17fcd2e4c3c8f0f479f
 
 # Move task 032 into a folder for its subtasks.
 c961e4d0732401475015628fe78bc7ed15601a99
+
+# Move the signed-in routes under the organization slug (task 052).
+c395f5b4a9f1d66e954b71d302f89df805c25200
