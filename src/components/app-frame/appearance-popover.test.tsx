@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/solid-quer
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { Show } from 'solid-js'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { sessionQuery } from '~/lib/queries/session'
 import type { Settings } from '~/lib/queries/settings'
 import { AppearancePopover } from './appearance-popover'
@@ -37,18 +37,8 @@ function Header() {
   )
 }
 
-afterEach(() => {
-  vi.unstubAllGlobals()
-})
-
 describe('AppearancePopover', () => {
   test('a refused change goes back and says why', async () => {
-    // jsdom has no matchMedia, which the scenery fields ask about reduced motion.
-    vi.stubGlobal('matchMedia', () => ({
-      matches: false,
-      addEventListener() {},
-      removeEventListener() {},
-    }))
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     queryClient.setQueryData(sessionQuery.queryKey, { settings } as never)
     fn.getAppSession.mockResolvedValue({ settings })

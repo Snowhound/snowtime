@@ -13,4 +13,4 @@ classes go through `cn`, which runs tailwind-merge. Those are the first suspects
 - [ ] A profile of the cached visit names what the grid's time goes to
 - [ ] Opening Reports on a month by project with 40 projects stays under 50 ms of
       main-thread work at 1×, measured as in task 055, with the 4× figure recorded
-- [ ] The grid looks and reads the same, with the Entries card's buttons
+- [ ] The grid looks and reads the same, with the Entries card's buttons working as before

@@ -16,3 +16,12 @@ globalThis.ResizeObserver ??= class {
   unobserve() {}
   disconnect() {}
 }
+
+// Nor matchMedia; the scene, the tagline, and the scenery settings ask about reduced motion.
+window.matchMedia ??= (query) =>
+  ({
+    matches: false,
+    media: query,
+    addEventListener() {},
+    removeEventListener() {},
+  }) as unknown as MediaQueryList
