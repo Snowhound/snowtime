@@ -1,6 +1,6 @@
 # 05: Needless complexity
 
-Status: in-progress (three proposals await a decision)
+Status: done
 
 Look for code that exists only to support a design choice that could change, as the
 shared active organization did before task 052. Such a change removes more code than
@@ -14,7 +14,7 @@ any local cleanup.
       client) has one source, or a stated reason for both
 - [x] Each server domain's layers (`*.functions.ts`, `*.server.ts`, schemas) carry
       their weight; none only forwards to the next
-- [ ] Larger simplifications are done, split into reviewable commits, with the
+- [x] Larger simplifications are done, split into reviewable commits, with the
       decisions they change updated in `docs/architecture.md`
 
 ## Findings
@@ -55,33 +55,26 @@ Checked and sound:
 - The `*Page` components read the session query so settings and renames show at once, and
   key the view by organization; the tests render the views with plain props.
 
-Proposals (not started; each changes a recorded decision or the product):
+Larger simplifications, decided on 2026-09-26:
 
-1. Settings created with the user. `session.settings` is null until the app frame's first
-   `getSettings` call sends the browser's time zone. That costs `getSettings`,
-   `GetSettingsInput`, the frame's `onMount`, three pages' `Show` guards with `settings!`,
-   two `?? 'UTC'` fallbacks, three loaders' `zone &&`, and `updateSettings`' missing-row
-   branch: about 40 lines. The server can't know the zone at sign-up, so removing them
-   needs another source for it (a first-run redirect, or a default the user corrects).
-   Recommendation: keep, unless one of those is acceptable.
-2. Project delete without the wait. The 500 ms delay in `optimistic`, the
-   `deleteProjectKey` mutation state, and the rows' pending look (about 35 lines) exist
-   because the server refuses a project with entries. If `listProjects` returned whether
-   each project has entries, the view could offer "Archive instead" before asking the
-   server, and delete would be a plain optimistic update. It costs an `EXISTS` per project
-   in the list query and changes the "Application rules" decision.
-3. The Table layout. `entry-table.tsx` (173 lines) and the row helpers `entry-list.tsx`
-   exports for it lay out the same fields as the Bar layout's rows. It's a product choice
-   from the prototype, so only you can drop it.
+- Project delete without the wait: task 056. `listProjects` says which projects have
+  entries, so the view offers "Archive instead" before asking the server, and the `delay`
+  option, `deleteProjectKey`, and the pending rows go (about 35 lines).
+- Settings created with the user: kept. `session.settings` is null until the app frame's
+  first `getSettings` sends the browser's time zone, which costs about 40 lines of guards
+  and fallbacks. The server can't know the zone at sign-up, and the alternatives, a
+  first-run redirect or a default the user must correct, are worse for the user.
+- The Table layout: kept. It shares every field component with the Bar layout's rows; what
+  repeats is the table's markup, and merging the two would make both harder to read.
+- A shared team and project dialog: rejected. The shared part is the ~20-line shell that
+  keeps its content while closing; the name checks differ (teams ignore case, projects
+  point to an archived clash). The component would sit in `src/components/` for two
+  callers and tie them together for little saving.
 
 No change of the size of task 052's was found: the remaining code follows decisions that
 still hold.
 
-Candidates from earlier subtasks:
+From earlier subtasks:
 
-- `team-dialog.tsx` and `project-dialog.tsx` repeat the dialog shell that keeps the last
-  target while it animates closed, and the name field with its uniqueness check (subtask
-  04, found by `jscpd`). A shared component would be a new abstraction, so it needs
-  agreement first.
 - `parseOrganizationInput` in `src/server/schemas.ts` has one caller, `scopeMiddleware`, but
   stays, with its own test (decided on 2026-09-26).

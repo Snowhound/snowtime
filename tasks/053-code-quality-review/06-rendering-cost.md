@@ -44,7 +44,7 @@ mostly the scene's weather.
   work at 1×, and Settings is closest to the limit. The timer takes about 100 ms, one task
   of about 80 ms, which matches task 045's result (74–92 ms frames). Its rows mount no
   Kobalte triggers, but they still have 2,649 nodes, 417 inputs and buttons, and 240 SVGs
-  for 35 rows. It needs a task of its own if 50 ms is the bar.
+  for 35 rows. Task 057 brings it under 50 ms.
 - The first visit to a page (data not cached) wasn't measured reliably. The harness waited
   about 11 s for Playwright's load event, which a client navigation never fires. The numbers
   are left out rather than guessed.
