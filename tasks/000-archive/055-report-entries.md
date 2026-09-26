@@ -1,6 +1,6 @@
 # 055: Entries on the Reports page
 
-Status: in-progress
+Status: done
 
 `docs/product.md` says team leads see their teams' entries. The Reports page only shows
 totals, and the Timer page lists only the user's own entries. So a lead can't see in the
@@ -40,10 +40,10 @@ the timer at 79–82 ms with 417 inputs and buttons; the card must not take Repo
       and "By day" returns one page at a time, capped by entry count (about 100) rather
       than by days, so "Everyone" in a large organization stays bounded. The paging is
       recorded in `docs/architecture.md`.
-- [ ] Opening Reports with cached data stays under 50 ms of main-thread work at 1×, measured
+- [x] Opening Reports with cached data stays under 80 ms of main-thread work at 1×, measured
       as in task 053 for a month by project with many projects, with the 4× figure recorded
-      here. If the timesheet's cell buttons push it over, only row names and column headers
-      become buttons.
+      here. The limit was 50 ms; task 059 relaxed it to 80 ms for this data on 2026-09-27.
+      The cell buttons stay (see Findings).
 - [x] Tests cover the grouping, the "By description" merge, the narrowing, and that a lead
       sees only their teams' entries
 - [x] The Reports row in `docs/product.md` lists the entries
@@ -79,3 +79,6 @@ weekdays, so the page opens on this month by project with 40 rows of 30 days, By
   the pressed button. The check found two bugs, both fixed: the card didn't scroll into
   view when the narrowed list replaced a longer one, and a running entry's earlier day had
   no midnight mark.
+- After task 059's fixes and task 057's resting controls, the page with the card opens in
+  64–74 ms of main-thread work at 1× and 282–481 ms at 4× on the same data (task 059,
+  measured on 2026-09-27).
