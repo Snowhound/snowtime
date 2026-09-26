@@ -473,9 +473,10 @@ html:has(.scene-header) {
 }
 
 /* Reports' timesheet (src/features/reports/timesheet.tsx): on glass, its sticky first and last
-   columns are see-through until cells scroll under them. */
-[data-scene-bg='on'][data-surfaces='glass'] .timesheet:not([data-scrolled]) :is(th, td):first-child,
-[data-scene-bg='on'][data-surfaces='glass'] .timesheet:not([data-more]) :is(th, td):last-child {
+   columns are see-through until cells scroll under them. The columns' own classes keep a change
+   of `data-scrolled` or `data-more` from restyling every cell. */
+[data-scene-bg='on'][data-surfaces='glass'] .timesheet:not([data-scrolled]) .timesheet-start,
+[data-scene-bg='on'][data-surfaces='glass'] .timesheet:not([data-more]) .timesheet-end {
   background-color: transparent;
 }
 

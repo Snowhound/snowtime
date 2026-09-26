@@ -180,7 +180,7 @@ export function Timesheet(props: {
             <TableRow>
               <TableHead
                 scope="col"
-                class="bg-card sticky left-0 z-10 max-w-40 min-w-36 pl-6 sm:max-w-64"
+                class="timesheet-start bg-card sticky left-0 z-10 max-w-40 min-w-36 pl-6 sm:max-w-64"
               >
                 {GROUP_LABELS[props.group]()}
               </TableHead>
@@ -203,7 +203,10 @@ export function Timesheet(props: {
                   </TableHead>
                 )}
               </For>
-              <TableHead scope="col" class="bg-card sticky right-0 z-10 pr-6 text-right">
+              <TableHead
+                scope="col"
+                class="timesheet-end bg-card sticky right-0 z-10 pr-6 text-right"
+              >
                 {m.reports_total()}
               </TableHead>
             </TableRow>
@@ -214,7 +217,7 @@ export function Timesheet(props: {
                 <TableRow>
                   <TableHead
                     scope="row"
-                    class="bg-card text-foreground sticky left-0 z-10 h-auto max-w-40 p-2 pl-6 font-normal sm:max-w-64"
+                    class="timesheet-start bg-card text-foreground sticky left-0 z-10 h-auto max-w-40 p-2 pl-6 font-normal sm:max-w-64"
                   >
                     <Pick
                       row={row.key}
@@ -234,7 +237,7 @@ export function Timesheet(props: {
                   <For each={buckets()}>
                     {(bucket, i) => <Cell ms={row.perBucket[i()]} bucket={bucket} row={row.key} />}
                   </For>
-                  <TableCell class="bg-card sticky right-0 z-10 pr-6 text-right font-medium tabular-nums">
+                  <TableCell class="timesheet-end bg-card sticky right-0 z-10 pr-6 text-right font-medium tabular-nums">
                     <Pick row={row.key}>
                       <Duration ms={row.total} />
                     </Pick>
@@ -245,7 +248,7 @@ export function Timesheet(props: {
             <TableRow class="border-t-2 font-medium hover:bg-transparent">
               <TableHead
                 scope="row"
-                class="bg-card text-foreground sticky left-0 z-10 h-auto p-2 pl-6"
+                class="timesheet-start bg-card text-foreground sticky left-0 z-10 h-auto p-2 pl-6"
               >
                 {m.reports_total()}
               </TableHead>
@@ -254,7 +257,7 @@ export function Timesheet(props: {
                   <Cell ms={props.report.perBucket[i()]} bucket={bucket} class="font-medium" />
                 )}
               </For>
-              <TableCell class="bg-card sticky right-0 z-10 pr-6 text-right tabular-nums">
+              <TableCell class="timesheet-end bg-card sticky right-0 z-10 pr-6 text-right tabular-nums">
                 <Duration ms={props.report.total} />
               </TableCell>
             </TableRow>
