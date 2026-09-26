@@ -38,7 +38,7 @@ export function presetRange(preset: Preset, today: IsoDate, weekStart: WeekStart
 
 // The preset that covers exactly the range, so a shifted or typed range that lands on one
 // shows it again.
-export function matchPreset(range: Range, today: IsoDate, weekStart: WeekStart): RangePreset {
+function matchPreset(range: Range, today: IsoDate, weekStart: WeekStart): RangePreset {
   return (
     PRESETS.find((p) => {
       const r = presetRange(p, today, weekStart)

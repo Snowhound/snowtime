@@ -17,7 +17,7 @@ import type { SetTeamRoleInput } from '~/server/teams/teams.schemas'
 import type { OrgRole } from './roles'
 
 // An invitation link lasts 48 hours (invitationExpiresIn in better-auth.server.ts).
-export const INVITATION_HOURS = 48
+const INVITATION_HOURS = 48
 const HOUR = 3_600_000
 
 export interface Invitation {

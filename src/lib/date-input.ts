@@ -99,8 +99,7 @@ export function uses12Hours(locale: string): boolean {
   return timeFormatter(locale).resolvedOptions().hour12 === true
 }
 
-// The 'HH:MM' time as the locale writes it, as formatTime shows times: 09:30 AM in en, 09:30
-// in et.
+// The 'HH:MM' time as the locale writes it: 09:30 AM in en, 09:30 in et.
 export function formatTimeInput(time: string, locale: string): string {
   if (!time) return ''
   const [h, min] = time.split(':').map(Number)

@@ -50,10 +50,6 @@ export function formatDateTime(
   return formatter.format(ms)
 }
 
-export function formatTime(ms: number | Date, timeZone: string) {
-  return formatDateTime(ms, timeZone, { hour: '2-digit', minute: '2-digit' })
-}
-
 // An ISO date such as 2026-09-24, which is a calendar day rather than an instant, so it is
 // formatted in UTC to keep the same day in every zone.
 export function formatIsoDate(date: string, options: Intl.DateTimeFormatOptions): string {

@@ -6,7 +6,7 @@
 import { Redis } from '@upstash/redis'
 
 // Seconds, as Better Auth's rateLimit options take them.
-export type RateLimitRule = { window: number; max: number }
+type RateLimitRule = { window: number; max: number }
 
 // Better Auth's customStorage shape: count one request and say whether it fits, in one
 // atomic step, so concurrent requests can't all pass the same stale count.
@@ -46,7 +46,7 @@ local count = redis.call('INCR', KEYS[1])
 if count == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
 return {count, redis.call('TTL', KEYS[1])}`
 
-export function redisStore(redis: Redis): RateLimitStore {
+function redisStore(redis: Redis): RateLimitStore {
   return {
     async consume(key, rule) {
       const [count, ttl] = await redis.eval<[string], [number, number]>(

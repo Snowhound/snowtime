@@ -18,7 +18,7 @@ import {
   resolveRange,
 } from './range'
 
-export const GROUPS = ['project', 'team', 'member'] as const
+const GROUPS = ['project', 'team', 'member'] as const
 export type Group = (typeof GROUPS)[number]
 export type Unit = (typeof REPORT_UNITS)[number]
 
@@ -43,7 +43,7 @@ export type ReportSearch = v.InferOutput<typeof ReportSearch>
 // tell which teams the user leads.
 export type Access = { kind: 'member' } | { kind: 'lead'; teams: Team[] } | { kind: 'admin' }
 
-export function accessOf(userId: string, admin: boolean, teams: Team[]): Access {
+function accessOf(userId: string, admin: boolean, teams: Team[]): Access {
   if (admin) return { kind: 'admin' }
   const led = teams.filter((t) => t.members.some((m) => m.userId === userId && m.role === 'lead'))
   return led.length ? { kind: 'lead', teams: led } : { kind: 'member' }
@@ -51,12 +51,12 @@ export function accessOf(userId: string, admin: boolean, teams: Team[]): Access 
 
 // The People select: the default (everyone, or the led teams), then teams, then members.
 // Members get none: they only see their own time.
-export interface PeopleOptions {
+interface PeopleOptions {
   teams: Team[]
   members: Member[]
 }
 
-export function peopleOptions(access: Access, userId: string, teams: Team[], members: Member[]) {
+function peopleOptions(access: Access, userId: string, teams: Team[], members: Member[]) {
   if (access.kind === 'member') return null
   if (access.kind === 'admin') return { teams, members }
   const ids = new Set([userId, ...access.teams.flatMap((t) => t.members.map((m) => m.userId))])

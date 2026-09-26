@@ -7,7 +7,7 @@ import { m } from '~/paraglide/messages.js'
 
 export type OrgRole = Member['orgRole']
 
-export const ORG_ROLES = ['owner', 'admin', 'member'] as const satisfies readonly OrgRole[]
+const ORG_ROLES = ['owner', 'admin', 'member'] as const satisfies readonly OrgRole[]
 
 export const ROLE_LABELS = {
   owner: m.organization_role_owner,

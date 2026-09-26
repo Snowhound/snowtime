@@ -37,7 +37,7 @@ const PROVIDERS: { id: SocialProvider; name: string; Icon: Component<{ class?: s
 
 // The list comes from the browser: the Better Auth client can't call itself during
 // server rendering.
-export const accountsQuery = queryOptions({
+const accountsQuery = queryOptions({
   queryKey: ['auth', 'accounts'],
   queryFn: () => unwrap(authClient.listAccounts()),
   enabled: !isServer,

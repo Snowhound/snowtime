@@ -856,9 +856,9 @@ intro.
 | Autumn | The leaves are falling. / So are your unlogged hours. / Before the last one lands, fill in your timesheet. | The nights are drawing in. / So is the deadline.                                              |
 
 `seasons.PERIODS` adds taglines for a timesheet period's last days, whatever the season: "It's
-Friday. So is the deadline." and "The month is almost out. Your hours shouldn't be." The
-alternates and period lines are for the app (task 031, subtask 06); the prototypes don't show
-them.
+Friday. So is the deadline." and "The month is almost out. Your hours shouldn't be." Neither
+the prototypes nor the app shows the alternates or period lines yet; this table is their source
+until one does.
 
 Simulated with fictional rules: the password `wrong` fails sign-in, `taken@example.com` is
 already registered, and the short name `snowhound` is taken. Provider, passkey, and email steps

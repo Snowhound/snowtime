@@ -77,7 +77,7 @@ export type PhotoTheme = 'light' | 'dark'
 // 2); past 2400 device pixels the large file is sharper. Screens under 768 px always get the small
 // one.
 export const PHOTO_SMALL = 1920
-export const PHOTO_LARGE = 3840
+const PHOTO_LARGE = 3840
 
 export function photoWidth(viewport: { width: number; height: number; dpr: number }) {
   if (viewport.width < 768) return PHOTO_SMALL

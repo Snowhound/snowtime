@@ -74,7 +74,7 @@ export function daysBetween(from: IsoDate, to: IsoDate): number {
 }
 
 // 0 for Sunday through 6 for Saturday, as Date.getUTCDay().
-export function weekday(date: IsoDate): number {
+function weekday(date: IsoDate): number {
   return new Date(dayNumber(date)).getUTCDay()
 }
 

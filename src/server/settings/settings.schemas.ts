@@ -5,7 +5,7 @@ import { m } from '~/paraglide/messages.js'
 // An IANA zone name such as Europe/Tallinn or UTC. Intl accepts the names the runtime
 // knows; the pattern rejects the offsets ("+02:00") Intl also accepts, because an offset
 // ignores daylight saving time.
-export const TimeZone = v.pipe(
+const TimeZone = v.pipe(
   v.string(),
   v.regex(/^[A-Za-z][\w+-]*(\/[\w+-]+)*$/, () => m.validation_time_zone_format()),
   v.check(
@@ -28,15 +28,15 @@ export type WeekStart = v.InferOutput<typeof WeekStart>
 
 // UI languages; the first is the default (docs/architecture.md, "Internationalization").
 export const LOCALES = ['en', 'et'] as const
-export const Locale = v.picklist(LOCALES)
-export type Locale = v.InferOutput<typeof Locale>
+const Locale = v.picklist(LOCALES)
+type Locale = v.InferOutput<typeof Locale>
 
 // View settings, kept on the server so the first paint uses them (docs/architecture.md,
 // "User settings"). The first value of each list is the default.
 export const THEMES = ['system', 'light', 'dark'] as const
 export const Theme = v.picklist(THEMES)
 export const TIMER_LAYOUTS = ['bar', 'focus', 'table'] as const
-export const TimerLayout = v.picklist(TIMER_LAYOUTS)
+const TimerLayout = v.picklist(TIMER_LAYOUTS)
 // The brand concepts in src/lib/app-icon.ts; '02' is the default.
 export const AppIcon = v.picklist(APP_ICON_IDS)
 // The seasonal scene (prototypes/README.md, "Seasonal scene in the app"). 'auto' picks the

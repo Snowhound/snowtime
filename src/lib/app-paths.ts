@@ -16,7 +16,7 @@ export const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 // Slugs an organization can't take: the top-level paths, which a slug would hide, and the page
 // names, which old links read as pages.
-export const RESERVED_SLUGS: readonly string[] = [
+const RESERVED_SLUGS: readonly string[] = [
   ...APP_PAGES,
   'api',
   'sign-in',

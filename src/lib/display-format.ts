@@ -53,7 +53,7 @@ export function useFormatHours() {
 // A locale whose numeric dates are in the date format: day first with dots as Estonian
 // writes them (the default), or month first with slashes as American English does. Only the
 // order and separators of date-input.ts's numeric dates come from it.
-export function dateLocale(format: DateFormat = 'dmy'): string {
+function dateLocale(format: DateFormat = 'dmy'): string {
   return format === 'mdy' ? 'en-US' : 'et'
 }
 

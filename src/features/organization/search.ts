@@ -2,7 +2,7 @@
 // dropped, so a bad link still opens Members.
 import * as v from 'valibot'
 
-export const ORGANIZATION_TABS = ['members', 'invitations', 'teams', 'general'] as const
+const ORGANIZATION_TABS = ['members', 'invitations', 'teams', 'general'] as const
 export type OrganizationTab = (typeof ORGANIZATION_TABS)[number]
 
 export const OrganizationSearch = v.object({

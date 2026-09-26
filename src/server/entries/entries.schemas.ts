@@ -52,7 +52,7 @@ export const DeleteEntryInput = v.object({ id: Uuidv7 })
 export type DeleteEntryInput = v.InferOutput<typeof DeleteEntryInput>
 
 // Longest range listEntries returns, to keep one call's reads bounded.
-export const MAX_LIST_DAYS = 93
+const MAX_LIST_DAYS = 93
 
 // Entries overlapping [from, to), optionally of one user.
 export const ListEntriesInput = v.pipe(

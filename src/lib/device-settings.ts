@@ -17,7 +17,7 @@ import { APP_PAGES } from './app-paths'
 import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from './scene/intro'
 import { SCENE_DEFAULTS, type SceneSettings, seasonByMonth } from './scene/scene'
 
-export const DEVICE_SETTINGS_KEY = 'snowtime.settings'
+const DEVICE_SETTINGS_KEY = 'snowtime.settings'
 
 export type DeviceSettings = SceneSettings & {
   theme: (typeof THEMES)[number]
