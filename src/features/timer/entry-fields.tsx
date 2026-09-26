@@ -71,28 +71,26 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
   createEffect(on(savedDescription, setDescription, { defer: true }))
   createEffect(on(savedTimes, () => setTimes({}), { defer: true }))
 
-  function date() {
-    return localDate(props.entry.startedAt.getTime(), props.zone)
-  }
+  // Memos, because the row's fields read these several times and each read goes through Intl.
+  const date = createMemo(() => localDate(props.entry.startedAt.getTime(), props.zone))
+  const values = createMemo(() => ({
+    date: date(),
+    start: times().start ?? localTime(props.entry.startedAt.getTime(), props.zone),
+    end: times().end ?? localTime(props.entry.stoppedAt.getTime(), props.zone),
+  }))
 
-  function values() {
-    return {
-      date: date(),
-      start: times().start ?? localTime(props.entry.startedAt.getTime(), props.zone),
-      end: times().end ?? localTime(props.entry.stoppedAt.getTime(), props.zone),
-    }
-  }
-
-  function read() {
+  function readNow() {
     return readEntryTimes(values(), { running: false, zone: props.zone, original: props.entry })
   }
+  // What the row shows. Its future check keeps the time of the last change, so a commit
+  // reads again with `readNow`.
+  const read = createMemo(readNow)
 
   // The times' error, on the field it belongs to; `key` is the field being committed.
-  function timesError(key: TimeKey): { key: TimeKey; message: string } | null {
+  function timesError(key: TimeKey, result = read()): { key: TimeKey; message: string } | null {
     const { start, end } = values()
     if (!start) return { key: 'start', message: m.entry_error_missing_start() }
     if (!end) return { key: 'end', message: m.entry_error_missing_end() }
-    const result = read()
     if (!result.error) return null
     return {
       key,
@@ -151,13 +149,13 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     },
     commitTimes(key: TimeKey) {
       if (times().start === undefined && times().end === undefined) return
-      const error = timesError(key)
+      const result = readNow()
+      const error = timesError(key, result)
       if (error) {
         setInvalid(error.key)
         return
       }
       setInvalid(null)
-      const result = read()
       if (result.error) return
       const patch: EntryPatch = {}
       if (result.startedAt.getTime() !== props.entry.startedAt.getTime()) {
