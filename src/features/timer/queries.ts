@@ -203,10 +203,9 @@ export function useDeleteEntry({ organizationId }: Keys) {
         cacheUpdate<Entry[], DeleteEntryInput>(entriesKey(organizationId), (entries, { id }) =>
           entries.filter((e) => e.id !== id),
         ),
-        // Unchanged until the refetch, which the update causes, finds the new earliest.
-        cacheUpdate<Date | null, DeleteEntryInput>(firstEntryKey(organizationId), (first) => first),
       ],
-      settled,
+      // The earliest start may have been this entry's.
+      { invalidate: [reportsKey, firstEntryKey(organizationId)] },
     ),
   }))
 }
