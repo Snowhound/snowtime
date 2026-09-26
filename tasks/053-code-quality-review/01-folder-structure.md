@@ -1,13 +1,13 @@
 # 01: Folder structure
 
-Status: done
+Status: in-progress
 
 A folder holding many unrelated files makes a change hard to scope. `src/lib/` has about
 35 files that range from scene and weather code to session, members, and form helpers.
 
 ## Acceptance criteria
 
-- [x] No folder in `src/` mixes several unrelated concerns; related files that only
+- [ ] No folder in `src/` mixes several unrelated concerns; related files that only
       share a folder move into a subfolder (for example the scene, weather, seasons,
       and intro files in `src/lib/` and `src/components/`)
 - [x] Code in `src/lib/` or `src/components/` that only one feature uses moves into that
@@ -42,3 +42,11 @@ Checked and sound:
   `queries.ts`), so no file has helpers only it uses that call for a component folder.
 - `src/server/`: top-level files are cross-domain (errors, middleware, scope, rate limit,
   CSP); domains have their own folders. `src/db/` and `src/routes/` are as designed.
+
+Left for a decision:
+
+- `src/lib/queries/session.ts` combines the session query and cache watcher with the
+  theme script and route and organization helpers. Its test also covers both cache and
+  route behavior. Moving it into `queries/` grouped the query code but left unrelated
+  behavior in that folder. Splitting the file would add a module; decide whether that
+  organization is worth the extra file before marking the first criterion done.
