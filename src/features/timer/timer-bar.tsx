@@ -1,10 +1,6 @@
 // The timer (prototypes/timer.html): description, project, the elapsed time, and Start or
-// Stop. The description suggests recent work, and Enter in it starts the timer. While it
-// runs, the fields edit the running entry, and the elapsed time opens its start in the
-// entry popover. The layouts
-// share these controls and differ only in their classes: one line in Bar, a large clock
-// in Focus, and a plain row above the table in Table. With the compactRows setting, the
-// controls are shorter and the padding smaller.
+// Stop. While it runs, the fields edit the running entry, and the elapsed time opens its
+// start in the entry popover. The layouts share these controls and differ only in classes.
 import PlayIcon from 'lucide-solid/icons/play'
 import SquareIcon from 'lucide-solid/icons/square'
 import { Show, createEffect, createSignal, on } from 'solid-js'

@@ -38,13 +38,11 @@ function useSettings(): SettingsSignal {
   return client ? settingsSignal(client) : () => undefined
 }
 
-// The user's duration format.
 export function useDurationFormat() {
   const settings = useSettings()
   return () => settings()?.durationFormat ?? 'clock'
 }
 
-// formatHours in the user's duration format.
 export function useFormatHours() {
   const settings = useSettings()
   return (ms: number) => formatHours(ms, settings()?.durationFormat)

@@ -182,7 +182,7 @@ function EntryForm(props: {
   const times = form.useStore((state) =>
     readEntryTimes(state.values, { running, zone: props.zone, original: entry ?? undefined }),
   )
-  // Like the prototype, the error shows once saving was tried, then follows the input.
+  // The error shows once saving was tried, then follows the input.
   const error = form.useStore((state) => {
     const result = readEntryTimes(state.values, {
       running,

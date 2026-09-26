@@ -1,13 +1,5 @@
-// TanStack Form takes the Valibot schemas (src/server/*/*.schemas.ts) directly as
-// validators, since both implement Standard Schema:
-//
-//   const form = createForm(() => ({
-//     defaultValues: { name: '' },
-//     validators: { onSubmit: CreateProjectForm },
-//     onSubmit: ({ value }) => mutation.mutateAsync(value),
-//   }))
-//
-// A field's errors are then Standard Schema issues or strings; this picks the text to show.
+// The text to show for a field's errors: strings, or Standard Schema issues from the Valibot
+// schemas that TanStack Form takes as validators.
 export function fieldError(errors: readonly unknown[]): string | undefined {
   for (const error of errors) {
     if (typeof error === 'string') return error

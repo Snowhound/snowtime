@@ -1,4 +1,4 @@
-// App icon concepts from design/brand-assets/ (task 029), copied to public/brand/. The choice is
+// App icon concepts from design/brand-assets/, copied to public/brand/. The choice is
 // the appIcon user setting (prototypes/README.md, "App icon"). The concepts are fixed here; a
 // deployment could swap them later.
 //

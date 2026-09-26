@@ -1,4 +1,3 @@
-// Helpers of the Projects view.
 import { getLocale } from '~/paraglide/runtime.js'
 
 export function byName(a: { name: string }, b: { name: string }) {

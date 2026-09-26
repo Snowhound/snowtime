@@ -167,7 +167,7 @@ export const account = sqliteTable(
   ],
 )
 
-// @better-auth/passkey's table (task 015). The key credentialID matches the plugin's
+// @better-auth/passkey's table. The key credentialID matches the plugin's
 // field name, which the Drizzle adapter looks up.
 export const passkey = sqliteTable(
   'passkey',

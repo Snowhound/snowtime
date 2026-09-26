@@ -1,4 +1,4 @@
-// The report's export (task 034, prototypes/reports.html): the timesheet and the entries
+// The report's export (prototypes/reports.html): the timesheet and the entries
 // behind it, as CSV or as one XLSX file with a sheet for each. getReport and getReportExport
 // apply the role rules; the browser names the rows from the cached lists, as the timesheet
 // does, and builds the files, so the XLSX library loads only when someone exports.

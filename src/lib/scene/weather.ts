@@ -53,7 +53,7 @@ uniform vec3 u_colorA, u_colorB;
 out vec4 outColor;
 `
 export const EFFECTS: Record<Effect, EffectDef> = {
-  // Winter's snow, from the mock-up. A is the near flakes' color, B the far ones'.
+  // Winter's snow. A is the near flakes' color, B the far ones'.
   snow: {
     density: 500,
     min: 150,
@@ -72,7 +72,6 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       x += sin((y+r4*6.28)*4.5 + u_time*(.35+r3)) * (.008 + .035*(1.0-z));
       x = -1.15 + mod(x+1.15, 2.30);
       x *= mix(.88, 1.08, z);
-      // The mock-up divided x by the aspect ratio, which left the sides of wide screens bare.
       gl_Position = vec4(x, y, 0.0, 1.0);
       gl_PointSize = 1.15 * u_dpr * mix(.8, 2.75, z);
       v_alpha = mix(.15,.82,z) * mix(.72,1.0,r4);
@@ -160,7 +159,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
             [0.85, 0.58, 0.2],
           ],
   },
-  // Summer nights: fireflies that wander over the meadow and glow on and off. A is the core, B the halo.
+  // Summer nights: fireflies that wander over the meadow and glow on and off. A is the core, B the
+  // halo.
   fireflies: {
     density: 40,
     min: 18,
@@ -198,8 +198,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       [0.74, 0.9, 0.32],
     ],
   },
-  // Summer days: soft dandelion fluff and pollen drifting on the breeze, the pollen catching the light.
-  // A is the seeds' color, B the pollen's.
+  // Summer days: soft dandelion fluff and pollen drifting on the breeze, the pollen catching the
+  // light. A is the seeds' color, B the pollen's.
   seeds: {
     density: 70,
     min: 30,

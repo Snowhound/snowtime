@@ -1,10 +1,6 @@
 // The timer view (prototypes/timer.html): the timer, the user's recent entries by day, the
-// summary, and the entry popover, in the layout of the user's settings. Bar lists day
-// cards; Focus has a large clock, "continue recent" chips, and the last three days;
-// Table has one table with day subtotals. The compactRows setting makes the timer and the
-// rows of every layout shorter. Entries are edited in their rows; the popover adds an entry
-// or edits the running one's start. Every write is optimistic and rolls back on error
-// (queries.ts), with the error shown under the edited row or above the timer.
+// summary, and the entry popover, in the Bar, Focus, or Table layout. Every write is
+// optimistic (queries.ts); its error shows under the edited row or above the timer.
 import { keepPreviousData, useQuery } from '@tanstack/solid-query'
 import PlusIcon from 'lucide-solid/icons/plus'
 import {

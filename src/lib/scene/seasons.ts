@@ -58,7 +58,6 @@ export const PERIODS: Record<'weekEnd' | 'monthEnd', [Line, Line]> = {
   monthEnd: [m.tagline_month_end_1, m.tagline_month_end_2],
 }
 
-// The intro's lines.
 export function introLines(season: Season) {
   return SEASON_COPY[season].lines.map((line) => line())
 }
