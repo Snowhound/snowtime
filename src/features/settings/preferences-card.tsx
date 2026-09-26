@@ -117,8 +117,12 @@ export function PreferencesCard(props: { settings: Settings }) {
     onCleanup(() => clearInterval(clock))
   })
 
-  // A saved zone the browser doesn't list (an alias, or newer tz data) still shows.
+  // A saved zone the browser doesn't list (an alias, or newer tz data) still shows. The list
+  // fills when the select is first used: each label needs its own Intl formatter, about
+  // 18 ms for all zones.
+  const [zonesWanted, setZonesWanted] = createSignal(false)
   function zones() {
+    if (!zonesWanted()) return [props.settings.timeZone]
     const listed = device()?.zones ?? []
     const extra = [props.settings.timeZone, device()?.zone].filter(
       (zone): zone is string => !!zone && !listed.includes(zone),
@@ -188,9 +192,11 @@ export function PreferencesCard(props: { settings: Settings }) {
                   id="time-zone"
                   class="sm:w-80 @2xl:w-full"
                   value={props.settings.timeZone}
+                  onPointerDown={() => setZonesWanted(true)}
+                  onFocus={() => setZonesWanted(true)}
                   onChange={(event) => update({ timeZone: event.currentTarget.value })}
                 >
-                  <For each={zones().length ? zones() : [props.settings.timeZone]}>
+                  <For each={zones()}>
                     {(zone) => (
                       <option value={zone} selected={zone === props.settings.timeZone}>
                         {zoneLabel(zone)}
