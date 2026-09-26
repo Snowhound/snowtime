@@ -16,6 +16,7 @@
     "datamodel:check": "bun datamodel/generate-dbml.ts --check",
     "datamodel:build": "bun datamodel/dbml-to-chartdb.mjs",
     "datamodel:stop": "docker compose -f datamodel/docker-compose.yml down",
+    "env:init": "bun scripts/env-init.ts",
     "db:generate": "bun scripts/db-generate.ts",
     "db:migrate": "bun scripts/db-verify.ts && bunx --bun drizzle-kit migrate",
     "db:verify": "bun scripts/db-verify.ts",

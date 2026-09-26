@@ -45,16 +45,16 @@ Requires [Bun](https://bun.sh) 1.3 or later.
 
 ```bash
 bun install
-bun -e "require('fs').appendFileSync('.env.local', 'BETTER_AUTH_SECRET=' + require('crypto').randomBytes(32).toString('base64url') + '\n')"
+bun run env:init
 bun run db:migrate
 bun run db:seed
 bun --bun run dev
 ```
 
 The app runs on http://localhost:3000 against a local SQLite file, `local.db`.
-`.env.development` sets the database and app URL; `BETTER_AUTH_SECRET` is the only
-variable you must add. Put it and other local overrides, such as OAuth credentials, in
-the gitignored `.env.local`; `.env.example` lists every variable.
+`.env.development` sets the database and app URL, and `bun run env:init` adds the one
+variable left, a generated `BETTER_AUTH_SECRET`, to the gitignored `.env.local`. Put other
+local overrides, such as OAuth credentials, there too; `.env.example` lists every variable.
 
 ### Seeded users
 
@@ -83,6 +83,7 @@ To start over: `rm local.db && bun run db:migrate && bun run db:seed`.
 | `bun run test`               | Runs server tests (`bun test`) and component tests |
 | `bun run lint`               | Runs oxlint                                        |
 | `bun run format`             | Formats with oxfmt                                 |
+| `bun run env:init`           | Adds a `BETTER_AUTH_SECRET` to `.env.local`        |
 | `bun run db:generate <name>` | Creates an empty SQL migration                     |
 | `bun run db:migrate`         | Verifies and applies migrations                    |
 | `bun run db:drift`           | Compares the Drizzle schema with the migrations    |
