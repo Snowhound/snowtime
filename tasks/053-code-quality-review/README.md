@@ -1,6 +1,6 @@
 # 053: Code quality review
 
-Status: in-progress (every subtask is done; the rules criterion is open)
+Status: done
 
 Review the repository for style and quality rather than bugs (task 039 covers bugs):
 layout, types, comments, leftovers, needless complexity, and rendering cost. The
@@ -32,4 +32,19 @@ skip them.
       counted without `routeTree.gen.ts` and `src/components/ui/`:
       `git ls-files src | grep -vE 'routeTree.gen|components/ui/' | grep -E '\.(ts|tsx|css)$' | xargs cat | wc -l`.
       After subtask 06 it is 25,862.
-- [ ] Rules worth keeping are enforced by oxlint or a script, or recorded in `AGENTS.md`
+- [x] Rules worth keeping are enforced by oxlint or a script, or recorded in `AGENTS.md`
+
+## Findings
+
+Rules checked on 2026-09-26, and what holds each one:
+
+- oxlint: import paths within and between areas, `function` declarations, no `any` or
+  `@ts-ignore` (subtask 02), and Solid's reactivity rules. It now also allows imports
+  from `src/features/` only in routes and `src/router.tsx`, which `AGENTS.md` stated but
+  nothing checked.
+- Scripts in `bun run test` and CI: icon names (`icons:check`), unused files and exports
+  (`knip`, subtask 04), and the data model diagram (`datamodel:check`).
+- TanStack Start's import protection keeps `*.server.ts` out of the client bundle.
+- `AGENTS.md` only: feature folders, route files, pending components, comments, and a
+  reason on every inline lint disable. The one disable without a reason after `--` now has
+  one.
