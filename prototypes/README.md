@@ -556,6 +556,31 @@ behind the report. The file name is the organization's short name and the range'
 days, such as `snowhound-2026-09-21-to-2026-09-27.xlsx`, with `-entries` before `.csv` for the
 entries. In the prototype an item only names the file the app would download.
 
+**Entries** (task 055), a card below the timesheet in 02 · Timesheet, lists the entries behind the
+report, so a team lead can see what a member worked on. The card lists the same day pieces the
+timesheet sums, so its total matches the part it shows. An entry that crosses midnight shows its
+full start and end, with a moon icon and the time that counts on that day. The card is read-only;
+only the owner edits an entry, on the Timer page. It hides when the range has no time.
+
+- **By day**: a heading per day with the day's total, newest day first, then each entry's start
+  and end, description, project, member, and duration. The member column shows only when the
+  selection covers more than one person; then a day lists each person's entries together.
+  Below 640 px, the time, project, and member wrap under the description.
+- **By description**: one row per project and description, with its total, how many entries on
+  how many days, and who tracked it (two names and a count past three), largest total first.
+
+The card opens By day for a week or less and By description for longer spans, where a list of
+single entries runs to hundreds of rows. The user's choice holds until a filter changes.
+
+Names and totals in the timesheet are buttons that narrow the card: a row's name or total to that
+row, a cell to that row and day or week, and a cell in the Total row to that day or week. The
+chosen button shows pressed, a chip in the card names the part with an × to show all again, and
+choosing the same button again clears it. When the card is below the fold, choosing a part
+scrolls to it. Changing any filter clears the narrowing.
+
+Long lists load in pages: By day shows seven days at a time, By description 25 rows, each with a
+"Show more" button.
+
 Omitted: filters by project or description, saved reports, and billable rates.
 
 Checked in Chromium at 1440, 850, and 390 px, light and dark, every layout and fixture, as

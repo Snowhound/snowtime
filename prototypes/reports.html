@@ -41,6 +41,13 @@
       body[data-scene-bg='on'][data-surfaces='glass'] .timesheet:not([data-scrolled]) :is(th, td):first-child {
         background-color: transparent;
       }
+      /* Timesheet names and totals that narrow the Entries card. */
+      .ts-pick {
+        @apply -mx-1.5 -my-0.5 rounded-sm px-1.5 py-0.5 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+      }
+      .ts-pick[aria-pressed='true'] {
+        @apply bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground;
+      }
     </style>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -148,7 +155,7 @@
       </section>
 
       <!-- 02 · Timesheet -->
-      <section class="timesheet-only min-w-0" aria-label="Timesheet">
+      <section class="timesheet-only flex min-w-0 flex-col gap-6" aria-label="Timesheet">
         <div data-ui="card" class="min-w-0 overflow-hidden">
           <div data-ui="card-header" class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
             <div class="grid min-w-0 gap-1.5">
@@ -165,6 +172,21 @@
           </div>
           <p id="export-status" class="px-6 pb-3 text-xs text-muted-foreground empty:hidden" role="status"></p>
           <div id="timesheet"></div>
+        </div>
+
+        <!-- Entries (task 055): the entries behind the timesheet, or behind the part chosen in it. -->
+        <div id="entries-card" data-ui="card" class="min-w-0 scroll-mt-4 overflow-hidden">
+          <div data-ui="card-header" class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
+            <div class="grid min-w-0 gap-1.5">
+              <h2 data-ui="card-title" class="text-base">Entries</h2>
+              <div id="entries-note" data-ui="card-description" class="flex flex-wrap items-center gap-x-2 gap-y-1"></div>
+            </div>
+            <div data-ui="toggle-group" role="group" aria-label="List entries" class="justify-start">
+              <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-entry-view="day">By day</button>
+              <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-entry-view="description">By description</button>
+            </div>
+          </div>
+          <div id="entries"></div>
         </div>
       </section>
 
@@ -213,6 +235,11 @@
         unit: 'day',
         org: null,
         entries: [],
+        // The Entries card: the timesheet part it's narrowed to ({ row, bucket }, either null),
+        // the view the user picked (null follows the range), and how many days or rows show.
+        narrow: null,
+        entryView: null,
+        entryLimit: null,
       }
 
       // --- Formatting ---------------------------------------------------------------------------
@@ -590,20 +617,209 @@
         }
         const grand = segs.reduce((a, s) => a + s.ms, 0)
         const head = (b) => `<th data-ui="table-head" class="min-w-16 whitespace-nowrap text-right ${isCurrent(b) ? 'text-foreground' : ''}" scope="col">${escapeHtml(bucketLabel(b, true))}${state.unit === 'day' && daysInRange() > 7 ? `<span class="block text-[10px] font-normal">${escapeHtml(fmt({ weekday: 'narrow' }).format(b + 12 * HOUR))}</span>` : ''}</th>`
-        const cell = (ms, b, extra = '') =>
-          `<td data-ui="table-cell" class="whitespace-nowrap text-right tabular-nums ${isCurrent(b) ? 'bg-muted/50' : ''} ${ms ? '' : 'text-muted-foreground/50'} ${extra}">${ms ? hm(ms) : '·'}</td>`
+        // Names and totals are buttons that narrow the Entries card to their row, bucket, or both.
+        const pick = (row, b, label, content, cls = '') => {
+          const n = state.narrow
+          const pressed = !!n && n.row === row && n.bucket === b
+          return `<button type="button" class="ts-pick ${cls}" data-row="${row ?? ''}" data-bucket="${b ?? ''}" aria-pressed="${pressed}" aria-label="${escapeHtml(`Entries for ${label}`)}">${content}</button>`
+        }
+        const cell = (ms, b, row, name, extra = '') =>
+          `<td data-ui="table-cell" class="whitespace-nowrap text-right tabular-nums ${isCurrent(b) ? 'bg-muted/50' : ''} ${ms ? '' : 'text-muted-foreground/50'} ${extra}">${ms ? pick(row, b, [name, bucketLabel(b, false)].filter(Boolean).join(', '), hm(ms)) : '·'}</td>`
         el.innerHTML = `<div class="relative w-full overflow-auto border-t">
           <table data-ui="table" class="timesheet">
             <thead data-ui="table-header"><tr data-ui="table-row"><th data-ui="table-head" class="min-w-36 max-w-40 pl-6 sm:max-w-64" scope="col">${escapeHtml(groupNoun()[0].toUpperCase() + groupNoun().slice(1))}</th>${bs.map(head).join('')}<th data-ui="table-head" class="pr-6 text-right" scope="col">Total</th></tr></thead>
             <tbody data-ui="table-body">${rows
               .map(
-                (r) => `<tr data-ui="table-row"><th data-ui="table-cell" scope="row" class="max-w-40 pl-6 text-left font-normal sm:max-w-64"><span class="flex min-w-0 items-center gap-2">${r.color ? dot(r.color) : ''}<span class="truncate ${r.muted ? 'text-muted-foreground' : ''}" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span></span></th>${bs.map((b) => cell(r.byBucket.get(b) ?? 0, b)).join('')}<td data-ui="table-cell" class="pr-6 text-right font-medium tabular-nums">${hm(r.total)}</td></tr>`
+                (r) => `<tr data-ui="table-row"><th data-ui="table-cell" scope="row" class="max-w-40 pl-6 text-left font-normal sm:max-w-64">${pick(r.key, null, r.name, `${r.color ? dot(r.color) : ''}<span class="truncate ${r.muted ? 'text-muted-foreground' : ''}" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span>`, 'flex min-w-0 max-w-full items-center gap-2 text-left')}</th>${bs.map((b) => cell(r.byBucket.get(b) ?? 0, b, r.key, r.name)).join('')}<td data-ui="table-cell" class="pr-6 text-right font-medium tabular-nums">${pick(r.key, null, r.name, hm(r.total))}</td></tr>`
               )
               .join('')}
-              <tr data-ui="table-row" class="border-t-2 font-medium hover:bg-transparent"><th data-ui="table-cell" scope="row" class="pl-6 text-left">Total</th>${bs.map((b) => cell(colTotal(b), b, 'font-medium')).join('')}<td data-ui="table-cell" class="pr-6 text-right tabular-nums">${hm(grand)}</td></tr>
+              <tr data-ui="table-row" class="border-t-2 font-medium hover:bg-transparent"><th data-ui="table-cell" scope="row" class="pl-6 text-left">Total</th>${bs.map((b) => cell(colTotal(b), b, null, '', 'font-medium')).join('')}<td data-ui="table-cell" class="pr-6 text-right tabular-nums">${hm(grand)}</td></tr>
             </tbody>
           </table></div>`
       }
+
+      // --- Entries (task 055) --------------------------------------------------------------------
+      // The same day pieces the timesheet sums, so the list adds up to the chosen totals. Newest
+      // first, as on the Timer page; with several people, a day lists each person's entries together. Read-only: only the owner edits an entry, on the Timer page.
+      const DAY_PAGE = 7
+      const DESCRIPTION_PAGE = 25
+      const clock = (t) => fmt({ hour: '2-digit', minute: '2-digit' }).format(t)
+
+      function narrowedSegments(segs) {
+        const n = state.narrow
+        if (!n) return segs
+        return segs.filter((s) => (n.row == null || keysFor(s.entry, state.group).includes(n.row)) && (n.bucket == null || bucketOf(s.day) === n.bucket))
+      }
+      function narrowLabel() {
+        const n = state.narrow
+        return [n.row != null && labelFor(n.row, state.group).name, n.bucket != null && bucketLabel(n.bucket, false)].filter(Boolean).join(' · ')
+      }
+      // Up to a week of days lists entries by day; longer spans merge them by description.
+      function entryView() {
+        if (state.entryView) return state.entryView
+        const n = state.narrow
+        const days = n?.bucket != null ? (state.unit === 'week' ? 7 : 1) : daysInRange()
+        return days > 7 ? 'description' : 'day'
+      }
+      // A member column only when the list can hold more than one person.
+      function manyPeople() {
+        const n = state.narrow
+        return scopedUsers().size > 1 && !(state.group === 'member' && n?.row != null)
+      }
+      const personName = (id) => (id === ME ? `${member(id).name} (you)` : member(id).name)
+      const projectLabel = (id) => {
+        const p = project(id ?? 'none')
+        return `<span class="flex min-w-0 items-center gap-2">${dot(colorVar(p.color))}<span class="truncate">${escapeHtml(p.name)}</span></span>`
+      }
+      const descriptionText = (d) => (d ? escapeHtml(d) : '<span class="italic text-muted-foreground">No description</span>')
+
+      function entryRow(s, many) {
+        const e = s.entry
+        const end = e.stoppedAt ?? Date.now()
+        const split = e.startedAt < s.day || end > Z.addDays(s.day, 1, state.zone)
+        const span = `${clock(e.startedAt)} – ${e.stoppedAt ? clock(e.stoppedAt) : 'now'}`
+        const marks = `${split ? `<span title="Crosses midnight: ${hm(s.ms)} counts on this day">${icon('moon', 'size-3.5')}<span class="sr-only">, crosses midnight, ${hm(s.ms)} counts on this day</span></span>` : ''}${e.stoppedAt ? '' : '<span data-ui="badge" data-variant="secondary" class="px-1.5 py-0 text-[10px]">Running</span>'}`
+        return `<li class="flex items-start gap-4 border-b px-6 py-2.5 text-sm last:border-b-0">
+          <span class="hidden w-32 shrink-0 items-center gap-1.5 whitespace-nowrap tabular-nums text-muted-foreground sm:flex">${span}${marks}</span>
+          <div class="grid min-w-0 flex-1 gap-0.5 ${many ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,9rem)]' : 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)]'} sm:items-center sm:gap-4">
+            <span class="truncate" title="${escapeHtml(e.description)}">${descriptionText(e.description)}</span>
+            <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-muted-foreground sm:contents">
+              <span class="flex items-center gap-1.5 tabular-nums sm:hidden">${span}${marks}</span>
+              ${projectLabel(e.projectId)}
+              ${many ? `<span class="truncate">${escapeHtml(personName(e.userId))}</span>` : ''}
+            </div>
+          </div>
+          <span class="w-12 shrink-0 text-right font-medium tabular-nums">${hm(s.ms)}</span>
+        </li>`
+      }
+
+      function byDay(list, many) {
+        const days = new Map()
+        for (const s of list) days.set(s.day, [...(days.get(s.day) ?? []), s])
+        const sorted = [...days.entries()].sort((a, b) => b[0] - a[0])
+        const shown = sorted.slice(0, state.entryLimit ?? DAY_PAGE)
+        const rest = sorted.length - shown.length
+        return {
+          html: shown
+            .map(
+              ([day, segs]) => `<li>
+                <h3 class="flex items-baseline justify-between gap-4 border-b bg-muted/50 px-6 py-1.5 text-sm font-medium"><span>${escapeHtml(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(day + 12 * HOUR))}</span><span class="tabular-nums">${hm(segs.reduce((a, s) => a + s.ms, 0))}</span></h3>
+                <ul>${segs
+                  .sort((a, b) => (many ? personName(a.entry.userId).localeCompare(personName(b.entry.userId)) : 0) || b.entry.startedAt - a.entry.startedAt)
+                  .map((s) => entryRow(s, many))
+                  .join('')}</ul>
+              </li>`
+            )
+            .join(''),
+          more: rest > 0 ? `Show ${Math.min(DAY_PAGE, rest)} more ${Math.min(DAY_PAGE, rest) === 1 ? 'day' : 'days'}` : '',
+          next: shown.length + DAY_PAGE,
+        }
+      }
+
+      // One row per project and description, with its total, entries, days, and people.
+      function byDescription(list, many) {
+        const rows = new Map()
+        for (const s of list) {
+          const key = `${s.entry.projectId}\u0000${s.entry.description}`
+          if (!rows.has(key)) rows.set(key, { entry: s.entry, total: 0, entries: new Set(), days: new Set(), users: new Set() })
+          const r = rows.get(key)
+          r.total += s.ms
+          r.entries.add(s.entry.id)
+          r.days.add(s.day)
+          r.users.add(s.entry.userId)
+        }
+        const sorted = [...rows.values()].sort((a, b) => b.total - a.total || a.entry.description.localeCompare(b.entry.description))
+        const shown = sorted.slice(0, state.entryLimit ?? DESCRIPTION_PAGE)
+        const people = (ids) => {
+          const names = [...ids].map(personName).sort((a, b) => a.localeCompare(b))
+          return names.length > 3 ? `${names.slice(0, 2).join(', ')} and ${names.length - 2} more` : names.join(', ')
+        }
+        const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
+        return {
+          html: shown
+            .map(
+              (r) => `<li class="flex items-start gap-4 border-b px-6 py-2.5 text-sm last:border-b-0">
+                <div class="grid min-w-0 flex-1 gap-0.5">
+                  <span class="truncate" title="${escapeHtml(r.entry.description)}">${descriptionText(r.entry.description)}</span>
+                  <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-muted-foreground">
+                    ${projectLabel(r.entry.projectId)}
+                    <span>${plural(r.entries.size, 'entry', 'entries')} on ${plural(r.days.size, 'day', 'days')}</span>
+                    ${many ? `<span class="min-w-0 truncate">${escapeHtml(people(r.users))}</span>` : ''}
+                  </div>
+                </div>
+                <span class="w-14 shrink-0 text-right font-medium tabular-nums">${hm(r.total)}</span>
+              </li>`
+            )
+            .join(''),
+          more: sorted.length > shown.length ? `Show all ${sorted.length}` : '',
+          next: sorted.length,
+        }
+      }
+
+      let nextEntryLimit = null
+      function renderEntries(segs) {
+        const card = document.getElementById('entries-card')
+        card.hidden = !segs.length
+        if (!segs.length) return
+        const list = narrowedSegments(segs)
+        const view = entryView()
+        document.querySelectorAll('[data-entry-view]').forEach((b) => {
+          const pressed = b.dataset.entryView === view
+          b.setAttribute('aria-pressed', String(pressed))
+          b.toggleAttribute('data-pressed', pressed)
+        })
+        const count = new Set(list.map((s) => s.entry.id)).size
+        const summary = `<span class="tabular-nums">${count} ${count === 1 ? 'entry' : 'entries'} · ${hm(list.reduce((a, s) => a + s.ms, 0))}</span>`
+        document.getElementById('entries-note').innerHTML = state.narrow
+          ? `${summary}<span data-ui="badge" data-variant="secondary" class="max-w-full gap-1 py-0.5 pr-0.5 font-medium"><span class="truncate">${escapeHtml(narrowLabel())}</span><button type="button" id="entries-clear" class="rounded-sm p-0.5 hover:bg-background/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Show all entries">${icon('x', 'size-3.5')}</button></span>`
+          : `${summary}<span>Choose a name or a total in the timesheet to narrow the list.</span>`
+        const { html, more, next } = (view === 'day' ? byDay : byDescription)(list, manyPeople())
+        nextEntryLimit = next
+        document.getElementById('entries').innerHTML = `<ul class="border-t">${html}</ul>${
+          more ? `<div class="border-t px-4 py-2"><button type="button" id="entries-more" data-ui="button" data-variant="ghost" data-size="sm">${icon('chevron-down')}${escapeHtml(more)}</button></div>` : ''
+        }`
+      }
+
+      // Changing a filter starts the card over: the whole report, the view that fits the range.
+      let entriesFor = ''
+      function resetEntriesOnFilterChange() {
+        const key = JSON.stringify([state.from, state.to, state.scope, state.group, state.unit, state.fixture, role(), state.zone, state.weekStart])
+        if (key === entriesFor) return
+        entriesFor = key
+        state.narrow = null
+        state.entryView = null
+        state.entryLimit = null
+      }
+
+      document.getElementById('timesheet').addEventListener('click', (event) => {
+        const b = event.target.closest('.ts-pick')
+        if (!b) return
+        const row = b.dataset.row || null
+        const bucket = b.dataset.bucket ? +b.dataset.bucket : null
+        const n = state.narrow
+        state.narrow = n && n.row === row && n.bucket === bucket ? null : { row, bucket }
+        state.entryLimit = null
+        render()
+        document.querySelector(`.ts-pick[data-row="${row ?? ''}"][data-bucket="${bucket ?? ''}"]`)?.focus()
+        const card = document.getElementById('entries-card')
+        if (state.narrow && card.getBoundingClientRect().top > innerHeight * 0.75) card.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+      document.getElementById('entries-card').addEventListener('click', (event) => {
+        const view = event.target.closest('[data-entry-view]')
+        if (view) {
+          state.entryView = view.dataset.entryView
+          state.entryLimit = null
+          render()
+        } else if (event.target.closest('#entries-clear')) {
+          state.narrow = null
+          state.entryLimit = null
+          render()
+          document.querySelector('[data-entry-view][aria-pressed="true"]').focus()
+        } else if (event.target.closest('#entries-more')) {
+          state.entryLimit = nextEntryLimit
+          render()
+        }
+      })
 
       // --- 03 · Breakdown -----------------------------------------------------------------------
       const SUBGROUP = { project: 'member', member: 'project', team: 'member' }
@@ -670,6 +886,7 @@
 
       function render() {
         document.getElementById('export-status').textContent = ''
+        resetEntriesOnFilterChange()
         renderControls()
         const { segs, split } = segments()
         const splitNote = document.getElementById('split-note')
@@ -680,8 +897,10 @@
           renderStats(segs)
           renderChart(segs)
           renderSummaryBreakdown(segs)
-        } else if (design === 'timesheet') renderTimesheet(segs)
-        else renderOutline(segs)
+        } else if (design === 'timesheet') {
+          renderTimesheet(segs)
+          renderEntries(segs)
+        } else renderOutline(segs)
       }
 
       function loadOrg() {
