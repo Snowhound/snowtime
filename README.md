@@ -45,14 +45,16 @@ Requires [Bun](https://bun.sh) 1.3 or later.
 
 ```bash
 bun install
+bun -e "require('fs').appendFileSync('.env.local', 'BETTER_AUTH_SECRET=' + require('crypto').randomBytes(32).toString('base64url') + '\n')"
 bun run db:migrate
 bun run db:seed
 bun --bun run dev
 ```
 
-The app runs on http://localhost:3000 against a local SQLite file, `local.db`. Put local
-overrides, such as OAuth credentials, in `.env.local`; `.env.example` lists every
-variable.
+The app runs on http://localhost:3000 against a local SQLite file, `local.db`.
+`.env.development` sets the database and app URL; `BETTER_AUTH_SECRET` is the only
+variable you must add. Put it and other local overrides, such as OAuth credentials, in
+the gitignored `.env.local`; `.env.example` lists every variable.
 
 ### Seeded users
 
