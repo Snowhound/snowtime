@@ -2,11 +2,12 @@ import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { useNavigate } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
 import { AuthHeading, AuthLayout } from '~/components/auth-layout/auth-layout'
+import { ErrorAlert } from '~/components/error-alert'
 import { sessionQuery } from '~/lib/queries/session'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { safeRedirect } from '~/lib/redirect'
 import { m } from '~/paraglide/messages.js'
-import { FormAlert, PasskeyButton, PasswordSignIn, ProviderButtons } from './sign-in-methods'
+import { PasskeyButton, PasswordSignIn, ProviderButtons } from './sign-in-methods'
 
 export function SignInPage(props: { redirect?: string; initialError?: string }) {
   const navigate = useNavigate()
@@ -31,7 +32,7 @@ export function SignInPage(props: { redirect?: string; initialError?: string }) 
   return (
     <AuthLayout firstVisitIntro>
       <AuthHeading title={m.sign_in_title()} description={m.sign_in_description()} />
-      <FormAlert message={error()} />
+      <ErrorAlert message={error()} />
       <ProviderButtons
         methods={methods.data ?? []}
         callbackURL={target()}

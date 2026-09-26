@@ -5,6 +5,7 @@ import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import MailIcon from 'lucide-solid/icons/mail'
 import { Show, createSignal } from 'solid-js'
 import { AuthHeading, AuthLayout } from '~/components/auth-layout/auth-layout'
+import { ErrorAlert } from '~/components/error-alert'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import {
@@ -20,7 +21,6 @@ import { fieldError } from '~/lib/form'
 import { sessionQuery } from '~/lib/queries/session'
 import { m } from '~/paraglide/messages.js'
 import { CreateOrganizationForm, slugify } from '~/server/auth/auth.schemas'
-import { FormAlert } from './sign-in-methods'
 
 export function CreateOrganizationPage(props: { email: string }) {
   const navigate = useNavigate()
@@ -76,7 +76,7 @@ export function CreateOrganizationPage(props: { email: string }) {
           void form.handleSubmit()
         }}
       >
-        <FormAlert message={formError()} />
+        <ErrorAlert message={formError()} />
         <form.Field name="name">
           {(field) => (
             <TextField

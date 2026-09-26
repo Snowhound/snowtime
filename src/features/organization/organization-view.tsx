@@ -3,11 +3,10 @@
 // (queries.ts); errors show above the tabs, or in the invite dialog while it is open.
 import { useMutationState, useQuery } from '@tanstack/solid-query'
 import { useNavigate } from '@tanstack/solid-router'
-import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import { For, Show, createMemo, createSignal } from 'solid-js'
 import { type Confirmation, ConfirmDialog } from '~/components/confirm-dialog'
+import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
-import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { errorMessage } from '~/lib/errors'
 import { type Member, membersQuery } from '~/lib/queries/members'
@@ -261,12 +260,7 @@ export function OrganizationView(props: {
           })}
         </p>
       </div>
-      <Show when={error()}>
-        <Alert variant="destructive">
-          <CircleAlertIcon aria-hidden="true" />
-          <AlertDescription>{error()}</AlertDescription>
-        </Alert>
-      </Show>
+      <ErrorAlert message={error()} />
       <Tabs value={props.tab} onChange={setTab} class="grid min-w-0 gap-4">
         <div class="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           <TabsList aria-label={m.organization_sections()}>

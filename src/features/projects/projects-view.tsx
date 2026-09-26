@@ -3,13 +3,12 @@
 // month and manage them; members and team leads see the projects open to them, with their
 // own time, and no actions. Writes are optimistic (queries.ts); errors show above the list.
 import { useMutationState, useQuery } from '@tanstack/solid-query'
-import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import PlusIcon from 'lucide-solid/icons/plus'
 import SearchIcon from 'lucide-solid/icons/search'
 import { For, Show, createMemo, createSignal } from 'solid-js'
 import { type Confirmation, ConfirmDialog } from '~/components/confirm-dialog'
+import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
-import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
@@ -174,12 +173,7 @@ export function ProjectsView(props: {
         <PageTitle title={m.nav_projects()} />
         <p class="scene-text text-muted-foreground min-w-0 truncate text-sm">{subtitle()}</p>
       </div>
-      <Show when={error()}>
-        <Alert variant="destructive">
-          <CircleAlertIcon aria-hidden="true" />
-          <AlertDescription>{error()}</AlertDescription>
-        </Alert>
-      </Show>
+      <ErrorAlert message={error()} />
       <Tabs value={tab()} onChange={(value) => setTab(value as Tab)} class="grid gap-4">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div class="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">

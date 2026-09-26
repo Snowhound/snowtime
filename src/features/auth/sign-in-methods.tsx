@@ -2,7 +2,6 @@
 // getSignInMethods returns it (docs/architecture.md, "Sign-in methods").
 import { createForm } from '@tanstack/solid-form'
 import { useQuery } from '@tanstack/solid-query'
-import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import EyeIcon from 'lucide-solid/icons/eye'
 import EyeOffIcon from 'lucide-solid/icons/eye-off'
 import KeyRoundIcon from 'lucide-solid/icons/key-round'
@@ -10,7 +9,7 @@ import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import type { Component } from 'solid-js'
 import { For, Show, createSignal } from 'solid-js'
 import { GitHubIcon, GoogleIcon, MicrosoftIcon } from '~/components/brand-logos'
-import { Alert, AlertDescription } from '~/components/ui/alert'
+import { ErrorAlert } from '~/components/error-alert'
 import { Button } from '~/components/ui/button'
 import { Separator } from '~/components/ui/separator'
 import {
@@ -140,18 +139,6 @@ export function PasskeyButton(props: {
   )
 }
 
-// A form-level error, such as wrong credentials, above the fields.
-export function FormAlert(props: { message: string | null }) {
-  return (
-    <Show when={props.message}>
-      <Alert variant="destructive" role="alert">
-        <CircleAlertIcon aria-hidden="true" />
-        <AlertDescription>{props.message}</AlertDescription>
-      </Alert>
-    </Show>
-  )
-}
-
 // Email and password, for seeded users in local development only. The seeded users are
 // listed above the form; picking one fills in their email and password.
 export function PasswordSignIn(props: {
@@ -229,7 +216,7 @@ export function PasswordSignIn(props: {
           void form.handleSubmit()
         }}
       >
-        <FormAlert message={formError()} />
+        <ErrorAlert message={formError()} />
         <form.Field name="email">
           {(field) => (
             <TextField

@@ -4,12 +4,11 @@
 // its place. "New link" on an expired invitation opens the dialog at the link.
 import { createForm } from '@tanstack/solid-form'
 import CheckIcon from 'lucide-solid/icons/check'
-import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import CopyIcon from 'lucide-solid/icons/copy'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import { For, Show, createMemo, createSignal, onCleanup } from 'solid-js'
 import * as v from 'valibot'
-import { Alert, AlertDescription } from '~/components/ui/alert'
+import { ErrorAlert } from '~/components/error-alert'
 import { Button } from '~/components/ui/button'
 import {
   Dialog,
@@ -136,12 +135,7 @@ function InviteForm(props: {
         <DialogTitle>{m.organization_invite()}</DialogTitle>
         <DialogDescription>{m.organization_invite_description()}</DialogDescription>
       </DialogHeader>
-      <Show when={error()}>
-        <Alert variant="destructive">
-          <CircleAlertIcon aria-hidden="true" />
-          <AlertDescription>{error()}</AlertDescription>
-        </Alert>
-      </Show>
+      <ErrorAlert message={error()} />
       <form.Field name="email" validators={{ onSubmit: ({ value }) => emailError(value) }}>
         {(field) => (
           <TextField

@@ -5,6 +5,7 @@ import ClockIcon from 'lucide-solid/icons/clock'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import { Match, Show, Switch, createSignal } from 'solid-js'
 import { AuthHeading, AuthIcon, AuthLayout } from '~/components/auth-layout/auth-layout'
+import { ErrorAlert } from '~/components/error-alert'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
 import { authClient } from '~/lib/auth-client'
@@ -13,7 +14,7 @@ import { sessionQuery } from '~/lib/queries/session'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { m } from '~/paraglide/messages.js'
 import { invitationQuery } from './queries'
-import { FormAlert, PasswordSignIn, ProviderButtons } from './sign-in-methods'
+import { PasswordSignIn, ProviderButtons } from './sign-in-methods'
 
 const AS_ROLE = {
   member: m.invitation_as_member,
@@ -154,7 +155,7 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
                     as: AS_ROLE[data().role](),
                   })}
                 />
-                <FormAlert message={error()} />
+                <ErrorAlert message={error()} />
                 <Show
                   when={user()}
                   fallback={

@@ -3,10 +3,9 @@
 // each change navigates, and the view reads the filters back from the search params.
 import { useQuery } from '@tanstack/solid-query'
 import { Link, useNavigate } from '@tanstack/solid-router'
-import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import { Show, createMemo, createSignal } from 'solid-js'
+import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
-import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Card, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { type WeekStart, addDays, localDate } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
@@ -200,12 +199,7 @@ export function ReportsView(props: {
           weekStart={props.weekStart}
           today={today()}
         />
-        <Show when={error()}>
-          <Alert variant="destructive">
-            <CircleAlertIcon aria-hidden="true" />
-            <AlertDescription>{error()}</AlertDescription>
-          </Alert>
-        </Show>
+        <ErrorAlert message={error()} />
       </div>
       <section
         class="mx-auto w-fit max-w-full min-w-[min(100%,68rem)]"

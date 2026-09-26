@@ -6,7 +6,6 @@
 // or edits the running one's start. Every write is optimistic and rolls back on error
 // (queries.ts), with the error shown under the edited row or above the timer.
 import { keepPreviousData, useQuery } from '@tanstack/solid-query'
-import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import PlusIcon from 'lucide-solid/icons/plus'
 import {
   Match,
@@ -18,8 +17,8 @@ import {
   onCleanup,
   onMount,
 } from 'solid-js'
+import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
-import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { addDays, localDate, runningMs, startOfDay } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
@@ -309,12 +308,7 @@ export function TimerView(props: {
         }
       >
         <div class={cn('flex min-w-0 flex-col', props.settings.compactRows ? 'gap-4' : 'gap-6')}>
-          <Show when={error()}>
-            <Alert variant="destructive">
-              <CircleAlertIcon aria-hidden="true" />
-              <AlertDescription>{error()}</AlertDescription>
-            </Alert>
-          </Show>
+          <ErrorAlert message={error()} />
           <TimerBar
             layout={layout()}
             compact={props.settings.compactRows}
