@@ -57,6 +57,8 @@ function entries(ms: number): ReportEntries {
         date: '2026-09-24',
         from,
         to: new Date(from.getTime() + ms),
+        startedAt: from,
+        stoppedAt: null,
         running: true,
         ms,
       },

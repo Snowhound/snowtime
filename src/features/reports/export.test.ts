@@ -41,6 +41,8 @@ function entries(list: Partial<ReportEntries['entries'][number]>[]): ReportEntri
       date: '2026-09-21',
       from: new Date('2026-09-21T06:00:00Z'),
       to: new Date('2026-09-21T07:30:00Z'),
+      startedAt: new Date('2026-09-21T06:00:00Z'),
+      stoppedAt: new Date('2026-09-21T07:30:00Z'),
       running: false,
       ms: 1.5 * HOUR,
       ...e,

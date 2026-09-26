@@ -22,7 +22,7 @@ import { MAX_ENTRY_MS } from '../entries/entries.schemas'
 import { AppError } from '../errors'
 import { live } from '../queries.server'
 import { isAdmin, readableUserIds, type Scope } from '../scope.server'
-import type { ReportInput } from './reports.schemas'
+import { ENTRY_PAGE_SIZE, type ReportEntriesInput, type ReportInput } from './reports.schemas'
 
 export interface Totals {
   total: number
@@ -272,8 +272,9 @@ export async function getReport(
   return reportOf(await reportData(db, scope, input, now), now)
 }
 
-// One entry's time on one day of the range, for the export's entry list: clipped to the
-// range, split at the zone's midnights like the report's totals, and a running entry up to now.
+// One entry's time on one day of the range, for the export's entry list and the Entries card:
+// clipped to the range, split at the zone's midnights like the report's totals, and a running
+// entry up to now.
 export interface ReportEntryPiece {
   entryId: string
   userId: string
@@ -282,6 +283,9 @@ export interface ReportEntryPiece {
   date: IsoDate
   from: Date
   to: Date
+  // The whole entry, which the card shows for a piece of an entry that crosses midnight.
+  startedAt: Date
+  stoppedAt: Date | null
   // The entry was running at `now`, so `to` is now, not its end.
   running: boolean
   ms: number
@@ -304,6 +308,8 @@ function piecesOf({ settings, range, entries }: ReportData, now: Date): ReportEn
         date: piece.date,
         from: new Date(from),
         to: new Date(to),
+        startedAt: entry.startedAt,
+        stoppedAt: entry.stoppedAt,
         running: !entry.stoppedAt && to === now.getTime(),
         ms: piece.ms,
       })
@@ -329,4 +335,159 @@ export async function getReportExport(
     timeZone: data.settings.timeZone,
     entries: piecesOf(data, now),
   }
+}
+
+type EntryRow = NonNullable<ReportEntriesInput['row']>
+type DayCursor = NonNullable<ReportEntriesInput['after']>
+
+// The pieces in one timesheet row. A team's row counts its current members, and "No team"
+// those in none of the report's teams, as the timesheet's rows do.
+function inRow(row: EntryRow, teams: Aggregation['teams']): (p: ReportEntryPiece) => boolean {
+  if (row.group === 'project') {
+    const projectId = row.id === 'none' ? null : row.id
+    return (p) => p.projectId === projectId
+  }
+  if (row.group === 'member') return (p) => p.userId === row.id
+  if (row.id === 'none') {
+    const inTeams = new Set(teams.flatMap((t) => t.userIds))
+    return (p) => !inTeams.has(p.userId)
+  }
+  const members = new Set(teams.find((t) => t.teamId === row.id)?.userIds)
+  return (p) => members.has(p.userId)
+}
+
+// A piece's place in By day: newest day first, then each person's pieces together, newest
+// first. A page's cursor is its last piece's place.
+function placeOf(p: ReportEntryPiece): DayCursor {
+  return { date: p.date, userId: p.userId, from: p.from.getTime(), entryId: p.entryId }
+}
+
+function byDay(a: DayCursor, b: DayCursor) {
+  return (
+    b.date.localeCompare(a.date) ||
+    a.userId.localeCompare(b.userId) ||
+    b.from - a.from ||
+    a.entryId.localeCompare(b.entryId)
+  )
+}
+
+export interface EntryDay {
+  date: IsoDate
+  // The whole day's time in the list, also when the page holds only part of the day.
+  total: number
+}
+
+// One page of By day: up to ENTRY_PAGE_SIZE pieces after the cursor. A page ends with a whole
+// day when it holds more than one, so a day splits between pages only when it alone is
+// longer than a page.
+export function dayPage(pieces: ReportEntryPiece[], after?: DayCursor) {
+  const places = new Map(pieces.map((p) => [p, placeOf(p)]))
+  const sorted = pieces.toSorted((a, b) => byDay(places.get(a)!, places.get(b)!))
+  let start = after ? sorted.findIndex((p) => byDay(places.get(p)!, after) > 0) : 0
+  if (start < 0) start = sorted.length
+  let end = Math.min(start + ENTRY_PAGE_SIZE, sorted.length)
+  if (end < sorted.length) {
+    let cut = end
+    while (cut > start && sorted[cut - 1].date === sorted[end].date) cut--
+    if (cut > start) end = cut
+  }
+  const page = sorted.slice(start, end)
+  const totals = new Map<IsoDate, number>()
+  for (const p of sorted) totals.set(p.date, (totals.get(p.date) ?? 0) + p.ms)
+  const days: EntryDay[] = [...new Set(page.map((p) => p.date))].map((date) => ({
+    date,
+    total: totals.get(date)!,
+  }))
+  return { days, pieces: page, next: end < sorted.length ? places.get(sorted[end - 1])! : null }
+}
+
+export interface DescriptionRow {
+  projectId: string | null
+  description: string
+  total: number
+  // How many entries and days the row merges, and who tracked it.
+  entries: number
+  days: number
+  userIds: string[]
+}
+
+// By description: one row per project and description, most time first.
+export function mergeByDescription(pieces: ReportEntryPiece[]): DescriptionRow[] {
+  const rows = new Map<
+    string,
+    { row: DescriptionRow; entries: Set<string>; days: Set<IsoDate>; users: Set<string> }
+  >()
+  for (const p of pieces) {
+    const key = `${p.projectId ?? ''}\u0000${p.description}`
+    let r = rows.get(key)
+    if (!r) {
+      r = {
+        row: {
+          projectId: p.projectId,
+          description: p.description,
+          total: 0,
+          entries: 0,
+          days: 0,
+          userIds: [],
+        },
+        entries: new Set(),
+        days: new Set(),
+        users: new Set(),
+      }
+      rows.set(key, r)
+    }
+    r.row.total += p.ms
+    r.entries.add(p.entryId)
+    r.days.add(p.date)
+    r.users.add(p.userId)
+  }
+  return [...rows.values()]
+    .map(({ row, entries, days, users }) => ({
+      ...row,
+      entries: entries.size,
+      days: days.size,
+      userIds: [...users],
+    }))
+    .sort(
+      (a, b) =>
+        b.total - a.total ||
+        a.description.localeCompare(b.description) ||
+        (a.projectId ?? '').localeCompare(b.projectId ?? ''),
+    )
+}
+
+// The whole list's size, whichever view and page is asked for.
+interface EntriesSummary {
+  // Entries, not pieces: an entry that crosses midnight counts once.
+  count: number
+  total: number
+}
+
+export type ReportEntries = EntriesSummary &
+  (
+    | { view: 'day'; days: EntryDay[]; pieces: ReportEntryPiece[]; next: DayCursor | null }
+    | { view: 'description'; rows: DescriptionRow[] }
+  )
+
+// The Entries card's list, from the pieces the export reads under getReport's rules, so both
+// show the same entries and count a running timer alike. The server groups and pages it, so
+// a large organization's month stays a bounded response (docs/architecture.md, "Report
+// entries").
+export async function getReportEntries(
+  db: Database,
+  scope: Scope,
+  input: ReportEntriesInput,
+  now = new Date(),
+): Promise<ReportEntries> {
+  const data = await reportData(db, scope, input.report, now)
+  let pieces = piecesOf(data, now)
+  if (input.row) pieces = pieces.filter(inRow(input.row, data.a.teams))
+  const summary = {
+    count: new Set(pieces.map((p) => p.entryId)).size,
+    total: pieces.reduce((sum, p) => sum + p.ms, 0),
+  }
+  if (input.view === 'description') {
+    return { ...summary, view: 'description', rows: mergeByDescription(pieces) }
+  }
+  return { ...summary, view: 'day', ...dayPage(pieces, input.after) }
 }

@@ -405,6 +405,31 @@ each.
 - File names: the organization's short name and the range's first and last days, such as
   `snowhound-2026-09-01-to-2026-09-30.csv`, with `-entries` for the entry list.
 
+## Report entries
+
+The Reports page's Entries card lists the entries behind the report (task 055,
+`prototypes/README.md`, Reports), so a team lead can see what a member worked on.
+
+- Source: `getReportEntries` reads the day pieces `getReportExport` builds, under the same role
+  rules, so the card and the export list the same entries and count a running timer up to the
+  moment of the read. Choosing a timesheet row narrows the pieces to its project, team (its
+  current members), or member. Choosing a day or week narrows the report's range to that
+  bucket instead.
+- Loading: the card has its own query under `reportsKey`, which the route loader doesn't
+  wait for, so the timesheet opens as fast as without the card. Timer writes mark it stale
+  with the reports.
+- Grouping: the server groups the list, because an admin's "Everyone" for a month in a
+  50-person organization is about 4,000 entries, several hundred KB of JSON. By description
+  returns only the merged rows, one per project and description. By day returns a page of at
+  most 100 pieces (`ENTRY_PAGE_SIZE`), newest day first, and each person's pieces together.
+  A page ends with a whole day unless one day alone fills it, and each page carries its days'
+  whole totals, so a heading is right when its day continues on the next page. Pages count
+  entries rather than days, because one day of a large organization can hold hundreds.
+- Cursor: a page asks for the pieces after the last one it has, by date, user, start, and
+  entry id, so an entry added between two pages doesn't repeat or skip a piece. Each call
+  reads the report's entries again and sorts them in TypeScript: the read is the one
+  `getReport` makes, and the response stays bounded.
+
 ## User settings
 
 - All of a user's settings live in `user_settings`, one row per user, so they follow the

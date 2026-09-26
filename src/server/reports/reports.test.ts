@@ -1,20 +1,26 @@
 /// <reference types="bun" />
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
 import type { Database } from '~/db'
 import { teamMember, timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
+import { addDays } from '~/lib/calendar'
 import { listEntries } from '../entries/entries.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
+import { ENTRY_PAGE_SIZE, type ReportEntriesInput } from './reports.schemas'
 import {
   aggregate,
+  dayPage,
   getReport,
+  getReportEntries,
   getReportExport,
+  mergeByDescription,
   type Aggregation,
   type Report,
+  type ReportEntryPiece,
 } from './reports.server'
 
 const { users: U, orgs: O, projects: P, teams: T } = seedIds
@@ -368,5 +374,197 @@ describe('getReportExport', () => {
       ['2026-10-03', '2026-10-02T23:00:00.000Z', '2026-10-03T01:00:00.000Z'],
     ])
     expect(entries[0].entryId).toBe(entries[1].entryId)
+  })
+})
+
+// A day piece of a stopped entry, for the pure grouping tests.
+function piece(p: Partial<ReportEntryPiece> & { date: string; at: number }): ReportEntryPiece {
+  const { at, ...rest } = p
+  const from = new Date(`${p.date}T00:00:00Z`).getTime() + at * HOUR
+  return {
+    entryId: uuidv7(),
+    userId: U.member,
+    projectId: P.website,
+    description: '',
+    from: new Date(from),
+    to: new Date(from + HOUR),
+    startedAt: new Date(from),
+    stoppedAt: new Date(from + HOUR),
+    running: false,
+    ms: HOUR,
+    ...rest,
+  }
+}
+
+// Every page of By day, in order.
+function allPages(pieces: ReportEntryPiece[]) {
+  const pages = [dayPage(pieces)]
+  while (pages.at(-1)!.next) pages.push(dayPage(pieces, pages.at(-1)!.next!))
+  return pages
+}
+
+describe('dayPage', () => {
+  test("lists days newest first, each person's pieces together, newest first", () => {
+    const a = piece({ date: '2026-09-21', at: 9 })
+    const b = piece({ date: '2026-09-22', at: 9, userId: U.lead })
+    const c = piece({ date: '2026-09-22', at: 8, userId: U.member })
+    const d = piece({ date: '2026-09-22', at: 11, userId: U.member })
+    const { days, pieces, next } = dayPage([a, b, c, d])
+    const lena = [U.lead, U.member].sort()[0] === U.lead
+    expect(pieces.map((p) => p.entryId)).toEqual(
+      lena ? [b, d, c, a].map((p) => p.entryId) : [d, c, b, a].map((p) => p.entryId),
+    )
+    expect(days).toEqual([
+      { date: '2026-09-22', total: 3 * HOUR },
+      { date: '2026-09-21', total: HOUR },
+    ])
+    expect(next).toBeNull()
+  })
+
+  test('pages end with a whole day, and split a day only when it is longer than a page', () => {
+    const perDay = 40
+    const pieces = ['2026-09-21', '2026-09-22', '2026-09-23'].flatMap((date) =>
+      Array.from({ length: perDay }, (_, i) => piece({ date, at: i * 0.1 })),
+    )
+    const pages = allPages(pieces)
+    expect(pages.map((p) => p.days.map((d) => d.date))).toEqual([
+      ['2026-09-23', '2026-09-22'],
+      ['2026-09-21'],
+    ])
+    expect(pages.flatMap((p) => p.pieces)).toHaveLength(pieces.length)
+
+    const long = Array.from({ length: ENTRY_PAGE_SIZE + 30 }, (_, i) =>
+      piece({ date: '2026-09-21', at: i * 0.1 }),
+    )
+    const [first, second] = allPages([...long, piece({ date: '2026-09-20', at: 9 })])
+    expect(first.pieces).toHaveLength(ENTRY_PAGE_SIZE)
+    // The day's heading gives its whole time on both pages.
+    expect(first.days).toEqual([{ date: '2026-09-21', total: long.length * HOUR }])
+    expect(second.days.map((d) => d.date)).toEqual(['2026-09-21', '2026-09-20'])
+    expect(second.days[0].total).toBe(long.length * HOUR)
+  })
+
+  test('the next page follows the last piece shown, so a new entry shifts nothing', () => {
+    const pieces = Array.from({ length: ENTRY_PAGE_SIZE + 10 }, (_, i) =>
+      piece({ date: '2026-09-21', at: i * 0.1 }),
+    )
+    const first = dayPage(pieces)
+    const added = piece({ date: '2026-09-21', at: 23.9 })
+    const second = dayPage([...pieces, added], first.next!)
+    const shown = new Set(first.pieces.map((p) => p.entryId))
+    expect(second.pieces.some((p) => shown.has(p.entryId))).toBe(false)
+    expect(second.pieces).toHaveLength(10)
+  })
+})
+
+describe('mergeByDescription', () => {
+  test('merges entries with the same project and description, most time first', () => {
+    const overnight = piece({ date: '2026-09-21', at: 23, description: 'Review' })
+    const rows = mergeByDescription([
+      overnight,
+      { ...overnight, date: '2026-09-22', ms: 2 * HOUR },
+      piece({ date: '2026-09-23', at: 9, description: 'Review', userId: U.lead }),
+      piece({ date: '2026-09-23', at: 10, description: 'Review', projectId: null }),
+      piece({ date: '2026-09-23', at: 11, description: 'review', ms: HOUR / 2 }),
+    ])
+    expect(rows.map((r) => [r.projectId, r.description, r.total, r.entries, r.days])).toEqual([
+      [P.website, 'Review', 4 * HOUR, 2, 3],
+      [null, 'Review', HOUR, 1, 1],
+      [P.website, 'review', HOUR / 2, 1, 1],
+    ])
+    expect(rows[0].userIds.sort()).toEqual([U.lead, U.member].sort())
+  })
+})
+
+describe('getReportEntries', () => {
+  const report = { from: '2026-09-14', to: '2026-09-24', unit: 'day' } as const
+  function entriesOf(scope: Scope, input: Partial<ReportEntriesInput> = {}) {
+    return getReportEntries(db, scope, { report, view: 'day', ...input }, NOW)
+  }
+
+  // Every page of By day, as the card loads them.
+  async function allDays(scope: Scope, input: Partial<ReportEntriesInput> = {}) {
+    const pages = []
+    let after: ReportEntriesInput['after']
+    do {
+      const page = await entriesOf(scope, { ...input, after })
+      if (page.view !== 'day') throw new Error('By day')
+      pages.push(page)
+      after = page.next ?? undefined
+    } while (after)
+    return { ...pages[0], pieces: pages.flatMap((p) => p.pieces), pages }
+  }
+
+  test('lists the pieces the export reads, in both views', async () => {
+    for (const scope of [scopes.member, scopes.lead, scopes.admin]) {
+      const exported = await getReportExport(db, scope, report, NOW)
+      const day = await allDays(scope)
+      expect(day.pieces.map((p) => `${p.entryId} ${p.date}`).sort()).toEqual(
+        exported.entries.map((e) => `${e.entryId} ${e.date}`).sort(),
+      )
+      expect(day.total).toBe(exported.report.total)
+      expect(day.count).toBe(new Set(exported.entries.map((e) => e.entryId)).size)
+      for (const page of day.pages) expect(page.pieces.length).toBeLessThanOrEqual(ENTRY_PAGE_SIZE)
+
+      const merged = await entriesOf(scope, { view: 'description' })
+      if (merged.view !== 'description') throw new Error('By description')
+      expect(sum(merged.rows.map((r) => r.total))).toBe(exported.report.total)
+      expect(merged).toMatchObject({ count: day.count, total: day.total })
+    }
+    // The admin's list is longer than a page.
+    expect((await allDays(scopes.admin)).pages.length).toBeGreaterThan(1)
+  })
+
+  test("narrows to a timesheet row with the row's total", async () => {
+    const all = await getReport(db, scopes.admin, report, NOW)
+    for (const [group, rows] of [
+      ['project', all.projects.map((r) => ({ id: r.projectId ?? 'none', total: r.total }))],
+      ['member', all.members.map((r) => ({ id: r.userId, total: r.total }))],
+      ['team', all.teams.map((r) => ({ id: r.teamId, total: r.total }))],
+    ] as const) {
+      for (const { id, total } of rows) {
+        const row = { group, id } as ReportEntriesInput['row']
+        expect((await entriesOf(scopes.admin, { row })).total).toBe(total)
+      }
+    }
+    // Noah, the admin, and the owner are in no team.
+    const inTeams = await db
+      .select({ userId: teamMember.userId })
+      .from(teamMember)
+      .where(inArray(teamMember.teamId, [T.design, T.engineering]))
+    const alone = all.members.filter((m) => !inTeams.some((t) => t.userId === m.userId))
+    expect(alone.map((m) => m.userId)).toContain(U.loner)
+    const none = await entriesOf(scopes.admin, { row: { group: 'team', id: 'none' } })
+    expect(none.total).toBe(sum(alone.map((m) => m.total)))
+  })
+
+  test('a day of the timesheet narrows the range to it', async () => {
+    const all = await getReport(db, scopes.admin, report, NOW)
+    const i = all.perBucket.findIndex((ms) => ms > 0)
+    const date = all.buckets[i]
+    const day = await entriesOf(scopes.admin, {
+      report: { ...report, from: date, to: addDays(date, 1) },
+    })
+    expect(day.total).toBe(all.perBucket[i])
+    if (day.view === 'day') expect(day.days.map((d) => d.date)).toEqual([date])
+  })
+
+  test("a lead sees only their teams' entries", async () => {
+    // Theo leads Engineering: Max and Mia.
+    const lead = await allDays(scopes.engLead)
+    expect([...new Set(lead.pieces.map((p) => p.userId))].sort()).toEqual(
+      [U.engLead, U.engineer, U.member].sort(),
+    )
+    // Noah is in no team, and Lena leads Design.
+    const other = await entriesOf(scopes.engLead, { row: { group: 'member', id: U.loner } })
+    expect(other).toMatchObject({ count: 0, total: 0 })
+    const design = await entriesOf(scopes.engLead, { row: { group: 'team', id: T.design } })
+    expect(design).toMatchObject({ count: 0, total: 0 })
+    await expect(
+      entriesOf(scopes.engLead, { report: { ...report, userId: U.loner } }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
+    await expect(
+      entriesOf(scopes.member, { report: { ...report, teamId: T.design } }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'team_report_forbidden' })
   })
 })

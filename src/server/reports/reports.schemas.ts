@@ -45,3 +45,28 @@ export const ReportInput = v.pipe(
   ),
 )
 export type ReportInput = v.InferOutput<typeof ReportInput>
+
+export const ENTRY_VIEWS = ['day', 'description'] as const
+
+// Most day pieces in one page of the By day list.
+export const ENTRY_PAGE_SIZE = 100
+
+const RowId = v.union([Uuidv7, v.literal('none')])
+
+// The report's entries for its Entries card, optionally of one timesheet row: a project, a
+// team's current members, or a member; 'none' is the "No project" or "No team" row. A day or
+// week of the timesheet narrows the report's range instead. By day comes a page at a time,
+// each after the last piece of the one before.
+export const ReportEntriesInput = v.object({
+  report: ReportInput,
+  view: v.picklist(ENTRY_VIEWS),
+  row: v.optional(
+    v.variant('group', [
+      v.object({ group: v.literal('project'), id: RowId }),
+      v.object({ group: v.literal('team'), id: RowId }),
+      v.object({ group: v.literal('member'), id: Uuidv7 }),
+    ]),
+  ),
+  after: v.optional(v.object({ date: IsoDate, userId: Uuidv7, from: v.number(), entryId: Uuidv7 })),
+})
+export type ReportEntriesInput = v.InferOutput<typeof ReportEntriesInput>
