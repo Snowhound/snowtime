@@ -105,3 +105,19 @@ layout as script:
   from unmemoized derived functions, and the `ui/table.tsx` wrappers in the Table layout.
   Leaving the timer also costs Reports about 10 ms: Solid's `cleanNode` disposing the
   timer page's computations.
+
+## Memoized row values
+
+`6e519d6` memoizes `date`, `values`, and `read` in `createEntryEditor`, and commits read the
+times again so their future check is current. In the profile the rows' calendar time falls
+from 9.0 to 3.3 ms at 1×. Measured on 2026-09-27 as above, alternating the build before and
+after on the same database, 2 × 3 runs per build at 1× and at 4×:
+
+| Build  | Longest task, 1× | Net, 1× | Longest task, 4× | Net, 4× |
+| ------ | ---------------- | ------- | ---------------- | ------- |
+| Before | 76–93            | 101–117 | 384–556          | 432–620 |
+| After  | 70–76            | 86–101  | 308–525          | 358–587 |
+
+The machine was noisier than for the profile above (the build before measured 87–97 there),
+so the rows compare only with each other. The Kobalte controls, icons, and date and time
+inputs are still there; cheaper resting controls in the rows come next.

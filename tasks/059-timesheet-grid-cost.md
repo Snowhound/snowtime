@@ -72,3 +72,25 @@ up to 20% overhead and counts forced style and layout as script.
 - Shared with the timer (task 057): the forced style and layout in `PageTitle`, `Intl` calls
   from unmemoized derived functions, and the `ui/table.tsx` wrappers, which the timer's
   Table layout uses (2.7 ms at 1× there).
+
+## First fixes
+
+- `0cd1cb5`: the timesheet works out its current day or week once, in a memo.
+- `2cf4707`: the see-through sticky columns key on their own classes (`timesheet-start`,
+  `timesheet-end`), so a change of `data-scrolled` or `data-more` restyles only those
+  cells. The second style recalc is gone.
+- `bed7733`: the body's rows and cells are plain `tr`, `th`, and `td` elements with
+  `ui/table.tsx`'s classes, without its unused checkbox and selected-state variants.
+
+Measured on 2026-09-27 as above, alternating the build before and after on the same
+database, 2 × 3 runs per build:
+
+| Build  | Longest task, 1× | Net, 1× | Script, 1× | Style, 1× | Longest task, 4× | Net, 4× |
+| ------ | ---------------- | ------- | ---------- | --------- | ---------------- | ------- |
+| Before | 65–72            | 96–103  | 54–58      | 11–13     | 303–349          | 389–445 |
+| After  | 47–54            | 71–80   | 36–43      | 8         | 217–305          | 304–390 |
+
+Script, style, and paint are net of idle. The grid's computed styles, row height, and width
+match the build before, in screenshots too, and so do its see-through columns at both ends
+of the scroll. The page is still over 50 ms. Style, layout, and paint take about 27 ms, and
+switching away from the timer about 10 ms of script.
