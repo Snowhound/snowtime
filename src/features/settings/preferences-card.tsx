@@ -177,7 +177,11 @@ export function PreferencesCard(props: { settings: Settings }) {
                 >
                   <For each={LANGUAGES}>
                     {(language) => (
-                      <option value={language.value} lang={language.value}>
+                      <option
+                        value={language.value}
+                        lang={language.value}
+                        selected={language.value === props.settings.locale}
+                      >
                         {language.label}
                       </option>
                     )}

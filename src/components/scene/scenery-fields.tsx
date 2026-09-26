@@ -90,10 +90,16 @@ export function SceneryFields(props: {
               })
             }
           >
-            <option value="auto">
+            <option value="auto" selected={props.settings.sceneSeason === 'auto'}>
               {m.scene_season_auto({ season: season(seasonByMonth()).label().toLowerCase() })}
             </option>
-            <For each={SEASONS}>{(s) => <option value={s.id}>{s.label()}</option>}</For>
+            <For each={SEASONS}>
+              {(s) => (
+                <option value={s.id} selected={s.id === props.settings.sceneSeason}>
+                  {s.label()}
+                </option>
+              )}
+            </For>
           </NativeSelect>
         </div>
       </Row>

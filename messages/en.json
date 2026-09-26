@@ -475,6 +475,8 @@
       }
     }
   ],
+  "reports_entries_col_description": "Description",
+  "reports_entries_col_days": "Days",
   "reports_entries_hint": "Choose a name or a total in the timesheet to narrow the list.",
   "reports_entries_pick_hint": "Lists its entries below the timesheet",
   "reports_entries_clear": "Show all entries",

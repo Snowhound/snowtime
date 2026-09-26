@@ -475,6 +475,8 @@
       }
     }
   ],
+  "reports_entries_col_description": "Kirjeldus",
+  "reports_entries_col_days": "Päevi",
   "reports_entries_hint": "Loendi kitsendamiseks vali tabelist nimi või summa.",
   "reports_entries_pick_hint": "Näitab selle ajakirjeid tabeli all",
   "reports_entries_clear": "Näita kõiki ajakirjeid",
