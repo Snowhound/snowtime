@@ -17,24 +17,13 @@ function isSession(query: Query) {
   return query.queryKey[0] === sessionQuery.queryKey[0]
 }
 
-// The user and organization whose data each client's cache holds, once known; a null user
-// once it holds none.
-const cached = new WeakMap<QueryClient, { userId: string | null; organizationId?: string }>()
+// The user and organization whose data each client's cache holds, once known.
+const cached = new WeakMap<QueryClient, { userId: string; organizationId?: string }>()
 
-// After signing out: the session becomes null and every other query, all of them the user's
-// data, is dropped. The session query itself stays in the cache, because the root watches it:
-// clearing it would leave the root on a query the cache no longer holds, and the next sign-in's
-// invalidation wouldn't refetch the session, so the new user stayed on the sign-in page.
-export function forgetSignedInUser(queryClient: QueryClient) {
-  cached.set(queryClient, { userId: null })
-  queryClient.setQueryData(sessionQuery.queryKey, null)
-  queryClient.removeQueries({ predicate: (query) => !isSession(query) })
-}
-
-// Keeps one user's data in the cache, in one organization. Signing out here drops it
-// (forgetSignedInUser), but a sign-out in another tab, or an expired session, leaves it
-// behind, and many keys hold only the organization: projects, teams, members, and reports
-// show what the user may see. When the session turns out to be another user's, every other
+// Keeps one user's data in the cache, in one organization. Signing out here loads a new page
+// (signOut in src/lib/auth-client.ts), but a sign-out in another tab, or an expired session,
+// leaves the data behind, and many keys hold only the organization: projects, teams, members,
+// and reports show what the user may see. When the session turns out to be another user's, every other
 // query starts over: those in use load again as the new user, and the rest lose their data.
 //
 // Tabs share the session, so another tab can switch its organization. When this tab's
@@ -50,7 +39,7 @@ export function followSession(queryClient: QueryClient) {
     const organizationId = session.activeOrganizationId ?? undefined
     const previous = cached.get(queryClient)
     cached.set(queryClient, { userId, organizationId })
-    if (previous?.userId && previous.userId !== userId) {
+    if (previous && previous.userId !== userId) {
       void queryClient.resetQueries({ predicate: (other) => !isSession(other) })
     } else if (previous?.organizationId && previous.organizationId !== organizationId) {
       queryClient.removeQueries({

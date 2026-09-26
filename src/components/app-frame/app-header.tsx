@@ -30,8 +30,8 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { appIcon } from '~/lib/app-icon'
-import { authClient } from '~/lib/auth-client'
-import { forgetOrganization, forgetSignedInUser, sessionQuery } from '~/lib/session'
+import { authClient, signOut } from '~/lib/auth-client'
+import { forgetOrganization, sessionQuery } from '~/lib/session'
 import { cn, initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { AppSession } from '~/server/auth/auth.functions'
@@ -181,14 +181,7 @@ function OrganizationSwitcher(props: { session: AppSession }) {
 }
 
 function UserMenu(props: { session: AppSession }) {
-  const queryClient = useQueryClient()
   const navigate = useNavigate()
-
-  async function signOut() {
-    await authClient.signOut()
-    forgetSignedInUser(queryClient)
-    await navigate({ to: '/sign-in' })
-  }
 
   return (
     <DropdownMenu placement="bottom-end">

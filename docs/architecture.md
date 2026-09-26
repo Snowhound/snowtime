@@ -418,8 +418,10 @@ each.
   here from `localStorage`. Signed-out pages (sign-in, invitations) use the theme, app
   icon, and scene settings kept on the device (`snowtime.settings` in `localStorage`,
   `src/lib/device-settings.ts`), which their Appearance menu changes. Signed in, the root
-  copies the account's values there, so the sign-in page opens as the last user left it;
-  signed-out changes stay on the device, and the account's settings apply at sign-in.
+  copies the account's values there whenever they change, so the sign-in page opens as the
+  last user left it; signed-out changes stay on the device, and the account's settings
+  apply at sign-in. A change on the device doesn't trigger the copy, so a tab that hasn't
+  noticed a sign-out in another tab doesn't undo that tab's changes.
   - The server renders the setting as `data-theme` on `<html>`. A script in `<head>`
     applies the `dark` class from it before the body paints, because only the browser
     can resolve `system`. Signed out, there is no `data-theme`, and the script reads the
@@ -587,9 +589,9 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
     marks the reports stale (`reportsKey`), so Reports and the Projects view's totals
     load again when they open, even within their 30-second stale time.
 - The query cache holds one user's data, in one organization at a time
-  (`src/lib/session.ts`). Signing out drops everything but the session. When the session
-  query returns another user, because of a sign-out elsewhere or an expired session, every
-  other query resets: projects, teams, members, and reports are keyed by organization but
+  (`src/lib/session.ts`). Signing out opens the sign-in page as a new page load, with an
+  empty cache. When the session query returns another user, because of a sign-out
+  elsewhere or an expired session, every other query resets: projects, teams, members, and reports are keyed by organization but
   hold what the user may see. An organization-scoped key holds the organization's id
   second (`['projects', organizationId, ...]`), and switching organization removes those
   of the old one. The server answers for the session's organization, so refetching them

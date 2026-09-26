@@ -72,16 +72,19 @@ function RootComponent(props: ParentProps) {
   }
 
   // Signed in, the device keeps a copy of the account's theme, app icon, and scene, so the
-  // sign-in page opens as the user left it.
-  createEffect(() => {
-    const settings = session.data?.settings
-    const device = deviceSettings()
-    if (!settings || !device) return
-    const copy = Object.fromEntries(
-      Object.keys(DEVICE_DEFAULTS).map((key) => [key, settings[key as keyof DeviceSettings]]),
-    ) as DeviceSettings
-    if (JSON.stringify(copy) !== JSON.stringify(device)) updateDeviceSettings(copy)
-  })
+  // sign-in page opens as the user left it. It copies when the account's settings change, not
+  // the device's: a signed-out tab changes those, and this tab, until it learns of the sign-out,
+  // would put its copy straight back.
+  const deviceLoaded = createMemo(() => !!deviceSettings())
+  createEffect(
+    on([() => session.data?.settings, deviceLoaded], ([settings, loaded]) => {
+      if (!settings || !loaded) return
+      const copy = Object.fromEntries(
+        Object.keys(DEVICE_DEFAULTS).map((key) => [key, settings[key as keyof DeviceSettings]]),
+      ) as DeviceSettings
+      if (JSON.stringify(copy) !== JSON.stringify(deviceSettings())) updateDeviceSettings(copy)
+    }),
+  )
 
   // Saving another language switches it in place: Paraglide takes the new locale and sets
   // the cookie for later requests, and the page renders again, since messages are plain

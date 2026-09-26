@@ -14,10 +14,10 @@ import {
   TextFieldInput,
   TextFieldLabel,
 } from '~/components/ui/text-field'
-import { authClient } from '~/lib/auth-client'
+import { authClient, signOut } from '~/lib/auth-client'
 import { errorMessage } from '~/lib/errors'
 import { fieldError } from '~/lib/form'
-import { forgetSignedInUser, sessionQuery } from '~/lib/session'
+import { sessionQuery } from '~/lib/session'
 import { m } from '~/paraglide/messages.js'
 import { CreateOrganizationForm, slugify } from '~/server/auth/auth.schemas'
 import { FormAlert } from './sign-in-methods'
@@ -63,12 +63,6 @@ export function CreateOrganizationPage(props: { email: string }) {
     },
   }))
   const submitting = form.useStore((state) => state.isSubmitting)
-
-  async function signOut() {
-    await authClient.signOut()
-    forgetSignedInUser(queryClient)
-    await navigate({ to: '/sign-in' })
-  }
 
   return (
     <AuthLayout>

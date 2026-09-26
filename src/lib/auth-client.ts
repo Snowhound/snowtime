@@ -14,3 +14,11 @@ export async function unwrap<T>(call: Promise<{ data: T | null; error: unknown }
   if (error || data === null) throw error ?? new Error('No data')
   return data
 }
+
+// Signs out and opens the sign-in page as a new page load, so the tab keeps nothing of the user
+// in memory, and the old page shows until the new one arrives rather than a blank one while
+// the sign-in route loads.
+export async function signOut() {
+  await authClient.signOut()
+  location.assign('/sign-in')
+}

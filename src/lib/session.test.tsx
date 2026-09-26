@@ -3,13 +3,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { getAppSession } from '~/server/auth/auth.functions'
 import { AppError } from '~/server/errors'
 import { newId } from './query'
-import {
-  callInShownOrganization,
-  followSession,
-  forgetSignedInUser,
-  sessionQuery,
-  shownOrganization,
-} from './session'
+import { callInShownOrganization, followSession, sessionQuery, shownOrganization } from './session'
 
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
 
@@ -54,19 +48,13 @@ describe('followSession', () => {
     unsubscribe()
   })
 
-  test('keeps the data of the same user, and of a user signed in after signing out here', async () => {
+  test('keeps the data of the same user', () => {
     const queryClient = setup()
     const ada = newId()
     queryClient.setQueryData(sessionQuery.queryKey, sessionOf(ada))
     queryClient.setQueryData(projectsKey, ['Ada’s'])
     queryClient.setQueryData(sessionQuery.queryKey, sessionOf(ada))
     expect(queryClient.getQueryData(projectsKey)).toEqual(['Ada’s'])
-
-    forgetSignedInUser(queryClient)
-    const ben = newId()
-    queryClient.setQueryData(projectsKey, ['Ben’s, loaded as he signed in'])
-    queryClient.setQueryData(sessionQuery.queryKey, sessionOf(ben))
-    expect(queryClient.getQueryData(projectsKey)).toEqual(['Ben’s, loaded as he signed in'])
   })
 })
 
