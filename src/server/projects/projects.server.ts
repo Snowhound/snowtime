@@ -1,7 +1,20 @@
 // Projects in the scope's organization. Everyone lists the projects they may see; admins
 // and owners create, change, archive and assign them. The timer and entry server
 // functions check projects through assertUsableProject.
-import { and, asc, count, eq, exists, inArray, isNull, notExists, or, type SQL } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  eq,
+  exists,
+  getTableColumns,
+  inArray,
+  isNull,
+  notExists,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm'
 import type { Database, Executor } from '~/db'
 import { project, projectTeam, team, teamMember, timeEntry } from '~/db/schema'
 import { AppError } from '../errors'
@@ -59,10 +72,16 @@ export async function assertUsableProject(db: Executor, scope: Scope, projectId:
 }
 
 // The projects the user may see, by name, each with the ids of the teams it is assigned
-// to. Archived ones only on request.
+// to and whether it has live time entries, which deleteProject refuses. Archived ones only
+// on request.
 export async function listProjects(db: Database, scope: Scope, input: ListProjectsInput) {
+  // Reads time_entry_project_id_idx, one indexed lookup per project.
+  const entries = db
+    .select({ one: timeEntry.id })
+    .from(timeEntry)
+    .where(and(eq(timeEntry.projectId, project.id), live(timeEntry, scope)))
   const rows = await db
-    .select()
+    .select({ ...getTableColumns(project), hasEntries: sql`${exists(entries)}`.mapWith(Boolean) })
     .from(project)
     .where(
       and(

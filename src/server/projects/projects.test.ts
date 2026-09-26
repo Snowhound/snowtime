@@ -45,6 +45,20 @@ function newProject(scope: Scope, name: string) {
   return as(scope, () => createProject(db, scope, { id: uuidv7(), name, color: null }))
 }
 
+function logOn(projectId: string, deleted = false) {
+  return as(scopes.admin, async () => {
+    await db.insert(timeEntry).values({
+      id: uuidv7(),
+      organizationId: O.northwind,
+      userId: U.admin,
+      projectId,
+      startedAt: new Date('2026-09-01T08:00:00Z'),
+      stoppedAt: new Date('2026-09-01T09:00:00Z'),
+      sysDeleted: deleted,
+    })
+  })
+}
+
 describe('listProjects', () => {
   test('members see unassigned projects and those of their teams', async () => {
     expect(await idsOf(scopes.member)).toEqual([P.internal, P.mobile, P.website])
@@ -72,6 +86,24 @@ describe('listProjects', () => {
       [P.legacy]: [T.engineering],
       [P.mobile]: [T.engineering],
       [P.website]: [T.design],
+    })
+  })
+
+  test('each project says whether it has live time entries', async () => {
+    const [none, deleted, used] = await Promise.all(
+      ['No time yet', 'Only deleted time', 'Some time'].map((name) =>
+        newProject(scopes.admin, name),
+      ),
+    )
+    await logOn(deleted.id, true)
+    await logOn(used.id)
+    const projects = await listProjects(db, scopes.member, { includeArchived: false })
+    const hasEntries = Object.fromEntries(projects.map((p) => [p.id, p.hasEntries]))
+    expect(hasEntries).toMatchObject({
+      [none.id]: false,
+      [deleted.id]: false,
+      [used.id]: true,
+      [P.internal]: true,
     })
   })
 
@@ -235,20 +267,6 @@ describe('assignProjectToTeam and unassignProjectFromTeam', () => {
 })
 
 describe('deleteProject', () => {
-  function logOn(projectId: string, deleted = false) {
-    return as(scopes.admin, async () => {
-      await db.insert(timeEntry).values({
-        id: uuidv7(),
-        organizationId: O.northwind,
-        userId: U.admin,
-        projectId,
-        startedAt: new Date('2026-09-01T08:00:00Z'),
-        stoppedAt: new Date('2026-09-01T09:00:00Z'),
-        sysDeleted: deleted,
-      })
-    })
-  }
-
   test('deletes the project and its team assignments, and frees the name', async () => {
     const created = await newProject(scopes.admin, 'Typo projekt')
     await as(scopes.admin, () =>
