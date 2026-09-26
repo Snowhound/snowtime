@@ -10,7 +10,7 @@ export const startTimer = createServerFn({ method: 'POST' })
   .validator(StartTimerInput)
   .handler(({ data, context }) => timer.startTimer(db, context.scope, data))
 
-// The running timer spans organizations, so stopping and reading it needs no active one.
+// The running timer spans organizations, so stopping and reading it names no organization.
 export const stopTimer = createServerFn({ method: 'POST' })
   .middleware([sessionMiddleware])
   .validator(StopTimerInput)

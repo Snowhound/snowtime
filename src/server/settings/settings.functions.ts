@@ -5,7 +5,7 @@ import { sessionMiddleware } from '../middleware'
 import { GetSettingsInput, UpdateSettingsInput } from './settings.schemas'
 import * as settings from './settings.server'
 
-// Settings are per user, so they need no active organization. getSettings creates the row
+// Settings are per user, so they need no organization. getSettings creates the row
 // on the first call, and repeating it changes nothing.
 export const getSettings = createServerFn({ method: 'GET' })
   .middleware([sessionMiddleware])

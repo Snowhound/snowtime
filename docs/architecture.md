@@ -591,16 +591,11 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
     `optimistic`'s `invalidate`. Every timer write, and every change to who is in a team,
     marks the reports stale (`reportsKey`), so Reports and the Projects view's totals
     load again when they open, even within their 30-second stale time.
-- The query cache holds one user's data, in one organization at a time
-  (`src/lib/queries/session.ts`). Signing out opens the sign-in page as a new page load, with an
-  empty cache. When the session query returns another user, because of a sign-out
-  elsewhere or an expired session, every other query resets: projects, teams, members, and reports are keyed by organization but
-  hold what the user may see. An organization-scoped key holds the organization's id
-  second (`['projects', organizationId, ...]`), and switching organization removes those
-  of the old one. The server answers for the session's organization, so refetching them
-  would store the new organization's data under the old id. When the session shows
-  another organization because another tab switched, the old one's queries go the same
-  way ("Tenancy").
+- The query cache holds one user's data (`src/lib/queries/session.ts`), each organization's
+  under its own keys ("Tenancy"). Signing out opens the sign-in page as a new page load, with
+  an empty cache. When the session query returns another user, because of a sign-out
+  elsewhere or an expired session, every other query resets: projects, teams, members, and
+  reports are keyed by organization but hold what the user may see.
 - Business logic lives in TypeScript, not DB triggers. Two trigger kinds are allowed:
   the `updated_at` safety net above, which is bookkeeping, and a guard for a rule that
   concurrent requests could break between the server's check and its write, where a
