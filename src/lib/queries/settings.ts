@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/solid-query'
 import type { AppSession } from '~/server/auth/auth.functions'
 import { updateSettings } from '~/server/settings/settings.functions'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
-import { optimistic } from './query'
+import { cacheUpdate, optimistic } from './query'
 import { sessionQuery } from './session'
 
 // The signed-in user's settings, as the session query carries them.
@@ -15,10 +15,12 @@ export function useUpdateSettings() {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (patch: UpdateSettingsInput) => updateSettings({ data: patch }),
-    ...optimistic<AppSession | null, UpdateSettingsInput>(queryClient, {
-      queryKey: sessionQuery.queryKey,
-      update: (session, patch) =>
-        session?.settings ? { ...session, settings: { ...session.settings, ...patch } } : session,
-    }),
+    ...optimistic(queryClient, [
+      cacheUpdate<AppSession | null, UpdateSettingsInput>(
+        sessionQuery.queryKey,
+        (session, patch) =>
+          session?.settings ? { ...session, settings: { ...session.settings, ...patch } } : session,
+      ),
+    ]),
   }))
 }

@@ -32,19 +32,8 @@ export function cacheUpdate<TData, TVariables>(
   return { queryKey, update: (data, variables, key) => update(data as TData, variables, key) }
 }
 
-// Callbacks for a mutation that updates cached data before the server answers. On error
-// every cache goes back to its snapshot; either way the queries refetch after.
-//
-//   useMutation(() => ({
-//     mutationFn: (entry) => deleteEntry({ data: entry }),
-//     ...optimistic(queryClient, {
-//       queryKey: ['entries'],
-//       update: (entries: Entry[], vars) => entries.filter((e) => e.id !== vars.id),
-//     }),
-//   }))
-//
-// A mutation that touches several caches passes a list of `cacheUpdate(queryKey, update)`
-// instead, as starting the timer does (src/features/timer/queries.ts).
+// Callbacks for a mutation that updates each cache in `updates` before the server answers.
+// On error every cache goes back to its snapshot; either way the queries refetch after.
 //
 // With `delay`, the update waits that many milliseconds for the server: a success applies
 // it at once, an error leaves the caches as they were, and without an answer by then it
@@ -53,16 +42,11 @@ export function cacheUpdate<TData, TVariables>(
 //
 // `invalidate` lists more keys to refetch after, for caches the write changes but that
 // can't be updated here, such as reports.
-export function optimistic<TData, TVariables>(
+export function optimistic<TVariables>(
   queryClient: QueryClient,
-  options:
-    | { queryKey: QueryKey; update: (data: TData, variables: TVariables) => TData }
-    | CacheUpdate<TVariables>[],
+  updates: CacheUpdate<TVariables>[],
   { delay = 0, invalidate = [] }: { delay?: number; invalidate?: QueryKey[] } = {},
 ) {
-  const updates = Array.isArray(options)
-    ? options
-    : [cacheUpdate<TData, TVariables>(options.queryKey, options.update)]
   type Context = {
     snapshot: [QueryKey, unknown][]
     applied: boolean
