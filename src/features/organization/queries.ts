@@ -7,10 +7,11 @@
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import { isServer } from 'solid-js/web'
 import { authClient, unwrap } from '~/lib/auth-client'
-import type { Member } from '~/lib/queries/members'
+import { type Member, membersQuery } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { cacheUpdate, newId, optimistic, reportsKey } from '~/lib/queries/query'
-import type { Team } from '~/lib/queries/teams'
+import { sessionQuery } from '~/lib/queries/session'
+import { type Team, teamsQuery } from '~/lib/queries/teams'
 import { type AppSession, getAppUrl } from '~/server/auth/auth.functions'
 import { setTeamRole } from '~/server/teams/teams.functions'
 import type { SetTeamRoleInput } from '~/server/teams/teams.schemas'
@@ -75,13 +76,13 @@ type Keys = { organizationId: string }
 const teamTotals = { invalidate: [reportsKey] }
 
 function membersKey(organizationId: string) {
-  return ['members', organizationId]
+  return membersQuery(organizationId).queryKey
 }
 function teamsKey(organizationId: string) {
-  return ['teams', organizationId]
+  return teamsQuery(organizationId).queryKey
 }
 function invitationsKey(organizationId: string) {
-  return ['invitations', organizationId]
+  return invitationsQuery(organizationId).queryKey
 }
 
 // --- Members ---------------------------------------------------------------------------
@@ -394,7 +395,7 @@ export function useRenameOrganization(keys: Keys) {
         authClient.organization.update({ organizationId: keys.organizationId, data: { name } }),
       ),
     ...optimistic(queryClient, [
-      cacheUpdate<AppSession | null, string>(['session'], (session, name) =>
+      cacheUpdate<AppSession | null, string>(sessionQuery.queryKey, (session, name) =>
         session
           ? {
               ...session,
