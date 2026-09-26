@@ -12,6 +12,9 @@ dist-ssr
 .vinxi
 __unconfig*
 
+# Local scratchpad
+temp
+
 # Local SQLite databases
 local.db*
 
