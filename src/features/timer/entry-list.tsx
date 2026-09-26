@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
-import { type WeekStart, addDays, localDate } from '~/lib/calendar'
+import { type WeekStart, addDays } from '~/lib/calendar'
 import { formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
@@ -38,8 +38,7 @@ import {
 import type { Entry, StoppedEntry } from './queries'
 import { createRowActivation } from './row-activation'
 
-export function dayLabel(date: string, zone: string, now: number) {
-  const today = localDate(now, zone)
+export function dayLabel(date: string, today: string) {
   if (date === today) return m.timer_today()
   if (date === addDays(today, -1)) return m.timer_yesterday()
   return formatIsoDate(date, { weekday: 'short', day: 'numeric', month: 'short' })
@@ -90,7 +89,7 @@ export function groupIds(group: DayGroup<StoppedEntry> | undefined) {
 export function EntryList(
   props: EntryRowProps & {
     groups: readonly DayGroup<StoppedEntry>[]
-    now: number
+    today: string
     focus?: boolean
   },
 ) {
@@ -103,7 +102,7 @@ export function EntryList(
         return (
           <Card class="overflow-hidden">
             <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
-              <h2 class="font-medium">{dayLabel(date, props.zone, props.now)}</h2>
+              <h2 class="font-medium">{dayLabel(date, props.today)}</h2>
               <span class="text-muted-foreground tabular-nums">
                 <Duration ms={group()?.total ?? 0} />
               </span>

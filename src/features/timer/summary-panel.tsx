@@ -1,7 +1,7 @@
 // The summary beside the entries (prototypes/timer.html), shown when the user's
 // showSummary setting is on: today and this week, and a bar per project for the week.
 // The totals come from summarize, which counts a running timer up to now.
-import { For, Show } from 'solid-js'
+import { Index, Show } from 'solid-js'
 import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
@@ -38,11 +38,11 @@ export function SummaryPanel(props: { summary: Summary; projects: readonly Proje
             fallback={<p class="text-muted-foreground text-sm">{m.timer_summary_empty()}</p>}
           >
             <ul class="flex flex-col gap-2.5">
-              <For each={props.summary.projects}>
+              <Index each={props.summary.projects}>
                 {(row) => {
                   function project() {
                     return (
-                      entryProject(props.projects, row.projectId) ?? {
+                      entryProject(props.projects, row().projectId) ?? {
                         name: m.timer_no_project(),
                         color: null,
                       }
@@ -52,21 +52,21 @@ export function SummaryPanel(props: { summary: Summary; projects: readonly Proje
                     <li class="flex flex-col gap-1 text-xs">
                       <div class="flex items-center justify-between gap-2">
                         <span class="flex min-w-0 items-center gap-1.5">
-                          <Show when={row.projectId}>
+                          <Show when={row().projectId}>
                             <ProjectDot color={project().color} />
                           </Show>
                           <span class="truncate">{project().name}</span>
                         </span>
                         <span class="text-muted-foreground tabular-nums">
-                          <Duration ms={row.total} />
+                          <Duration ms={row().total} />
                         </span>
                       </div>
                       <div class="bg-muted h-1.5 rounded-full" aria-hidden="true">
                         <div
                           class="h-full rounded-full"
                           style={{
-                            width: `${(row.total / props.summary.week) * 100}%`,
-                            background: row.projectId
+                            width: `${(row().total / props.summary.week) * 100}%`,
+                            background: row().projectId
                               ? projectColor(project().color)
                               : 'var(--muted-foreground)',
                           }}
@@ -75,7 +75,7 @@ export function SummaryPanel(props: { summary: Summary; projects: readonly Proje
                     </li>
                   )
                 }}
-              </For>
+              </Index>
             </ul>
           </Show>
         </CardContent>

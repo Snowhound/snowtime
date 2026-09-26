@@ -179,7 +179,7 @@ export function TimerView(props: {
 
   // The summary covers this organization, so a timer running in another one stays out.
   // The ranges lie within the loaded days: a week is shorter than RECENT_DAYS.
-  function summary() {
+  const summary = createMemo(() => {
     const timer = running.data
     const counted =
       timer?.organizationId === props.organizationId ? [...stopped(), timer] : stopped()
@@ -188,7 +188,7 @@ export function TimerView(props: {
       weekStart: props.settings.weekStart,
       now: now(),
     })
-  }
+  })
 
   function showError(e: unknown) {
     setError(errorMessage(e))
@@ -262,8 +262,8 @@ export function TimerView(props: {
     get weekStart() {
       return props.settings.weekStart
     },
-    get now() {
-      return now()
+    get today() {
+      return today()
     },
     get compact() {
       return props.settings.compactRows

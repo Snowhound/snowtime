@@ -39,7 +39,7 @@ import { createRowActivation } from './row-activation'
 export function EntryTable(
   props: EntryRowProps & {
     groups: readonly DayGroup<StoppedEntry>[]
-    now: number
+    today: string
   },
 ) {
   return (
@@ -79,7 +79,7 @@ export function EntryTable(
                       scope="rowgroup"
                       class="p-2 text-left align-middle text-xs font-medium"
                     >
-                      {dayLabel(date, props.zone, props.now)}
+                      {dayLabel(date, props.today)}
                     </th>
                     <TableCell class="text-right text-xs tabular-nums">
                       <Duration ms={group()?.total ?? 0} />
