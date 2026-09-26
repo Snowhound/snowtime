@@ -31,7 +31,7 @@ Changed:
   the missing row away.
 - `FormAlert` in the auth feature and five inline copies in the Organization, invite,
   Projects, Timer, and Reports views became one `ErrorAlert` in
-  `src/components/error-alert.tsx`. Kobalte's `Alert` already has `role="alert"`, so the
+  `src/components/error-alert.tsx` (agreed after the fact on 2026-09-26). Kobalte's `Alert` already has `role="alert"`, so the
   explicit one went.
 
 Checked and sound:
