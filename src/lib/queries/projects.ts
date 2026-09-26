@@ -7,7 +7,10 @@ import { ORGANIZATION_STALE_TIME } from './query'
 type ListedProject = Awaited<ReturnType<typeof listProjects>>[number]
 
 // The fields the views read, so an optimistic project needs no audit columns.
-export type Project = Pick<ListedProject, 'id' | 'name' | 'color' | 'archivedAt' | 'teamIds'>
+export type Project = Pick<
+  ListedProject,
+  'id' | 'name' | 'color' | 'archivedAt' | 'teamIds' | 'hasEntries'
+>
 
 // Archived projects too: entries keep theirs, the timer names them, and Projects lists
 // them under Archived.

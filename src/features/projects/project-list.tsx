@@ -45,8 +45,6 @@ export function ProjectList(
     teams: readonly Team[]
     // Milliseconds this month by project id.
     totals: ReadonlyMap<string, number>
-    // Projects being deleted.
-    pending: ReadonlySet<string | undefined>
     admin: boolean
     archived: boolean
     query: string
@@ -75,14 +73,7 @@ export function ProjectList(
       </div>
       <ul class="divide-y">
         <For each={props.projects} fallback={<Empty {...props} />}>
-          {(project) => (
-            <Row
-              {...props}
-              project={project}
-              grid={grid()}
-              pending={props.pending.has(project.id)}
-            />
-          )}
+          {(project) => <Row {...props} project={project} grid={grid()} />}
         </For>
       </ul>
     </Card>
@@ -97,7 +88,6 @@ function Row(
     admin: boolean
     zone: string
     grid: string
-    pending: boolean
   },
 ) {
   function ms() {
@@ -112,9 +102,7 @@ function Row(
         'grid items-center gap-x-3 gap-y-1.5 px-4 py-3 sm:px-6 md:gap-x-4',
         props.admin ? 'grid-cols-[minmax(0,1fr)_auto_auto]' : 'grid-cols-[minmax(0,1fr)_auto]',
         props.grid,
-        props.pending && 'animate-pulse opacity-50',
       )}
-      aria-busy={props.pending || undefined}
     >
       <div class="flex min-w-0 items-start gap-3">
         <ProjectDot color={props.project.color} class="mt-1 size-3" />
@@ -173,7 +161,6 @@ function Row(
               variant="ghost"
               size="icon"
               class="size-9"
-              disabled={props.pending}
               aria-label={m.projects_actions({ name: props.project.name })}
             >
               <EllipsisIcon aria-hidden="true" />

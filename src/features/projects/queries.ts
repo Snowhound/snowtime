@@ -69,7 +69,7 @@ async function saveProject(organizationId: string, input: SaveProjectInput) {
 function saved(projects: Project[], input: SaveProjectInput): Project[] {
   if (input.kind === 'create') {
     const { id, name, color, teamIds } = input
-    return [...projects, { id, name, color, teamIds, archivedAt: null }]
+    return [...projects, { id, name, color, teamIds, archivedAt: null, hasEntries: false }]
   }
   return projects.map((p) =>
     p.id === input.id
@@ -121,24 +121,14 @@ export function useUnarchiveProject({ organizationId }: Keys) {
   }))
 }
 
-// A project with time entries is refused with CONFLICT, so the row waits up to
-// DELETE_DELAY ms for the answer, shown as pending, before it goes (optimistic's `delay`).
-const DELETE_DELAY = 500
-export const deleteProjectKey = ['delete-project']
-
 export function useDeleteProject({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationKey: deleteProjectKey,
     mutationFn: (input: ProjectIdInput) => deleteProject({ data: { ...input, organizationId } }),
-    ...optimistic(
-      queryClient,
-      [
-        cacheUpdate<Project[], ProjectIdInput>(projectsKey(organizationId), (projects, { id }) =>
-          projects.filter((p) => p.id !== id),
-        ),
-      ],
-      { delay: DELETE_DELAY },
-    ),
+    ...optimistic(queryClient, [
+      cacheUpdate<Project[], ProjectIdInput>(projectsKey(organizationId), (projects, { id }) =>
+        projects.filter((p) => p.id !== id),
+      ),
+    ]),
   }))
 }

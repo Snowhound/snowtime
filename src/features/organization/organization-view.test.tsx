@@ -117,7 +117,7 @@ function fixtures(): Server {
     ),
   }))
   function project(name: string, teamIds: string[]): Project {
-    return { id: newId(), name, color: '#3b82b8', archivedAt: null, teamIds }
+    return { id: newId(), name, color: '#3b82b8', archivedAt: null, teamIds, hasEntries: false }
   }
   return {
     viewer: ids.admin,

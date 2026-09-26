@@ -2,7 +2,7 @@
 // sorted by name. Admins and owners see every project with the organization's time this
 // month and manage them; members and team leads see the projects open to them, with their
 // own time, and no actions. Writes are optimistic (queries.ts); errors show above the list.
-import { useMutationState, useQuery } from '@tanstack/solid-query'
+import { useQuery } from '@tanstack/solid-query'
 import PlusIcon from 'lucide-solid/icons/plus'
 import SearchIcon from 'lucide-solid/icons/search'
 import { For, Show, createMemo, createSignal } from 'solid-js'
@@ -16,13 +16,11 @@ import { errorMessage } from '~/lib/errors'
 import { type Project, projectsQuery } from '~/lib/queries/projects'
 import { teamsQuery } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
-import { AppError } from '~/server/errors'
 import { ProjectDialog, type ProjectDialogTarget } from './project-dialog'
 import { type ProjectActions, ProjectList } from './project-list'
 import { byName } from './projects'
 import {
   type SaveProjectInput,
-  deleteProjectKey,
   monthReportQuery,
   useArchiveProject,
   useDeleteProject,
@@ -55,13 +53,6 @@ export function ProjectsView(props: {
   const archiveProject = useArchiveProject(keys)
   const unarchiveProject = useUnarchiveProject(keys)
   const deleteProject = useDeleteProject(keys)
-
-  // Projects whose delete awaits the server.
-  const deleting = useMutationState(() => ({
-    filters: { mutationKey: deleteProjectKey, status: 'pending' },
-    select: (mutation) => (mutation.state.variables as { id: string } | undefined)?.id,
-  }))
-  const pending = createMemo(() => new Set(deleting()))
 
   const [tab, setTab] = createSignal<Tab>('active')
   const [query, setQuery] = createSignal('')
@@ -122,17 +113,10 @@ export function ProjectsView(props: {
     })
   }
 
+  // An entry logged after the list loaded makes the server refuse; that shows as an error.
   function remove(project: Project) {
     setError(null)
-    deleteProject.mutate(
-      { id: project.id },
-      {
-        onError: (e) =>
-          e instanceof AppError && e.key === 'project_has_entries'
-            ? hasTime(project)
-            : showError(e),
-      },
-    )
+    deleteProject.mutate({ id: project.id }, options)
   }
 
   const actions: ProjectActions = {
@@ -146,15 +130,17 @@ export function ProjectsView(props: {
       }),
     onRestore: restore,
     onDelete: (project) =>
-      setConfirmation({
-        title: m.projects_delete_title({ name: project.name }),
-        description: m.projects_delete_description(),
-        action: {
-          label: m.projects_delete_confirm(),
-          destructive: true,
-          run: () => remove(project),
-        },
-      }),
+      project.hasEntries
+        ? hasTime(project)
+        : setConfirmation({
+            title: m.projects_delete_title({ name: project.name }),
+            description: m.projects_delete_description(),
+            action: {
+              label: m.projects_delete_confirm(),
+              destructive: true,
+              run: () => remove(project),
+            },
+          }),
   }
 
   function subtitle() {
@@ -227,7 +213,6 @@ export function ProjectsView(props: {
                   projects={shown(t.value)}
                   teams={teams.data ?? []}
                   totals={totals()}
-                  pending={pending()}
                   admin={props.admin}
                   archived={t.value === 'archived'}
                   query={query()}

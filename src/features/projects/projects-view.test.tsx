@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
+import { render, screen, waitFor, within } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type { Project } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
 import { AppError } from '~/server/errors'
@@ -54,7 +54,15 @@ const design = { id: newId(), name: 'Design', members: [] }
 const client = { id: newId(), name: 'Client services', members: [] }
 
 function project(name: string, patch: Partial<Project> = {}): Project {
-  return { id: newId(), name, color: '#3b82b8', archivedAt: null, teamIds: [], ...patch }
+  return {
+    id: newId(),
+    name,
+    color: '#3b82b8',
+    archivedAt: null,
+    teamIds: [],
+    hasEntries: false,
+    ...patch,
+  }
 }
 
 const server: { role: 'member' | 'admin'; projects: Project[] } = {
@@ -118,10 +126,6 @@ beforeEach(() => {
   fn.unassignProjectFromTeam.mockImplementation(async ({ data }) =>
     change(data.projectId, (p) => ({ teamIds: p.teamIds.filter((t) => t !== data.teamId) })),
   )
-})
-
-afterEach(() => {
-  vi.useRealTimers()
 })
 
 async function openActions(name: string) {
@@ -276,71 +280,63 @@ describe('ProjectsView', () => {
     expect(screen.getByText('Snowhound · 0 active, 2 archived')).toBeInTheDocument()
   })
 
-  test('a refused delete offers to archive instead', async () => {
+  test('deletes once confirmed, before the server answers', async () => {
     server.role = 'admin'
-    fn.deleteProject.mockRejectedValue(new AppError('CONFLICT', 'project_has_entries'))
+    fn.deleteProject.mockReturnValue(new Promise(() => {}))
     renderView()
     await chooseAction('Snowtime', 'Delete')
     const confirm = await screen.findByRole('dialog', { name: 'Delete Snowtime?' })
     await userEvent.click(within(confirm).getByRole('button', { name: 'Delete project' }))
     expect(fn.deleteProject).toHaveBeenCalledWith({ data: { organizationId, id: snowtime.id } })
-
-    const refused = await screen.findByRole('dialog', { name: 'Snowtime has tracked time' })
-    // The refusal came within the delay, so the row never left.
-    expect(screen.getByText('Snowtime')).toBeInTheDocument()
-    await userEvent.click(within(refused).getByRole('button', { name: 'Archive instead' }))
-    expect(fn.archiveProject).toHaveBeenCalledWith({ data: { organizationId, id: snowtime.id } })
+    await waitFor(() => expect(screen.queryByText('Snowtime')).not.toBeInTheDocument())
   })
 
-  test('a slow delete shows the row pending, then removes it', async () => {
+  test('a project with time offers to archive instead, without asking the server', async () => {
     server.role = 'admin'
-    let answer!: () => void
-    fn.deleteProject.mockImplementation(
-      ({ data }) =>
-        new Promise<void>((resolve) => {
-          answer = () => {
-            server.projects = server.projects.filter((p) => p.id !== data.id)
-            resolve()
-          }
-        }),
-    )
+    snowtime.hasEntries = true
     renderView()
     await chooseAction('Snowtime', 'Delete')
-    const confirm = await screen.findByRole('dialog', { name: 'Delete Snowtime?' })
-    // Fake timers from here, so the delay passes without waiting for it.
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete project' }))
-    await vi.advanceTimersByTimeAsync(10)
-
-    const row = screen.getByText('Snowtime').closest('li')!
-    expect(row).toHaveAttribute('aria-busy', 'true')
-    expect(within(row).getByRole('button', { hidden: true })).toBeDisabled()
-    await vi.advanceTimersByTimeAsync(489)
-    expect(screen.getByText('Snowtime')).toBeInTheDocument()
-    // Gone once the delay is over, before the server answers.
-    await vi.advanceTimersByTimeAsync(1)
-    expect(screen.queryByText('Snowtime')).not.toBeInTheDocument()
-
-    vi.useRealTimers()
-    answer()
-    await waitFor(() => expect(fn.listProjects).toHaveBeenCalledTimes(2))
-    expect(screen.queryByText('Snowtime')).not.toBeInTheDocument()
+    const dialog = await screen.findByRole('dialog', { name: 'Snowtime has tracked time' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Archive instead' }))
+    expect(fn.archiveProject).toHaveBeenCalledWith({ data: { organizationId, id: snowtime.id } })
+    expect(fn.deleteProject).not.toHaveBeenCalled()
   })
 
-  test('a refused delete of an archived project only explains', async () => {
+  test('an archived project with time only explains', async () => {
     server.role = 'admin'
-    fn.deleteProject.mockRejectedValue(new AppError('CONFLICT', 'project_has_entries'))
+    website.hasEntries = true
     renderView()
     await userEvent.click(await screen.findByRole('tab', { name: /Archived/ }))
     await chooseAction('Website 2025', 'Delete')
-    const confirm = await screen.findByRole('dialog', { name: 'Delete Website 2025?' })
+    const dialog = await screen.findByRole('dialog', { name: 'Website 2025 has tracked time' })
+    expect(within(dialog).getByText(/It stays archived/)).toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Archive instead' })).toBeNull()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'OK' }))
+    expect(fn.archiveProject).not.toHaveBeenCalled()
+    expect(fn.deleteProject).not.toHaveBeenCalled()
+  })
+
+  test('time logged after the list loaded makes the server refuse, shown as an error', async () => {
+    server.role = 'admin'
+    fn.deleteProject.mockImplementation(async () => {
+      server.projects = [{ ...snowtime, hasEntries: true }, website]
+      throw new AppError('CONFLICT', 'project_has_entries')
+    })
+    renderView()
+    await chooseAction('Snowtime', 'Delete')
+    const confirm = await screen.findByRole('dialog', { name: 'Delete Snowtime?' })
     await userEvent.click(within(confirm).getByRole('button', { name: 'Delete project' }))
 
-    const refused = await screen.findByRole('dialog', { name: 'Website 2025 has tracked time' })
-    expect(within(refused).getByText(/It stays archived/)).toBeInTheDocument()
-    expect(within(refused).queryByRole('button', { name: 'Archive instead' })).toBeNull()
-    await userEvent.click(within(refused).getByRole('button', { name: 'OK' }))
-    expect(fn.archiveProject).not.toHaveBeenCalled()
+    expect(
+      await screen.findByText('This project has time entries. Archive it instead.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Snowtime')).toBeInTheDocument()
+    // The refetch knows about the time now, so another try offers to archive.
+    await waitFor(() => expect(fn.listProjects).toHaveBeenCalledTimes(2))
+    await chooseAction('Snowtime', 'Delete')
+    expect(
+      await screen.findByRole('dialog', { name: 'Snowtime has tracked time' }),
+    ).toBeInTheDocument()
   })
 
   test('a new organization offers its first project and links to Organization for teams', async () => {
