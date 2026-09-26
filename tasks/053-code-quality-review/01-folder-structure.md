@@ -23,6 +23,9 @@ Changed:
   `intro.tsx` moved to `src/components/scene/`. Paths in comments, `src/styles.css`,
   `docs/architecture.md`, `design/backgrounds/README.md`, and tasks 050 and 051 follow.
   The move is in `.git-blame-ignore-revs`.
+- The shared queries (`session.ts`, `settings.ts`, `members.ts`, `projects.ts`,
+  `teams.ts`, `passkeys.ts`, `sign-in-methods.ts`, `query.ts`) moved to
+  `src/lib/queries/`, also listed in `.git-blame-ignore-revs`.
 - `src/integrations/tanstack-query/provider.tsx`, one function in its own folder with one
   caller, is inlined into `src/router.tsx`.
 - `src/lib/date-input.ts` pointed at `src/components/date-picker/`, which no longer
@@ -39,10 +42,3 @@ Checked and sound:
   `queries.ts`), so no file has helpers only it uses that call for a component folder.
 - `src/server/`: top-level files are cross-domain (errors, middleware, scope, rate limit,
   CSP); domains have their own folders. `src/db/` and `src/routes/` are as designed.
-
-Left for a decision:
-
-- The rest of `src/lib/` is still flat, about 22 files. The shared queries (`session.ts`,
-  `settings.ts`, `members.ts`, `projects.ts`, `teams.ts`, `passkeys.ts`,
-  `sign-in-methods.ts`, `query.ts`) could share `src/lib/queries/`. Their names already
-  say what they hold, so this review left them.
