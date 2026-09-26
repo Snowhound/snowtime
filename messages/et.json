@@ -675,5 +675,8 @@
   "picker_day": "pp",
   "picker_month": "kk",
   "picker_year": "aaaa",
-  "picker_time": "tt:mm"
+  "picker_time": "tt:mm",
+  "browser_notice_title": "See brauser on aegunud.",
+  "browser_notice_body": "Snowtime toetab Chrome'i, Edge'i, Firefoxi ja Safari kahte uusimat versiooni ning osa sellest ei pruugi siin töötada. Uuenda brauserit, et kõik töötaks.",
+  "browser_notice_dismiss": "Sulge"
 }

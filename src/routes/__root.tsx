@@ -20,7 +20,9 @@ import {
   onMount,
 } from 'solid-js'
 import { HydrationScript, isServer } from 'solid-js/web'
+import { BrowserNotice } from '~/components/browser-notice'
 import { appIcon, faviconLinks, setFavicon } from '~/lib/app-icon'
+import { browserCheckScript } from '~/lib/browser-check'
 import {
   deviceSettings,
   followAccountDeviceSettings,
@@ -91,6 +93,9 @@ function RootComponent(props: ParentProps) {
   return (
     <html lang={locale()} data-theme={theme()}>
       <head>
+        {/* Its own script, so an old browser that can't parse the theme script still runs it. */}
+        {/* oxlint-disable-next-line solid/no-innerhtml -- browserCheckScript is a constant. */}
+        <script nonce={router.options.ssr?.nonce} innerHTML={browserCheckScript} />
         {/* oxlint-disable-next-line solid/no-innerhtml -- themeScript is a constant. */}
         <script nonce={router.options.ssr?.nonce} innerHTML={themeScript} />
         <HydrationScript />
@@ -108,6 +113,7 @@ function RootComponent(props: ParentProps) {
         </For>
       </head>
       <body>
+        <BrowserNotice />
         <Suspense>
           {/* The root's match, inside the error and not-found boundaries it has from the
               router's defaults (src/router.tsx). */}

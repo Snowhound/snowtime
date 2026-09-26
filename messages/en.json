@@ -675,5 +675,8 @@
   "picker_day": "dd",
   "picker_month": "mm",
   "picker_year": "yyyy",
-  "picker_time": "hh:mm"
+  "picker_time": "hh:mm",
+  "browser_notice_title": "This browser is out of date.",
+  "browser_notice_body": "Snowtime supports the latest two versions of Chrome, Edge, Firefox, and Safari, and parts of it may not work here. Update your browser to use it fully.",
+  "browser_notice_dismiss": "Dismiss"
 }
