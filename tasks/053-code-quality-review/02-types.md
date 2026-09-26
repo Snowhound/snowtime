@@ -1,18 +1,70 @@
 # 02: Types
 
-Status: todo
+Status: done
 
 A loose type at a module's boundary spreads to every caller. Inside a function it only
 costs that function.
 
 ## Acceptance criteria
 
-- [ ] No `any` in exported signatures, props, or query and server function results;
+- [x] No `any` in exported signatures, props, or query and server function results;
       `unknown` or a precise type replaces it
-- [ ] Each remaining `any`, `as` cast, non-null `!`, and `@ts-expect-error` is needed
+- [x] Each remaining `any`, `as` cast, non-null `!`, and `@ts-expect-error` is needed
       and has a reason, or goes
-- [ ] Types derive from one source (the Drizzle schema, Valibot schemas, server
+- [x] Types derive from one source (the Drizzle schema, Valibot schemas, server
       function return types) rather than being restated by hand
-- [ ] oxlint enforces what's decided, for example `typescript/no-explicit-any`
+- [x] oxlint enforces what's decided, for example `typescript/no-explicit-any`
 
 ## Findings
+
+Changed:
+
+- oxlint now errors on `typescript/no-explicit-any`, `ban-ts-comment`,
+  `no-unnecessary-type-assertion`, `no-extra-non-null-assertion`, and
+  `no-non-null-asserted-optional-chain`. The code already passed all five.
+  `no-unsafe-type-assertion` stays off: it flags every narrowing cast, including the
+  ones listed below.
+- `SocialProvider`, written out in `sign-in-methods.tsx` and `sign-in-methods-list.tsx`,
+  derives from the server's `SignInMethod`.
+- `WeekStart` comes from the settings schema; `src/lib/calendar.ts` re-exports it rather
+  than restating `'mon' | 'sun'`.
+- `CreatedInvitation` in `invite-dialog.tsx` is a `Pick` of `Invitation`.
+
+Checked and sound:
+
+- No `any`, `@ts-ignore`, or `@ts-expect-error` in `src/`, `scripts/`, or `datamodel/`.
+- `unknown` appears only where callers ignore a result (`Promise<unknown>`), for parsed
+  input (`JSON.parse`, form errors), and inside `cacheUpdate`, which erases each cache's
+  type behind a typed wrapper.
+- Query types derive from server function results (`Member`, `Team`, `Project`,
+  `Report`, `Entry`, `AppSession`, `Settings`); settings, roles, and filters derive from
+  Valibot schemas or `as const` lists. The Better Auth mutation inputs in
+  `features/organization/queries.ts` describe client calls, not server schemas.
+- `as` casts in app code fall into these groups, each needed:
+  - DOM: event targets, `activeElement`, `firstElementChild`, `dataset` values.
+  - Select and toggle values read back as the union their options came from
+    (`OrgRole`, `TeamRole`, settings fields, filter-bar values, tabs).
+  - `useMutationState` variables, which TanStack types as `unknown`.
+  - Library gaps with a comment: the router's nonce, Better Auth's hook result, and the
+    error page's missing `reset` on the server.
+  - Widening a default (`'member' as OrgRole`, `[] as string[]`), `Object.keys`, and
+    `includes`/`indexOf` on `as const` lists.
+  - A computed key in `reports.server.ts` and the uniform map in `weather.ts`, which
+    TypeScript can't type.
+- Test files cast fixtures (`as never`, `as Member[]`) and assert non-null freely: a
+  wrong guess fails the test.
+- Non-null `!` in app code, about 30, each follow a guard TypeScript can't see: a
+  Solid accessor called again after a check (`device()!`, `user()!` under its `Match`),
+  refs set in JSX, lookups after a `has`/filter (`teams-tab.tsx`), `find` on constant
+  tables (`app-icon.ts`, `scene.ts`), and Drizzle's `and()` with fixed arguments.
+  `session.settings` is null until `getSettings` creates the row with the browser's time
+  zone, so the Projects and Reports pages assert `settings!` under a `Show` that checks it.
+
+Left for a decision:
+
+- Six `!` in `entry-fields.tsx` and `timer-view.tsx` assert `stoppedAt` on entries that
+  are stopped by construction. A `StoppedEntry` type, or an overload of
+  `readEntryTimes` for `running: false`, would remove them for a few added lines.
+- `reports-page.tsx` checks `owner || admin` inline, while `organization-page.tsx` and
+  `projects-page.tsx` each define the same `isAdmin`. Subtask 04 covers duplicated
+  helpers.
