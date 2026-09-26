@@ -3,7 +3,16 @@
 // It scrolls inside its card with the first and last columns sticky. Names and totals are
 // buttons that narrow the Entries card to their row, day or week, or both.
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
-import { type JSX, For, Show, createSelector, createSignal, onCleanup, onMount } from 'solid-js'
+import {
+  type JSX,
+  For,
+  Show,
+  createMemo,
+  createSelector,
+  createSignal,
+  onCleanup,
+  onMount,
+} from 'solid-js'
 import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
 import {
@@ -75,10 +84,12 @@ export function Timesheet(props: {
     return props.unit === 'day' && buckets().length > WEEK_DAYS
   }
 
+  // A memo, because every cell asks and `today` is worked out through Intl on each read.
+  const currentBucket = createMemo(() =>
+    props.unit === 'week' ? startOfWeek(props.today, props.weekStart) : props.today,
+  )
   function current(bucket: IsoDate) {
-    return props.unit === 'week'
-      ? bucket === startOfWeek(props.today, props.weekStart)
-      : bucket === props.today
+    return bucket === currentBucket()
   }
 
   function shortLabel(bucket: IsoDate) {
