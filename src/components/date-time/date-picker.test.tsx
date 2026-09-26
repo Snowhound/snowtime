@@ -46,6 +46,18 @@ function renderPicker(initial: string, options: { live?: boolean; max?: string }
 }
 
 describe('DatePicker', () => {
+  test('Tab keeps focus in the open calendar', async () => {
+    renderPicker('2026-09-05')
+    await userEvent.click(screen.getByRole('button', { name: 'Choose date' }))
+    const calendar = await screen.findByRole('dialog', { name: 'Choose date' })
+    for (let i = 0; i < 6; i++) {
+      await userEvent.tab()
+      expect(calendar).toContainElement(document.activeElement as HTMLElement)
+    }
+    await userEvent.tab({ shift: true })
+    expect(calendar).toContainElement(document.activeElement as HTMLElement)
+  })
+
   test('shows the date in the locale format and reads typed short forms on blur', () => {
     const { input, onChange } = renderPicker('2026-09-05')
     expect(input).toHaveValue('09/05/2026')

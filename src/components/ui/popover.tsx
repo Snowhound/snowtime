@@ -13,6 +13,28 @@ const Popover: Component<PopoverPrimitive.PopoverRootProps> = (props) => {
 type PopoverContentProps<T extends ValidComponent = 'div'> =
   PopoverPrimitive.PopoverContentProps<T> & { class?: string | undefined }
 
+// The controls Tab reaches, in order.
+function tabbable(root: HTMLElement) {
+  return [
+    ...root.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]'),
+  ].filter((el) => el.tabIndex >= 0 && !el.matches(':disabled') && !el.closest('[hidden]'))
+}
+
+// Kobalte traps focus only in a modal popover. These stay non-modal, so a click outside still
+// reaches the page, but Tab wraps at their ends: from the portal at the end of the body, focus
+// would otherwise fall to the body and leave the popover open.
+function wrapTab(event: KeyboardEvent) {
+  if (event.key !== 'Tab' || event.defaultPrevented) return
+  const controls = tabbable(event.currentTarget as HTMLElement)
+  const first = controls[0]
+  const last = controls.at(-1)
+  if (!first || !last) return
+  const edge = event.shiftKey ? first : last
+  if (document.activeElement !== edge) return
+  event.preventDefault()
+  ;(event.shiftKey ? last : first).focus()
+}
+
 const PopoverContent = <T extends ValidComponent = 'div'>(
   props: PolymorphicProps<T, PopoverContentProps<T>>,
 ) => {
@@ -25,6 +47,7 @@ const PopoverContent = <T extends ValidComponent = 'div'>(
           local.class,
         )}
         {...others}
+        onKeyDown={wrapTab}
       />
     </PopoverPrimitive.Portal>
   )
