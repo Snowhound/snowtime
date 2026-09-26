@@ -349,6 +349,31 @@ The cost is one 16-byte random value and a header, about 2 µs per page. A per-p
 rules out caching the HTML in a shared cache, which none of the app's pages can do
 anyway, since each one renders the signed-in user's session.
 
+## Supported browsers
+
+Snowtime supports the latest two major versions of Chrome, Edge, Firefox, and Safari, desktop
+and mobile (task 058). Those are the browsers it's tested in and fixed for. An older browser
+that has what the app uses gets no notice, because a few versions back in all likelihood still
+works; one that lacks it gets a notice at the top of each page.
+
+- Build: Vite's `build.target` stays its default, Baseline Widely Available (Chrome and Edge
+  111, Firefox 114, Safari 16.4 in Vite 8), so the output's syntax doesn't lock out browsers
+  older than the supported window that could run the app. Tailwind 4 needs about the same:
+  Chrome 111, Safari 16.4, and Firefox 128 (the current ESR) for `@property`.
+- APIs: `tsconfig.json`'s `lib` may allow more than the build target has, now ES2023. Any
+  feature the app uses beyond the build target goes in the check's list
+  (`src/lib/browser-check.ts`), so a browser without it sees the notice rather than a broken
+  page.
+- Check: an ES5 script in `<head>`, apart from the theme script, which an old browser can't
+  parse. It tests features (`toSorted`, `CSS.registerProperty`, `:has()`, `color-mix()`),
+  not user agents, which lie and go stale. A test parses it as ES5. It costs well under a
+  millisecond per page and carries the CSP nonce like the theme script.
+- Notice (`src/components/browser-notice.tsx`): the server renders it hidden, in the page's
+  language, and the check shows it, so it needs none of the app's scripts. It names the
+  supported browsers, doesn't block the page, and a dismissal lasts the session
+  (`snowtime.browserNoticeDismissed` in `sessionStorage`). Its styles are inline, because a
+  browser that drops the stylesheet's cascade layers loses every Tailwind class.
+
 ## Deployment model
 
 - Default: one shared multi-tenant deployment.
