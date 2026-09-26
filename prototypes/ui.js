@@ -195,7 +195,8 @@
       event.preventDefault()
     }
     const menu = event.target.closest?.('[data-ui="menu"]')
-    if (menu && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+    // A select in a menu keeps its own arrow keys.
+    if (menu && event.target.tagName !== 'SELECT' && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
       const items = menuItems(menu)
       const i = items.indexOf(document.activeElement)
       const next = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: items.length - 1 }[event.key]

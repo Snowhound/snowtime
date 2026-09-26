@@ -66,10 +66,16 @@
       .map((w) => w[0].toUpperCase())
       .join('')
 
+  // The app's languages by their own names, for the user menu's Language select.
+  const LANGUAGES = [
+    { value: 'en', label: 'English' },
+    { value: 'et', label: 'Eesti' },
+  ]
+
   // --- User settings -------------------------------------------------------------------------
   // The app keeps these in user_settings. The prototypes stand in for it with one localStorage key,
   // so every page sees the same values. The Settings page, the timer's View popover and the user
-  // menu's theme items all read and write it through here, and each change saves right away.
+  // menu's Language select all read and write it through here, and each change saves right away.
   const SETTINGS_KEY = 'snowtime.prototypeSettings'
   const SETTINGS_DEFAULTS = {
     locale: 'en',
@@ -333,8 +339,18 @@
             <span class="truncate text-xs text-muted-foreground">${escapeHtml(user.email)}</span>
           </div>
           <div data-ui="menu-separator" role="separator"></div>
-          <a href="${link('settings.html#profile')}" data-frame-link="settings.html#profile" role="menuitem" data-ui="menu-item">${icon('user')}Profile</a>
           <a href="${link('settings.html')}" data-frame-link="settings.html" role="menuitem" data-ui="menu-item">${icon('settings')}Settings</a>
+          <a href="${link('settings.html#profile')}" data-frame-link="settings.html#profile" role="menuitem" data-ui="menu-item">${icon('user')}Profile</a>
+          <div data-ui="menu-separator" role="separator"></div>
+          <!-- Not a menu item: the select keeps its own keys. The app switches its language in place. -->
+          <div class="flex items-center justify-between gap-3 px-2 py-1.5">
+            <label data-ui="label" for="frame-locale" class="font-normal">Language</label>
+            <div class="w-32">
+              <select id="frame-locale" data-ui="select" class="h-8 py-1">
+                ${LANGUAGES.map((l) => `<option value="${l.value}" lang="${l.value}"${l.value === settings.locale ? ' selected' : ''}>${l.label}</option>`).join('')}
+              </select>
+            </div>
+          </div>
           <div data-ui="menu-separator" role="separator"></div>
           <a href="auth.html" role="menuitem" data-ui="menu-item">${icon('log-out')}Sign out</a>
         </div>
@@ -374,6 +390,13 @@
       syncLinks()
       emit('org')
     } else if (themeItem) settingsStore.set({ theme: themeItem.dataset.frameTheme })
+  })
+  document.addEventListener('change', (event) => {
+    if (event.target.id === 'frame-locale') settingsStore.set({ locale: event.target.value })
+  })
+  listeners.settings.push(() => {
+    const select = document.getElementById('frame-locale')
+    if (select) select.value = settings.locale
   })
 
   // `scene: true` puts the seasonal scene behind the page.

@@ -214,7 +214,8 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
 - The **app header**: the app icon and name, linking to the timer; the organization switcher (a
   dropdown menu of the user's organizations); navigation (Timer, Reports, Projects, and
   Organization for admins and owners only); the **Appearance** button; and a user menu
-  (Profile, Settings, Sign out). Below 768 px the navigation moves to a second header row of four
+  (Settings, Profile, a Language select, Sign out). The select isn't a menu item, so it keeps its
+  own arrow keys; in the app a new language shows at once, without a reload. Below 768 px the navigation moves to a second header row of four
   equal-width links, so every page stays one tap away without a hamburger menu. Between 768 and
   1024 px the header drops the "Snowtime" name beside the mark, so the organization name fits.
   In the app the header sticks to the top of the page at every width, both rows below 768 px, so
@@ -568,6 +569,16 @@ only the owner edits an entry, on the Timer page. It hides when the range has no
   Below 640 px, the time, project, and member wrap under the description.
 - **By description**: one row per project and description, with its total, how many entries on
   how many days, and who tracked it (two names and a count past three), largest total first.
+  From 640 px it's a table: a header row names the columns once (Description, Project, People,
+  Entries, Days, Total), so each row is one line; below that the counts wrap under the
+  description as "2 entries on 2 days".
+
+The card starts closed, showing only its header: the title with a chevron, the count and total,
+and the hint or the narrowing chip. The chevron opens the list and the By day and By description
+toggle; the browser remembers the choice (`snowtime.reportEntriesOpen`). Choosing a part of the
+timesheet opens it too. The hint, "Choose a name or a total in the timesheet to narrow the list",
+shows until the user first narrows the list. In the app the card takes the timesheet's width, so
+their edges line up when a month of days widens the timesheet past the page.
 
 The card opens By day for a week or less and By description for longer spans, where a list of
 single entries runs to hundreds of rows. The user's choice holds until a filter changes.

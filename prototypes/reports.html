@@ -176,12 +176,14 @@
 
         <!-- Entries (task 055): the entries behind the timesheet, or behind the part chosen in it. -->
         <div id="entries-card" data-ui="card" class="min-w-0 scroll-mt-4 overflow-hidden">
-          <div data-ui="card-header" class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
+          <div id="entries-header" data-ui="card-header" class="flex-row flex-wrap items-start justify-between gap-2 space-y-0">
             <div class="grid min-w-0 gap-1.5">
-              <h2 data-ui="card-title" class="text-base">Entries</h2>
+              <h2 data-ui="card-title" class="text-base">
+                <button type="button" id="entries-toggle" class="-mx-1 flex items-center gap-1.5 rounded-sm px-1 hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-controls="entries" aria-expanded="false"><span id="entries-chevron" class="flex"></span>Entries</button>
+              </h2>
               <div id="entries-note" data-ui="card-description" class="flex flex-wrap items-center gap-x-2 gap-y-1"></div>
             </div>
-            <div data-ui="toggle-group" role="group" aria-label="List entries" class="justify-start">
+            <div id="entries-views" data-ui="toggle-group" role="group" aria-label="List entries" class="justify-start">
               <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-entry-view="day">By day</button>
               <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-entry-view="description">By description</button>
             </div>
@@ -641,6 +643,27 @@
       // --- Entries (task 055) --------------------------------------------------------------------
       // The same day pieces the timesheet sums, so the list adds up to the chosen totals. Newest
       // first, as on the Timer page; with several people, a day lists each person's entries together. Read-only: only the owner edits an entry, on the Timer page.
+      // Kept in this browser: whether the list is open (it starts closed, showing only the header)
+      // and whether the user has narrowed it, after which the hint no longer shows.
+      const readFlag = (key) => {
+        try {
+          return localStorage.getItem(key) === '1'
+        } catch {
+          return false
+        }
+      }
+      const writeFlag = (key, on) => {
+        try {
+          if (on) localStorage.setItem(key, '1')
+          else localStorage.removeItem(key)
+        } catch {}
+      }
+      let entriesOpen = readFlag('snowtime.reportEntriesOpen')
+      let narrowedOnce = readFlag('snowtime.reportEntriesNarrowed')
+      function setEntriesOpen(open) {
+        entriesOpen = open
+        writeFlag('snowtime.reportEntriesOpen', open)
+      }
       const DAY_PAGE = 7
       const DESCRIPTION_PAGE = 25
       const clock = (t) => fmt({ hour: '2-digit', minute: '2-digit' }).format(t)
@@ -735,22 +758,32 @@
           return names.length > 3 ? `${names.slice(0, 2).join(', ')} and ${names.length - 2} more` : names.join(', ')
         }
         const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
+        // From 640 px a header names the columns once and the counts are bare numbers; screen
+        // readers get them as a sentence instead. Below that, they wrap under the description.
+        const cols = many
+          ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,12rem)_4.5rem_3.5rem_3.5rem]'
+          : 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_4.5rem_3.5rem_3.5rem]'
+        const header = `<li aria-hidden="true" class="hidden gap-x-4 border-b bg-muted/50 px-6 py-1.5 text-xs font-medium text-muted-foreground sm:grid ${cols}">
+          <span>Description</span><span>Project</span>${many ? '<span>People</span>' : ''}<span class="text-right">Entries</span><span class="text-right">Days</span><span class="text-right">Total</span>
+        </li>`
         return {
-          html: shown
-            .map(
-              (r) => `<li class="flex items-start gap-4 border-b px-6 py-2.5 text-sm last:border-b-0">
-                <div class="grid min-w-0 flex-1 gap-0.5">
-                  <span class="truncate" title="${escapeHtml(r.entry.description)}">${descriptionText(r.entry.description)}</span>
-                  <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-muted-foreground">
-                    ${projectLabel(r.entry.projectId)}
-                    <span>${plural(r.entries.size, 'entry', 'entries')} on ${plural(r.days.size, 'day', 'days')}</span>
-                    ${many ? `<span class="min-w-0 truncate">${escapeHtml(people(r.users))}</span>` : ''}
+          html:
+            header +
+            shown
+              .map(
+                (r) => `<li class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5 border-b px-6 py-2.5 text-sm last:border-b-0 sm:items-center ${cols}">
+                  <span class="truncate sm:col-start-1 sm:row-start-1" title="${escapeHtml(r.entry.description)}">${descriptionText(r.entry.description)}</span>
+                  <span class="col-start-2 row-start-1 text-right font-medium tabular-nums sm:col-start-auto sm:col-end-[-1]">${hm(r.total)}</span>
+                  <div class="col-span-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-muted-foreground sm:contents">
+                    <span class="min-w-0 sm:col-start-2 sm:row-start-1">${projectLabel(r.entry.projectId)}</span>
+                    <span class="sm:sr-only">${plural(r.entries.size, 'entry', 'entries')} on ${plural(r.days.size, 'day', 'days')}</span>
+                    ${many ? `<span class="min-w-0 truncate sm:col-start-3 sm:row-start-1">${escapeHtml(people(r.users))}</span>` : ''}
+                    <span aria-hidden="true" class="hidden text-right tabular-nums sm:col-start-[-4] sm:row-start-1 sm:block">${r.entries.size}</span>
+                    <span aria-hidden="true" class="hidden text-right tabular-nums sm:col-start-[-3] sm:row-start-1 sm:block">${r.days.size}</span>
                   </div>
-                </div>
-                <span class="w-14 shrink-0 text-right font-medium tabular-nums">${hm(r.total)}</span>
-              </li>`
-            )
-            .join(''),
+                </li>`
+              )
+              .join(''),
           more: sorted.length > shown.length ? `Show all ${sorted.length}` : '',
           next: sorted.length,
         }
@@ -772,7 +805,15 @@
         const summary = `<span class="tabular-nums">${count} ${count === 1 ? 'entry' : 'entries'} · ${hm(list.reduce((a, s) => a + s.ms, 0))}</span>`
         document.getElementById('entries-note').innerHTML = state.narrow
           ? `${summary}<span data-ui="badge" data-variant="secondary" class="max-w-full gap-1 py-0.5 pr-0.5 font-medium"><span class="truncate">${escapeHtml(narrowLabel())}</span><button type="button" id="entries-clear" class="rounded-sm p-0.5 hover:bg-background/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Show all entries">${icon('x', 'size-3.5')}</button></span>`
-          : `${summary}<span>Choose a name or a total in the timesheet to narrow the list.</span>`
+          : `${summary}${narrowedOnce ? '' : '<span>Choose a name or a total in the timesheet to narrow the list.</span>'}`
+        document.getElementById('entries-toggle').setAttribute('aria-expanded', String(entriesOpen))
+        document.getElementById('entries-chevron').innerHTML = icon('chevron-down', `size-4 transition-transform ${entriesOpen ? '' : '-rotate-90'}`)
+        document.getElementById('entries-views').hidden = !entriesOpen
+        document.getElementById('entries-header').classList.toggle('pb-4', entriesOpen)
+        if (!entriesOpen) {
+          document.getElementById('entries').innerHTML = ''
+          return
+        }
         const { html, more, next } = (view === 'day' ? byDay : byDescription)(list, manyPeople())
         nextEntryLimit = next
         document.getElementById('entries').innerHTML = `<ul class="border-t">${html}</ul>${
@@ -799,6 +840,12 @@
         const n = state.narrow
         state.narrow = n && n.row === row && n.bucket === bucket ? null : { row, bucket }
         state.entryLimit = null
+        // Choosing a part asks for its entries, so it opens the list.
+        if (state.narrow) {
+          narrowedOnce = true
+          writeFlag('snowtime.reportEntriesNarrowed', true)
+          setEntriesOpen(true)
+        }
         render()
         document.querySelector(`.ts-pick[data-row="${row ?? ''}"][data-bucket="${bucket ?? ''}"]`)?.focus()
         const card = document.getElementById('entries-card')
@@ -806,7 +853,10 @@
       })
       document.getElementById('entries-card').addEventListener('click', (event) => {
         const view = event.target.closest('[data-entry-view]')
-        if (view) {
+        if (event.target.closest('#entries-toggle')) {
+          setEntriesOpen(!entriesOpen)
+          render()
+        } else if (view) {
           state.entryView = view.dataset.entryView
           state.entryLimit = null
           render()
