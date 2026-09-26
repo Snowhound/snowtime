@@ -14,15 +14,15 @@ companies can use it too.
 
 ## MVP scope
 
-| Area     | Included                                                                                               |
-| -------- | ------------------------------------------------------------------------------------------------------ |
-| Auth     | Sign up / sign in via Better Auth                                                                      |
-| Tenancy  | Organizations, teams, members, invitations; org switcher                                               |
-| Timer    | Start / stop a single running timer with a description                                                 |
-| Entries  | List, edit, delete, and manually add past entries                                                      |
-| Projects | Org-level projects, optionally assigned to teams; CRUD                                                 |
-| Reports  | Totals per day / week / project / team / member, user's zone; CSV and XLSX export of a report as shown |
-| Settings | Time zone and week start                                                                               |
+| Area     | Included                                                                                                                         |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Auth     | Sign up / sign in via Better Auth                                                                                                |
+| Tenancy  | Organizations, teams, members, invitations; org switcher                                                                         |
+| Timer    | Start / stop a single running timer with a description                                                                           |
+| Entries  | List, edit, delete, and manually add past entries                                                                                |
+| Projects | Org-level projects, optionally assigned to teams; CRUD                                                                           |
+| Reports  | Totals per day / week / project / team / member, user's zone; their entries, read-only; CSV and XLSX export of a report as shown |
+| Settings | Time zone and week start                                                                                                         |
 
 ## Not in MVP
 

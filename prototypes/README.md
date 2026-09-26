@@ -579,7 +579,8 @@ choosing the same button again clears it. When the card is below the fold, choos
 scrolls to it. Changing any filter clears the narrowing.
 
 Long lists load in pages: By day shows seven days at a time, By description 25 rows, each with a
-"Show more" button.
+"Show more" button. The app pages By day by entry count instead, up to 100 at a time, so one
+busy day of a large organization stays one page (`docs/architecture.md`, "Report entries").
 
 Omitted: filters by project or description, saved reports, and billable rates.
 
