@@ -8,7 +8,7 @@
 // the first signed-in page opened in a calendar season it hasn't played in
 // (`snowtime.introSeason`), under the Intro switch and never with reduced motion. Replay plays it
 // any time. While it plays, <html data-intro> holds the page dark: the theme script
-// (src/lib/queries/session.ts) treats it as dark.
+// (src/lib/device-settings.ts) treats it as dark.
 import { createSignal } from 'solid-js'
 import { type Season, type SceneSettings, seasonByMonth } from './scene'
 import { introLines } from './seasons'

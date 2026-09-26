@@ -1,9 +1,6 @@
 import { type Query, type QueryClient, queryOptions } from '@tanstack/solid-query'
 import { redirect } from '@tanstack/solid-router'
-import { APP_PAGES, isAppPage } from '~/lib/app-paths'
-import { DEVICE_SETTINGS_KEY } from '~/lib/device-settings'
-import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from '~/lib/scene/intro'
-import { seasonByMonth } from '~/lib/scene/scene'
+import { isAppPage } from '~/lib/app-paths'
 import { type AppSession, getAppSession } from '~/server/auth/auth.functions'
 
 // The signed-in user, their organizations and settings, or null when signed out. The root
@@ -40,52 +37,6 @@ export function followSession(queryClient: QueryClient) {
     }
   })
 }
-
-// The season of each month, for the head script.
-const MONTH_SEASONS = Array.from({ length: 12 }, (_, month) => seasonByMonth(new Date(2000, month)))
-
-// The signed-in pages, /<slug>/<page>, where the intro plays once a season (src/routes/$org/).
-const APP_PATHS = new RegExp(`^/[^/]+/(${APP_PAGES.join('|')})(/|$)`)
-
-// Runs in <head> before the body paints. Signed in, the server renders the theme setting as
-// data-theme on <html>; signed out it renders none, and the theme saved on this device applies
-// (src/lib/device-settings.ts) until the root sets data-theme from it after hydration. This
-// applies the `dark` class, resolving "system" with the browser's preference, and follows later
-// changes to either.
-//
-// When the intro is due on this page by the device's settings (src/lib/scene/intro.ts), it marks
-// <html data-intro="pending">, which paints the page black until the intro starts; the frame
-// clears it if the account's settings say otherwise, and a timeout clears it if nothing mounts.
-// While <html> has data-intro, the page is dark.
-export const themeScript = `(() => {
-  const root = document.documentElement
-  const dark = matchMedia('(prefers-color-scheme: dark)')
-  let stored = {}
-  try {
-    stored = JSON.parse(localStorage.getItem(${JSON.stringify(DEVICE_SETTINGS_KEY)}) ?? '{}') ?? {}
-  } catch {}
-  try {
-    const path = location.pathname
-    const where = path === '/sign-in' ? 'sign-in' : ${APP_PATHS}.test(path) ? 'app' : null
-    const due =
-      where &&
-      stored.sceneIntro !== false &&
-      !matchMedia('(prefers-reduced-motion: reduce)').matches &&
-      (where === 'app'
-        ? localStorage.getItem(${JSON.stringify(INTRO_SEASON_KEY)}) !== ${JSON.stringify(MONTH_SEASONS)}[new Date().getMonth()]
-        : localStorage.getItem(${JSON.stringify(INTRO_SEEN_KEY)}) !== '1')
-    if (due) {
-      root.dataset.intro = 'pending'
-      setTimeout(() => root.dataset.intro === 'pending' && delete root.dataset.intro, ${INTRO_PENDING_TIMEOUT})
-    }
-  } catch {}
-  const theme = () => root.dataset.theme ?? stored.theme
-  const apply = () =>
-    root.classList.toggle('dark', root.dataset.intro !== undefined || theme() === 'dark' || (theme() !== 'light' && dark.matches))
-  apply()
-  dark.addEventListener('change', apply)
-  new MutationObserver(apply).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-intro'] })
-})()`
 
 // The organization `/` and old links open: the session's active one, which getAppSession
 // keeps valid. Null for a user without an organization.
