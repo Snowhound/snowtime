@@ -27,7 +27,7 @@ import { passkeysQuery } from '~/lib/passkeys'
 import { m } from '~/paraglide/messages.js'
 import type { SignInMethod } from '~/server/auth/auth.functions'
 
-type SocialProvider = 'google' | 'github' | 'microsoft'
+type SocialProvider = Exclude<SignInMethod, 'password' | 'passkey'>
 
 const PROVIDERS: { id: SocialProvider; name: string; Icon: Component<{ class?: string }> }[] = [
   { id: 'google', name: 'Google', Icon: GoogleIcon },

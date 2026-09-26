@@ -3,9 +3,10 @@
 // milliseconds. Pure: Intl supplies the zone offsets, so tests need no database.
 
 import { MAX_ENTRY_MS } from '~/server/entries/entries.schemas'
+import type { WeekStart } from '~/server/settings/settings.schemas'
 
 export type IsoDate = string
-export type WeekStart = 'mon' | 'sun'
+export type { WeekStart }
 
 const DAY = 86_400_000
 

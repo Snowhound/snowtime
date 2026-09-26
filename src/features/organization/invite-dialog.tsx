@@ -40,11 +40,7 @@ import { type Invitation, type InviteInput, invitationLink, isExpired } from './
 import { type OrgRole, ROLE_LABELS } from './roles'
 
 // The link to show, or null while the server creates it.
-export interface CreatedInvitation {
-  id: string
-  email: string
-  expiresAt: Date
-}
+export type CreatedInvitation = Pick<Invitation, 'id' | 'email' | 'expiresAt'>
 
 export type InviteDialogState =
   | { kind: 'form' }

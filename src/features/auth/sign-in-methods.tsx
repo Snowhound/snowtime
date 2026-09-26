@@ -26,7 +26,7 @@ import { getDevUsers } from '~/server/auth/auth.functions'
 import type { SignInMethod } from '~/server/auth/auth.functions'
 import { SignInForm } from '~/server/auth/auth.schemas'
 
-type SocialProvider = 'google' | 'github' | 'microsoft'
+type SocialProvider = Exclude<SignInMethod, 'password' | 'passkey'>
 
 const PROVIDERS: { id: SocialProvider; name: string; label: () => string; Icon: Component }[] = [
   { id: 'google', name: 'Google', label: m.sign_in_google, Icon: GoogleIcon },

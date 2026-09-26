@@ -24,6 +24,7 @@ export const TimeZone = v.pipe(
 )
 
 export const WeekStart = v.picklist(['mon', 'sun'])
+export type WeekStart = v.InferOutput<typeof WeekStart>
 
 // UI languages; the first is the default (docs/architecture.md, "Internationalization").
 export const LOCALES = ['en', 'et'] as const
