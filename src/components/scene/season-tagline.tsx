@@ -1,17 +1,23 @@
-// The season's tagline, its first two intro lines, two-toned like the intro: the first line in
-// the season's headline color (darkened on light pages), the second in its second line's
-// (src/styles.css, `season-tagline`).
+// The season's tagline, the first two lines of the day's intro set, or a period's on its last
+// days (`taglineLines`), two-toned like the intro: the first line in the season's headline
+// color (darkened on light pages), the second in its second line's (src/styles.css,
+// `season-tagline`).
 import type { Season } from '~/lib/scene/scene'
-import { SEASON_COPY } from '~/lib/scene/seasons'
+import { SEASON_COPY, taglineLines } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 
 export function SeasonTagline(props: {
   season: Season
+  // The user's zone, for the dated and period taglines; without it, the tagline stays seasonal.
+  timeZone?: string
   class?: string
   ref?: (el: HTMLParagraphElement) => void
 }) {
   function copy() {
     return SEASON_COPY[props.season]
+  }
+  function lines() {
+    return taglineLines(props.season, { timeZone: props.timeZone })
   }
   return (
     <p
@@ -23,8 +29,7 @@ export function SeasonTagline(props: {
         '--tagline-sub': copy().colors.sub,
       }}
     >
-      <span class="tagline-1">{copy().lines[0]()}</span>{' '}
-      <span class="tagline-2">{copy().lines[1]()}</span>
+      <span class="tagline-1">{lines()[0]()}</span> <span class="tagline-2">{lines()[1]()}</span>
     </p>
   )
 }

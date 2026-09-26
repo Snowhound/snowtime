@@ -9,7 +9,7 @@
 // (`page-tagline`), so it doesn't show under the title and then move; with `centerOn`, which
 // CSS can't follow, it is hidden until then.
 import { createEffect, on, onCleanup, onMount } from 'solid-js'
-import { useSeason } from '~/lib/scene/seasons'
+import { useSeason, useTimeZone } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 import { SeasonTagline } from './scene/season-tagline'
 
@@ -17,6 +17,7 @@ const GAP = 24
 
 export function PageTitle(props: { title: string; centerOn?: () => HTMLElement | undefined }) {
   const season = useSeason()
+  const timeZone = useTimeZone()
   let row!: HTMLDivElement
   let title!: HTMLHeadingElement
   let tagline!: HTMLParagraphElement
@@ -78,6 +79,7 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
       <SeasonTagline
         ref={(el) => (tagline = el)}
         season={season()}
+        timeZone={timeZone()}
         class={cn(
           'page-tagline min-w-0 basis-full text-sm font-medium',
           props.centerOn && 'page-tagline-deferred',

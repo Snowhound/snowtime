@@ -885,7 +885,7 @@ to at least 5:1 on the page, tint, and `muted` colors, and the second line is `f
 Winter's headline is near-white, so in dark mode its tagline barely shows two tones, as in the
 intro.
 
-| Season | Lines 1 to 3 (shown)                                                                                   | Alternates (lines 1 and 2; not shown yet)                                                    |
+| Season | Lines 1 to 3                                                                                           | Alternates (lines 1 and 2)                                                                   |
 | ------ | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
 | Winter | Winter is coming. / So is the end of the month. / Before the snow gets deeper, fill in your timesheet. | None                                                                                         |
 | Spring | The snow is melting. / So is your memory of last week. / Before it's gone, fill in your timesheet.     | Everything's growing. / So are your unlogged hours.                                          |
@@ -893,9 +893,10 @@ intro.
 | Autumn | The leaves are falling. / So are your unlogged hours. / Before the last one lands, fill in your timesheet. | The nights are drawing in. / So is the deadline.                                              |
 
 `seasons.PERIODS` adds taglines for a timesheet period's last days, whatever the season: "It's
-Friday. So is the deadline." and "The month is almost out. Your hours shouldn't be." The
-alternates and period lines are for the app (task 054); the prototypes don't show
-them.
+Friday. So is the deadline." and "The month is almost out. Your hours shouldn't be." The app
+rotates the alternates in and shows the period lines (`docs/architecture.md`, "Tagline"); the
+prototypes show each season's first set only. The app's copy, with more sets per season and sets
+for dates, is in `src/lib/scene/seasons.ts`.
 
 Simulated with fictional rules: the password `wrong` fails sign-in, `taken@example.com` is
 already registered, and the short name `snowhound` is taken. Provider, passkey, and email steps

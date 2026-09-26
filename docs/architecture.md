@@ -539,6 +539,20 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
 - Tagline (`src/lib/scene/seasons.ts`, `src/components/page-title.tsx`): the seasonal copy is
   Paraglide messages. Each signed-in page's title row places the tagline in the browser, from
   its measured size, so it moves under the title when it doesn't fit.
+  - A season's sets of lines take turns, one per UTC day, so the tagline doesn't wear out and
+    the intro and the tagline show the same set. The day is UTC's so the server and the
+    browser pick the same set without knowing the user's zone; the set changes at 02:00 or
+    03:00 in Tallinn.
+  - Signed in, the calendar adds sets, by the date in the user's zone from their settings,
+    which the server and the browser both have. A date range's set joins the season's in
+    the turn: the holidays in July, school in September, and the elves from 1 to 19
+    December. A date's set replaces the tagline, but not the intro: New Year, leap day, the
+    Mondays after the EU's clock changes, Midsummer, Halloween, St Martin's Day, and Santa.
+    A set can be in one language only, such as St Martin's Day in Estonian, where it's a
+    custom. Several sets on one date take turns.
+  - Otherwise, on a timesheet period's last days, a period tagline replaces the season's:
+    the month's last three days, else Friday, whatever the week start.
+  - The sign-in page has no zone, so it shows only the season's sets.
 - Intro (`src/lib/scene/intro.ts`, `src/components/scene/intro.tsx`): module-level signals hold its state,
   so the frames, the scene layer, and the Replay buttons share one player. The page under it
   stays mounted, hidden and `inert`. While it plays, `<html data-intro>` holds the page dark:

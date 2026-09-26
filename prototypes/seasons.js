@@ -1,6 +1,6 @@
 // Seasonal copy (task 031): the intro's three lines per season, whose first two are the tagline on
-// every page, plus alternates and timesheet-period lines that the app may rotate in later, and the
-// intro's text colors.
+// every page, plus alternates and timesheet-period lines that the app rotates in, and the intro's
+// text colors.
 // `titleLight` is the headline's hue darkened for the tagline on light pages (at least 5:1 on the
 // page, tint, and muted colors). The prototypes show each season's `lines` only. Load before
 // scene.js, intro.js, and app-frame.js.

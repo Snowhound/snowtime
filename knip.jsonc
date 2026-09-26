@@ -9,7 +9,5 @@
   "ignoreIssues": {
     // The Solid-UI copies keep the registry's exports.
     "src/components/ui/**": ["exports", "types"],
-    // PERIODS waits for task 054.
-    "src/lib/scene/seasons.ts": ["exports"],
   },
 }

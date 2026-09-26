@@ -6,7 +6,7 @@ import { SceneLayer } from '~/components/scene/scene-layer'
 import { sessionQuery } from '~/lib/queries/session'
 import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/scene/intro'
 import { SCENE_DEFAULTS, currentSeason, sceneAttributes } from '~/lib/scene/scene'
-import { SeasonProvider } from '~/lib/scene/seasons'
+import { SeasonProvider, TimeZoneProvider } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { AppSession } from '~/server/auth/auth.functions'
@@ -39,7 +39,10 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
   // The intro plays on the first page opened in a calendar season it hasn't played in.
   onMount(() => {
     if (introDue('app', scene().sceneIntro)) {
-      playIntro({ season: currentSeason(scene().sceneSeason) })
+      playIntro({
+        season: currentSeason(scene().sceneSeason),
+        timeZone: session.data?.settings?.timeZone,
+      })
     } else releaseIntroPending()
   })
 
@@ -59,10 +62,12 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
       <IntroPage class="flex flex-1 flex-col">
         <AppHeader organizationId={props.organizationId} />
         <SeasonProvider value={() => currentSeason(scene().sceneSeason)}>
-          <main class={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-8', !wide() && 'max-w-6xl')}>
-            <PasskeyPrompt signedInAt={props.session.signedInAt} />
-            <InAppFrame.Provider value={organizationId}>{props.children}</InAppFrame.Provider>
-          </main>
+          <TimeZoneProvider value={() => session.data?.settings?.timeZone}>
+            <main class={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-8', !wide() && 'max-w-6xl')}>
+              <PasskeyPrompt signedInAt={props.session.signedInAt} />
+              <InAppFrame.Provider value={organizationId}>{props.children}</InAppFrame.Provider>
+            </main>
+          </TimeZoneProvider>
         </SeasonProvider>
       </IntroPage>
       <Intro />
