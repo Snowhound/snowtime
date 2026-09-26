@@ -1,8 +1,6 @@
 // The day cards of the Bar and Focus layouts (prototypes/timer.html): a card per day,
 // newest first, with the day's total, and per entry its fields (entry-fields.tsx) and the
-// continue and delete actions. Rows are one line from 768 px and three below it. Focus
-// pads them less, and compact rows (the compactRows setting) least, with smaller action
-// buttons. The parts the Table layout shares are exported.
+// continue and delete actions. The parts the Table layout shares are exported.
 import CheckIcon from 'lucide-solid/icons/check'
 import ClockIcon from 'lucide-solid/icons/clock'
 import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'

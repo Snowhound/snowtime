@@ -2,8 +2,8 @@
 // Background switch with Strength and Surfaces under it, Weather, and optionally Intro. The
 // Appearance popover, Settings > Preferences, and the sign-in page's Scenery menu lay them out
 // the same way; `hints` picks how much each row explains, and Settings adds "Replay it" to the
-// Intro hint. Weather always has a hint: the
-// season's effect, or why it's off (reduced motion, no WebGL 2, or an effect that didn't start).
+// Intro hint. Weather always has a hint: the season's effect, or why it's off (reduced motion,
+// no WebGL 2, or an effect that didn't start).
 import type { JSX } from 'solid-js'
 import { For, Show, createUniqueId } from 'solid-js'
 import { Label } from '~/components/ui/label'

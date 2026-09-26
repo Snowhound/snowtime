@@ -1,9 +1,7 @@
 // Inline editing of a stopped entry (prototypes/timer.html): the entry rows' description,
 // project, date, start, and end are fields that read as text until hovered or focused.
-// Their popovers and menus mount only while the row is `active` (row-activation.ts); until
-// then, their triggers are plain buttons that look the same. Each field saves on its own,
-// with only what changed. The mutation applies the change at
-// once and rolls it back on error (queries.ts); the error then shows under the row.
+// Their popovers and menus mount only while the row is `active` (row-activation.ts). Each
+// field saves on its own, with only what changed; an error shows under the row.
 import CalendarIcon from 'lucide-solid/icons/calendar'
 import { For, Show, createEffect, createMemo, createSignal, createUniqueId, on } from 'solid-js'
 import { DatePicker } from '~/components/date-time/date-picker'

@@ -1,8 +1,6 @@
-// The header's Appearance popover (prototypes/app-frame.js), from the mountain button left of the
-// avatar on every page: the theme, the app icon with Change, and the scenery, compact, with
-// hints only where the label doesn't say enough, so it fits a 390 × 844 screen, and All settings
-// with Replay intro. Each change
-// saves right away through useUpdateSettings.
+// The header's Appearance popover (prototypes/app-frame.js): the theme, the app icon, and the
+// scenery, with hints only where the label doesn't say enough, so it fits a 390 × 844 screen.
+// Each change saves right away through useUpdateSettings.
 import { Link } from '@tanstack/solid-router'
 import MountainSnowIcon from 'lucide-solid/icons/mountain-snow'
 import { Show, createSignal } from 'solid-js'
