@@ -1,7 +1,7 @@
 import { render, screen } from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
-import { ProviderButtons } from './sign-in-methods'
+import { ProviderButtons, providerErrorMessage } from './sign-in-methods'
 
 // Server functions and Better Auth stay out of the DOM tests.
 vi.mock('~/server/auth/auth.functions', () => ({ getDevUsers: vi.fn(), getAppSession: vi.fn() }))
@@ -65,4 +65,13 @@ describe('ProviderButtons', () => {
     expect(onError).toHaveBeenCalledWith("Sign-in didn't finish. Try again or use another method.")
     expect(screen.getByRole('button', { name: 'Continue with Microsoft' })).toBeEnabled()
   })
+})
+
+test('an unverified provider address gets its own message', () => {
+  for (const code of ['EMAIL_UNVERIFIED', 'email_not_verified']) {
+    expect(providerErrorMessage(code)).toMatch(/isn't verified by its provider/)
+  }
+  expect(providerErrorMessage('invalid_code')).toBe(
+    "Sign-in didn't finish. Try again or use another method.",
+  )
 })

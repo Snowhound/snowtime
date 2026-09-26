@@ -53,6 +53,15 @@ function Busy(props: { label: string }) {
   )
 }
 
+// The message for the `error` search parameter a failed provider sign-in comes back with. An
+// unverified address is refused at sign-up (refuseUnverifiedSignUp), or by Better Auth when it
+// won't link one to an existing account.
+export function providerErrorMessage(code: string) {
+  return code === 'EMAIL_UNVERIFIED' || code === 'email_not_verified'
+    ? m.sign_in_error_unverified()
+    : m.sign_in_error_failed()
+}
+
 // The provider buttons. A provider sign-in leaves the page, and Better Auth brings the user
 // back to `callbackURL`, or to `errorCallbackURL` with an `error` search parameter.
 export function ProviderButtons(props: {

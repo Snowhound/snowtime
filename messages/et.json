@@ -94,6 +94,7 @@
   "sign_in_submitting": "Login sisse…",
   "sign_in_error_credentials": "E-post või parool on vale.",
   "sign_in_error_failed": "Sisselogimine jäi pooleli. Proovi uuesti või kasuta muud viisi.",
+  "sign_in_error_unverified": "Selle konto e-posti aadressi pole teenusepakkuja kinnitanud. Kinnita see seal või kasuta muud sisselogimisviisi.",
   "invitation_team": "Meeskond {team}",
   "invitation_title": "Liitu: {organization}",
   "invitation_description": "{inviter} saatis aadressile {email} kutse liituda {as}. Jätka kontoga, mis seda aadressi kasutab.",

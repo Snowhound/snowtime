@@ -13,7 +13,7 @@ import { limits, rateLimits } from '../limits.server'
 import { createRateLimitStore } from '../rate-limit.server'
 import { stopTimerOfRemovedMember } from '../timer/timer.server'
 import { databaseHooks, organizationHooks } from './name-checks.server'
-import { passwordEnabled, socialProviders } from './sign-in.server'
+import { passwordEnabled, refuseUnverifiedSignUp, socialProviders } from './sign-in.server'
 
 // Passkeys are bound to the app's domain, so each environment's relying party follows its
 // BETTER_AUTH_URL; the plugin would otherwise default to localhost.
@@ -50,7 +50,9 @@ export const auth = betterAuth({
     enabled: passwordEnabled(env),
   },
   socialProviders: socialProviders(env),
-  databaseHooks,
+  databaseHooks: {
+    user: { ...databaseHooks.user, create: { before: refuseUnverifiedSignUp } },
+  },
   hooks: {
     // A member removed from an organization, or leaving it, loses access to its entries, so
     // their running timer there stops now (docs/architecture.md, "Tenancy"). The plugin's

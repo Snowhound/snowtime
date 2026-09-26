@@ -94,6 +94,7 @@
   "sign_in_submitting": "Signing in…",
   "sign_in_error_credentials": "Email or password is incorrect.",
   "sign_in_error_failed": "Sign-in didn't finish. Try again or use another method.",
+  "sign_in_error_unverified": "This account's email address isn't verified by its provider. Verify it there, or use another sign-in method.",
   "invitation_team": "Team {team}",
   "invitation_title": "Join {organization}",
   "invitation_description": "{inviter} invited {email} to join {as}. Continue with the account that uses this address.",

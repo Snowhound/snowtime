@@ -7,14 +7,19 @@ import { sessionQuery } from '~/lib/queries/session'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { safeRedirect } from '~/lib/redirect'
 import { m } from '~/paraglide/messages.js'
-import { PasskeyButton, PasswordSignIn, ProviderButtons } from './sign-in-methods'
+import {
+  PasskeyButton,
+  PasswordSignIn,
+  ProviderButtons,
+  providerErrorMessage,
+} from './sign-in-methods'
 
 export function SignInPage(props: { redirect?: string; initialError?: string }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const methods = useQuery(() => signInMethodsQuery)
   const [error, setError] = createSignal<string | null>(
-    props.initialError ? m.sign_in_error_failed() : null,
+    props.initialError ? providerErrorMessage(props.initialError) : null,
   )
   function target() {
     return safeRedirect(props.redirect)

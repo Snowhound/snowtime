@@ -14,7 +14,7 @@ import { sessionQuery } from '~/lib/queries/session'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { m } from '~/paraglide/messages.js'
 import { invitationQuery } from './queries'
-import { PasswordSignIn, ProviderButtons } from './sign-in-methods'
+import { PasswordSignIn, ProviderButtons, providerErrorMessage } from './sign-in-methods'
 
 const AS_ROLE = {
   member: m.invitation_as_member,
@@ -30,7 +30,7 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
   const session = useQuery(() => sessionQuery)
   const methods = useQuery(() => signInMethodsQuery)
   const [error, setError] = createSignal<string | null>(
-    props.initialError ? m.sign_in_error_failed() : null,
+    props.initialError ? providerErrorMessage(props.initialError) : null,
   )
   const [accepting, setAccepting] = createSignal(false)
 

@@ -1,5 +1,7 @@
 // Which sign-in methods an environment offers. Pure, so better-auth.server.ts and getSignInMethods
-// build from the same rule and cannot disagree about what is configured.
+// build from the same rule and cannot disagree about what is configured. Also which provider
+// addresses count as verified (docs/architecture.md, "Sign-in methods").
+import { APIError } from 'better-auth/api'
 
 export type SignInMethod = 'google' | 'github' | 'microsoft' | 'password' | 'passkey'
 
@@ -33,6 +35,9 @@ export function socialProviders(config: SignInConfig) {
           clientSecret: config.MICROSOFT_CLIENT_SECRET,
           // Unset means Better Auth's default, `common`: any work, school or personal account.
           ...(config.MICROSOFT_TENANT_ID && { tenantId: config.MICROSOFT_TENANT_ID }),
+          mapProfileToUser: (profile: MicrosoftClaims) => ({
+            emailVerified: microsoftEmailVerified(profile),
+          }),
         },
       }),
   }
@@ -55,4 +60,59 @@ export function signInMethods(config: SignInConfig): SignInMethod[] {
   if (passwordEnabled(config)) methods.push('password')
   methods.push('passkey')
   return methods
+}
+
+// Every personal Microsoft account signs in through this tenant, which Microsoft runs.
+const MICROSOFT_CONSUMER_TENANT = '9188040d-6c67-4c5b-b112-36a304b66dad'
+
+// The ID token claims that tell whether Microsoft vouches for the address.
+export interface MicrosoftClaims {
+  email?: string
+  tid?: string
+  email_verified?: boolean
+  verified_primary_email?: string[]
+  verified_secondary_email?: string[]
+  // The tenant has verified the address's domain. An optional claim, which the Entra app
+  // registration must add to the ID token (docs/deployment.md).
+  xms_edov?: boolean
+}
+
+// Better Auth trusts only the email_verified and verified_*_email claims, which Microsoft
+// sends only when the app registration asks for them. A personal account's address is one
+// Microsoft verified, and xms_edov says the tenant owns the domain. Any other work address is
+// one the tenant typed in, so it stays unverified.
+export function microsoftEmailVerified(claims: MicrosoftClaims): boolean {
+  const listed =
+    !!claims.email &&
+    [...(claims.verified_primary_email ?? []), ...(claims.verified_secondary_email ?? [])].includes(
+      claims.email,
+    )
+  return (
+    claims.email_verified === true ||
+    listed ||
+    claims.tid === MICROSOFT_CONSUMER_TENANT ||
+    claims.xms_edov === true
+  )
+}
+
+// Better Auth's password sign-up, which only development offers (passwordEnabled).
+const PASSWORD_SIGN_UP = '/sign-up/email'
+
+export const signUpRefusals = {
+  EMAIL_UNVERIFIED: "The sign-in provider hasn't verified this account's email address.",
+} as const
+
+// A databaseHooks.user.create.before hook. A provider sign-up needs a verified address: an
+// unverified user would hold the address, and Better Auth refuses to link a later, verified
+// sign-in to it, so the address's owner could never sign in. Better Auth sends the code to
+// the sign-in page's `error` search parameter.
+export async function refuseUnverifiedSignUp(
+  user: { emailVerified?: boolean | null },
+  ctx?: { path?: string } | null,
+) {
+  if (user.emailVerified || ctx?.path === PASSWORD_SIGN_UP) return
+  throw new APIError('FORBIDDEN', {
+    code: 'EMAIL_UNVERIFIED',
+    message: signUpRefusals.EMAIL_UNVERIFIED,
+  })
 }
