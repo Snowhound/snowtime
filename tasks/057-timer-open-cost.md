@@ -108,7 +108,7 @@ layout as script:
 
 ## Memoized row values
 
-`6e519d6` memoizes `date`, `values`, and `read` in `createEntryEditor`, and commits read the
+`562b7e0` memoizes `date`, `values`, and `read` in `createEntryEditor`, and commits read the
 times again so their future check is current. In the profile the rows' calendar time falls
 from 9.0 to 3.3 ms at 1×. Measured on 2026-09-27 as above, alternating the build before and
 after on the same database, 2 × 3 runs per build at 1× and at 4×:
@@ -121,3 +121,26 @@ after on the same database, 2 × 3 runs per build at 1× and at 4×:
 The machine was noisier than for the profile above (the build before measured 87–97 there),
 so the rows compare only with each other. The Kobalte controls, icons, and date and time
 inputs are still there; cheaper resting controls in the rows come next.
+
+## Resting controls
+
+`4b51dae` renders a resting row's buttons (project, date, clock, continue, more) as native
+buttons with `ui/button.tsx`'s classes (`PlainButton`), and the description as a native
+input. The row still has the same inputs and buttons in the same order, so row activation
+swaps in the Kobalte triggers as before. Measured on 2026-09-27, alternating the builds on
+the same database, 2 × 3 runs each:
+
+| Build                | Longest task, 1× | Net, 1× | Longest task, 4× | Net, 4× |
+| -------------------- | ---------------- | ------- | ---------------- | ------- |
+| Before this task     | 73–83            | 93–106  | 312–445          | 354–479 |
+| Memoized row values  | 64–70            | 87–99   |                  |         |
+| And resting controls | 43–48            | 59–68   | 180–341          | 243–389 |
+| Same, Table layout   | 43–48            | 59–66   | 189–224          | 230–271 |
+
+- The Table layout row is 3 runs, without an alternating run of the build before.
+- In both builds, the rows look the same at rest, on hover, and after a tap (identical
+  screenshots). The project and more menus and the date and clock popovers open from a
+  pointer, the keyboard, and a tap, and Escape restores a typed description.
+- The timer is still over 50 ms at 1×. What remains per row is mostly the icons, the time
+  inputs, and the day cards themselves. Mounting only the days near the viewport would
+  cover the rest.
