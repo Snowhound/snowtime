@@ -18,3 +18,10 @@ any local cleanup.
       decisions they change updated in `docs/architecture.md`
 
 ## Findings
+
+Candidates from earlier subtasks:
+
+- `team-dialog.tsx` and `project-dialog.tsx` repeat the dialog shell that keeps the last
+  target while it animates closed, and the name field with its uniqueness check (subtask
+  04, found by `jscpd`). A shared component would be a new abstraction, so it needs
+  agreement first.
