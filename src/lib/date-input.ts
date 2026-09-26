@@ -1,4 +1,4 @@
-// Typed dates and times for DatePicker and TimeInput (src/components/date-picker/): the text
+// Typed dates and times for DatePicker and TimeInput (src/components/date-time/): the text
 // they show in the UI language, and what they read back from it. Values stay ISO dates
 // ('2026-09-25') and 'HH:MM' times; only the text is localized. Pure, with the locale passed in.
 import { type IsoDate, type WeekStart, addDays, startOfWeek } from './calendar'
