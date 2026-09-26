@@ -3,6 +3,7 @@ import { ProjectsPage } from '~/features/projects/projects-page'
 import { ProjectsPending } from '~/features/projects/projects-pending'
 import { monthReportQuery } from '~/features/projects/queries'
 import { projectsQuery } from '~/lib/projects'
+import { isAdmin } from '~/lib/session'
 import { teamsQuery } from '~/lib/teams'
 import { m } from '~/paraglide/messages.js'
 
@@ -11,7 +12,7 @@ export const Route = createFileRoute('/$org/projects')({
   loader: async ({ context }) => {
     const { queryClient, session, organization } = context
     const organizationId = organization.id
-    const admin = organization.role === 'owner' || organization.role === 'admin'
+    const admin = isAdmin(organization.role)
     const zone = session.settings?.timeZone
     await Promise.all([
       queryClient.ensureQueryData(projectsQuery(organizationId)),

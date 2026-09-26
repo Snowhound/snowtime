@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/solid-query'
 import { Show } from 'solid-js'
-import { organizationIn, sessionQuery } from '~/lib/session'
+import { isAdmin, organizationIn, sessionQuery } from '~/lib/session'
 import type { ReportSearch } from './filters'
 import { ReportsView } from './reports-view'
 
@@ -21,7 +21,7 @@ export function ReportsPage(props: { organizationId: string; search: ReportSearc
                 organizationId={organizationId}
                 organizationSlug={organization()?.slug ?? 'snowtime'}
                 userId={data().user.id}
-                admin={organization()?.role === 'owner' || organization()?.role === 'admin'}
+                admin={isAdmin(organization()?.role)}
                 zone={data().settings!.timeZone}
                 weekStart={data().settings!.weekStart}
                 search={props.search}

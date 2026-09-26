@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/solid-query'
 import { Show } from 'solid-js'
-import { organizationIn, sessionQuery } from '~/lib/session'
+import { isAdmin, organizationIn, sessionQuery } from '~/lib/session'
 import { ProjectsView } from './projects-view'
 
 // The view reads the month in the user's zone, from the settings the app frame creates on
@@ -29,8 +29,4 @@ export function ProjectsPage(props: { organizationId: string }) {
       )}
     </Show>
   )
-}
-
-function isAdmin(role: string | undefined) {
-  return role === 'owner' || role === 'admin'
 }

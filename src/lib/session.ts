@@ -116,3 +116,7 @@ export function organizationOfPath(session: AppSession, slug: string, href: stri
 export function organizationIn(session: AppSession, organizationId: string) {
   return session.organizations.find((o) => o.id === organizationId)
 }
+
+export function isAdmin(role: string | undefined) {
+  return role === 'owner' || role === 'admin'
+}

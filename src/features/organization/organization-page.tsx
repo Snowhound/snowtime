@@ -3,7 +3,7 @@ import LockIcon from 'lucide-solid/icons/lock'
 import { Show } from 'solid-js'
 import { PageTitle } from '~/components/page-title'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { organizationIn, sessionQuery } from '~/lib/session'
+import { isAdmin, organizationIn, sessionQuery } from '~/lib/session'
 import { m } from '~/paraglide/messages.js'
 import { OrganizationView } from './organization-view'
 import type { OrganizationTab } from './search'
@@ -42,10 +42,6 @@ export function OrganizationPage(props: { organizationId: string; tab: Organizat
       )}
     </Show>
   )
-}
-
-function isAdmin(role: string | undefined) {
-  return role === 'owner' || role === 'admin'
 }
 
 function NoAccess(props: { organizationName: string }) {
