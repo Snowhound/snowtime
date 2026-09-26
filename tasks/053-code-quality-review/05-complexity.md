@@ -25,3 +25,5 @@ Candidates from earlier subtasks:
   target while it animates closed, and the name field with its uniqueness check (subtask
   04, found by `jscpd`). A shared component would be a new abstraction, so it needs
   agreement first.
+- `parseOrganizationInput` in `src/server/schemas.ts` has one caller, `scopeMiddleware`, and
+  a test of its own. Inlining it would put the Valibot check in the middleware (subtask 03).

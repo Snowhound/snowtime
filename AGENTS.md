@@ -61,6 +61,12 @@ Edit their source files at the paths above so both agents use the same instructi
   fine as an inline callback, or where a type annotation needs a `const`
   (`const Card: Component<...> = ...`). oxlint's `func-style` checks this; the copied
   Solid-UI components in `src/components/ui/` are exempt so they stay as the registry has them.
+- Comment only where the code is hard to follow without it, and say only what a reader
+  of that code needs: why, a constraint, or a contract the code can't show. Don't restate
+  the next line, and don't describe earlier versions, the mock-up, or the task that added
+  the code; history belongs in git. Keep file headers to what the file is for, citing a
+  prototype or doc only where it helps. If most of a block needs explaining, simplify the
+  code before writing the comment.
 - A lefthook pre-commit hook (`lefthook.yml`, installed by `bun install`) runs
   `oxlint --fix` and `oxfmt` on the staged files; CI checks the whole repository. Disable a
   lint rule inline only with a reason: `// oxlint-disable-next-line rule -- why`.
