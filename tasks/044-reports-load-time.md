@@ -1,6 +1,6 @@
 # 044: Reports load time
 
-Status: in-progress
+Status: done
 
 Opening Reports without cached data is slow on the server. The page waits on about 14
 sequential Turso round trips, against about 6 for the timer, and each round trip is its
@@ -35,7 +35,8 @@ every round trip.
 ## Acceptance criteria
 
 - [ ] Server timings for `/reports` and `/timer` recorded before and after, per server
-      function, on the deployed app
+      function, on the deployed app. Dropped on 2026-09-26: no longer needed, and the
+      task closes without them.
 - [x] The Vercel function region and the Turso primary region confirmed to match
 - [x] The report query starts together with projects, teams and members instead of
       after them. The route asks for the report the URL names (`requestedInput`); a
