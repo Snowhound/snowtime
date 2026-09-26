@@ -8,8 +8,11 @@ subtasks go from mechanical checks to ones that need judgement. Task 052's organ
 in the URL shows the target for the simplicity review: one structural change that removed
 a class of code. Task 045's timer rows show the target for the performance review.
 
-Fix small findings in place. Open a task for any change too big for one commit. Record
-areas checked and found sound in the subtask, so a later review can skip them.
+The review must leave the code no larger or more complex than it found it. Fix small
+findings in place. Ask before any fix that adds a meaningful amount of code, such as a
+new abstraction, helper module, or dependency, and open a task for any change too big for
+one commit. Record areas checked and found sound in the subtask, so a later review can
+skip them.
 
 ## Subtasks
 
@@ -23,4 +26,8 @@ areas checked and found sound in the subtask, so a later review can skip them.
 ## Acceptance criteria
 
 - [ ] Every subtask is done
+- [ ] `src/` has no more lines than at the start, apart from fixes agreed first. The
+      baseline on 2026-09-26 (`4169a08`) is 25,962 lines of `.ts`, `.tsx`, and `.css`,
+      counted without `routeTree.gen.ts` and `src/components/ui/`:
+      `git ls-files src | grep -vE 'routeTree.gen|components/ui/' | grep -E '\.(ts|tsx|css)$' | xargs cat | wc -l`
 - [ ] Rules worth keeping are enforced by oxlint or a script, or recorded in `AGENTS.md`
