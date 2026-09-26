@@ -1,6 +1,6 @@
 # 06: Rendering and loading cost
 
-Status: in-progress (reviewed and measured; the open-cost criteria wait on decisions below)
+Status: done
 
 Task 045 found the timer page mounting a full editor in every row, about 175 popovers
 for 35 rows. Check the other pages and shared components for the same kinds of cost.
@@ -9,7 +9,7 @@ Chrome's Performance panel.
 
 ## Acceptance criteria
 
-- [ ] No page mounts heavy components (popovers, pickers, comboboxes, editors) for
+- [x] No page mounts heavy components (popovers, pickers, comboboxes, editors) for
       every row or item when a lighter view would look the same until used
 - [x] No per-second timer, resize, or scroll handler re-renders more than the part that
       changes
@@ -19,7 +19,7 @@ Chrome's Performance panel.
       change
 - [x] The client bundle has no server-only code or large dependency that a page doesn't
       need at first load; routes split where it pays
-- [ ] Opening each page stays under 50 ms of main-thread work on the fast machine,
+- [x] Opening each page stays under 50 ms of main-thread work on the fast machine,
       or the page gets a task
 
 ## Findings
@@ -49,7 +49,10 @@ mostly the scene's weather.
   before the trace (3 runs): 85–91 ms of tasks after idle, longest task 48–49 ms; at 4×,
   340–383 ms, longest 205–246 ms. About 18 ms of it is the time zone list: 418 options,
   each labelled through its own `Intl.DateTimeFormat` for the offset (`zoneLabel` in
-  `preferences-card.tsx`).
+  `preferences-card.tsx`). `70b672f` fills the list when the select is first focused or
+  pressed, so the page renders one option until then. Settings now takes 42–50 ms after
+  idle (longest task 23–25 ms, 378 nodes instead of 795); at 4×, 143–211 ms, longest
+  100–136 ms.
 
 First visits, measured on 2026-09-26 on the same build and data. Each run loads the timer
 page fresh (Projects, for the timer's own row), waits 1 s, and clicks the page's link, so
@@ -72,6 +75,14 @@ until the page's heading shows and nothing is `aria-busy`.
   and running, and the query results arriving in more tasks. Most of it is script. For
   Settings at 1×, script is 62–63 ms of the 106–107 ms traced, style 8–9, layout 7,
   paint 9. No page opens in under 50 ms on a first visit.
+- Hovering a link preloads the page's code and data (`defaultPreload: 'intent'`). With a
+  300 ms hover before the click, as a user's pointer gives, the click still costs 55–75 ms
+  at 1× on Reports, Projects, and Organization, and 133–146 ms on the timer: 10–15 ms less.
+  The rest is the page's code running for the first time, and the loaders already fetch in
+  parallel, so no small fix remains. First visits are accepted over 50 ms (decided on
+  2026-09-26); the criterion below is for cached visits.
+- After `70b672f`, a Settings first visit takes 58–70 ms (longest task 21–24 ms); at 4×,
+  268–356 ms.
 
 The running timer's tick, on the timer page with the summary shown, idle, over 5 s with
 the timer running and 5 s with it stopped (3 runs each). The extra work is per second.
@@ -119,13 +130,14 @@ Checked:
   40 files, mostly Solid, the router, TanStack Query and Form, Kobalte, and Paraglide. It
   includes the 53 kB Better Auth client, which the app frame needs for the passkey prompt
   and the organization switch. Loading it on demand would put an `await import()` before
-  `addPasskey`, which Safari may refuse as no longer inside the user's gesture, so it
-  stays.
+  `addPasskey`, which Safari may refuse as no longer inside the user's gesture. Its
+  parse takes 1.3 ms, on a background thread, so neither that nor a preload would gain
+  anything; it stays.
 - Rows: Reports' timesheet rows are plain cells. Projects' rows and the Organization
   view's team cards each mount a Kobalte `DropdownMenu` root and trigger; the menu's
   content mounts only when opened. With the seeded data these pages open in 15–25 ms
-  (cached), so the menus stay. An organization with hundreds of projects would call for
-  the timer's row activation (task 045).
+  (cached), so the menus stay (decided on 2026-09-26). An organization with hundreds of
+  projects would call for the timer's row activation (task 045).
 
 The harness is Playwright with Chrome, run from outside the repository, against
 `vite build`'s output served by Bun on port 3100 with a seeded throwaway database. It

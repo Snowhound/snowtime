@@ -1,6 +1,6 @@
 # 053: Code quality review
 
-Status: in-progress (subtasks 1–5 done; 6 waits on decisions about Settings and first visits)
+Status: in-progress (every subtask is done; the rules criterion is open)
 
 Review the repository for style and quality rather than bugs (task 039 covers bugs):
 layout, types, comments, leftovers, needless complexity, and rendering cost. The
@@ -26,9 +26,10 @@ skip them.
 
 ## Acceptance criteria
 
-- [ ] Every subtask is done
-- [ ] `src/` has no more lines than at the start, apart from fixes agreed first. The
+- [x] Every subtask is done
+- [x] `src/` has no more lines than at the start, apart from fixes agreed first. The
       baseline on 2026-09-26 (`4169a08`) is 25,962 lines of `.ts`, `.tsx`, and `.css`,
       counted without `routeTree.gen.ts` and `src/components/ui/`:
-      `git ls-files src | grep -vE 'routeTree.gen|components/ui/' | grep -E '\.(ts|tsx|css)$' | xargs cat | wc -l`
+      `git ls-files src | grep -vE 'routeTree.gen|components/ui/' | grep -E '\.(ts|tsx|css)$' | xargs cat | wc -l`.
+      After subtask 06 it is 25,862.
 - [ ] Rules worth keeping are enforced by oxlint or a script, or recorded in `AGENTS.md`
