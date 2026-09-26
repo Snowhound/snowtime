@@ -20,7 +20,7 @@ import {
 import { fieldError } from '~/lib/form'
 import type { Team } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
-import { Name } from '~/server/auth/auth.schemas'
+import { NAME_MAX_LENGTH, Name } from '~/server/auth/auth.schemas'
 
 export type TeamDialogTarget = { kind: 'new' } | { kind: 'rename'; team: Team }
 
@@ -104,7 +104,7 @@ function TeamForm(props: {
             <TextFieldInput
               id="team-name"
               autocomplete="off"
-              maxLength={100}
+              maxLength={NAME_MAX_LENGTH}
               onBlur={field().handleBlur}
             />
             <TextFieldErrorMessage class="break-words">

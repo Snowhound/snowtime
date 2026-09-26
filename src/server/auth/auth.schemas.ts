@@ -23,13 +23,17 @@ export const SignInForm = v.object({
 })
 export type SignInForm = v.InferOutput<typeof SignInForm>
 
+// The longest name and slug. Better Auth's hooks check them on the server too
+// (name-checks.server.ts), and refuse with codes errorMessage maps to these messages.
+export const NAME_MAX_LENGTH = 100
+export const SLUG_MAX_LENGTH = 48
+
 // Lowercase words joined by single dashes (SLUG_PATTERN). The app's pages live under it
-// (/northwind-studio/timer), so it can't take one of the app's own paths; a Better Auth hook
-// refuses those on the server too.
-const Slug = v.pipe(
+// (/northwind-studio/timer), so it can't take one of the app's own paths.
+export const Slug = v.pipe(
   v.string(),
   v.regex(SLUG_PATTERN, () => m.validation_slug_format()),
-  v.maxLength(48, (issue) => m.validation_too_long({ max: issue.requirement })),
+  v.maxLength(SLUG_MAX_LENGTH, (issue) => m.validation_too_long({ max: issue.requirement })),
   v.check(
     (slug) => !isReservedSlug(slug),
     () => m.validation_slug_reserved(),
@@ -41,7 +45,7 @@ export const Name = v.pipe(
   v.string(),
   v.trim(),
   v.nonEmpty(() => m.validation_name_required()),
-  v.maxLength(100, (issue) => m.validation_too_long({ max: issue.requirement })),
+  v.maxLength(NAME_MAX_LENGTH, (issue) => m.validation_too_long({ max: issue.requirement })),
 )
 
 export const CreateOrganizationForm = v.object({ name: Name, slug: Slug })
@@ -69,6 +73,6 @@ export function slugify(name: string) {
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 48)
+    .slice(0, SLUG_MAX_LENGTH)
     .replace(/-+$/, '')
 }

@@ -1,4 +1,5 @@
 import { m } from '~/paraglide/messages.js'
+import { NAME_MAX_LENGTH, SLUG_MAX_LENGTH } from '~/server/auth/auth.schemas'
 import { AppError, type AppErrorKey } from '~/server/errors'
 
 // One message per AppError key. Typed as a full record, so a key added to the catalog in
@@ -64,6 +65,11 @@ const authErrorText: Record<string, () => string> = {
   TEAM_NOT_FOUND: m.error_team_not_found,
   USER_IS_NOT_A_MEMBER_OF_THE_TEAM: m.error_team_member_not_found,
   INVITATION_NOT_FOUND: m.error_invitation_not_found,
+  // The name checks in src/server/auth/name-checks.server.ts, with the forms' messages.
+  NAME_REQUIRED: m.validation_name_required,
+  NAME_TOO_LONG: () => m.validation_too_long({ max: NAME_MAX_LENGTH }),
+  SLUG_FORMAT: m.validation_slug_format,
+  SLUG_TOO_LONG: () => m.validation_too_long({ max: SLUG_MAX_LENGTH }),
   SLUG_RESERVED: m.validation_slug_reserved,
 }
 

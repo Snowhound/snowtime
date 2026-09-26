@@ -264,6 +264,20 @@ the database, and the Turso quotas in `docs/hosting.md`, without bound. The valu
 - A refused write throws `AppError` with code `LIMIT_REACHED`. Two concurrent writes can
   both pass a count and exceed a cap by one; a cap is a bound, not an exact number.
 
+Names written through the Better Auth client have their length checked on the server too,
+since the forms' schemas run only in the browser there. `src/server/auth/name-checks.server.ts`
+runs the forms' own `Name` and `Slug` schemas (`auth.schemas.ts`), so both sides share one
+limit, in two Better Auth hooks:
+
+- The organization plugin's `organizationHooks` check the organization's name and slug on
+  create, the name on update, and a team's name on create and rename. The slug's format
+  matters beyond the URL: the report export puts it in file names.
+- The `user.update.before` database hook checks the profile's name. Sign-up isn't
+  checked, since the OAuth provider supplies the name.
+
+A refusal is an `APIError` with a code such as `NAME_TOO_LONG`, which `errorMessage` in
+`src/lib/errors.ts` maps to the form's own message.
+
 Rate limits bound how fast one user or address can write, which the caps don't. The rates
 are `rateLimits` in `src/server/limits.server.ts`.
 

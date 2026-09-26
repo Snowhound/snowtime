@@ -15,6 +15,7 @@ import {
   TextFieldLabel,
 } from '~/components/ui/text-field'
 import { authClient } from '~/lib/auth-client'
+import { errorMessage } from '~/lib/errors'
 import { fieldError } from '~/lib/form'
 import { sessionQuery } from '~/lib/queries/session'
 import { initials } from '~/lib/utils'
@@ -41,7 +42,7 @@ export function ProfileCard(props: {
       const name = value.name.trim()
       const { error } = await authClient.updateUser({ name })
       if (error) {
-        setStatus(m.error_unexpected())
+        setStatus(errorMessage(error))
         return
       }
       // The member lists name the user too, and would otherwise wait out their stale time.

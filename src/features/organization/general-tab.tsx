@@ -17,7 +17,7 @@ import {
 } from '~/components/ui/text-field'
 import { fieldError } from '~/lib/form'
 import { m } from '~/paraglide/messages.js'
-import { Name } from '~/server/auth/auth.schemas'
+import { NAME_MAX_LENGTH, Name } from '~/server/auth/auth.schemas'
 
 export function GeneralTab(props: {
   name: string
@@ -76,7 +76,7 @@ export function GeneralTab(props: {
                 <TextFieldInput
                   id="org-name"
                   autocomplete="organization"
-                  maxLength={100}
+                  maxLength={NAME_MAX_LENGTH}
                   onBlur={field().handleBlur}
                 />
                 <TextFieldErrorMessage>

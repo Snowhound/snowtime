@@ -27,7 +27,7 @@ open.
       default).
 - [x] Server functions that write (entries, projects, teams) have a per-user limit.
       Better Auth's limiter covers only `/api/auth/*`.
-- [ ] Names written through the Better Auth client (organization, team, and the user's
+- [x] Names written through the Better Auth client (organization, team, and the user's
       own name from the profile) are length-checked on the server too, for example in
       the plugin's `organizationHooks` and a `user.update.before` database hook. The
       form schemas run only in the browser there; server functions already check
