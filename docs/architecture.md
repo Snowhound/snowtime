@@ -672,10 +672,10 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
   cache a mutation touches before the server answers, restores them on error, and
   refetches either way; the view then shows the error's message. The timer
   (`src/features/timer/queries.ts`) sets the pattern: starting a timer updates both the running timer
-  and the entry lists. A write the server often refuses waits briefly first: deleting a
-  project, refused when it has time entries, shows the row as pending for up to 500 ms
-  and removes it on success or after that. A refusal within that time never makes the
-  row vanish and come back.
+  and the entry lists. A view checks for a refusal it can predict before it writes:
+  `listProjects` says which projects have live time entries, so deleting one of those
+  offers archiving without a call. A delete the server refuses anyway, because an entry
+  was logged after the list loaded, brings the row back and shows the error.
   - An optimistic change goes only into the caches it belongs in: a new entry joins the
     lists of its organization, user, and days, and a stopped timer ends where the server
     will end it, at most 24 hours after its start.

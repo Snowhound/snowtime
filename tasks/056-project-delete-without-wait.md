@@ -1,6 +1,6 @@
 # 056: Project delete without the wait
 
-Status: todo
+Status: done
 
 Deleting a project the server refuses, because it has time entries, waits up to 500 ms before
 the row goes: `optimistic`'s `delay`, the `deleteProjectKey` mutation state, and the rows'
@@ -15,11 +15,11 @@ logged after the list loaded still makes the server refuse; the view shows that 
 
 ## Acceptance criteria
 
-- [ ] `listProjects` returns `hasEntries`, and a test covers a project with live entries,
+- [x] `listProjects` returns `hasEntries`, and a test covers a project with live entries,
       with only deleted ones, and with none
-- [ ] Delete on a project with entries opens the has-time dialog at once; the server's
+- [x] Delete on a project with entries opens the has-time dialog at once; the server's
       refusal still shows as an error
-- [ ] The `delay` option in `src/lib/queries/query.ts`, `deleteProjectKey`, and the
+- [x] The `delay` option in `src/lib/queries/query.ts`, `deleteProjectKey`, and the
       Projects rows' pending state are gone
-- [ ] `docs/architecture.md` ("Application rules") no longer describes the wait
-- [ ] `src/` has fewer lines than before
+- [x] `docs/architecture.md` ("Application rules") no longer describes the wait
+- [x] `src/` has fewer lines than before
