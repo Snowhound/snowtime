@@ -270,7 +270,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       float id = float(gl_VertexID / 6) + 1.0;
       float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0);
       float z = mix(.35, 1.0, pow(r3, 1.3));
-      float fall = u_time * mix(1.1, 2.0, z);
+      float fall = u_time * mix(1.0, 1.7, z);
       float y = 1.2 - mod((1.2 - (r2*2.0-1.0)) + fall, 2.4);
       float x = r1*2.0-1.0 + fall * SLANT * u_res.y / u_res.x;
       x = -1.15 + mod(x + 1.15, 2.3);
@@ -288,7 +288,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       vec2 offset = v_q.x * dir + v_q.y * vec2(-dir.y, dir.x);
       // A hidden streak collapses to its center, so it covers no pixels.
       gl_Position = vec4(vec2(x, y) + (shown < .01 ? vec2(0) : offset * size / u_res), 0.0, 1.0);
-      v_alpha = mix(.25, .6, z) * shown;
+      v_alpha = mix(.22, .45, z) * shown;
       v_depth = z;
     }`,
     fs: `${FS_HEAD}
