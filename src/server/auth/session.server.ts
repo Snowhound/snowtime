@@ -3,8 +3,9 @@
 // organization yet (docs/architecture.md, "Tenancy" and "User settings").
 import { and, asc, eq, gt, sql } from 'drizzle-orm'
 import type { Database } from '~/db'
-import { invitation, member, organization, userSettings } from '~/db/schema'
+import { invitation, member, organization } from '~/db/schema'
 import { strongestRole } from '../scope.server'
+import { findSettings } from '../settings/settings.server'
 
 export async function appSession(
   db: Database,
@@ -30,30 +31,7 @@ export async function appSession(
   const active =
     organizations.find((o) => o.id === activeOrganizationId) ?? organizations.at(0) ?? null
 
-  const settings = (
-    await db
-      .select({
-        timeZone: userSettings.timeZone,
-        weekStart: userSettings.weekStart,
-        locale: userSettings.locale,
-        theme: userSettings.theme,
-        timerLayout: userSettings.timerLayout,
-        showSummary: userSettings.showSummary,
-        compactRows: userSettings.compactRows,
-        appIcon: userSettings.appIcon,
-        sceneSeason: userSettings.sceneSeason,
-        sceneBackground: userSettings.sceneBackground,
-        sceneStrength: userSettings.sceneStrength,
-        surfaces: userSettings.surfaces,
-        sceneWeather: userSettings.sceneWeather,
-        sceneIntro: userSettings.sceneIntro,
-        durationFormat: userSettings.durationFormat,
-        dateFormat: userSettings.dateFormat,
-        timeFormat: userSettings.timeFormat,
-      })
-      .from(userSettings)
-      .where(eq(userSettings.userId, user.id))
-  ).at(0)
+  const settings = await findSettings(db, user.id)
 
   // Only asked when there is no organization: such a user goes to their invitation, or to
   // create an organization. Better Auth compares invited addresses case-insensitively.
