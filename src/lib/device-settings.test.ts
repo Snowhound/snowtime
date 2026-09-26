@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { DEVICE_DEFAULTS, parseDeviceSettings } from './device-settings'
+import { DEVICE_DEFAULTS, parseDeviceSettings, sameDeviceSettings } from './device-settings'
 
 describe('device settings', () => {
   test('nothing stored, or not JSON, gives the defaults', () => {
@@ -28,5 +28,16 @@ describe('device settings', () => {
       sceneStrength: 'full',
       sceneWeather: false,
     })
+  })
+
+  test('compares account values across refetches without equating changed choices', () => {
+    const account = { ...DEVICE_DEFAULTS, sceneSeason: 'auto' as const }
+    const refetched = { ...account }
+    const device = { ...account, sceneSeason: 'winter' as const, theme: 'dark' as const }
+
+    expect(sameDeviceSettings(account, refetched)).toBe(true)
+    expect(sameDeviceSettings(account, device)).toBe(false)
+    expect(sameDeviceSettings(null, account)).toBe(false)
+    expect(sameDeviceSettings(null, null)).toBe(true)
   })
 })

@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js'
+import { type Accessor, createEffect, createMemo, createSignal, on } from 'solid-js'
 // The settings signed-out pages use, kept in this browser's localStorage (prototypes/auth.html):
 // the theme, the app icon, and the scene. Signed in, the account's settings apply, and the root
 // copies them here, so the sign-in page opens as the last user left it. Changes on a signed-out
@@ -26,6 +26,13 @@ export const DEVICE_DEFAULTS: DeviceSettings = {
   theme: 'system',
   appIcon: DEFAULT_APP_ICON,
   ...SCENE_DEFAULTS,
+}
+
+const DEVICE_SETTING_KEYS = Object.keys(DEVICE_DEFAULTS) as (keyof DeviceSettings)[]
+
+export function sameDeviceSettings(a: DeviceSettings | null, b: DeviceSettings | null) {
+  if (!a || !b) return a === b
+  return DEVICE_SETTING_KEYS.every((key) => a[key] === b[key])
 }
 
 const FIELDS: { [K in keyof DeviceSettings]: v.GenericSchema<unknown, DeviceSettings[K]> } = {
@@ -89,4 +96,35 @@ export function updateDeviceSettings(patch: Partial<DeviceSettings>) {
   } catch {
     // Storage is blocked: the change holds until the page reloads.
   }
+}
+
+// Signed-in settings become the device's starting point for the next sign-in page. Only copy
+// when their values change: a session refetch returns a fresh object, and copying that object
+// again would undo a choice made in a signed-out tab.
+export function followAccountDeviceSettings(account: Accessor<DeviceSettings | null | undefined>) {
+  const loaded = createMemo(() => !!deviceSettings())
+  const accountCopy = createMemo(
+    () => {
+      const settings = account()
+      if (!settings) return null
+      return {
+        theme: settings.theme,
+        appIcon: settings.appIcon,
+        sceneSeason: settings.sceneSeason,
+        sceneBackground: settings.sceneBackground,
+        sceneStrength: settings.sceneStrength,
+        surfaces: settings.surfaces,
+        sceneWeather: settings.sceneWeather,
+        sceneIntro: settings.sceneIntro,
+      }
+    },
+    null,
+    { equals: sameDeviceSettings },
+  )
+  createEffect(
+    on([accountCopy, loaded], ([copy, ready]) => {
+      if (!copy || !ready) return
+      if (!sameDeviceSettings(copy, deviceSettings())) updateDeviceSettings(copy)
+    }),
+  )
 }

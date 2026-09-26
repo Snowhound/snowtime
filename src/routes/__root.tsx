@@ -22,11 +22,9 @@ import {
 import { HydrationScript, isServer } from 'solid-js/web'
 import { appIcon, faviconLinks, setFavicon } from '~/lib/app-icon'
 import {
-  DEVICE_DEFAULTS,
-  type DeviceSettings,
   deviceSettings,
+  followAccountDeviceSettings,
   loadDeviceSettings,
-  updateDeviceSettings,
 } from '~/lib/device-settings'
 import { sessionQuery, themeScript } from '~/lib/session'
 import { getLocale, setLocale } from '~/paraglide/runtime.js'
@@ -71,20 +69,7 @@ function RootComponent(props: ParentProps) {
     return session.data?.settings?.theme ?? deviceSettings()?.theme
   }
 
-  // Signed in, the device keeps a copy of the account's theme, app icon, and scene, so the
-  // sign-in page opens as the user left it. It copies when the account's settings change, not
-  // the device's: a signed-out tab changes those, and this tab, until it learns of the sign-out,
-  // would put its copy straight back.
-  const deviceLoaded = createMemo(() => !!deviceSettings())
-  createEffect(
-    on([() => session.data?.settings, deviceLoaded], ([settings, loaded]) => {
-      if (!settings || !loaded) return
-      const copy = Object.fromEntries(
-        Object.keys(DEVICE_DEFAULTS).map((key) => [key, settings[key as keyof DeviceSettings]]),
-      ) as DeviceSettings
-      if (JSON.stringify(copy) !== JSON.stringify(deviceSettings())) updateDeviceSettings(copy)
-    }),
-  )
+  followAccountDeviceSettings(() => session.data?.settings)
 
   // Saving another language switches it in place: Paraglide takes the new locale and sets
   // the cookie for later requests, and the page renders again, since messages are plain

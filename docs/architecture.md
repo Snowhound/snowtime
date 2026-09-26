@@ -420,10 +420,11 @@ each.
   here from `localStorage`. Signed-out pages (sign-in, invitations) use the theme, app
   icon, and scene settings kept on the device (`snowtime.settings` in `localStorage`,
   `src/lib/device-settings.ts`), which their Appearance menu changes. Signed in, the root
-  copies the account's values there whenever they change, so the sign-in page opens as the
-  last user left it; signed-out changes stay on the device, and the account's settings
-  apply at sign-in. A change on the device doesn't trigger the copy, so a tab that hasn't
-  noticed a sign-out in another tab doesn't undo that tab's changes.
+  copies the account's values there when their values change, not on every session refetch.
+  The sign-in page opens as the last user left it. Signed-out changes stay on the device,
+  and the account's settings apply at sign-in. A change on the device doesn't trigger the
+  copy, so a tab that hasn't noticed a sign-out in another tab doesn't undo that tab's
+  changes.
   - The server renders the setting as `data-theme` on `<html>`. A script in `<head>`
     applies the `dark` class from it before the body paints, because only the browser
     can resolve `system`. Signed out, there is no `data-theme`, and the script reads the
