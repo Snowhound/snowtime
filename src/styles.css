@@ -250,7 +250,8 @@ code {
 }
 .scene-photo {
   background-size: cover;
-  background-position: center;
+  /* Only screens wider than 16:9 crop the height; keep more of the mountains than the foreground. */
+  background-position: center 20%;
   opacity: 0;
   transition: opacity 0.9s ease;
 }
