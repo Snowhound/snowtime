@@ -1,6 +1,6 @@
 # 053: Code quality review
 
-Status: in-progress
+Status: in-progress (subtasks 1–5 done; 6 waits on decisions about Settings and first visits)
 
 Review the repository for style and quality rather than bugs (task 039 covers bugs):
 layout, types, comments, leftovers, needless complexity, and rendering cost. The
