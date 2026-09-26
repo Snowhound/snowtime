@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/solid-query'
 import { Link } from '@tanstack/solid-router'
 import type { JSX } from 'solid-js'
-import { Match, Switch } from 'solid-js'
-import { AppFrame, useInAppFrame } from '~/components/app-frame/app-frame'
+import { Match, Switch, useContext } from 'solid-js'
+import { AppFrame, InAppFrame } from '~/components/app-frame/app-frame'
 import { AuthHeading, AuthIcon, AuthLayout } from '~/components/auth-layout/auth-layout'
 import { buttonVariants } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
@@ -21,7 +21,7 @@ export function StatusPage(props: {
   children?: JSX.Element
 }) {
   const session = useQuery(() => sessionQuery)
-  const inAppFrame = useInAppFrame()
+  const inAppFrame = useContext(InAppFrame)
   // The organization the page belongs to: the app frame's, or else the default one.
   function organization() {
     const data = session.data

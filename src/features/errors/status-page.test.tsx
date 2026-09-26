@@ -25,11 +25,11 @@ vi.mock('@tanstack/solid-router', () => ({
   ),
   useRouter: () => ({ invalidate }),
 }))
-vi.mock('~/components/app-frame/app-frame', () => ({
+vi.mock('~/components/app-frame/app-frame', async () => ({
   AppFrame: (props: { children: JSX.Element }) => (
     <div data-testid="app-frame">{props.children}</div>
   ),
-  useInAppFrame: () => () => frame.organizationId,
+  InAppFrame: (await import('solid-js')).createContext(() => frame.organizationId),
 }))
 vi.mock('~/components/auth-layout/auth-layout', () => ({
   AuthLayout: (props: { children: JSX.Element }) => (

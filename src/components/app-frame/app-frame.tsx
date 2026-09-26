@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { useMatches } from '@tanstack/solid-router'
-import { type ParentProps, createContext, onMount, useContext } from 'solid-js'
+import { type ParentProps, createContext, onMount } from 'solid-js'
 import { Intro, IntroPage } from '~/components/scene/intro'
 import { SceneLayer } from '~/components/scene/scene-layer'
 import { sessionQuery } from '~/lib/queries/session'
@@ -16,11 +16,7 @@ import { PasskeyPrompt } from './passkey-prompt'
 
 // The organization of the app frame a component renders in, undefined outside one, so a page
 // that picks its own frame, such as the error page, doesn't add a second one.
-const InAppFrame = createContext<() => string | undefined>(() => undefined)
-
-export function useInAppFrame() {
-  return useContext(InAppFrame)
-}
+export const InAppFrame = createContext<() => string | undefined>(() => undefined)
 
 // The frame of an organization's pages: `organizationId` is the one the tab's URL names.
 export function AppFrame(props: ParentProps<{ session: AppSession; organizationId: string }>) {
