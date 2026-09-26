@@ -69,7 +69,7 @@ describe('timer mutations', () => {
     for (const [org, user, range] of lists) {
       queryClient.setQueryData(entriesQuery(org, user, range).queryKey, [])
     }
-    const { result } = renderHook(() => useCreateEntry(), { wrapper })
+    const { result } = renderHook(() => useCreateEntry({ organizationId }), { wrapper })
 
     result.mutate({
       id: newId(),
@@ -113,7 +113,7 @@ describe('timer mutations', () => {
     queryClient.setQueryData(reportKey, { totals: [] })
     fn.createEntry.mockResolvedValue(undefined)
     fn.listEntries.mockResolvedValue([])
-    const { result } = renderHook(() => useCreateEntry(), { wrapper })
+    const { result } = renderHook(() => useCreateEntry({ organizationId }), { wrapper })
 
     await result.mutateAsync({
       id: newId(),

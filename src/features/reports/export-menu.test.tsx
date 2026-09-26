@@ -87,6 +87,7 @@ describe('ExportMenu', () => {
         }
         group="project"
         input={input}
+        organizationId="org"
         organizationSlug="snowhound"
         projects={projects}
         members={members}

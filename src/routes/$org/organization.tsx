@@ -14,9 +14,9 @@ import { m } from '~/paraglide/messages.js'
 export const Route = createFileRoute('/$org/organization')({
   validateSearch: OrganizationSearch,
   loader: async ({ context }) => {
-    const { queryClient, session } = context
-    if (session.role !== 'owner' && session.role !== 'admin') return
-    const organizationId = session.activeOrganizationId!
+    const { queryClient, organization } = context
+    if (organization.role !== 'owner' && organization.role !== 'admin') return
+    const organizationId = organization.id
     await Promise.all([
       queryClient.ensureQueryData(membersQuery(organizationId)),
       queryClient.ensureQueryData(teamsQuery(organizationId)),
@@ -30,6 +30,9 @@ export const Route = createFileRoute('/$org/organization')({
 })
 
 function Organization() {
+  const context = Route.useRouteContext()
   const search = Route.useSearch()
-  return <OrganizationPage tab={search().tab ?? 'members'} />
+  return (
+    <OrganizationPage organizationId={context().organization.id} tab={search().tab ?? 'members'} />
+  )
 }

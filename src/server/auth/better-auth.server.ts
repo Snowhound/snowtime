@@ -9,6 +9,7 @@ import { db } from '~/db'
 import { withActor } from '~/db/actor'
 import * as schema from '~/db/schema'
 import { env } from '~/env'
+import { isReservedSlug } from '~/lib/app-paths'
 import { limits, rateLimits } from '../limits.server'
 import { createRateLimitStore } from '../rate-limit.server'
 import { stopTimerOfRemovedMember } from '../timer/timer.server'
@@ -89,6 +90,26 @@ export const auth = betterAuth({
       requireEmailVerificationOnInvitation: true,
       // Organizations own time entries and are never hard-deleted (docs/architecture.md).
       disableOrganizationDeletion: true,
+      // The slug names the organization in the app's URLs (docs/architecture.md, "Tenancy"),
+      // so it can't take one of the app's own paths, and never changes.
+      organizationHooks: {
+        beforeCreateOrganization: async ({ organization }) => {
+          if (organization.slug !== undefined && isReservedSlug(organization.slug)) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'This short name is reserved.',
+              code: 'SLUG_RESERVED',
+            })
+          }
+        },
+        beforeUpdateOrganization: async ({ organization }) => {
+          if (organization.slug !== undefined) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'The short name cannot change.',
+              code: 'SLUG_READ_ONLY',
+            })
+          }
+        },
+      },
     }),
     passkey({ rpID: appUrl.hostname, rpName: 'Snowtime', origin: appUrl.origin }),
     // Must stay last: it sets cookies from the other plugins' responses.

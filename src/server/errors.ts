@@ -4,9 +4,6 @@
 // imports.
 export type AppErrorCode =
   | 'UNAUTHENTICATED'
-  | 'NO_ACTIVE_ORGANIZATION'
-  // The call is for another organization than the session's: another tab switched it.
-  | 'ORGANIZATION_CHANGED'
   | 'FORBIDDEN'
   | 'NOT_FOUND'
   | 'CONFLICT'
@@ -22,9 +19,7 @@ export type AppErrorCode =
 // name the Paraglide message error_<key> (src/lib/errors.ts); the English text is the fallback.
 export const errorMessages = {
   sign_in_required: 'Sign in first.',
-  organization_required: 'Select an organization first.',
   not_organization_member: 'You are not a member of this organization.',
-  organization_changed: 'You switched organization in another tab, so nothing was changed.',
   member_not_found: 'Member not found.',
   team_not_found: 'Team not found.',
   team_member_not_found: 'This member is not on the team.',

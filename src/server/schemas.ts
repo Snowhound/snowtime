@@ -18,3 +18,13 @@ export const Description = v.pipe(
 )
 
 export const Timestamp = v.date()
+
+// The organization an organization-scoped call acts in. scopeMiddleware checks it on the
+// call's whole input and passes the input on unchanged, for the function's own schema; the
+// server then checks that the caller is a member.
+export const OrganizationInput = v.object({ organizationId: v.pipe(v.string(), v.nonEmpty()) })
+
+export function parseOrganizationInput<T extends { organizationId: string }>(input: T): T {
+  v.parse(OrganizationInput, input)
+  return input
+}

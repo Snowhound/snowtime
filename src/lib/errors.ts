@@ -5,9 +5,7 @@ import { AppError, type AppErrorKey } from '~/server/errors'
 // src/server/errors.ts fails the type check until it has a message here.
 const errorText: Record<AppErrorKey, () => string> = {
   sign_in_required: m.error_sign_in_required,
-  organization_required: m.error_organization_required,
   not_organization_member: m.error_not_organization_member,
-  organization_changed: m.error_organization_changed,
   member_not_found: m.error_member_not_found,
   team_not_found: m.error_team_not_found,
   team_member_not_found: m.error_team_member_not_found,
@@ -66,6 +64,7 @@ const authErrorText: Record<string, () => string> = {
   TEAM_NOT_FOUND: m.error_team_not_found,
   USER_IS_NOT_A_MEMBER_OF_THE_TEAM: m.error_team_member_not_found,
   INVITATION_NOT_FOUND: m.error_invitation_not_found,
+  SLUG_RESERVED: m.validation_slug_reserved,
 }
 
 function authErrorCode(error: unknown): string | undefined {

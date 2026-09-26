@@ -2,7 +2,7 @@
 // organization switcher, the navigation, the Appearance popover, and the user menu. Below 768 px the navigation moves to a
 // second row of equal-width links. It sticks to the top, above the cards and below popovers (z-50).
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
-import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/solid-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/solid-router'
 import BuildingComplexIcon from 'lucide-solid/icons/building-complex'
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
 import ChevronsUpDownIcon from 'lucide-solid/icons/chevrons-up-down'
@@ -31,18 +31,20 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { appIcon } from '~/lib/app-icon'
 import { authClient, signOut } from '~/lib/auth-client'
-import { forgetOrganization, sessionQuery } from '~/lib/session'
+import { organizationIn, sessionQuery } from '~/lib/session'
 import { cn, initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { AppSession } from '~/server/auth/auth.functions'
 import { AppearancePopover } from './appearance-popover'
 
 const NAV = [
-  { to: '/timer', label: m.nav_timer, Icon: TimerIcon },
-  { to: '/reports', label: m.nav_reports, Icon: ChartColumnIcon },
-  { to: '/projects', label: m.nav_projects, Icon: FolderKanbanIcon },
-  { to: '/organization', label: m.nav_organization, Icon: BuildingComplexIcon, admin: true },
+  { to: '/$org/timer', label: m.nav_timer, Icon: TimerIcon },
+  { to: '/$org/reports', label: m.nav_reports, Icon: ChartColumnIcon },
+  { to: '/$org/projects', label: m.nav_projects, Icon: FolderKanbanIcon },
+  { to: '/$org/organization', label: m.nav_organization, Icon: BuildingComplexIcon, admin: true },
 ] as const
+
+type Organization = AppSession['organizations'][number]
 
 function OrgMark(props: { name: string; class?: string }) {
   return (
@@ -58,54 +60,73 @@ function OrgMark(props: { name: string; class?: string }) {
   )
 }
 
-export function AppHeader() {
+// `organizationId` is the organization the tab shows, from its URL.
+export function AppHeader(props: { organizationId: string }) {
   const session = useQuery(() => sessionQuery)
+  function current() {
+    const data = session.data
+    const organization = data && organizationIn(data, props.organizationId)
+    return data && organization ? { data, organization } : undefined
+  }
   return (
-    <Show when={session.data}>
-      {(data) => (
-        <header class="scene-header bg-background sticky top-0 z-30 border-b">
-          <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
-            <Link
-              to="/timer"
-              class="focus-visible:ring-ring focus-visible:ring-offset-background mr-1 flex shrink-0 items-center gap-2 rounded-md text-base font-bold tracking-[-0.02em] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-              aria-label={m.app_home()}
-            >
-              <AppMark id={appIcon(data().settings?.appIcon).id} small class="size-7" />
-              <span class="hidden sm:inline md:hidden lg:inline">{m.app_name()}</span>
-            </Link>
-            <span class="bg-border mx-1 h-5 w-px shrink-0" aria-hidden="true" />
-            <OrganizationSwitcher session={data()} />
-            <nav class="ml-2 hidden items-center gap-1 md:flex" aria-label={m.nav_main()}>
-              <NavLinks role={data().role} />
+    <Show when={current()}>
+      {(current) => {
+        function data() {
+          return current().data
+        }
+        function organization() {
+          return current().organization
+        }
+        return (
+          <header class="scene-header bg-background sticky top-0 z-30 border-b">
+            <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
+              <Link
+                to="/$org/timer"
+                params={{ org: organization().slug }}
+                class="focus-visible:ring-ring focus-visible:ring-offset-background mr-1 flex shrink-0 items-center gap-2 rounded-md text-base font-bold tracking-[-0.02em] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                aria-label={m.app_home()}
+              >
+                <AppMark id={appIcon(data().settings?.appIcon).id} small class="size-7" />
+                <span class="hidden sm:inline md:hidden lg:inline">{m.app_name()}</span>
+              </Link>
+              <span class="bg-border mx-1 h-5 w-px shrink-0" aria-hidden="true" />
+              <OrganizationSwitcher session={data()} organization={organization()} />
+              <nav class="ml-2 hidden items-center gap-1 md:flex" aria-label={m.nav_main()}>
+                <NavLinks organization={organization()} />
+              </nav>
+              <Show when={data().settings} fallback={<span class="ml-auto" />}>
+                {(settings) => (
+                  <AppearancePopover settings={settings()} organizationSlug={organization().slug} />
+                )}
+              </Show>
+              <UserMenu session={data()} organizationSlug={organization().slug} />
+            </div>
+            <nav class="flex gap-1 border-t px-2 py-1.5 md:hidden" aria-label={m.nav_main()}>
+              <NavLinks organization={organization()} mobile />
             </nav>
-            <Show when={data().settings} fallback={<span class="ml-auto" />}>
-              {(settings) => <AppearancePopover settings={settings()} />}
-            </Show>
-            <UserMenu session={data()} />
-          </div>
-          <nav class="flex gap-1 border-t px-2 py-1.5 md:hidden" aria-label={m.nav_main()}>
-            <NavLinks role={data().role} mobile />
-          </nav>
-        </header>
-      )}
+          </header>
+        )
+      }}
     </Show>
   )
 }
 
-function NavLinks(props: { role: AppSession['role']; mobile?: boolean }) {
+function NavLinks(props: { organization: Organization; mobile?: boolean }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   function items() {
-    return NAV.filter((item) => !('admin' in item) || props.role !== 'member')
+    return NAV.filter((item) => !('admin' in item) || props.organization.role !== 'member')
   }
   return (
     <For each={items()}>
       {(item) => {
         function current() {
-          return pathname() === item.to || pathname().startsWith(`${item.to}/`)
+          const path = item.to.replace('$org', props.organization.slug)
+          return pathname() === path || pathname().startsWith(`${path}/`)
         }
         return (
           <Link
             to={item.to}
+            params={{ org: props.organization.slug }}
             class={cn(
               buttonVariants({ variant: current() ? 'secondary' : 'ghost', size: 'sm' }),
               props.mobile && 'h-9 flex-1 gap-1.5 px-2',
@@ -120,27 +141,22 @@ function NavLinks(props: { role: AppSession['role']; mobile?: boolean }) {
   )
 }
 
-function OrganizationSwitcher(props: { session: AppSession }) {
+// Switching opens the same page under the other organization's slug; each organization's
+// data stays cached under its own keys. It also makes that organization the session's
+// default, for `/` and new tabs, without waiting: this tab doesn't depend on it.
+function OrganizationSwitcher(props: { session: AppSession; organization: Organization }) {
   const queryClient = useQueryClient()
-  const router = useRouter()
   const navigate = useNavigate()
-  function active() {
-    return props.session.organizations.find((o) => o.id === props.session.activeOrganizationId)!
-  }
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
 
-  // The old organization's queries go, the rest load again, and the routes check the role
-  // in the new one. A refused switch, such as to an organization the user has just left,
-  // stays on this one with the list read again.
-  async function switchTo(organizationId: string) {
-    const previous = props.session.activeOrganizationId!
-    if (organizationId === previous) return
-    const { error } = await authClient.organization.setActive({ organizationId })
-    if (error) {
-      await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })
-      return
-    }
-    await forgetOrganization(queryClient, previous)
-    await router.invalidate()
+  function switchTo(organizationId: string) {
+    const target = organizationIn(props.session, organizationId)
+    if (!target || target.id === props.organization.id) return
+    const page = pathname().split('/').slice(2).join('/')
+    void navigate({ href: `/${target.slug}/${page}` })
+    void authClient.organization
+      .setActive({ organizationId })
+      .then(() => queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey }))
   }
 
   return (
@@ -150,14 +166,14 @@ function OrganizationSwitcher(props: { session: AppSession }) {
         variant="ghost"
         size="sm"
         class="max-w-[13rem] min-w-0 justify-start gap-2 px-2 lg:max-w-[16rem]"
-        aria-label={m.org_switcher_label({ name: active().name })}
+        aria-label={m.org_switcher_label({ name: props.organization.name })}
       >
-        <OrgMark name={active().name} />
-        <span class="truncate text-sm">{active().name}</span>
+        <OrgMark name={props.organization.name} />
+        <span class="truncate text-sm">{props.organization.name}</span>
         <ChevronsUpDownIcon class="opacity-50" aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent class="w-64">
-        <DropdownMenuRadioGroup value={props.session.activeOrganizationId!} onChange={switchTo}>
+        <DropdownMenuRadioGroup value={props.organization.id} onChange={switchTo}>
           <DropdownMenuGroupLabel class="text-muted-foreground text-xs font-medium">
             {m.org_menu_title()}
           </DropdownMenuGroupLabel>
@@ -180,7 +196,7 @@ function OrganizationSwitcher(props: { session: AppSession }) {
   )
 }
 
-function UserMenu(props: { session: AppSession }) {
+function UserMenu(props: { session: AppSession; organizationSlug: string }) {
   const navigate = useNavigate()
 
   return (
@@ -204,11 +220,23 @@ function UserMenu(props: { session: AppSession }) {
           <span class="text-muted-foreground truncate text-xs">{props.session.user.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => navigate({ to: '/settings', hash: 'profile' })}>
+        <DropdownMenuItem
+          onSelect={() =>
+            navigate({
+              to: '/$org/settings',
+              params: { org: props.organizationSlug },
+              hash: 'profile',
+            })
+          }
+        >
           <UserIcon class="size-4" aria-hidden="true" />
           {m.user_menu_profile()}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => navigate({ to: '/settings' })}>
+        <DropdownMenuItem
+          onSelect={() =>
+            navigate({ to: '/$org/settings', params: { org: props.organizationSlug } })
+          }
+        >
           <SettingsIcon class="size-4" aria-hidden="true" />
           {m.nav_settings()}
         </DropdownMenuItem>

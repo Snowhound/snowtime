@@ -119,9 +119,8 @@ function report({ data }: { data: ReportInput }) {
 function session() {
   return {
     activeOrganizationId: organizationId,
-    role: server.role,
     user: { id: me },
-    organizations: [{ id: organizationId, name: 'Snowhound' }],
+    organizations: [{ id: organizationId, name: 'Snowhound', role: server.role }],
     settings: { timeZone: 'Europe/Tallinn', weekStart: 'mon' },
   }
 }
@@ -137,14 +136,16 @@ function renderView(initial: ReportSearch = { range: 'this-week' }) {
   queryClient.setQueryData(['session'], session())
   render(() => (
     <QueryClientProvider client={queryClient}>
-      <ReportsPage search={search()} />
+      <ReportsPage organizationId={organizationId} search={search()} />
     </QueryClientProvider>
   ))
   return { search }
 }
 
+// The report's filters, without the organization every call names.
 function lastInput(): ReportInput {
-  return fn.getReport.mock.lastCall![0].data
+  const { organizationId: _, ...input } = fn.getReport.mock.lastCall![0].data
+  return input
 }
 
 function options(select: HTMLElement) {
@@ -202,7 +203,7 @@ describe('ReportsView', () => {
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'change' })).toHaveAttribute(
       'href',
-      '/settings#preferences',
+      '/$org/settings#preferences',
     )
     expect(screen.getByText('Projects by day')).toBeInTheDocument()
 

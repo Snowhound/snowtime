@@ -4,13 +4,13 @@ import { sessionQuery } from '~/lib/session'
 import { TimerView } from './timer-view'
 
 // The view needs the user's settings, which the app frame creates on first sign-in, and
-// starts afresh when the active organization changes.
-export function TimerPage() {
+// starts afresh in another organization.
+export function TimerPage(props: { organizationId: string }) {
   const session = useQuery(() => sessionQuery)
   return (
     <Show when={session.data?.settings && session.data}>
       {(data) => (
-        <Show when={data().activeOrganizationId} keyed>
+        <Show when={props.organizationId} keyed>
           {(organizationId) => (
             <TimerView
               organizationId={organizationId}

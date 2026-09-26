@@ -226,7 +226,7 @@ function ProjectForm(props: {
                 fallback={
                   <p class="text-muted-foreground px-2 py-2 text-sm">
                     {m.projects_no_teams()}{' '}
-                    <Link to="/organization" class="underline underline-offset-4">
+                    <Link from="/$org" to="/$org/organization" class="underline underline-offset-4">
                       {m.projects_create_teams()}
                     </Link>
                   </p>

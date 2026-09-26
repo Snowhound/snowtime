@@ -29,7 +29,11 @@ const settings = {
 // The popover reads the settings from the session query, as the header passes them.
 function Header() {
   const session = useQuery(() => sessionQuery)
-  return <Show when={session.data?.settings}>{(s) => <AppearancePopover settings={s()} />}</Show>
+  return (
+    <Show when={session.data?.settings}>
+      {(s) => <AppearancePopover settings={s()} organizationSlug="snowhound" />}
+    </Show>
+  )
 }
 
 afterEach(() => {

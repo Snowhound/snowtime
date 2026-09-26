@@ -8,13 +8,18 @@ import { ErrorPage } from './error-page'
 import { NotFoundPage } from './not-found-page'
 
 const invalidate = vi.hoisted(() => vi.fn())
-const frame = vi.hoisted(() => ({ inApp: false }))
+const frame = vi.hoisted(() => ({ organizationId: undefined as string | undefined }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
 // The pages render without a router; the frames stand in as marked wrappers, since the
 // frame each page picks is what these tests check.
 vi.mock('@tanstack/solid-router', () => ({
-  Link: (props: { to: string; class?: string; children: JSX.Element }) => (
-    <a href={props.to} class={props.class}>
+  Link: (props: {
+    to: string
+    params?: { org: string }
+    class?: string
+    children: JSX.Element
+  }) => (
+    <a href={props.to.replace('$org', props.params?.org ?? '$org')} class={props.class}>
       {props.children}
     </a>
   ),
@@ -24,7 +29,7 @@ vi.mock('~/components/app-frame/app-frame', () => ({
   AppFrame: (props: { children: JSX.Element }) => (
     <div data-testid="app-frame">{props.children}</div>
   ),
-  useInAppFrame: () => frame.inApp,
+  useInAppFrame: () => () => frame.organizationId,
 }))
 vi.mock('~/components/auth-layout/auth-layout', () => ({
   AuthLayout: (props: { children: JSX.Element }) => (
@@ -39,8 +44,15 @@ vi.mock('~/components/auth-layout/auth-layout', () => ({
   ),
 }))
 
-const member = { activeOrganizationId: 'org', user: { id: 'user' }, settings: null }
-const withoutOrganization = { ...member, activeOrganizationId: null }
+const northwind = { id: 'northwind-id', name: 'Northwind', slug: 'northwind', role: 'member' }
+const harbor = { id: 'harbor-id', name: 'Harbor', slug: 'harbor', role: 'member' }
+const member = {
+  activeOrganizationId: northwind.id,
+  organizations: [harbor, northwind],
+  user: { id: 'user' },
+  settings: null,
+}
+const withoutOrganization = { ...member, organizations: [], activeOrganizationId: null }
 
 function renderPage(page: () => JSX.Element, session: object | null) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -60,7 +72,7 @@ function homeLink() {
 }
 
 beforeEach(() => {
-  frame.inApp = false
+  frame.organizationId = undefined
 })
 
 describe('NotFoundPage', () => {
@@ -74,15 +86,15 @@ describe('NotFoundPage', () => {
   test('for a member of an organization, sits in the app frame and links to the timer', () => {
     renderPage(() => <NotFoundPage />, member)
     expect(shownFrame()).toBe('app frame')
-    expect(homeLink()).toEqual(['Go to the timer', '/timer'])
+    expect(homeLink()).toEqual(['Go to the timer', '/northwind/timer'])
   })
 
-  test('under the signed-in layout, adds no second app frame', () => {
-    frame.inApp = true
+  test('under the signed-in layout, adds no second app frame and stays in its organization', () => {
+    frame.organizationId = harbor.id
     renderPage(() => <NotFoundPage />, member)
     expect(shownFrame()).toBe('none')
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
-    expect(homeLink()).toEqual(['Go to the timer', '/timer'])
+    expect(homeLink()).toEqual(['Go to the timer', '/harbor/timer'])
   })
 
   test('signed in without an organization, sits in the auth layout and continues home', () => {

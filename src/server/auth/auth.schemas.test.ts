@@ -5,6 +5,15 @@ import * as v from 'valibot'
 import { safeRedirect } from '~/lib/redirect'
 import { CreateOrganizationForm, slugify } from './auth.schemas'
 
+describe('CreateOrganizationForm', () => {
+  test('refuses a slug the app uses as a path or a page', () => {
+    for (const slug of ['timer', 'settings', 'sign-in', 'api', 'invitation', 'brand']) {
+      expect(v.is(CreateOrganizationForm, { name: 'Acme', slug })).toBe(false)
+    }
+    expect(v.is(CreateOrganizationForm, { name: 'Acme', slug: 'timer-co' })).toBe(true)
+  })
+})
+
 describe('slugify', () => {
   test('lowercases, drops accents, and joins words with single dashes', () => {
     expect(slugify('Northwind Studio')).toBe('northwind-studio')

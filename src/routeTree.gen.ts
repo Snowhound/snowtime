@@ -10,16 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppRouteImport } from './routes/_app'
+import { Route as OrgRouteImport } from './routes/$org'
 import { Route as CreateOrganizationRouteImport } from './routes/create-organization'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as AppOrganizationRouteImport } from './routes/_app/organization'
-import { Route as AppProjectsRouteImport } from './routes/_app/projects'
-import { Route as AppReportsRouteImport } from './routes/_app/reports'
-import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppTimerRouteImport } from './routes/_app/timer'
+import { Route as OrgIndexRouteImport } from './routes/$org/index'
+import { Route as OrgOrganizationRouteImport } from './routes/$org/organization'
+import { Route as OrgProjectsRouteImport } from './routes/$org/projects'
+import { Route as OrgReportsRouteImport } from './routes/$org/reports'
+import { Route as OrgSettingsRouteImport } from './routes/$org/settings'
+import { Route as OrgTimerRouteImport } from './routes/$org/timer'
 import { Route as InvitationIdRouteImport } from './routes/invitation.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -28,8 +29,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const OrgRoute = OrgRouteImport.update({
+  id: '/$org',
+  path: '/$org',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateOrganizationRoute = CreateOrganizationRouteImport.update({
@@ -52,30 +54,35 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppOrganizationRoute = AppOrganizationRouteImport.update({
+const OrgIndexRoute = OrgIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrgRoute,
+} as any)
+const OrgOrganizationRoute = OrgOrganizationRouteImport.update({
   id: '/organization',
   path: '/organization',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppProjectsRoute = AppProjectsRouteImport.update({
+const OrgProjectsRoute = OrgProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppReportsRoute = AppReportsRouteImport.update({
+const OrgReportsRoute = OrgReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
+const OrgSettingsRoute = OrgSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppTimerRoute = AppTimerRouteImport.update({
+const OrgTimerRoute = OrgTimerRouteImport.update({
   id: '/timer',
   path: '/timer',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
 const InvitationIdRoute = InvitationIdRouteImport.update({
   id: '/invitation/$id',
@@ -90,16 +97,18 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$org': typeof OrgRouteWithChildren
   '/create-organization': typeof CreateOrganizationRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
-  '/organization': typeof AppOrganizationRoute
-  '/projects': typeof AppProjectsRoute
-  '/reports': typeof AppReportsRoute
-  '/settings': typeof AppSettingsRoute
-  '/timer': typeof AppTimerRoute
+  '/$org/organization': typeof OrgOrganizationRoute
+  '/$org/projects': typeof OrgProjectsRoute
+  '/$org/reports': typeof OrgReportsRoute
+  '/$org/settings': typeof OrgSettingsRoute
+  '/$org/timer': typeof OrgTimerRoute
   '/invitation/$id': typeof InvitationIdRoute
+  '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
@@ -108,44 +117,48 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
-  '/organization': typeof AppOrganizationRoute
-  '/projects': typeof AppProjectsRoute
-  '/reports': typeof AppReportsRoute
-  '/settings': typeof AppSettingsRoute
-  '/timer': typeof AppTimerRoute
+  '/$org/organization': typeof OrgOrganizationRoute
+  '/$org/projects': typeof OrgProjectsRoute
+  '/$org/reports': typeof OrgReportsRoute
+  '/$org/settings': typeof OrgSettingsRoute
+  '/$org/timer': typeof OrgTimerRoute
   '/invitation/$id': typeof InvitationIdRoute
+  '/$org': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_app': typeof AppRouteWithChildren
+  '/$org': typeof OrgRouteWithChildren
   '/create-organization': typeof CreateOrganizationRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
   '/terms': typeof TermsRoute
-  '/_app/organization': typeof AppOrganizationRoute
-  '/_app/projects': typeof AppProjectsRoute
-  '/_app/reports': typeof AppReportsRoute
-  '/_app/settings': typeof AppSettingsRoute
-  '/_app/timer': typeof AppTimerRoute
+  '/$org/organization': typeof OrgOrganizationRoute
+  '/$org/projects': typeof OrgProjectsRoute
+  '/$org/reports': typeof OrgReportsRoute
+  '/$org/settings': typeof OrgSettingsRoute
+  '/$org/timer': typeof OrgTimerRoute
   '/invitation/$id': typeof InvitationIdRoute
+  '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$org'
     | '/create-organization'
     | '/privacy'
     | '/sign-in'
     | '/terms'
-    | '/organization'
-    | '/projects'
-    | '/reports'
-    | '/settings'
-    | '/timer'
+    | '/$org/organization'
+    | '/$org/projects'
+    | '/$org/reports'
+    | '/$org/settings'
+    | '/$org/timer'
     | '/invitation/$id'
+    | '/$org/'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,33 +167,35 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/sign-in'
     | '/terms'
-    | '/organization'
-    | '/projects'
-    | '/reports'
-    | '/settings'
-    | '/timer'
+    | '/$org/organization'
+    | '/$org/projects'
+    | '/$org/reports'
+    | '/$org/settings'
+    | '/$org/timer'
     | '/invitation/$id'
+    | '/$org'
     | '/api/auth/$'
   id:
     | '__root__'
     | '/'
-    | '/_app'
+    | '/$org'
     | '/create-organization'
     | '/privacy'
     | '/sign-in'
     | '/terms'
-    | '/_app/organization'
-    | '/_app/projects'
-    | '/_app/reports'
-    | '/_app/settings'
-    | '/_app/timer'
+    | '/$org/organization'
+    | '/$org/projects'
+    | '/$org/reports'
+    | '/$org/settings'
+    | '/$org/timer'
     | '/invitation/$id'
+    | '/$org/'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRouteWithChildren
+  OrgRoute: typeof OrgRouteWithChildren
   CreateOrganizationRoute: typeof CreateOrganizationRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
@@ -198,11 +213,11 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+    '/$org': {
+      id: '/$org'
+      path: '/$org'
+      fullPath: '/$org'
+      preLoaderRoute: typeof OrgRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create-organization': {
@@ -233,40 +248,47 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/organization': {
-      id: '/_app/organization'
+    '/$org/': {
+      id: '/$org/'
+      path: '/'
+      fullPath: '/$org/'
+      preLoaderRoute: typeof OrgIndexRouteImport
+      parentRoute: typeof OrgRoute
+    }
+    '/$org/organization': {
+      id: '/$org/organization'
       path: '/organization'
-      fullPath: '/organization'
-      preLoaderRoute: typeof AppOrganizationRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/$org/organization'
+      preLoaderRoute: typeof OrgOrganizationRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/projects': {
-      id: '/_app/projects'
+    '/$org/projects': {
+      id: '/$org/projects'
       path: '/projects'
-      fullPath: '/projects'
-      preLoaderRoute: typeof AppProjectsRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/$org/projects'
+      preLoaderRoute: typeof OrgProjectsRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/reports': {
-      id: '/_app/reports'
+    '/$org/reports': {
+      id: '/$org/reports'
       path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AppReportsRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/$org/reports'
+      preLoaderRoute: typeof OrgReportsRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/settings': {
-      id: '/_app/settings'
+    '/$org/settings': {
+      id: '/$org/settings'
       path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/$org/settings'
+      preLoaderRoute: typeof OrgSettingsRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/timer': {
-      id: '/_app/timer'
+    '/$org/timer': {
+      id: '/$org/timer'
       path: '/timer'
-      fullPath: '/timer'
-      preLoaderRoute: typeof AppTimerRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/$org/timer'
+      preLoaderRoute: typeof OrgTimerRouteImport
+      parentRoute: typeof OrgRoute
     }
     '/invitation/$id': {
       id: '/invitation/$id'
@@ -285,27 +307,29 @@ declare module '@tanstack/solid-router' {
   }
 }
 
-interface AppRouteChildren {
-  AppOrganizationRoute: typeof AppOrganizationRoute
-  AppProjectsRoute: typeof AppProjectsRoute
-  AppReportsRoute: typeof AppReportsRoute
-  AppSettingsRoute: typeof AppSettingsRoute
-  AppTimerRoute: typeof AppTimerRoute
+interface OrgRouteChildren {
+  OrgOrganizationRoute: typeof OrgOrganizationRoute
+  OrgProjectsRoute: typeof OrgProjectsRoute
+  OrgReportsRoute: typeof OrgReportsRoute
+  OrgSettingsRoute: typeof OrgSettingsRoute
+  OrgTimerRoute: typeof OrgTimerRoute
+  OrgIndexRoute: typeof OrgIndexRoute
 }
 
-const AppRouteChildren: AppRouteChildren = {
-  AppOrganizationRoute: AppOrganizationRoute,
-  AppProjectsRoute: AppProjectsRoute,
-  AppReportsRoute: AppReportsRoute,
-  AppSettingsRoute: AppSettingsRoute,
-  AppTimerRoute: AppTimerRoute,
+const OrgRouteChildren: OrgRouteChildren = {
+  OrgOrganizationRoute: OrgOrganizationRoute,
+  OrgProjectsRoute: OrgProjectsRoute,
+  OrgReportsRoute: OrgReportsRoute,
+  OrgSettingsRoute: OrgSettingsRoute,
+  OrgTimerRoute: OrgTimerRoute,
+  OrgIndexRoute: OrgIndexRoute,
 }
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const OrgRouteWithChildren = OrgRoute._addFileChildren(OrgRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRouteWithChildren,
+  OrgRoute: OrgRouteWithChildren,
   CreateOrganizationRoute: CreateOrganizationRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,

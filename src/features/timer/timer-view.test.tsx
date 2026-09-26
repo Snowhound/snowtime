@@ -127,7 +127,7 @@ function renderView() {
   queryClient.setQueryData(['session'], session())
   render(() => (
     <QueryClientProvider client={queryClient}>
-      <TimerPage />
+      <TimerPage organizationId={organizationId} />
     </QueryClientProvider>
   ))
 }
@@ -241,7 +241,9 @@ describe('TimerView', () => {
 
     await clickInRow('Actions for Invoice export review')
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }))
-    expect(fn.deleteEntry).toHaveBeenCalledWith({ data: { id: expect.any(String) } })
+    expect(fn.deleteEntry).toHaveBeenCalledWith({
+      data: { organizationId, id: expect.any(String) },
+    })
     expect(screen.queryByDisplayValue('Invoice export review')).not.toBeInTheDocument()
     expect(await screen.findByText('No time tracked yet')).toBeInTheDocument()
   })
@@ -257,7 +259,9 @@ describe('TimerView', () => {
     await userEvent.clear(input)
     await userEvent.type(input, 'Invoice export{Enter}')
     await waitFor(() =>
-      expect(fn.updateEntry).toHaveBeenCalledWith({ data: { id, description: 'Invoice export' } }),
+      expect(fn.updateEntry).toHaveBeenCalledWith({
+        data: { organizationId, id, description: 'Invoice export' },
+      }),
     )
 
     await waitFor(() => expect(fn.listEntries).toHaveBeenCalledTimes(2))
@@ -309,6 +313,7 @@ describe('TimerView', () => {
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
         data: {
+          organizationId,
           id,
           startedAt: new Date(atLocalTime(date, '23:00', zone)),
           stoppedAt: new Date(atLocalTime(addDays(date, 1), '10:30', zone)),
@@ -357,7 +362,9 @@ describe('TimerView', () => {
     await clickInRow('Project: Snowtime')
     await userEvent.click(await screen.findByRole('menuitemradio', { name: 'No project' }))
     await waitFor(() =>
-      expect(fn.updateEntry).toHaveBeenCalledWith({ data: { id, projectId: null } }),
+      expect(fn.updateEntry).toHaveBeenCalledWith({
+        data: { organizationId, id, projectId: null },
+      }),
     )
   })
 
@@ -376,6 +383,7 @@ describe('TimerView', () => {
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
         data: {
+          organizationId,
           id,
           startedAt: new Date(atLocalTime(date, '09:00', zone)),
           stoppedAt: new Date(atLocalTime(date, '10:30', zone)),
@@ -540,7 +548,7 @@ describe('TimerView', () => {
     const view = await openView()
     expect(within(view).getByRole('link', { name: 'All settings' })).toHaveAttribute(
       'href',
-      '/settings#preferences',
+      '/$org/settings#preferences',
     )
     await userEvent.click(within(view).getByRole('button', { name: 'Table' }))
     expect(fn.updateSettings).toHaveBeenCalledWith({ data: { timerLayout: 'table' } })

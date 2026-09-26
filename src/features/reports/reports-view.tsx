@@ -104,7 +104,7 @@ export function ReportsView(props: {
       ...(group !== 'project' ? { group } : {}),
       ...(unit === 'week' ? { unit } : {}),
     }
-    void navigate({ to: '/reports', search })
+    void navigate({ from: '/$org/reports', to: '/$org/reports', search })
   }
 
   const actions: FilterActions = {
@@ -117,7 +117,8 @@ export function ReportsView(props: {
       }
       const { from, to } = filters().range
       void navigate({
-        to: '/reports',
+        from: '/$org/reports',
+        to: '/$org/reports',
         search: { ...props.search, range: 'custom', from, to: addDays(to, -1) },
       })
     },
@@ -182,7 +183,8 @@ export function ReportsView(props: {
             <Dot />
             {zoneNote()} (
             <Link
-              to="/settings"
+              from="/$org"
+              to="/$org/settings"
               hash="preferences"
               class="hover:text-foreground underline underline-offset-4"
             >
@@ -224,6 +226,7 @@ export function ReportsView(props: {
                   rowsOf={rowsOf}
                   group={filters().group}
                   input={filters().input}
+                  organizationId={props.organizationId}
                   organizationSlug={props.organizationSlug}
                   projects={projects.data ?? []}
                   members={members.data ?? []}

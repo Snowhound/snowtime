@@ -168,43 +168,45 @@
 - One shared database per environment; tenant isolation is row-level.
 - Every tenant-owned table has a non-null `organization_id`; team-scoped rows
   (e.g. project assignments) also reference `team_id`.
-- The active organization comes from the session. Every server function
-  resolves it and checks membership and role before touching data; queries
-  always filter by `organization_id`.
-- `getAppSession` loads the app frame's session: the user's organizations with their
-  role in each, the active one, and their settings. When the session has no active
-  organization, or one the user has left, it saves the first by name to the session.
-  A signed-in user with no organization goes to their open invitation, or to create
-  an organization.
-- The loaders on that page call their server functions in the same request, which still
-  carries the cached session cookie from before the save. When that cached session gives no
-  scope, `scopeMiddleware` reads the session once more from the database and uses its
-  organization (`resolveSessionScope`). Without that, every provider sign-in, which returns
-  with a full page load, failed on its first page (task 048). The extra read happens only
-  on that path, so the cookie cache still saves it on every other call.
-- Tabs share the session, so they share its active organization. A switch in one tab
-  moves every other tab once it reads the session again (task 049). Until then, a tab
-  shows the old organization while the server answers for the new one. To keep a tab from
-  showing or writing another organization's data under its own, `scopeMiddleware`'s client
-  part sends the organization the tab shows (the active one of its cached session), and the
-  server refuses a call for any other with `ORGANIZATION_CHANGED`. The server reads the
-  session from the database before refusing, in case the cookie cache lags. The client
-  answers the refusal by reading the session again. When a tab's session shows another
-  organization, it drops the old one's queries, loads the routes again, and says so above
-  the page (`OrganizationNotice`).
-  - Rejected: each tab keeping its own organization, with the server acting on whichever
-    the call names after checking membership. Tabs would work side by side, but the active
-    organization would stop being the session's alone. A `BroadcastChannel` telling other
-    tabs about a switch narrows the window but can't close it, since a call can be in
-    flight during the switch.
-  - Server rendering sends the page's organization too, so a switch during a page load
-    can't put one organization's data in the other's page.
+- Each tab's organization comes from its URL: the app's pages live under the
+  organization's slug (`/<slug>/timer`, `/<slug>/reports`, and so on). Every
+  organization-scoped server function takes `organizationId`, and `scopeMiddleware` checks
+  that the user is a member (`resolveScope`) before the function touches data; queries
+  always filter by `organization_id`. Tabs never disagree with the server, and two
+  organizations can stay open side by side (task 052).
+  - Rejected: the session's active organization as the one every call acts in. Tabs share
+    the session, so a switch in one tab moved the others while they still showed the old
+    organization. Keeping them apart took a server refusal, session re-reads, cache
+    surgery, and a notice above the page (tasks 048 and 049), and still couldn't show two
+    organizations at once.
+  - `scopeMiddleware` has its own input validator, which Start runs on the raw call data
+    before the function's own schema, and whose input type it merges into the function's.
+    So a scoped call that names no organization fails the type check and the server's
+    validation. The functions' own schemas are plain objects, which drop
+    `organizationId` again.
+  - The session's active organization remains the default: `/` and old links without a
+    slug (`/timer`, bookmarks, sign-in redirects, the installed app's start URL) open that
+    organization, keeping the rest of the path and the search. An unknown slug goes to `/`.
+    Switching organization opens the same page under the other slug, and sets the
+    session's active organization without waiting for it, so new tabs open there.
+  - Slugs never change after creation, so links stay valid. A slug can't be one of the
+    app's top-level paths or page names (`src/lib/app-paths.ts`). The create-organization
+    form refuses those, and a Better Auth organization hook refuses them, and any slug
+    change, on the server.
+  - Query keys hold the organization's id second (`['projects', organizationId, ...]`), so
+    each organization's data stays cached under its own keys, and switching drops nothing.
+    When the session turns out to be another user's, every query but the session's starts
+    over (`followSession`).
   - The Organization view's Better Auth calls name the organization the view shows
-    (`organizationId`), so they act on it whatever the session holds. Canceling an
-    invitation takes the invitation's organization.
+    (`organizationId`). Canceling an invitation takes the invitation's organization.
   - The running timer spans organizations, so `getRunningTimer` and `stopTimer` check no
     organization. `startTimer` creates an entry in one, so it goes through
     `scopeMiddleware` like every other organization-scoped call.
+- `getAppSession` loads the app frame's session: the user's organizations with their
+  role in each, the default (active) one, and their settings. When the session has no
+  active organization, or one the user has left, it saves the first by name to the
+  session. A signed-in user with no organization goes to their open invitation, or to
+  create an organization.
 - Organization roles: owner / admin / member (plugin defaults).
   - `member.role` can hold several roles, comma-separated. `strongestRole` reads the list
     as Better Auth's permission check does, without trimming, so the app never grants
@@ -623,12 +625,12 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
   - `<domain>.test.ts`: tests of the rules.
 - Code that several domains share sits directly in `src/server/`:
   - `middleware.ts`: `sessionMiddleware` resolves the Better Auth session;
-    `scopeMiddleware` adds the tenancy scope of the active organization, and refuses a
-    call from a tab that shows another. Both run the call inside `withActor()`.
+    `scopeMiddleware` requires `organizationId` in the call's input and adds the tenancy
+    scope of that organization ("Tenancy"). Both run the call inside `withActor()`.
   - `scope.server.ts`, `queries.server.ts`, and `testing.ts`: the tenancy scope, the
     soft-delete query helpers, and the seeded test databases.
   - `schemas.ts`: Valibot building blocks (`Uuidv7`, `Description`, `Timestamp`) for
-    the domain schemas.
+    the domain schemas, and `OrganizationInput`, which `scopeMiddleware` checks.
   - `errors.ts`: `AppError`, thrown with a code (`FORBIDDEN`, `NOT_FOUND`, and so on).
     A serialization adapter in `src/start.ts` keeps the code across the wire; Start
     would otherwise send only the message. `src/start.ts` also registers Start's CSRF

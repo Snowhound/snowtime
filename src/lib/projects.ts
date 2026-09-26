@@ -14,7 +14,8 @@ export type Project = Pick<ListedProject, 'id' | 'name' | 'color' | 'archivedAt'
 export function projectsQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['projects', organizationId, { includeArchived: true }],
-    queryFn: (): Promise<Project[]> => listProjects({ data: { includeArchived: true } }),
+    queryFn: (): Promise<Project[]> =>
+      listProjects({ data: { organizationId, includeArchived: true } }),
     staleTime: ORGANIZATION_STALE_TIME,
   })
 }

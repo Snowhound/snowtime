@@ -11,7 +11,7 @@ export type Member = Awaited<ReturnType<typeof listMembers>>[number]
 export function membersQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['members', organizationId],
-    queryFn: () => listMembers(),
+    queryFn: () => listMembers({ data: { organizationId } }),
     reconcile: 'userId',
     staleTime: ORGANIZATION_STALE_TIME,
   })

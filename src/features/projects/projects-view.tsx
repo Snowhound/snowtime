@@ -50,10 +50,12 @@ export function ProjectsView(props: {
     monthReportQuery(props.organizationId, props.zone, props.admin ? null : props.userId),
   )
 
-  const saveProject = useSaveProject()
-  const archiveProject = useArchiveProject()
-  const unarchiveProject = useUnarchiveProject()
-  const deleteProject = useDeleteProject()
+  // oxlint-disable-next-line solid/reactivity -- the page renders a new view per organization.
+  const keys = { organizationId: props.organizationId }
+  const saveProject = useSaveProject(keys)
+  const archiveProject = useArchiveProject(keys)
+  const unarchiveProject = useUnarchiveProject(keys)
+  const deleteProject = useDeleteProject(keys)
 
   // Projects whose delete awaits the server.
   const deleting = useMutationState(() => ({

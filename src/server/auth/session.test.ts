@@ -55,7 +55,6 @@ describe('appSession', () => {
       { id: O.northwind, name: 'Northwind Studio', slug: 'northwind', role: 'admin' },
     ])
     expect(session.activeOrganizationId).toBe(O.northwind)
-    expect(session.role).toBe('admin')
     expect(session.settings).toEqual({
       timeZone: 'Europe/Berlin',
       weekStart: 'mon',
@@ -81,13 +80,11 @@ describe('appSession', () => {
   test('without an active organization, the first by name stands in', async () => {
     const session = await appSession(db, seeded(U.admin, 'admin@example.com'), null, NOW)
     expect(session.activeOrganizationId).toBe(O.harbor)
-    expect(session.role).toBe('owner')
   })
 
   test('an active organization the user has left is replaced', async () => {
     const session = await appSession(db, seeded(U.owner, 'owner@example.com'), O.harbor, NOW)
     expect(session.activeOrganizationId).toBe(O.northwind)
-    expect(session.role).toBe('owner')
   })
 
   test('a user with no organization gets their open invitation, matched case-insensitively', async () => {
@@ -100,7 +97,6 @@ describe('appSession', () => {
     expect(session).toEqual({
       organizations: [],
       activeOrganizationId: null,
-      role: null,
       settings: null,
       invitationId: open,
     })

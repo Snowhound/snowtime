@@ -30,11 +30,8 @@ export function strongestRole(role: string): OrgRole {
 export async function resolveScope(
   db: Database,
   userId: string,
-  organizationId: string | null | undefined,
+  organizationId: string,
 ): Promise<Scope> {
-  if (!organizationId) {
-    throw new AppError('NO_ACTIVE_ORGANIZATION', 'organization_required')
-  }
   // Both reads run together: every server function resolves its scope first, so each
   // round trip here delays all of them.
   const [[membership], led] = await Promise.all([
@@ -63,47 +60,6 @@ export async function resolveScope(
     orgRole: strongestRole(membership.role),
     ledTeamIds: led.map((r) => r.teamId),
   }
-}
-
-// The scope of the session's active organization. Better Auth's cookie cache can still hold
-// the session as it was before getAppSession saved an organization in the same request: a
-// new session has none, and one the user left is replaced. The loaders that call server
-// functions during that page's render send the old cookie, so when it gives no scope, the
-// session is read again from the database (`reread`), and its organization tried once.
-//
-// Tabs share the session, so another tab can switch it while this one still shows the old
-// organization. The client sends the organization it shows (`shownOrganizationId`), and a
-// call for any other than the session's is refused with ORGANIZATION_CHANGED, which the
-// client answers by reading the session again. The session is read again before refusing,
-// in case the cookie cache lags behind it. A call that names
-// none is checked against the session alone.
-export async function resolveSessionScope(
-  db: Database,
-  userId: string,
-  activeOrganizationId: string | null,
-  reread: () => Promise<string | null | undefined>,
-  shownOrganizationId?: string,
-): Promise<Scope> {
-  if (shownOrganizationId && shownOrganizationId !== activeOrganizationId) {
-    if ((await reread()) !== shownOrganizationId) throw organizationChanged()
-    return resolveScope(db, userId, shownOrganizationId)
-  }
-  try {
-    return await resolveScope(db, userId, activeOrganizationId)
-  } catch (error) {
-    const stale =
-      error instanceof AppError &&
-      (error.key === 'organization_required' || error.key === 'not_organization_member')
-    if (!stale) throw error
-    const stored = await reread()
-    if (!stored || stored === activeOrganizationId) throw error
-    if (shownOrganizationId) throw organizationChanged()
-    return resolveScope(db, userId, stored)
-  }
-}
-
-function organizationChanged() {
-  return new AppError('ORGANIZATION_CHANGED', 'organization_changed')
 }
 
 export function isAdmin(scope: Scope): boolean {

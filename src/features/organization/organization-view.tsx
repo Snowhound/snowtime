@@ -116,7 +116,8 @@ export function OrganizationView(props: {
 
   function setTab(tab: string) {
     void navigate({
-      to: '/organization',
+      from: '/$org/organization',
+      to: '/$org/organization',
       search: tab === 'members' ? {} : { tab: tab as OrganizationTab },
       replace: true,
     })

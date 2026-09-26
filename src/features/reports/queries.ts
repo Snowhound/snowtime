@@ -12,7 +12,7 @@ export type Report = Awaited<ReturnType<typeof getReport>>
 export function reportQuery(organizationId: string, input: ReportInput) {
   return queryOptions({
     queryKey: [...reportsKey, organizationId, input],
-    queryFn: () => getReport({ data: input }),
+    queryFn: () => getReport({ data: { ...input, organizationId } }),
     placeholderData: keepPreviousData,
   })
 }

@@ -52,14 +52,14 @@ export function CreateOrganizationPage(props: { email: string }) {
         focusInvalid()
         return
       }
-      // Better Auth makes the new organization the session's active one.
+      // Better Auth makes the new organization the session's active one, the default.
       const { error } = await authClient.organization.create({ name, slug: value.slug })
       if (error) {
         setFormError(errorMessage(error))
         return
       }
       await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })
-      await navigate({ to: '/timer' })
+      await navigate({ to: '/$org/timer', params: { org: value.slug } })
     },
   }))
   const submitting = form.useStore((state) => state.isSubmitting)

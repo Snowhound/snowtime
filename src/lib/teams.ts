@@ -10,7 +10,7 @@ export type Team = Awaited<ReturnType<typeof listTeams>>[number]
 export function teamsQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['teams', organizationId],
-    queryFn: () => listTeams(),
+    queryFn: () => listTeams({ data: { organizationId } }),
     reconcile: 'id',
     staleTime: ORGANIZATION_STALE_TIME,
   })

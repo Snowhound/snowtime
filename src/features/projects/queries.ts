@@ -23,7 +23,7 @@ export function monthReportQuery(organizationId: string, zone: string, userId: s
   const { from, to } = monthDates(localDate(Date.now(), zone))
   return queryOptions({
     queryKey: [...reportsKey, organizationId, { from, to, userId }],
-    queryFn: () => getReport({ data: { from, to, ...(userId ? { userId } : {}) } }),
+    queryFn: () => getReport({ data: { organizationId, from, to, ...(userId ? { userId } : {}) } }),
   })
 }
 
@@ -39,21 +39,30 @@ export type SaveProjectInput =
       unassign: string[]
     }
 
-const projectsKey = ['projects']
+// The organization the view shows, which the writes below act in.
+type Keys = { organizationId: string }
+
+function projectsKey(organizationId: string) {
+  return ['projects', organizationId]
+}
 
 // The project exists before its teams are assigned, so the calls run in that order.
-async function saveProject(input: SaveProjectInput) {
+async function saveProject(organizationId: string, input: SaveProjectInput) {
   const { id } = input
   if (input.kind === 'create') {
-    await createProject({ data: { id, name: input.name, color: input.color } })
+    await createProject({ data: { organizationId, id, name: input.name, color: input.color } })
   } else if (input.name !== undefined || input.color !== undefined) {
-    await updateProject({ data: { id, name: input.name, color: input.color } })
+    await updateProject({ data: { organizationId, id, name: input.name, color: input.color } })
   }
   const assign = input.kind === 'create' ? input.teamIds : input.assign
   const unassign = input.kind === 'create' ? [] : input.unassign
   await Promise.all([
-    ...assign.map((teamId) => assignProjectToTeam({ data: { projectId: id, teamId } })),
-    ...unassign.map((teamId) => unassignProjectFromTeam({ data: { projectId: id, teamId } })),
+    ...assign.map((teamId) =>
+      assignProjectToTeam({ data: { organizationId, projectId: id, teamId } }),
+    ),
+    ...unassign.map((teamId) =>
+      unassignProjectFromTeam({ data: { organizationId, projectId: id, teamId } }),
+    ),
   ])
 }
 
@@ -74,11 +83,13 @@ function saved(projects: Project[], input: SaveProjectInput): Project[] {
   )
 }
 
-export function useSaveProject() {
+export function useSaveProject({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: saveProject,
-    ...optimistic(queryClient, [cacheUpdate<Project[], SaveProjectInput>(projectsKey, saved)]),
+    mutationFn: (input: SaveProjectInput) => saveProject(organizationId, input),
+    ...optimistic(queryClient, [
+      cacheUpdate<Project[], SaveProjectInput>(projectsKey(organizationId), saved),
+    ]),
   }))
 }
 
@@ -86,24 +97,24 @@ function setArchived(projects: Project[], id: string, archivedAt: Date | null) {
   return projects.map((p) => (p.id === id ? { ...p, archivedAt } : p))
 }
 
-export function useArchiveProject() {
+export function useArchiveProject({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: ProjectIdInput) => archiveProject({ data: input }),
+    mutationFn: (input: ProjectIdInput) => archiveProject({ data: { ...input, organizationId } }),
     ...optimistic(queryClient, [
-      cacheUpdate<Project[], ProjectIdInput>(projectsKey, (projects, { id }) =>
+      cacheUpdate<Project[], ProjectIdInput>(projectsKey(organizationId), (projects, { id }) =>
         setArchived(projects, id, new Date()),
       ),
     ]),
   }))
 }
 
-export function useUnarchiveProject() {
+export function useUnarchiveProject({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: ProjectIdInput) => unarchiveProject({ data: input }),
+    mutationFn: (input: ProjectIdInput) => unarchiveProject({ data: { ...input, organizationId } }),
     ...optimistic(queryClient, [
-      cacheUpdate<Project[], ProjectIdInput>(projectsKey, (projects, { id }) =>
+      cacheUpdate<Project[], ProjectIdInput>(projectsKey(organizationId), (projects, { id }) =>
         setArchived(projects, id, null),
       ),
     ]),
@@ -115,15 +126,15 @@ export function useUnarchiveProject() {
 const DELETE_DELAY = 500
 export const deleteProjectKey = ['delete-project']
 
-export function useDeleteProject() {
+export function useDeleteProject({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationKey: deleteProjectKey,
-    mutationFn: (input: ProjectIdInput) => deleteProject({ data: input }),
+    mutationFn: (input: ProjectIdInput) => deleteProject({ data: { ...input, organizationId } }),
     ...optimistic(
       queryClient,
       [
-        cacheUpdate<Project[], ProjectIdInput>(projectsKey, (projects, { id }) =>
+        cacheUpdate<Project[], ProjectIdInput>(projectsKey(organizationId), (projects, { id }) =>
           projects.filter((p) => p.id !== id),
         ),
       ],

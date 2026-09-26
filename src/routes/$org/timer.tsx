@@ -10,7 +10,7 @@ import { m } from '~/paraglide/messages.js'
 export const Route = createFileRoute('/$org/timer')({
   loader: async ({ context }) => {
     const { queryClient, session } = context
-    const organizationId = session.activeOrganizationId!
+    const organizationId = context.organization.id
     const zone = session.settings?.timeZone
     await Promise.all([
       queryClient.ensureQueryData(runningTimerQuery),
@@ -24,5 +24,10 @@ export const Route = createFileRoute('/$org/timer')({
   },
   pendingComponent: TimerPending,
   head: () => ({ meta: [{ title: `${m.nav_timer()} · ${m.app_name()}` }] }),
-  component: TimerPage,
+  component: Timer,
 })
+
+function Timer() {
+  const context = Route.useRouteContext()
+  return <TimerPage organizationId={context().organization.id} />
+}

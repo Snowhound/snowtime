@@ -23,7 +23,13 @@ export function SettingsPage(props: { initialError?: string }) {
   const [linkError] = createSignal(props.initialError ? linkErrorMessage(props.initialError) : null)
   onMount(() => {
     if (!props.initialError) return
-    void navigate({ to: '/settings', search: {}, replace: true, hash: 'sign-in-methods' })
+    void navigate({
+      from: '/$org/settings',
+      to: '/$org/settings',
+      search: {},
+      replace: true,
+      hash: 'sign-in-methods',
+    })
     document.getElementById('sign-in-methods')?.scrollIntoView()
   })
 

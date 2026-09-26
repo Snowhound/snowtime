@@ -9,9 +9,9 @@ import { m } from '~/paraglide/messages.js'
 // Project list and management (prototypes/projects.html).
 export const Route = createFileRoute('/$org/projects')({
   loader: async ({ context }) => {
-    const { queryClient, session } = context
-    const organizationId = session.activeOrganizationId!
-    const admin = session.role === 'owner' || session.role === 'admin'
+    const { queryClient, session, organization } = context
+    const organizationId = organization.id
+    const admin = organization.role === 'owner' || organization.role === 'admin'
     const zone = session.settings?.timeZone
     await Promise.all([
       queryClient.ensureQueryData(projectsQuery(organizationId)),
@@ -24,5 +24,10 @@ export const Route = createFileRoute('/$org/projects')({
   },
   pendingComponent: ProjectsPending,
   head: () => ({ meta: [{ title: `${m.nav_projects()} · ${m.app_name()}` }] }),
-  component: ProjectsPage,
+  component: Projects,
 })
+
+function Projects() {
+  const context = Route.useRouteContext()
+  return <ProjectsPage organizationId={context().organization.id} />
+}

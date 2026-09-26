@@ -21,7 +21,7 @@ import { type Settings, useUpdateSettings } from '~/lib/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 
-export function AppearancePopover(props: { settings: Settings }) {
+export function AppearancePopover(props: { settings: Settings; organizationSlug: string }) {
   const save = useUpdateSettings()
   const [open, setOpen] = createSignal(false)
   const [iconDialogOpen, setIconDialogOpen] = createSignal(false)
@@ -99,7 +99,8 @@ export function AppearancePopover(props: { settings: Settings }) {
           <Separator />
           <div class="flex items-center justify-between gap-3">
             <Link
-              to="/settings"
+              to="/$org/settings"
+              params={{ org: props.organizationSlug }}
               hash="preferences"
               class={cn(
                 buttonVariants({ variant: 'link', size: 'sm' }),

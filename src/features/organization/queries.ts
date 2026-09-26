@@ -352,7 +352,8 @@ export function useRemoveTeamMember(keys: Keys) {
 export function useSetTeamRole(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: SetTeamRoleInput) => setTeamRole({ data: input }),
+    mutationFn: (input: SetTeamRoleInput) =>
+      setTeamRole({ data: { ...input, organizationId: keys.organizationId } }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], SetTeamRoleInput>(teamsKey(keys.organizationId), (teams, input) =>
         teams.map((t) =>

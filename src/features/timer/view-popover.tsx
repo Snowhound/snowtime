@@ -89,7 +89,8 @@ export function ViewPopover(props: { settings: Settings; onError: (error: unknow
         </Switch>
         <Separator />
         <Link
-          to="/settings"
+          from="/$org"
+          to="/$org/settings"
           hash="preferences"
           class={cn(buttonVariants({ variant: 'link', size: 'sm' }), 'h-auto justify-start p-0')}
         >

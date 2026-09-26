@@ -65,6 +65,7 @@ export function ExportMenu(props: {
   rowsOf: (report: Report) => Row[]
   group: Group
   input: ReportInput
+  organizationId: string
   organizationSlug: string
   projects: Project[]
   members: Member[]
@@ -89,7 +90,9 @@ export function ExportMenu(props: {
       if (kind === 'csv') {
         blob = new Blob([toCsv(timesheet(props.report))], { type: 'text/csv;charset=utf-8' })
       } else {
-        const data = await getReportExport({ data: props.input })
+        const data = await getReportExport({
+          data: { ...props.input, organizationId: props.organizationId },
+        })
         const entries = entriesTable(data, { projects: props.projects, members: props.members })
         blob =
           kind === 'entries'

@@ -2,6 +2,7 @@
 // profile. Sign-in and organizations go through the Better Auth client, so these validate
 // the forms only; Better Auth checks again on its side.
 import * as v from 'valibot'
+import { SLUG_PATTERN, isReservedSlug } from '~/lib/app-paths'
 import { m } from '~/paraglide/messages.js'
 import { Uuidv7 } from '../schemas'
 
@@ -22,11 +23,17 @@ export const SignInForm = v.object({
 })
 export type SignInForm = v.InferOutput<typeof SignInForm>
 
-// Lowercase words joined by single dashes, as in links: "northwind-studio".
+// Lowercase words joined by single dashes (SLUG_PATTERN). The app's pages live under it
+// (/northwind-studio/timer), so it can't take one of the app's own paths; a Better Auth hook
+// refuses those on the server too.
 export const Slug = v.pipe(
   v.string(),
-  v.regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, () => m.validation_slug_format()),
+  v.regex(SLUG_PATTERN, () => m.validation_slug_format()),
   v.maxLength(48, (issue) => m.validation_too_long({ max: issue.requirement })),
+  v.check(
+    (slug) => !isReservedSlug(slug),
+    () => m.validation_slug_reserved(),
+  ),
 )
 
 // A person's or an organization's name.

@@ -115,11 +115,13 @@ export function TimerView(props: {
   }))
   const firstEntry = useQuery(() => firstEntryQuery(props.organizationId, props.userId))
 
-  const startTimer = useStartTimer()
+  // oxlint-disable-next-line solid/reactivity -- the page renders a new view per organization.
+  const keys = { organizationId: props.organizationId }
+  const startTimer = useStartTimer(keys)
   const stopTimer = useStopTimer()
-  const updateEntry = useUpdateEntry()
-  const deleteEntry = useDeleteEntry()
-  const createEntry = useCreateEntry()
+  const updateEntry = useUpdateEntry(keys)
+  const deleteEntry = useDeleteEntry(keys)
+  const createEntry = useCreateEntry(keys)
 
   const [error, setError] = createSignal<string | null>(null)
   // The entry popover's form and the button it opens under.

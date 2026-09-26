@@ -69,7 +69,8 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
     }
     await authClient.organization.setActive({ organizationId: data.organizationId })
     await queryClient.invalidateQueries()
-    await navigate({ to: '/timer' })
+    // Home opens the default organization, now this one.
+    await navigate({ to: '/' })
   }
 
   // The wrong account signs out and comes back here to sign in with the invited one.

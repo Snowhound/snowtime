@@ -21,7 +21,7 @@ export const Route = createFileRoute('/$org/reports')({
   validateSearch: ReportSearch,
   loader: async ({ context, location }) => {
     const { queryClient, session } = context
-    const organizationId = session.activeOrganizationId!
+    const organizationId = context.organization.id
     const settings = session.settings
     const input =
       settings &&
@@ -43,6 +43,7 @@ export const Route = createFileRoute('/$org/reports')({
 })
 
 function Reports() {
+  const context = Route.useRouteContext()
   const search = Route.useSearch()
-  return <ReportsPage search={search()} />
+  return <ReportsPage organizationId={context().organization.id} search={search()} />
 }

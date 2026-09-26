@@ -1,13 +1,15 @@
 import { type Query, type QueryClient, queryOptions } from '@tanstack/solid-query'
+import { redirect } from '@tanstack/solid-router'
 import { type AppSession, getAppSession } from '~/server/auth/auth.functions'
-import { AppError } from '~/server/errors'
+import { APP_PAGES, isAppPage } from './app-paths'
 import { DEVICE_SETTINGS_KEY } from './device-settings'
 import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from './intro'
 import { seasonByMonth } from './scene'
 
 // The signed-in user, their organizations and settings, or null when signed out. The root
 // route loads it before every page; changes to the session (switching organization,
-// signing out, saving the theme) update or invalidate this query.
+// signing out, saving the theme) update or invalidate this query. Its active organization is
+// only the default for `/` and old links: each tab shows the organization in its URL.
 export const sessionQuery = queryOptions({
   queryKey: ['session'],
   queryFn: () => getAppSession(),
@@ -17,98 +19,33 @@ function isSession(query: Query) {
   return query.queryKey[0] === sessionQuery.queryKey[0]
 }
 
-// The user and organization whose data each client's cache holds, once known.
-const cached = new WeakMap<QueryClient, { userId: string; organizationId?: string }>()
+// The user whose data each client's cache holds, once known.
+const cachedUser = new WeakMap<QueryClient, string>()
 
-// Keeps one user's data in the cache, in one organization. Signing out here loads a new page
-// (signOut in src/lib/auth-client.ts), but a sign-out in another tab, or an expired session,
-// leaves the data behind, and many keys hold only the organization: projects, teams, members,
-// and reports show what the user may see. When the session turns out to be another user's, every other
-// query starts over: those in use load again as the new user, and the rest lose their data.
-//
-// Tabs share the session, so another tab can switch its organization. When this tab's
-// session shows another organization, the old one's queries go, as after a switch here
-// (forgetOrganization), and the pages, keyed by organization, load the new one's. The root's
-// query client calls this once.
+// Keeps one user's data in the cache. Signing out here loads a new page (signOut in
+// src/lib/auth-client.ts), but a sign-out in another tab, or an expired session, leaves the
+// data behind, and many keys hold only the organization: projects, teams, members, and
+// reports show what the user may see. When the session turns out to be another user's, every
+// other query starts over: those in use load again as the new user, and the rest lose their
+// data. The root's query client calls this once.
 export function followSession(queryClient: QueryClient) {
   return queryClient.getQueryCache().subscribe(({ query }) => {
     if (!isSession(query)) return
     const session = query.state.data as AppSession | null | undefined
     if (!session) return
-    const userId = session.user.id
-    const organizationId = session.activeOrganizationId ?? undefined
-    const previous = cached.get(queryClient)
-    cached.set(queryClient, { userId, organizationId })
-    if (previous && previous.userId !== userId) {
+    const previous = cachedUser.get(queryClient)
+    cachedUser.set(queryClient, session.user.id)
+    if (previous && previous !== session.user.id) {
       void queryClient.resetQueries({ predicate: (other) => !isSession(other) })
-    } else if (previous?.organizationId && previous.organizationId !== organizationId) {
-      queryClient.removeQueries({
-        predicate: (other) => other.queryKey[1] === previous.organizationId,
-      })
     }
   })
-}
-
-// The organization each client last switched away from itself, so a change of the session's
-// organization can tell a switch here from one in another tab.
-const switchedFrom = new WeakMap<QueryClient, string>()
-
-// After the session's active organization changes here. The keys of organization-scoped
-// queries hold the organization's id second (['projects', organizationId, ...]), but the
-// server answers for the session's organization, so refetching the old organization's queries
-// now would store the new one's data under the old id, and show it there. They are dropped
-// instead; the views of the new organization load their own, and the rest (the session, the
-// running timer) load again.
-export async function forgetOrganization(queryClient: QueryClient, organizationId: string) {
-  switchedFrom.set(queryClient, organizationId)
-  await queryClient.cancelQueries({ predicate: (query) => query.queryKey[1] === organizationId })
-  queryClient.removeQueries({ predicate: (query) => query.queryKey[1] === organizationId })
-  await queryClient.invalidateQueries()
-}
-
-// Whether the session's organization changed from `organizationId` by a switch in this tab,
-// rather than in another tab. It answers once per switch.
-export function switchedHere(queryClient: QueryClient, organizationId: string) {
-  const here = switchedFrom.get(queryClient) === organizationId
-  switchedFrom.delete(queryClient)
-  return here
-}
-
-// The organization this tab shows: the active one of the session in its cache, which the
-// header and every page read. scopeMiddleware sends it with each organization-scoped call.
-export function shownOrganization(queryClient: QueryClient) {
-  return (
-    queryClient.getQueryData<AppSession | null>(sessionQuery.queryKey)?.activeOrganizationId ??
-    undefined
-  )
-}
-
-// Makes an organization-scoped call for the organization this tab shows. The server refuses
-// it when the session has another (ORGANIZATION_CHANGED): another tab switched. This tab then
-// reads the session again, and followSession drops the old organization's queries. Refusals
-// of calls made together share one read.
-export async function callInShownOrganization<T>(
-  queryClient: QueryClient,
-  call: (organizationId: string | undefined) => Promise<T>,
-) {
-  try {
-    return await call(shownOrganization(queryClient))
-  } catch (error) {
-    if (error instanceof AppError && error.code === 'ORGANIZATION_CHANGED') {
-      void queryClient.invalidateQueries(
-        { queryKey: sessionQuery.queryKey },
-        { cancelRefetch: false },
-      )
-    }
-    throw error
-  }
 }
 
 // The season of each month, for the head script.
 const MONTH_SEASONS = Array.from({ length: 12 }, (_, month) => seasonByMonth(new Date(2000, month)))
 
-// The signed-in pages, where the intro plays once a season (src/routes/_app/).
-const APP_PATHS = /^\/(timer|reports|projects|organization|settings)(\/|$)/
+// The signed-in pages, /<slug>/<page>, where the intro plays once a season (src/routes/$org/).
+const APP_PATHS = new RegExp(`^/[^/]+/(${APP_PAGES.join('|')})(/|$)`)
 
 // Runs in <head> before the body paints. Signed in, the server renders the theme setting as
 // data-theme on <html>; signed out it renders none, and the theme saved on this device applies
@@ -149,3 +86,33 @@ export const themeScript = `(() => {
   dark.addEventListener('change', apply)
   new MutationObserver(apply).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-intro'] })
 })()`
+
+// The organization `/` and old links open: the session's active one, which getAppSession
+// keeps valid. Null for a user without an organization.
+export function defaultOrganization(session: AppSession) {
+  return session.organizations.find((o) => o.id === session.activeOrganizationId) ?? null
+}
+
+// Where a signed-in user without an organization goes: to their invitation, or to create one.
+export function withoutOrganization(session: AppSession) {
+  return session.invitationId
+    ? redirect({ to: '/invitation/$id', params: { id: session.invitationId } })
+    : redirect({ to: '/create-organization' })
+}
+
+// The organization /<slug>/... names, for a signed-in user. An old link to a page (/timer,
+// with `href` its path, search, and hash) opens it in the default organization, and an unknown
+// slug goes home, which opens the default organization's timer. Throws the redirect.
+export function organizationOfPath(session: AppSession, slug: string, href: string) {
+  const fallback = defaultOrganization(session)
+  if (!fallback) throw withoutOrganization(session)
+  if (isAppPage(slug)) throw redirect({ href: `/${fallback.slug}${href}` })
+  const organization = session.organizations.find((o) => o.slug === slug)
+  if (!organization) throw redirect({ to: '/' })
+  return organization
+}
+
+// One of the user's organizations by id, as the session lists it now: a rename shows at once.
+export function organizationIn(session: AppSession, organizationId: string) {
+  return session.organizations.find((o) => o.id === organizationId)
+}

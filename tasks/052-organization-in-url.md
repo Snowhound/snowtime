@@ -1,6 +1,6 @@
 # 052: Each tab's organization comes from its URL
 
-Status: in-progress
+Status: done
 
 The app shows the session's active organization, which every tab shares. A switch in one
 tab moved the others, so task 049 added a server refusal (`ORGANIZATION_CHANGED`), a
@@ -28,9 +28,10 @@ two organizations can stay open side by side.
 - Slugs can't take a top-level path or a page name (`sign-in`, `timer`, and so on).
   The create-organization schema refuses them, and so does a Better Auth hook on the
   server.
-- Server: `scopeMiddleware` has its own input schema, a loose object with
-  `organizationId`. Start runs it on the raw input before the function's own schema, and
-  merges the types, so every scoped call must name the organization. The middleware
+- Server: `scopeMiddleware` has its own input validator, which checks `organizationId`
+  and passes the input on unchanged (a valibot `looseObject` fails Start's serializable
+  check). Start runs it on the raw input before the function's own schema, and merges the
+  types, so every scoped call must name the organization. The middleware
   calls `resolveScope(db, userId, organizationId)`, which checks membership.
   `resolveSessionScope`, its re-read, the client part, and `ORGANIZATION_CHANGED` go.
 - Client: query functions pass the organization id they already hold in their key.
@@ -47,12 +48,12 @@ two organizations can stay open side by side.
 
 ## Acceptance criteria
 
-- [ ] App pages live under `/<slug>/`; old paths redirect there, keeping the search.
-- [ ] Two tabs on two organizations each read and write their own, with no notice and
+- [x] App pages live under `/<slug>/`; old paths redirect there, keeping the search.
+- [x] Two tabs on two organizations each read and write their own, with no notice and
       no refusal.
-- [ ] Every organization-scoped server function takes `organizationId`, and the server
+- [x] Every organization-scoped server function takes `organizationId`, and the server
       refuses one the user isn't a member of.
-- [ ] The code listed under "Delete" is gone; tests cover the new middleware input and
+- [x] The code listed under "Delete" is gone; tests cover the new middleware input and
       the redirects.
-- [ ] Reserved slugs are refused when creating an organization.
-- [ ] `docs/architecture.md` records the decision.
+- [x] Reserved slugs are refused when creating an organization.
+- [x] `docs/architecture.md` records the decision.

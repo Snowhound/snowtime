@@ -1,5 +1,5 @@
 // What the app frame needs about the signed-in user: their organizations and role in each,
-// which one is active, their settings, and an open invitation when they have no
+// the default one (the session's active organization), their settings, and an open invitation when they have no
 // organization yet (docs/architecture.md, "Tenancy" and "User settings").
 import { and, asc, eq, gt, sql } from 'drizzle-orm'
 import type { Database } from '~/db'
@@ -77,7 +77,6 @@ export async function appSession(
   return {
     organizations,
     activeOrganizationId: active?.id ?? null,
-    role: active?.role ?? null,
     settings: settings ?? null,
     invitationId,
   }

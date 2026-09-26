@@ -12,20 +12,23 @@ import { getLocale } from '~/paraglide/runtime.js'
 import type { AppSession } from '~/server/auth/auth.functions'
 import { getSettings } from '~/server/settings/settings.functions'
 import { AppHeader } from './app-header'
-import { OrganizationNotice } from './organization-notice'
 import { PasskeyPrompt } from './passkey-prompt'
 
-// Whether a component renders inside the app frame, so a page that picks its own frame, such
-// as the error page, doesn't add a second one.
-const InAppFrame = createContext(false)
+// The organization of the app frame a component renders in, undefined outside one, so a page
+// that picks its own frame, such as the error page, doesn't add a second one.
+const InAppFrame = createContext<() => string | undefined>(() => undefined)
 
 export function useInAppFrame() {
   return useContext(InAppFrame)
 }
 
-export function AppFrame(props: ParentProps<{ session: AppSession }>) {
+// The frame of an organization's pages: `organizationId` is the one the tab's URL names.
+export function AppFrame(props: ParentProps<{ session: AppSession; organizationId: string }>) {
   const queryClient = useQueryClient()
   const session = useQuery(() => sessionQuery)
+  function organizationId() {
+    return props.organizationId
+  }
   // A wide page, such as Reports, lays out its own width within the whole window.
   const wide = useMatches({ select: (matches) => matches.some((m) => m.staticData.wide) })
   // The session query, not the route's copy, so a saved setting shows at once.
@@ -58,12 +61,11 @@ export function AppFrame(props: ParentProps<{ session: AppSession }>) {
     <div class="isolate flex min-h-dvh flex-col" {...sceneAttributes(shown())}>
       <SceneLayer settings={shown()} pace="calm" />
       <IntroPage class="flex flex-1 flex-col">
-        <AppHeader />
+        <AppHeader organizationId={props.organizationId} />
         <SeasonProvider value={() => currentSeason(scene().sceneSeason)}>
           <main class={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-8', !wide() && 'max-w-6xl')}>
-            <OrganizationNotice />
             <PasskeyPrompt signedInAt={props.session.signedInAt} />
-            <InAppFrame.Provider value={true}>{props.children}</InAppFrame.Provider>
+            <InAppFrame.Provider value={organizationId}>{props.children}</InAppFrame.Provider>
           </main>
         </SeasonProvider>
       </IntroPage>

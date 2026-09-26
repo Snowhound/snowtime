@@ -45,7 +45,9 @@ export function entriesQuery(organizationId: string, userId: string, range: Rang
   return queryOptions({
     queryKey: ['entries', organizationId, userId, range.from, range.to],
     queryFn: (): Promise<Entry[]> =>
-      listEntries({ data: { from: new Date(range.from), to: new Date(range.to), userId } }),
+      listEntries({
+        data: { organizationId, from: new Date(range.from), to: new Date(range.to), userId },
+      }),
   })
 }
 
@@ -54,12 +56,17 @@ export function entriesQuery(organizationId: string, userId: string, range: Rang
 export function firstEntryQuery(organizationId: string, userId: string) {
   return queryOptions({
     queryKey: ['first-entry', organizationId, userId],
-    queryFn: () => getFirstEntryStart({ data: { userId } }),
+    queryFn: () => getFirstEntryStart({ data: { organizationId, userId } }),
   })
 }
 
-const entriesKey = ['entries']
-const firstEntryKey = ['first-entry']
+// The organization's entry lists and earliest start. The running timer spans organizations.
+function entriesKey(organizationId: string) {
+  return ['entries', organizationId]
+}
+function firstEntryKey(organizationId: string) {
+  return ['first-entry', organizationId]
+}
 
 // Every write changes logged time, which Reports and the Projects view total.
 const settled = { invalidate: [reportsKey] }
@@ -98,15 +105,18 @@ function patch<T extends Entry>(entry: T, input: UpdateEntryInput): T {
   }
 }
 
+// The organization the view shows, which the writes below act in.
+type Keys = { organizationId: string }
+
 // Starting stops a running timer first, in any organization.
-export function useStartTimer() {
+export function useStartTimer({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: StartTimerInput) => startTimer({ data: input }),
+    mutationFn: (input: StartTimerInput) => startTimer({ data: { ...input, organizationId } }),
     ...optimistic(
       queryClient,
       [
-        cacheUpdate<Entry[], StartTimerInput>(entriesKey, (entries) =>
+        cacheUpdate<Entry[], StartTimerInput>(['entries'], (entries) =>
           entries.map((e) => (e.stoppedAt ? e : { ...e, stoppedAt: stoppedNow(e) })),
         ),
         cacheUpdate<RunningTimer | null, StartTimerInput>(
@@ -115,7 +125,7 @@ export function useStartTimer() {
             const session = queryClient.getQueryData(sessionQuery.queryKey)
             return {
               id: input.id,
-              organizationId: session?.activeOrganizationId ?? '',
+              organizationId,
               userId: session?.user.id ?? '',
               projectId: input.projectId ?? null,
               description: input.description.trim(),
@@ -138,7 +148,7 @@ export function useStopTimer() {
     ...optimistic(
       queryClient,
       [
-        cacheUpdate<Entry[], StopTimerInput>(entriesKey, (entries, { id }) =>
+        cacheUpdate<Entry[], StopTimerInput>(['entries'], (entries, { id }) =>
           entries.map((e) => (e.id === id ? { ...e, stoppedAt: stoppedNow(e) } : e)),
         ),
         cacheUpdate<RunningTimer | null, StopTimerInput>(
@@ -152,17 +162,17 @@ export function useStopTimer() {
 }
 
 // Edits a stopped entry, or the running one.
-export function useUpdateEntry() {
+export function useUpdateEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: UpdateEntryInput) => updateEntry({ data: input }),
+    mutationFn: (input: UpdateEntryInput) => updateEntry({ data: { ...input, organizationId } }),
     ...optimistic(
       queryClient,
       [
-        cacheUpdate<Entry[], UpdateEntryInput>(entriesKey, (entries, input) =>
+        cacheUpdate<Entry[], UpdateEntryInput>(entriesKey(organizationId), (entries, input) =>
           entries.map((e) => (e.id === input.id ? patch(e, input) : e)),
         ),
-        cacheUpdate<Date | null, UpdateEntryInput>(firstEntryKey, (first, input) =>
+        cacheUpdate<Date | null, UpdateEntryInput>(firstEntryKey(organizationId), (first, input) =>
           earliest(first, input.startedAt),
         ),
         cacheUpdate<RunningTimer | null, UpdateEntryInput>(
@@ -180,18 +190,18 @@ export function useUpdateEntry() {
   }))
 }
 
-export function useDeleteEntry() {
+export function useDeleteEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: DeleteEntryInput) => deleteEntry({ data: input }),
+    mutationFn: (input: DeleteEntryInput) => deleteEntry({ data: { ...input, organizationId } }),
     ...optimistic(
       queryClient,
       [
-        cacheUpdate<Entry[], DeleteEntryInput>(entriesKey, (entries, { id }) =>
+        cacheUpdate<Entry[], DeleteEntryInput>(entriesKey(organizationId), (entries, { id }) =>
           entries.filter((e) => e.id !== id),
         ),
         // Unchanged until the refetch, which the update causes, finds the new earliest.
-        cacheUpdate<Date | null, DeleteEntryInput>(firstEntryKey, (first) => first),
+        cacheUpdate<Date | null, DeleteEntryInput>(firstEntryKey(organizationId), (first) => first),
       ],
       settled,
     ),
@@ -199,28 +209,31 @@ export function useDeleteEntry() {
 }
 
 // A finished entry logged by hand.
-export function useCreateEntry() {
+export function useCreateEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: CreateEntryInput) => createEntry({ data: input }),
+    mutationFn: (input: CreateEntryInput) => createEntry({ data: { ...input, organizationId } }),
     ...optimistic(
       queryClient,
       [
-        cacheUpdate<Entry[], CreateEntryInput>(entriesKey, (entries, input, key) => {
-          const session = queryClient.getQueryData(sessionQuery.queryKey)
-          const entry: Entry = {
-            id: input.id,
-            organizationId: session?.activeOrganizationId ?? '',
-            userId: session?.user.id ?? '',
-            projectId: input.projectId ?? null,
-            description: input.description.trim(),
-            startedAt: input.startedAt,
-            stoppedAt: input.stoppedAt,
-          }
-          if (!listed(entry, key)) return entries
-          return [entry, ...entries].sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
-        }),
-        cacheUpdate<Date | null, CreateEntryInput>(firstEntryKey, (first, input) =>
+        cacheUpdate<Entry[], CreateEntryInput>(
+          entriesKey(organizationId),
+          (entries, input, key) => {
+            const session = queryClient.getQueryData(sessionQuery.queryKey)
+            const entry: Entry = {
+              id: input.id,
+              organizationId,
+              userId: session?.user.id ?? '',
+              projectId: input.projectId ?? null,
+              description: input.description.trim(),
+              startedAt: input.startedAt,
+              stoppedAt: input.stoppedAt,
+            }
+            if (!listed(entry, key)) return entries
+            return [entry, ...entries].sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
+          },
+        ),
+        cacheUpdate<Date | null, CreateEntryInput>(firstEntryKey(organizationId), (first, input) =>
           earliest(first, input.startedAt),
         ),
       ],

@@ -158,9 +158,10 @@ function viewerRole() {
 function session() {
   return {
     activeOrganizationId: organizationId,
-    role: viewerRole(),
     user: { id: server.viewer },
-    organizations: [{ id: organizationId, name: 'Snowhound', slug: 'snowhound' }],
+    organizations: [
+      { id: organizationId, name: 'Snowhound', slug: 'snowhound', role: viewerRole() },
+    ],
     settings: { timeZone: 'Europe/Tallinn' },
   }
 }
@@ -174,7 +175,7 @@ function renderPage(tab: OrganizationTab = 'members') {
   queryClient.setQueryData(['session'], session())
   render(() => (
     <QueryClientProvider client={queryClient}>
-      <OrganizationPage tab={tab} />
+      <OrganizationPage organizationId={organizationId} tab={tab} />
     </QueryClientProvider>
   ))
 }
@@ -470,7 +471,7 @@ describe('OrganizationView', () => {
 
     await userEvent.selectOptions(select(), 'lead')
     expect(fn.setTeamRole).toHaveBeenCalledWith({
-      data: { teamId: ids.platform, userId: ids.max, role: 'lead' },
+      data: { organizationId, teamId: ids.platform, userId: ids.max, role: 'lead' },
     })
     expect(
       await screen.findByText('2 members · Led by Lena Lead and Max Member'),
@@ -478,7 +479,7 @@ describe('OrganizationView', () => {
 
     await userEvent.selectOptions(select(), 'member')
     expect(fn.setTeamRole).toHaveBeenLastCalledWith({
-      data: { teamId: ids.platform, userId: ids.max, role: 'member' },
+      data: { organizationId, teamId: ids.platform, userId: ids.max, role: 'member' },
     })
   })
 
@@ -505,7 +506,8 @@ describe('OrganizationView', () => {
     renderPage()
     await userEvent.click(await screen.findByRole('tab', { name: /Teams/ }))
     expect(fn.navigate).toHaveBeenCalledWith({
-      to: '/organization',
+      from: '/$org/organization',
+      to: '/$org/organization',
       search: { tab: 'teams' },
       replace: true,
     })

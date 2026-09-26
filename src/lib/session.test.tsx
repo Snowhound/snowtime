@@ -1,9 +1,7 @@
 import { QueryClient, QueryObserver } from '@tanstack/solid-query'
 import { describe, expect, test, vi } from 'vitest'
-import { getAppSession } from '~/server/auth/auth.functions'
-import { AppError } from '~/server/errors'
 import { newId } from './query'
-import { callInShownOrganization, followSession, sessionQuery, shownOrganization } from './session'
+import { followSession, organizationOfPath, sessionQuery } from './session'
 
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
 
@@ -11,8 +9,8 @@ const organizationId = newId()
 const projectsKey = ['projects', organizationId]
 
 // The session of one user, as far as the cache watcher reads it.
-function sessionOf(userId: string) {
-  return { user: { id: userId }, activeOrganizationId: organizationId } as never
+function sessionOf(userId: string, activeOrganizationId = organizationId) {
+  return { user: { id: userId }, activeOrganizationId } as never
 }
 
 function setup() {
@@ -56,87 +54,63 @@ describe('followSession', () => {
     queryClient.setQueryData(sessionQuery.queryKey, sessionOf(ada))
     expect(queryClient.getQueryData(projectsKey)).toEqual(['Ada’s'])
   })
+
+  // Each tab shows the organization in its URL, so another tab's switch leaves this one's
+  // data alone.
+  test('keeps every organization’s data when the session’s default changes', () => {
+    const queryClient = setup()
+    const ada = newId()
+    queryClient.setQueryData(sessionQuery.queryKey, sessionOf(ada))
+    queryClient.setQueryData(projectsKey, ['Ada’s'])
+    queryClient.setQueryData(sessionQuery.queryKey, sessionOf(ada, newId()))
+    expect(queryClient.getQueryData(projectsKey)).toEqual(['Ada’s'])
+  })
 })
 
-describe('tabs sharing the session', () => {
-  const max = newId()
-  const harbor = newId()
-  const northwind = newId()
-  const projects = { [harbor]: ['Harbor’s project'], [northwind]: ['Northwind’s project'] }
+describe('organizationOfPath', () => {
+  const northwind = { id: newId(), name: 'Northwind', slug: 'northwind', role: 'member' }
+  const harbor = { id: newId(), name: 'Harbor', slug: 'harbor', role: 'owner' }
+  const session = {
+    user: { id: newId() },
+    activeOrganizationId: harbor.id,
+    organizations: [harbor, northwind],
+    invitationId: null,
+  } as never
 
-  function sessionIn(activeOrganizationId: string) {
-    return { user: { id: max }, activeOrganizationId } as never
+  // The redirect organizationOfPath throws, as the router reads it.
+  function redirected(slug: string, href: string, from = session) {
+    try {
+      organizationOfPath(from, slug, href)
+    } catch (thrown) {
+      return (thrown as { options: object }).options
+    }
+    throw new Error('no redirect')
   }
 
-  // A tab on Harbor, with its session watched as the root watches it, and a server that
-  // answers for the session's organization, which another tab can switch at any time. It
-  // refuses a call for another organization, as scopeMiddleware does.
-  function tabOnHarbor() {
-    const queryClient = setup()
-    const server = { active: harbor, refusals: 0 }
-    vi.mocked(getAppSession).mockImplementation(async () => sessionIn(server.active))
-    queryClient.setQueryData(sessionQuery.queryKey, sessionIn(harbor))
-    const session = new QueryObserver(queryClient, { ...sessionQuery, staleTime: Infinity })
-    const stopSession = session.subscribe(() => {})
-    // Every value the cache stored under each organization's projects key.
-    const stored: [unknown, unknown][] = []
-    queryClient.getQueryCache().subscribe(({ query, type }) => {
-      if (type === 'updated' && query.queryKey[0] === 'projects') {
-        stored.push([query.queryKey[1], query.state.data])
-      }
-    })
-    function listProjects(shown: string | undefined) {
-      if (shown && shown !== server.active) {
-        server.refusals++
-        throw new AppError('ORGANIZATION_CHANGED', 'organization_changed')
-      }
-      return projects[server.active]
-    }
-    const list = new QueryObserver(queryClient, {
-      queryKey: ['projects', harbor],
-      queryFn: () => callInShownOrganization(queryClient, async (shown) => listProjects(shown)),
-    })
-    const stopList = list.subscribe(() => {})
-    return {
-      queryClient,
-      server,
-      list,
-      stored,
-      stop() {
-        stopList()
-        stopSession()
-      },
-    }
-  }
-
-  test('a call for the organization another tab left is refused, and the tab follows', async () => {
-    const tab = tabOnHarbor()
-    await vi.waitFor(() => expect(tab.list.getCurrentResult().data).toEqual(projects[harbor]))
-
-    // Another tab switches to Northwind; this one still shows Harbor, and refetches.
-    tab.server.active = northwind
-    await tab.list.refetch()
-    expect(tab.server.refusals).toBe(1)
-
-    // It reads the session again, follows it to Northwind, and drops Harbor's queries.
-    await vi.waitFor(() => expect(shownOrganization(tab.queryClient)).toBe(northwind))
-    expect(tab.queryClient.getQueryCache().find({ queryKey: ['projects', harbor] })).toBeUndefined()
-    expect(tab.stored).not.toContainEqual([harbor, projects[northwind]])
-    tab.stop()
+  test('names the organization of a slug the user belongs to', () => {
+    expect(organizationOfPath(session, 'northwind', '/northwind/timer')).toBe(northwind)
   })
 
-  test('a session read again with another organization drops the old one’s queries', async () => {
-    const tab = tabOnHarbor()
-    await vi.waitFor(() => expect(tab.list.getCurrentResult().data).toEqual(projects[harbor]))
-    tab.queryClient.setQueryData(['projects', northwind], projects[northwind])
+  test('opens an old link in the default organization, keeping the search and hash', () => {
+    expect(redirected('reports', '/reports?range=last-week#top')).toMatchObject({
+      href: '/harbor/reports?range=last-week#top',
+    })
+    expect(redirected('timer', '/timer')).toMatchObject({ href: '/harbor/timer' })
+  })
 
-    // The session refetches, on focus, after another tab switched.
-    tab.server.active = northwind
-    await tab.queryClient.refetchQueries({ queryKey: sessionQuery.queryKey })
+  test('sends an unknown slug home', () => {
+    expect(redirected('elsewhere', '/elsewhere/timer')).toMatchObject({ to: '/' })
+  })
 
-    expect(shownOrganization(tab.queryClient)).toBe(northwind)
-    expect(tab.queryClient.getQueryData(['projects', harbor])).toBeUndefined()
-    expect(tab.queryClient.getQueryData(['projects', northwind])).toEqual(projects[northwind])
-    tab.stop()
+  test('sends a user without an organization to their invitation, or to create one', () => {
+    const none = { ...(session as object), organizations: [], activeOrganizationId: null }
+    expect(redirected('timer', '/timer', none as never)).toMatchObject({
+      to: '/create-organization',
+    })
+    const invited = { ...none, invitationId: 'invitation' }
+    expect(redirected('northwind', '/northwind/timer', invited as never)).toMatchObject({
+      to: '/invitation/$id',
+      params: { id: 'invitation' },
+    })
   })
 })

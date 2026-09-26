@@ -65,9 +65,8 @@ const server: { role: 'member' | 'admin'; projects: Project[] } = {
 function session() {
   return {
     activeOrganizationId: organizationId,
-    role: server.role,
     user: { id: userId },
-    organizations: [{ id: organizationId, name: 'Snowhound' }],
+    organizations: [{ id: organizationId, name: 'Snowhound', role: server.role }],
     settings: { timeZone: 'Europe/Tallinn' },
   }
 }
@@ -77,7 +76,7 @@ function renderView() {
   queryClient.setQueryData(['session'], session())
   render(() => (
     <QueryClientProvider client={queryClient}>
-      <ProjectsPage />
+      <ProjectsPage organizationId={organizationId} />
     </QueryClientProvider>
   ))
 }
@@ -207,7 +206,7 @@ describe('ProjectsView', () => {
     const { id } = fn.createProject.mock.calls[0][0].data
     await waitFor(() =>
       expect(fn.assignProjectToTeam).toHaveBeenCalledWith({
-        data: { projectId: id, teamId: design.id },
+        data: { organizationId, projectId: id, teamId: design.id },
       }),
     )
     expect(fn.assignProjectToTeam).toHaveBeenCalledTimes(1)
@@ -227,11 +226,11 @@ describe('ProjectsView', () => {
 
     await waitFor(() => expect(fn.unassignProjectFromTeam).toHaveBeenCalledTimes(1))
     expect(fn.unassignProjectFromTeam).toHaveBeenCalledWith({
-      data: { projectId: snowtime.id, teamId: design.id },
+      data: { organizationId, projectId: snowtime.id, teamId: design.id },
     })
     expect(fn.assignProjectToTeam).toHaveBeenCalledTimes(1)
     expect(fn.assignProjectToTeam).toHaveBeenCalledWith({
-      data: { projectId: snowtime.id, teamId: client.id },
+      data: { organizationId, projectId: snowtime.id, teamId: client.id },
     })
     // Name and color are unchanged.
     expect(fn.updateProject).not.toHaveBeenCalled()
@@ -249,7 +248,7 @@ describe('ProjectsView', () => {
     await chooseAction('Snowtime', 'Archive')
     dialog = await screen.findByRole('dialog', { name: 'Archive Snowtime?' })
     await userEvent.click(within(dialog).getByRole('button', { name: 'Archive' }))
-    expect(fn.archiveProject).toHaveBeenCalledWith({ data: { id: snowtime.id } })
+    expect(fn.archiveProject).toHaveBeenCalledWith({ data: { organizationId, id: snowtime.id } })
     // Moved to Archived before the server answers.
     expect(screen.getByText('Snowhound · 0 active, 2 archived')).toBeInTheDocument()
   })
@@ -261,13 +260,13 @@ describe('ProjectsView', () => {
     await chooseAction('Snowtime', 'Delete')
     const confirm = await screen.findByRole('dialog', { name: 'Delete Snowtime?' })
     await userEvent.click(within(confirm).getByRole('button', { name: 'Delete project' }))
-    expect(fn.deleteProject).toHaveBeenCalledWith({ data: { id: snowtime.id } })
+    expect(fn.deleteProject).toHaveBeenCalledWith({ data: { organizationId, id: snowtime.id } })
 
     const refused = await screen.findByRole('dialog', { name: 'Snowtime has tracked time' })
     // The refusal came within the delay, so the row never left.
     expect(screen.getByText('Snowtime')).toBeInTheDocument()
     await userEvent.click(within(refused).getByRole('button', { name: 'Archive instead' }))
-    expect(fn.archiveProject).toHaveBeenCalledWith({ data: { id: snowtime.id } })
+    expect(fn.archiveProject).toHaveBeenCalledWith({ data: { organizationId, id: snowtime.id } })
   })
 
   test('a slow delete shows the row pending, then removes it', async () => {
@@ -332,6 +331,6 @@ describe('ProjectsView', () => {
     const dialog = await screen.findByRole('dialog', { name: 'New project' })
     expect(
       within(dialog).getByRole('link', { name: 'Create teams in Organization' }),
-    ).toHaveAttribute('href', '/organization')
+    ).toHaveAttribute('href', '/$org/organization')
   })
 })
