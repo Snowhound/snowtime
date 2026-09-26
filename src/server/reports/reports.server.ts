@@ -371,7 +371,7 @@ function byDay(a: DayCursor, b: DayCursor) {
   )
 }
 
-export interface EntryDay {
+interface EntryDay {
   date: IsoDate
   // The whole day's time in the list, also when the page holds only part of the day.
   total: number

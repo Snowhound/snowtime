@@ -7,7 +7,7 @@ import type { OrganizationOptions } from 'better-auth/plugins'
 import * as v from 'valibot'
 import { Name, Slug } from './auth.schemas'
 
-export const nameRefusals = {
+const nameRefusals = {
   NAME_REQUIRED: 'Enter a name.',
   NAME_TOO_LONG: 'The name is too long.',
   SLUG_FORMAT: 'Use lowercase letters, numbers, and dashes.',

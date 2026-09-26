@@ -98,7 +98,7 @@ export function microsoftEmailVerified(claims: MicrosoftClaims): boolean {
 // Better Auth's password sign-up, which only development offers (passwordEnabled).
 const PASSWORD_SIGN_UP = '/sign-up/email'
 
-export const signUpRefusals = {
+const signUpRefusals = {
   EMAIL_UNVERIFIED: "The sign-in provider hasn't verified this account's email address.",
 } as const
 
