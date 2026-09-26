@@ -84,12 +84,32 @@
       }
     },
     {
+      "files": ["src/features/**", "src/components/**", "src/lib/**", "src/server/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^~/features/",
+                "message": "Only routes import features; move shared code to src/components/ or src/lib/."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["src/features/*/*/**", "src/server/*/**"],
       "rules": {
         "eslint/no-restricted-imports": [
           "error",
           {
             "patterns": [
+              {
+                "regex": "^~/features/",
+                "message": "Only routes import features; move shared code to src/components/ or src/lib/."
+              },
               {
                 "regex": "^\\.\\./\\.\\./",
                 "message": "Import from outside this feature or src/server/ through ~/."

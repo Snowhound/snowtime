@@ -39,12 +39,13 @@ Edit their source files at the paths above so both agents use the same instructi
 - A page whose loader waits on the server has a `<Name>Pending` (`<name>-pending.tsx`,
   built on `src/components/page-pending.tsx`) that the router shows while it loads, so a
   link opens at once.
-- Features don't import from each other. Code starts in its feature and moves once a
-  second feature needs it: components to `src/components/`, everything else to
-  `src/lib/`. `src/lib/` also holds generic helpers and code the server shares, such as
-  `calendar.ts`. `src/components/ui/` holds only the Solid-UI registry copies. Files there
-  that serve one concern share a subfolder, as the seasonal scene's do in `src/lib/scene/`
-  and `src/components/scene/`.
+- Features don't import from each other; oxlint allows imports from `src/features/` only
+  in routes and `src/router.tsx`. Code starts in its feature and moves once a second
+  feature needs it: components to `src/components/`, everything else to `src/lib/`.
+  `src/lib/` also holds generic helpers and code the server shares, such as `calendar.ts`.
+  `src/components/ui/` holds only the Solid-UI registry copies. Files there that serve one
+  concern share a subfolder, as the seasonal scene's do in `src/lib/scene/` and
+  `src/components/scene/`.
 - A component gets its own folder, `<name>/<name>.tsx`, once it has subcomponents,
   helpers, or tests that nothing else in the feature uses.
 - Backend code is grouped by domain in `src/server/<domain>/` ("Application rules" in
