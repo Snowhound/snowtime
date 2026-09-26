@@ -29,6 +29,12 @@ Changed:
 - `WeekStart` comes from the settings schema; `src/lib/calendar.ts` re-exports it rather
   than restating `'mon' | 'sun'`.
 - `CreatedInvitation` in `invite-dialog.tsx` is a `Pick` of `Invitation`.
+- The day lists hold `StoppedEntry` (an `Entry` with a `stoppedAt`), and `readEntryTimes`
+  returns a non-null `stoppedAt` for `running: false`, so the entry editor and the
+  all-time total no longer assert it. The one left, in `timer-view.tsx`, saves a new
+  entry from the popover, whose values type covers the running entry too.
+- One `isAdmin` in `src/lib/session.ts` replaces two copies and two inline checks
+  (agreed on 2026-09-26, ahead of subtask 04).
 
 Checked and sound:
 
@@ -59,12 +65,3 @@ Checked and sound:
   tables (`app-icon.ts`, `scene.ts`), and Drizzle's `and()` with fixed arguments.
   `session.settings` is null until `getSettings` creates the row with the browser's time
   zone, so the Projects and Reports pages assert `settings!` under a `Show` that checks it.
-
-Left for a decision:
-
-- Six `!` in `entry-fields.tsx` and `timer-view.tsx` assert `stoppedAt` on entries that
-  are stopped by construction. A `StoppedEntry` type, or an overload of
-  `readEntryTimes` for `running: false`, would remove them for a few added lines.
-- `reports-page.tsx` checks `owner || admin` inline, while `organization-page.tsx` and
-  `projects-page.tsx` each define the same `isAdmin`. Subtask 04 covers duplicated
-  helpers.
