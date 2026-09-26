@@ -24,3 +24,6 @@ fc414e064bdcce20e642df675967fbd927f5807f
 
 # Archive task 044.
 1eecce8a91bddfcf8d01bde381b24b8b6402bbeb
+
+# Move the shared query files into src/lib/queries/ (task 053).
+6136d8b0290fddd090a8dcf79ef299d54f97cbfb
