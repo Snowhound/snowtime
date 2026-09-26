@@ -14,7 +14,7 @@ any local cleanup.
       client) has one source, or a stated reason for both
 - [ ] Each server domain's layers (`*.functions.ts`, `*.server.ts`, schemas) carry
       their weight; none only forwards to the next
-- [ ] Larger simplifications found are listed with what they remove, each as its own
-      task
+- [ ] Larger simplifications are done, split into reviewable commits, with the
+      decisions they change updated in `docs/architecture.md`
 
 ## Findings
