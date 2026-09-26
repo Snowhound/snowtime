@@ -1,6 +1,6 @@
-// The signed-out pages' Appearance menu (prototypes/auth.html, "Scenery menu"), from the
-// mountain button at the top right: the theme and the scenery with short hints, the Intro
-// switch, and Replay intro. Signed out it saves on this device; on a signed-in page without an organization yet it
+// The signed-out pages' Appearance menu (prototypes/auth.html, "Scenery menu"), from the mountain
+// button at the top right: the theme and the scenery with short hints, the Intro switch, and Replay
+// intro. Signed out it saves on this device; on a signed-in page without an organization yet it
 // saves to the account, like the header's popover.
 import MountainSnowIcon from 'lucide-solid/icons/mountain-snow'
 import { Show, createSignal } from 'solid-js'

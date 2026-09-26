@@ -22,10 +22,10 @@ import { currentSeason, sceneAttributes } from '~/lib/scene/scene'
 import { m } from '~/paraglide/messages.js'
 import { AppearanceMenu } from './appearance-menu'
 
-// The signed-out screens' frame: a centered card over the seasonal scene, with the product
-// mark and the season's tagline above it (prototypes/auth.html, 01 · Card), and the Appearance menu at the top
-// right. Signed out, the settings are the device's (src/lib/device-settings.ts); they load after
-// hydration, so the first paint shows the defaults. A signed-in user without an organization
+// The signed-out screens' frame: a centered card over the seasonal scene, with the product mark and
+// the season's tagline above it (prototypes/auth.html, 01 · Card), and the Appearance menu at the
+// top right. Signed out, the settings are the device's (src/lib/device-settings.ts); they load
+// after hydration, so the first paint shows the defaults. A signed-in user without an organization
 // yet has the account's.
 export function AuthLayout(props: { children: JSX.Element; firstVisitIntro?: boolean }) {
   const session = useQuery(() => sessionQuery)

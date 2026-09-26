@@ -1,5 +1,5 @@
-// Which sign-in methods an environment offers. Pure, so better-auth.server.ts and getSignInMethods build
-// from the same rule and cannot disagree about what is configured.
+// Which sign-in methods an environment offers. Pure, so better-auth.server.ts and getSignInMethods
+// build from the same rule and cannot disagree about what is configured.
 
 export type SignInMethod = 'google' | 'github' | 'microsoft' | 'password' | 'passkey'
 

@@ -1,8 +1,8 @@
-// TimeInput's dropdown, like Firefox's time picker: a scrolling column of hours and one of
-// minutes in 5-minute steps, each a listbox. In the 12-hour format the hours run 12, 01 to 11,
-// and a third column picks AM or PM; the value stays a 24-hour 'HH:MM'. ArrowUp and ArrowDown move within a column, Home and
-// End to its ends, Tab to the other column, and Enter or Space picks. A typed minute off the
-// steps, such as 33, is added to its column so the value always shows as picked.
+// TimeInput's dropdown, like Firefox's time picker: a scrolling column of hours and one of minutes
+// in 5-minute steps, each a listbox. In the 12-hour format the hours run 12, 01 to 11, and a third
+// column picks AM or PM; the value stays a 24-hour 'HH:MM'. ArrowUp and ArrowDown move within a
+// column, Home and End to its ends, Tab to the other column, and Enter or Space picks. A typed
+// minute off the steps, such as 33, is added to its column so the value always shows as picked.
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { uses12Hours } from '~/lib/date-input'
 import { cn } from '~/lib/utils'

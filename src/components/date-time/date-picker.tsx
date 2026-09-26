@@ -1,13 +1,13 @@
-// A date field that looks the same in every browser, in place of <input type="date">: a text
-// input in the user's date format (src/lib/date-input.ts, the dateFormat setting) and a calendar. Typing takes
-// short forms (25.9, 25/9/26), ArrowUp and ArrowDown move a day, and Alt+ArrowDown opens the
+// A date field that looks the same in every browser, in place of <input type="date">: a text input
+// in the user's date format (src/lib/date-input.ts, the dateFormat setting) and a calendar. Typing
+// takes short forms (25.9, 25/9/26), ArrowUp and ArrowDown move a day, and Alt+ArrowDown opens the
 // calendar. The value is an ISO date, or '' for none.
 //
-// `onChange` runs when the value is committed: on blur, on Enter, and when a day is picked,
-// with which one it was. With `live`, it also runs on every keystroke, with '' while the text
-// isn't a date, as a native input's value is. Without it, text that isn't a date goes back to
-// the value on blur. `inline` shows the calendar under the input instead of in a popover, for
-// a field that already sits in one.
+// `onChange` runs when the value is committed: on blur, on Enter, and when a day is picked, with
+// which one it was. With `live`, it also runs on every keystroke, with '' while the text isn't a
+// date, as a native input's value is. Without it, text that isn't a date goes back to the value on
+// blur. `inline` shows the calendar under the input instead of in a popover, for a field that
+// already sits in one.
 import CalendarIcon from 'lucide-solid/icons/calendar'
 import { Show, createEffect, createSignal, createUniqueId, on } from 'solid-js'
 import { Button } from '~/components/ui/button'

@@ -1,6 +1,7 @@
-// The signed-in header every page shares (prototypes/app-frame.js): the app icon, the
-// organization switcher, the navigation, the Appearance popover, and the user menu. Below 768 px the navigation moves to a
-// second row of equal-width links. It sticks to the top, above the cards and below popovers (z-50).
+// The signed-in header every page shares (prototypes/app-frame.js): the app icon, the organization
+// switcher, the navigation, the Appearance popover, and the user menu. Below 768 px the navigation
+// moves to a second row of equal-width links. It sticks to the top, above the cards and below
+// popovers (z-50).
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/solid-router'
 import BuildingComplexIcon from 'lucide-solid/icons/building-complex'

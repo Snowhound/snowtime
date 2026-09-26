@@ -1,16 +1,16 @@
-// A time field that looks the same in every browser, in place of <input type="time">: a text
-// input in the user's hour cycle (src/lib/date-input.ts, the timeFormat setting) that takes short forms such as
-// 930, 9.30, or 9:30pm, and a clock button that opens columns of hours and 5-minute steps,
-// and AM and PM in the 12-hour format (time-columns.tsx), as Firefox's picker does. ArrowUp and ArrowDown move the hour when the
-// caret is in it and the minute otherwise, and Alt+ArrowDown opens the columns.
+// A time field that looks the same in every browser, in place of <input type="time">: a text input
+// in the user's hour cycle (src/lib/date-input.ts, the timeFormat setting) that takes short forms
+// such as 930, 9.30, or 9:30pm, and a clock button that opens columns of hours and 5-minute steps,
+// and AM and PM in the 12-hour format (time-columns.tsx), as Firefox's picker does. ArrowUp and
+// ArrowDown move the hour when the caret is in it and the minute otherwise, and Alt+ArrowDown opens
+// the columns.
 //
-// The value is 'HH:MM', or '' while the text isn't a time, and `onChange` runs on every
-// keystroke and pick, as a native input's input event does. `onCommit` runs when the change is
-// done: on blur, and when the columns close after a pick. Escape in the columns puts back the
-// time they opened on.
+// The value is 'HH:MM', or '' while the text isn't a time, and `onChange` runs on every keystroke
+// and pick, as a native input's input event does. `onCommit` runs when the change is done: on blur,
+// and when the columns close after a pick. Escape in the columns puts back the time they opened on.
 //
-// While `idle`, the clock is a plain button that looks the same, without its popover, so a list
-// of fields can mount the popover only where it is being used.
+// While `idle`, the clock is a plain button that looks the same, without its popover, so a list of
+// fields can mount the popover only where it is being used.
 import ClockIcon from 'lucide-solid/icons/clock'
 import { Show, createEffect, createSignal, on } from 'solid-js'
 import { Button } from '~/components/ui/button'

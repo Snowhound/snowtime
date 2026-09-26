@@ -1,6 +1,6 @@
-// What the app frame needs about the signed-in user: their organizations and role in each,
-// the default one (the session's active organization), their settings, and an open invitation when they have no
-// organization yet (docs/architecture.md, "Tenancy" and "User settings").
+// What the app frame needs about the signed-in user: their organizations and role in each, the
+// default one (the session's active organization), their settings, and an open invitation when they
+// have no organization yet (docs/architecture.md, "Tenancy" and "User settings").
 import { and, asc, eq, gt, sql } from 'drizzle-orm'
 import type { Database } from '~/db'
 import { invitation, member, organization } from '~/db/schema'
