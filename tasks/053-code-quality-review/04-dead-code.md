@@ -17,7 +17,10 @@ Unused code still gets read, searched, and kept up to date.
 
 Changed:
 
-- A one-off `bunx knip` run (no dependency added) found these, now removed: the
+- knip runs in CI (`bun run knip`, agreed on 2026-09-26). `knip.jsonc` names the entries it
+  can't find (Start's server entry, `drizzle.config.ts`) and skips `prototypes/`, `design/`,
+  the Solid-UI copies' exports, and `seasons.ts` until task 054.
+- The first knip run found these, now removed: the
   `@tanstack/solid-query-devtools` and `@tanstack/router-cli` dependencies from the
   scaffold, the unused `src/components/ui/progress.tsx`, and `formatTime` in
   `src/lib/format.ts`. 26 exports that only their own file used lose `export`.
@@ -54,9 +57,3 @@ Checked and sound:
   (`isAdmin` on the server's `Scope` and on the client's role, `read`, `Row`,
   `EmptyState`, `setArchived`) do different things. The server can't import the
   client's `isAdmin`.
-
-Open:
-
-- knip in CI needs a `knip.json` that ignores `src/components/ui/`, `prototypes/`, and
-  `drizzle.config.ts` (which fails without `TURSO_DATABASE_URL`), plus a dev dependency.
-  With so few findings, a run at each review may be enough.

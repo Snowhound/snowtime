@@ -19,3 +19,4 @@ and nothing records how the app picks among a season's sets. Task 053 found the 
 - [ ] The period taglines replace the season's in a week's or month's last days, and when
       they count as the last days is decided
 - [ ] A test covers the pick and the period taglines
+- [ ] `knip.jsonc` no longer ignores `src/lib/scene/seasons.ts`

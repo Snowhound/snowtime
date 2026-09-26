@@ -39,6 +39,9 @@ jobs:
       - name: Type check
         run: bunx tsc --noEmit -p .
 
+      - name: Unused files, exports, and dependencies
+        run: bun run knip
+
       - name: Test
         run: bun test
 

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Start's server entry (vite.config.ts) and drizzle-kit's config, which knip can't load
+  // without TURSO_DATABASE_URL.
+  "entry": ["src/server-entry.ts", "drizzle.config.ts"],
+  "drizzle": false,
+  // Static prototypes and design files load their scripts from HTML.
+  "ignore": ["prototypes/**", "design/**"],
+  "ignoreIssues": {
+    // The Solid-UI copies keep the registry's exports.
+    "src/components/ui/**": ["exports", "types"],
+    // PERIODS waits for task 054.
+    "src/lib/scene/seasons.ts": ["exports"],
+  },
+}
