@@ -1,18 +1,28 @@
+import { QueryClient } from '@tanstack/solid-query'
 import { createRouter as createTanStackRouter } from '@tanstack/solid-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/solid-router-ssr-query'
 import { getGlobalStartContext } from '@tanstack/solid-start'
 import { ErrorPage } from '~/features/errors/error-page'
 import { NotFoundPage } from '~/features/errors/not-found-page'
-import { getContext } from '~/integrations/tanstack-query/provider'
+import { followSession } from '~/lib/session'
 import { routeTree } from './routeTree.gen'
 
 export function getRouter() {
-  const context = getContext()
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Data rendered on the server is fresh when the page hydrates; without this the
+        // client refetches everything right away.
+        staleTime: 30_000,
+      },
+    },
+  })
+  followSession(queryClient)
 
   const router = createTanStackRouter({
     routeTree,
 
-    context,
+    context: { queryClient },
 
     // The page's CSP nonce (src/server-entry.ts), which the router and Solid put on the
     // scripts they render. The client reads it back from the page's csp-nonce meta tag.
@@ -38,7 +48,7 @@ export function getRouter() {
 
   // Provides the query client to components and hands queries loaded on the server to the
   // client, so it doesn't fetch them again.
-  setupRouterSsrQueryIntegration({ router, queryClient: context.queryClient })
+  setupRouterSsrQueryIntegration({ router, queryClient })
 
   return router
 }
