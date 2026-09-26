@@ -1,6 +1,6 @@
 // The seasonal copy (prototypes/seasons.js, prototypes/README.md, "Seasonal copy"): the intro's
 // three lines per season, whose first two are the tagline on every page, plus alternates and
-// timesheet-period taglines task 054 shows, and the intro's text colors. Every set
+// timesheet-period taglines that task 054 will show, and the intro's text colors. Every set
 // follows one pattern: the season does something, then the timesheet does the same.
 import { type Accessor, createContext, useContext } from 'solid-js'
 import { m } from '~/paraglide/messages.js'

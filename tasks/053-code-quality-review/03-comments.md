@@ -27,9 +27,8 @@ Changed:
   `entry-popover.tsx`, and the task numbers of finished tasks (015, 029, 034) in
   `schema.ts`, `app-icon.ts`, and `export.ts` are gone.
 - `src/server/middleware.ts`: the 8-line header listing both middlewares became a
-  2–3 line comment on each, and the 4 lines on Start's input merging became one sentence.
-  `schemas.ts` already says why the input passes through unchanged. 12 comment lines are
-  now 5; the code needed no change.
+  2–3 line comment on each. The note on Start's input merging moved to the validator it
+  explains, so an edit doesn't drop the pass-through. The code needed no change.
 - `src/lib/queries/query.ts`: `optimistic()` took one cache or a list. Only the settings
   mutation passed one cache, so it now passes a list too; the other branch and its 8-line
   usage example are gone. A small code change that removes code, so it's done here rather

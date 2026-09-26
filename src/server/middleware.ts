@@ -30,6 +30,9 @@ export const sessionMiddleware = createMiddleware({ type: 'function' }).server(
 // call must pass `organizationId`.
 export const scopeMiddleware = createMiddleware({ type: 'function' })
   .middleware([sessionMiddleware])
+  // Start runs this on the raw data before the function's own schema, which then parses the
+  // rest, so it checks `organizationId` and returns the input whole. A Valibot looseObject
+  // would do both, but its type fails Start's check that inputs are serializable.
   .validator((input: { organizationId: string }) => parseOrganizationInput(input))
   .server(async ({ next, context, data }) =>
     next({ context: { scope: await resolveScope(db, context.userId, data.organizationId) } }),
