@@ -249,11 +249,24 @@ code {
   inset: 0;
 }
 .scene-photo {
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+.scene-photo-image {
+  position: absolute;
+  inset: 0;
   background-size: cover;
   /* Only screens wider than 16:9 crop the height; keep more of the mountains than the foreground. */
   background-position: center 20%;
-  opacity: 0;
-  transition: opacity 0.9s ease;
+}
+/* A new season's picture fades in over the one before. */
+.scene-photo-image + .scene-photo-image {
+  animation: scene-photo-in 0.9s ease;
+}
+@keyframes scene-photo-in {
+  from {
+    opacity: 0;
+  }
 }
 /* A layer shows once its file has decoded (data-ready), so the image fades in whole. */
 .scene[data-background='on'] .scene-photo-light[data-ready] {
@@ -306,6 +319,7 @@ code {
   .scene,
   .scene * {
     transition: none !important;
+    animation: none !important;
   }
 }
 

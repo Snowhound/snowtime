@@ -4,7 +4,8 @@
 // (src/lib/scene/weather.ts) at the page's pace. The frame that renders it is
 // `isolate` and carries sceneAttributes(), so the layer sits behind the frame's content and the
 // surfaces follow the settings (src/styles.css).
-import { createEffect, createSignal, onCleanup, onMount, untrack } from 'solid-js'
+import { For, createEffect, createMemo, createSignal, onCleanup, onMount, untrack } from 'solid-js'
+import { createStore } from 'solid-js/store'
 import { intro } from '~/lib/scene/intro'
 import {
   PHOTO_SMALL,
@@ -12,6 +13,7 @@ import {
   type PhotoTheme,
   STRENGTHS,
   type SceneSettings,
+  type Season,
   createReducedMotion,
   currentSeason,
   loadPhoto,
@@ -37,9 +39,9 @@ type LayerSettings = Pick<
   'sceneSeason' | 'sceneBackground' | 'sceneStrength' | 'sceneWeather'
 >
 
-function background(src: string) {
-  return src ? `url("${src}")` : undefined
-}
+// A theme's pictures, oldest first. A new season's picture fades in over the one before, which
+// goes once the fade ends; a sharper file of the same season replaces the top one in place.
+type Photo = { season: Season; src: string }
 
 export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
   const [dark, setDark] = createSignal(false)
@@ -57,8 +59,33 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     await loadPhoto(url)
     if (photoReady(url)) setLoaded((n) => n + 1)
   }
-  const [lightSrc, setLightSrc] = createSignal('')
-  const [darkSrc, setDarkSrc] = createSignal('')
+  const [photos, setPhotos] = createStore<Record<PhotoTheme, Photo[]>>({ light: [], dark: [] })
+  function show(theme: PhotoTheme, season: Season, src: string) {
+    if (untrack(() => photos[theme].at(-1)?.season) === season) {
+      // A sharper file of the season on top: swap it in place, without a fade.
+      setPhotos(theme, (p) => p.season === season, 'src', src)
+    } else if (untrack(reducedMotion)) {
+      // No fade, so nothing needs to stay underneath.
+      setPhotos(theme, [{ season, src }])
+    } else {
+      // A new season: fade in on top. A season already in the stack moves up rather than
+      // showing twice.
+      setPhotos(theme, (list) => [...list.filter((p) => p.season !== season), { season, src }])
+    }
+  }
+  function faded(theme: PhotoTheme, season: Season) {
+    setPhotos(theme, (list) => {
+      const i = list.findIndex((p) => p.season === season)
+      return i > 0 ? list.slice(i) : list
+    })
+  }
+  // The weather follows the picture that shows, so a season change switches both as its
+  // picture starts to fade in.
+  const sceneSeason = createMemo(() => {
+    const setting = currentSeason(props.settings.sceneSeason)
+    if (!props.settings.sceneBackground) return setting
+    return photos[dark() ? 'dark' : 'light'].at(-1)?.season ?? setting
+  })
   const [format, setFormat] = createSignal<PhotoFormat>()
 
   onMount(() => {
@@ -76,11 +103,12 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
       removeEventListener('resize', update)
     })
 
-    // The shown theme loads its small file first, on its own, so a picture shows as soon as
-    // possible, then the file for this screen, so it sharpens without moving. The other theme
-    // gets its small file after that, for the crossfade. A layer shows a file only once it has
-    // decoded, and fades it in. Nothing loads while the background is off. It starts once the
-    // theme, the screen, and the file format are known.
+    // On the first picture, the shown theme loads its small file first, on its own, so a picture
+    // shows as soon as possible, then the file for this screen, so it sharpens without moving.
+    // Once a picture shows, a new season loads the file for this screen straight away. The other
+    // theme gets its small file after that, for the crossfade. A layer shows a file only once it
+    // has decoded, and fades it in. Nothing loads while the background is off. It starts once
+    // the theme, the screen, and the file format are known.
     void photoFormat().then(setFormat)
     createEffect(() => {
       loaded()
@@ -91,21 +119,21 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
       const shown: PhotoTheme = dark() ? 'dark' : 'light'
       const shownReady = photoReady(photoUrl(season, shown, width(), f))
       for (const theme of ['light', 'dark'] as const) {
-        const [src, setSrc] = theme === 'light' ? [lightSrc, setLightSrc] : [darkSrc, setDarkSrc]
         const sharp = photoUrl(season, theme, width(), f)
         if (photoReady(sharp)) {
-          setSrc(sharp)
+          show(theme, season, sharp)
           continue
         }
         const small = photoUrl(season, theme, PHOTO_SMALL, f)
         const due = on && (theme === shown || shownReady)
+        const showing = untrack(() => photos[theme].length > 0)
         // The intro opens without the background and fades the dark image in later, so its
         // sharp file loads meanwhile.
         const wanted = (on && theme === shown) || (intro.playing() && theme === 'dark')
-        if (wanted && (photoReady(small) || !due)) void load(sharp)
+        if (wanted && (photoReady(small) || !due || showing)) void load(sharp)
         if (!due) continue
-        if (!photoReady(small)) void load(small)
-        else if (!untrack(src).includes(`/${season}-${theme}-`)) setSrc(small)
+        if (photoReady(small)) show(theme, season, small)
+        else if (!showing) void load(small)
       }
     })
 
@@ -124,8 +152,7 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     createEffect(() => {
       const isDark = dark()
       const background = props.settings.sceneBackground
-      const effect =
-        SEASON_EFFECTS[currentSeason(props.settings.sceneSeason)][isDark ? 'dark' : 'light']
+      const effect = SEASON_EFFECTS[sceneSeason()][isDark ? 'dark' : 'light']
       let on = props.settings.sceneWeather && !reducedMotion() && visible() && !failed.has(effect)
       if (on && renderer === undefined) {
         renderer = createWeatherRenderer(canvas, () => PACES[props.pace])
@@ -157,16 +184,24 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         '--scene-tint-dark': STRENGTHS[props.settings.sceneStrength].dark,
       }}
     >
-      <div
-        class="scene-photo scene-photo-light"
-        data-ready={lightSrc() ? '' : undefined}
-        style={{ 'background-image': background(lightSrc()) }}
-      />
-      <div
-        class="scene-photo scene-photo-dark"
-        data-ready={darkSrc() ? '' : undefined}
-        style={{ 'background-image': background(darkSrc()) }}
-      />
+      <For each={['light', 'dark'] as const}>
+        {(theme) => (
+          <div
+            class={`scene-photo scene-photo-${theme}`}
+            data-ready={photos[theme].length > 0 ? '' : undefined}
+          >
+            <For each={photos[theme]}>
+              {(photo) => (
+                <div
+                  class="scene-photo-image"
+                  style={{ 'background-image': `url("${photo.src}")` }}
+                  onAnimationEnd={() => faded(theme, photo.season)}
+                />
+              )}
+            </For>
+          </div>
+        )}
+      </For>
       <div class="scene-tint" />
       <div class="scene-vignette" />
       <canvas ref={canvas} class="scene-weather" data-on={weatherOn() ? '' : undefined} />
