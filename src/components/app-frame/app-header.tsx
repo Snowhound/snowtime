@@ -1,7 +1,7 @@
 // The signed-in header every page shares (prototypes/app-frame.js): the app icon, the organization
-// switcher, the navigation, the Appearance popover, and the user menu. Below 768 px the navigation
-// moves to a second row of equal-width links. It sticks to the top, above the cards and below
-// popovers (z-50).
+// switcher, the navigation, the Appearance popover, and the user menu, which also switches the
+// language. Below 768 px the navigation moves to a second row of equal-width links. It sticks to
+// the top, above the cards and below popovers (z-50).
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/solid-router'
 import BuildingComplexIcon from 'lucide-solid/icons/building-complex'
@@ -30,9 +30,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { Label } from '~/components/ui/label'
+import { NativeSelect } from '~/components/ui/native-select'
 import { appIcon } from '~/lib/app-icon'
 import { authClient, signOut } from '~/lib/auth-client'
+import { LANGUAGES } from '~/lib/languages'
 import { organizationIn, sessionQuery } from '~/lib/queries/session'
+import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { cn, initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { AppSession } from '~/server/auth/auth.functions'
@@ -199,6 +203,7 @@ function OrganizationSwitcher(props: { session: AppSession; organization: Organi
 
 function UserMenu(props: { session: AppSession; organizationSlug: string }) {
   const navigate = useNavigate()
+  const save = useUpdateSettings()
 
   return (
     <DropdownMenu placement="bottom-end">
@@ -223,6 +228,14 @@ function UserMenu(props: { session: AppSession; organizationSlug: string }) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={() =>
+            navigate({ to: '/$org/settings', params: { org: props.organizationSlug } })
+          }
+        >
+          <SettingsIcon class="size-4" aria-hidden="true" />
+          {m.nav_settings()}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() =>
             navigate({
               to: '/$org/settings',
               params: { org: props.organizationSlug },
@@ -233,14 +246,44 @@ function UserMenu(props: { session: AppSession; organizationSlug: string }) {
           <UserIcon class="size-4" aria-hidden="true" />
           {m.user_menu_profile()}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() =>
-            navigate({ to: '/$org/settings', params: { org: props.organizationSlug } })
-          }
-        >
-          <SettingsIcon class="size-4" aria-hidden="true" />
-          {m.nav_settings()}
-        </DropdownMenuItem>
+        <Show when={props.session.settings}>
+          {(settings) => (
+            <>
+              <DropdownMenuSeparator />
+              {/* Not a menu item: the select keeps its own keys, which the menu would take for
+                  moving between items and type-ahead. Saving switches the language in place
+                  (the root route). */}
+              <div class="flex items-center justify-between gap-3 px-2 py-1.5">
+                <Label for="user-menu-locale" class="font-normal">
+                  {m.settings_language()}
+                </Label>
+                <NativeSelect
+                  id="user-menu-locale"
+                  class="h-8 w-32 py-1"
+                  value={settings().locale}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Escape' && event.key !== 'Tab') event.stopPropagation()
+                  }}
+                  onChange={(event) =>
+                    save.mutate({ locale: event.currentTarget.value as Settings['locale'] })
+                  }
+                >
+                  <For each={LANGUAGES}>
+                    {(language) => (
+                      <option
+                        value={language.value}
+                        lang={language.value}
+                        selected={language.value === settings().locale}
+                      >
+                        {language.label}
+                      </option>
+                    )}
+                  </For>
+                </NativeSelect>
+              </div>
+            </>
+          )}
+        </Show>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => navigate({ to: '/privacy' })}>
           <ShieldIcon class="size-4" aria-hidden="true" />

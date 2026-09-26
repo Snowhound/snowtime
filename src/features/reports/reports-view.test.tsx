@@ -245,6 +245,8 @@ const NOW = new Date('2026-09-24T09:00:00Z')
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  // The Entries list starts closed until the user opens it; most tests need it open.
+  localStorage.setItem('snowtime.reportEntriesOpen', '1')
   vi.useFakeTimers({ toFake: ['Date'], now: NOW })
   server.role = 'member'
   server.rows = [
@@ -554,33 +556,35 @@ describe('ReportsView', () => {
     await waitFor(() => expect(search()).toEqual({ range: 'this-week' }))
   })
 
-  test('the Entries list closes from its title, stays closed, and a timesheet cell opens it', async () => {
+  test('the Entries list starts closed, opens from its title, stays as left, and a timesheet cell opens it', async () => {
+    localStorage.clear()
     renderView()
     const card = await screen.findByRole('region', { name: 'Entries' })
-    await within(card).findAllByRole('heading', { level: 4 })
-    await userEvent.click(within(card).getByRole('button', { name: 'Entries' }))
-    expect(within(card).getByRole('button', { name: 'Entries' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    )
-    expect(within(card).queryByRole('heading', { level: 4 })).not.toBeInTheDocument()
+    const title = within(card).getByRole('button', { name: 'Entries' })
+    expect(title).toHaveAttribute('aria-expanded', 'false')
+    expect(await within(card).findByText(summary('3 entries · 3:00'))).toBeInTheDocument()
     expect(within(card).queryByRole('button', { name: 'By day' })).not.toBeInTheDocument()
 
+    await userEvent.click(title)
+    expect(title).toHaveAttribute('aria-expanded', 'true')
+    expect(await within(card).findAllByRole('heading', { level: 4 })).toHaveLength(2)
     cleanup()
     renderView()
-    const again = await screen.findByRole('region', { name: 'Entries' })
-    expect(within(again).getByRole('button', { name: 'Entries' })).toHaveAttribute(
+    const opened = await screen.findByRole('region', { name: 'Entries' })
+    expect(await within(opened).findAllByRole('heading', { level: 4 })).toHaveLength(2)
+
+    await userEvent.click(within(opened).getByRole('button', { name: 'Entries' }))
+    cleanup()
+    renderView()
+    const closed = await screen.findByRole('region', { name: 'Entries' })
+    expect(within(closed).getByRole('button', { name: 'Entries' })).toHaveAttribute(
       'aria-expanded',
       'false',
     )
     const grid = await screen.findByRole('table')
     const row = within(grid).getByRole('rowheader', { name: 'Snowtime' }).closest('tr')!
     await userEvent.click(within(row).getByRole('button', { name: '3:00' }))
-    expect(await within(again).findAllByRole('heading', { level: 4 })).toHaveLength(1)
-    expect(within(again).getByRole('button', { name: 'Entries' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    )
+    expect(await within(closed).findAllByRole('heading', { level: 4 })).toHaveLength(1)
   })
 
   test('changing a filter shows all entries in the view that fits the range', async () => {

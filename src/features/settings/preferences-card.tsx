@@ -27,18 +27,13 @@ import { formatTimeInput } from '~/lib/date-input'
 import { hourCycle } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatHours, formatIsoDate } from '~/lib/format'
+import { LANGUAGES } from '~/lib/languages'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { playIntro } from '~/lib/scene/intro'
 import { useSeason } from '~/lib/scene/seasons'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
-
-// Languages by their own names, so each reads the same in every UI language.
-const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'et', label: 'Eesti' },
-] as const
 
 const WEEK_STARTS = [
   { value: 'mon', label: m.settings_week_monday },

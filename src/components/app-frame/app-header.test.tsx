@@ -11,9 +11,10 @@ const fn = vi.hoisted(() => ({
   getAppSession: vi.fn(),
   setActive: vi.fn(),
   navigate: vi.fn(),
+  updateSettings: vi.fn(),
 }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
-vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: vi.fn() }))
+vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
   authClient: { organization: { setActive: fn.setActive } },
@@ -45,9 +46,9 @@ const session = {
 }
 
 // The tab shows Northwind, from its URL, while the session's default is Harbor.
-function renderHeader() {
+function renderHeader(data: object = session) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  queryClient.setQueryData(sessionQuery.queryKey, session as never)
+  queryClient.setQueryData(sessionQuery.queryKey, data as never)
   render(() => (
     <QueryClientProvider client={queryClient}>
       <AppHeader organizationId={northwind.id} />
@@ -103,5 +104,20 @@ describe('AppHeader', () => {
     await userEvent.click(await screen.findByRole('menuitemradio', { name: 'Northwind' }))
     expect(fn.navigate).not.toHaveBeenCalled()
     expect(fn.setActive).not.toHaveBeenCalled()
+  })
+
+  test('the user menu lists Settings before Profile and switches the language', async () => {
+    const withSettings = { ...session, settings: { locale: 'en', appIcon: '02' } }
+    fn.getAppSession.mockResolvedValue(withSettings)
+    fn.updateSettings.mockResolvedValue(undefined)
+    renderHeader(withSettings)
+    await userEvent.click(screen.getByRole('button', { name: 'Account menu for Max Member' }))
+    const items = await screen.findAllByRole('menuitem')
+    expect(items.slice(0, 2).map((item) => item.textContent)).toEqual(['Settings', 'Profile'])
+    const language = screen.getByRole('combobox', { name: 'Language' })
+    expect(language).toHaveValue('en')
+
+    await userEvent.selectOptions(language, 'et')
+    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { locale: 'et' } })
   })
 })

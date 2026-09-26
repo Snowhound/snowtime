@@ -1,6 +1,6 @@
 // The project picker of the timer bar and the entry popover, and the choices it and the
 // entry rows' project menu list.
-import { Show, createMemo } from 'solid-js'
+import { Show, createMemo, createSignal } from 'solid-js'
 import { ProjectDot } from '~/components/project-dot'
 import {
   Select,
@@ -68,10 +68,15 @@ export function ProjectSelect(props: {
   function selected() {
     return options().find((o) => o.value === props.value) ?? options()[0]
   }
+  // Kobalte's list lets Tab through, and from its portal at the end of the body focus would
+  // fall to the page's start. Tab closes the list instead, and focus goes back to the picker.
+  const [open, setOpen] = createSignal(false)
 
   return (
     <Select<ProjectOption>
       class={props.class}
+      open={open()}
+      onOpenChange={setOpen}
       options={options()}
       optionValue="key"
       optionTextValue="label"
@@ -92,7 +97,15 @@ export function ProjectSelect(props: {
           {(state) => <ChoiceLabel choice={state.selectedOption()} />}
         </SelectValue>
       </SelectTrigger>
-      <SelectContent class="max-h-80 overflow-y-auto" />
+      <SelectContent
+        class="max-h-80 overflow-y-auto"
+        onKeyDown={(event: KeyboardEvent) => {
+          if (event.key !== 'Tab') return
+          event.preventDefault()
+          setOpen(false)
+          document.getElementById(props.id)?.focus()
+        }}
+      />
     </Select>
   )
 }

@@ -319,7 +319,7 @@ lists these items, and must change with them.
 | `snowtime.introSeen`, `snowtime.introSeason` | localStorage | Where the intro last played           | Until cleared                      |
 | `snowtime.passkeyPromptDismissed`            | localStorage | "Not now" on the passkey prompt       | Until cleared                      |
 | `snowtime.reportEntriesNarrowed`             | localStorage | Hides the Entries card's hint         | Until cleared                      |
-| `snowtime.reportEntriesCollapsed`            | localStorage | The Entries card's list closed        | Until cleared                      |
+| `snowtime.reportEntriesOpen`                 | localStorage | The Entries card's list left open     | Until cleared                      |
 
 On HTTPS, Better Auth prefixes its cookies with `__Secure-`.
 

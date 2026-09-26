@@ -31,9 +31,10 @@ import { type DayPage, type EntryPiece, entryDays, peopleLabel } from './entry-g
 const DESCRIPTION_ROWS = 25
 
 // Flags kept in this browser: whether the user has narrowed the list from the timesheet, after
-// which the header's hint on how to do that no longer shows, and whether they closed the list.
+// which the header's hint on how to do that no longer shows, and whether they left the list
+// open. It starts closed, showing only the header, until they open it.
 const NARROWED_KEY = 'snowtime.reportEntriesNarrowed'
-const COLLAPSED_KEY = 'snowtime.reportEntriesCollapsed'
+const OPEN_KEY = 'snowtime.reportEntriesOpen'
 
 function readFlag(key: string) {
   try {
@@ -74,14 +75,14 @@ export function EntriesCard(props: {
   const [allOf, setAllOf] = createSignal<string>()
   // Decided on mount, since only the browser has localStorage.
   const [hint, setHint] = createSignal(false)
-  const [open, setOpen] = createSignal(true)
+  const [open, setOpen] = createSignal(false)
   onMount(() => {
     setHint(!readFlag(NARROWED_KEY))
-    setOpen(!readFlag(COLLAPSED_KEY))
+    setOpen(readFlag(OPEN_KEY))
   })
   function toggle(next: boolean) {
     setOpen(next)
-    writeFlag(COLLAPSED_KEY, !next)
+    writeFlag(OPEN_KEY, next)
   }
   // Choosing a part of the timesheet asks for its entries, so it opens the list.
   createEffect(() => {
