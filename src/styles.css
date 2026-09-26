@@ -323,7 +323,9 @@ html[data-intro='pending'] body {
   display: grid;
   place-items: center;
   transition: opacity 1.05s ease;
-  background: linear-gradient(180deg, rgb(0 0 0 / 0.4), rgb(0 0 0 / 0.28));
+  /* Flat, not a gradient: Firefox's GPU renderer redraws a gradient slightly differently where
+     a line fades in, which shows as a faint box around the line on the dark scene. */
+  background: rgb(0 0 0 / 0.34);
 }
 .intro.intro-done {
   opacity: 0;
@@ -349,12 +351,14 @@ html[data-intro='pending'] body {
   opacity: 0;
   transform: translateY(16px);
   filter: blur(10px);
+  /* Stays on its own layer after the fade-in, so Firefox doesn't snap the text to a whole pixel
+     when the transition ends and nudge it down. */
+  will-change: transform, filter;
   text-wrap: balance;
   transition:
     opacity 0.85s ease,
     transform 0.85s ease,
     filter 0.85s ease;
-  text-shadow: 0 4px 28px rgb(0 0 0 / 0.45);
 }
 .intro-line.show {
   opacity: 1;
@@ -389,17 +393,16 @@ html[data-intro='pending'] body {
   right: 18px;
 }
 /* The page waits under the intro, then rises into place. The class is only there while the
-   intro runs, so it doesn't override the page's own transitions. */
+   intro runs, so it doesn't override the page's own transitions. No blur: over the full page
+   and its glass surfaces, an animated blur stutters the weather on a cold start. */
 .intro-page {
   transition:
     opacity 0.95s ease,
-    transform 0.95s cubic-bezier(0.2, 0.72, 0.2, 1),
-    filter 0.95s ease;
+    transform 0.95s cubic-bezier(0.2, 0.72, 0.2, 1);
 }
 .intro-page[data-intro-hidden] {
   opacity: 0;
   transform: translateY(18px) scale(0.988);
-  filter: blur(12px);
 }
 /* Hide the page's photo immediately when the intro starts. Otherwise its normal fade-out can
    show through the opening before the photo's scheduled fade-in. */

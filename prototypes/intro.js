@@ -70,14 +70,14 @@
     html.intro-pending { background: #05070a; }
     html.intro-pending body { visibility: hidden; }
     .intro { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; transition: opacity 1.05s ease;
-      background: linear-gradient(180deg, rgb(0 0 0 / .4), rgb(0 0 0 / .28)); }
+      background: rgb(0 0 0 / .34); }
     .intro[hidden] { display: none; }
     .intro.intro-done { opacity: 0; pointer-events: none; }
     .intro-fade { position: absolute; inset: 0; background: #05070a; transition: opacity 1.1s ease; }
     .intro-fade.reveal { opacity: 0; }
     .intro-block { position: relative; width: min(760px, calc(100vw - 48px)); text-align: center; transform: translateY(-16px); }
-    .intro-line { margin: 0; opacity: 0; transform: translateY(16px); filter: blur(10px); text-wrap: balance;
-      transition: opacity .85s ease, transform .85s ease, filter .85s ease; text-shadow: 0 4px 28px rgb(0 0 0 / .45); }
+    .intro-line { margin: 0; opacity: 0; transform: translateY(16px); filter: blur(10px); will-change: transform, filter; text-wrap: balance;
+      transition: opacity .85s ease, transform .85s ease, filter .85s ease; }
     .intro-line.show { opacity: 1; transform: none; filter: none; }
     .intro-line-1 { font-size: clamp(34px, 5vw, 58px); line-height: 1.05; letter-spacing: -.04em; font-weight: 720; color: var(--intro-title, #f4f8fd); }
     .intro-line-2 { margin-top: 8px; font-size: clamp(22px, 3vw, 36px); line-height: 1.12; letter-spacing: -.03em; font-weight: 610; color: var(--intro-sub, #e6eef8); }
@@ -85,8 +85,8 @@
     .intro-skip { position: absolute; top: 18px; right: 18px; }
     /* The page waits under the intro, then rises into place. The class is only there while the
        intro runs, so it doesn't override the page's own transitions. */
-    .intro-page { transition: opacity .95s ease, transform .95s cubic-bezier(.2, .72, .2, 1), filter .95s ease; }
-    body[data-intro] .intro-page { opacity: 0; transform: translateY(18px) scale(.988); filter: blur(12px); }
+    .intro-page { transition: opacity .95s ease, transform .95s cubic-bezier(.2, .72, .2, 1); }
+    body[data-intro] .intro-page { opacity: 0; transform: translateY(18px) scale(.988); }
     /* The background fades in slowly during the intro. */
     body[data-intro] .scene-photo { transition-duration: 2.6s; }
     /* At the start the image, the page, and the theme change at once: fading them out let the image
@@ -191,10 +191,9 @@
       at(3100, () => setBackground(true))
       at(11300, revealPage)
       at(11500, () => el.classList.add('intro-done'))
-      at(11850, () => {
-        releaseTheme()
-        handFocus()
-      })
+      at(11850, handFocus)
+      // A light theme comes in once the page has risen and the overlay has faded out.
+      at(12550, releaseTheme)
       at(12950, end)
       return true
     }

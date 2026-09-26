@@ -133,10 +133,12 @@ export function playIntro(options: { season: Season; focus?: HTMLElement }) {
   setSeason(options.season)
   setLines(introLines(options.season))
 
-  // At the start the image, the page, and the theme switch at once, with transitions off:
-  // fading them let the image show as the black lifted. Solid updates the DOM as the signals
-  // change, so the styles are flushed before the transitions come back. Reading a scene layer's
-  // style, not the body's, makes Firefox apply the cut when only descendants' styles changed.
+  // At the start the image, the page, and the theme switch at once, with transitions off, so
+  // the image doesn't show as the black lifts and the page doesn't fade out. From onMount, Solid
+  // applies the signals to the DOM only after the mount, so the styles are flushed in a
+  // microtask, before the first frame, and then the transitions come back. Reading a scene
+  // layer's style, not the body's, makes Firefox apply the cut when only descendants' styles
+  // changed.
   root.classList.add('intro-cut')
   root.dataset.intro = 'playing'
   setPageActive(true)
@@ -146,10 +148,12 @@ export function playIntro(options: { season: Season; focus?: HTMLElement }) {
   setDone(false)
   setRevealed(false)
   setShown(0)
-  for (const el of document.querySelectorAll('.scene-photo, .intro-page')) {
-    void getComputedStyle(el).opacity
-  }
-  root.classList.remove('intro-cut')
+  queueMicrotask(() => {
+    for (const el of document.querySelectorAll('.scene-photo, .intro-page')) {
+      void getComputedStyle(el).opacity
+    }
+    root.classList.remove('intro-cut')
+  })
   // On a page that has just hydrated, the overlay's portal mounts a moment later.
   skipButton?.focus()
   queueMicrotask(() => {
@@ -163,10 +167,10 @@ export function playIntro(options: { season: Season; focus?: HTMLElement }) {
   at(3100, () => setBackground(true))
   at(11300, revealPage)
   at(11500, () => setDone(true))
-  at(11850, () => {
-    releaseTheme()
-    handFocus()
-  })
+  at(11850, handFocus)
+  // A light theme comes in once the page has risen and the overlay has faded out, so the
+  // fades don't overlap.
+  at(12550, releaseTheme)
   at(12950, end)
   return true
 }
