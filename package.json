@@ -30,7 +30,7 @@
     "test:server": "bun test",
     "test:components": "vitest run",
     "postinstall": "bun run i18n:compile",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install || true"
   },
   "dependencies": {
     "@better-auth/passkey": "1.7.6",
