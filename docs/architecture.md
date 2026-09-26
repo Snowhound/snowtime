@@ -465,7 +465,7 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   the image from them. Popovers, menus, and dialogs render into `<body>`, outside the frame, so
   they stay solid.
 - Weather (`src/lib/weather.ts`): each season's effect is a WebGL 2 program that draws all its
-  points in one call with no buffers, on one canvas in the scene layer, at about 30 fps, with
+  points (rain's thin quads) in one call with no buffers, on one canvas in the scene layer, at about 30 fps, with
   point counts scaled to the screen's area. Its WebGL context starts the first time it runs. App pages run it calm (half the points, 70% speed),
   and the sign-in page at full pace. It runs only with the Weather switch on, without reduced
   motion, and in a visible tab. Without WebGL 2, or when an effect's shaders don't compile, it

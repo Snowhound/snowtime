@@ -1,7 +1,7 @@
 // The seasonal scene's weather (prototypes/scene.js, prototypes/README.md, "Weather"): one WebGL 2
-// canvas that draws a season's effect as points in one call, with no buffers; each point's
-// randomness comes from gl_VertexID and its position from the vertex shader. SceneLayer
-// (src/components/scene-layer.tsx) runs it.
+// canvas that draws a season's effect as points, or rain as thin quads, in one call with no
+// buffers; each item's randomness comes from gl_VertexID and its position from the vertex shader.
+// SceneLayer (src/components/scene-layer.tsx) runs it.
 import { createSignal } from 'solid-js'
 import type { Season } from './scene'
 
@@ -16,6 +16,8 @@ type EffectDef = {
   max: number
   vs: string
   fs: string
+  // Draw each item as a quad of two triangles (six vertices) instead of a point.
+  quads?: boolean
   // A and B: two colors each effect mixes, for dark pages and for the image or the plain page.
   colors: (scene: { dark: boolean; background: boolean }) => [Rgb, Rgb]
 }
@@ -256,35 +258,44 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     density: 260,
     min: 90,
     max: 450,
+    // Each streak is a thin quad along its slant, since a point covering it would shade about
+    // 15 times as many pixels, nearly all of them transparent.
+    quads: true,
     vs: `${HEAD}
     const float SLANT = .22; // sideways pixels per pixel of fall
+    const vec2 CORNERS[6] = vec2[6](vec2(-1,-1), vec2(1,-1), vec2(1,1), vec2(-1,-1), vec2(1,1), vec2(-1,1));
     out float v_alpha, v_depth, v_width;
+    out vec2 v_q;
     void main() {
-      float id = float(gl_VertexID) + 1.0;
+      float id = float(gl_VertexID / 6) + 1.0;
       float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0);
       float z = mix(.35, 1.0, pow(r3, 1.3));
       float fall = u_time * mix(1.1, 2.0, z);
       float y = 1.2 - mod((1.2 - (r2*2.0-1.0)) + fall, 2.4);
       float x = r1*2.0-1.0 + fall * SLANT * u_res.y / u_res.x;
       x = -1.15 + mod(x + 1.15, 2.3);
-      gl_Position = vec4(x, y, 0.0, 1.0);
       // Bursts: the shower's strength rises and falls, and each streak shows above its own level.
       float level = mix(.1, 1.0, smoothstep(.15, .85, .5 + .5*sin(u_time*.23 + sin(u_time*.07)*2.0)));
       float shown = smoothstep(r4 - .1, r4, level);
+      // The streak's length in pixels; it spans -1 to 1 along its slant.
       float size = u_dpr * mix(14.0, 30.0, z);
-      gl_PointSize = shown < .01 ? 0.0 : size;
+      // Half a streak's width in the same units: about 0.6 px, fading out by 2.5 times that.
+      v_width = .6 * u_dpr * 2.0 / size;
+      // x: along the streak, toward its falling end; y: across it.
+      vec2 corner = CORNERS[gl_VertexID % 6];
+      v_q = vec2(corner.x, corner.y * v_width * 2.5);
+      vec2 dir = normalize(vec2(SLANT, -1.0));
+      vec2 offset = v_q.x * dir + v_q.y * vec2(-dir.y, dir.x);
+      // A hidden streak collapses to its center, so it covers no pixels.
+      gl_Position = vec4(vec2(x, y) + (shown < .01 ? vec2(0) : offset * size / u_res), 0.0, 1.0);
       v_alpha = mix(.25, .6, z) * shown;
       v_depth = z;
-      // Half a streak's width in point coordinates: about 0.6 px.
-      v_width = .6 * u_dpr * 2.0 / size;
     }`,
     fs: `${FS_HEAD}
     in float v_alpha, v_depth, v_width;
+    in vec2 v_q;
     void main() {
-      vec2 q = (gl_PointCoord - .5) * 2.0;
-      vec2 dir = normalize(vec2(.22, 1.0));
-      float across = abs(dot(q, vec2(-dir.y, dir.x)));
-      float along = dot(q, dir);
+      float along = v_q.x, across = abs(v_q.y);
       float a = (1.0 - smoothstep(v_width, v_width * 2.5, across)) * smoothstep(1.0, .1, abs(along)) * mix(.35, 1.0, along * .5 + .5) * v_alpha;
       vec3 col = mix(u_colorB, u_colorA, v_depth);
       outColor = vec4(col * a, a);
@@ -422,7 +433,8 @@ export function createWeatherRenderer(
     // Point counts scale with the drawn area, relative to a 1440 × 900 viewport.
     const area = (cssWidth * cssHeight) / (1440 * 900)
     const count = Math.min(fx.max, Math.max(fx.min, fx.density * area)) * pace().density
-    gl.drawArrays(gl.POINTS, 0, Math.round(count))
+    if (fx.quads) gl.drawArrays(gl.TRIANGLES, 0, Math.round(count) * 6)
+    else gl.drawArrays(gl.POINTS, 0, Math.round(count))
   }
   function stop() {
     cancelAnimationFrame(raf)
