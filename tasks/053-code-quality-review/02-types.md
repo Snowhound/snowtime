@@ -59,8 +59,8 @@ Checked and sound:
     TypeScript can't type.
 - Test files cast fixtures (`as never`, `as Member[]`) and assert non-null freely: a
   wrong guess fails the test.
-- Non-null `!` in app code, about 30, each follow a guard TypeScript can't see: a
-  Solid accessor called again after a check (`device()!`, `user()!` under its `Match`),
+- Non-null `!` in app code, on about 20 lines, each follow a guard TypeScript can't see:
+  a Solid accessor called again after a check (`device()!`, `user()!` under its `Match`),
   refs set in JSX, lookups after a `has`/filter (`teams-tab.tsx`), `find` on constant
   tables (`app-icon.ts`, `scene.ts`), and Drizzle's `and()` with fixed arguments.
   `session.settings` is null until `getSettings` creates the row with the browser's time
