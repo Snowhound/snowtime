@@ -142,20 +142,19 @@ export function ReportsView(props: {
     for (const key of ['row', 'bucket', 'entries'] as const) {
       if (!search[key]) delete search[key]
     }
-    void navigate({ from: '/$org/reports', to: '/$org/reports', search })
+    return navigate({ from: '/$org/reports', to: '/$org/reports', search })
   }
 
   // Choosing the part the card shows again shows all entries. The card scrolls into view when
-  // it starts below most of the window.
-  function pick(part: TimesheetPart) {
+  // it starts below most of the window, once the narrowed list has replaced the longer one.
+  async function pick(part: TimesheetPart) {
     const { row, bucket } = filters().entries
     const same = part.row === row && part.bucket === bucket
-    entrySearch(same ? { row: undefined, bucket: undefined } : part)
+    await entrySearch(same ? { row: undefined, bucket: undefined } : part)
     const card = document.getElementById('report-entries')
-    if (!same && card && card.getBoundingClientRect().top > innerHeight * 0.75) {
-      const still = matchMedia('(prefers-reduced-motion: reduce)').matches
-      card.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' })
-    }
+    if (same || !card || card.getBoundingClientRect().top <= innerHeight * 0.75) return
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+    card.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' })
   }
 
   function narrowLabel() {
@@ -272,7 +271,7 @@ export function ReportsView(props: {
                 today={today()}
                 weekStart={props.weekStart}
                 picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
-                onPick={pick}
+                onPick={(part) => void pick(part)}
               />
             )}
           </Show>
@@ -290,8 +289,8 @@ export function ReportsView(props: {
             zone={props.zone}
             projects={projects.data ?? []}
             members={members.data ?? []}
-            onView={(entries: EntryView) => entrySearch({ entries })}
-            onClear={() => entrySearch({ row: undefined, bucket: undefined })}
+            onView={(entries: EntryView) => void entrySearch({ entries })}
+            onClear={() => void entrySearch({ row: undefined, bucket: undefined })}
           />
         </section>
       </Show>

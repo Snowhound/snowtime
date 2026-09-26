@@ -274,7 +274,8 @@ function EntryRow(props: {
   }
   function split() {
     const p = props.piece
-    return p.startedAt < p.from || (p.stoppedAt !== null && p.stoppedAt > p.to)
+    // A running entry's last piece ends now; its earlier ones end at midnight.
+    return p.startedAt < p.from || (p.stoppedAt ? p.stoppedAt > p.to : !p.running)
   }
   // One grid: below 640 px the time, project, and member wrap under the description; from
   // 640 px each has a column, the time first, fixed so the rows line up.
