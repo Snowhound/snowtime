@@ -44,8 +44,9 @@ uniform float u_time, u_dpr;
 float hash(float n){ return fract(sin(n*127.1)*43758.5453123); }
 float hash2(float n){ return fract(sin(n*269.5+31.7)*17358.5453123); }
 `
+// mediump: the fragment shaders only shape a point's pixels, and it's cheaper on mobile GPUs.
 const FS_HEAD = `#version 300 es
-precision highp float;
+precision mediump float;
 uniform vec3 u_colorA, u_colorB;
 out vec4 outColor;
 `
@@ -84,7 +85,6 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       vec3 c = mix(u_colorB, u_colorA, v_depth) + v_rnd * 0.02;
       // Premultiplied, as the canvas composites; straight alpha would darken the flakes' edges.
       outColor = vec4(c * a, a);
-      if (outColor.a < .02) discard;
     }`,
     // White on the dark scene and on the light image; on the plain light page white flakes would
     // vanish, so they turn blue-grey there.
@@ -146,7 +146,6 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       col = mix(col, col * 1.15 + .04, step(v_flip, 0.0) * .6);
       col *= 1.0 - .25 * (1.0 - smoothstep(.0, .05, abs(xr))) * step(abs(q.y), .8);
       outColor = vec4(col * a, a);
-      if (outColor.a < .02) discard;
     }`,
     colors: ({ dark }) =>
       dark
@@ -191,7 +190,6 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       vec3 col = mix(u_colorB, u_colorA, core / (core + halo + 1e-4));
       // Less alpha than color, so the glow adds light like it would at night.
       outColor = vec4(col * a, a * .7);
-      if (a < .01) discard;
     }`,
     colors: () => [
       [1.0, 0.98, 0.72],
@@ -240,7 +238,6 @@ export const EFFECTS: Record<Effect, EffectDef> = {
         col = u_colorB;
       }
       outColor = vec4(col * a, a);
-      if (outColor.a < .02) discard;
     }`,
     colors: ({ dark, background }) =>
       dark || background
@@ -291,7 +288,6 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       float a = (1.0 - smoothstep(v_width, v_width * 2.5, across)) * smoothstep(1.0, .1, abs(along)) * mix(.35, 1.0, along * .5 + .5) * v_alpha;
       vec3 col = mix(u_colorB, u_colorA, v_depth);
       outColor = vec4(col * a, a);
-      if (outColor.a < .01) discard;
     }`,
     colors: ({ dark, background }) =>
       dark
@@ -316,6 +312,12 @@ export const EFFECTS: Record<Effect, EffectDef> = {
 const [weatherProblem, setWeatherProblem] = createSignal<'webgl' | 'failed' | null>(null)
 export { setWeatherProblem, weatherProblem }
 
+// Whether the browser has WebGL 2 at all. A context can still fail to start, for example on a
+// blocked GPU; createWeatherRenderer returns null then.
+export function weatherSupported() {
+  return typeof WebGL2RenderingContext !== 'undefined'
+}
+
 export type WeatherRenderer = {
   // Throws if the effect's shaders don't compile.
   start(effect: Effect, colors: () => [Rgb, Rgb]): void
@@ -325,7 +327,8 @@ export type WeatherRenderer = {
 }
 
 // One WebGL context for all effects; each effect's program compiles the first time it runs.
-// `pace()` gives the factors for the point count and the speed. Null without WebGL 2.
+// `pace()` gives the factors for the point count and the speed. Null without WebGL 2, which
+// weatherSupported() predicts without creating a context.
 export function createWeatherRenderer(
   canvas: HTMLCanvasElement,
   pace: () => { density: number; speed: number },
@@ -372,8 +375,18 @@ export function createWeatherRenderer(
   }
   gl.bindVertexArray(gl.createVertexArray())
   gl.enable(gl.BLEND)
-  // Premultiplied, as the canvas composites, so edges don't darken.
+  // Premultiplied, as the canvas composites, so edges don't darken. A transparent pixel leaves the
+  // canvas as it was, so the shaders don't discard.
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
+  // The canvas's size in CSS pixels, kept by an observer so frames don't force a layout.
+  let cssWidth = canvas.clientWidth
+  let cssHeight = canvas.clientHeight
+  const resize = new ResizeObserver(([entry]) => {
+    cssWidth = entry.contentRect.width
+    cssHeight = entry.contentRect.height
+  })
+  resize.observe(canvas)
 
   let raf = 0
   let last = 0
@@ -382,13 +395,14 @@ export function createWeatherRenderer(
   let colors: (() => [Rgb, Rgb]) | null = null
   function frame(now: number) {
     raf = requestAnimationFrame(frame)
-    // About 45 fps is plenty for slow effects and halves the GPU work on 120 Hz screens.
-    if (now - last < 22 || !current || !colors) return
+    // About 30 fps on 60, 90, 120, and 144 Hz screens: plenty for slow effects, and each frame
+    // also redraws the blur of the glass surfaces over the canvas.
+    if (now - last < 30 || !current || !colors) return
     elapsed += (Math.min(now - (last || now), 100) / 1000) * pace().speed
     last = now
     const dpr = Math.min(devicePixelRatio || 1, 1.5)
-    const w = Math.max(1, Math.floor(canvas.clientWidth * dpr))
-    const h = Math.max(1, Math.floor(canvas.clientHeight * dpr))
+    const w = Math.max(1, Math.floor(cssWidth * dpr))
+    const h = Math.max(1, Math.floor(cssHeight * dpr))
     if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w
       canvas.height = h
@@ -406,7 +420,7 @@ export function createWeatherRenderer(
     gl.uniform3f(u.u_colorA, ...a)
     gl.uniform3f(u.u_colorB, ...b)
     // Point counts scale with the drawn area, relative to a 1440 × 900 viewport.
-    const area = (canvas.clientWidth * canvas.clientHeight) / (1440 * 900)
+    const area = (cssWidth * cssHeight) / (1440 * 900)
     const count = Math.min(fx.max, Math.max(fx.min, fx.density * area)) * pace().density
     gl.drawArrays(gl.POINTS, 0, Math.round(count))
   }
@@ -428,6 +442,7 @@ export function createWeatherRenderer(
     stop,
     destroy() {
       stop()
+      resize.disconnect()
       for (const { p } of Object.values(programs)) gl.deleteProgram(p)
       gl.getExtension('WEBGL_lose_context')?.loseContext()
     },

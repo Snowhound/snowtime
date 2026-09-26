@@ -26,8 +26,10 @@ import {
   PACES,
   type Pace,
   SEASON_EFFECTS,
+  type WeatherRenderer,
   createWeatherRenderer,
   setWeatherProblem,
+  weatherSupported,
 } from '~/lib/weather'
 
 type LayerSettings = Pick<
@@ -108,9 +110,10 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     })
 
     // The weather runs while its switch is on, the device doesn't reduce motion, and the tab
-    // shows. An effect that fails to compile stays off, and the Weather hint says why.
-    const renderer = createWeatherRenderer(canvas, () => PACES[props.pace])
-    setWeatherProblem(renderer ? null : 'webgl')
+    // shows. Its WebGL context starts the first time it runs, so with the switch off there's
+    // none. An effect that fails to compile stays off, and the Weather hint says why.
+    let renderer: WeatherRenderer | null | undefined = weatherSupported() ? undefined : null
+    setWeatherProblem(renderer === null ? 'webgl' : null)
     const failed = new Set<Effect>()
     visibility()
     document.addEventListener('visibilitychange', visibility)
@@ -124,6 +127,10 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
       const effect =
         SEASON_EFFECTS[currentSeason(props.settings.sceneSeason)][isDark ? 'dark' : 'light']
       let on = props.settings.sceneWeather && !reducedMotion() && visible() && !failed.has(effect)
+      if (on && renderer === undefined) {
+        renderer = createWeatherRenderer(canvas, () => PACES[props.pace])
+        if (!renderer) setWeatherProblem('webgl')
+      }
       if (renderer && on) {
         try {
           renderer.start(effect, () => EFFECTS[effect].colors({ dark: isDark, background }))
@@ -134,7 +141,7 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         }
       }
       if (!on) renderer?.stop()
-      if (renderer) setWeatherProblem(failed.has(effect) ? 'failed' : null)
+      if (renderer !== null) setWeatherProblem(failed.has(effect) ? 'failed' : null)
       setWeatherOn(on && !!renderer)
     })
   })
