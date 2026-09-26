@@ -36,8 +36,8 @@ Each season keeps the mood of its current image, which the site's colors were pi
 | Summer | Clear blue sky, deep green forest, alpine meadow, lupines and white flowers. | Firefly yellow and green (`#f6e7a1`, `#76630b`); seeds and fireflies.        |
 | Autumn | Fog under a heavy sky, amber and rust foliage and ground cover.              | Amber and rust (`#f6c07e`, `#94560a`); leaves about `#b55226` and `#d99433`. |
 
-The colors come from `SEASON_COPY` in `src/lib/seasons.ts` and `EFFECTS` in
-`src/lib/weather.ts`. Autumn's color comes from larches among the existing conifers and from
+The colors come from `SEASON_COPY` in `src/lib/scene/seasons.ts` and `EFFECTS` in
+`src/lib/scene/weather.ts`. Autumn's color comes from larches among the existing conifers and from
 the ground cover, since the edit can't add deciduous trees.
 
 No stream or standing water shows in the foreground or middle ground: the image is still, and

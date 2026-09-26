@@ -3,7 +3,7 @@
 Status: todo
 
 Task 039 found on 2026-09-25 that the server and the browser can render different
-seasons. `seasonByMonth` (`src/lib/scene.ts`) reads the month in the runtime's own zone:
+seasons. `seasonByMonth` (`src/lib/scene/scene.ts`) reads the month in the runtime's own zone:
 UTC on Vercel, the device's zone in the browser. In the hours around midnight on 1 March,
 June, September, and December, the two disagree for any user off UTC: in Tallinn, from
 00:00 to 03:00 on 1 December, the server renders autumn and the browser winter.

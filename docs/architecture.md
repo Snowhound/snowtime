@@ -449,7 +449,7 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   AVIF, about 30% smaller at the same quality, when the browser decodes a 1 × 1 probe, and WebP
   otherwise. The AVIF files are 110 to 405 KB each, so they're files rather than bundled imports,
   and nothing loads until the page asks for one.
-- Loading (`src/components/scene-layer.tsx`, `photoWidth` in `src/lib/scene.ts`): the 3840 file
+- Loading (`src/components/scene/scene-layer.tsx`, `photoWidth` in `src/lib/scene/scene.ts`): the 3840 file
   is for images that cover more than 2400 device pixels across (pixel ratio at most 2), and
   screens under 768 px always get the 1920 file. The shown theme loads the 1920 file first, on
   its own so it arrives sooner, fades it in once it has decoded, then loads the larger one and
@@ -464,16 +464,16 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   server renders, and `src/styles.css` styles `surface` elements, the header, and the text over
   the image from them. Popovers, menus, and dialogs render into `<body>`, outside the frame, so
   they stay solid.
-- Weather (`src/lib/weather.ts`): each season's effect is a WebGL 2 program that draws all its
+- Weather (`src/lib/scene/weather.ts`): each season's effect is a WebGL 2 program that draws all its
   points (rain's thin quads) in one call with no buffers, on one canvas in the scene layer, at about 30 fps, with
   point counts scaled to the screen's area. Its WebGL context starts the first time it runs. App pages run it calm (half the points, 70% speed),
   and the sign-in page at full pace. It runs only with the Weather switch on, without reduced
   motion, and in a visible tab. Without WebGL 2, or when an effect's shaders don't compile, it
   stays off and the Weather hint says why. Unmounting cancels the frame and loses the context.
-- Tagline (`src/lib/seasons.ts`, `src/components/page-title.tsx`): the seasonal copy is
+- Tagline (`src/lib/scene/seasons.ts`, `src/components/page-title.tsx`): the seasonal copy is
   Paraglide messages. Each signed-in page's title row places the tagline in the browser, from
   its measured size, so it moves under the title when it doesn't fit.
-- Intro (`src/lib/intro.ts`, `src/components/intro.tsx`): module-level signals hold its state,
+- Intro (`src/lib/scene/intro.ts`, `src/components/scene/intro.tsx`): module-level signals hold its state,
   so the frames, the scene layer, and the Replay buttons share one player. The page under it
   stays mounted, hidden and `inert`. While it plays, `<html data-intro>` holds the page dark:
   the theme script in `<head>` treats it as dark and applies the saved theme once it goes.

@@ -1,7 +1,7 @@
 // The seasonal scene's weather (prototypes/scene.js, prototypes/README.md, "Weather"): one WebGL 2
 // canvas that draws a season's effect as points, or rain as thin quads, in one call with no
 // buffers; each item's randomness comes from gl_VertexID and its position from the vertex shader.
-// SceneLayer (src/components/scene-layer.tsx) runs it.
+// SceneLayer (src/components/scene/scene-layer.tsx) runs it.
 import { createSignal } from 'solid-js'
 import type { Season } from './scene'
 

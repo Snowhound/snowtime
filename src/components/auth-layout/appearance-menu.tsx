@@ -4,14 +4,14 @@
 // saves to the account, like the header's popover.
 import MountainSnowIcon from 'lucide-solid/icons/mountain-snow'
 import { Show, createSignal } from 'solid-js'
-import { ReplayIntroButton } from '~/components/intro'
-import { SceneryFields } from '~/components/scenery-fields'
+import { ReplayIntroButton } from '~/components/scene/intro'
+import { SceneryFields } from '~/components/scene/scenery-fields'
 import { ThemeToggle } from '~/components/theme-toggle'
 import { Button } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { Separator } from '~/components/ui/separator'
 import type { DeviceSettings } from '~/lib/device-settings'
-import { currentSeason } from '~/lib/scene'
+import { currentSeason } from '~/lib/scene/scene'
 import { m } from '~/paraglide/messages.js'
 
 export function AppearanceMenu(props: {

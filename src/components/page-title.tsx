@@ -9,9 +9,9 @@
 // (`page-tagline`), so it doesn't show under the title and then move; with `centerOn`, which
 // CSS can't follow, it is hidden until then.
 import { createEffect, on, onCleanup, onMount } from 'solid-js'
-import { useSeason } from '~/lib/seasons'
+import { useSeason } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
-import { SeasonTagline } from './season-tagline'
+import { SeasonTagline } from './scene/season-tagline'
 
 const GAP = 24
 

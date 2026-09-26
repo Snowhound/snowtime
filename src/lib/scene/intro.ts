@@ -1,8 +1,8 @@
 // The seasonal intro (prototypes/intro.js, prototypes/README.md, "Seasonal scene and intro"):
 // about 11 seconds, always dark, over the page's scene. It opens on the weather alone, shows the
-// season's lines (src/lib/seasons.ts), fades the background in, then hands back to the page,
+// season's lines (src/lib/scene/seasons.ts), fades the background in, then hands back to the page,
 // which rises into place in its own theme. The page stays mounted under it, so a running timer
-// keeps counting. src/components/intro.tsx renders it from the state here.
+// keeps counting. src/components/scene/intro.tsx renders it from the state here.
 //
 // It plays on the sign-in page on the first visit to this browser (`snowtime.introSeen`) and on
 // the first signed-in page opened in a calendar season it hasn't played in

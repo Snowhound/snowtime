@@ -1,11 +1,11 @@
 // The seasonal scene behind the signed-in pages and the sign-in page (prototypes/scene.js,
 // prototypes/README.md, "Seasonal scene in the app"): the season's image in light and dark, which
 // crossfade with the theme, the tint at the Strength setting, and the season's weather
-// (src/lib/weather.ts) at the page's pace. The frame that renders it is
+// (src/lib/scene/weather.ts) at the page's pace. The frame that renders it is
 // `isolate` and carries sceneAttributes(), so the layer sits behind the frame's content and the
 // surfaces follow the settings (src/styles.css).
 import { createEffect, createSignal, onCleanup, onMount, untrack } from 'solid-js'
-import { intro } from '~/lib/intro'
+import { intro } from '~/lib/scene/intro'
 import {
   PHOTO_SMALL,
   type PhotoFormat,
@@ -19,7 +19,7 @@ import {
   photoFormat,
   photoUrl,
   photoWidth,
-} from '~/lib/scene'
+} from '~/lib/scene/scene'
 import {
   EFFECTS,
   type Effect,
@@ -30,7 +30,7 @@ import {
   createWeatherRenderer,
   setWeatherProblem,
   weatherSupported,
-} from '~/lib/weather'
+} from '~/lib/scene/weather'
 
 type LayerSettings = Pick<
   SceneSettings,

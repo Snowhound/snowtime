@@ -228,7 +228,7 @@ code {
   }
 }
 
-/* The seasonal scene (src/components/scene-layer.tsx) behind a frame that is `isolate`. With the
+/* The seasonal scene (src/components/scene/scene-layer.tsx) behind a frame that is `isolate`. With the
    background off, its base is the page tint the frames had before, bg-muted/40. The light and dark
    images are the same view at another time of day, so a theme change only crossfades them; a
    scale would make the mountains move. */
@@ -290,7 +290,7 @@ code {
 .scene[data-background='off'] :is(.scene-tint, .scene-vignette) {
   opacity: 0;
 }
-/* The weather's canvas (src/lib/weather.ts) fades in once it runs. */
+/* The weather's canvas (src/lib/scene/weather.ts) fades in once it runs. */
 .scene-weather {
   width: 100%;
   height: 100%;
@@ -308,7 +308,7 @@ code {
   }
 }
 
-/* The seasonal intro (src/components/intro.tsx, src/lib/intro.ts). When it's due, the head
+/* The seasonal intro (src/components/scene/intro.tsx, src/lib/scene/intro.ts). When it's due, the head
    script paints the page black until it starts, so a light page doesn't flash first. */
 html[data-intro='pending'] {
   background: #05070a;
@@ -461,7 +461,7 @@ html:has(.scene-header) {
   background-color: transparent;
 }
 
-/* The season's tagline (src/components/season-tagline.tsx) in the intro's colors: the headline
+/* The season's tagline (src/components/scene/season-tagline.tsx) in the intro's colors: the headline
    color, darkened on light pages, then the second line's. From 1024 px PageTitle centers it on
    the title row (`page-tagline-centered`). Until it has, it starts where it usually goes, on
    the page's center level with the title, or hidden if it centers on something else. */

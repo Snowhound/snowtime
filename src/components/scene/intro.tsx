@@ -1,13 +1,13 @@
 import RotateCcwIcon from 'lucide-solid/icons/rotate-ccw'
-// The seasonal intro's overlay and the page under it (src/lib/intro.ts). Each frame renders
+// The seasonal intro's overlay and the page under it (src/lib/scene/intro.ts). Each frame renders
 // `Intro` and wraps its page in `IntroPage`. The overlay renders into <body>, outside the frame,
 // so the frame's styles for controls over the image don't reach Skip intro.
 import { For, type JSX, Show, onCleanup, onMount } from 'solid-js'
 import { Portal } from 'solid-js/web'
 import { Button } from '~/components/ui/button'
-import { intro, playIntro, setIntroSkipButton, skipIntro } from '~/lib/intro'
-import { type Season, createReducedMotion } from '~/lib/scene'
-import { SEASON_COPY } from '~/lib/seasons'
+import { intro, playIntro, setIntroSkipButton, skipIntro } from '~/lib/scene/intro'
+import { type Season, createReducedMotion } from '~/lib/scene/scene'
+import { SEASON_COPY } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 

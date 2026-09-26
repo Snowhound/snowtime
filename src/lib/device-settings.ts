@@ -13,7 +13,7 @@ import {
   type THEMES,
 } from '~/server/settings/settings.schemas'
 import { type AppIconId, DEFAULT_APP_ICON } from './app-icon'
-import { SCENE_DEFAULTS, type SceneSettings } from './scene'
+import { SCENE_DEFAULTS, type SceneSettings } from './scene/scene'
 
 export const DEVICE_SETTINGS_KEY = 'snowtime.settings'
 

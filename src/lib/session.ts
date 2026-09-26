@@ -3,8 +3,8 @@ import { redirect } from '@tanstack/solid-router'
 import { type AppSession, getAppSession } from '~/server/auth/auth.functions'
 import { APP_PAGES, isAppPage } from './app-paths'
 import { DEVICE_SETTINGS_KEY } from './device-settings'
-import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from './intro'
-import { seasonByMonth } from './scene'
+import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from './scene/intro'
+import { seasonByMonth } from './scene/scene'
 
 // The signed-in user, their organizations and settings, or null when signed out. The root
 // route loads it before every page; changes to the session (switching organization,
@@ -53,7 +53,7 @@ const APP_PATHS = new RegExp(`^/[^/]+/(${APP_PAGES.join('|')})(/|$)`)
 // applies the `dark` class, resolving "system" with the browser's preference, and follows later
 // changes to either.
 //
-// When the intro is due on this page by the device's settings (src/lib/intro.ts), it marks
+// When the intro is due on this page by the device's settings (src/lib/scene/intro.ts), it marks
 // <html data-intro="pending">, which paints the page black until the intro starts; the frame
 // clears it if the account's settings say otherwise, and a timeout clears it if nothing mounts.
 // While <html> has data-intro, the page is dark.

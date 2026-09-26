@@ -1,8 +1,8 @@
 // The season's tagline, its first two intro lines, two-toned like the intro: the first line in
 // the season's headline color (darkened on light pages), the second in its second line's
 // (src/styles.css, `season-tagline`).
-import type { Season } from '~/lib/scene'
-import { SEASON_COPY } from '~/lib/seasons'
+import type { Season } from '~/lib/scene/scene'
+import { SEASON_COPY } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 
 export function SeasonTagline(props: {

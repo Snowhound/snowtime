@@ -23,9 +23,9 @@ import {
   currentSeason,
   season,
   seasonByMonth,
-} from '~/lib/scene'
+} from '~/lib/scene/scene'
+import { weatherProblem } from '~/lib/scene/weather'
 import { cn } from '~/lib/utils'
-import { weatherProblem } from '~/lib/weather'
 import { m } from '~/paraglide/messages.js'
 
 type Hints = 'none' | 'short' | 'long'
