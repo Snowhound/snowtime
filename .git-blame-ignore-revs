@@ -27,3 +27,6 @@ fc414e064bdcce20e642df675967fbd927f5807f
 
 # Move the shared query files into src/lib/queries/ (task 053).
 6136d8b0290fddd090a8dcf79ef299d54f97cbfb
+
+# Move the head theme script into device-settings.ts (task 053).
+e907445204813de8e79197f75973b745c23f1fc5
