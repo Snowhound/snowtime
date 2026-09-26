@@ -154,9 +154,11 @@ export interface EntryFormTimes {
 
 export type EntryFormError = 'missing' | 'missing_running' | 'future' | 'running_future'
 
-export type EntryFormResult =
+export type EntryFormResult<Stop = Date | null> =
   | { error: EntryFormError }
-  | { error?: undefined; startedAt: Date; stoppedAt: Date | null; nextDay: boolean }
+  | { error?: undefined; startedAt: Date; stoppedAt: Stop; nextDay: boolean }
+
+type ReadOptions = { running: boolean; zone: string; now?: number; original?: EntryTimes }
 
 // The instant read from a minute-precision input, or the original one when the input
 // still shows its minute.
@@ -172,8 +174,10 @@ function keep(ms: number, original: Date | null | undefined) {
 // the `original` entry.
 export function readEntryTimes(
   values: EntryFormTimes,
-  options: { running: boolean; zone: string; now?: number; original?: EntryTimes },
-): EntryFormResult {
+  options: ReadOptions & { running: false },
+): EntryFormResult<Date>
+export function readEntryTimes(values: EntryFormTimes, options: ReadOptions): EntryFormResult
+export function readEntryTimes(values: EntryFormTimes, options: ReadOptions): EntryFormResult {
   const { running, zone, now = Date.now(), original } = options
   if (!values.date || !values.start || (!running && !values.end)) {
     return { error: running ? 'missing_running' : 'missing' }

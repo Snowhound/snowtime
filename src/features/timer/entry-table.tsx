@@ -33,12 +33,12 @@ import {
   revealWhenSaved,
   savedTint,
 } from './entry-list'
-import type { Entry } from './queries'
+import type { StoppedEntry } from './queries'
 import { createRowActivation } from './row-activation'
 
 export function EntryTable(
   props: EntryRowProps & {
-    groups: readonly DayGroup<Entry>[]
+    groups: readonly DayGroup<StoppedEntry>[]
     now: number
   },
 ) {
@@ -104,7 +104,7 @@ export function EntryTable(
   )
 }
 
-function EntryTableRow(props: EntryRowProps & { entry: Entry }) {
+function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
   const editor = createEntryEditor(props)
   const activation = createRowActivation()
   const ref = revealWhenSaved(props)

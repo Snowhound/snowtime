@@ -37,6 +37,7 @@ import { EntryPopover, type EntryPopoverTarget, type EntryPopoverValues } from '
 import { EntryTable } from './entry-table'
 import {
   type Entry,
+  type StoppedEntry,
   entriesQuery,
   firstEntryQuery,
   runningTimerQuery,
@@ -151,7 +152,9 @@ export function TimerView(props: {
   }
 
   // The running entry shows in the timer only.
-  const stopped = createMemo(() => (entries.data ?? []).filter((e) => e.stoppedAt))
+  const stopped = createMemo(() =>
+    (entries.data ?? []).filter((e): e is StoppedEntry => e.stoppedAt !== null),
+  )
   const groups = createMemo(() => groupByDay(stopped(), zone()))
   function shownGroups() {
     return layout() === 'focus' ? groups().slice(0, FOCUS_DAYS) : groups()
@@ -168,7 +171,7 @@ export function TimerView(props: {
     const first = firstEntry.data
     if (!first) return null
     const total = stopped().reduce(
-      (sum, e) => sum + e.stoppedAt!.getTime() - e.startedAt.getTime(),
+      (sum, e) => sum + e.stoppedAt.getTime() - e.startedAt.getTime(),
       0,
     )
     const date = formatIsoDate(localDate(first.getTime(), zone()), {

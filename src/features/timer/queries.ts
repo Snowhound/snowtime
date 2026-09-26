@@ -29,6 +29,9 @@ export type Entry = Pick<
   'id' | 'organizationId' | 'userId' | 'projectId' | 'description' | 'startedAt' | 'stoppedAt'
 >
 
+// An entry that has ended, as the day lists show and edit them.
+export type StoppedEntry = Entry & { stoppedAt: Date }
+
 // The running entry, with its project for a timer running in another organization, whose
 // projects the view hasn't loaded.
 export type RunningTimer = Entry & {

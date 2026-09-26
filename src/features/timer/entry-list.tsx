@@ -37,7 +37,7 @@ import {
   TimeField,
   createEntryEditor,
 } from './entry-fields'
-import type { Entry } from './queries'
+import type { Entry, StoppedEntry } from './queries'
 import { createRowActivation } from './row-activation'
 
 export function dayLabel(date: string, zone: string, now: number) {
@@ -81,17 +81,17 @@ export function savedTint(saved: boolean) {
 
 // Rows are keyed by date and id, not by object: every save replaces the entry objects,
 // and a new row would lose the focus of the field being tabbed to.
-export function groupDates(groups: readonly DayGroup<Entry>[]) {
+export function groupDates(groups: readonly DayGroup<StoppedEntry>[]) {
   return groups.map((g) => g.date)
 }
 
-export function groupIds(group: DayGroup<Entry> | undefined) {
+export function groupIds(group: DayGroup<StoppedEntry> | undefined) {
   return group?.entries.map((e) => e.id) ?? []
 }
 
 export function EntryList(
   props: EntryRowProps & {
-    groups: readonly DayGroup<Entry>[]
+    groups: readonly DayGroup<StoppedEntry>[]
     now: number
     focus?: boolean
   },
@@ -128,7 +128,7 @@ export function EntryList(
   )
 }
 
-function EntryRow(props: EntryRowProps & { entry: Entry; focus?: boolean }) {
+function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean }) {
   const editor = createEntryEditor(props)
   const activation = createRowActivation()
   const ref = revealWhenSaved(props)

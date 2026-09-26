@@ -29,7 +29,7 @@ import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
 import { readEntryTimes } from './entries'
 import { projectChoices } from './project-select'
-import type { Entry } from './queries'
+import type { Entry, StoppedEntry } from './queries'
 
 export type EntryPatch = Omit<UpdateEntryInput, 'id'>
 export type SaveEntry = (entry: Entry, patch: EntryPatch) => Promise<unknown>
@@ -55,7 +55,7 @@ export type EntryEditor = ReturnType<typeof createEntryEditor>
 
 // The row's unsaved values and errors. Times are read like the entry popover's: on the
 // start's date, with an end at or before the start on the next day.
-export function createEntryEditor(props: { entry: Entry; zone: string; onSave: SaveEntry }) {
+export function createEntryEditor(props: { entry: StoppedEntry; zone: string; onSave: SaveEntry }) {
   const errorId = createUniqueId()
   // oxlint-disable-next-line solid/reactivity -- it starts from the saved value; an effect follows it.
   const [description, setDescription] = createSignal(props.entry.description)
@@ -81,7 +81,7 @@ export function createEntryEditor(props: { entry: Entry; zone: string; onSave: S
     return {
       date: date(),
       start: times().start ?? localTime(props.entry.startedAt.getTime(), props.zone),
-      end: times().end ?? localTime(props.entry.stoppedAt!.getTime(), props.zone),
+      end: times().end ?? localTime(props.entry.stoppedAt.getTime(), props.zone),
     }
   }
 
@@ -122,7 +122,7 @@ export function createEntryEditor(props: { entry: Entry; zone: string; onSave: S
     const seconds = startedAt.getTime() % 60_000
     const start =
       atLocalTime(value, localTime(startedAt.getTime(), props.zone), props.zone) + seconds
-    const stop = start + stoppedAt!.getTime() - startedAt.getTime()
+    const stop = start + stoppedAt.getTime() - startedAt.getTime()
     if (stop > Date.now()) return { error: m.entry_error_future() }
     return { startedAt: new Date(start), stoppedAt: new Date(stop) }
   }
@@ -165,8 +165,8 @@ export function createEntryEditor(props: { entry: Entry; zone: string; onSave: S
       if (result.startedAt.getTime() !== props.entry.startedAt.getTime()) {
         patch.startedAt = result.startedAt
       }
-      if (result.stoppedAt!.getTime() !== props.entry.stoppedAt!.getTime()) {
-        patch.stoppedAt = result.stoppedAt!
+      if (result.stoppedAt.getTime() !== props.entry.stoppedAt.getTime()) {
+        patch.stoppedAt = result.stoppedAt
       }
       if (Object.keys(patch).length === 0) setTimes({})
       else save(patch)
@@ -185,7 +185,7 @@ export function createEntryEditor(props: { entry: Entry; zone: string; onSave: S
     },
     duration() {
       const result = read()
-      return result.error ? null : result.stoppedAt!.getTime() - result.startedAt.getTime()
+      return result.error ? null : result.stoppedAt.getTime() - result.startedAt.getTime()
     },
     nextDay() {
       const result = read()
