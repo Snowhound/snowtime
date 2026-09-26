@@ -7,7 +7,7 @@ import ChevronDownIcon from 'lucide-solid/icons/chevron-down'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import MoonIcon from 'lucide-solid/icons/moon'
 import XIcon from 'lucide-solid/icons/x'
-import { For, Match, Show, Switch, createMemo, createSignal } from 'solid-js'
+import { For, Match, Show, Switch, createEffect, createMemo, createSignal, onMount } from 'solid-js'
 import { Duration } from '~/components/duration'
 import { ErrorAlert } from '~/components/error-alert'
 import { ProjectDot } from '~/components/project-dot'
@@ -30,6 +30,29 @@ import { type DayPage, type EntryPiece, entryDays, peopleLabel } from './entry-g
 // By description rows shown before "Show all".
 const DESCRIPTION_ROWS = 25
 
+// Flags kept in this browser: whether the user has narrowed the list from the timesheet, after
+// which the header's hint on how to do that no longer shows, and whether they closed the list.
+const NARROWED_KEY = 'snowtime.reportEntriesNarrowed'
+const COLLAPSED_KEY = 'snowtime.reportEntriesCollapsed'
+
+function readFlag(key: string) {
+  try {
+    return localStorage.getItem(key) === '1'
+  } catch {
+    return false
+  }
+}
+
+// When storage is blocked, the choice lasts until the page reloads.
+function writeFlag(key: string, on: boolean) {
+  try {
+    if (on) localStorage.setItem(key, '1')
+    else localStorage.removeItem(key)
+  } catch {
+    // Nothing to do.
+  }
+}
+
 type DescriptionRow = Extract<ReportEntries, { view: 'description' }>['rows'][number]
 
 export function EntriesCard(props: {
@@ -49,6 +72,24 @@ export function EntriesCard(props: {
   )
   // The list whose By description rows all show, until the list changes.
   const [allOf, setAllOf] = createSignal<string>()
+  // Decided on mount, since only the browser has localStorage.
+  const [hint, setHint] = createSignal(false)
+  const [open, setOpen] = createSignal(true)
+  onMount(() => {
+    setHint(!readFlag(NARROWED_KEY))
+    setOpen(!readFlag(COLLAPSED_KEY))
+  })
+  function toggle(next: boolean) {
+    setOpen(next)
+    writeFlag(COLLAPSED_KEY, !next)
+  }
+  // Choosing a part of the timesheet asks for its entries, so it opens the list.
+  createEffect(() => {
+    if (!props.narrowLabel) return
+    writeFlag(NARROWED_KEY, true)
+    setHint(false)
+    toggle(true)
+  })
   function listKey() {
     return JSON.stringify(props.filters.input)
   }
@@ -77,9 +118,28 @@ export function EntriesCard(props: {
 
   return (
     <Card class="min-w-0 scroll-mt-4 overflow-hidden" id="report-entries">
-      <CardHeader class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
+      <CardHeader
+        class={cn(
+          'flex-row flex-wrap items-start justify-between gap-2 space-y-0',
+          open() && 'pb-4',
+        )}
+      >
         <div class="grid min-w-0 gap-1.5">
-          <CardTitle class="text-base">{m.reports_entries()}</CardTitle>
+          <CardTitle class="text-base">
+            <button
+              type="button"
+              class="hover:text-foreground/80 focus-visible:ring-ring -mx-1 flex items-center gap-1.5 rounded-sm px-1 focus-visible:ring-2 focus-visible:outline-none"
+              aria-expanded={open()}
+              aria-controls="report-entries-list"
+              onClick={() => toggle(!open())}
+            >
+              <ChevronDownIcon
+                class={cn('size-4 transition-transform', !open() && '-rotate-90')}
+                aria-hidden="true"
+              />
+              {m.reports_entries()}
+            </button>
+          </CardTitle>
           <div class="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
             <Show when={first()}>
               {(page) => (
@@ -89,7 +149,14 @@ export function EntriesCard(props: {
                 </span>
               )}
             </Show>
-            <Show when={props.narrowLabel} fallback={<span>{m.reports_entries_hint()}</span>}>
+            <Show
+              when={props.narrowLabel}
+              fallback={
+                <Show when={hint()}>
+                  <span>{m.reports_entries_hint()}</span>
+                </Show>
+              }
+            >
               {(label) => (
                 <Badge variant="secondary" class="max-w-full gap-1 py-0.5 pr-0.5 font-medium">
                   <span class="truncate">{label()}</span>
@@ -106,19 +173,21 @@ export function EntriesCard(props: {
             </Show>
           </div>
         </div>
-        <ToggleGroup
-          variant="outline"
-          size="sm"
-          class="justify-start"
-          aria-label={m.reports_entries_view()}
-          value={props.filters.view}
-          onChange={(value) => value && props.onView(value as EntryView)}
-        >
-          <ToggleGroupItem value="day">{m.reports_entries_by_day()}</ToggleGroupItem>
-          <ToggleGroupItem value="description">
-            {m.reports_entries_by_description()}
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <Show when={open()}>
+          <ToggleGroup
+            variant="outline"
+            size="sm"
+            class="justify-start"
+            aria-label={m.reports_entries_view()}
+            value={props.filters.view}
+            onChange={(value) => value && props.onView(value as EntryView)}
+          >
+            <ToggleGroupItem value="day">{m.reports_entries_by_day()}</ToggleGroupItem>
+            <ToggleGroupItem value="description">
+              {m.reports_entries_by_description()}
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </Show>
       </CardHeader>
       <Show when={entries.error}>
         {(error) => (
@@ -127,87 +196,91 @@ export function EntriesCard(props: {
           </div>
         )}
       </Show>
-      <Show
-        when={first()}
-        fallback={
-          <Show when={entries.isPending}>
-            <p class="text-muted-foreground border-t px-6 py-4 text-sm" role="status">
-              {m.reports_entries_loading()}
-            </p>
+      <div id="report-entries-list">
+        <Show when={open()}>
+          <Show
+            when={first()}
+            fallback={
+              <Show when={entries.isPending}>
+                <p class="text-muted-foreground border-t px-6 py-4 text-sm" role="status">
+                  {m.reports_entries_loading()}
+                </p>
+              </Show>
+            }
+          >
+            <div
+              class={cn('border-t transition-opacity', entries.isPlaceholderData && 'opacity-60')}
+              aria-busy={entries.isPlaceholderData || entries.isFetchingNextPage}
+            >
+              <Switch>
+                <Match when={first()?.view === 'day'}>
+                  <ul>
+                    <For each={days()}>
+                      {(day) => (
+                        <li>
+                          <h4 class="bg-muted/50 flex items-baseline justify-between gap-4 border-b px-6 py-1.5 text-sm font-medium">
+                            <span>
+                              {formatIsoDate(day.date, {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long',
+                              })}
+                            </span>
+                            <span class="tabular-nums">
+                              <Duration ms={day.total} />
+                            </span>
+                          </h4>
+                          <ul>
+                            <For each={day.pieces}>
+                              {(piece) => (
+                                <EntryRow
+                                  piece={piece}
+                                  many={props.filters.many}
+                                  zone={props.zone}
+                                  project={project(piece.projectId)}
+                                  person={nameOf(piece.userId)}
+                                />
+                              )}
+                            </For>
+                          </ul>
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                  <Show when={entries.hasNextPage}>
+                    <More
+                      busy={entries.isFetchingNextPage}
+                      onClick={() => void entries.fetchNextPage()}
+                    >
+                      {m.reports_entries_more()}
+                    </More>
+                  </Show>
+                </Match>
+                <Match when={first()?.view === 'description'}>
+                  <ul>
+                    <DescriptionHeader many={props.filters.many} />
+                    <For each={rows()}>
+                      {(row) => (
+                        <DescriptionItem
+                          row={row}
+                          many={props.filters.many}
+                          project={project(row.projectId)}
+                          people={peopleLabel(row.userIds, nameOf)}
+                        />
+                      )}
+                    </For>
+                  </ul>
+                  <Show when={allRows().length > rows().length}>
+                    <More busy={false} onClick={() => setAllOf(listKey())}>
+                      {m.reports_entries_all({ count: allRows().length })}
+                    </More>
+                  </Show>
+                </Match>
+              </Switch>
+            </div>
           </Show>
-        }
-      >
-        <div
-          class={cn('border-t transition-opacity', entries.isPlaceholderData && 'opacity-60')}
-          aria-busy={entries.isPlaceholderData || entries.isFetchingNextPage}
-        >
-          <Switch>
-            <Match when={first()?.view === 'day'}>
-              <ul>
-                <For each={days()}>
-                  {(day) => (
-                    <li>
-                      <h4 class="bg-muted/50 flex items-baseline justify-between gap-4 border-b px-6 py-1.5 text-sm font-medium">
-                        <span>
-                          {formatIsoDate(day.date, {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long',
-                          })}
-                        </span>
-                        <span class="tabular-nums">
-                          <Duration ms={day.total} />
-                        </span>
-                      </h4>
-                      <ul>
-                        <For each={day.pieces}>
-                          {(piece) => (
-                            <EntryRow
-                              piece={piece}
-                              many={props.filters.many}
-                              zone={props.zone}
-                              project={project(piece.projectId)}
-                              person={nameOf(piece.userId)}
-                            />
-                          )}
-                        </For>
-                      </ul>
-                    </li>
-                  )}
-                </For>
-              </ul>
-              <Show when={entries.hasNextPage}>
-                <More
-                  busy={entries.isFetchingNextPage}
-                  onClick={() => void entries.fetchNextPage()}
-                >
-                  {m.reports_entries_more()}
-                </More>
-              </Show>
-            </Match>
-            <Match when={first()?.view === 'description'}>
-              <ul>
-                <DescriptionHeader many={props.filters.many} />
-                <For each={rows()}>
-                  {(row) => (
-                    <DescriptionItem
-                      row={row}
-                      many={props.filters.many}
-                      project={project(row.projectId)}
-                      people={peopleLabel(row.userIds, nameOf)}
-                    />
-                  )}
-                </For>
-              </ul>
-              <Show when={allRows().length > rows().length}>
-                <More busy={false} onClick={() => setAllOf(listKey())}>
-                  {m.reports_entries_all({ count: allRows().length })}
-                </More>
-              </Show>
-            </Match>
-          </Switch>
-        </div>
-      </Show>
+        </Show>
+      </div>
     </Card>
   )
 }
@@ -366,7 +439,7 @@ function DescriptionItem(props: {
         descriptionColumns(props.many),
       )}
     >
-      <DescriptionText text={props.row.description} />
+      <DescriptionText text={props.row.description} class="sm:col-start-1 sm:row-start-1" />
       <span class="col-start-2 row-start-1 text-right font-medium tabular-nums sm:col-start-auto sm:col-end-[-1]">
         <Duration ms={props.row.total} />
       </span>
@@ -379,10 +452,16 @@ function DescriptionItem(props: {
         <Show when={props.many}>
           <span class="min-w-0 truncate sm:col-start-3 sm:row-start-1">{props.people}</span>
         </Show>
-        <span aria-hidden="true" class="hidden text-right tabular-nums sm:row-start-1 sm:block">
+        <span
+          aria-hidden="true"
+          class="hidden text-right tabular-nums sm:col-start-[-4] sm:row-start-1 sm:block"
+        >
           {props.row.entries}
         </span>
-        <span aria-hidden="true" class="hidden text-right tabular-nums sm:row-start-1 sm:block">
+        <span
+          aria-hidden="true"
+          class="hidden text-right tabular-nums sm:col-start-[-3] sm:row-start-1 sm:block"
+        >
           {props.row.days}
         </span>
       </div>

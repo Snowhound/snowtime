@@ -304,9 +304,9 @@ on a device unless it is strictly necessary for a service the user asked for. Ev
 below is exempt under Criterion B of the Article 29 Working Party's Opinion 04/2012: sign-in
 cookies as authentication, and the rest as user-interface customization. CNIL's 2020
 guidelines (Délibération 2020-091, Article 5) also exempt customization that is an
-intrinsic, expected part of the service, which covers the intro and the passkey prompt's
-state. The privacy policy (`src/features/legal/privacy-page.tsx`) lists these items, and
-must change with them.
+intrinsic, expected part of the service, which covers the intro, the passkey prompt's
+state, and the Entries card's hint and list. The privacy policy (`src/features/legal/privacy-page.tsx`)
+lists these items, and must change with them.
 
 | Item                                         | Where        | Purpose                               | Lifetime                           |
 | -------------------------------------------- | ------------ | ------------------------------------- | ---------------------------------- |
@@ -318,6 +318,8 @@ must change with them.
 | `snowtime.settings`                          | localStorage | Theme, app icon, and scene            | Until cleared                      |
 | `snowtime.introSeen`, `snowtime.introSeason` | localStorage | Where the intro last played           | Until cleared                      |
 | `snowtime.passkeyPromptDismissed`            | localStorage | "Not now" on the passkey prompt       | Until cleared                      |
+| `snowtime.reportEntriesNarrowed`             | localStorage | Hides the Entries card's hint         | Until cleared                      |
+| `snowtime.reportEntriesCollapsed`            | localStorage | The Entries card's list closed        | Until cleared                      |
 
 On HTTPS, Better Auth prefixes its cookies with `__Secure-`.
 

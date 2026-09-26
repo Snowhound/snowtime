@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { type JSX, createSignal } from 'solid-js'
@@ -244,6 +244,7 @@ const NOW = new Date('2026-09-24T09:00:00Z')
 
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
   vi.useFakeTimers({ toFake: ['Date'], now: NOW })
   server.role = 'member'
   server.rows = [
@@ -551,6 +552,35 @@ describe('ReportsView', () => {
     await waitFor(() => expect(search()).toEqual({ range: 'this-week', row: snowtime.id }))
     await userEvent.click(await within(card).findByRole('button', { name: 'Show all entries' }))
     await waitFor(() => expect(search()).toEqual({ range: 'this-week' }))
+  })
+
+  test('the Entries list closes from its title, stays closed, and a timesheet cell opens it', async () => {
+    renderView()
+    const card = await screen.findByRole('region', { name: 'Entries' })
+    await within(card).findAllByRole('heading', { level: 4 })
+    await userEvent.click(within(card).getByRole('button', { name: 'Entries' }))
+    expect(within(card).getByRole('button', { name: 'Entries' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    expect(within(card).queryByRole('heading', { level: 4 })).not.toBeInTheDocument()
+    expect(within(card).queryByRole('button', { name: 'By day' })).not.toBeInTheDocument()
+
+    cleanup()
+    renderView()
+    const again = await screen.findByRole('region', { name: 'Entries' })
+    expect(within(again).getByRole('button', { name: 'Entries' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    const grid = await screen.findByRole('table')
+    const row = within(grid).getByRole('rowheader', { name: 'Snowtime' }).closest('tr')!
+    await userEvent.click(within(row).getByRole('button', { name: '3:00' }))
+    expect(await within(again).findAllByRole('heading', { level: 4 })).toHaveLength(1)
+    expect(within(again).getByRole('button', { name: 'Entries' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
   })
 
   test('changing a filter shows all entries in the view that fits the range', async () => {

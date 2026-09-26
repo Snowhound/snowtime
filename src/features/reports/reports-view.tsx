@@ -202,8 +202,9 @@ export function ReportsView(props: {
 
   return (
     <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
-      {/* The page is wide (the route's staticData): all but the timesheet keep the header's
-          width, and the timesheet widens with its columns, up to the window's. */}
+      {/* The page is wide (the route's staticData): the header and filters keep a fixed width,
+          and the timesheet widens with its columns, up to the window's. The Entries card below
+          keeps its edges. */}
       <div class="mx-auto grid w-full max-w-[68rem] grid-cols-[minmax(0,1fr)] gap-4">
         <div class="relative flex min-w-0 flex-col gap-1">
           <PageTitle title={m.nav_reports()} />
@@ -233,67 +234,67 @@ export function ReportsView(props: {
         />
         <ErrorAlert message={error()} />
       </div>
-      <section
-        class="mx-auto w-fit max-w-full min-w-[min(100%,68rem)]"
-        aria-label={m.reports_timesheet()}
-      >
-        <Card class="min-w-0 overflow-hidden">
-          <CardHeader class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
-            <div class="grid min-w-0 gap-1.5">
-              <CardTitle class="text-base">{TITLES[filters().group][filters().unit]()}</CardTitle>
-              <Show when={filters().group === 'team'}>
-                <CardDescription>{m.reports_team_note()}</CardDescription>
+      <div class="mx-auto grid w-fit max-w-full min-w-[min(100%,68rem)] grid-cols-[minmax(0,1fr)] gap-6">
+        <section aria-label={m.reports_timesheet()}>
+          <Card class="min-w-0 overflow-hidden">
+            <CardHeader class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
+              <div class="grid min-w-0 gap-1.5">
+                <CardTitle class="text-base">{TITLES[filters().group][filters().unit]()}</CardTitle>
+                <Show when={filters().group === 'team'}>
+                  <CardDescription>{m.reports_team_note()}</CardDescription>
+                </Show>
+              </div>
+              <Show when={report.data}>
+                {(data) => (
+                  <ExportMenu
+                    report={data()}
+                    rowsOf={rowsOf}
+                    group={filters().group}
+                    input={filters().input}
+                    organizationId={props.organizationId}
+                    organizationSlug={props.organizationSlug}
+                    projects={projects.data ?? []}
+                    members={members.data ?? []}
+                    onError={setExportError}
+                  />
+                )}
               </Show>
-            </div>
+            </CardHeader>
             <Show when={report.data}>
               {(data) => (
-                <ExportMenu
+                <Timesheet
                   report={data()}
-                  rowsOf={rowsOf}
+                  rows={rows()}
                   group={filters().group}
-                  input={filters().input}
-                  organizationId={props.organizationId}
-                  organizationSlug={props.organizationSlug}
-                  projects={projects.data ?? []}
-                  members={members.data ?? []}
-                  onError={setExportError}
+                  unit={data().unit}
+                  today={today()}
+                  weekStart={props.weekStart}
+                  picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
+                  onPick={(part) => void pick(part)}
                 />
               )}
             </Show>
-          </CardHeader>
-          <Show when={report.data}>
-            {(data) => (
-              <Timesheet
-                report={data()}
-                rows={rows()}
-                group={filters().group}
-                unit={data().unit}
-                today={today()}
-                weekStart={props.weekStart}
-                picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
-                onPick={(part) => void pick(part)}
-              />
-            )}
-          </Show>
-        </Card>
-      </section>
-      {/* Its own query, so it shows its loading state while the timesheet is already up. It
-          hides when the range has no time. */}
-      <Show when={teams.isSuccess && members.isSuccess && (report.data?.total ?? 1) > 0}>
-        <section class="mx-auto w-full max-w-[68rem]" aria-label={m.reports_entries()}>
-          <EntriesCard
-            organizationId={props.organizationId}
-            filters={filters().entries}
-            narrowLabel={narrowLabel()}
-            userId={props.userId}
-            zone={props.zone}
-            projects={projects.data ?? []}
-            members={members.data ?? []}
-            onView={(entries: EntryView) => void entrySearch({ entries })}
-            onClear={() => void entrySearch({ row: undefined, bucket: undefined })}
-          />
+          </Card>
         </section>
-      </Show>
+        {/* Its own query, so it shows its loading state while the timesheet is already up. It
+            hides when the range has no time. It takes the timesheet's width, and its contain
+            keeps a long description from widening both. */}
+        <Show when={teams.isSuccess && members.isSuccess && (report.data?.total ?? 1) > 0}>
+          <section class="[contain:inline-size]" aria-label={m.reports_entries()}>
+            <EntriesCard
+              organizationId={props.organizationId}
+              filters={filters().entries}
+              narrowLabel={narrowLabel()}
+              userId={props.userId}
+              zone={props.zone}
+              projects={projects.data ?? []}
+              members={members.data ?? []}
+              onView={(entries: EntryView) => void entrySearch({ entries })}
+              onClear={() => void entrySearch({ row: undefined, bucket: undefined })}
+            />
+          </section>
+        </Show>
+      </div>
     </div>
   )
 }

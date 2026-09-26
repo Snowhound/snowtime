@@ -86,8 +86,9 @@ const labelVariants = cva(
     variants: {
       variant: {
         label: 'data-[invalid]:text-destructive',
-        description: 'font-normal text-muted-foreground',
-        error: 'text-xs text-destructive',
+        // Descriptions and errors can wrap, so they keep a line height.
+        description: 'font-normal leading-snug text-muted-foreground',
+        error: 'text-xs leading-snug text-destructive',
       },
     },
     defaultVariants: {

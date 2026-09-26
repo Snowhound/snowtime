@@ -153,9 +153,10 @@ function PrivacyEn() {
         </li>
         <li>
           Browser storage on this device keeps your appearance choices (theme, app icon, and
-          scenery), which season you last saw the intro in, and whether you've dismissed the offer
-          to add a passkey. It stays until you clear your browser's site data, and it never leaves
-          your device.
+          scenery), which season you last saw the intro in, whether you've dismissed the offer to
+          add a passkey, and whether you've narrowed a report's entries from its timesheet or closed
+          their list. It stays until you clear your browser's site data, and it never leaves your
+          device.
         </li>
       </ul>
 
@@ -337,8 +338,9 @@ function PrivacyEt() {
         <li>
           Brauseri kohalik salvestusruum (localStorage) jätab selles seadmes meelde
           kujunduseelistused (teema, rakenduse ikoon ja maastik), selle, millisel aastaajal oled
-          tutvustust viimati näinud, ja selle, kas oled pääsuvõtme lisamise pakkumisest loobunud.
-          Need jäävad alles, kuni kustutad brauseri saidiandmed, ega lahku kunagi sinu seadmest.
+          tutvustust viimati näinud, selle, kas oled pääsuvõtme lisamise pakkumisest loobunud, ja
+          selle, kas oled aruande ajakirjete loendit tabelist kitsendanud või loendi sulgenud. Need
+          jäävad alles, kuni kustutad brauseri saidiandmed, ega lahku kunagi sinu seadmest.
         </li>
       </ul>
 
