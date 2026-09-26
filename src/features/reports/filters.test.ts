@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
-import type { Member } from '~/lib/members'
-import type { Team } from '~/lib/teams'
+import type { Member } from '~/lib/queries/members'
+import type { Team } from '~/lib/queries/teams'
 import { type ReportContext, type ReportSearch, reportFilters, requestedInput } from './filters'
 
 const LEAD = '01900000-0000-7000-8000-000000000001'

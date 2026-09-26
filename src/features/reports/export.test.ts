@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { strFromU8, unzipSync } from 'fflate'
-import type { Member } from '~/lib/members'
-import type { Project } from '~/lib/projects'
+import type { Member } from '~/lib/queries/members'
+import type { Project } from '~/lib/queries/projects'
 import {
   type ReportEntries,
   entriesTable,

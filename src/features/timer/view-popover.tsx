@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover
 import { Separator } from '~/components/ui/separator'
 import { Switch, SwitchControl, SwitchLabel, SwitchThumb } from '~/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
-import { type Settings, useUpdateSettings } from '~/lib/settings'
+import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'

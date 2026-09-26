@@ -26,7 +26,7 @@ import {
   followAccountDeviceSettings,
   loadDeviceSettings,
 } from '~/lib/device-settings'
-import { sessionQuery, themeScript } from '~/lib/session'
+import { sessionQuery, themeScript } from '~/lib/queries/session'
 import { getLocale, setLocale } from '~/paraglide/runtime.js'
 import styleCss from '~/styles.css?url'
 import '~/lib/locale-cookie'

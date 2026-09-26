@@ -16,8 +16,8 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { NativeSelect } from '~/components/ui/native-select'
-import type { Member } from '~/lib/members'
-import type { Team } from '~/lib/teams'
+import type { Member } from '~/lib/queries/members'
+import type { Team } from '~/lib/queries/teams'
 import { initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'

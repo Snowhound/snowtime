@@ -2,8 +2,8 @@ import { render, screen } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { membersQuery } from '~/lib/members'
-import { newId } from '~/lib/query'
+import { membersQuery } from '~/lib/queries/members'
+import { newId } from '~/lib/queries/query'
 import { ProfileCard } from './profile-card'
 
 // Better Auth stays out of the DOM tests; each call resolves to { data, error } like the

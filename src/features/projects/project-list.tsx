@@ -22,8 +22,8 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { formatDateTime } from '~/lib/format'
-import type { Project } from '~/lib/projects'
-import type { Team } from '~/lib/teams'
+import type { Project } from '~/lib/queries/projects'
+import type { Team } from '~/lib/queries/teams'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { byName } from './projects'

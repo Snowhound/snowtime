@@ -6,7 +6,7 @@ import { AppFrame, useInAppFrame } from '~/components/app-frame/app-frame'
 import { AuthHeading, AuthIcon, AuthLayout } from '~/components/auth-layout/auth-layout'
 import { buttonVariants } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
-import { defaultOrganization, organizationIn, sessionQuery } from '~/lib/session'
+import { defaultOrganization, organizationIn, sessionQuery } from '~/lib/queries/session'
 import { m } from '~/paraglide/messages.js'
 
 // The not-found and error pages' frame. A route under the signed-in layout shows them inside

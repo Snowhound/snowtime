@@ -2,7 +2,7 @@ import { renderHook } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import type { JSX } from 'solid-js'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { newId } from '~/lib/query'
+import { newId } from '~/lib/queries/query'
 import { MAX_ENTRY_MS } from '~/server/entries/entries.schemas'
 import { type Entry, entriesQuery, useCreateEntry, useStopTimer } from './queries'
 

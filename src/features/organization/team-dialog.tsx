@@ -18,7 +18,7 @@ import {
   TextFieldLabel,
 } from '~/components/ui/text-field'
 import { fieldError } from '~/lib/form'
-import type { Team } from '~/lib/teams'
+import type { Team } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
 import { Name } from '~/server/auth/auth.schemas'
 

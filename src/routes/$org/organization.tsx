@@ -3,9 +3,9 @@ import { OrganizationPage } from '~/features/organization/organization-page'
 import { OrganizationPending } from '~/features/organization/organization-pending'
 import { appUrlQuery } from '~/features/organization/queries'
 import { OrganizationSearch } from '~/features/organization/search'
-import { membersQuery } from '~/lib/members'
-import { projectsQuery } from '~/lib/projects'
-import { teamsQuery } from '~/lib/teams'
+import { membersQuery } from '~/lib/queries/members'
+import { projectsQuery } from '~/lib/queries/projects'
+import { teamsQuery } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
 
 // Members, invitations, teams, and the organization's name (prototypes/organization.html).

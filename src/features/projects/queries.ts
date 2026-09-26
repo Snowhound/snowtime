@@ -1,9 +1,9 @@
 // The Projects view's queries and its optimistic mutations. Projects live in the cache
-// the timer reads too (src/lib/projects.ts), so each write shows there at once as well.
+// the timer reads too (src/lib/queries/projects.ts), so each write shows there at once as well.
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import { localDate, monthDates } from '~/lib/calendar'
-import type { Project } from '~/lib/projects'
-import { cacheUpdate, optimistic, reportsKey } from '~/lib/query'
+import type { Project } from '~/lib/queries/projects'
+import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
 import {
   archiveProject,
   assignProjectToTeam,

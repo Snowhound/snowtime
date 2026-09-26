@@ -3,8 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { newId } from '~/lib/query'
-import { sessionQuery } from '~/lib/session'
+import { newId } from '~/lib/queries/query'
+import { sessionQuery } from '~/lib/queries/session'
 import { AppHeader } from './app-header'
 
 const fn = vi.hoisted(() => ({

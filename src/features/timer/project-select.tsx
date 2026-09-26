@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
-import type { Project } from '~/lib/projects'
+import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 

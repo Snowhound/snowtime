@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/solid-router'
-import { defaultOrganization, withoutOrganization } from '~/lib/session'
+import { defaultOrganization, withoutOrganization } from '~/lib/queries/session'
 
 // The app starts at the default organization's timer.
 export const Route = createFileRoute('/')({

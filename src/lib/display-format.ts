@@ -6,8 +6,8 @@ import { createSignal, useContext } from 'solid-js'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { DateFormat, TimeFormat } from '~/server/settings/settings.schemas'
 import { formatHours } from './format'
-import { sessionQuery } from './session'
-import type { Settings } from './settings'
+import { sessionQuery } from './queries/session'
+import type { Settings } from './queries/settings'
 
 type SettingsSignal = () => Settings | null | undefined
 

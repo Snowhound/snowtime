@@ -16,7 +16,7 @@ import {
 } from '~/components/ui/text-field'
 import { authClient } from '~/lib/auth-client'
 import { fieldError } from '~/lib/form'
-import { sessionQuery } from '~/lib/session'
+import { sessionQuery } from '~/lib/queries/session'
 import { initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { AppSession } from '~/server/auth/auth.functions'

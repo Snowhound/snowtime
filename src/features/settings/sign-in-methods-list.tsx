@@ -23,7 +23,7 @@ import {
 } from '~/components/ui/dialog'
 import { authClient, unwrap } from '~/lib/auth-client'
 import { formatDateTime } from '~/lib/format'
-import { passkeysQuery } from '~/lib/passkeys'
+import { passkeysQuery } from '~/lib/queries/passkeys'
 import { m } from '~/paraglide/messages.js'
 import type { SignInMethod } from '~/server/auth/auth.functions'
 

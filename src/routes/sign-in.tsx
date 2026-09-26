@@ -1,8 +1,8 @@
 import { createFileRoute, redirect } from '@tanstack/solid-router'
 import * as v from 'valibot'
 import { SignInPage } from '~/features/auth/sign-in-page'
+import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { safeRedirect } from '~/lib/redirect'
-import { signInMethodsQuery } from '~/lib/sign-in-methods'
 import { m } from '~/paraglide/messages.js'
 
 export const Route = createFileRoute('/sign-in')({

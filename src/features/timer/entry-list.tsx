@@ -20,7 +20,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { type WeekStart, addDays, localDate } from '~/lib/calendar'
 import { formatIsoDate } from '~/lib/format'
-import type { Project } from '~/lib/projects'
+import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'

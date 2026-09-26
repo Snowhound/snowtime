@@ -31,7 +31,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { appIcon } from '~/lib/app-icon'
 import { authClient, signOut } from '~/lib/auth-client'
-import { organizationIn, sessionQuery } from '~/lib/session'
+import { organizationIn, sessionQuery } from '~/lib/queries/session'
 import { cn, initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { AppSession } from '~/server/auth/auth.functions'

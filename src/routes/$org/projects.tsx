@@ -2,9 +2,9 @@ import { createFileRoute } from '@tanstack/solid-router'
 import { ProjectsPage } from '~/features/projects/projects-page'
 import { ProjectsPending } from '~/features/projects/projects-pending'
 import { monthReportQuery } from '~/features/projects/queries'
-import { projectsQuery } from '~/lib/projects'
-import { isAdmin } from '~/lib/session'
-import { teamsQuery } from '~/lib/teams'
+import { projectsQuery } from '~/lib/queries/projects'
+import { isAdmin } from '~/lib/queries/session'
+import { teamsQuery } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
 
 // Project list and management (prototypes/projects.html).

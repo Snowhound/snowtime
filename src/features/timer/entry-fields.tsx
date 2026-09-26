@@ -23,7 +23,7 @@ import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-
 import { type WeekStart, atLocalTime, localDate, localTime } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
-import type { Project } from '~/lib/projects'
+import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'

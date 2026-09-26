@@ -5,9 +5,9 @@ import { reportQuery } from '~/features/reports/queries'
 import { ReportsPage } from '~/features/reports/reports-page'
 import { ReportsPending } from '~/features/reports/reports-pending'
 import { localDate } from '~/lib/calendar'
-import { membersQuery } from '~/lib/members'
-import { projectsQuery } from '~/lib/projects'
-import { teamsQuery } from '~/lib/teams'
+import { membersQuery } from '~/lib/queries/members'
+import { projectsQuery } from '~/lib/queries/projects'
+import { teamsQuery } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
 
 // Day and week totals (prototypes/reports.html, 02 · Timesheet). Bad or missing search

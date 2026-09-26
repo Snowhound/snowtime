@@ -3,8 +3,8 @@
 // updates both before the server answers and rolls both back on error.
 import { type QueryKey, queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import type { Range } from '~/lib/calendar'
-import { cacheUpdate, optimistic, reportsKey } from '~/lib/query'
-import { sessionQuery } from '~/lib/session'
+import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
+import { sessionQuery } from '~/lib/queries/session'
 import {
   createEntry,
   deleteEntry,

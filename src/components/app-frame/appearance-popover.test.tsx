@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { Show } from 'solid-js'
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { sessionQuery } from '~/lib/session'
-import type { Settings } from '~/lib/settings'
+import { sessionQuery } from '~/lib/queries/session'
+import type { Settings } from '~/lib/queries/settings'
 import { AppearancePopover } from './appearance-popover'
 
 const fn = vi.hoisted(() => ({ updateSettings: vi.fn(), getAppSession: vi.fn() }))

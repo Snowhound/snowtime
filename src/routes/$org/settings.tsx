@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/solid-router'
 import * as v from 'valibot'
 import { SettingsPage } from '~/features/settings/settings-page'
 import { SettingsPending } from '~/features/settings/settings-pending'
-import { signInMethodsQuery } from '~/lib/sign-in-methods'
+import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { m } from '~/paraglide/messages.js'
 
 export const Route = createFileRoute('/$org/settings')({

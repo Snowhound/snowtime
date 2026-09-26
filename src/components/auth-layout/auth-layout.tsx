@@ -15,10 +15,10 @@ import {
   updateDeviceSettings,
 } from '~/lib/device-settings'
 import { errorMessage } from '~/lib/errors'
+import { sessionQuery } from '~/lib/queries/session'
+import { useUpdateSettings } from '~/lib/queries/settings'
 import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/scene/intro'
 import { currentSeason, sceneAttributes } from '~/lib/scene/scene'
-import { sessionQuery } from '~/lib/session'
-import { useUpdateSettings } from '~/lib/settings'
 import { m } from '~/paraglide/messages.js'
 import { AppearanceMenu } from './appearance-menu'
 

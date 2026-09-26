@@ -3,7 +3,7 @@ import { RECENT_DAYS, recentRange } from '~/features/timer/entries'
 import { entriesQuery, firstEntryQuery, runningTimerQuery } from '~/features/timer/queries'
 import { TimerPage } from '~/features/timer/timer-page'
 import { TimerPending } from '~/features/timer/timer-pending'
-import { projectsQuery } from '~/lib/projects'
+import { projectsQuery } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
 
 // The main tracking view (prototypes/timer.html, Bar layout).

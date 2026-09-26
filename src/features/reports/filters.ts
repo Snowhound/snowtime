@@ -4,8 +4,8 @@
 // the same rules, so options outside them are dropped here rather than sent and refused.
 import * as v from 'valibot'
 import type { IsoDate, WeekStart } from '~/lib/calendar'
-import type { Member } from '~/lib/members'
-import type { Team } from '~/lib/teams'
+import type { Member } from '~/lib/queries/members'
+import type { Team } from '~/lib/queries/teams'
 import { IsoDate as IsoDateSchema, REPORT_UNITS } from '~/server/reports/reports.schemas'
 import type { ReportInput } from '~/server/reports/reports.schemas'
 import { Uuidv7 } from '~/server/schemas'

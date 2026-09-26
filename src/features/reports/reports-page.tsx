@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/solid-query'
 import { Show } from 'solid-js'
-import { isAdmin, organizationIn, sessionQuery } from '~/lib/session'
+import { isAdmin, organizationIn, sessionQuery } from '~/lib/queries/session'
 import type { ReportSearch } from './filters'
 import { ReportsView } from './reports-view'
 

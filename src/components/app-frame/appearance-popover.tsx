@@ -16,8 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover
 import { Separator } from '~/components/ui/separator'
 import { appIcon } from '~/lib/app-icon'
 import { errorMessage } from '~/lib/errors'
+import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { currentSeason } from '~/lib/scene/scene'
-import { type Settings, useUpdateSettings } from '~/lib/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 

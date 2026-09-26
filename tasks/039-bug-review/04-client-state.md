@@ -8,7 +8,7 @@ server fault.
 ## Acceptance criteria
 
 - [x] Switching organization, signing out, and signing in as another user drop the
-      previous data (`src/lib/session.ts`)
+      previous data (`src/lib/queries/session.ts`)
 - [x] Every mutation invalidates or updates the queries that show its data, including
       in other open views
 - [x] Solid reactivity: no prop read once where it must stay live, no effect that

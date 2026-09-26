@@ -17,7 +17,7 @@ import {
 import { authClient, signOut } from '~/lib/auth-client'
 import { errorMessage } from '~/lib/errors'
 import { fieldError } from '~/lib/form'
-import { sessionQuery } from '~/lib/session'
+import { sessionQuery } from '~/lib/queries/session'
 import { m } from '~/paraglide/messages.js'
 import { CreateOrganizationForm, slugify } from '~/server/auth/auth.schemas'
 import { FormAlert } from './sign-in-methods'

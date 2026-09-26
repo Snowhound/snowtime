@@ -2,7 +2,7 @@
 // admins manage members and admins but not owners, and can't grant owner; nobody changes
 // their own role; the last owner can't be demoted or removed. Better Auth's organization
 // plugin refuses most of this itself, so the view hides or disables what it would refuse.
-import type { Member } from '~/lib/members'
+import type { Member } from '~/lib/queries/members'
 import { m } from '~/paraglide/messages.js'
 
 export type OrgRole = Member['orgRole']

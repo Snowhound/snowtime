@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/solid-query'
 import { isServer } from 'solid-js/web'
-import { authClient, unwrap } from './auth-client'
+import { authClient, unwrap } from '~/lib/auth-client'
 
 // The user's passkeys, for the settings list and the app frame's prompt to add one. It
 // runs in the browser: the Better Auth client can't call itself during server rendering.

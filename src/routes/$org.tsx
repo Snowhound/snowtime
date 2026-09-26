@@ -1,7 +1,7 @@
 import { Outlet, createFileRoute, notFound, redirect } from '@tanstack/solid-router'
 import { AppFrame } from '~/components/app-frame/app-frame'
 import { SLUG_PATTERN } from '~/lib/app-paths'
-import { organizationOfPath } from '~/lib/session'
+import { organizationOfPath } from '~/lib/queries/session'
 
 // The signed-in layout, under the organization's slug: each tab shows the organization in its
 // URL (docs/architecture.md, "Tenancy"). Signed-out users go to sign-in and come back to the

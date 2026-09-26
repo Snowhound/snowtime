@@ -3,8 +3,8 @@
 // apply the role rules; the browser names the rows from the cached lists, as the timesheet
 // does, and builds the files, so the XLSX library loads only when someone exports.
 import { type IsoDate, localTime } from '~/lib/calendar'
-import type { Member } from '~/lib/members'
-import type { Project } from '~/lib/projects'
+import type { Member } from '~/lib/queries/members'
+import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
 import type { getReportExport } from '~/server/reports/reports.functions'
 import type { Group } from './filters'

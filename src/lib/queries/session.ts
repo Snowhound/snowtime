@@ -1,10 +1,10 @@
 import { type Query, type QueryClient, queryOptions } from '@tanstack/solid-query'
 import { redirect } from '@tanstack/solid-router'
+import { APP_PAGES, isAppPage } from '~/lib/app-paths'
+import { DEVICE_SETTINGS_KEY } from '~/lib/device-settings'
+import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from '~/lib/scene/intro'
+import { seasonByMonth } from '~/lib/scene/scene'
 import { type AppSession, getAppSession } from '~/server/auth/auth.functions'
-import { APP_PAGES, isAppPage } from './app-paths'
-import { DEVICE_SETTINGS_KEY } from './device-settings'
-import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from './scene/intro'
-import { seasonByMonth } from './scene/scene'
 
 // The signed-in user, their organizations and settings, or null when signed out. The root
 // route loads it before every page; changes to the session (switching organization,

@@ -9,7 +9,7 @@ import { Show, createSignal, onMount } from 'solid-js'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { authClient } from '~/lib/auth-client'
-import { FRESH_SESSION_MS, passkeysQuery } from '~/lib/passkeys'
+import { FRESH_SESSION_MS, passkeysQuery } from '~/lib/queries/passkeys'
 import { m } from '~/paraglide/messages.js'
 
 export const PASSKEY_PROMPT_KEY = 'snowtime.passkeyPromptDismissed'

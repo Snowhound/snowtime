@@ -33,7 +33,7 @@ Changed:
   returns a non-null `stoppedAt` for `running: false`, so the entry editor and the
   all-time total no longer assert it. The one left, in `timer-view.tsx`, saves a new
   entry from the popover, whose values type covers the running entry too.
-- One `isAdmin` in `src/lib/session.ts` replaces two copies and two inline checks
+- One `isAdmin` in `src/lib/queries/session.ts` replaces two copies and two inline checks
   (agreed on 2026-09-26, ahead of subtask 04).
 
 Checked and sound:

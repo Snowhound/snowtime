@@ -16,8 +16,8 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { type IsoDate, addDays } from '~/lib/calendar'
-import type { Member } from '~/lib/members'
-import type { Project } from '~/lib/projects'
+import type { Member } from '~/lib/queries/members'
+import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
 import { getReportExport } from '~/server/reports/reports.functions'
 import type { ReportInput } from '~/server/reports/reports.schemas'

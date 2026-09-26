@@ -432,7 +432,7 @@ each.
     the system preference.
 - The UI saves each field when it changes, so `updateSettings` takes a partial patch.
   The session query carries the settings, and `useUpdateSettings` in
-  `src/lib/settings.ts` updates it optimistically. A change therefore shows at once
+  `src/lib/queries/settings.ts` updates it optimistically. A change therefore shows at once
   wherever the settings are read. A new language applies without a reload: the root
   passes it to Paraglide, which sets the cookie, and renders the page again.
 - The app validates the text values (`src/server/settings/settings.schemas.ts`); their columns have no
@@ -576,7 +576,7 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
 - Authorization checks live in server functions (SQLite has no RLS).
 - Writes are named mutations (`startTimer`, `stopTimer`, `updateEntry`, …),
   not generic CRUD.
-- The UI applies writes optimistically. `optimistic` in `src/lib/query.ts` updates every
+- The UI applies writes optimistically. `optimistic` in `src/lib/queries/query.ts` updates every
   cache a mutation touches before the server answers, restores them on error, and
   refetches either way; the view then shows the error's message. The timer
   (`src/features/timer/queries.ts`) sets the pattern: starting a timer updates both the running timer
@@ -592,7 +592,7 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
     marks the reports stale (`reportsKey`), so Reports and the Projects view's totals
     load again when they open, even within their 30-second stale time.
 - The query cache holds one user's data, in one organization at a time
-  (`src/lib/session.ts`). Signing out opens the sign-in page as a new page load, with an
+  (`src/lib/queries/session.ts`). Signing out opens the sign-in page as a new page load, with an
   empty cache. When the session query returns another user, because of a sign-out
   elsewhere or an expired session, every other query resets: projects, teams, members, and reports are keyed by organization but
   hold what the user may see. An organization-scoped key holds the organization's id
