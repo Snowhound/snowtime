@@ -15,3 +15,6 @@ c961e4d0732401475015628fe78bc7ed15601a99
 
 # Move the signed-in routes under the organization slug (task 052).
 c395f5b4a9f1d66e954b71d302f89df805c25200
+
+# Move the scene, weather, seasons, and intro files into scene/ folders (task 053).
+b412d7e9a786fd43bae5320d070acab4a33e5447
