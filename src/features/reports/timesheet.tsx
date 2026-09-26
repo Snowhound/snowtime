@@ -15,14 +15,7 @@ import {
 } from 'solid-js'
 import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '~/components/ui/table'
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '~/components/ui/table'
 import { type IsoDate, type WeekStart, startOfWeek } from '~/lib/calendar'
 import { formatIsoDate } from '~/lib/format'
 import { cn } from '~/lib/utils'
@@ -39,6 +32,15 @@ const GROUP_LABELS = {
 
 // Short day labels up to a week; longer ranges show the day number over its weekday.
 const WEEK_DAYS = 7
+
+// The body's rows and cells are plain elements with ui/table's classes. Its components split
+// and spread their props, which a month by 40 projects does for 1,300 cells.
+const ROW = 'border-b transition-colors hover:bg-muted/50'
+const ROW_HEAD =
+  'timesheet-start bg-card text-foreground sticky left-0 z-10 p-2 pl-6 text-left align-middle'
+const CELL = 'p-2 align-middle text-right whitespace-nowrap tabular-nums'
+const ROW_TOTAL =
+  'timesheet-end bg-card sticky right-0 z-10 p-2 pr-6 text-right align-middle tabular-nums'
 
 // A day or week in full, as screen readers and the Entries card name it.
 export function bucketLabel(bucket: IsoDate, unit: Unit) {
@@ -121,9 +123,9 @@ export function Timesheet(props: {
 
   function Cell(cell: { ms: number; bucket: IsoDate; row?: string; class?: string }) {
     return (
-      <TableCell
+      <td
         class={cn(
-          'text-right whitespace-nowrap tabular-nums',
+          CELL,
           current(cell.bucket) && 'bg-muted/50',
           !cell.ms && 'text-muted-foreground/50',
           cell.class,
@@ -136,7 +138,7 @@ export function Timesheet(props: {
         ) : (
           '·'
         )}
-      </TableCell>
+      </td>
     )
   }
 
@@ -214,11 +216,8 @@ export function Timesheet(props: {
           <TableBody>
             <For each={props.rows}>
               {(row) => (
-                <TableRow>
-                  <TableHead
-                    scope="row"
-                    class="timesheet-start bg-card text-foreground sticky left-0 z-10 h-auto max-w-40 p-2 pl-6 font-normal sm:max-w-64"
-                  >
+                <tr class={ROW}>
+                  <th scope="row" class={`${ROW_HEAD} max-w-40 font-normal sm:max-w-64`}>
                     <Pick
                       row={row.key}
                       class="flex max-w-full min-w-0 items-center gap-2 text-left"
@@ -233,34 +232,31 @@ export function Timesheet(props: {
                         {row.name}
                       </span>
                     </Pick>
-                  </TableHead>
+                  </th>
                   <For each={buckets()}>
                     {(bucket, i) => <Cell ms={row.perBucket[i()]} bucket={bucket} row={row.key} />}
                   </For>
-                  <TableCell class="timesheet-end bg-card sticky right-0 z-10 pr-6 text-right font-medium tabular-nums">
+                  <td class={`${ROW_TOTAL} font-medium`}>
                     <Pick row={row.key}>
                       <Duration ms={row.total} />
                     </Pick>
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               )}
             </For>
-            <TableRow class="border-t-2 font-medium hover:bg-transparent">
-              <TableHead
-                scope="row"
-                class="timesheet-start bg-card text-foreground sticky left-0 z-10 h-auto p-2 pl-6"
-              >
+            <tr class="border-t-2 border-b font-medium">
+              <th scope="row" class={`${ROW_HEAD} font-medium`}>
                 {m.reports_total()}
-              </TableHead>
+              </th>
               <For each={buckets()}>
                 {(bucket, i) => (
                   <Cell ms={props.report.perBucket[i()]} bucket={bucket} class="font-medium" />
                 )}
               </For>
-              <TableCell class="timesheet-end bg-card sticky right-0 z-10 pr-6 text-right tabular-nums">
+              <td class={ROW_TOTAL}>
                 <Duration ms={props.report.total} />
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           </TableBody>
         </Table>
       </div>
