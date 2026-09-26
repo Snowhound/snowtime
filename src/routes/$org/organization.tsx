@@ -11,7 +11,7 @@ import { m } from '~/paraglide/messages.js'
 // Members, invitations, teams, and the organization's name (prototypes/organization.html).
 // Admins and owners only: members and team leads get a no-access message, and the
 // navigation hides the page from them.
-export const Route = createFileRoute('/_app/organization')({
+export const Route = createFileRoute('/$org/organization')({
   validateSearch: OrganizationSearch,
   loader: async ({ context }) => {
     const { queryClient, session } = context

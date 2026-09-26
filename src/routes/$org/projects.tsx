@@ -7,7 +7,7 @@ import { teamsQuery } from '~/lib/teams'
 import { m } from '~/paraglide/messages.js'
 
 // Project list and management (prototypes/projects.html).
-export const Route = createFileRoute('/_app/projects')({
+export const Route = createFileRoute('/$org/projects')({
   loader: async ({ context }) => {
     const { queryClient, session } = context
     const organizationId = session.activeOrganizationId!

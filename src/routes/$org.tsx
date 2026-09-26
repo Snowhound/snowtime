@@ -3,7 +3,7 @@ import { AppFrame } from '~/components/app-frame/app-frame'
 
 // The signed-in layout. Signed-out users go to sign-in and come back to the page they
 // asked for; users without an organization go to their invitation or create one.
-export const Route = createFileRoute('/_app')({
+export const Route = createFileRoute('/$org')({
   beforeLoad: ({ context, location }) => {
     const { session } = context
     if (!session) {

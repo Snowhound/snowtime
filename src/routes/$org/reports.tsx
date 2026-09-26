@@ -16,7 +16,7 @@ import { m } from '~/paraglide/messages.js'
 // The filters aren't loaderDeps on purpose: a filter change then keeps this match, so the
 // router reloads it in the background and the view keeps the previous report on screen,
 // rather than showing ReportsPending. The loader reads them from the location instead.
-export const Route = createFileRoute('/_app/reports')({
+export const Route = createFileRoute('/$org/reports')({
   staticData: { wide: true },
   validateSearch: ReportSearch,
   loader: async ({ context, location }) => {

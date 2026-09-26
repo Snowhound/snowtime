@@ -7,7 +7,7 @@ import { projectsQuery } from '~/lib/projects'
 import { m } from '~/paraglide/messages.js'
 
 // The main tracking view (prototypes/timer.html, Bar layout).
-export const Route = createFileRoute('/_app/timer')({
+export const Route = createFileRoute('/$org/timer')({
   loader: async ({ context }) => {
     const { queryClient, session } = context
     const organizationId = session.activeOrganizationId!
