@@ -1,6 +1,6 @@
 # 042: Unverified provider emails
 
-Status: todo
+Status: in-progress
 
 Better Auth creates a user with whatever email the sign-in provider returns and records
 whether the provider verified it (`user.email_verified`). Task 039 found two problems
@@ -27,12 +27,22 @@ reproduced, because no Microsoft or GitHub sign-in is configured locally.
 
 - [ ] A Microsoft sign-in, and a GitHub one, is tested in an environment with the
       provider configured, and the stored `email_verified` is recorded here
-- [ ] Microsoft users can accept invitations: through optional claims in the Entra app
+- [x] Microsoft users can accept invitations: through optional claims in the Entra app
       registration, a check of Microsoft's verified-domain claim (`xms_edov`), or
       another rule that doesn't trust an address the tenant made up
-- [ ] An unverified provider email can't block a later verified sign-in with the same
+- [x] An unverified provider email can't block a later verified sign-in with the same
       address. For example, a `databaseHooks.user.create.before` hook refuses social
       sign-ups whose email isn't verified, with a message on the sign-in screen
-- [ ] `docs/architecture.md` ("Sign-in methods") and `docs/deployment.md` (the Microsoft
+- [x] `docs/architecture.md` ("Sign-in methods") and `docs/deployment.md` (the Microsoft
       app setup) say which providers give verified addresses and what the app does with
       the others
+
+## Findings
+
+Done on 2026-09-27 without a real Microsoft or GitHub sign-in. Microsoft isn't enabled in
+any environment and won't be for a while. The rules follow Better Auth 1.7's source: its
+Microsoft provider spreads `mapProfileToUser`'s result over the `emailVerified` it computed,
+and its OAuth callback turns an `APIError` from a create hook into the error callback's
+`?error=<code>`. Tests cover `microsoftEmailVerified` with sample claims,
+`refuseUnverifiedSignUp`, and the sign-in page's message. The first criterion waits for the
+first environment with a provider: sign in once and record the stored `email_verified`.

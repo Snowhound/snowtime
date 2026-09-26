@@ -126,12 +126,27 @@
 - The MVP sends no email. OAuth providers supply the verified email address that
   Better Auth requires before an invitation can be accepted
   (`requireEmailVerificationOnInvitation`), and admins share invitation links
-  themselves. Microsoft and GitHub may report an address as unverified, which task 042
-  tracks. Password sign-in, which would need email for
+  themselves. Password sign-in, which would need email for
   verification and reset, is enabled only in local development, where seeded users
   (task 008) sign in with a known password. The sign-in form lists the seeded users, and
   picking one fills in the email and password; `getDevUsers` returns the list only
   where password sign-in is enabled.
+- A provider sign-up needs a verified address (task 042). `refuseUnverifiedSignUp` in
+  `src/server/auth/sign-in.server.ts`, a `databaseHooks.user.create.before` hook, refuses
+  any other, and the sign-in page says the provider hasn't verified the address. An
+  unverified user would hold the address: Better Auth won't link a later, verified sign-in
+  to it (`requireLocalEmailVerified`), so under Microsoft's `common` tenant anyone could
+  sign up from a tenant they made up with someone else's address and lock its owner out.
+  It also couldn't accept an invitation.
+  - Google marks its addresses verified, and GitHub the ones its email list marks verified.
+  - Microsoft verifies an address only in optional claims Better Auth reads
+    (`email_verified`, `verified_primary_email`, `verified_secondary_email`), so
+    `microsoftEmailVerified` also trusts a personal account (the consumer tenant, whose
+    addresses Microsoft verified) and `xms_edov`, the claim that the tenant owns the
+    address's domain. The app registration must add `xms_edov` to the ID token
+    (`docs/deployment.md`); without it, work and school accounts can't sign up.
+  - Checked against Better Auth 1.7's source and with sample claims, not yet with a real
+    Microsoft or GitHub sign-in.
 - Passkeys are added to an existing account: a signed-in user registers one, then signs
   in with it instead of their provider. Nobody signs up with a passkey alone.
   - After sign-in, the app frame offers to add one: above every signed-in page, for a day
