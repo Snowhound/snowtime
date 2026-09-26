@@ -767,8 +767,9 @@ Frankfurt (`fra1`) would save roughly 20–30 ms per request, but both mean port
 schema, migrations, and tooling from SQLite, and the free tiers pause idle databases. If
 this changes, switch before production holds real data.
 
-**Migrations:** CI runs `db:migrate` after the checks pass on a push to the environment's
-branch. Migrations never run in the Vercel build or on app start. A database only
+**Migrations and deploys:** CI runs `db:migrate` after the checks pass on a push to the
+environment's branch, and then deploys that commit to Vercel. Migrations never run in the
+Vercel build or on app start. A database only
 receives merged migrations, because `db:verify` rejects an applied migration that a PR
 later edits, and two open PRs would mix their migrations in one shared database. PRs
 test their migrations on throwaway local databases only (`db:drift`).
@@ -777,9 +778,15 @@ test their migrations on throwaway local databases only (`db:drift`).
   host such as `staging.<domain>`, with branch-scoped Preview env vars, so OAuth
   callbacks and passkeys can be registered for it once. Other preview deployments have
   generated URLs and no sign-in.
-- Vercel deploys a push in parallel with CI, so new code can go live a minute before its
-  migration applies. That is accepted for now, and backward-compatible migrations keep
-  it safe. Later, Vercel can wait for the migrate check before promoting a deployment.
+- Vercel doesn't deploy `main` by itself (`vercel.json`). CI's `deploy-prod` job runs
+  `vercel deploy --prod` once the migration has applied, so a failed check or migration
+  keeps new code off production. Vercel used to deploy each push in parallel with CI;
+  on 2026-09-27 a failed knip check skipped a migration, the new code read a column prod
+  didn't have, and every signed-in page failed. Vercel's Deployment Checks, which hold a
+  deployment until chosen GitHub checks pass, were rejected: the setting lives in each
+  project's dashboard, not the repository, so every client stack would need it by hand.
+  The previous deployment serves until the new one is ready, so migrations stay backward
+  compatible.
 - Planned: CI also applies `main`'s migrations to a throwaway database, seeds it, and
   then applies the PR's migrations, to catch a migration that fails on existing rows
   (for example a `NOT NULL` column without a default).

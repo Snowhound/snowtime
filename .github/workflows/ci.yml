@@ -1,5 +1,6 @@
 # Checks every PR and push to main; tests and db:drift use throwaway local databases. A push
-# to main then migrates prod (docs/architecture.md, "Environments and deployment").
+# to main then migrates prod and deploys it (docs/architecture.md, "Environments and
+# deployment").
 name: CI
 
 on:
@@ -70,6 +71,8 @@ jobs:
     concurrency:
       group: migrate-prod
       cancel-in-progress: false
+    outputs:
+      migrated: ${{ steps.migrate.outputs.migrated }}
     env:
       TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
       TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
@@ -87,9 +90,39 @@ jobs:
       # db:migrate runs db:verify first, so an edited applied migration stops it. Until the
       # secrets are set, the step skips visibly rather than fail every push to main.
       - name: Migrate prod
+        id: migrate
         run: |
           if [ -z "$TURSO_DATABASE_URL" ] || [ -z "$TURSO_AUTH_TOKEN" ]; then
             echo "::notice title=Prod migration skipped::Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in the production environment."
             exit 0
           fi
           bun run db:migrate
+          echo "migrated=true" >> "$GITHUB_OUTPUT"
+
+  # vercel.json keeps Vercel from deploying main by itself, so new code goes live only after
+  # the checks pass and its migrations apply. A skipped migration skips the deploy too.
+  deploy-prod:
+    needs: migrate-prod
+    if: needs.migrate-prod.outputs.migrated == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Uploads the source; Vercel builds it with the project's environment variables, and the
+      # CLI waits for the build and fails with it.
+      - name: Deploy prod
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::warning title=Prod deploy skipped::Set VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID in the production environment."
+            exit 0
+          fi
+          npx --yes vercel@60.1.3 deploy --prod --yes --token "$VERCEL_TOKEN"

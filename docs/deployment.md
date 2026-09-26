@@ -2,7 +2,7 @@
 
 This runbook sets up one production stack from scratch: a Turso database, optional
 Upstash Redis, a Vercel project, one or more OAuth apps, and the GitHub environment CI
-migrates from. Follow it for your own deployment or for a dedicated stack per client. The
+migrates and deploys from. Follow it for your own deployment or for a dedicated stack per client. The
 reasons behind the choices are in `architecture.md` ("Environments and deployment"), and
 the free-tier limits are in `hosting.md`.
 
@@ -51,8 +51,9 @@ doesn't read.
 ## 3. Create the Vercel project and find its host
 
 1. Import the repository into Vercel. `vercel.json` selects the TanStack Start
-   framework, so leave the build settings at their defaults. The first deployment
-   fails or shows an error page until step 6 sets the environment variables.
+   framework, so leave the build settings at their defaults. `vercel.json` also stops
+   Vercel from deploying `main` by itself; CI deploys it from step 5 on. Until step 6
+   sets the environment variables, a production deployment fails or shows an error page.
 2. Under **Settings > Functions**, set the function region to the one from
    [Before you start](#before-you-start), for example `dub1`. Vercel's default is
    `iad1` (Washington, D.C.).
@@ -109,29 +110,47 @@ operator, so a stack someone else runs changes `COMPANY` in
 Copy each provider's client ID and secret. GitHub shows a client secret only once, right
 after you generate it.
 
-## 5. Let CI migrate the database
+## 5. Let CI migrate and deploy
 
 After the checks pass on a push to `main`, the `migrate-prod` job in
 `.github/workflows/ci.yml` runs `bun run db:migrate` against the production database.
-Until its secrets are set, the job skips and leaves a notice in the run summary.
+The `deploy-prod` job then runs `vercel deploy --prod`, and Vercel builds the commit with
+the project's environment variables. Preview deployments of other branches still come
+from Vercel's Git integration. Until a job's secrets are set, it skips and leaves a notice
+in the run summary. A skipped migration skips the deploy too, so unmigrated code never
+goes live.
 
-1. In the GitHub repository, open **Settings > Environments** and create `production`
+1. Create a Vercel token under **Account Settings > Tokens**
+   ([vercel.com/account/settings/tokens](https://vercel.com/account/settings/tokens)).
+   Scope it to the team or account that owns the project. This is `VERCEL_TOKEN`. When
+   it expires, `deploy-prod` fails until you replace the secret, so note the date.
+2. Find the project's IDs with the Vercel CLI. In the repository, run `vercel link` and
+   pick the project. The gitignored `.vercel/` folder then holds them: in `repo.json`,
+   the project's `orgId` (`VERCEL_ORG_ID`) and `id` (`VERCEL_PROJECT_ID`); with older
+   CLIs, `project.json` with `orgId` and `projectId`. The dashboard shows them too:
+   the project ID under the project's **Settings > General**, and the team ID under the
+   team's **Settings > General**.
+3. In the GitHub repository, open **Settings > Environments** and create `production`
    (the first CI run on `main` may already have created it).
-2. Add the secrets `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from step 1. Repository
-   secrets (**Settings > Secrets and variables > Actions**) also work, because a job
-   reads them as well as its environment's. Environment secrets add a branch rule: under
+4. Add the secrets `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from step 1, and
+   `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID`. Repository secrets
+   (**Settings > Secrets and variables > Actions**) also work, because a job reads them
+   as well as its environment's. Environment secrets add a branch rule: under
    **Deployment branches and tags**, allow only `main`.
-3. Re-run the latest workflow on `main`, or push to it. The `migrate-prod` job applies
-   every migration to the empty database.
+5. Re-run the latest workflow on `main`, or push to it. The `migrate-prod` job applies
+   every migration to the empty database, and `deploy-prod` deploys.
 
-To migrate from your machine instead, for example before CI is set up in a fork:
+To migrate or deploy from your machine instead, for example before CI is set up in a
+fork, migrate first:
 
 ```bash
 TURSO_DATABASE_URL=libsql://... TURSO_AUTH_TOKEN=... bun run db:migrate
+vercel deploy --prod
 ```
 
-Vercel deploys a push while CI is still running, so new code can go live about a minute
-before its migration applies. Keep migrations backward compatible (`migrations.md`).
+The previous deployment serves until the new one is ready, so it runs against the
+migrated database for a few minutes. Keep migrations backward compatible
+(`migrations.md`).
 
 ## 6. Set the environment variables and redeploy
 
@@ -160,8 +179,9 @@ before its migration applies. Keep migrations backward compatible (`migrations.m
 
 3. Leave Preview environment variables unset. Preview deployments have generated hosts,
    where OAuth and passkeys can't work (`architecture.md`, "Sign-in methods").
-4. Redeploy the latest production deployment, so it runs with the region and variables.
-   Vercel applies both only to deployments made after the change.
+4. Redeploy the latest production deployment in Vercel, or re-run the latest workflow on
+   `main`, so it runs with the region and variables. Vercel applies both only to
+   deployments made after the change.
 
 ## 7. Check the deployment
 
