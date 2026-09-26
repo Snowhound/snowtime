@@ -6,6 +6,7 @@ import CalendarIcon from 'lucide-solid/icons/calendar'
 import { For, Show, createEffect, createMemo, createSignal, createUniqueId, on } from 'solid-js'
 import { DatePicker } from '~/components/date-time/date-picker'
 import { TimeInput } from '~/components/date-time/time-input'
+import { PlainButton } from '~/components/plain-button'
 import { ProjectDot } from '~/components/project-dot'
 import { Button } from '~/components/ui/button'
 import {
@@ -17,7 +18,6 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { Label } from '~/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
-import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { type WeekStart, atLocalTime, localDate, localTime } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
@@ -35,6 +35,9 @@ export type SaveEntry = (entry: Entry, patch: EntryPatch) => Promise<unknown>
 // The fields show their border only on hover and focus, so a row reads as text.
 const QUIET =
   'h-8 border-transparent px-2 shadow-none hover:border-input focus-visible:border-input'
+// The description is a native input with ui/text-field's classes rather than Kobalte's
+// TextField, whose props proxies every row would repeat.
+const DESCRIPTION_INPUT = `flex w-full rounded-md border bg-transparent py-2 text-sm text-ellipsis ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${QUIET}`
 // Controls that show on row hover or focus from 640 px, like the row's actions.
 export const REVEAL =
   'sm:opacity-0 sm:transition-opacity sm:group-focus-within:opacity-100 sm:group-hover:opacity-100 data-[expanded]:opacity-100'
@@ -209,19 +212,22 @@ function commitKeys(commit: () => void, reset: () => void) {
 
 export function DescriptionField(props: { editor: EntryEditor }) {
   return (
-    <TextField value={props.editor.description()} onChange={props.editor.setDescription}>
-      <TextFieldLabel class="sr-only">{m.entry_description()}</TextFieldLabel>
-      <TextFieldInput
-        autocomplete="off"
-        placeholder={m.timer_no_description()}
-        class={cn(QUIET, 'text-ellipsis')}
-        onBlur={() => props.editor.commitDescription()}
-        onKeyDown={commitKeys(
+    <input
+      type="text"
+      autocomplete="off"
+      aria-label={m.entry_description()}
+      placeholder={m.timer_no_description()}
+      value={props.editor.description()}
+      class={DESCRIPTION_INPUT}
+      onInput={(event) => props.editor.setDescription(event.currentTarget.value)}
+      onBlur={() => props.editor.commitDescription()}
+      onKeyDown={(event) =>
+        commitKeys(
           () => props.editor.commitDescription(),
           () => props.editor.resetDescription(),
-        )}
-      />
-    </TextField>
+        )(event)
+      }
+    />
   )
 }
 
@@ -310,9 +316,9 @@ export function ProjectField(props: {
     <Show
       when={props.active}
       fallback={
-        <Button {...trigger} aria-haspopup="menu" aria-expanded={false}>
+        <PlainButton {...trigger} aria-haspopup="menu" aria-expanded={false}>
           <Name />
-        </Button>
+        </PlainButton>
       }
     >
       <DropdownMenu placement="bottom-start">
@@ -396,9 +402,9 @@ export function DateField(props: {
     <Show
       when={props.active}
       fallback={
-        <Button {...trigger} aria-haspopup="dialog" aria-expanded={false}>
+        <PlainButton {...trigger} aria-haspopup="dialog" aria-expanded={false}>
           <CalendarIcon aria-hidden="true" />
-        </Button>
+        </PlainButton>
       }
     >
       <Popover open={open()} onOpenChange={openChange} placement="bottom-start">

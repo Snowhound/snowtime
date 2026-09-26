@@ -13,6 +13,7 @@
 // fields can mount the popover only where it is being used.
 import ClockIcon from 'lucide-solid/icons/clock'
 import { Show, createEffect, createSignal, on } from 'solid-js'
+import { PlainButton } from '~/components/plain-button'
 import { Button } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { formatTimeInput, parseTimeInput, shiftTime, uses12Hours } from '~/lib/date-input'
@@ -173,9 +174,9 @@ export function TimeInput(props: {
         <Show
           when={!props.idle}
           fallback={
-            <Button {...clock} aria-haspopup="dialog" aria-expanded={false}>
+            <PlainButton {...clock} aria-haspopup="dialog" aria-expanded={false}>
               <ClockIcon aria-hidden="true" />
-            </Button>
+            </PlainButton>
           }
         >
           <Popover

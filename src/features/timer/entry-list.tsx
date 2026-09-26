@@ -8,6 +8,7 @@ import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { For, Show, createEffect, on } from 'solid-js'
 import { Duration } from '~/components/duration'
+import { PlainButton } from '~/components/plain-button'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import {
@@ -223,7 +224,7 @@ export function EntryActions(props: {
             'pointer-events-none opacity-0 sm:opacity-0 sm:group-focus-within:opacity-0 sm:group-hover:opacity-0',
         )}
       >
-        <Button
+        <PlainButton
           variant="ghost"
           size="icon"
           class={cn(props.compact && 'size-8')}
@@ -235,13 +236,13 @@ export function EntryActions(props: {
           onClick={() => props.onContinue(props.entry)}
         >
           <PlayIcon aria-hidden="true" />
-        </Button>
+        </PlainButton>
         <Show
           when={props.active}
           fallback={
-            <Button {...more} aria-haspopup="menu" aria-expanded={false}>
+            <PlainButton {...more} aria-haspopup="menu" aria-expanded={false}>
               <EllipsisVerticalIcon aria-hidden="true" />
-            </Button>
+            </PlainButton>
           }
         >
           <DropdownMenu placement="bottom-end">
