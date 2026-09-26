@@ -310,6 +310,9 @@ export const userSettings = sqliteTable(
     sceneIntro: integer('scene_intro', { mode: 'boolean' })
       .default(sql`1`)
       .notNull(),
+    sceneTagline: integer('scene_tagline', { mode: 'boolean' })
+      .default(sql`1`)
+      .notNull(),
     durationFormat: text('duration_format', { enum: DURATION_FORMATS }).default('clock').notNull(),
     dateFormat: text('date_format', { enum: DATE_FORMATS }).default('dmy').notNull(),
     timeFormat: text('time_format', { enum: TIME_FORMATS }).default('24h').notNull(),
@@ -321,6 +324,7 @@ export const userSettings = sqliteTable(
     check('user_settings_scene_background', sql`scene_background IN (0, 1)`),
     check('user_settings_scene_weather', sql`scene_weather IN (0, 1)`),
     check('user_settings_scene_intro', sql`scene_intro IN (0, 1)`),
+    check('user_settings_scene_tagline', sql`scene_tagline IN (0, 1)`),
   ],
 )
 

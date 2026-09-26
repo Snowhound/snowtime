@@ -488,6 +488,94 @@ html:has(.scene-header) {
     visibility: hidden;
   }
 }
+/* A new tagline's cue (src/components/page-title.tsx): a light sweeps across it, a copy of its
+   text that shows only the light. Where it's centered and there's room, the lines then roll:
+   the first two slide up and fade as the third slides in from below, which holds, then rolls on
+   the same way back to the first two. The rows share one grid cell, centered, and nothing clips
+   them, so the text's glow fades with them and the first two don't move when the third is
+   wider. The tagline's box stays one line tall, so nothing around it moves. */
+.season-tagline[data-cue]:not(.page-tagline-centered) {
+  position: relative;
+}
+.tagline-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  text-shadow: none !important;
+  background: linear-gradient(100deg, transparent 35%, rgb(255 255 255 / 0.85) 50%, transparent 65%)
+    no-repeat;
+  background-size: 250% 100%;
+  background-clip: text;
+  animation: tagline-sheen 1.4s ease-in-out 0.3s both;
+}
+@keyframes tagline-sheen {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+.season-tagline[data-roll] .tagline-rows {
+  --roll-step: calc(1lh + 1em);
+  display: grid;
+  justify-items: center;
+}
+.season-tagline[data-roll] .tagline-row {
+  grid-area: 1 / 1;
+  position: relative;
+  animation: tagline-roll-out 6.6s ease-in-out both;
+}
+.season-tagline[data-roll] .tagline-3 {
+  animation-name: tagline-roll-in;
+}
+.season-tagline .tagline-3 {
+  color: color-mix(in srgb, var(--muted-foreground) 45%, var(--foreground));
+}
+/* The first two lines: out upward at 30 to 39%, back in from below at 91 to 100%. */
+@keyframes tagline-roll-out {
+  0%,
+  30% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  36% {
+    opacity: 0;
+  }
+  39% {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--roll-step)));
+  }
+  91% {
+    opacity: 0;
+    transform: translateY(var(--roll-step));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* The third line: in from below at 30 to 39%, out upward at 91 to 100%. */
+@keyframes tagline-roll-in {
+  0%,
+  30% {
+    opacity: 0;
+    transform: translateY(var(--roll-step));
+  }
+  39%,
+  91% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  97% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--roll-step)));
+  }
+}
 .season-tagline .tagline-1 {
   color: var(--tagline-title-light);
 }

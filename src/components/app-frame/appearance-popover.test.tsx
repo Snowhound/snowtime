@@ -24,6 +24,7 @@ const settings = {
   surfaces: 'glass',
   sceneWeather: true,
   sceneIntro: true,
+  sceneTagline: true,
 } as Settings
 
 // The popover reads the settings from the session query, as the header passes them.

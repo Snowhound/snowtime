@@ -93,6 +93,10 @@ export function AppearancePopover(props: { settings: Settings; organizationSlug:
             settings={props.settings}
             hints="none"
             onChange={(patch) => save.mutate(patch)}
+            tagline={{
+              checked: props.settings.sceneTagline,
+              onChange: (sceneTagline) => save.mutate({ sceneTagline }),
+            }}
           />
           <Separator />
           <div class="flex items-center justify-between gap-3">

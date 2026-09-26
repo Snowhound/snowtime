@@ -6,7 +6,7 @@ import { SceneLayer } from '~/components/scene/scene-layer'
 import { sessionQuery } from '~/lib/queries/session'
 import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/scene/intro'
 import { SCENE_DEFAULTS, currentSeason, sceneAttributes } from '~/lib/scene/scene'
-import { SeasonProvider, TimeZoneProvider } from '~/lib/scene/seasons'
+import { SeasonProvider, TaglineProvider } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { AppSession } from '~/server/auth/auth.functions'
@@ -62,12 +62,17 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
       <IntroPage class="flex flex-1 flex-col">
         <AppHeader organizationId={props.organizationId} />
         <SeasonProvider value={() => currentSeason(scene().sceneSeason)}>
-          <TimeZoneProvider value={() => session.data?.settings?.timeZone}>
+          <TaglineProvider
+            value={() => ({
+              show: session.data?.settings?.sceneTagline ?? true,
+              timeZone: session.data?.settings?.timeZone,
+            })}
+          >
             <main class={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-8', !wide() && 'max-w-6xl')}>
               <PasskeyPrompt signedInAt={props.session.signedInAt} />
               <InAppFrame.Provider value={organizationId}>{props.children}</InAppFrame.Provider>
             </main>
-          </TimeZoneProvider>
+          </TaglineProvider>
         </SeasonProvider>
       </IntroPage>
       <Intro />

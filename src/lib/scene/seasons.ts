@@ -182,22 +182,19 @@ export function seasonLines(season: Season, when: When = {}): Lines {
   return inTurn([lines, ...alternates, ...ranges.map((r) => r.lines)], now)
 }
 
-// The tagline's two lines: a date's set, else a period's on its last days (the month's last
-// three, else Friday), else the first two of the intro's set.
-export function taglineLines(season: Season, when: When = {}): [Line, Line] {
+// The tagline's lines: a date's set, else a period's on its last days (the month's last three,
+// else Friday), else the intro's set. The tagline shows the first two; a set's third line can
+// rise in under them.
+export function taglineLines(season: Season, when: When = {}): [Line, Line] | Lines {
   const { now = Date.now(), timeZone, locale = getLocale() } = when
   if (timeZone) {
     const today = localDate(now, timeZone)
     const dates = dated(DATES, today, locale)
-    if (dates.length > 0) {
-      const [first, second] = inTurn(dates, now).lines
-      return [first, second]
-    }
+    if (dates.length > 0) return inTurn(dates, now).lines
     if (today >= addDays(monthDates(today).to, -MONTH_END_DAYS)) return PERIODS.monthEnd
     if (weekday(today) === 5) return PERIODS.weekEnd
   }
-  const [first, second] = seasonLines(season, when)
-  return [first, second]
+  return seasonLines(season, when)
 }
 
 export function introLines(season: Season, when: When = {}) {
@@ -213,11 +210,12 @@ export function useSeason() {
   return useContext(SeasonContext)
 }
 
-// The user's time zone, for the dated and period taglines. The frame provides it once the
-// account's settings exist; without it, the tagline stays seasonal.
-const TimeZoneContext = createContext<Accessor<string | undefined>>(() => undefined)
-export const TimeZoneProvider = TimeZoneContext.Provider
+// The page tagline's settings, which the frame provides from the account's: whether it shows,
+// and the user's zone for the dated and period taglines. Without a zone it stays seasonal.
+type TaglineSettings = { show: boolean; timeZone?: string }
+const TaglineContext = createContext<Accessor<TaglineSettings>>(() => ({ show: true }))
+export const TaglineProvider = TaglineContext.Provider
 
-export function useTimeZone() {
-  return useContext(TimeZoneContext)
+export function useTagline() {
+  return useContext(TaglineContext)
 }

@@ -22,6 +22,7 @@ const columns = {
   surfaces: userSettings.surfaces,
   sceneWeather: userSettings.sceneWeather,
   sceneIntro: userSettings.sceneIntro,
+  sceneTagline: userSettings.sceneTagline,
   durationFormat: userSettings.durationFormat,
   dateFormat: userSettings.dateFormat,
   timeFormat: userSettings.timeFormat,

@@ -317,6 +317,7 @@ lists these items, and must change with them.
 | `PARAGLIDE_LOCALE`                           | Cookie       | The account's language                | 30 days, renewed on each page load |
 | `snowtime.settings`                          | localStorage | Theme, app icon, and scene            | Until cleared                      |
 | `snowtime.introSeen`, `snowtime.introSeason` | localStorage | Where the intro last played           | Until cleared                      |
+| `snowtime.taglineSeen`                       | localStorage | The page tagline last shown           | Until cleared                      |
 | `snowtime.passkeyPromptDismissed`            | localStorage | "Not now" on the passkey prompt       | Until cleared                      |
 | `snowtime.reportEntriesNarrowed`             | localStorage | Hides the Entries card's hint         | Until cleared                      |
 | `snowtime.reportEntriesOpen`                 | localStorage | The Entries card's list left open     | Until cleared                      |
@@ -477,7 +478,8 @@ The Reports page's Entries card lists the entries behind the report (task 055,
   user across devices: time zone, week start, language (`locale`), theme, timer layout,
   whether the summary shows, compact entry rows (`compact_rows`), the app icon
   (`app_icon`, the header mark and favicon), the seasonal scene (`scene_season`,
-  `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`), and
+  `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`,
+  `scene_tagline`), and
   how durations, dates, and times show (`duration_format`, `date_format`, `time_format`).
   They default to 11:10, 30.09.2026, and 15:30 in every language. Exports keep the
   formats spreadsheets read, whatever the duration format.
@@ -553,6 +555,15 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   - Otherwise, on a timesheet period's last days, a period tagline replaces the season's:
     the month's last three days, else Friday, whatever the week start.
   - The sign-in page has no zone, so it shows only the season's sets.
+  - A tagline the browser hasn't shown before gets a cue once it's placed: a light sweeps
+    across it. When it's centered and the set has a third line, the first two lines then roll
+    up and fade for the third, which holds for about four seconds before they roll back. The
+    tagline's box keeps its size, so nothing around it moves; if the third line is too wide
+    for the title row, only the light plays. The browser decides after hydration, since only
+    it knows what it showed last; hiding the server's text to fade it in would flicker on
+    every load. There's no cue while the intro shows the lines or with reduced motion.
+  - The Tagline switch (`scene_tagline`) hides the tagline on signed-in pages. The sign-in
+    page keeps it, and the intro has its own switch.
 - Intro (`src/lib/scene/intro.ts`, `src/components/scene/intro.tsx`): module-level signals hold its state,
   so the frames, the scene layer, and the Replay buttons share one player. The page under it
   stays mounted, hidden and `inert`. While it plays, `<html data-intro>` holds the page dark:
@@ -564,8 +575,9 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
 - Storage keys in `localStorage`: `snowtime.settings` (the device's settings; see "User
   settings"), `snowtime.introSeen` (the sign-in page's intro has played in this browser), and
   `snowtime.introSeason` (the calendar season the intro last played in, so app pages play it
-  once a season). Every access is guarded, and blocked storage only means the intro may play
-  again.
+  once a season), and `snowtime.taglineSeen` (the page tagline's text when it last showed, so
+  a new one gets its cue). Every access is guarded; blocked storage only means the intro may
+  play again, or a new tagline shows without its cue.
 
 ## Date and time fields
 

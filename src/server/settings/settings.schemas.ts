@@ -86,6 +86,7 @@ export const UpdateSettingsInput = v.object({
   surfaces: v.optional(Surfaces),
   sceneWeather: v.optional(v.boolean()),
   sceneIntro: v.optional(v.boolean()),
+  sceneTagline: v.optional(v.boolean()),
   durationFormat: v.optional(DurationFormat),
   dateFormat: v.optional(DateFormat),
   timeFormat: v.optional(TimeFormat),

@@ -53,16 +53,16 @@ describe('seasonLines', () => {
 })
 
 describe('taglineLines', () => {
-  test("shows the first two lines of the day's set", () => {
+  test("shows the day's set, with its third line for the cue", () => {
     const now = at('2026-10-06T12:00:00Z')
-    const [first, second] = seasonLines('autumn', { now, timeZone: TALLINN, locale: 'en' })
-    expect(tagline('2026-10-06T12:00:00Z')).toEqual([first, second])
+    expect(tagline('2026-10-06T12:00:00Z')).toBe(
+      seasonLines('autumn', { now, timeZone: TALLINN, locale: 'en' }),
+    )
   })
 
   test('stays seasonal without a zone', () => {
     const now = at('2026-09-18T12:00:00Z')
-    const [first, second] = seasonLines('autumn', { now })
-    expect(taglineLines('autumn', { now })).toEqual([first, second])
+    expect(taglineLines('autumn', { now })).toBe(seasonLines('autumn', { now }))
   })
 
   test("follows Friday in the user's zone, not in UTC", () => {

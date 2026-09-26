@@ -8,22 +8,48 @@
 // placed, such as in the server's HTML, CSS centers it from 1024 px as the script usually does
 // (`page-tagline`), so it doesn't show under the title and then move; with `centerOn`, which
 // CSS can't follow, it is hidden until then.
-import { createEffect, on, onCleanup, onMount } from 'solid-js'
-import { useSeason, useTimeZone } from '~/lib/scene/seasons'
+//
+// Once placed, a tagline this browser hasn't shown before gets a cue (`SeasonTagline`), unless
+// the intro is showing the lines or the device reduces motion. The Tagline setting hides it.
+import { Show, createEffect, createSignal, on, onCleanup, onMount } from 'solid-js'
+import { intro } from '~/lib/scene/intro'
+import { useSeason, useTagline } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 import { SeasonTagline } from './scene/season-tagline'
 
 const GAP = 24
+// The tagline this browser last showed, by its text.
+const SEEN_KEY = 'snowtime.taglineSeen'
+// How long the cue's sweep and roll take (src/styles.css, `tagline-roll`).
+const CUE_MS = 7000
+
+// Whether the tagline's text differs from the last one shown; notes it as shown.
+function firstShowing(text: string) {
+  try {
+    const seen = localStorage.getItem(SEEN_KEY)
+    localStorage.setItem(SEEN_KEY, text)
+    return seen !== text
+  } catch {
+    // Storage is blocked: without a record, no cue.
+    return false
+  }
+}
 
 export function PageTitle(props: { title: string; centerOn?: () => HTMLElement | undefined }) {
   const season = useSeason()
-  const timeZone = useTimeZone()
+  const settings = useTagline()
+  const [cue, setCue] = createSignal(false)
+  const [roll, setRoll] = createSignal(false)
   let row!: HTMLDivElement
   let title!: HTMLHeadingElement
-  let tagline!: HTMLParagraphElement
+  let tagline: HTMLParagraphElement | undefined
+  let checked = false
+  let cueTimer: ReturnType<typeof setTimeout> | undefined
+  onCleanup(() => clearTimeout(cueTimer))
 
   function place() {
     const area = row.parentElement
+    if (!tagline?.isConnected) return
     tagline.classList.remove('page-tagline-centered')
     tagline.style.top = ''
     tagline.style.left = ''
@@ -34,10 +60,19 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
     tagline.style.top = `${h.top - a.top + (h.height - tagline.offsetHeight) / 2}px`
     const center = props.centerOn?.()?.getBoundingClientRect()
     if (center?.width) tagline.style.left = `${center.left + center.width / 2 - a.left}px`
-    const t = tagline.getBoundingClientRect()
-    const blockers = [title, ...[...area.children].filter((el) => el !== row)]
-    const touches = blockers.some((el) => {
-      const r = el.getBoundingClientRect()
+    if (crowded(tagline, area)) {
+      tagline.classList.remove('page-tagline-centered')
+      tagline.style.top = ''
+      tagline.style.left = ''
+    }
+  }
+
+  // Whether the centered tagline comes within GAP of the title or the area's other content.
+  function crowded(el: HTMLElement, area: HTMLElement) {
+    const t = el.getBoundingClientRect()
+    const blockers = [title, ...[...area.children].filter((child) => child !== row)]
+    return blockers.some((blocker) => {
+      const r = blocker.getBoundingClientRect()
       return (
         r.width > 0 &&
         r.left < t.right + GAP &&
@@ -46,16 +81,35 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
         r.bottom > t.top
       )
     })
-    if (touches) {
-      tagline.classList.remove('page-tagline-centered')
-      tagline.style.top = ''
-      tagline.style.left = ''
-    }
   }
 
   function placeAndShow() {
     place()
-    if (!props.centerOn || props.centerOn()) tagline.dataset.placed = ''
+    if (!tagline?.isConnected || (props.centerOn && !props.centerOn())) return
+    tagline.dataset.placed = ''
+    cueIfNew(tagline)
+  }
+
+  function cueIfNew(el: HTMLParagraphElement) {
+    if (checked) return
+    checked = true
+    const quiet =
+      intro.open() ||
+      document.documentElement.dataset.intro !== undefined ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!firstShowing(el.textContent ?? '') || quiet) return
+    setCue(true)
+    // The roll only fits where the tagline is centered on one line, and the third line can be
+    // wider than the first two: without room for it, only the light sweeps.
+    const area = row.parentElement
+    if (area && el.classList.contains('page-tagline-centered')) {
+      setRoll(true)
+      if (crowded(el, area)) setRoll(false)
+    }
+    cueTimer = setTimeout(() => {
+      setCue(false)
+      setRoll(false)
+    }, CUE_MS)
   }
 
   onMount(() => {
@@ -68,7 +122,7 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
     })
     onCleanup(() => observer.disconnect())
     void document.fonts?.ready.then(place)
-    createEffect(on(season, () => queueMicrotask(place)))
+    createEffect(on([season, () => settings().show], () => queueMicrotask(placeAndShow)))
   })
 
   return (
@@ -76,15 +130,19 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
       <h1 ref={title} class="text-2xl font-semibold tracking-tight">
         {props.title}
       </h1>
-      <SeasonTagline
-        ref={(el) => (tagline = el)}
-        season={season()}
-        timeZone={timeZone()}
-        class={cn(
-          'page-tagline min-w-0 basis-full text-sm font-medium',
-          props.centerOn && 'page-tagline-deferred',
-        )}
-      />
+      <Show when={settings().show}>
+        <SeasonTagline
+          ref={(el) => (tagline = el)}
+          season={season()}
+          timeZone={settings().timeZone}
+          cue={cue()}
+          roll={roll()}
+          class={cn(
+            'page-tagline min-w-0 basis-full text-sm font-medium',
+            props.centerOn && 'page-tagline-deferred',
+          )}
+        />
+      </Show>
     </div>
   )
 }

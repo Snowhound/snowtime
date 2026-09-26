@@ -1984,6 +1984,23 @@
         },
         {
           "id": "t10f19",
+          "name": "scene_tagline",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "1",
+          "comments": "Boolean 0/1 (CHECK). Whether signed-in pages show the tagline by the title."
+        },
+        {
+          "id": "t10f20",
           "name": "duration_format",
           "type": {
             "id": "text",
@@ -2000,7 +2017,7 @@
           "comments": "clock (11:10), units (11h 10m). How durations show; exports keep their own. Validated in the app, no CHECK."
         },
         {
-          "id": "t10f20",
+          "id": "t10f21",
           "name": "date_format",
           "type": {
             "id": "text",
@@ -2017,7 +2034,7 @@
           "comments": "dmy (30.09.2026), mdy (09/30/2026), default dmy. Numeric dates. Validated in the app, no CHECK."
         },
         {
-          "id": "t10f21",
+          "id": "t10f22",
           "name": "time_format",
           "type": {
             "id": "text",

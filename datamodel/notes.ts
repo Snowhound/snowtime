@@ -178,6 +178,7 @@ export const tables: Record<string, TableNotes> = {
         'glass, solid: whether cards let the image show through. Validated in the app, no CHECK.',
       scene_weather: 'Boolean 0/1 (CHECK). Whether the season weather effect runs.',
       scene_intro: 'Boolean 0/1 (CHECK). Whether the intro plays on first visit and once a season.',
+      scene_tagline: 'Boolean 0/1 (CHECK). Whether signed-in pages show the tagline by the title.',
       duration_format:
         'clock (11:10), units (11h 10m). How durations show; exports keep their own. Validated in the app, no CHECK.',
       date_format:

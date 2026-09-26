@@ -1,7 +1,7 @@
 // The scenery settings (prototypes/app-frame.js, settings.html, and auth.html): Season, the
 // Background switch with Strength and Surfaces under it, Weather, and optionally Intro. The
 // Appearance popover, Settings > Preferences, and the sign-in page's Scenery menu lay them out
-// the same way; `hints` picks how much each row explains, and Settings adds "Replay it" to the
+// the same way, and the signed-in ones add the Tagline switch after Weather; `hints` picks how much each row explains, and Settings adds "Replay it" to the
 // Intro hint. Weather always has a hint: the season's effect, or why it's off (reduced motion,
 // no WebGL 2, or an effect that didn't start).
 import type { JSX } from 'solid-js'
@@ -45,6 +45,8 @@ export function SceneryFields(props: {
   onChange: (patch: Partial<SceneSettings>) => void
   hints: Hints
   intro?: boolean
+  // The page tagline's switch, an account setting shown only where signed in.
+  tagline?: { checked: boolean; onChange: (checked: boolean) => void }
   // Settings' "Replay it" at the end of the Intro hint; it passes itself back for the focus.
   onReplay?: (button: HTMLButtonElement) => void
 }) {
@@ -138,6 +140,17 @@ export function SceneryFields(props: {
         disabled={!!weatherBlocked()}
         onChange={(sceneWeather) => props.onChange({ sceneWeather })}
       />
+      <Show when={props.tagline}>
+        {(tagline) => (
+          <SwitchRow
+            hints={props.hints}
+            label={m.scene_tagline()}
+            hint={hint(m.scene_tagline_hint, m.scene_tagline_hint)}
+            checked={tagline().checked}
+            onChange={(checked) => tagline().onChange(checked)}
+          />
+        )}
+      </Show>
       <Show when={props.intro}>
         <SwitchRow
           hints={props.hints}
