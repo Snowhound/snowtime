@@ -1,11 +1,12 @@
 // The Reports view's queries. Projects, teams and members come from the shared caches in
 // src/lib/.
-import { keepPreviousData, queryOptions } from '@tanstack/solid-query'
+import { infiniteQueryOptions, keepPreviousData, queryOptions } from '@tanstack/solid-query'
 import { reportsKey } from '~/lib/queries/query'
-import { getReport } from '~/server/reports/reports.functions'
-import type { ReportInput } from '~/server/reports/reports.schemas'
+import { getReport, getReportEntries } from '~/server/reports/reports.functions'
+import type { ReportEntriesInput, ReportInput } from '~/server/reports/reports.schemas'
 
 export type Report = Awaited<ReturnType<typeof getReport>>
+export type ReportEntries = Awaited<ReturnType<typeof getReportEntries>>
 
 // The previous report stays on screen while the next filters load, so the grid doesn't
 // flash empty between them.
@@ -13,6 +14,22 @@ export function reportQuery(organizationId: string, input: ReportInput) {
   return queryOptions({
     queryKey: [...reportsKey, organizationId, input],
     queryFn: () => getReport({ data: { ...input, organizationId } }),
+    placeholderData: keepPreviousData,
+  })
+}
+
+// The Entries card's list, apart from the report so the timesheet never waits for it. By
+// description is one page; By day loads a page at a time after the last piece shown.
+export function reportEntriesQuery(
+  organizationId: string,
+  input: Omit<ReportEntriesInput, 'after'>,
+) {
+  return infiniteQueryOptions({
+    queryKey: [...reportsKey, organizationId, 'entries', input],
+    queryFn: ({ pageParam }) =>
+      getReportEntries({ data: { ...input, organizationId, after: pageParam } }),
+    initialPageParam: undefined as ReportEntriesInput['after'],
+    getNextPageParam: (page) => (page.view === 'day' ? (page.next ?? undefined) : undefined),
     placeholderData: keepPreviousData,
   })
 }

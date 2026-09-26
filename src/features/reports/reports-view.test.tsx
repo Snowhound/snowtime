@@ -6,7 +6,7 @@ import * as v from 'valibot'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { addDays, datesBetween, startOfWeek } from '~/lib/calendar'
 import { newId } from '~/lib/queries/query'
-import type { ReportInput } from '~/server/reports/reports.schemas'
+import type { ReportEntriesInput, ReportInput } from '~/server/reports/reports.schemas'
 import { ReportSearch } from './filters'
 import { ReportsPage } from './reports-page'
 
@@ -14,13 +14,17 @@ import { ReportsPage } from './reports-page'
 // spread over the buckets of the range it is asked for.
 const fn = vi.hoisted(() => ({
   getReport: vi.fn(),
+  getReportEntries: vi.fn(),
   listTeams: vi.fn(),
   listMembers: vi.fn(),
   listProjects: vi.fn(),
   getAppSession: vi.fn(),
   navigate: vi.fn(),
 }))
-vi.mock('~/server/reports/reports.functions', () => ({ getReport: fn.getReport }))
+vi.mock('~/server/reports/reports.functions', () => ({
+  getReport: fn.getReport,
+  getReportEntries: fn.getReportEntries,
+}))
 vi.mock('~/server/teams/teams.functions', () => ({
   listTeams: fn.listTeams,
   listMembers: fn.listMembers,
@@ -70,6 +74,10 @@ function person(userId: string, name: string) {
   return { userId, name, email: '', image: null, orgRole: 'member', teams: memberships }
 }
 
+function team() {
+  return platform.id
+}
+
 const snowtime = { id: newId(), name: 'Snowtime', color: '#3b82b8', archivedAt: null, teamIds: [] }
 
 interface Row {
@@ -79,10 +87,25 @@ interface Row {
   ms: number[]
 }
 
-const server: { role: 'member' | 'admin'; lead: boolean; rows: Row[] } = {
+interface Entry {
+  userId: string
+  projectId: string | null
+  description: string
+  // Its day and starting hour, UTC; each lasts an hour.
+  date: string
+  hour: number
+}
+
+const server: {
+  role: 'member' | 'admin'
+  lead: boolean
+  rows: Row[]
+  entries: Entry[]
+} = {
   role: 'member',
   lead: false,
   rows: [],
+  entries: [],
 }
 
 function bucketsOf(input: ReportInput) {
@@ -113,6 +136,68 @@ function report({ data }: { data: ReportInput }) {
     projects,
     members: rows('member').map((r) => ({ userId: r.id!, ...totals(buckets, r.ms) })),
     teams: rows('team').map((r) => ({ teamId: r.id!, ...totals(buckets, r.ms) })),
+  }
+}
+
+// getReportEntries over `server.entries`: the range and row it is asked for, By day in one
+// page or merged By description.
+function entries(input: Omit<ReportEntriesInput, 'after'>) {
+  const { from, to } = input.report
+  const row = input.row
+  const pieces = server.entries
+    .filter((e) => e.date >= from && e.date < to)
+    .filter(
+      (e) =>
+        !row ||
+        (row.group === 'project' && (e.projectId ?? 'none') === row.id) ||
+        (row.group === 'member' && e.userId === row.id),
+    )
+    .map((e, i) => {
+      const start = new Date(`${e.date}T${String(e.hour).padStart(2, '0')}:00:00Z`)
+      const end = new Date(start.getTime() + HOUR)
+      return {
+        ...e,
+        entryId: String(i),
+        from: start,
+        to: end,
+        startedAt: start,
+        stoppedAt: end,
+        running: false,
+        ms: HOUR,
+      }
+    })
+  const summary = { count: pieces.length, total: pieces.length * HOUR }
+  if (input.view === 'description') {
+    const rows = new Map<string, { projectId: string | null; description: string; n: number }>()
+    for (const p of pieces) {
+      const key = `${p.projectId}|${p.description}`
+      const r = rows.get(key) ?? { projectId: p.projectId, description: p.description, n: 0 }
+      r.n++
+      rows.set(key, r)
+    }
+    return {
+      ...summary,
+      view: 'description',
+      rows: [...rows.values()].map((r) => ({
+        projectId: r.projectId,
+        description: r.description,
+        total: r.n * HOUR,
+        entries: r.n,
+        days: r.n,
+        userIds: [me],
+      })),
+    }
+  }
+  const dates = [...new Set(pieces.map((p) => p.date))].toSorted((a, b) => b.localeCompare(a))
+  return {
+    ...summary,
+    view: 'day',
+    days: dates.map((date) => ({
+      date,
+      total: pieces.filter((p) => p.date === date).length * HOUR,
+    })),
+    pieces,
+    next: null,
   }
 }
 
@@ -166,9 +251,27 @@ beforeEach(() => {
     { kind: 'project', id: null, ms: [0.5 * HOUR, 0, 0, 0.25 * HOUR] },
     { kind: 'member', id: me, ms: [2.5 * HOUR, 0, 3 * HOUR, 1.75 * HOUR] },
   ]
+  server.entries = [
+    {
+      userId: me,
+      projectId: snowtime.id,
+      description: 'Timer layouts',
+      date: '2026-09-21',
+      hour: 7,
+    },
+    {
+      userId: me,
+      projectId: snowtime.id,
+      description: 'Timer layouts',
+      date: '2026-09-23',
+      hour: 8,
+    },
+    { userId: me, projectId: null, description: '', date: '2026-09-23', hour: 12 },
+  ]
   server.lead = false
   fn.getAppSession.mockImplementation(async () => session())
   fn.getReport.mockImplementation(async (input) => report(input))
+  fn.getReportEntries.mockImplementation(async ({ data }) => entries(data))
   fn.listTeams.mockImplementation(async () => teams())
   fn.listMembers.mockImplementation(async () => [
     person(kadri, 'Kadri Tamm'),
@@ -182,6 +285,12 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers()
 })
+
+// The Entries card's count and total, whose text Solid splits into several nodes.
+function summary(text: string) {
+  return (_: string, element: Element | null) =>
+    element?.tagName === 'SPAN' && element.textContent === text
+}
 
 // Types into a date field and leaves it, which commits the date.
 function typeDate(label: string, value: string) {
@@ -366,5 +475,125 @@ describe('ReportsView', () => {
     await screen.findByRole('table')
     expect(lastInput()).toEqual({ from: '2026-09-01', to: '2026-10-01', unit: 'day' })
     expect(screen.getByLabelText('Range')).toHaveValue('this-month')
+  })
+
+  test('the Entries card lists a week by day, newest first, without a member column', async () => {
+    renderView()
+    const card = await screen.findByRole('region', { name: 'Entries' })
+    expect(await within(card).findByText(summary('3 entries · 3:00'))).toBeInTheDocument()
+    const headings = within(card).getAllByRole('heading', { level: 4 })
+    expect(headings.map((h) => h.textContent)).toEqual([
+      'Wednesday, September 232:00',
+      'Monday, September 211:00',
+    ])
+    expect(within(card).getAllByRole('listitem').at(-1)).toHaveTextContent(
+      /^Timer layouts1:0010:00 – 11:00Snowtime$/,
+    )
+    expect(within(card).getByText('No description')).toBeInTheDocument()
+    expect(within(card).queryByText(/Max Member/)).not.toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: 'By day' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  test('the Entries card waits for its own query, not the timesheet', async () => {
+    let answer: (value: unknown) => void = () => {}
+    fn.getReportEntries.mockImplementation(() => new Promise((resolve) => (answer = resolve)))
+    renderView()
+    await screen.findByRole('table')
+    expect(screen.getByRole('status')).toHaveTextContent('Loading entries…')
+    answer(entries(fn.getReportEntries.mock.lastCall![0].data))
+    expect(await screen.findByText(summary('3 entries · 3:00'))).toBeInTheDocument()
+  })
+
+  test('a month opens By description, and the choice goes in the URL', async () => {
+    const { search } = renderView({})
+    const card = await screen.findByRole('region', { name: 'Entries' })
+    expect(await within(card).findByText('2 entries on 2 days')).toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: 'By description' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({ view: 'description' })
+
+    await userEvent.click(within(card).getByRole('button', { name: 'By day' }))
+    await waitFor(() => expect(search()).toEqual({ entries: 'day' }))
+    expect(await within(card).findAllByRole('heading', { level: 4 })).toHaveLength(2)
+  })
+
+  test('a timesheet cell narrows the card to its row and day, and a chip clears it', async () => {
+    const { search } = renderView()
+    const grid = await screen.findByRole('table')
+    const card = await screen.findByRole('region', { name: 'Entries' })
+    const row = within(grid).getByRole('rowheader', { name: 'Snowtime' }).closest('tr')!
+    const wednesday = within(row).getByRole('button', { name: '3:00' })
+    await userEvent.click(wednesday)
+    await waitFor(() =>
+      expect(search()).toEqual({ range: 'this-week', row: snowtime.id, bucket: '2026-09-23' }),
+    )
+    expect(wednesday).toHaveAttribute('aria-pressed', 'true')
+    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({
+      report: { from: '2026-09-23', to: '2026-09-24' },
+      row: { group: 'project', id: snowtime.id },
+    })
+    expect(await within(card).findByText(summary('1 entry · 1:00'))).toBeInTheDocument()
+    expect(within(card).getByText('Snowtime · Wed, Sep 23')).toBeInTheDocument()
+
+    // The Total row's cell narrows to the day alone, and choosing it again shows all.
+    const totals = within(grid).getByRole('rowheader', { name: 'Total' }).closest('tr')!
+    await userEvent.click(within(totals).getByRole('button', { name: '1:45' }))
+    await waitFor(() => expect(search()).toEqual({ range: 'this-week', bucket: '2026-09-24' }))
+    await userEvent.click(within(totals).getByRole('button', { name: '1:45' }))
+    await waitFor(() => expect(search()).toEqual({ range: 'this-week' }))
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Snowtime' }))
+    await waitFor(() => expect(search()).toEqual({ range: 'this-week', row: snowtime.id }))
+    await userEvent.click(await within(card).findByRole('button', { name: 'Show all entries' }))
+    await waitFor(() => expect(search()).toEqual({ range: 'this-week' }))
+  })
+
+  test('changing a filter shows all entries in the view that fits the range', async () => {
+    const { search } = renderView({
+      range: 'this-week',
+      row: snowtime.id,
+      bucket: '2026-09-23',
+      entries: 'description',
+    })
+    await screen.findByRole('table')
+    await userEvent.click(screen.getByRole('button', { name: 'Next range' }))
+    await waitFor(() =>
+      expect(search()).toEqual({ range: 'custom', from: '2026-09-28', to: '2026-10-04' }),
+    )
+  })
+
+  test('a row or day outside the report is ignored', async () => {
+    server.lead = true
+    renderView({ range: 'this-week', row: team(), bucket: '2026-10-01', group: 'member' })
+    await screen.findByRole('table')
+    await waitFor(() => expect(fn.getReportEntries).toHaveBeenCalled())
+    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({
+      report: { from: '2026-09-21', to: '2026-09-28' },
+    })
+    expect(fn.getReportEntries.mock.lastCall![0].data).not.toHaveProperty('row')
+  })
+
+  test('team leads see who tracked each entry, grouped by person within a day', async () => {
+    server.lead = true
+    server.entries.push({
+      userId: kadri,
+      projectId: snowtime.id,
+      description: 'Review',
+      date: '2026-09-23',
+      hour: 13,
+    })
+    renderView()
+    const card = await screen.findByRole('region', { name: 'Entries' })
+    const wednesday = (await within(card).findAllByRole('heading', { level: 4 }))[0].closest('li')!
+    expect(
+      within(wednesday)
+        .getAllByRole('listitem')
+        .map((li) => within(li).queryByText(/Kadri|Max/)?.textContent),
+    ).toEqual(['Kadri Tamm', 'Max Member (you)', 'Max Member (you)'])
   })
 })

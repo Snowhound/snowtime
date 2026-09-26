@@ -16,9 +16,10 @@ import { teamsQuery } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
 import { MAX_REPORT_DAYS } from '~/server/reports/reports.schemas'
+import { EntriesCard } from './entries-card/entries-card'
 import { ExportMenu } from './export-menu'
 import { type FilterActions, ReportFilterBar } from './filter-bar'
-import { type Group, type ReportSearch, type Unit, reportFilters } from './filters'
+import { type EntryView, type Group, type ReportSearch, type Unit, reportFilters } from './filters'
 import { type Report, reportQuery } from './queries'
 import {
   type Range,
@@ -29,7 +30,7 @@ import {
   shiftRange,
 } from './range'
 import { reportRows } from './rows'
-import { Timesheet } from './timesheet'
+import { Timesheet, type TimesheetPart, bucketLabel } from './timesheet'
 
 const TITLES = {
   project: { day: m.reports_title_project_day, week: m.reports_title_project_week },
@@ -71,10 +72,13 @@ export function ReportsView(props: {
     ...reportQuery(props.organizationId, filters().input),
     enabled: teams.isSuccess && members.isSuccess,
   }))
+  // Apart from filters(), which changes with every search param, so that narrowing the
+  // Entries card doesn't build the timesheet's rows again.
+  const group = createMemo(() => filters().group)
   // A report's timesheet rows, named from the cached lists: the one on screen, or the one
   // an export reads.
   function rowsOf(data: Report) {
-    return reportRows(data, filters().group, {
+    return reportRows(data, group(), {
       userId: props.userId,
       admin: props.admin,
       projects: projects.data ?? [],
@@ -130,6 +134,35 @@ export function ReportsView(props: {
     onPeople: (people) => go({ people }),
     onGroup: (group) => go({ group }),
     onUnit: (unit) => go({ unit }),
+  }
+
+  // The Entries card's own params, kept with the filters.
+  function entrySearch(next: Pick<ReportSearch, 'row' | 'bucket' | 'entries'>) {
+    const search: ReportSearch = { ...props.search, ...next }
+    for (const key of ['row', 'bucket', 'entries'] as const) {
+      if (!search[key]) delete search[key]
+    }
+    void navigate({ from: '/$org/reports', to: '/$org/reports', search })
+  }
+
+  // Choosing the part the card shows again shows all entries. The card scrolls into view when
+  // it starts below most of the window.
+  function pick(part: TimesheetPart) {
+    const { row, bucket } = filters().entries
+    const same = part.row === row && part.bucket === bucket
+    entrySearch(same ? { row: undefined, bucket: undefined } : part)
+    const card = document.getElementById('report-entries')
+    if (!same && card && card.getBoundingClientRect().top > innerHeight * 0.75) {
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+      card.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' })
+    }
+  }
+
+  function narrowLabel() {
+    const { row, bucket } = filters().entries
+    if (!row && !bucket) return null
+    const name = row ? rows().find((r) => r.key === row)?.name : undefined
+    return [name, bucket && bucketLabel(bucket, filters().unit)].filter(Boolean).join(' · ')
   }
 
   function rangeLabel() {
@@ -238,11 +271,30 @@ export function ReportsView(props: {
                 unit={data().unit}
                 today={today()}
                 weekStart={props.weekStart}
+                picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
+                onPick={pick}
               />
             )}
           </Show>
         </Card>
       </section>
+      {/* Its own query, so it shows its loading state while the timesheet is already up. It
+          hides when the range has no time. */}
+      <Show when={teams.isSuccess && members.isSuccess && (report.data?.total ?? 1) > 0}>
+        <section class="mx-auto w-full max-w-[68rem]" aria-label={m.reports_entries()}>
+          <EntriesCard
+            organizationId={props.organizationId}
+            filters={filters().entries}
+            narrowLabel={narrowLabel()}
+            userId={props.userId}
+            zone={props.zone}
+            projects={projects.data ?? []}
+            members={members.data ?? []}
+            onView={(entries: EntryView) => entrySearch({ entries })}
+            onClear={() => entrySearch({ row: undefined, bucket: undefined })}
+          />
+        </section>
+      </Show>
     </div>
   )
 }

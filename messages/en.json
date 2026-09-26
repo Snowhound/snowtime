@@ -454,6 +454,40 @@
   "reports_zone_monday": "Days and weeks in {zone}, starting Monday",
   "reports_zone_sunday": "Days and weeks in {zone}, starting Sunday",
   "reports_change_settings": "change",
+  "reports_entries": "Entries",
+  "reports_entries_count": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} entry",
+        "countPlural=*": "{count} entries"
+      }
+    }
+  ],
+  "reports_entries_days": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "on {count} day",
+        "countPlural=*": "on {count} days"
+      }
+    }
+  ],
+  "reports_entries_hint": "Choose a name or a total in the timesheet to narrow the list.",
+  "reports_entries_pick_hint": "Lists its entries below the timesheet",
+  "reports_entries_clear": "Show all entries",
+  "reports_entries_view": "List entries",
+  "reports_entries_by_day": "By day",
+  "reports_entries_by_description": "By description",
+  "reports_entries_more": "Show more",
+  "reports_entries_all": "Show all {count}",
+  "reports_entries_loading": "Loading entries…",
+  "reports_entries_now": "now",
+  "reports_entries_running": "Running",
+  "reports_entries_split": "Crosses midnight: {duration} counts on this day",
+  "reports_entries_people_more": "{names} and {count} more",
   "export_button": "Export",
   "export_menu": "Export the report",
   "export_xlsx": "Excel (XLSX)",

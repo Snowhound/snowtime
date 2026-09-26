@@ -64,3 +64,59 @@ describe('requestedInput', () => {
     )
   })
 })
+
+describe('reportFilters.entries', () => {
+  test('a week of the timesheet narrows the range to its days in the report', () => {
+    // September 2026 in weeks: its first week starts on Monday 31 August.
+    const search: ReportSearch = {
+      range: 'custom',
+      from: '2026-09-01',
+      to: '2026-10-31',
+      unit: 'week',
+      bucket: '2026-08-31',
+    }
+    const { entries } = reportFilters(search, context(MEMBER))
+    expect(entries.bucket).toBe('2026-08-31')
+    expect(entries.input.report).toMatchObject({ from: '2026-09-01', to: '2026-09-07' })
+    // Six days open By day.
+    expect(entries.view).toBe('day')
+    // A day that starts no week of the report is dropped.
+    const bad = reportFilters({ ...search, bucket: '2026-09-02' }, context(MEMBER))
+    expect(bad.entries.bucket).toBeUndefined()
+    expect(bad.entries.view).toBe('description')
+  })
+
+  test('opens By day for up to seven days, until the user picks a view', () => {
+    const week = reportFilters({ range: 'this-week' }, context(MEMBER)).entries
+    expect(week.view).toBe('day')
+    const month = reportFilters({}, context(MEMBER)).entries
+    expect(month).toMatchObject({ view: 'description', input: { view: 'description' } })
+    const day = reportFilters({ bucket: '2026-09-10' }, context(MEMBER)).entries
+    expect(day).toMatchObject({ view: 'day', input: { report: { from: '2026-09-10' } } })
+    const chosen = reportFilters({ entries: 'day' }, context(MEMBER)).entries
+    expect(chosen.view).toBe('day')
+  })
+
+  test('narrows to a row of the grouping the user may see', () => {
+    const lead = context(LEAD)
+    const member = reportFilters({ group: 'member', row: MEMBER }, lead).entries
+    expect(member.input.row).toEqual({ group: 'member', id: MEMBER })
+    // Team C isn't led by the user, and leads have no "No team" row.
+    for (const row of [TEAM_C, 'none']) {
+      expect(reportFilters({ group: 'team', row }, lead).entries.row).toBeUndefined()
+    }
+    expect(reportFilters({ group: 'team', row: 'none' }, context(OTHER, true)).entries.row).toBe(
+      'none',
+    )
+    const project = reportFilters({ row: 'none' }, context(MEMBER)).entries
+    expect(project.input.row).toEqual({ group: 'project', id: 'none' })
+  })
+
+  test('names people unless the list holds one person', () => {
+    expect(reportFilters({}, context(MEMBER)).entries.many).toBe(false)
+    expect(reportFilters({}, context(LEAD)).entries.many).toBe(true)
+    expect(reportFilters({ member: MEMBER }, context(LEAD)).entries.many).toBe(false)
+    expect(reportFilters({ group: 'member', row: MEMBER }, context(LEAD)).entries.many).toBe(false)
+    expect(reportFilters({ row: 'none' }, context(LEAD)).entries.many).toBe(true)
+  })
+})

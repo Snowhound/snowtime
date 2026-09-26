@@ -454,6 +454,40 @@
   "reports_zone_monday": "Ajavöönd: {zone}, nädal algab esmaspäeval",
   "reports_zone_sunday": "Ajavöönd: {zone}, nädal algab pühapäeval",
   "reports_change_settings": "muuda",
+  "reports_entries": "Ajakirjed",
+  "reports_entries_count": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} ajakirje",
+        "countPlural=*": "{count} ajakirjet"
+      }
+    }
+  ],
+  "reports_entries_days": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} päeval",
+        "countPlural=*": "{count} päeval"
+      }
+    }
+  ],
+  "reports_entries_hint": "Loendi kitsendamiseks vali tabelist nimi või summa.",
+  "reports_entries_pick_hint": "Näitab selle ajakirjeid tabeli all",
+  "reports_entries_clear": "Näita kõiki ajakirjeid",
+  "reports_entries_view": "Ajakirjete loend",
+  "reports_entries_by_day": "Päevade kaupa",
+  "reports_entries_by_description": "Kirjelduse järgi",
+  "reports_entries_more": "Näita rohkem",
+  "reports_entries_all": "Näita kõiki {count}",
+  "reports_entries_loading": "Ajakirjete laadimine…",
+  "reports_entries_now": "praegu",
+  "reports_entries_running": "Käib",
+  "reports_entries_split": "Ületab keskööd: sellele päevale läheb {duration}",
+  "reports_entries_people_more": "{names} ja veel {count}",
   "export_button": "Ekspordi",
   "export_menu": "Ekspordi aruanne",
   "export_xlsx": "Excel (XLSX)",

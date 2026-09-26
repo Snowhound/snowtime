@@ -41,7 +41,8 @@ function projectRows(report: Report, names: RowNames): Row[] {
   })
 }
 
-function memberName(userId: string, names: RowNames) {
+// A member's name, with "(you)" for the user.
+export function memberName(userId: string, names: Pick<RowNames, 'userId' | 'members'>) {
   const name = names.members.find((m) => m.userId === userId)?.name ?? ''
   return userId === names.userId ? m.reports_you({ name }) : name
 }

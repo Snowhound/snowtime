@@ -1,8 +1,9 @@
 // The timesheet grid (prototypes/reports.html, 02 · Timesheet): a row per group and a
 // column per day or week, with row and column totals and the current day or week shaded.
-// It scrolls inside its card with the first and last columns sticky.
+// It scrolls inside its card with the first and last columns sticky. Names and totals are
+// buttons that narrow the Entries card to their row, day or week, or both.
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
-import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
+import { type JSX, For, Show, createSelector, createSignal, onCleanup, onMount } from 'solid-js'
 import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
 import {
@@ -30,6 +31,22 @@ const GROUP_LABELS = {
 // Short day labels up to a week; longer ranges show the day number over its weekday.
 const WEEK_DAYS = 7
 
+// A day or week in full, as screen readers and the Entries card name it.
+export function bucketLabel(bucket: IsoDate, unit: Unit) {
+  const date = formatIsoDate(bucket, { weekday: 'short', day: 'numeric', month: 'short' })
+  return unit === 'week' ? m.reports_week_of({ date }) : date
+}
+
+// The timesheet part the Entries card lists: a row, a day or week, or both.
+export interface TimesheetPart {
+  row?: string
+  bucket?: IsoDate
+}
+
+function partKey(part: TimesheetPart) {
+  return `${part.row ?? ''}|${part.bucket ?? ''}`
+}
+
 export function Timesheet(props: {
   report: Report
   rows: Row[]
@@ -37,7 +54,20 @@ export function Timesheet(props: {
   unit: Unit
   today: IsoDate
   weekStart: WeekStart
+  picked: TimesheetPart
+  onPick: (part: TimesheetPart) => void
 }) {
+  // One comparison per change rather than one per button.
+  const pressed = createSelector(() => partKey(props.picked))
+
+  // One handler for every button, which carries its part in data attributes.
+  function pick(event: MouseEvent) {
+    const button = (event.target as HTMLElement).closest<HTMLElement>('[data-pick]')
+    if (!button) return
+    const { row, bucket } = button.dataset
+    props.onPick({ row: row || undefined, bucket: bucket || undefined })
+  }
+
   function buckets() {
     return props.report.buckets
   }
@@ -59,12 +89,26 @@ export function Timesheet(props: {
     )
   }
 
-  function fullLabel(bucket: IsoDate) {
-    const date = formatIsoDate(bucket, { weekday: 'short', day: 'numeric', month: 'short' })
-    return props.unit === 'week' ? m.reports_week_of({ date }) : date
+  function Pick(part: TimesheetPart & { class?: string; children: JSX.Element }) {
+    return (
+      <button
+        type="button"
+        data-pick=""
+        data-row={part.row}
+        data-bucket={part.bucket}
+        aria-pressed={pressed(partKey(part))}
+        aria-describedby="timesheet-pick-hint"
+        class={cn(
+          'hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/90 -mx-1.5 -my-0.5 rounded-sm px-1.5 py-0.5 focus-visible:ring-2 focus-visible:outline-none',
+          part.class,
+        )}
+      >
+        {part.children}
+      </button>
+    )
   }
 
-  function Cell(cell: { ms: number; bucket: IsoDate; class?: string }) {
+  function Cell(cell: { ms: number; bucket: IsoDate; row?: string; class?: string }) {
     return (
       <TableCell
         class={cn(
@@ -74,7 +118,13 @@ export function Timesheet(props: {
           cell.class,
         )}
       >
-        {cell.ms ? <Duration ms={cell.ms} /> : '·'}
+        {cell.ms ? (
+          <Pick row={cell.row} bucket={cell.bucket}>
+            <Duration ms={cell.ms} />
+          </Pick>
+        ) : (
+          '·'
+        )}
       </TableCell>
     )
   }
@@ -109,7 +159,11 @@ export function Timesheet(props: {
           capture: true,
           handleEvent: (event) => measure(event.target as HTMLElement),
         }}
+        onClick={pick}
       >
+        <span id="timesheet-pick-hint" class="sr-only">
+          {m.reports_entries_pick_hint()}
+        </span>
         <Table>
           <TableHeader>
             <TableRow>
@@ -129,7 +183,7 @@ export function Timesheet(props: {
                     )}
                   >
                     <span aria-hidden="true">{shortLabel(bucket)}</span>
-                    <span class="sr-only">{fullLabel(bucket)}</span>
+                    <span class="sr-only">{bucketLabel(bucket, props.unit)}</span>
                     <Show when={longRange()}>
                       <span class="block text-[10px] font-normal" aria-hidden="true">
                         {formatIsoDate(bucket, { weekday: 'narrow' })}
@@ -151,7 +205,10 @@ export function Timesheet(props: {
                     scope="row"
                     class="bg-card text-foreground sticky left-0 z-10 h-auto max-w-40 p-2 pl-6 font-normal sm:max-w-64"
                   >
-                    <span class="flex min-w-0 items-center gap-2">
+                    <Pick
+                      row={row.key}
+                      class="flex max-w-full min-w-0 items-center gap-2 text-left"
+                    >
                       <Show when={props.group === 'project'}>
                         <ProjectDot color={row.color ?? null} />
                       </Show>
@@ -161,13 +218,15 @@ export function Timesheet(props: {
                       >
                         {row.name}
                       </span>
-                    </span>
+                    </Pick>
                   </TableHead>
                   <For each={buckets()}>
-                    {(bucket, i) => <Cell ms={row.perBucket[i()]} bucket={bucket} />}
+                    {(bucket, i) => <Cell ms={row.perBucket[i()]} bucket={bucket} row={row.key} />}
                   </For>
                   <TableCell class="bg-card sticky right-0 z-10 pr-6 text-right font-medium tabular-nums">
-                    <Duration ms={row.total} />
+                    <Pick row={row.key}>
+                      <Duration ms={row.total} />
+                    </Pick>
                   </TableCell>
                 </TableRow>
               )}

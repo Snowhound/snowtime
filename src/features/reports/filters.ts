@@ -3,11 +3,16 @@
 // their led teams and those teams' members; admins and owners everyone. getReport enforces
 // the same rules, so options outside them are dropped here rather than sent and refused.
 import * as v from 'valibot'
-import type { IsoDate, WeekStart } from '~/lib/calendar'
+import { type IsoDate, type WeekStart, addDays, startOfWeek } from '~/lib/calendar'
 import type { Member } from '~/lib/queries/members'
 import type { Team } from '~/lib/queries/teams'
-import { IsoDate as IsoDateSchema, REPORT_UNITS } from '~/server/reports/reports.schemas'
-import type { ReportInput } from '~/server/reports/reports.schemas'
+import {
+  ENTRY_VIEWS,
+  IsoDate as IsoDateSchema,
+  REPORT_UNITS,
+  type ReportEntriesInput,
+  type ReportInput,
+} from '~/server/reports/reports.schemas'
 import { Uuidv7 } from '~/server/schemas'
 import {
   MAX_DAY_COLUMNS,
@@ -21,6 +26,7 @@ import {
 const GROUPS = ['project', 'team', 'member'] as const
 export type Group = (typeof GROUPS)[number]
 export type Unit = (typeof REPORT_UNITS)[number]
+export type EntryView = (typeof ENTRY_VIEWS)[number]
 
 // A value that doesn't parse is dropped, so a bad link still opens a report.
 function optional<T extends v.GenericSchema>(schema: T) {
@@ -36,6 +42,11 @@ export const ReportSearch = v.object({
   member: optional(Uuidv7),
   group: optional(v.picklist(GROUPS)),
   unit: optional(v.picklist(REPORT_UNITS)),
+  // The Entries card: the timesheet row and day or week it narrows to, and the view the user
+  // chose. A filter change drops them.
+  row: optional(v.union([Uuidv7, v.literal('none')])),
+  bucket: optional(IsoDateSchema),
+  entries: optional(v.picklist(ENTRY_VIEWS)),
 })
 export type ReportSearch = v.InferOutput<typeof ReportSearch>
 
@@ -90,6 +101,20 @@ export interface ReportFilters {
   access: Access
   people: PeopleOptions | null
   input: ReportInput
+  entries: EntryFilters
+}
+
+// Longest span By day opens for; longer ones open By description.
+const DAY_VIEW_DAYS = 7
+
+export interface EntryFilters {
+  view: EntryView
+  // The timesheet part chosen, when it is one of the report's rows and buckets.
+  row?: string
+  bucket?: IsoDate
+  input: Omit<ReportEntriesInput, 'after'>
+  // The list can hold more than one person's entries, so it names them.
+  many: boolean
 }
 
 function rangeAndUnit(search: ReportSearch, today: IsoDate, weekStart: WeekStart) {
@@ -124,6 +149,13 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
     search.group && groupOptions(access).includes(search.group) ? search.group : 'project'
   const member = people?.members.some((m) => m.userId === search.member) ? search.member : undefined
   const team = !member && people?.teams.some((t) => t.id === search.team) ? search.team : undefined
+  const input: ReportInput = {
+    from: range.from,
+    to: range.to,
+    unit,
+    ...(member ? { userId: member } : {}),
+    ...(team ? { teamId: team } : {}),
+  }
   return {
     preset,
     range,
@@ -133,12 +165,58 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
     member,
     access,
     people,
+    input,
+    entries: entryFilters(search, c, { access, group, range, unit, member, input }),
+  }
+}
+
+// Whether the report has this row: any project, a team it counts (for admins also "No team"),
+// or a member it may name.
+function hasRow(id: string, group: Group, access: Access, c: ReportContext) {
+  if (group === 'project') return true
+  if (group === 'member') return access.kind !== 'member' && c.members.some((m) => m.userId === id)
+  if (access.kind === 'admin') return id === 'none' || c.teams.some((t) => t.id === id)
+  return access.kind === 'lead' && access.teams.some((t) => t.id === id)
+}
+
+function hasBucket(bucket: IsoDate, range: Range, unit: Unit, weekStart: WeekStart) {
+  if (unit === 'day') return bucket >= range.from && bucket < range.to
+  return (
+    startOfWeek(bucket, weekStart) === bucket &&
+    bucket < range.to &&
+    addDays(bucket, 7) > range.from
+  )
+}
+
+// The Entries card's list: the report's entries, or those of the timesheet part the URL names.
+// A day or week narrows the range to its days in the report.
+function entryFilters(
+  search: ReportSearch,
+  c: ReportContext,
+  f: Pick<ReportFilters, 'access' | 'group' | 'range' | 'unit' | 'member' | 'input'>,
+): EntryFilters {
+  const row = search.row && hasRow(search.row, f.group, f.access, c) ? search.row : undefined
+  const bucket =
+    search.bucket && hasBucket(search.bucket, f.range, f.unit, c.weekStart)
+      ? search.bucket
+      : undefined
+  const range = bucket
+    ? {
+        from: bucket < f.range.from ? f.range.from : bucket,
+        to: [addDays(bucket, f.unit === 'week' ? 7 : 1), f.range.to].sort()[0],
+      }
+    : f.range
+  const view = search.entries ?? (rangeDays(range) > DAY_VIEW_DAYS ? 'description' : 'day')
+  return {
+    view,
+    row,
+    bucket,
     input: {
-      from: range.from,
-      to: range.to,
-      unit,
-      ...(member ? { userId: member } : {}),
-      ...(team ? { teamId: team } : {}),
+      report: { ...f.input, from: range.from, to: range.to },
+      view,
+      // hasRow keeps 'none' out of the member group.
+      ...(row ? { row: { group: f.group, id: row } } : {}),
     },
+    many: f.access.kind !== 'member' && !f.member && !(row && f.group === 'member'),
   }
 }
