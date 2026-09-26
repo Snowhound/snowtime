@@ -160,6 +160,29 @@ describe('ProjectsView', () => {
     expect(screen.getByRole('button', { name: 'Actions for Snowtime' })).toBeInTheDocument()
   })
 
+  test('closing the dialog returns focus to the button that opened it', async () => {
+    server.role = 'admin'
+    renderView()
+    const opener = await screen.findByRole('button', { name: 'New project' })
+    await userEvent.click(opener)
+    await screen.findByRole('dialog', { name: 'New project' })
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(opener).toHaveFocus()
+  })
+
+  test("a dialog opened from a row's menu returns focus to the menu's button", async () => {
+    server.role = 'admin'
+    renderView()
+    const actions = await screen.findByRole('button', { name: 'Actions for Snowtime' })
+    await userEvent.click(actions)
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+    await screen.findByRole('dialog', { name: 'Edit project' })
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(actions).toHaveFocus()
+  })
+
   test('the dialog checks the name, and suggests restoring an archived clash', async () => {
     server.role = 'admin'
     renderView()

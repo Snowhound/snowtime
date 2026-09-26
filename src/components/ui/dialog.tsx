@@ -42,21 +42,50 @@ type DialogContentProps<T extends ValidComponent = 'div'> =
     children?: JSX.Element
   }
 
+// The element a dialog returns focus to. A menu item closes with its menu, so a dialog
+// opened from one returns focus to the menu's button.
+function focused() {
+  const active = document.activeElement
+  if (!(active instanceof HTMLElement)) return null
+  const menu = active.closest('[role="menu"]')
+  const button = menu?.id && document.querySelector(`[aria-controls="${menu.id}"]`)
+  return button instanceof HTMLElement ? button : active
+}
+
 const DialogContent = <T extends ValidComponent = 'div'>(
   props: PolymorphicProps<T, DialogContentProps<T>>,
 ) => {
-  const [, rest] = splitProps(props as DialogContentProps, ['class', 'children'])
+  const [local, rest] = splitProps(props as DialogContentProps, [
+    'class',
+    'children',
+    'onOpenAutoFocus',
+    'onCloseAutoFocus',
+  ])
+  // Kobalte returns focus only to a DialogTrigger. The app's dialogs open from state, so
+  // focus goes back to whatever had it when the dialog opened, unless the dialog's own
+  // onCloseAutoFocus already moved it.
+  let opener: HTMLElement | null = null
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
+        onOpenAutoFocus={(event: Event) => {
+          opener = focused()
+          local.onOpenAutoFocus?.(event)
+        }}
+        onCloseAutoFocus={(event: Event) => {
+          local.onCloseAutoFocus?.(event)
+          if (event.defaultPrevented || !opener?.isConnected) return
+          event.preventDefault()
+          opener.focus()
+        }}
         class={cn(
           'fixed left-1/2 top-1/2 z-50 grid max-h-screen w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto border bg-background p-6 shadow-lg duration-200 data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 data-[closed]:slide-out-to-left-1/2 data-[closed]:slide-out-to-top-[48%] data-[expanded]:slide-in-from-left-1/2 data-[expanded]:slide-in-from-top-[48%] sm:rounded-lg',
-          props.class,
+          local.class,
         )}
         {...rest}
       >
-        {props.children}
+        {local.children}
         <DialogPrimitive.CloseButton class="ring-offset-background focus:ring-ring data-[expanded]:bg-accent data-[expanded]:text-muted-foreground absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:pointer-events-none">
           <svg
             xmlns="http://www.w3.org/2000/svg"
