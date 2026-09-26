@@ -1,6 +1,6 @@
 # 057: Timer opening cost
 
-Status: todo
+Status: in-progress
 
 Opening the timer is the one page over 50 ms of main-thread work. Task 053 measured it on
 2026-09-26 on a local production build with the seeded owner (35 rows over 14 days),
@@ -15,7 +15,7 @@ layout and paint but not component setup.
 
 ## Acceptance criteria
 
-- [ ] A Performance trace splits the task into script, style, and layout, recorded here
+- [x] A Performance trace splits the task into script, style, and layout, recorded here
 - [ ] Opening the timer with cached data takes under 50 ms of main-thread work at 1×, with
       the 4× figure recorded, before and after
 - [ ] Both layouts, compact rows, keyboard and touch editing, and "Show earlier" work as
@@ -44,3 +44,64 @@ splits it; "other" is mostly the scene's weather and task overhead.
   1,035–1,257 ms.
 - Script is about three quarters of the cached open; style and layout together are
   13 ms, so `content-visibility` alone would save little.
+
+## Profile
+
+Measured on 2026-09-27 at `8f4a1b1` with task 053's harness, extended with a CPU profile: a
+production build in its own worktree, a freshly seeded throwaway database, and the seeded
+owner. Task 059 measured Reports in the same session. Each run opens the timer once from
+Projects, goes back, and clicks the Timer link. The trace covers the 1.5 s after the click;
+3 runs, in milliseconds. The Table layout comes from the same seed with the owner's
+`timer_layout` set to `table`.
+
+| Layout | CPU | Longest task | Tasks   | Net of idle | Script  | Style | Layout | Paint | DOM nodes |
+| ------ | --- | ------------ | ------- | ----------- | ------- | ----- | ------ | ----- | --------- |
+| Bar    | 1×  | 72–83        | 110–119 | 87–97       | 66–76   | 7–9   | 4–5    | 11–12 | 2,656     |
+| Bar    | 4×  | 351–515      | 486–659 | 409–592     | 312–447 | 37–58 | 22–36  | 46–61 | 2,656     |
+| Table  | 1×  | 77–87        | 115–140 | 90–115      | 71–84   | 8–9   | 5–6    | 12    | 2,756     |
+| Table  | 4×  | 428–594      | 548–694 | 471–613     | 383–534 | 39–48 | 24–30  | 34–46 | 2,756     |
+
+The 4× runs vary more than on 2026-09-26; the machine was shared with another session.
+
+The CPU profile (`Profiler.start`, 100 µs samples, 5 runs, source-mapped to `src/` and
+`node_modules/`) attributes each sample to the nearest app frame on its stack. Bar layout,
+milliseconds per open; the profile adds up to 20% overhead and counts forced style and
+layout as script:
+
+| Where the time goes                                                      | 1×   | 4×   |
+| ------------------------------------------------------------------------ | ---- | ---- |
+| Style and layout forced by `document.fonts.ready` in `PageTitle`         | 11.4 | 52.4 |
+| Kobalte `Button` (`ui/button.tsx`), mostly `mergeProps` and `splitProps` | 10.3 | 52.2 |
+| `calendar.ts` through `Intl.formatToParts`, from the rows' editors       | 9.0  | 44.1 |
+| Garbage collection                                                       | 9.0  | 22.9 |
+| Kobalte `TextField` (`ui/text-field.tsx`), one root per row              | 8.2  | 44.3 |
+| Lucide icons: 240 SVGs, each a `Dynamic` and a `For` over its paths      | 7.8  | 53.3 |
+| Entry editor (`entry-fields.tsx`, `entries.ts`), besides the calendar    | 4.8  | 33.3 |
+| Entry rows (`entry-list.tsx`)                                            | 4.8  | 29.9 |
+| Date and time inputs (`components/date-time/`)                           | 4.0  | 26.6 |
+| Solid's effect queue and other framework code                            | 9.8  | 46.7 |
+| Router, query, page title, scene, and the rest                           | 10.7 | 47.3 |
+| Playwright's own locator queries (the harness)                           | 2.7  | 11.9 |
+| Total sampled                                                            | 92.3 | 465  |
+
+- Script is the cost, and it is spread over what each of the 35 rows mounts, not one hot
+  function. Rows' Kobalte components (`Button`, `TextField`) and icons take 26 ms at 1×;
+  most of it is Solid's props proxies (`mergeProps`, `splitProps`, `spread`) that each
+  polymorphic component stacks up.
+- `createEntryEditor` derives `date()`, `values()`, and `read()` as plain functions.
+  `duration()`, `nextDay()`, and the time fields call them several times per row, and each
+  call runs `localDate`, `localTime`, or `atLocalTime`, which format through `Intl`:
+  `readEntryTimes` 4.1 ms, `values()` 2.6 ms, `date()` 1.9 ms.
+- `cn` and tailwind-merge take under 1 ms in total: tailwind-merge caches repeated class
+  strings. `Duration` takes 0.3 ms here.
+- The Table layout costs the same plus 2.7 ms (15 ms at 4×) in `TableCell`, `TableHead`,
+  and `TableRow`.
+- Reading `document.fonts.ready` in `PageTitle`'s `onMount` makes Chrome run the new page's
+  style recalc (2,547 elements, 5.9 ms) and layout (4.3 ms) inside the click's task. That
+  is the page's normal style and layout run early, so it isn't extra work, but it adds to
+  the one long task.
+- At 1440 × 900, 9 of the 35 rows show above the fold, 2 of the 14 day cards.
+- Shared with Reports (task 059): the forced style and layout in `PageTitle`, `Intl` calls
+  from unmemoized derived functions, and the `ui/table.tsx` wrappers in the Table layout.
+  Leaving the timer also costs Reports about 10 ms: Solid's `cleanNode` disposing the
+  timer page's computations.
