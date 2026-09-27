@@ -147,7 +147,7 @@ the same database, 2 × 3 runs each:
 
 ## Days near the screen
 
-`01d0d45` mounts a day's rows only when the day is within the first 12 rows, comes within half
+`7b3bfcd` mounts a day's rows only when the day is within the first 12 rows, comes within half
 a screen of the viewport, holds an entry just saved, or once Tab is pressed anywhere on the
 page (`lazy-days.ts`). Until then the day holds a placeholder as tall as its rows. Both
 layouts use it; the Focus layout's few days all mount at once. Measured on 2026-09-27,
