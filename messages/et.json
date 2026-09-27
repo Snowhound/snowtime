@@ -341,7 +341,7 @@
   "timer_delete": "Kustuta",
   "timer_entry_actions": "Toimingud: {description}",
   "timer_entry_actions_unnamed": "Kirje toimingud",
-  "timer_entry_saved": "Salvestatud",
+  "timer_entry_saved": "Tehtud",
   "timer_empty_title": "Ühtegi tundi pole veel kirjas",
   "timer_empty_description": "Käivita ülal taimer. Kirjed ilmuvad siia päevade kaupa.",
   "timer_show_earlier": "Näita varasemaid kirjeid",
