@@ -33,6 +33,7 @@ import {
   useRemoveMember,
   useRemoveTeamMember,
   useRenameOrganization,
+  useUpdateIssueLinks,
   useRenameTeam,
   useSetTeamRole,
   useUpdateMemberRole,
@@ -57,6 +58,7 @@ export function OrganizationView(props: {
   organizationId: string
   organizationName: string
   slug: string
+  issueLinks: string | null
   viewer: Viewer
   zone: string
   tab: OrganizationTab
@@ -81,6 +83,7 @@ export function OrganizationView(props: {
   const removeTeamMember = useRemoveTeamMember(keys)
   const setTeamRole = useSetTeamRole(keys)
   const renameOrganization = useRenameOrganization(keys)
+  const saveIssueLinks = useUpdateIssueLinks(keys)
 
   // Teams whose create awaits the server, so their stand-in id can't be acted on yet.
   const creating = useMutationState(() => ({
@@ -244,9 +247,21 @@ export function OrganizationView(props: {
 
   // --- General -------------------------------------------------------------------------
 
-  function renameOrg(name: string, done: () => void) {
+  // Saves what changed on the General tab and says so once every write succeeded.
+  async function saveGeneral(
+    changes: { name?: string; issueLinks?: string | null },
+    saved: () => void,
+  ) {
     setError(null)
-    renameOrganization.mutate(name, { onSuccess: done, onError: showError })
+    try {
+      await Promise.all([
+        changes.name !== undefined && renameOrganization.mutateAsync(changes.name),
+        changes.issueLinks !== undefined && saveIssueLinks.mutateAsync(changes.issueLinks),
+      ])
+      saved()
+    } catch (e) {
+      showError(e)
+    }
   }
 
   return (
@@ -319,7 +334,12 @@ export function OrganizationView(props: {
           />
         </TabsContent>
         <TabsContent value="general" class="mt-0">
-          <GeneralTab name={props.organizationName} slug={props.slug} onRename={renameOrg} />
+          <GeneralTab
+            name={props.organizationName}
+            slug={props.slug}
+            issueLinks={props.issueLinks}
+            onSave={saveGeneral}
+          />
         </TabsContent>
       </Tabs>
       <InviteDialog

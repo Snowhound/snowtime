@@ -20,6 +20,7 @@ const fn = vi.hoisted(() => ({
   listProjects: vi.fn(),
   getAppSession: vi.fn(),
   getAppUrl: vi.fn(),
+  updateIssueLinks: vi.fn(),
   navigate: vi.fn(),
 }))
 const org = vi.hoisted(() => ({
@@ -44,6 +45,7 @@ vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listPr
 vi.mock('~/server/auth/auth.functions', () => ({
   getAppSession: fn.getAppSession,
   getAppUrl: fn.getAppUrl,
+  updateIssueLinks: fn.updateIssueLinks,
 }))
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
@@ -86,6 +88,7 @@ interface Server {
   teams: Team[]
   projects: Project[]
   invitations: (Invitation & { status: string })[]
+  issueLinks: string | null
 }
 
 // Built fresh per test: Solid stores keep signals on the objects they wrap.
@@ -121,6 +124,7 @@ function fixtures(): Server {
   }
   return {
     viewer: ids.admin,
+    issueLinks: null,
     members,
     teams,
     projects: [
@@ -160,7 +164,13 @@ function session() {
     activeOrganizationId: organizationId,
     user: { id: server.viewer },
     organizations: [
-      { id: organizationId, name: 'Snowhound', slug: 'snowhound', role: viewerRole() },
+      {
+        id: organizationId,
+        name: 'Snowhound',
+        slug: 'snowhound',
+        issueLinks: server.issueLinks,
+        role: viewerRole(),
+      },
     ],
     settings: { timeZone: 'Europe/Tallinn' },
   }
@@ -508,6 +518,43 @@ describe('OrganizationView', () => {
     expect(org.removeTeam).toHaveBeenCalledWith({ teamId: ids.platform, organizationId })
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: 'Platform' })).not.toBeInTheDocument(),
+    )
+  })
+
+  test('General saves Issue links, an https:// address with {key}, and clears it', async () => {
+    fn.updateIssueLinks.mockImplementation(async ({ data }) => {
+      server.issueLinks = data.issueLinks || null
+      return { id: organizationId, issueLinks: server.issueLinks }
+    })
+    renderPage('general')
+    const input = await screen.findByLabelText('Issue links')
+    const save = screen.getByRole('button', { name: 'Save' })
+
+    await userEvent.type(input, 'acme.atlassian.net/browse/{{key}')
+    await userEvent.click(save)
+    expect(await screen.findByText(/Enter an https:\/\/ address/)).toBeInTheDocument()
+    expect(input).toHaveFocus()
+
+    await userEvent.clear(input)
+    await userEvent.type(input, 'https://acme.atlassian.net/browse/')
+    await userEvent.click(save)
+    expect(await screen.findByText(/Put \{key\} where the ticket key goes/)).toBeInTheDocument()
+    expect(fn.updateIssueLinks).not.toHaveBeenCalled()
+
+    await userEvent.type(input, '{{key}')
+    await userEvent.click(save)
+    expect(fn.updateIssueLinks).toHaveBeenCalledWith({
+      data: { organizationId, issueLinks: 'https://acme.atlassian.net/browse/{key}' },
+    })
+    expect(org.update).not.toHaveBeenCalled()
+    expect(await screen.findByText('Saved.')).toBeInTheDocument()
+
+    await userEvent.clear(input)
+    await userEvent.click(save)
+    await waitFor(() =>
+      expect(fn.updateIssueLinks).toHaveBeenLastCalledWith({
+        data: { organizationId, issueLinks: '' },
+      }),
     )
   })
 

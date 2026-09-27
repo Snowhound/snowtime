@@ -1,9 +1,9 @@
-// The General tab: the organization's name, its short name, which can't change, and a
-// note that organizations can't be deleted (disableOrganizationDeletion in
-// better-auth.server.ts).
+// The General tab: the organization's name, its short name, which can't change, where ticket
+// keys link (Issue links), and a note that organizations can't be deleted
+// (disableOrganizationDeletion in better-auth.server.ts).
 import { createForm } from '@tanstack/solid-form'
 import InfoIcon from 'lucide-solid/icons/info'
-import { createSignal } from 'solid-js'
+import { For, createSignal } from 'solid-js'
 import * as v from 'valibot'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
@@ -17,25 +17,67 @@ import {
 } from '~/components/ui/text-field'
 import { fieldError } from '~/lib/form'
 import { m } from '~/paraglide/messages.js'
-import { NAME_MAX_LENGTH, Name } from '~/server/auth/auth.schemas'
+import {
+  ISSUE_LINKS_MAX_LENGTH,
+  IssueLinks,
+  NAME_MAX_LENGTH,
+  Name,
+} from '~/server/auth/auth.schemas'
+
+// The hint with {key} set as code, as the address has it.
+function IssueLinksHint() {
+  const parts = m.organization_issue_links_hint({ key: '\u0000' }).split('\u0000')
+  return (
+    <For each={parts}>
+      {(part, i) => (
+        <>
+          {i() > 0 && <code class="font-mono">{'{key}'}</code>}
+          {part}
+        </>
+      )}
+    </For>
+  )
+}
+
+function firstIssue(schema: v.GenericSchema, value: unknown) {
+  const result = v.safeParse(schema, value)
+  return result.success ? undefined : result.issues[0].message
+}
 
 export function GeneralTab(props: {
   name: string
   slug: string
-  onRename: (name: string, done: () => void) => void
+  issueLinks: string | null
+  // Only the changed fields; `done` runs once they are saved.
+  onSave: (changes: { name?: string; issueLinks?: string | null }, done: () => void) => void
 }) {
   const [status, setStatus] = createSignal<string | null>(null)
 
   const form = createForm(() => ({
-    defaultValues: { name: props.name },
-    onSubmitInvalid: () => queueMicrotask(() => document.getElementById('org-name')?.focus()),
+    defaultValues: { name: props.name, issueLinks: props.issueLinks ?? '' },
+    onSubmitInvalid: ({ formApi }) =>
+      queueMicrotask(() => {
+        const field = formApi.getFieldMeta('name')?.errors.length ? 'org-name' : 'org-issue-links'
+        document.getElementById(field)?.focus()
+      }),
     onSubmit: ({ value, formApi }) => {
       const name = value.name.trim()
-      formApi.reset({ name })
-      props.onRename(name, () => setStatus(m.organization_saved()))
+      const issueLinks = value.issueLinks.trim() || null
+      formApi.reset({ name, issueLinks: issueLinks ?? '' })
+      props.onSave(
+        {
+          ...(name !== props.name ? { name } : {}),
+          ...(issueLinks !== props.issueLinks ? { issueLinks } : {}),
+        },
+        () => setStatus(m.organization_saved()),
+      )
     },
   }))
-  const unchanged = form.useStore((state) => state.values.name.trim() === props.name)
+  const unchanged = form.useStore(
+    (state) =>
+      state.values.name.trim() === props.name &&
+      (state.values.issueLinks.trim() || null) === props.issueLinks,
+  )
 
   return (
     <Card class="max-w-2xl">
@@ -53,15 +95,7 @@ export function GeneralTab(props: {
           <CardDescription>{m.organization_general_description()}</CardDescription>
         </CardHeader>
         <CardContent class="grid grid-cols-[minmax(0,1fr)] gap-4">
-          <form.Field
-            name="name"
-            validators={{
-              onSubmit: ({ value }) => {
-                const result = v.safeParse(Name, value)
-                return result.success ? undefined : result.issues[0].message
-              },
-            }}
-          >
+          <form.Field name="name" validators={{ onSubmit: ({ value }) => firstIssue(Name, value) }}>
             {(field) => (
               <TextField
                 class="grid gap-2"
@@ -92,6 +126,39 @@ export function GeneralTab(props: {
               {m.organization_slug_hint()}
             </TextFieldDescription>
           </TextField>
+          <form.Field
+            name="issueLinks"
+            validators={{ onSubmit: ({ value }) => firstIssue(IssueLinks, value) }}
+          >
+            {(field) => (
+              <TextField
+                class="grid gap-2"
+                value={field().state.value}
+                onChange={(value) => {
+                  setStatus(null)
+                  field().handleChange(value)
+                }}
+                validationState={fieldError(field().state.meta.errors) ? 'invalid' : 'valid'}
+              >
+                <TextFieldLabel>{m.organization_issue_links()}</TextFieldLabel>
+                <TextFieldInput
+                  id="org-issue-links"
+                  type="url"
+                  inputMode="url"
+                  autocomplete="off"
+                  placeholder="https://yourcompany.atlassian.net/browse/{key}"
+                  maxLength={ISSUE_LINKS_MAX_LENGTH}
+                  onBlur={field().handleBlur}
+                />
+                <TextFieldDescription class="text-xs">
+                  <IssueLinksHint />
+                </TextFieldDescription>
+                <TextFieldErrorMessage>
+                  {fieldError(field().state.meta.errors)}
+                </TextFieldErrorMessage>
+              </TextField>
+            )}
+          </form.Field>
           <Alert>
             <InfoIcon aria-hidden="true" />
             <AlertDescription>{m.organization_no_delete()}</AlertDescription>

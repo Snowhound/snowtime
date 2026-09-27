@@ -12,7 +12,7 @@ import type { Project } from '~/lib/queries/projects'
 import { cacheUpdate, newId, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
 import { type Team, teamsQuery } from '~/lib/queries/teams'
-import { type AppSession, getAppUrl } from '~/server/auth/auth.functions'
+import { type AppSession, getAppUrl, updateIssueLinks } from '~/server/auth/auth.functions'
 import { setTeamRole } from '~/server/teams/teams.functions'
 import type { SetTeamRoleInput } from '~/server/teams/teams.schemas'
 import type { OrgRole } from './roles'
@@ -401,6 +401,29 @@ export function useRenameOrganization(keys: Keys) {
               ...session,
               organizations: session.organizations.map((o) =>
                 o.id === keys.organizationId ? { ...o, name } : o,
+              ),
+            }
+          : session,
+      ),
+    ]),
+  }))
+}
+
+// The Issue links setting, which ticket chips on the timer read from the session.
+export function useUpdateIssueLinks(keys: Keys) {
+  const queryClient = useQueryClient()
+  return useMutation(() => ({
+    mutationFn: (issueLinks: string | null) =>
+      updateIssueLinks({
+        data: { organizationId: keys.organizationId, issueLinks: issueLinks ?? '' },
+      }),
+    ...optimistic(queryClient, [
+      cacheUpdate<AppSession | null, string | null>(sessionQuery.queryKey, (session, issueLinks) =>
+        session
+          ? {
+              ...session,
+              organizations: session.organizations.map((o) =>
+                o.id === keys.organizationId ? { ...o, issueLinks } : o,
               ),
             }
           : session,

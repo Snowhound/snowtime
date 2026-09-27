@@ -30,6 +30,7 @@ export function OrganizationPage(props: { organizationId: string; tab: Organizat
                     organizationId={organizationId}
                     organizationName={org().name}
                     slug={org().slug}
+                    issueLinks={org().issueLinks}
                     viewer={{ userId: data().user.id, role: org().role }}
                     zone={data().settings?.timeZone ?? 'UTC'}
                     tab={props.tab}
