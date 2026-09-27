@@ -600,10 +600,11 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
 `prototypes/README.md` describes in "Seasonal scene in the app".
 
 - Assets: each season has a light and a dark image as static files in `public/backgrounds/`,
-  1920 and 3840 px wide, as AVIF and WebP, copied from `design/backgrounds/`. The layer uses
-  AVIF, about 30% smaller at the same quality, when the browser decodes a 1 × 1 probe, and WebP
-  otherwise. The AVIF files are 110 to 405 KB each, so they're files rather than bundled imports,
-  and nothing loads until the page asks for one.
+  1920 and 3840 px wide, as AVIF only (`design/backgrounds/README.md` records how they're made).
+  Every supported browser decodes AVIF; one that doesn't, such as Edge before 121, fails the load
+  and shows the page color behind the scene. A WebP set for those browsers doubled the committed
+  files for no supported browser, so it was dropped (task 051). The files are 104 to 431 KB each,
+  so they're files rather than bundled imports, and nothing loads until the page asks for one.
 - Loading (`src/components/scene/scene-layer.tsx`, `photoWidth` in `src/lib/scene/scene.ts`): the 3840 file
   is for images that cover more than 2400 device pixels across (pixel ratio at most 2), and
   screens under 768 px always get the 1920 file. The shown theme loads the 1920 file first, on

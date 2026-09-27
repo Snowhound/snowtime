@@ -9,7 +9,6 @@ import { createStore } from 'solid-js/store'
 import { intro } from '~/lib/scene/intro'
 import {
   PHOTO_SMALL,
-  type PhotoFormat,
   type PhotoTheme,
   STRENGTHS,
   type SceneSettings,
@@ -18,7 +17,6 @@ import {
   currentSeason,
   loadPhoto,
   photoReady,
-  photoFormat,
   photoUrl,
   photoWidth,
 } from '~/lib/scene/scene'
@@ -86,7 +84,6 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     if (!props.settings.sceneBackground) return setting
     return photos[dark() ? 'dark' : 'light'].at(-1)?.season ?? setting
   })
-  const [format, setFormat] = createSignal<PhotoFormat>()
 
   onMount(() => {
     const root = document.documentElement
@@ -108,23 +105,20 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     // Once a picture shows, a new season loads the file for this screen straight away. The other
     // theme gets its small file after that, for the crossfade. A layer shows a file only once it
     // has decoded, and fades it in. Nothing loads while the background is off. It starts once
-    // the theme, the screen, and the file format are known.
-    void photoFormat().then(setFormat)
+    // the theme and the screen are known.
     createEffect(() => {
       loaded()
-      const f = format()
-      if (!f) return
       const season = currentSeason(props.settings.sceneSeason)
       const on = props.settings.sceneBackground
       const shown: PhotoTheme = dark() ? 'dark' : 'light'
-      const shownReady = photoReady(photoUrl(season, shown, width(), f))
+      const shownReady = photoReady(photoUrl(season, shown, width()))
       for (const theme of ['light', 'dark'] as const) {
-        const sharp = photoUrl(season, theme, width(), f)
+        const sharp = photoUrl(season, theme, width())
         if (photoReady(sharp)) {
           show(theme, season, sharp)
           continue
         }
-        const small = photoUrl(season, theme, PHOTO_SMALL, f)
+        const small = photoUrl(season, theme, PHOTO_SMALL)
         const due = on && (theme === shown || shownReady)
         const showing = untrack(() => photos[theme].length > 0)
         // The intro opens without the background and fades the dark image in later, so its

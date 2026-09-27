@@ -10,7 +10,7 @@
 // plus the app-wide `surfaces` ('glass', 'solid'): whether cards let a background show through.
 // `scene.settings` reads and writes them for auth.html, which has no frame.
 ;(() => {
-  const BASE = '../design/backgrounds/'
+  const BASE = '../public/backgrounds/'
   const SETTINGS_KEY = 'snowtime.prototypeSettings'
   const DEFAULTS = { sceneSeason: 'auto', sceneBackground: true, sceneStrength: 'dimmed', surfaces: 'glass', sceneWeather: true, sceneIntro: true }
   // `weather` names the effect for light and dark pages. The intro's lines and the tagline are in
@@ -413,7 +413,7 @@
     return needed > PHOTO_SMALL * 1.25 ? PHOTO_LARGE : PHOTO_SMALL
   }
   function photoUrl(season, theme, width) {
-    return `${BASE}${season}-${theme}-01-${width}.webp`
+    return `${BASE}${season}-${theme}-01-${width}.avif`
   }
   // Files loaded and decoded, so a layer only switches to an image that's ready to paint.
   const ready = new Set()

@@ -831,8 +831,8 @@ points in one call on one shared canvas, runs at about 45 fps, stops when the ta
 weather is off, and scales its point count to the area it covers. Unlike the mock-up, snow covers
 the full width.
 
-The images are upscaled to 3840 px and come as WebP files 1920 and 3840 px wide (see
-`design/backgrounds/README.md`). `scene.js` picks the 3840 file when the image covers more than
+The images are upscaled to 3840 px and come as AVIF files 1920 and 3840 px wide, in
+`public/backgrounds/` (see `design/backgrounds/README.md`). `scene.js` picks the 3840 file when the image covers more than
 2400 device pixels across: `cover` stretches it to the larger of the viewport's width and its
 height's 16:9 width, times the pixel ratio (at most 2). Screens under 768 px wide always get the
 1920 file. The shown theme's layer gets the 1920 file first and swaps to the 3840 one once it has
