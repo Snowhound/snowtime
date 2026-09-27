@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 import { APP_ICON_IDS } from '~/lib/app-icon'
+import { COUNTRIES } from '~/lib/holidays/region'
 import { m } from '~/paraglide/messages.js'
 
 // An IANA zone name such as Europe/Tallinn or UTC. Intl accepts the names the runtime
@@ -61,6 +62,8 @@ export type DateFormat = v.InferOutput<typeof DateFormat>
 export const TIME_FORMATS = ['24h', '12h'] as const
 export const TimeFormat = v.picklist(TIME_FORMATS)
 export type TimeFormat = v.InferOutput<typeof TimeFormat>
+// Whose working days count for the taglines; null guesses from the time zone.
+export const Country = v.nullable(v.picklist(COUNTRIES))
 
 // The browser's zone (Intl.DateTimeFormat().resolvedOptions().timeZone) and the supported
 // locale that best matches its languages, used only when the user has no settings yet.
@@ -90,5 +93,6 @@ export const UpdateSettingsInput = v.object({
   durationFormat: v.optional(DurationFormat),
   dateFormat: v.optional(DateFormat),
   timeFormat: v.optional(TimeFormat),
+  country: v.optional(Country),
 })
 export type UpdateSettingsInput = v.InferOutput<typeof UpdateSettingsInput>

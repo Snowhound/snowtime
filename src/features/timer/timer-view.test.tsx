@@ -87,6 +87,7 @@ function defaultSettings(): Settings {
     durationFormat: 'clock',
     dateFormat: 'dmy',
     timeFormat: '24h',
+    country: null,
   }
 }
 

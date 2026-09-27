@@ -1,6 +1,6 @@
 # 03: Country setting
 
-Status: todo
+Status: done
 
 The holidays follow the user's country, not their language: someone in Tallinn using the
 app in English still has Estonian holidays. Add a Country setting to Preferences. It
@@ -15,11 +15,11 @@ example "From time zone (Estonia)".
 
 ## Acceptance criteria
 
-- [ ] `user_settings.country` is a nullable text column; null means "From time zone"
+- [x] `user_settings.country` is a nullable text column; null means "From time zone"
       (`docs/migrations.md`)
-- [ ] The settings schema accepts only `'EE'`, `'US'`, `'other'`, or null
-- [ ] Preferences shows the setting with a hint on what it affects, in English and Estonian
-- [ ] The select's options render on the server; opening Preferences costs no more than
+- [x] The settings schema accepts only `'EE'`, `'US'`, `'other'`, or null
+- [x] Preferences shows the setting with a hint on what it affects, in English and Estonian
+- [x] The select's options render on the server; opening Preferences costs no more than
       before
-- [ ] A test covers the guess from the time zone
-- [ ] The data model diagram (`datamodel/`) shows the column
+- [x] A test covers the guess from the time zone
+- [x] The data model diagram (`datamodel/`) shows the column

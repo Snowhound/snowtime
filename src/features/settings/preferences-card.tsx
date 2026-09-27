@@ -27,6 +27,7 @@ import { formatTimeInput } from '~/lib/date-input'
 import { hourCycle } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatHours, formatIsoDate } from '~/lib/format'
+import { type Country, countryFromZone } from '~/lib/holidays/region'
 import { LANGUAGES } from '~/lib/languages'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { playIntro } from '~/lib/scene/intro'
@@ -57,6 +58,19 @@ const TIME_FORMATS = [
   { value: '24h', label: () => formatTimeInput('15:30', `${getLocale()}-u-hc-h23`) },
   { value: '12h', label: () => formatTimeInput('15:30', `${getLocale()}-u-hc-h12`) },
 ] as const
+
+const COUNTRIES = [
+  { value: 'EE', label: m.settings_country_ee },
+  { value: 'US', label: m.settings_country_us },
+  { value: 'other', label: m.settings_country_other },
+] as const
+
+// The select's value for "From time zone", which saves as null.
+const FROM_ZONE = ''
+
+function countryName(country: Country) {
+  return COUNTRIES.find((c) => c.value === country)!.label()
+}
 
 const THEMES = [
   { value: 'light', label: m.theme_light },
@@ -215,6 +229,39 @@ export function PreferencesCard(props: { settings: Settings }) {
                   {m.settings_use_device_zone()}
                 </Button>
               </div>
+            </div>
+            <div class="grid gap-2">
+              <Label for="country">{m.settings_country()}</Label>
+              <div class="sm:w-56">
+                <NativeSelect
+                  id="country"
+                  aria-describedby="country-hint"
+                  value={props.settings.country ?? FROM_ZONE}
+                  onChange={(event) => {
+                    const value = event.currentTarget.value
+                    update({ country: value === FROM_ZONE ? null : (value as Country) })
+                  }}
+                >
+                  <option value={FROM_ZONE} selected={props.settings.country === null}>
+                    {m.settings_country_from_zone({
+                      country: countryName(countryFromZone(props.settings.timeZone)),
+                    })}
+                  </option>
+                  <For each={COUNTRIES}>
+                    {(country) => (
+                      <option
+                        value={country.value}
+                        selected={country.value === props.settings.country}
+                      >
+                        {country.label()}
+                      </option>
+                    )}
+                  </For>
+                </NativeSelect>
+              </div>
+              <p id="country-hint" class="text-muted-foreground text-sm">
+                {m.settings_country_hint()}
+              </p>
             </div>
             <div class="grid gap-2">
               <span class="text-sm leading-none font-medium" id="week-start-label">

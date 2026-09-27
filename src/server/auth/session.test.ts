@@ -74,6 +74,7 @@ describe('appSession', () => {
       durationFormat: 'clock',
       dateFormat: 'dmy',
       timeFormat: '24h',
+      country: null,
     })
     expect(session.invitationId).toBeNull()
   })

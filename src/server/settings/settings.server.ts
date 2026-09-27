@@ -26,6 +26,7 @@ const columns = {
   durationFormat: userSettings.durationFormat,
   dateFormat: userSettings.dateFormat,
   timeFormat: userSettings.timeFormat,
+  country: userSettings.country,
 }
 
 export async function findSettings(db: Database, userId: string) {

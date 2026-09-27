@@ -454,6 +454,13 @@ about gaps in the timesheet (task 060). The server and the browser share it.
   the Monday after. Christmas Eve is the working day before Christmas's day off, so the two
   never land on one day.
 - Other regions count weekends only.
+- The region is the user's Country setting (`user_settings.country`), not their language:
+  someone in Tallinn using the app in English still has Estonian holidays. It offers only
+  the countries with data, Estonia and the United States, plus Other, so the select is
+  short and renders on the server. Null means "From time zone", and
+  `src/lib/holidays/region.ts` guesses from the zone: `Europe/Tallinn` gives Estonia, the
+  six main US zones and their tzdata aliases give the United States, and any other zone
+  gives Other. The label names the guess, such as "From time zone (Estonia)".
 
 ## Report export
 
@@ -514,7 +521,8 @@ The Reports page's Entries card lists the entries behind the report (task 055,
   (`app_icon`, the header mark and favicon), the seasonal scene (`scene_season`,
   `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`,
   `scene_tagline`), and
-  how durations, dates, and times show (`duration_format`, `date_format`, `time_format`).
+  how durations, dates, and times show (`duration_format`, `date_format`, `time_format`),
+  and the country whose working days count (`country`; see "Working days").
   They default to 11:10, 30.09.2026, and 15:30 in every language. Exports keep the
   formats spreadsheets read, whatever the duration format.
 - The server renders the theme class from the session user's settings, so the first

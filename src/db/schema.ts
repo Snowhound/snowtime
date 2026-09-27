@@ -12,6 +12,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core'
 import { APP_ICON_IDS, DEFAULT_APP_ICON } from '~/lib/app-icon'
+import { COUNTRIES } from '~/lib/holidays/region'
 import {
   DATE_FORMATS,
   DURATION_FORMATS,
@@ -316,6 +317,8 @@ export const userSettings = sqliteTable(
     durationFormat: text('duration_format', { enum: DURATION_FORMATS }).default('clock').notNull(),
     dateFormat: text('date_format', { enum: DATE_FORMATS }).default('dmy').notNull(),
     timeFormat: text('time_format', { enum: TIME_FORMATS }).default('24h').notNull(),
+    // Null: guess from the time zone (src/lib/holidays/region.ts).
+    country: text({ enum: COUNTRIES }),
   },
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),
