@@ -417,6 +417,20 @@ describe('TimerView', () => {
     expect(await screen.findByRole('menuitem', { name: 'Delete' })).toBeInTheDocument()
   })
 
+  test('mounts the rows of days past the first screen once Tab is pressed', async () => {
+    server.entries = [1, 2, 3, 4].flatMap((day) =>
+      [1, 2, 3, 4, 5].map((hour) =>
+        entry(day, `0${hour}:00`, `0${hour}:30`, `Day ${day}, ${hour}`),
+      ),
+    )
+    renderView()
+    await screen.findByDisplayValue('Day 3, 1')
+    expect(screen.queryByDisplayValue('Day 4, 1')).not.toBeInTheDocument()
+
+    await userEvent.tab()
+    expect(screen.getByDisplayValue('Day 4, 1')).toBeInTheDocument()
+  })
+
   test('the first tap on a row’s field opens it', async () => {
     renderView()
     await screen.findByDisplayValue('Invoice export review')

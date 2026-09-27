@@ -30,9 +30,11 @@ import {
   dayLabel,
   groupDates,
   groupIds,
+  hasJustSaved,
   revealWhenSaved,
   savedTint,
 } from './entry-list'
+import { createLazyDays } from './lazy-days'
 import type { StoppedEntry } from './queries'
 import { createRowActivation } from './row-activation'
 
@@ -42,6 +44,11 @@ export function EntryTable(
     today: string
   },
 ) {
+  const lazyDay = createLazyDays(() => props.groups)
+  // Rows' heights as rendered, for a day's placeholder until it mounts (lazy-days.ts).
+  function rowHeight() {
+    return props.compact ? 37 : 57
+  }
   return (
     <div class="surface bg-card overflow-hidden rounded-lg border">
       <Table class="min-w-[48rem] table-fixed">
@@ -71,6 +78,7 @@ export function EntryTable(
               function group() {
                 return props.groups.find((g) => g.date === date)
               }
+              const lazy = lazyDay(date, () => hasJustSaved(props, group()))
               return (
                 <>
                   <TableRow class="bg-muted/50">
@@ -86,14 +94,26 @@ export function EntryTable(
                     </TableCell>
                     <TableCell />
                   </TableRow>
-                  <For each={groupIds(group())}>
-                    {(id) => (
-                      <EntryTableRow
-                        {...props}
-                        entry={group()!.entries.find((e) => e.id === id)!}
-                      />
-                    )}
-                  </For>
+                  <Show
+                    when={lazy.shown()}
+                    fallback={
+                      <tr ref={lazy.placeholder}>
+                        <td
+                          colspan={6}
+                          style={{ height: `${groupIds(group()).length * rowHeight()}px` }}
+                        />
+                      </tr>
+                    }
+                  >
+                    <For each={groupIds(group())}>
+                      {(id) => (
+                        <EntryTableRow
+                          {...props}
+                          entry={group()!.entries.find((e) => e.id === id)!}
+                        />
+                      )}
+                    </For>
+                  </Show>
                 </>
               )
             }}

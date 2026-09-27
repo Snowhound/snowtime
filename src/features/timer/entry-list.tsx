@@ -36,6 +36,7 @@ import {
   TimeField,
   createEntryEditor,
 } from './entry-fields'
+import { createLazyDays } from './lazy-days'
 import type { Entry, StoppedEntry } from './queries'
 import { createRowActivation } from './row-activation'
 
@@ -59,14 +60,13 @@ export interface EntryRowProps {
 }
 
 // Brings a row the server just confirmed into view, such as one a new date moved to
-// another day. Returns the row's ref.
+// another day, also when its day mounts for it (lazy-days.ts). Returns the row's ref.
 export function revealWhenSaved(props: EntryRowProps & { entry: Entry }) {
   let row: HTMLElement | undefined
   createEffect(
     on(
       () => props.justSaved(props.entry.id),
       (saved) => saved && row?.scrollIntoView({ block: 'nearest' }),
-      { defer: true },
     ),
   )
   return (el: HTMLElement) => (row = el)
@@ -87,6 +87,17 @@ export function groupIds(group: DayGroup<StoppedEntry> | undefined) {
   return group?.entries.map((e) => e.id) ?? []
 }
 
+export function hasJustSaved(props: EntryRowProps, group: DayGroup<StoppedEntry> | undefined) {
+  return group?.entries.some((e) => props.justSaved(e.id)) ?? false
+}
+
+// Rows' heights as rendered, with their divider, for a day's placeholder until it mounts. Below
+// 768 px a row wraps onto three lines, 72 px taller. A wrong height only moves content off
+// screen.
+function rowHeight(rows: { compact: boolean; focus?: boolean }) {
+  return rows.compact ? 41 : rows.focus ? 57 : 65
+}
+
 export function EntryList(
   props: EntryRowProps & {
     groups: readonly DayGroup<StoppedEntry>[]
@@ -94,11 +105,16 @@ export function EntryList(
     focus?: boolean
   },
 ) {
+  const lazyDay = createLazyDays(() => props.groups)
   return (
     <For each={groupDates(props.groups)}>
       {(date) => {
         function group() {
           return props.groups.find((g) => g.date === date)
+        }
+        const lazy = lazyDay(date, () => hasJustSaved(props, group()))
+        function height(extra: number) {
+          return `${groupIds(group()).length * (rowHeight(props) + extra)}px`
         }
         return (
           <Card class="overflow-hidden">
@@ -108,17 +124,28 @@ export function EntryList(
                 <Duration ms={group()?.total ?? 0} />
               </span>
             </header>
-            <ul class="divide-y">
-              <For each={groupIds(group())}>
-                {(id) => (
-                  <EntryRow
-                    {...props}
-                    entry={group()!.entries.find((e) => e.id === id)!}
-                    focus={props.focus}
-                  />
-                )}
-              </For>
-            </ul>
+            <Show
+              when={lazy.shown()}
+              fallback={
+                <div
+                  ref={lazy.placeholder}
+                  class="h-(--rows) md:h-(--rows-md)"
+                  style={{ '--rows': height(72), '--rows-md': height(0) }}
+                />
+              }
+            >
+              <ul class="divide-y">
+                <For each={groupIds(group())}>
+                  {(id) => (
+                    <EntryRow
+                      {...props}
+                      entry={group()!.entries.find((e) => e.id === id)!}
+                      focus={props.focus}
+                    />
+                  )}
+                </For>
+              </ul>
+            </Show>
           </Card>
         )
       }}

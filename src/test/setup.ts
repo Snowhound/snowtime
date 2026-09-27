@@ -17,6 +17,14 @@ globalThis.ResizeObserver ??= class {
   disconnect() {}
 }
 
+// Nor IntersectionObserver; the timer mounts later days' rows with it. This one never reports
+// an intersection, so only the first screen's days mount unless a test presses Tab.
+globalThis.IntersectionObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof IntersectionObserver
+
 // Nor matchMedia; the scene, the tagline, and the scenery settings ask about reduced motion.
 window.matchMedia ??= (query) =>
   ({
