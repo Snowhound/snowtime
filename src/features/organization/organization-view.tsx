@@ -293,6 +293,7 @@ export function OrganizationView(props: {
             members={memberList()}
             teams={teamList()}
             zone={props.zone}
+            loadError={invitations.isError ? errorMessage(invitations.error) : null}
             onInvite={() => setInvite({ kind: 'form' })}
             onCopy={copy}
             onRenew={renew}

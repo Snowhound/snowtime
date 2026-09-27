@@ -7,6 +7,7 @@ import LinkIcon from 'lucide-solid/icons/link'
 import MailIcon from 'lucide-solid/icons/mail'
 import UserPlusIcon from 'lucide-solid/icons/user-plus'
 import { For, Show, createSignal, onCleanup } from 'solid-js'
+import { ErrorAlert } from '~/components/error-alert'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
@@ -32,6 +33,8 @@ export function InvitationsTab(
     members: readonly Member[]
     teams: readonly Team[]
     zone: string
+    // Why the invitations didn't load; the list then shows this instead of being empty.
+    loadError: string | null
   },
 ) {
   function sorted() {
@@ -51,13 +54,24 @@ export function InvitationsTab(
         <For
           each={sorted()}
           fallback={
-            <li class="flex flex-col items-center gap-2 px-6 py-10 text-center">
-              <MailIcon class="text-muted-foreground size-6" aria-hidden="true" />
-              <p class="font-medium">{m.organization_invitations_empty_title()}</p>
-              <p class="text-muted-foreground text-sm">
-                {m.organization_invitations_empty_description()}
-              </p>
-            </li>
+            <Show
+              when={props.loadError}
+              fallback={
+                <li class="flex flex-col items-center gap-2 px-6 py-10 text-center">
+                  <MailIcon class="text-muted-foreground size-6" aria-hidden="true" />
+                  <p class="font-medium">{m.organization_invitations_empty_title()}</p>
+                  <p class="text-muted-foreground text-sm">
+                    {m.organization_invitations_empty_description()}
+                  </p>
+                </li>
+              }
+            >
+              {(message) => (
+                <li class="p-4 sm:px-6">
+                  <ErrorAlert message={message()} />
+                </li>
+              )}
+            </Show>
           }
         >
           {(invitation) => <InvitationRow {...props} invitation={invitation} />}

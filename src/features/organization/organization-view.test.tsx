@@ -444,6 +444,15 @@ describe('OrganizationView', () => {
     )
   })
 
+  test('invitations that fail to load say why instead of that there are none', async () => {
+    org.listInvitations.mockImplementation(() =>
+      Promise.resolve({ data: null, error: { status: 500 } }),
+    )
+    renderPage('invitations')
+    expect(await screen.findByText('Something went wrong. Try again.')).toBeInTheDocument()
+    expect(screen.queryByText('No open invitations')).not.toBeInTheDocument()
+  })
+
   test('cancels an invitation once confirmed', async () => {
     renderPage('invitations')
     const open = (await screen.findByText('kristjan@example.com')).closest('li')!
