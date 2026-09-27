@@ -1,6 +1,6 @@
 # 039: Bug review
 
-Status: todo
+Status: done
 
 A review by Codex on 2026-09-25 found three real bugs that the tests missed: two
 concurrent edits could make an entry longer than 24 hours, moving an entry could bypass
@@ -22,5 +22,5 @@ them.
 
 ## Acceptance criteria
 
-- [ ] Every subtask is done
-- [ ] Each confirmed bug is fixed with a test, or tracked in its own task
+- [x] Every subtask is done
+- [x] Each confirmed bug is fixed with a test, or tracked in its own task
