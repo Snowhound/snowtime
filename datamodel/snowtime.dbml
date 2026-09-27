@@ -101,6 +101,7 @@ Table organization [note: 'Tenant. Every app-owned table carries organization_id
   logo text
   metadata text [note: 'Plugin-defined JSON. Not used by the app.']
   created_at integer [not null]
+  issue_links text [note: 'App-managed. Issue links: an https:// URL with {key}, which ticket chips link to. Null for plain labels. Better Auth never reads or writes it.']
 }
 
 Table member [note: 'A user in an organization. A user can be a member of several organizations.'] {
@@ -188,6 +189,7 @@ Table user_settings [note: 'Per-user settings, one row per user, shared across o
   duration_format text [not null, default: 'clock', note: 'clock (11:10), units (11h 10m). How durations show; exports keep their own. Validated in the app, no CHECK.']
   date_format text [not null, default: 'dmy', note: 'dmy (30.09.2026), mdy (09/30/2026), default dmy. Numeric dates. Validated in the app, no CHECK.']
   time_format text [not null, default: '24h', note: '24h, 12h, default 24h. Clock times and the time picker. Validated in the app, no CHECK.']
+  wide_timer integer [not null, default: 0, note: 'Boolean 0/1 (CHECK), default 0. Wide page: the timer page up to 88rem, with a Ticket column in the rows.']
 }
 
 Table project [note: 'Owned by the organization. Visible to the whole organization unless assigned to teams.'] {
@@ -234,12 +236,14 @@ Table time_entry [note: 'A span of tracked time. A row with stopped_at null is t
   updated_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Set by the app on update; trigger fallback.']
   updated_by text [not null, ref: > user.id, note: 'Audit. Acting user of the last change, set by the app.']
   sys_deleted integer [not null, default: 0, note: 'Audit. Logical delete, CHECK 0 or 1. Deleted rows are excluded everywhere, reports included.']
+  ticket text [note: 'Optional ticket key, such as NBW-412, found in the description when it is committed. One per entry. Format checked in the app.']
 
   indexes {
     user_id [unique, note: 'Partial: WHERE stopped_at IS NULL AND sys_deleted = 0. At most one running timer per user across all organizations.']
     (organization_id, user_id, started_at) [note: 'Own entry list and per-member reports.']
     (organization_id, started_at) [note: 'Organization-wide reports by time range.']
     project_id
+    (organization_id, ticket) [note: 'Reports by ticket.']
   }
 }
 

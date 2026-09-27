@@ -95,6 +95,8 @@ export const organization = sqliteTable(
     logo: text(),
     metadata: text(),
     createdAt: timestamp('created_at').notNull(),
+    // An app column Better Auth never reads or writes: the Issue links URL with {key}.
+    issueLinks: text('issue_links'),
   },
   (t) => [uniqueIndex('organization_slug_unique').on(t.slug)],
 )
@@ -316,6 +318,9 @@ export const userSettings = sqliteTable(
     durationFormat: text('duration_format', { enum: DURATION_FORMATS }).default('clock').notNull(),
     dateFormat: text('date_format', { enum: DATE_FORMATS }).default('dmy').notNull(),
     timeFormat: text('time_format', { enum: TIME_FORMATS }).default('24h').notNull(),
+    wideTimer: integer('wide_timer', { mode: 'boolean' })
+      .default(sql`0`)
+      .notNull(),
   },
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),
@@ -325,6 +330,7 @@ export const userSettings = sqliteTable(
     check('user_settings_scene_weather', sql`scene_weather IN (0, 1)`),
     check('user_settings_scene_intro', sql`scene_intro IN (0, 1)`),
     check('user_settings_scene_tagline', sql`scene_tagline IN (0, 1)`),
+    check('user_settings_wide_timer', sql`wide_timer IN (0, 1)`),
   ],
 )
 
@@ -394,6 +400,7 @@ export const timeEntry = sqliteTable(
     ...createdAudit(),
     ...updatedAudit(),
     ...sysDeleted(),
+    ticket: text(),
   },
   (t) => [
     foreignKey({
@@ -413,5 +420,6 @@ export const timeEntry = sqliteTable(
     ),
     index('time_entry_organization_id_started_at_idx').on(t.organizationId, t.startedAt),
     index('time_entry_project_id_idx').on(t.projectId),
+    index('time_entry_organization_id_ticket_idx').on(t.organizationId, t.ticket),
   ],
 )

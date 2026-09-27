@@ -121,6 +121,8 @@ export const tables: Record<string, TableNotes> = {
     columns: {
       slug: 'URL-safe handle.',
       metadata: 'Plugin-defined JSON. Not used by the app.',
+      issue_links:
+        'App-managed. Issue links: an https:// URL with {key}, which ticket chips link to. Null for plain labels. Better Auth never reads or writes it.',
     },
   },
   member: {
@@ -185,6 +187,8 @@ export const tables: Record<string, TableNotes> = {
         'dmy (30.09.2026), mdy (09/30/2026), default dmy. Numeric dates. Validated in the app, no CHECK.',
       time_format:
         '24h, 12h, default 24h. Clock times and the time picker. Validated in the app, no CHECK.',
+      wide_timer:
+        'Boolean 0/1 (CHECK), default 0. Wide page: the timer page up to 88rem, with a Ticket column in the rows.',
     },
   },
   project: {
@@ -219,11 +223,14 @@ export const tables: Record<string, TableNotes> = {
       description: 'What was worked on.',
       started_at: 'Epoch ms, UTC.',
       stopped_at: 'Epoch ms, UTC. CHECK stopped_at > started_at. Null while running.',
+      ticket:
+        'Optional ticket key, such as NBW-412, found in the description when it is committed. One per entry. Format checked in the app.',
     },
     indexes: {
       time_entry_one_running: 'At most one running timer per user across all organizations.',
       time_entry_organization_id_user_id_started_at_idx: 'Own entry list and per-member reports.',
       time_entry_organization_id_started_at_idx: 'Organization-wide reports by time range.',
+      time_entry_organization_id_ticket_idx: 'Reports by ticket.',
     },
   },
 }

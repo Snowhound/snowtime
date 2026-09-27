@@ -1050,6 +1050,23 @@
           "scale": null,
           "default": null,
           "comments": null
+        },
+        {
+          "id": "t5f6",
+          "name": "issue_links",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "App-managed. Issue links: an https:// URL with {key}, which ticket chips link to. Null for plain labels. Better Auth never reads or writes it."
         }
       ],
       "indexes": [],
@@ -1065,7 +1082,7 @@
       "name": "member",
       "schema": "main",
       "x": 1008,
-      "y": 346,
+      "y": 378,
       "fields": [
         {
           "id": "t6f0",
@@ -2049,6 +2066,23 @@
           "scale": null,
           "default": "'24h'",
           "comments": "24h, 12h, default 24h. Clock times and the time picker. Validated in the app, no CHECK."
+        },
+        {
+          "id": "t10f23",
+          "name": "wide_timer",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comments": "Boolean 0/1 (CHECK), default 0. Wide page: the timer page up to 88rem, with a Ticket column in the rows."
         }
       ],
       "indexes": [],
@@ -2606,6 +2640,23 @@
           "scale": null,
           "default": "0",
           "comments": "Audit. Logical delete, CHECK 0 or 1. Deleted rows are excluded everywhere, reports included."
+        },
+        {
+          "id": "t13f12",
+          "name": "ticket",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Optional ticket key, such as NBW-412, found in the description when it is committed. One per entry. Format checked in the app."
         }
       ],
       "indexes": [
@@ -2655,6 +2706,18 @@
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
           "comments": null
+        },
+        {
+          "id": "t13i4",
+          "name": "time_entry_organization_id_ticket_idx",
+          "unique": false,
+          "fieldIds": [
+            "t13f1",
+            "t13f12"
+          ],
+          "createdAt": 1700000000000,
+          "isPrimaryKey": false,
+          "comments": "Reports by ticket."
         }
       ],
       "color": "#59A14F",
