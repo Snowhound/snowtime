@@ -141,7 +141,7 @@ const workload: Record<string, string[]> = {
 const tasks = ['Planning', 'Review', 'Implementation', 'Meeting', 'Research', 'Bug fixing', '']
 
 // Deterministic pseudo-random numbers (mulberry32), so every seed looks the same.
-function random(seed: number) {
+export function random(seed: number) {
   return () => {
     seed = (seed + 0x6d2b79f5) | 0
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)

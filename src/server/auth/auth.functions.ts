@@ -4,6 +4,7 @@ import { createServerFn } from '@tanstack/solid-start'
 import { getRequestHeaders, setCookie } from '@tanstack/solid-start/server'
 import { db } from '~/db'
 import { SEED_PASSWORD, seedUsers } from '~/db/seed'
+import { companyUsers } from '~/db/seed-company'
 import { env } from '~/env'
 import { cookieMaxAge, cookieName, getLocale } from '~/paraglide/runtime.js'
 import { GetInvitationInput } from './auth.schemas'
@@ -17,12 +18,21 @@ import { passwordEnabled, signInMethods } from './sign-in.server'
 export const getSignInMethods = createServerFn({ method: 'GET' }).handler(() => signInMethods(env))
 
 // The seeded users and their shared password, for one-click sign-in in local development.
-// Empty wherever password sign-in is off, so deployed environments never list them.
-export const getDevUsers = createServerFn({ method: 'GET' }).handler(() =>
-  passwordEnabled(env)
-    ? seedUsers.map((u) => ({ name: u.name, email: u.email, password: SEED_PASSWORD }))
-    : [],
-)
+// Empty wherever password sign-in is off, so deployed environments never list them. The
+// company's users are listed once `bun run db:seed --company` has added them.
+export const getDevUsers = createServerFn({ method: 'GET' }).handler(async () => {
+  if (!passwordEnabled(env)) return []
+  const company = await db.query.user.findMany({
+    columns: { email: true },
+    where: { email: { in: companyUsers.map((u) => u.email) } },
+  })
+  const seeded = new Set(company.map((u) => u.email))
+  return [...seedUsers, ...companyUsers.filter((u) => seeded.has(u.email))].map((u) => ({
+    name: u.name,
+    email: u.email,
+    password: SEED_PASSWORD,
+  }))
+})
 
 // The app frame's view of the session, or null when signed out, so it runs without
 // middleware. It also keeps two things in step with the account:

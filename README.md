@@ -74,20 +74,40 @@ any database that is not a local file. Every seeded user signs in with the passw
 
 To start over: `rm local.db && bun run db:migrate && bun run db:seed`.
 
+### A mid-sized company
+
+`bun run db:seed --company` also adds Lumen Works (`src/db/seed-company.ts`), for checking
+queries and pages at a realistic size: 18 members in four teams, one former member, and
+about 20,000 entries over the year before the seed ran. The year has weekends, holidays,
+vacations, part-time and late-joining members, projects archived partway through, evening
+and overnight work, and three running timers. Run it on a database seeded without it to
+add the company. It takes under a second.
+
+The sign-in page also lists five of its users, with the same password:
+
+| Email                         | Name           | Role                                                                    |
+| ----------------------------- | -------------- | ----------------------------------------------------------------------- |
+| `kristiina@lumen.example.com` | Kristiina Kask | Owner, in no team                                                       |
+| `jonas@lumen.example.com`     | Jonas Berg     | Admin, in Web                                                           |
+| `sofia@lumen.example.com`     | Sofia Rossi    | Lead of Web                                                             |
+| `daniel@lumen.example.com`    | Daniel Park    | Lead of Mobile, in New York, weeks start on Sunday; has a running timer |
+| `marta@lumen.example.com`     | Marta Nowak    | Member in Design and Web, works three days a week                       |
+
 ## Scripts
 
-| Command                      | What it does                                       |
-| ---------------------------- | -------------------------------------------------- |
-| `bun --bun run dev`          | Starts the dev server on port 3000                 |
-| `bun run build`              | Builds for production                              |
-| `bun run test`               | Runs server tests (`bun test`) and component tests |
-| `bun run lint`               | Runs oxlint                                        |
-| `bun run format`             | Formats with oxfmt                                 |
-| `bun run env:init`           | Adds a `BETTER_AUTH_SECRET` to `.env.local`        |
-| `bun run db:generate <name>` | Creates an empty SQL migration                     |
-| `bun run db:migrate`         | Verifies and applies migrations                    |
-| `bun run db:drift`           | Compares the Drizzle schema with the migrations    |
-| `bun run datamodel`          | Opens the data model in ChartDB (needs Docker)     |
+| Command                       | What it does                                       |
+| ----------------------------- | -------------------------------------------------- |
+| `bun --bun run dev`           | Starts the dev server on port 3000                 |
+| `bun run build`               | Builds for production                              |
+| `bun run test`                | Runs server tests (`bun test`) and component tests |
+| `bun run lint`                | Runs oxlint                                        |
+| `bun run format`              | Formats with oxfmt                                 |
+| `bun run env:init`            | Adds a `BETTER_AUTH_SECRET` to `.env.local`        |
+| `bun run db:generate <name>`  | Creates an empty SQL migration                     |
+| `bun run db:migrate`          | Verifies and applies migrations                    |
+| `bun run db:drift`            | Compares the Drizzle schema with the migrations    |
+| `bun run db:seed [--company]` | Seeds the local database with demo data            |
+| `bun run datamodel`           | Opens the data model in ChartDB (needs Docker)     |
 
 ## Database
 
