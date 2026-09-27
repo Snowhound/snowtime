@@ -135,6 +135,15 @@
                   <span data-ui="switch-thumb"></span>
                 </button>
               </div>
+              <div class="flex items-center justify-between gap-4">
+                <div class="grid gap-1">
+                  <span data-ui="label" id="wide-label">Wide page</span>
+                  <span class="text-sm text-muted-foreground" id="wide-hint">More room for descriptions, with tickets in their own column.</span>
+                </div>
+                <button id="wide-switch" type="button" role="switch" aria-checked="false" aria-labelledby="wide-label" aria-describedby="wide-hint" data-ui="switch">
+                  <span data-ui="switch-thumb"></span>
+                </button>
+              </div>
             </div>
             <div data-ui="separator"></div>
             <div id="scenery" class="grid scroll-mt-6 gap-5">
@@ -469,6 +478,7 @@
           b.toggleAttribute('data-pressed', pressed)
         })
         ui.setSwitch(document.getElementById('summary-switch'), settings.showSummary)
+        ui.setSwitch(document.getElementById('wide-switch'), settings.wideTimer)
         document.querySelectorAll('[data-scene-setting]').forEach((sw) => ui.setSwitch(sw, settings[sw.dataset.sceneSetting]))
         const seasonSelect = document.getElementById('scene-season')
         seasonSelect.value = settings.sceneSeason in seasons.SEASONS ? settings.sceneSeason : 'auto'
@@ -501,6 +511,7 @@
       document.querySelectorAll('[data-setting]').forEach((b) => b.addEventListener('click', () => save({ [b.dataset.setting]: b.dataset.value })))
       document.getElementById('scene-season').addEventListener('change', (event) => save({ sceneSeason: event.currentTarget.value }))
       document.getElementById('summary-switch').addEventListener('change', (event) => save({ showSummary: event.currentTarget.getAttribute('aria-checked') === 'true' }))
+      document.getElementById('wide-switch').addEventListener('change', (event) => save({ wideTimer: event.currentTarget.getAttribute('aria-checked') === 'true' }))
       appFrame.on('settings', renderPreferences)
       document.querySelectorAll('[data-scene-setting]').forEach((sw) =>
         sw.addEventListener('change', () => save({ [sw.dataset.sceneSetting]: sw.getAttribute('aria-checked') === 'true' }))

@@ -246,7 +246,7 @@ It also provides:
 
 | API                                  | Use                                                            |
 | ------------------------------------ | -------------------------------------------------------------- |
-| `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`, `appIcon`, and the scene's (`sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`, `sceneWeather`, `sceneIntro`). The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
+| `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`, `wideTimer`, `appIcon`, and the scene's (`sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`, `sceneWeather`, `sceneIntro`). The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
 | `appFrame.on('settings' \| 'role' \| 'org', fn)` | Re-render when settings, the prototype role, or the organization change |
 | `appFrame.role`, `appFrame.isAdmin()`, `appFrame.org`, `appFrame.user` | Prototype session |
 | `appFrame.openIconPicker()`, `appFrame.appIconImg(size, cls)` | Open the app icon dialog; an `<img>` of the chosen bare mark that follows changes |
@@ -611,7 +611,7 @@ Two cards, with section links beside them from 1024 px:
 
 | Card        | Stored in         | Fields                                                         |
 | ----------- | ----------------- | -------------------------------------------------------------- |
-| Preferences | `user_settings`   | Language, time zone, week start, theme, timer layout, show summary, scenery; each saves on change |
+| Preferences | `user_settings`   | Language, time zone, week start, theme, timer layout, show summary, wide page, scenery; each saves on change |
 | Profile     | `user`, `account` | Name with "Save profile"; email read-only; sign-in methods      |
 
 Preferences come first because they change most often. Theme and timer layout moved from
@@ -654,8 +654,8 @@ user-selectable options.
 - **Table**: dense table with day subtotal rows; scrolls horizontally inside its container on
   narrow screens.
 
-The settings button opens a **View** popover: layout and whether the summary panel (today / this
-week, per-project bars) is shown, plus a link to Settings. The theme is in the header's
+The settings button opens a **View** popover: layout, whether the summary panel (today / this
+week, per-project bars) is shown, and Wide page, plus a link to Settings. The theme is in the header's
 Appearance popover.
 These are user settings, saved through the app frame (`user_settings` in the app).
 
@@ -715,27 +715,40 @@ Decisions:
   Kobalte's Combobox has no controlled input value and clears or resets free text on Escape
   and blur.
 
-- **Ticket keys: chips of the entry's own**, stored beside the description (task 060). A key is
-  a letter, one to nine more letters or digits, a dash, and a number (`ABC-123`), as Jira,
-  Linear, and YouTrack write them. Keys are found when the description is committed (Enter,
-  blur, Save), never while typing. Keys at the start, with brackets or a following `:`, `-`,
-  or `|`, leave the text; a key later in the sentence becomes a chip and stays in the text, so
-  "Pair with Erik on CP-91 flaky tests" still reads. A pasted issue link (`…/browse/KEY`,
-  `…/issue/KEY`) becomes its key. `UTF-`, `ISO-`, `SHA-`, and `COVID-` numbers stay text.
-- **A chip's ×, or Backspace before the text, turns the key back into text**, at the start of
-  the description, and it isn't found again: only keys an edit adds become chips. That fixes a
-  false match such as `Q3-2026` without losing what was typed; a wrong ticket is then deleted
-  as text. In rows the × shows on hover and focus, like the row's actions.
-- **Chips sit before the description** in the timer, the entry popover, every row layout, the
-  recent-work suggestions, and the Focus layout's Continue recent buttons. Picking recent work
-  or Continue brings the tickets along, and typing a key finds recent work by it. Chips wrap
-  onto their own line where the text would get less than 6rem.
+- **Ticket keys: one per entry**, stored beside the description (task 060). A key is a letter,
+  one to nine more letters or digits, a dash, and a number (`ABC-123`), as Jira, Linear, and
+  YouTrack write them. One ticket keeps reports by ticket adding up to the total and matches
+  tracker worklogs, which belong to one issue each; work on two tickets is two entries, or
+  one with the second key in its text. Keys are found when the description is committed
+  (Enter, blur, Save), never while typing. A key at the start, with brackets or a following
+  `:`, `-`, or `|`, becomes the ticket and leaves the text, replacing any ticket the entry
+  had. A key later in the text becomes the ticket only when there is none, and stays in the
+  text, so "Pair with Erik on CP-91 flaky tests" still reads. Other keys stay text. A pasted
+  issue link (`…/browse/KEY`, `…/issue/KEY`) becomes its key. `UTF-`, `ISO-`, `SHA-`, and
+  `COVID-` numbers stay text.
+- **A chip's × turns the key back into text**, at the start of the description, and it isn't
+  found again: only keys an edit adds are found. That fixes a false match such as `Q3-2026`
+  without losing what was typed; a wrong ticket is then deleted as text. In rows the × shows
+  on hover and focus, like the row's actions.
+- **The ticket goes after the description**, so the text starts in the same place with or
+  without one. At the standard width the chip follows the row's text, taking at most 45% of
+  the cell, and its × takes no room until the row is hovered or focused. With Wide page on,
+  rows have an 8rem Ticket column between the description and the project, empty without a
+  ticket, so the tickets line up. A long key is cut short, with the whole key on hover. Below
+  768 px the chip follows the text in the standard width and joins the project on the row's
+  second line in the wide one. The timer and the entry popover show the chip
+  at the end of their field; recent-work suggestions and Continue recent show it after the
+  text. A chip before the text moved each row's text by the chip's width. Picking recent work
+  or Continue brings the ticket along, and typing a key finds recent work by it.
 - **Links: the organization's Issue links setting** (`organization.html`, General). With it set,
   a chip's key is an underlined link to the issue, opening in a new tab; the prototype bar's
   Issue links select stands in for it.
-- **Width: the Timer page is wider than the header, up to 88rem**, as Reports is, and the timer
-  bar spans the summary column too. At 1440 px a row's description gets about 500 px instead
-  of 200, which chips and ticket-style descriptions need.
+- **Width: a Wide page switch in the View popover, off by default**, beside Show summary, as
+  the app's Compact rows is (`user_settings.wide_timer`, task 060). Off, the page keeps the
+  header's width with the timer beside the summary, as before tickets; at 1440 px a row has
+  about 200 px for its text and chip, so a long description with a ticket keeps about 100.
+  On, the page is up to 88rem, as Reports is, and the timer spans the summary column; a row's
+  text gets about 330 px beside the Ticket column.
 
 Inline fields add `border-transparent shadow-none` to `input` and `button`, with the border
 back on hover and focus; the app passes the same classes at the call site
@@ -747,9 +760,9 @@ Simulated: start/stop, Enter to start, editing the running entry inline or in th
 continue (stops any running timer first), delete, inline edits, Add entry, picking recent
 work in both description fields, and ticket chips with and without Issue links. Fixtures: running,
 idle, long content, empty. Running and idle include an entry crossing midnight, one on
-the archived Website 2025 project, a key mid-sentence, two tickets on one entry, and a
-`Q3-2026` turned back into text; long content includes one on a project the user can no
-longer see, three long keys on the running timer, and an entry with only a ticket. Day totals count stopped entries only; the summary includes the running timer.
+the archived Website 2025 project, a key mid-sentence, a second key left in the text, and
+a `Q3-2026` turned back into text; long content includes one on a project the user can no
+longer see, long keys, and an entry with only a ticket. Day totals count stopped entries only; the summary includes the running timer.
 Entries are grouped by their start day; splitting at midnight belongs to reports.
 
 Omitted: overlap checks between entries, reports, persistence of entries.
@@ -765,9 +778,9 @@ Chrome on 2026-09-25 at 1440, 850, and 390 px, light and dark: placement under e
 focus on open, keyboard picking, Escape closing only the list, the kept draft, and no errors.
 Ticket chips were checked in Chrome on 2026-09-27 at 1440, 850, and 390 px, light and dark, in
 all three layouts: no horizontal page overflow, detection on Enter, blur, and Save, keys at the
-start, in brackets, mid-sentence, and in pasted links, standards left as text, × and Backspace
-turning a chip back into text without it being found again, tickets carried by recent work,
-links from the Issue links setting, and no browser errors.
+start, in brackets, mid-sentence, and in pasted links, a key at the start replacing the ticket,
+standards left as text, × turning a chip back into text without it being found again, the
+ticket carried by recent work, links from the Issue links setting, and no browser errors.
 
 ### [auth.html](auth.html) — Sign-in flows
 

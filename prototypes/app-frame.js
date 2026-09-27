@@ -83,6 +83,7 @@
     weekStart: 'mon',
     theme: 'system',
     design: 'bar', // user_settings.timer_layout
+    wideTimer: false, // user_settings.wide_timer: the Timer page up to 88rem instead of the header's width
     showSummary: true,
     surfaces: 'glass', // 'glass' | 'solid': whether cards let a background show through
     // The seasonal scene behind the sign-in page and the app; see scene.js. The season also picks
