@@ -77,7 +77,7 @@ describe('entriesTable', () => {
   test("names the member and project, and gives times in the user's zone", () => {
     const table = entriesTable(
       entries([
-        { description: 'Planning' },
+        { description: 'Planning', ticket: 'NBW-412' },
         {
           projectId: null,
           from: new Date('2026-09-21T20:00:00Z'),
@@ -96,17 +96,27 @@ describe('entriesTable', () => {
       'Date',
       'Member',
       'Project',
+      'Ticket',
       'Description',
       'Start',
       'End',
       'Duration',
     ])
     expect(table.rows).toEqual([
-      ['2026-09-21', 'Mari Tamm', 'Õunaaed', 'Planning', '09:00', '10:30', { ms: 1.5 * HOUR }],
+      [
+        '2026-09-21',
+        'Mari Tamm',
+        'Õunaaed',
+        'NBW-412',
+        'Planning',
+        '09:00',
+        '10:30',
+        { ms: 1.5 * HOUR },
+      ],
       // A piece that ends at midnight ends at 24:00.
-      ['2026-09-21', 'Mari Tamm', 'No project', '', '23:00', '24:00', { ms: HOUR }],
+      ['2026-09-21', 'Mari Tamm', 'No project', '', '', '23:00', '24:00', { ms: HOUR }],
       // A running entry has no end.
-      ['2026-09-21', 'Mari Tamm', 'Õunaaed', '', '12:00', null, { ms: 1.5 * HOUR }],
+      ['2026-09-21', 'Mari Tamm', 'Õunaaed', '', '', '12:00', null, { ms: 1.5 * HOUR }],
     ])
   })
 })

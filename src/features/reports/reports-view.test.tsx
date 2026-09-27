@@ -81,7 +81,7 @@ function team() {
 const snowtime = { id: newId(), name: 'Snowtime', color: '#3b82b8', archivedAt: null, teamIds: [] }
 
 interface Row {
-  kind: 'project' | 'member' | 'team'
+  kind: 'project' | 'member' | 'team' | 'ticket'
   id: string | null
   // Milliseconds per bucket; missing buckets are empty.
   ms: number[]
@@ -134,6 +134,7 @@ function report({ data }: { data: ReportInput }) {
     unit: data.unit,
     buckets,
     projects,
+    tickets: rows('ticket').map((r) => ({ ticket: r.id, ...totals(buckets, r.ms) })),
     members: rows('member').map((r) => ({ userId: r.id!, ...totals(buckets, r.ms) })),
     teams: rows('team').map((r) => ({ teamId: r.id!, ...totals(buckets, r.ms) })),
   }
@@ -158,6 +159,7 @@ function entries(input: Omit<ReportEntriesInput, 'after'>) {
       return {
         ...e,
         entryId: String(i),
+        ticket: null,
         from: start,
         to: end,
         startedAt: start,
@@ -180,6 +182,7 @@ function entries(input: Omit<ReportEntriesInput, 'after'>) {
       view: 'description',
       rows: [...rows.values()].map((r) => ({
         projectId: r.projectId,
+        ticket: null,
         description: r.description,
         total: r.n * HOUR,
         entries: r.n,
@@ -303,12 +306,38 @@ function typeDate(label: string, value: string) {
 }
 
 describe('ReportsView', () => {
+  test('groups by ticket and filters to one, typed in any case', async () => {
+    server.rows.push(
+      { kind: 'ticket', id: 'NBW-412', ms: [2 * HOUR] },
+      { kind: 'ticket', id: null, ms: [HOUR] },
+    )
+    const { search } = renderView()
+    await screen.findByRole('table')
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Ticket' }))
+    expect(await screen.findByText('Tickets by day')).toBeInTheDocument()
+    const grid = screen.getByRole('table')
+    expect(within(grid).getByRole('rowheader', { name: 'NBW-412' })).toBeInTheDocument()
+    expect(within(grid).getByRole('rowheader', { name: 'No ticket' })).toBeInTheDocument()
+
+    const ticket = screen.getByLabelText('Ticket')
+    await userEvent.type(ticket, 'nbw 4{Enter}')
+    expect(screen.getByText('Use a ticket key such as ABC-123.')).toBeInTheDocument()
+    await userEvent.clear(ticket)
+    await userEvent.type(ticket, 'nbw-412{Enter}')
+    await waitFor(() => expect(lastInput()).toMatchObject({ ticket: 'NBW-412' }))
+    expect(search()).toMatchObject({ ticket: 'NBW-412', group: 'ticket' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show all tickets' }))
+    await waitFor(() => expect(lastInput()).not.toHaveProperty('ticket'))
+  })
+
   test('members see their own time by project, with row and column totals', async () => {
     renderView()
     const grid = await screen.findByRole('table')
     expect(lastInput()).toEqual({ from: '2026-09-21', to: '2026-09-28', unit: 'day' })
     expect(screen.queryByLabelText('People')).not.toBeInTheDocument()
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Project', 'Ticket'])
     expect(screen.getByText(/Your own time/)).toBeInTheDocument()
     expect(
       screen.getByText(/Days and weeks in Europe\/Tallinn, starting Monday/),
@@ -345,6 +374,7 @@ describe('ReportsView', () => {
     expect(screen.getByText(/the time of the Platform team, which you lead/)).toBeInTheDocument()
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
       'Project',
+      'Ticket',
       'Team',
       'Member',
     ])

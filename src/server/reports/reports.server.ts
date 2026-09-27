@@ -42,8 +42,10 @@ export interface Report extends Totals {
   // First day of each bucket: every day of the range, or the week start of each week it
   // touches. A partial first or last week counts only the days in the range.
   buckets: IsoDate[]
-  // Only rows with time, most time first. projectId null is time without a project.
+  // Only rows with time, most time first. projectId null is time without a project, and
+  // ticket null time without a ticket.
   projects: (Totals & { projectId: string | null })[]
+  tickets: (Totals & { ticket: string | null })[]
   members: (Totals & { userId: string })[]
   // A member in two teams counts in both, so team totals can add up to more than total.
   teams: (Totals & { teamId: string })[]
@@ -52,6 +54,7 @@ export interface Report extends Totals {
 interface ReportEntry {
   userId: string
   projectId: string | null
+  ticket?: string | null
   startedAt: Date
   stoppedAt: Date | null
 }
@@ -100,18 +103,22 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
 
   const all = empty()
   const projects = new Map<string | null, Totals>()
+  const tickets = new Map<string | null, Totals>()
   const members = new Map<string, Totals>()
   for (const entry of entries) {
     const span = countedSpan(entry, range, a.now)
     if (!span) continue
     const project = projects.get(entry.projectId) ?? empty()
     projects.set(entry.projectId, project)
+    const ticket = tickets.get(entry.ticket ?? null) ?? empty()
+    tickets.set(entry.ticket ?? null, ticket)
     const member = members.get(entry.userId) ?? empty()
     members.set(entry.userId, member)
     for (const piece of splitByDay(span.from, span.to, a.timeZone)) {
       const bucket = Math.floor(daysBetween(buckets[0], piece.date) / step)
       add(all, bucket, piece.ms)
       add(project, bucket, piece.ms)
+      add(ticket, bucket, piece.ms)
       add(member, bucket, piece.ms)
     }
   }
@@ -139,6 +146,7 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
     ...all,
     buckets,
     projects: rows('projectId', projects),
+    tickets: rows('ticket', tickets),
     members: rows('userId', members),
     teams: rows('teamId', teams),
   }
@@ -242,6 +250,7 @@ async function reportData(db: Database, scope: Scope, input: ReportInput, now: D
             and(
               live(timeEntry, scope),
               users ? inArray(timeEntry.userId, users) : undefined,
+              input.ticket ? eq(timeEntry.ticket, input.ticket) : undefined,
               gt(timeEntry.startedAt, new Date(range.from - MAX_ENTRY_MS)),
               lt(timeEntry.startedAt, new Date(range.to)),
               or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, new Date(range.from))),
@@ -346,9 +355,9 @@ type DayCursor = NonNullable<ReportEntriesInput['after']>
 // The pieces in one timesheet row. A team's row counts its current members, and "No team"
 // those in none of the report's teams, as the timesheet's rows do.
 function inRow(row: EntryRow, teams: Aggregation['teams']): (p: ReportEntryPiece) => boolean {
-  if (row.group === 'project') {
-    const projectId = row.id === 'none' ? null : row.id
-    return (p) => p.projectId === projectId
+  if (row.group === 'project' || row.group === 'ticket') {
+    const id = row.id === 'none' ? null : row.id
+    return row.group === 'project' ? (p) => p.projectId === id : (p) => p.ticket === id
   }
   if (row.group === 'member') return (p) => p.userId === row.id
   if (row.id === 'none') {

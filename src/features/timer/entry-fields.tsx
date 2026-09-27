@@ -279,7 +279,9 @@ export function InlineDescription(props: {
         >
           {props.editor.description() || m.timer_no_description()}
         </span>
-        <span class="col-start-1 row-start-1 min-w-0">
+        {/* No width of its own: an input's default of about 20 characters would size the
+            column instead of the text. */}
+        <span class="col-start-1 row-start-1 w-0 min-w-full">
           <DescriptionField editor={props.editor} />
         </span>
       </span>

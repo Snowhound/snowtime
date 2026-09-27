@@ -1,10 +1,11 @@
 // The filter row above the timesheet (prototypes/reports.html): range preset, previous and
-// next, from and to, People, Group by, and totals per day or week. Members get neither
-// People nor Group by: they see their own time by project. The selects mark their option
+// next, from and to, People, Ticket, Group by, and totals per day or week. Members get no
+// People: they see their own time. The selects mark their option
 // `selected` too, because a select's value does nothing in server-rendered HTML.
 import ChevronLeftIcon from 'lucide-solid/icons/chevron-left'
 import ChevronRightIcon from 'lucide-solid/icons/chevron-right'
-import { For, Show } from 'solid-js'
+import XIcon from 'lucide-solid/icons/x'
+import { For, Show, createSignal } from 'solid-js'
 import { DatePicker } from '~/components/date-time/date-picker'
 import { Button } from '~/components/ui/button'
 import { Label } from '~/components/ui/label'
@@ -12,6 +13,8 @@ import { NativeSelect } from '~/components/ui/native-select'
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { type IsoDate, type WeekStart, addDays } from '~/lib/calendar'
+import { TICKET_PATTERN } from '~/lib/tickets'
+import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { type Group, type ReportFilters, type Unit, groupOptions } from './filters'
 import { MAX_DAY_COLUMNS, type RangePreset, rangeDays } from './range'
@@ -27,6 +30,7 @@ const PRESET_LABELS = {
 
 const GROUP_LABELS = {
   project: m.reports_group_project,
+  ticket: m.reports_group_ticket,
   team: m.reports_group_team,
   member: m.reports_group_member,
 } satisfies Record<Group, () => string>
@@ -38,6 +42,8 @@ export interface FilterActions {
   onDates: (from: string, to: string) => void
   onPeople: (people: { team?: string; member?: string }) => void
   onGroup: (group: Group) => void
+  // A ticket key, or null for all tickets.
+  onTicket: (ticket: string | null) => void
   onUnit: (unit: Unit) => void
 }
 
@@ -197,6 +203,7 @@ export function ReportFilterBar(
             </div>
           )}
         </Show>
+        <TicketFilter ticket={props.filters.ticket} onTicket={props.onTicket} />
         <Show when={groupOptions(props.filters.access).length > 1}>
           <div class="grid gap-1.5">
             <span class="text-sm leading-none font-medium" id="report-group-label">
@@ -233,5 +240,60 @@ export function ReportFilterBar(
         </div>
       </div>
     </section>
+  )
+}
+
+// A ticket key, typed in any case; it applies on Enter or blur once it reads as a key.
+function TicketFilter(props: { ticket?: string; onTicket: (ticket: string | null) => void }) {
+  const [invalid, setInvalid] = createSignal(false)
+  function apply(input: HTMLInputElement) {
+    const value = input.value.trim().toUpperCase()
+    if (value && !TICKET_PATTERN.test(value)) {
+      setInvalid(true)
+      return
+    }
+    setInvalid(false)
+    input.value = value
+    if (value !== (props.ticket ?? '')) props.onTicket(value || null)
+  }
+  return (
+    <div class="grid gap-1.5">
+      <Label for="report-ticket">{m.reports_ticket()}</Label>
+      <div class="relative">
+        <input
+          id="report-ticket"
+          type="text"
+          autocomplete="off"
+          spellcheck={false}
+          placeholder={m.reports_ticket_all()}
+          value={props.ticket ?? ''}
+          aria-invalid={invalid() || undefined}
+          aria-describedby={invalid() ? 'report-ticket-error' : undefined}
+          class={cn(
+            'border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-36 rounded-md border bg-transparent py-2 pr-8 pl-3 text-sm uppercase tabular-nums placeholder:normal-case focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+            invalid() && 'border-destructive text-destructive',
+          )}
+          onChange={(event) => apply(event.currentTarget)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') apply(event.currentTarget)
+          }}
+        />
+        <Show when={props.ticket}>
+          <button
+            type="button"
+            class="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm focus-visible:ring-2 focus-visible:outline-none"
+            aria-label={m.reports_ticket_clear()}
+            onClick={() => props.onTicket(null)}
+          >
+            <XIcon class="size-3.5" aria-hidden="true" />
+          </button>
+        </Show>
+      </div>
+      <Show when={invalid()}>
+        <p id="report-ticket-error" class="text-destructive w-36 text-xs">
+          {m.validation_ticket_format()}
+        </p>
+      </Show>
+    </div>
   )
 }

@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import { m } from '~/paraglide/messages.js'
-import { Uuidv7 } from '../schemas'
+import { TicketKey, Uuidv7 } from '../schemas'
 
 // A calendar day such as 2026-09-24, read in the user's time zone.
 export const IsoDate = v.pipe(
@@ -22,7 +22,7 @@ function days(from: string, to: string) {
 }
 
 // Totals for the days from `from` up to but not including `to`, per day or per week,
-// optionally of one member or of one team's current members.
+// optionally of one member or of one team's current members, and of one ticket.
 export const ReportInput = v.pipe(
   v.object({
     from: IsoDate,
@@ -30,6 +30,7 @@ export const ReportInput = v.pipe(
     unit: v.optional(v.picklist(REPORT_UNITS), 'day'),
     userId: v.optional(Uuidv7),
     teamId: v.optional(Uuidv7),
+    ticket: v.optional(TicketKey),
   }),
   v.check(
     (i) => i.to > i.from,
@@ -54,7 +55,8 @@ export const ENTRY_PAGE_SIZE = 100
 const RowId = v.union([Uuidv7, v.literal('none')])
 
 // The report's entries for its Entries card, optionally of one timesheet row: a project, a
-// team's current members, or a member; 'none' is the "No project" or "No team" row. A day or
+// team's current members, a member, or a ticket; 'none' is the "No project", "No team", or
+// "No ticket" row. A day or
 // week of the timesheet narrows the report's range instead. By day comes a page at a time,
 // each after the last piece of the one before.
 export const ReportEntriesInput = v.object({
@@ -65,6 +67,7 @@ export const ReportEntriesInput = v.object({
       v.object({ group: v.literal('project'), id: RowId }),
       v.object({ group: v.literal('team'), id: RowId }),
       v.object({ group: v.literal('member'), id: Uuidv7 }),
+      v.object({ group: v.literal('ticket'), id: v.union([TicketKey, v.literal('none')]) }),
     ]),
   ),
   after: v.optional(v.object({ date: IsoDate, userId: Uuidv7, from: v.number(), entryId: Uuidv7 })),

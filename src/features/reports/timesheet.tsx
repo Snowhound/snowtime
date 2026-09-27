@@ -26,6 +26,7 @@ import type { Row } from './rows'
 
 const GROUP_LABELS = {
   project: m.reports_group_project,
+  ticket: m.reports_group_ticket,
   team: m.reports_group_team,
   member: m.reports_group_member,
 } satisfies Record<Group, () => string>

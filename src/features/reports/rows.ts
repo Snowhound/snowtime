@@ -1,6 +1,6 @@
-// The timesheet's rows: getReport's totals per project, team or member, named from the
-// cached lists. Time without a project gets a "No project" row; for admins, members in no
-// team get a "No team" row.
+// The timesheet's rows: getReport's totals per project, ticket, team or member, named from the
+// cached lists. Time without a project or ticket gets a "No project" or "No ticket" row; for
+// admins, members in no team get a "No team" row.
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import type { Team } from '~/lib/queries/teams'
@@ -70,18 +70,30 @@ function teamRows(report: Report, names: RowNames): Row[] {
   ]
 }
 
+function ticketRows(report: Report): Row[] {
+  return report.tickets.map(({ ticket, total, perBucket }) => ({
+    key: ticket ?? 'none',
+    name: ticket ?? m.reports_no_ticket(),
+    muted: !ticket,
+    total,
+    perBucket,
+  }))
+}
+
 // Most time first, then by name.
 export function reportRows(report: Report, group: Group, names: RowNames): Row[] {
   const rows =
     group === 'project'
       ? projectRows(report, names)
-      : group === 'team'
-        ? teamRows(report, names)
-        : report.members.map(({ userId, total, perBucket }) => ({
-            key: userId,
-            name: memberName(userId, names),
-            total,
-            perBucket,
-          }))
+      : group === 'ticket'
+        ? ticketRows(report)
+        : group === 'team'
+          ? teamRows(report, names)
+          : report.members.map(({ userId, total, perBucket }) => ({
+              key: userId,
+              name: memberName(userId, names),
+              total,
+              perBucket,
+            }))
   return rows.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
 }

@@ -20,12 +20,11 @@ export const Description = v.pipe(
 
 // An entry's ticket key, such as NBW-412, or null for none. The client finds it in the
 // description (src/lib/tickets.ts); the server checks only its shape.
-export const Ticket = v.nullable(
-  v.pipe(
-    v.string(),
-    v.regex(TICKET_PATTERN, () => m.validation_ticket_format()),
-  ),
+export const TicketKey = v.pipe(
+  v.string(),
+  v.regex(TICKET_PATTERN, () => m.validation_ticket_format()),
 )
+export const Ticket = v.nullable(TicketKey)
 
 export const Timestamp = v.date()
 

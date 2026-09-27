@@ -312,20 +312,30 @@ function ProjectLabel(props: { project: Project | undefined; class?: string }) {
   )
 }
 
-function DescriptionText(props: { text: string; class?: string }) {
+// The description, then the ticket, as the timer shows them.
+function DescriptionText(props: { text: string; ticket: string | null; class?: string }) {
   return (
-    <Show
-      when={props.text}
-      fallback={
-        <span class={cn('text-muted-foreground italic', props.class)}>
-          {m.timer_no_description()}
+    <span class={cn('flex min-w-0 items-center gap-1.5', props.class)}>
+      <Show
+        when={props.text}
+        fallback={
+          <Show when={!props.ticket}>
+            <span class="text-muted-foreground italic">{m.timer_no_description()}</span>
+          </Show>
+        }
+      >
+        <span class="truncate" title={props.text}>
+          {props.text}
         </span>
-      }
-    >
-      <span class={cn('truncate', props.class)} title={props.text}>
-        {props.text}
-      </span>
-    </Show>
+      </Show>
+      <Show when={props.ticket}>
+        {(ticket) => (
+          <Badge variant="secondary" class="h-5 min-w-0 shrink-0 px-1.5 font-medium tabular-nums">
+            <span class="truncate">{ticket()}</span>
+          </Badge>
+        )}
+      </Show>
+    </span>
   )
 }
 
@@ -364,7 +374,11 @@ function EntryRow(props: {
         hourCycle() === 'h12' ? '[--time:11.5rem]' : '[--time:9rem]',
       )}
     >
-      <DescriptionText text={props.piece.description} class="sm:col-start-2 sm:row-start-1" />
+      <DescriptionText
+        text={props.piece.description}
+        ticket={props.piece.ticket}
+        class="sm:col-start-2 sm:row-start-1"
+      />
       <span class="col-start-2 row-start-1 text-right font-medium tabular-nums sm:col-start-auto sm:col-end-[-1]">
         <Duration ms={props.piece.ms} />
       </span>
@@ -440,7 +454,11 @@ function DescriptionItem(props: {
         descriptionColumns(props.many),
       )}
     >
-      <DescriptionText text={props.row.description} class="sm:col-start-1 sm:row-start-1" />
+      <DescriptionText
+        text={props.row.description}
+        ticket={props.row.ticket}
+        class="sm:col-start-1 sm:row-start-1"
+      />
       <span class="col-start-2 row-start-1 text-right font-medium tabular-nums sm:col-start-auto sm:col-end-[-1]">
         <Duration ms={props.row.total} />
       </span>

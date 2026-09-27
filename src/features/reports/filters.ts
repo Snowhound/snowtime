@@ -1,6 +1,7 @@
 // The report's filters: the URL's search params, and what each role may choose
-// (prototypes/README.md, reports.html). Members see their own time by project; team leads
-// their led teams and those teams' members; admins and owners everyone. getReport enforces
+// (prototypes/README.md, reports.html). Members see their own time by project or ticket; team
+// leads their led teams and those teams' members; admins and owners everyone. Anyone can narrow
+// the report to one ticket. getReport enforces
 // the same rules, so options outside them are dropped here rather than sent and refused.
 import * as v from 'valibot'
 import { type IsoDate, type WeekStart, addDays, startOfWeek } from '~/lib/calendar'
@@ -13,7 +14,7 @@ import {
   type ReportEntriesInput,
   type ReportInput,
 } from '~/server/reports/reports.schemas'
-import { Uuidv7 } from '~/server/schemas'
+import { TicketKey, Uuidv7 } from '~/server/schemas'
 import {
   MAX_DAY_COLUMNS,
   PRESETS,
@@ -23,7 +24,7 @@ import {
   resolveRange,
 } from './range'
 
-const GROUPS = ['project', 'team', 'member'] as const
+const GROUPS = ['project', 'ticket', 'team', 'member'] as const
 export type Group = (typeof GROUPS)[number]
 export type Unit = (typeof REPORT_UNITS)[number]
 export type EntryView = (typeof ENTRY_VIEWS)[number]
@@ -40,11 +41,12 @@ export const ReportSearch = v.object({
   to: optional(IsoDateSchema),
   team: optional(Uuidv7),
   member: optional(Uuidv7),
+  ticket: optional(TicketKey),
   group: optional(v.picklist(GROUPS)),
   unit: optional(v.picklist(REPORT_UNITS)),
   // The Entries card: the timesheet row and day or week it narrows to, and the view the user
   // chose. A filter change drops them.
-  row: optional(v.union([Uuidv7, v.literal('none')])),
+  row: optional(v.union([Uuidv7, TicketKey, v.literal('none')])),
   bucket: optional(IsoDateSchema),
   entries: optional(v.picklist(ENTRY_VIEWS)),
 })
@@ -79,7 +81,7 @@ function peopleOptions(access: Access, userId: string, teams: Team[], members: M
 }
 
 export function groupOptions(access: Access): readonly Group[] {
-  return access.kind === 'member' ? ['project'] : GROUPS
+  return access.kind === 'member' ? ['project', 'ticket'] : GROUPS
 }
 
 export interface ReportContext {
@@ -98,6 +100,7 @@ export interface ReportFilters {
   group: Group
   team?: string
   member?: string
+  ticket?: string
   access: Access
   people: PeopleOptions | null
   input: ReportInput
@@ -137,6 +140,7 @@ export function requestedInput(
     to: range.to,
     unit,
     ...(search.member ? { userId: search.member } : search.team ? { teamId: search.team } : {}),
+    ...(search.ticket ? { ticket: search.ticket } : {}),
   }
 }
 
@@ -155,6 +159,7 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
     unit,
     ...(member ? { userId: member } : {}),
     ...(team ? { teamId: team } : {}),
+    ...(search.ticket ? { ticket: search.ticket } : {}),
   }
   return {
     preset,
@@ -163,6 +168,7 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
     group,
     team,
     member,
+    ticket: search.ticket,
     access,
     people,
     input,
@@ -170,10 +176,11 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
   }
 }
 
-// Whether the report has this row: any project, a team it counts (for admins also "No team"),
-// or a member it may name.
+// Whether the report has this row: any project or ticket, a team it counts (for admins also
+// "No team"), or a member it may name.
 function hasRow(id: string, group: Group, access: Access, c: ReportContext) {
-  if (group === 'project') return true
+  if (group === 'ticket') return id === 'none' || v.is(TicketKey, id)
+  if (group === 'project') return id === 'none' || v.is(Uuidv7, id)
   if (group === 'member') return access.kind !== 'member' && c.members.some((m) => m.userId === id)
   if (access.kind === 'admin') return id === 'none' || c.teams.some((t) => t.id === id)
   return access.kind === 'lead' && access.teams.some((t) => t.id === id)

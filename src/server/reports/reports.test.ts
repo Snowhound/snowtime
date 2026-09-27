@@ -170,9 +170,26 @@ describe('aggregate', () => {
       perBucket: [0, 0, 0],
       buckets: ['2026-03-28', '2026-03-29', '2026-03-30'],
       projects: [],
+      tickets: [],
       members: [],
       teams: [],
     })
+  })
+
+  test('totals per ticket, with time without one in its own row', () => {
+    const { tickets, total } = aggregate(
+      [
+        { ...entry('a', null, '2026-03-28T08:00:00Z', '2026-03-28T10:00:00Z'), ticket: 'NBW-1' },
+        { ...entry('b', null, '2026-03-28T11:00:00Z', '2026-03-28T12:00:00Z'), ticket: 'NBW-1' },
+        entry('a', null, '2026-03-29T08:00:00Z', '2026-03-29T08:30:00Z'),
+      ],
+      base,
+    )
+    expect(tickets.map((t) => [t.ticket, t.total])).toEqual([
+      ['NBW-1', 3 * HOUR],
+      [null, HOUR / 2],
+    ])
+    expect(sum(tickets.map((t) => t.total))).toBe(total)
   })
 })
 
@@ -270,6 +287,19 @@ describe('getReport', () => {
     ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
+  })
+
+  test('filters by ticket', async () => {
+    const input = { from: '2026-09-14', to: '2026-09-24', unit: 'day' } as const
+    const all = await getReport(db, scopes.admin, input, NOW)
+    const mob = all.tickets.find((t) => t.ticket === 'MOB-214')
+    expect(mob?.total).toBeGreaterThan(0)
+    expect(sum(all.tickets.map((t) => t.total))).toBe(all.total)
+    const one = await getReport(db, scopes.admin, { ...input, ticket: 'MOB-214' }, NOW)
+    expect(one.total).toBe(mob!.total)
+    expect(one.tickets.map((t) => t.ticket)).toEqual(['MOB-214'])
+    // A member sees only their own time on it.
+    expect((await getReport(db, scopes.member, { ...input, ticket: 'MOB-214' }, NOW)).total).toBe(0)
   })
 
   test('week totals equal the day totals of the same range', async () => {
@@ -475,6 +505,18 @@ describe('mergeByDescription', () => {
     ])
     expect(rows[0].userIds.sort()).toEqual([U.lead, U.member].sort())
   })
+
+  test('keeps work on different tickets apart', () => {
+    const rows = mergeByDescription([
+      piece({ date: '2026-09-23', at: 9, description: 'Review', ticket: 'NBW-1' }),
+      piece({ date: '2026-09-23', at: 10, description: 'Review', ticket: 'NBW-2' }),
+      piece({ date: '2026-09-23', at: 11, description: 'Review', ticket: 'NBW-1' }),
+    ])
+    expect(rows.map((r) => [r.ticket, r.total])).toEqual([
+      ['NBW-1', 2 * HOUR],
+      ['NBW-2', HOUR],
+    ])
+  })
 })
 
 describe('getReportEntries', () => {
@@ -522,6 +564,7 @@ describe('getReportEntries', () => {
       ['project', all.projects.map((r) => ({ id: r.projectId ?? 'none', total: r.total }))],
       ['member', all.members.map((r) => ({ id: r.userId, total: r.total }))],
       ['team', all.teams.map((r) => ({ id: r.teamId, total: r.total }))],
+      ['ticket', all.tickets.map((r) => ({ id: r.ticket ?? 'none', total: r.total }))],
     ] as const) {
       for (const { id, total } of rows) {
         const row = { group, id } as ReportEntriesInput['row']

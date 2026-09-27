@@ -32,6 +32,7 @@ export interface Table {
 
 const GROUP_LABELS = {
   project: m.reports_group_project,
+  ticket: m.reports_group_ticket,
   team: m.reports_group_team,
   member: m.reports_group_member,
 } satisfies Record<Group, () => string>
@@ -59,6 +60,7 @@ export function entriesTable(
       m.export_column_date(),
       m.reports_group_member(),
       m.reports_group_project(),
+      m.export_column_ticket(),
       m.export_column_description(),
       m.export_column_start(),
       m.export_column_end(),
@@ -70,6 +72,7 @@ export function entriesTable(
       entry.projectId
         ? (names.projects.find((p) => p.id === entry.projectId)?.name ?? '')
         : m.reports_no_project(),
+      entry.ticket ?? '',
       entry.description,
       localTime(entry.from.getTime(), data.timeZone),
       entry.running ? null : endTime(entry.to.getTime(), entry.from.getTime(), data.timeZone),

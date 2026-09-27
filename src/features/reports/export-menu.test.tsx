@@ -39,6 +39,7 @@ function report(ms: number): Report {
     buckets: ['2026-09-24'],
     ...totals,
     projects: [{ projectId: null, ...totals }],
+    tickets: [{ ticket: null, ...totals }],
     members: [{ userId, ...totals }],
     teams: [],
   }

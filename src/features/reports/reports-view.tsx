@@ -36,6 +36,7 @@ const TITLES = {
   project: { day: m.reports_title_project_day, week: m.reports_title_project_week },
   team: { day: m.reports_title_team_day, week: m.reports_title_team_week },
   member: { day: m.reports_title_member_day, week: m.reports_title_member_week },
+  ticket: { day: m.reports_title_ticket_day, week: m.reports_title_ticket_week },
 } satisfies Record<Group, Record<Unit, () => string>>
 
 export function ReportsView(props: {
@@ -94,16 +95,19 @@ export function ReportsView(props: {
     unit?: Unit
     group?: Group
     people?: { team?: string; member?: string }
+    ticket?: string | null
   }) {
     setRangeError(null)
     const f = filters()
     const people = next.people ?? { team: f.team, member: f.member }
+    const ticket = next.ticket === undefined ? f.ticket : next.ticket
     const group = next.group ?? f.group
     const unit = 'unit' in next ? next.unit : props.search.unit
     const search: ReportSearch = {
       ...rangeSearch(next.range ?? f.range, today(), props.weekStart),
       ...(people.team ? { team: people.team } : {}),
       ...(people.member ? { member: people.member } : {}),
+      ...(ticket ? { ticket } : {}),
       ...(group !== 'project' ? { group } : {}),
       ...(unit === 'week' ? { unit } : {}),
     }
@@ -133,6 +137,7 @@ export function ReportsView(props: {
     },
     onPeople: (people) => go({ people }),
     onGroup: (group) => go({ group }),
+    onTicket: (ticket) => go({ ticket }),
     onUnit: (unit) => go({ unit }),
   }
 
