@@ -51,8 +51,14 @@ describe('appSession', () => {
   test('lists the organizations by name with the role in each', async () => {
     const session = await appSession(db, seeded(U.admin, 'admin@example.com'), O.northwind, NOW)
     expect(session.organizations).toEqual([
-      { id: O.harbor, name: 'Harbor Consulting', slug: 'harbor', role: 'owner' },
-      { id: O.northwind, name: 'Northwind Studio', slug: 'northwind', role: 'admin' },
+      { id: O.harbor, name: 'Harbor Consulting', slug: 'harbor', issueLinks: null, role: 'owner' },
+      {
+        id: O.northwind,
+        name: 'Northwind Studio',
+        slug: 'northwind',
+        issueLinks: null,
+        role: 'admin',
+      },
     ])
     expect(session.activeOrganizationId).toBe(O.northwind)
     expect(session.settings).toEqual({
@@ -63,6 +69,7 @@ describe('appSession', () => {
       timerLayout: 'bar',
       showSummary: true,
       compactRows: false,
+      wideTimer: false,
       appIcon: '02',
       sceneSeason: 'auto',
       sceneBackground: true,

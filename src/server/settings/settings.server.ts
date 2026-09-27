@@ -15,6 +15,7 @@ const columns = {
   timerLayout: userSettings.timerLayout,
   showSummary: userSettings.showSummary,
   compactRows: userSettings.compactRows,
+  wideTimer: userSettings.wideTimer,
   appIcon: userSettings.appIcon,
   sceneSeason: userSettings.sceneSeason,
   sceneBackground: userSettings.sceneBackground,

@@ -76,6 +76,7 @@ function defaultSettings(): Settings {
     timerLayout: 'bar',
     showSummary: false,
     compactRows: false,
+    wideTimer: false,
     appIcon: '02',
     sceneSeason: 'auto',
     sceneBackground: true,

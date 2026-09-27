@@ -13,7 +13,7 @@ import { createProject, deleteProject } from '../projects/projects.server'
 import { failedConstraint } from '../queries.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, interleaved, scopeOf } from '../testing'
-import { CreateEntryInput, MAX_ENTRY_HOURS } from './entries.schemas'
+import { CreateEntryInput, MAX_ENTRY_HOURS, UpdateEntryInput } from './entries.schemas'
 import {
   createEntry,
   deleteEntry,
@@ -137,6 +137,21 @@ describe('createEntry', () => {
     })
   })
 
+  test('an entry takes a ticket key in its format', async () => {
+    const id = uuidv7()
+    const entry = await as(scopes.member, () =>
+      createEntry(db, scopes.member, { id, description: 'Fix', ticket: 'NBW-412', ...past(31) }),
+    )
+    expect(entry.ticket).toBe('NBW-412')
+    const [listed] = (await listEntries(db, scopes.member, range)).filter((e) => e.id === id)
+    expect(listed.ticket).toBe('NBW-412')
+    const input = { id: uuidv7(), ...past(32) }
+    expect(v.is(CreateEntryInput, { ...input, ticket: null })).toBe(true)
+    for (const ticket of ['nbw-412', 'NBW-412 ', 'NBW 412', 'N-1', 'NBW-0']) {
+      expect(v.is(CreateEntryInput, { ...input, ticket })).toBe(false)
+    }
+  })
+
   test(`an entry is at most ${MAX_ENTRY_HOURS} hours long`, () => {
     const entry = { id: uuidv7(), ...past(48, MAX_ENTRY_HOURS) }
     expect(v.is(CreateEntryInput, entry)).toBe(true)
@@ -255,6 +270,30 @@ describe('updateEntry', () => {
       updatedBy: U.member,
     })
     expect(updated.startedAt).toEqual(entry.startedAt)
+  })
+
+  test('the ticket changes when given, and null removes it', async () => {
+    const entry = await newEntry(scopes.member)
+    const set = await as(scopes.member, () =>
+      updateEntry(db, scopes.member, { id: entry.id, ticket: 'CP-91' }),
+    )
+    expect(set).toMatchObject({ ticket: 'CP-91', description: 'Draft' })
+    const renamed = await as(scopes.member, () =>
+      updateEntry(db, scopes.member, { id: entry.id, description: 'Review' }),
+    )
+    expect(renamed.ticket).toBe('CP-91')
+    const removed = await as(scopes.member, () =>
+      updateEntry(db, scopes.member, { id: entry.id, ticket: null }),
+    )
+    expect(removed.ticket).toBeNull()
+    expect(v.is(UpdateEntryInput, { id: entry.id, ticket: 'cp-91' })).toBe(false)
+  })
+
+  test('the running entry takes a ticket too', async () => {
+    const updated = await as(scopes.member, () =>
+      updateEntry(db, scopes.member, { id: E.running, ticket: 'SNOW-160' }),
+    )
+    expect(updated).toMatchObject({ ticket: 'SNOW-160', stoppedAt: null })
   })
 
   test("a team lead cannot change a team member's entry; an admin can", async () => {

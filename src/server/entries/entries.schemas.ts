@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import { m } from '~/paraglide/messages.js'
-import { Description, Timestamp, Uuidv7 } from '../schemas'
+import { Description, Ticket, Timestamp, Uuidv7 } from '../schemas'
 
 // The longest an entry runs. Stopping a timer ends it here at the latest, so the queries of
 // a range can start reading entries this long before it, on the started_at index, instead of
@@ -15,6 +15,7 @@ export const CreateEntryInput = v.pipe(
     userId: v.optional(Uuidv7),
     projectId: v.nullish(Uuidv7),
     description: v.optional(Description, ''),
+    ticket: v.optional(Ticket),
     startedAt: Timestamp,
     stoppedAt: Timestamp,
   }),
@@ -38,11 +39,12 @@ export const CreateEntryInput = v.pipe(
 )
 export type CreateEntryInput = v.InferOutput<typeof CreateEntryInput>
 
-// Only the fields present change. projectId null removes the project.
+// Only the fields present change. projectId or ticket null removes it.
 export const UpdateEntryInput = v.object({
   id: Uuidv7,
   projectId: v.nullish(Uuidv7),
   description: v.optional(Description),
+  ticket: v.optional(Ticket),
   startedAt: v.optional(Timestamp),
   stoppedAt: v.optional(Timestamp),
 })

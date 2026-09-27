@@ -233,6 +233,7 @@ async function reportData(db: Database, scope: Scope, input: ReportInput, now: D
             userId: timeEntry.userId,
             projectId: timeEntry.projectId,
             description: timeEntry.description,
+            ticket: timeEntry.ticket,
             startedAt: timeEntry.startedAt,
             stoppedAt: timeEntry.stoppedAt,
           })
@@ -280,6 +281,7 @@ export interface ReportEntryPiece {
   userId: string
   projectId: string | null
   description: string
+  ticket: string | null
   date: IsoDate
   from: Date
   to: Date
@@ -305,6 +307,7 @@ function piecesOf({ settings, range, entries }: ReportData, now: Date): ReportEn
         userId: entry.userId,
         projectId: entry.projectId,
         description: entry.description,
+        ticket: entry.ticket,
         date: piece.date,
         from: new Date(from),
         to: new Date(to),
@@ -403,6 +406,7 @@ export function dayPage(pieces: ReportEntryPiece[], after?: DayCursor) {
 
 export interface DescriptionRow {
   projectId: string | null
+  ticket: string | null
   description: string
   total: number
   // How many entries and days the row merges, and who tracked it.
@@ -411,19 +415,20 @@ export interface DescriptionRow {
   userIds: string[]
 }
 
-// By description: one row per project and description, most time first.
+// By description: one row per project, ticket, and description, most time first.
 export function mergeByDescription(pieces: ReportEntryPiece[]): DescriptionRow[] {
   const rows = new Map<
     string,
     { row: DescriptionRow; entries: Set<string>; days: Set<IsoDate>; users: Set<string> }
   >()
   for (const p of pieces) {
-    const key = `${p.projectId ?? ''}\u0000${p.description}`
+    const key = `${p.projectId ?? ''}\u0000${p.ticket ?? ''}\u0000${p.description}`
     let r = rows.get(key)
     if (!r) {
       r = {
         row: {
           projectId: p.projectId,
+          ticket: p.ticket,
           description: p.description,
           total: 0,
           entries: 0,
@@ -452,6 +457,7 @@ export function mergeByDescription(pieces: ReportEntryPiece[]): DescriptionRow[]
       (a, b) =>
         b.total - a.total ||
         a.description.localeCompare(b.description) ||
+        (a.ticket ?? '').localeCompare(b.ticket ?? '') ||
         (a.projectId ?? '').localeCompare(b.projectId ?? ''),
     )
 }

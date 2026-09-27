@@ -68,6 +68,7 @@ export async function startTimer(db: Database, scope: Scope, input: StartTimerIn
           userId: scope.userId,
           projectId: input.projectId ?? null,
           description: input.description,
+          ticket: input.ticket ?? null,
           startedAt: now,
         })
         .returning()

@@ -49,6 +49,33 @@ export const Name = v.pipe(
 )
 
 export const CreateOrganizationForm = v.object({ name: Name, slug: Slug })
+
+export const ISSUE_LINKS_MAX_LENGTH = 500
+
+// Where ticket chips link: an https:// address with {key} where the key goes, such as
+// https://acme.atlassian.net/browse/{key}. Empty turns the links off, as null.
+export const IssueLinks = v.pipe(
+  v.string(),
+  v.trim(),
+  v.maxLength(ISSUE_LINKS_MAX_LENGTH, (issue) => m.validation_too_long({ max: issue.requirement })),
+  v.check(
+    (value) => value === '' || isHttpsAddress(value),
+    () => m.validation_issue_links_https({ key: '{key}' }),
+  ),
+  v.check(
+    (value) => value === '' || value.includes('{key}'),
+    () => m.validation_issue_links_key({ key: '{key}' }),
+  ),
+  v.transform((value) => value || null),
+)
+
+// An https:// address with a host name that has a dot, then a path, and no spaces.
+function isHttpsAddress(value: string) {
+  return /^https:\/\/[^\s./]+(?:\.[^\s./]+)+\/\S*$/.test(value)
+}
+
+export const UpdateIssueLinksInput = v.object({ issueLinks: IssueLinks })
+export type UpdateIssueLinksInput = v.InferOutput<typeof UpdateIssueLinksInput>
 export type CreateOrganizationForm = v.InferOutput<typeof CreateOrganizationForm>
 
 // An invitation's address. Better Auth stores and compares addresses in lowercase.

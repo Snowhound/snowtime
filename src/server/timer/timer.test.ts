@@ -3,11 +3,13 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { and, eq, isNull } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
+import * as v from 'valibot'
 import type { Database } from '~/db'
 import { member, timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
 import { MAX_ENTRY_HOURS, MAX_ENTRY_MS } from '../entries/entries.schemas'
 import { as, createSeededDatabase, scopeOf } from '../testing'
+import { StartTimerInput } from './timer.schemas'
 import { getRunningTimer, startTimer, stopTimer, stopTimerOfRemovedMember } from './timer.server'
 
 const { users: U, orgs: O, projects: P, entries: E } = seedIds
@@ -44,6 +46,18 @@ describe('timer', () => {
     expect(stopped?.id).toBe(E.running)
     expect(stopped?.stoppedAt).not.toBeNull()
     expect((await getRunningTimer(db, U.member))?.id).toBe(id)
+  })
+
+  test('a timer starts with a ticket, whose format is checked', async () => {
+    const scope = await scopeOf(db, U.member, O.harbor)
+    const id = uuidv7()
+    const { started } = await as(scope, () =>
+      startTimer(db, scope, { id, description: 'Review', ticket: 'AUD-7', projectId: P.audit }),
+    )
+    expect(started.ticket).toBe('AUD-7')
+    expect((await getRunningTimer(db, U.member))?.ticket).toBe('AUD-7')
+    expect(v.is(StartTimerInput, { id, ticket: null })).toBe(true)
+    expect(v.is(StartTimerInput, { id, ticket: 'aud-7' })).toBe(false)
   })
 
   test('stopTimer stops only the given running entry, in any organization', async () => {

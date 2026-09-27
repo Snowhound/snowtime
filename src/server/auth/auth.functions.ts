@@ -1,5 +1,5 @@
-// Sign-in and session server functions. Thin wrappers: the rules live in sign-in.server.ts,
-// session.server.ts and invitations.server.ts.
+// Sign-in, session, and organization server functions. Thin wrappers: the rules live in
+// sign-in.server.ts, session.server.ts, invitations.server.ts, and organization.server.ts.
 import { createServerFn } from '@tanstack/solid-start'
 import { getRequestHeaders, setCookie } from '@tanstack/solid-start/server'
 import { db } from '~/db'
@@ -7,9 +7,11 @@ import { SEED_PASSWORD, seedUsers } from '~/db/seed'
 import { companyUsers } from '~/db/seed-company'
 import { env } from '~/env'
 import { cookieMaxAge, cookieName, getLocale } from '~/paraglide/runtime.js'
-import { GetInvitationInput } from './auth.schemas'
+import { scopeMiddleware } from '../middleware'
+import { GetInvitationInput, UpdateIssueLinksInput } from './auth.schemas'
 import { auth } from './better-auth.server'
 import { invitationPreview } from './invitations.server'
+import * as organizations from './organization.server'
 import { appSession } from './session.server'
 import { passwordEnabled, signInMethods } from './sign-in.server'
 
@@ -84,3 +86,9 @@ export const getAppUrl = createServerFn({ method: 'GET' }).handler(
 export const getInvitation = createServerFn({ method: 'GET' })
   .validator(GetInvitationInput)
   .handler(({ data }) => invitationPreview(db, data.id))
+
+// The organization's Issue links setting, which Better Auth's organization client can't set.
+export const updateIssueLinks = createServerFn({ method: 'POST' })
+  .middleware([scopeMiddleware])
+  .validator(UpdateIssueLinksInput)
+  .handler(({ data, context }) => organizations.updateIssueLinks(db, context.scope, data))

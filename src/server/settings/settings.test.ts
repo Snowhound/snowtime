@@ -29,6 +29,7 @@ const DEFAULTS = {
   timerLayout: 'bar',
   showSummary: true,
   compactRows: false,
+  wideTimer: false,
   appIcon: '02',
   sceneSeason: 'auto',
   sceneBackground: true,

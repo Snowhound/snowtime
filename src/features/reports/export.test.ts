@@ -38,6 +38,7 @@ function entries(list: Partial<ReportEntries['entries'][number]>[]): ReportEntri
       userId: 'u1',
       projectId: 'p1',
       description: '',
+      ticket: null,
       date: '2026-09-21',
       from: new Date('2026-09-21T06:00:00Z'),
       to: new Date('2026-09-21T07:30:00Z'),

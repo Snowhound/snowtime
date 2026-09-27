@@ -46,6 +46,7 @@ export const errorMessages = {
   team_report_forbidden: 'You can report only on teams you lead.',
   settings_not_found: 'Load the settings first.',
   rate_limited: 'Too many changes in a short time. Wait a minute and try again.',
+  organization_forbidden: 'Only admins and owners manage the organization.',
 } as const
 
 export type AppErrorKey = keyof typeof errorMessages

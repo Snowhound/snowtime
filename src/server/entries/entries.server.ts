@@ -85,6 +85,7 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
         userId,
         projectId: input.projectId ?? null,
         description: input.description,
+        ticket: input.ticket ?? null,
         startedAt: input.startedAt,
         stoppedAt: input.stoppedAt,
       })
@@ -137,6 +138,7 @@ export async function updateEntry(db: Database, scope: Scope, input: UpdateEntry
       .set({
         projectId: input.projectId,
         description: input.description,
+        ticket: input.ticket,
         startedAt: input.startedAt,
         stoppedAt: input.stoppedAt,
       })

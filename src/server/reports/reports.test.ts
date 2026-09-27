@@ -386,6 +386,7 @@ function piece(p: Partial<ReportEntryPiece> & { date: string; at: number }): Rep
     userId: U.member,
     projectId: P.website,
     description: '',
+    ticket: null,
     from: new Date(from),
     to: new Date(from + HOUR),
     startedAt: new Date(from),

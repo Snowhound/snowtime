@@ -32,6 +32,7 @@ const errorText: Record<AppErrorKey, () => string> = {
   team_report_forbidden: m.error_team_report_forbidden,
   settings_not_found: m.error_settings_not_found,
   rate_limited: m.error_rate_limited,
+  organization_forbidden: m.error_organization_forbidden,
 }
 
 // Refusals from Better Auth's client calls, by the code its error carries (unwrap in

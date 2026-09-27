@@ -54,6 +54,7 @@ function entries(ms: number): ReportEntries {
         userId,
         projectId: null,
         description: 'Timer layouts',
+        ticket: null,
         date: '2026-09-24',
         from,
         to: new Date(from.getTime() + ms),

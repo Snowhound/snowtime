@@ -15,6 +15,7 @@ function piece(entryId: string, userId: string, date: string, hour: number): Ent
     userId,
     projectId: null,
     description: '',
+    ticket: null,
     date,
     from,
     to,
