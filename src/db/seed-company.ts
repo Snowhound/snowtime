@@ -10,6 +10,7 @@
 import { hashPassword } from 'better-auth/crypto'
 import { v7 as uuidv7 } from 'uuid'
 import { addDays, datesBetween, type IsoDate, localDate, startOfDay } from '~/lib/calendar'
+import { detectTicket } from '~/lib/tickets'
 import type { Database } from '.'
 import { SYSTEM_USER_ID, withActor } from './actor'
 import {
@@ -318,6 +319,7 @@ export async function seedCompany(
         id: O,
         name: 'Lumen Works',
         slug: 'lumen',
+        issueLinks: 'https://lumen.atlassian.net/browse/{key}',
         createdAt: new Date(yearStart - 30 * DAY),
       })
 
@@ -503,16 +505,19 @@ function entries(now: Date, yearStart: number, days: number): NewEntry[] {
       return first === second ? `${first} ${text}` : `${first} ${second} ${text}`
     }
 
-    function add(projectId: string | null, description: string, start: number, stop: number) {
+    // The ticket is found as when the description is typed, so Q3-2026 becomes one too.
+    function add(projectId: string | null, text: string, start: number, stop: number) {
       if (start < from || start >= until) return
       stop = Math.min(stop, until)
       if (stop - start < MINUTE) return
+      const { description, ticket } = detectTicket(text, new Set(), null)
       rows.push({
         id: uuidv7(),
         organizationId: O,
         userId: uid,
         projectId,
         description,
+        ticket,
         startedAt: new Date(start),
         stoppedAt: new Date(stop),
         sysDeleted: rand() < 0.01,

@@ -2,7 +2,7 @@
 
 import { verifyPassword } from 'better-auth/crypto'
 import { afterAll, beforeAll, expect, test } from 'bun:test'
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import type { Database } from '.'
 import { account, project, timeEntry } from './schema'
 import { SEED_PASSWORD, seed, seedIds } from './seed'
@@ -46,4 +46,18 @@ test('a few weeks of entries, with archived and deleted projects', async () => {
     .from(project)
     .where(eq(project.id, seedIds.projects.scrapped))
   expect(scrapped.sysDeleted).toBe(true)
+})
+
+test('two entries with a ticket', async () => {
+  const withTicket = await db
+    .select({ id: timeEntry.id, ticket: timeEntry.ticket })
+    .from(timeEntry)
+    .where(isNotNull(timeEntry.ticket))
+  expect(withTicket).toEqual(
+    expect.arrayContaining([
+      { id: seedIds.entries.overnight, ticket: 'MOB-214' },
+      { id: seedIds.entries.harbor, ticket: 'AUD-7' },
+    ]),
+  )
+  expect(withTicket).toHaveLength(2)
 })

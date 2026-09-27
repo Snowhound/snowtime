@@ -61,3 +61,22 @@ test('archived projects have no time after they were archived', async () => {
     .where(and(inCompany, sql`${timeEntry.stoppedAt} > ${project.archivedAt}`))
   expect(late).toBe(0)
 })
+
+test('tickets found in the descriptions as when they are typed', async () => {
+  const rows = await db
+    .select({ description: timeEntry.description, ticket: timeEntry.ticket })
+    .from(timeEntry)
+    .where(inCompany)
+  const withTicket = rows.filter((r) => r.ticket)
+  expect(withTicket.length).toBeGreaterThan(1000)
+  // A key at the start leaves the text, and one mid-sentence stays in it.
+  expect(rows.some((r) => r.description.startsWith('['))).toBe(false)
+  expect(withTicket.some((r) => r.description.includes(`(${r.ticket})`))).toBe(true)
+  // A second key stays text, so a description starts with a key only after a first one.
+  const second = rows.filter((r) => /^[A-Z]+-\d+ /.test(r.description))
+  expect(second.length).toBeGreaterThan(0)
+  expect(second.every((r) => r.ticket && !r.description.startsWith(r.ticket))).toBe(true)
+  expect(rows.some((r) => r.ticket === 'Q3-2026')).toBe(true)
+  // UTF-8 and ISO-8601 stay text.
+  expect(rows.some((r) => r.description.includes('UTF-8') && !r.ticket)).toBe(true)
+})
