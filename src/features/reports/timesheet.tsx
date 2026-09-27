@@ -2,7 +2,6 @@
 // column per day or week, with row and column totals and the current day or week shaded.
 // It scrolls inside its card with the first and last columns sticky. Names and totals are
 // buttons that narrow the Entries card to their row, day or week, or both.
-import ChartColumnIcon from 'lucide-solid/icons/chart-column'
 import {
   type JSX,
   For,
@@ -20,7 +19,10 @@ import { type IsoDate, type WeekStart, startOfWeek } from '~/lib/calendar'
 import { formatIsoDate } from '~/lib/format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import { type ReportPart, bucketLabel, longRange, shortBucketLabel } from './buckets'
+import { EmptyState } from './empty-state'
 import type { Group, Unit } from './filters'
+import { PICK_CLASS, PickHint } from './pick-button'
 import type { Report } from './queries'
 import type { Row } from './rows'
 
@@ -31,9 +33,6 @@ const GROUP_LABELS = {
   member: m.reports_group_member,
 } satisfies Record<Group, () => string>
 
-// Short day labels up to a week; longer ranges show the day number over its weekday.
-const WEEK_DAYS = 7
-
 // The body's rows and cells are plain elements with ui/table's classes. Its components split
 // and spread their props, which a month by 40 projects does for 1,300 cells.
 const ROW = 'border-b transition-colors hover:bg-muted/50'
@@ -43,19 +42,7 @@ const CELL = 'p-2 align-middle text-right whitespace-nowrap tabular-nums'
 const ROW_TOTAL =
   'timesheet-end bg-card sticky right-0 z-10 p-2 pr-6 text-right align-middle tabular-nums'
 
-// A day or week in full, as screen readers and the Entries card name it.
-export function bucketLabel(bucket: IsoDate, unit: Unit) {
-  const date = formatIsoDate(bucket, { weekday: 'short', day: 'numeric', month: 'short' })
-  return unit === 'week' ? m.reports_week_of({ date }) : date
-}
-
-// The timesheet part the Entries card lists: a row, a day or week, or both.
-export interface TimesheetPart {
-  row?: string
-  bucket?: IsoDate
-}
-
-function partKey(part: TimesheetPart) {
+function partKey(part: ReportPart) {
   return `${part.row ?? ''}|${part.bucket ?? ''}`
 }
 
@@ -66,8 +53,8 @@ export function Timesheet(props: {
   unit: Unit
   today: IsoDate
   weekStart: WeekStart
-  picked: TimesheetPart
-  onPick: (part: TimesheetPart) => void
+  picked: ReportPart
+  onPick: (part: ReportPart) => void
 }) {
   // One comparison per change rather than one per button.
   const pressed = createSelector(() => partKey(props.picked))
@@ -83,8 +70,9 @@ export function Timesheet(props: {
   function buckets() {
     return props.report.buckets
   }
-  function longRange() {
-    return props.unit === 'day' && buckets().length > WEEK_DAYS
+  // Long ranges show the day number over its weekday.
+  function long() {
+    return longRange(props.unit, buckets().length)
   }
 
   // A memo, because every cell asks and `today` is worked out through Intl on each read.
@@ -95,15 +83,7 @@ export function Timesheet(props: {
     return bucket === currentBucket()
   }
 
-  function shortLabel(bucket: IsoDate) {
-    if (props.unit === 'week') return formatIsoDate(bucket, { day: 'numeric', month: 'short' })
-    return formatIsoDate(
-      bucket,
-      longRange() ? { day: 'numeric' } : { weekday: 'short', day: 'numeric' },
-    )
-  }
-
-  function Pick(part: TimesheetPart & { class?: string; children: JSX.Element }) {
+  function Pick(part: ReportPart & { class?: string; children: JSX.Element }) {
     return (
       <button
         type="button"
@@ -112,10 +92,7 @@ export function Timesheet(props: {
         data-bucket={part.bucket}
         aria-pressed={pressed(partKey(part))}
         aria-describedby="timesheet-pick-hint"
-        class={cn(
-          'hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/90 -mx-1.5 -my-0.5 rounded-sm px-1.5 py-0.5 focus-visible:ring-2 focus-visible:outline-none',
-          part.class,
-        )}
+        class={cn(PICK_CLASS, part.class)}
       >
         {part.children}
       </button>
@@ -175,9 +152,7 @@ export function Timesheet(props: {
         }}
         onClick={pick}
       >
-        <span id="timesheet-pick-hint" class="sr-only">
-          {m.reports_entries_pick_hint()}
-        </span>
+        <PickHint id="timesheet-pick-hint" />
         <Table>
           <TableHeader>
             <TableRow>
@@ -196,9 +171,11 @@ export function Timesheet(props: {
                       current(bucket) && 'text-foreground',
                     )}
                   >
-                    <span aria-hidden="true">{shortLabel(bucket)}</span>
+                    <span aria-hidden="true">
+                      {shortBucketLabel(bucket, props.unit, buckets().length)}
+                    </span>
                     <span class="sr-only">{bucketLabel(bucket, props.unit)}</span>
-                    <Show when={longRange()}>
+                    <Show when={long()}>
                       <span class="block text-[10px] font-normal" aria-hidden="true">
                         {formatIsoDate(bucket, { weekday: 'narrow' })}
                       </span>
@@ -262,17 +239,5 @@ export function Timesheet(props: {
         </Table>
       </div>
     </Show>
-  )
-}
-
-function EmptyState() {
-  return (
-    <div class="px-6 pb-6">
-      <div class="flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-10 text-center">
-        <ChartColumnIcon class="text-muted-foreground size-6" aria-hidden="true" />
-        <p class="font-medium">{m.reports_empty_title()}</p>
-        <p class="text-muted-foreground text-sm">{m.reports_empty_description()}</p>
-      </div>
-    </div>
   )
 }

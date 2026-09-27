@@ -1,26 +1,39 @@
-// The Reports view (prototypes/reports.html, 02 · Timesheet): day or week totals by
-// project, team or member. The filters live in the URL, so a report reloads and shares;
-// each change navigates, and the view reads the filters back from the search params.
+// The Reports page (prototypes/reports.html): one report of day or week totals by project,
+// ticket, team or member, in three views as tabs: Timesheet, Summary, and Breakdown. The
+// filters and the view live in the URL, so a report reloads and shares; each change
+// navigates, and the page reads them back from the search params.
 import { useQuery } from '@tanstack/solid-query'
 import { Link, useNavigate } from '@tanstack/solid-router'
 import { Show, createMemo, createSignal } from 'solid-js'
 import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
 import { Card, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { type WeekStart, addDays, localDate } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
 import { formatIsoDate, formatIsoDateRange } from '~/lib/format'
 import { membersQuery } from '~/lib/queries/members'
 import { projectsQuery } from '~/lib/queries/projects'
 import { teamsQuery } from '~/lib/queries/teams'
+import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
 import { MAX_REPORT_DAYS } from '~/server/reports/reports.schemas'
+import { Breakdown } from './breakdown/breakdown'
+import { needsPairs, outline, subgroupOf } from './breakdown/outline'
+import { type ReportPart, bucketLabel } from './buckets'
 import { EntriesCard } from './entries-card/entries-card'
 import { ExportMenu } from './export-menu'
 import { type FilterActions, ReportFilterBar } from './filter-bar'
-import { type EntryView, type Group, type ReportSearch, type Unit, reportFilters } from './filters'
-import { type Report, reportQuery } from './queries'
+import {
+  type EntryView,
+  type Group,
+  type ReportSearch,
+  type Unit,
+  type View,
+  reportFilters,
+} from './filters'
+import { type Report, reportBreakdownQuery, reportQuery } from './queries'
 import {
   type Range,
   type RangePreset,
@@ -29,8 +42,9 @@ import {
   rangeSearch,
   shiftRange,
 } from './range'
-import { reportRows } from './rows'
-import { Timesheet, type TimesheetPart, bucketLabel } from './timesheet'
+import { type RowNames, reportRows } from './rows'
+import { Summary } from './summary/summary'
+import { Timesheet } from './timesheet'
 
 const TITLES = {
   project: { day: m.reports_title_project_day, week: m.reports_title_project_week },
@@ -76,18 +90,49 @@ export function ReportsView(props: {
   // Apart from filters(), which changes with every search param, so that narrowing the
   // Entries card doesn't build the timesheet's rows again.
   const group = createMemo(() => filters().group)
-  // A report's timesheet rows, named from the cached lists: the one on screen, or the one
-  // an export reads.
-  function rowsOf(data: Report) {
-    return reportRows(data, group(), {
+  const view = createMemo(() => filters().view)
+  function names(): RowNames {
+    return {
       userId: props.userId,
       admin: props.admin,
       projects: projects.data ?? [],
       teams: teams.data ?? [],
       members: members.data ?? [],
-    })
+    }
+  }
+  // A report's rows by the grouping, named from the cached lists: the one on screen, or the
+  // one an export reads.
+  function rowsOf(data: Report) {
+    return reportRows(data, group(), names())
   }
   const rows = createMemo(() => (report.data ? rowsOf(report.data) : []))
+  // Summary's chart is always by project.
+  const projectRows = createMemo(() => {
+    if (view() !== 'summary' || !report.data) return []
+    return group() === 'project' ? rows() : reportRows(report.data, 'project', names())
+  })
+
+  // Breakdown's second level, loaded only there.
+  const pairsNeeded = createMemo(() => needsPairs(group(), filters().access))
+  const breakdown = useQuery(() => ({
+    ...reportBreakdownQuery(props.organizationId, filters().input),
+    enabled: view() === 'breakdown' && pairsNeeded() && teams.isSuccess && members.isSuccess,
+  }))
+  // The outline and its total. While either query loads the next filters, it keeps the one
+  // shown, so the second level never mixes two reports' totals.
+  const outlined = createMemo<{ total: number; groups?: ReturnType<typeof outline> }>((shown) => {
+    const data = report.data
+    if (view() !== 'breakdown' || !data) return { total: 0 }
+    // Reading the data of a query still loading suspends, which holds back the tab change
+    // navigating here, so the status comes first.
+    if (pairsNeeded() && !breakdown.isSuccess) return { total: data.total }
+    const pairs = pairsNeeded() ? breakdown.data : undefined
+    if (shown?.groups && (report.isPlaceholderData || breakdown.isPlaceholderData)) return shown
+    return {
+      total: data.total,
+      groups: outline(rows(), group(), filters().access, data, pairs, names()),
+    }
+  })
 
   // Only values that differ from the defaults go in the URL.
   function go(next: {
@@ -96,6 +141,7 @@ export function ReportsView(props: {
     group?: Group
     people?: { team?: string; member?: string }
     ticket?: string | null
+    view?: View
   }) {
     setRangeError(null)
     const f = filters()
@@ -103,6 +149,7 @@ export function ReportsView(props: {
     const ticket = next.ticket === undefined ? f.ticket : next.ticket
     const group = next.group ?? f.group
     const unit = 'unit' in next ? next.unit : props.search.unit
+    const view = next.view ?? f.view
     const search: ReportSearch = {
       ...rangeSearch(next.range ?? f.range, today(), props.weekStart),
       ...(people.team ? { team: people.team } : {}),
@@ -110,6 +157,7 @@ export function ReportsView(props: {
       ...(ticket ? { ticket } : {}),
       ...(group !== 'project' ? { group } : {}),
       ...(unit === 'week' ? { unit } : {}),
+      ...(view !== 'timesheet' ? { view } : {}),
     }
     void navigate({ from: '/$org/reports', to: '/$org/reports', search })
   }
@@ -152,10 +200,12 @@ export function ReportsView(props: {
 
   // Choosing the part the card shows again shows all entries. The card scrolls into view when
   // it starts below most of the window, once the narrowed list has replaced the longer one.
-  async function pick(part: TimesheetPart) {
+  async function pick(part: ReportPart) {
     const { row, bucket } = filters().entries
     const same = part.row === row && part.bucket === bucket
-    await entrySearch(same ? { row: undefined, bucket: undefined } : part)
+    await entrySearch(
+      same ? { row: undefined, bucket: undefined } : { row: part.row, bucket: part.bucket },
+    )
     const card = document.getElementById('report-entries')
     if (same || !card || card.getBoundingClientRect().top <= innerHeight * 0.75) return
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -239,39 +289,87 @@ export function ReportsView(props: {
         />
         <ErrorAlert message={error()} />
       </div>
-      <div class="mx-auto grid w-fit max-w-full min-w-[min(100%,68rem)] grid-cols-[minmax(0,1fr)] gap-6">
-        <section aria-label={m.reports_timesheet()}>
-          <Card class="min-w-0 overflow-hidden">
-            <CardHeader class="flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-4">
-              <div class="grid min-w-0 gap-1.5">
+      {/* The views and the Entries card. The timesheet widens with its columns, up to the
+          window's; Summary and Breakdown keep the header's width, since a chart measured
+          inside a column that fits its content would feed back into its own width. */}
+      <Tabs
+        value={view()}
+        onChange={(next) => go({ view: next as View })}
+        class="grid grid-cols-[minmax(0,1fr)] gap-4"
+      >
+        <div class="mx-auto flex w-full max-w-[68rem] flex-wrap items-center justify-between gap-2">
+          <TabsList aria-label={m.reports_views()} class="h-9">
+            <TabsTrigger value="timesheet" class="py-1">
+              {m.reports_timesheet()}
+            </TabsTrigger>
+            <TabsTrigger value="summary" class="py-1">
+              {m.reports_view_summary()}
+            </TabsTrigger>
+            <TabsTrigger value="breakdown" class="py-1">
+              {m.reports_view_breakdown()}
+            </TabsTrigger>
+          </TabsList>
+          {/* Every view exports the timesheet and its entries. It stays at the right when the
+              row wraps. */}
+          <Show when={report.data}>
+            {(data) => (
+              <div class="ml-auto">
+                <ExportMenu
+                  report={data()}
+                  rowsOf={rowsOf}
+                  group={filters().group}
+                  input={filters().input}
+                  organizationId={props.organizationId}
+                  organizationSlug={props.organizationSlug}
+                  projects={projects.data ?? []}
+                  members={members.data ?? []}
+                  onError={setExportError}
+                />
+              </div>
+            )}
+          </Show>
+        </div>
+        <div
+          class={cn(
+            'mx-auto grid grid-cols-[minmax(0,1fr)] gap-6',
+            view() === 'timesheet'
+              ? 'w-fit max-w-full min-w-[min(100%,68rem)]'
+              : 'w-full max-w-[68rem]',
+          )}
+        >
+          <TabsContent value="timesheet" class="mt-0 min-w-0">
+            <Card class="min-w-0 overflow-hidden">
+              <CardHeader class="pb-4">
                 <CardTitle class="text-base">{TITLES[filters().group][filters().unit]()}</CardTitle>
                 <Show when={filters().group === 'team'}>
                   <CardDescription>{m.reports_team_note()}</CardDescription>
                 </Show>
-              </div>
+              </CardHeader>
               <Show when={report.data}>
                 {(data) => (
-                  <ExportMenu
+                  <Timesheet
                     report={data()}
-                    rowsOf={rowsOf}
+                    rows={rows()}
                     group={filters().group}
-                    input={filters().input}
-                    organizationId={props.organizationId}
-                    organizationSlug={props.organizationSlug}
-                    projects={projects.data ?? []}
-                    members={members.data ?? []}
-                    onError={setExportError}
+                    unit={data().unit}
+                    today={today()}
+                    weekStart={props.weekStart}
+                    picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
+                    onPick={(part) => void pick(part)}
                   />
                 )}
               </Show>
-            </CardHeader>
+            </Card>
+          </TabsContent>
+          <TabsContent value="summary" class="mt-0 min-w-0">
             <Show when={report.data}>
               {(data) => (
-                <Timesheet
+                <Summary
                   report={data()}
+                  projectRows={projectRows()}
                   rows={rows()}
                   group={filters().group}
-                  unit={data().unit}
+                  range={filters().range}
                   today={today()}
                   weekStart={props.weekStart}
                   picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
@@ -279,27 +377,39 @@ export function ReportsView(props: {
                 />
               )}
             </Show>
-          </Card>
-        </section>
-        {/* Its own query, so it shows its loading state while the timesheet is already up. It
+          </TabsContent>
+          <TabsContent value="breakdown" class="mt-0 min-w-0">
+            <Show when={report.data}>
+              <Breakdown
+                total={outlined().total}
+                groups={outlined().groups}
+                group={filters().group}
+                nested={subgroupOf(filters().group, filters().access) !== null}
+                picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
+                onPick={(part) => void pick(part)}
+              />
+            </Show>
+          </TabsContent>
+          {/* Its own query, so it shows its loading state while the timesheet is already up. It
             hides when the range has no time. It takes the timesheet's width, and its contain
             keeps a long description from widening both. */}
-        <Show when={teams.isSuccess && members.isSuccess && (report.data?.total ?? 1) > 0}>
-          <section class="[contain:inline-size]" aria-label={m.reports_entries()}>
-            <EntriesCard
-              organizationId={props.organizationId}
-              filters={filters().entries}
-              narrowLabel={narrowLabel()}
-              userId={props.userId}
-              zone={props.zone}
-              projects={projects.data ?? []}
-              members={members.data ?? []}
-              onView={(entries: EntryView) => void entrySearch({ entries })}
-              onClear={() => void entrySearch({ row: undefined, bucket: undefined })}
-            />
-          </section>
-        </Show>
-      </div>
+          <Show when={teams.isSuccess && members.isSuccess && (report.data?.total ?? 1) > 0}>
+            <section class="[contain:inline-size]" aria-label={m.reports_entries()}>
+              <EntriesCard
+                organizationId={props.organizationId}
+                filters={filters().entries}
+                narrowLabel={narrowLabel()}
+                userId={props.userId}
+                zone={props.zone}
+                projects={projects.data ?? []}
+                members={members.data ?? []}
+                onView={(entries: EntryView) => void entrySearch({ entries })}
+                onClear={() => void entrySearch({ row: undefined, bucket: undefined })}
+              />
+            </section>
+          </Show>
+        </div>
+      </Tabs>
     </div>
   )
 }

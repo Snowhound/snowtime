@@ -27,24 +27,35 @@ export interface RowNames {
   members: Member[]
 }
 
+// A project's row key and name; null is time without a project.
+export function projectLabel(projectId: string | null, names: Pick<RowNames, 'projects'>) {
+  const project = projectId ? names.projects.find((p) => p.id === projectId) : undefined
+  return {
+    key: projectId ?? 'none',
+    name: project?.name ?? m.reports_no_project(),
+    color: project?.color ?? null,
+    muted: !project,
+  }
+}
+
 function projectRows(report: Report, names: RowNames): Row[] {
-  return report.projects.map(({ projectId, total, perBucket }) => {
-    const project = projectId ? names.projects.find((p) => p.id === projectId) : undefined
-    return {
-      key: projectId ?? 'none',
-      name: project?.name ?? m.reports_no_project(),
-      color: project?.color ?? null,
-      muted: !project,
-      total,
-      perBucket,
-    }
-  })
+  return report.projects.map(({ projectId, total, perBucket }) => ({
+    ...projectLabel(projectId, names),
+    total,
+    perBucket,
+  }))
 }
 
 // A member's name, with "(you)" for the user.
 export function memberName(userId: string, names: Pick<RowNames, 'userId' | 'members'>) {
   const name = names.members.find((m) => m.userId === userId)?.name ?? ''
   return userId === names.userId ? m.reports_you({ name }) : name
+}
+
+// Whether a member is in none of the organization's teams, the "No team" row.
+export function inNoTeam(names: Pick<RowNames, 'teams'>) {
+  const inTeams = new Set(names.teams.flatMap((t) => t.members.map((m) => m.userId)))
+  return (userId: string) => !inTeams.has(userId)
 }
 
 function teamRows(report: Report, names: RowNames): Row[] {
@@ -55,8 +66,8 @@ function teamRows(report: Report, names: RowNames): Row[] {
     perBucket,
   }))
   if (!names.admin) return rows
-  const inTeams = new Set(names.teams.flatMap((t) => t.members.map((m) => m.userId)))
-  const alone = report.members.filter((r) => !inTeams.has(r.userId))
+  const noTeam = inNoTeam(names)
+  const alone = report.members.filter((r) => noTeam(r.userId))
   if (alone.length === 0) return rows
   return [
     ...rows,

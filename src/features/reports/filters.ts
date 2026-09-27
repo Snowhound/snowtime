@@ -26,6 +26,9 @@ import {
 
 const GROUPS = ['project', 'ticket', 'team', 'member'] as const
 export type Group = (typeof GROUPS)[number]
+// The report's views, as tabs. Timesheet is the default and has no search param.
+const VIEWS = ['timesheet', 'summary', 'breakdown'] as const
+export type View = (typeof VIEWS)[number]
 export type Unit = (typeof REPORT_UNITS)[number]
 export type EntryView = (typeof ENTRY_VIEWS)[number]
 
@@ -44,8 +47,9 @@ export const ReportSearch = v.object({
   ticket: optional(TicketKey),
   group: optional(v.picklist(GROUPS)),
   unit: optional(v.picklist(REPORT_UNITS)),
-  // The Entries card: the timesheet row and day or week it narrows to, and the view the user
-  // chose. A filter change drops them.
+  view: optional(v.picklist(VIEWS.filter((view) => view !== 'timesheet'))),
+  // The Entries card: the row and day or week it narrows to, and the list the user chose. A
+  // filter or view change drops them.
   row: optional(v.union([Uuidv7, TicketKey, v.literal('none')])),
   bucket: optional(IsoDateSchema),
   entries: optional(v.picklist(ENTRY_VIEWS)),
@@ -94,6 +98,7 @@ export interface ReportContext {
 }
 
 export interface ReportFilters {
+  view: View
   preset: RangePreset
   range: Range
   unit: Unit
@@ -162,6 +167,7 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
     ...(search.ticket ? { ticket: search.ticket } : {}),
   }
   return {
+    view: search.view ?? 'timesheet',
     preset,
     range,
     unit,

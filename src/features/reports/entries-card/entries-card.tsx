@@ -1,5 +1,5 @@
-// The Entries card (prototypes/reports.html, 02 · Timesheet): the entries behind the report,
-// or behind the timesheet part chosen, by day or merged by description. Read-only: only an
+// The Entries card (prototypes/reports.html): the entries behind the report, or behind the
+// part chosen in one of its views, by day or merged by description. Read-only: only an
 // entry's owner edits it, on the Timer page. It loads apart from the report, so the timesheet
 // never waits for it.
 import { useInfiniteQuery } from '@tanstack/solid-query'

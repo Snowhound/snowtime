@@ -42,6 +42,9 @@ export interface Report extends Totals {
   // First day of each bucket: every day of the range, or the week start of each week it
   // touches. A partial first or last week counts only the days in the range.
   buckets: IsoDate[]
+  // Days of the range with time, for the average per tracked day, which the buckets can't
+  // give when they are weeks.
+  trackedDays: number
   // Only rows with time, most time first. projectId null is time without a project, and
   // ticket null time without a ticket.
   projects: (Totals & { projectId: string | null })[]
@@ -105,6 +108,7 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
   const projects = new Map<string | null, Totals>()
   const tickets = new Map<string | null, Totals>()
   const members = new Map<string, Totals>()
+  const days = new Set<IsoDate>()
   for (const entry of entries) {
     const span = countedSpan(entry, range, a.now)
     if (!span) continue
@@ -120,6 +124,7 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
       add(project, bucket, piece.ms)
       add(ticket, bucket, piece.ms)
       add(member, bucket, piece.ms)
+      if (piece.ms > 0) days.add(piece.date)
     }
   }
 
@@ -145,6 +150,7 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
   return {
     ...all,
     buckets,
+    trackedDays: days.size,
     projects: rows('projectId', projects),
     tickets: rows('ticket', tickets),
     members: rows('userId', members),
@@ -280,6 +286,61 @@ export async function getReport(
   now = new Date(),
 ): Promise<Report> {
   return reportOf(await reportData(db, scope, input, now), now)
+}
+
+// Breakdown's second level: the range's time per project and member, and per ticket and member.
+// Null is time without a project or ticket. Team, then member needs none: it comes from team
+// membership and the report's member totals.
+export interface ReportBreakdown {
+  projects: { projectId: string | null; userId: string; total: number }[]
+  tickets: { ticket: string | null; userId: string; total: number }[]
+}
+
+// Most time first, then by member.
+function byMemberTotal<T extends { userId: string; total: number }>(map: Map<string, T>) {
+  return [...map.values()].sort((x, y) => y.total - x.total || x.userId.localeCompare(y.userId))
+}
+
+// Sums each entry's time in the range by project and member and by ticket and member. Pure,
+// like aggregate.
+export function breakdownOf(
+  entries: ReportEntry[],
+  a: Pick<Aggregation, 'timeZone' | 'from' | 'to' | 'now'>,
+): ReportBreakdown {
+  const range = rangeOf(a)
+  const projects = new Map<string, ReportBreakdown['projects'][number]>()
+  const tickets = new Map<string, ReportBreakdown['tickets'][number]>()
+  for (const entry of entries) {
+    const span = countedSpan(entry, range, a.now)
+    if (!span) continue
+    const ms = span.to - span.from
+    const ticket = entry.ticket ?? null
+    const p = `${entry.projectId ?? ''}\u0000${entry.userId}`
+    const project = projects.get(p) ?? {
+      projectId: entry.projectId,
+      userId: entry.userId,
+      total: 0,
+    }
+    project.total += ms
+    projects.set(p, project)
+    const t = `${ticket ?? ''}\u0000${entry.userId}`
+    const row = tickets.get(t) ?? { ticket, userId: entry.userId, total: 0 }
+    row.total += ms
+    tickets.set(t, row)
+  }
+  return { projects: byMemberTotal(projects), tickets: byMemberTotal(tickets) }
+}
+
+// Breakdown's second level for the report's filters, under getReport's rules. It is apart from
+// the report, which every view loads, so only Breakdown pays for it.
+export async function getReportBreakdown(
+  db: Database,
+  scope: Scope,
+  input: ReportInput,
+  now = new Date(),
+): Promise<ReportBreakdown> {
+  const { a, entries } = await reportData(db, scope, input, now)
+  return breakdownOf(entries, a)
 }
 
 // One entry's time on one day of the range, for the export's entry list and the Entries card:

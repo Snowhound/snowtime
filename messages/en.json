@@ -456,6 +456,50 @@
   "reports_unit_day": "Day",
   "reports_unit_week": "Week",
   "reports_timesheet": "Timesheet",
+  "reports_views": "Report view",
+  "reports_view_summary": "Summary",
+  "reports_view_breakdown": "Breakdown",
+  "reports_stats_average": "Average",
+  "reports_stats_per_day": [
+    {
+      "declarations": ["input count", "input tracked", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "a day, over {tracked} of {count} day",
+        "countPlural=*": "a day, over {tracked} of {count} days"
+      }
+    }
+  ],
+  "reports_stats_top": "Top project",
+  "reports_chart_title_day": "Time per day",
+  "reports_chart_title_week": "Time per week",
+  "reports_chart_views": "Chart or table",
+  "reports_chart": "Chart",
+  "reports_chart_table": "Table",
+  "reports_chart_label_day": "Stacked columns of time per day by project; choose one to list its entries. The Table tab lists the same values.",
+  "reports_chart_label_week": "Stacked columns of time per week by project; choose one to list its entries. The Table tab lists the same values.",
+  "reports_chart_band": "Entries for {bucket}, {duration}",
+  "reports_chart_projects": "Projects",
+  "reports_chart_other": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Other ({count} project)",
+        "countPlural=*": "Other ({count} projects)"
+      }
+    }
+  ],
+  "reports_chart_no_time": "No time",
+  "reports_share_project": "By project",
+  "reports_share_ticket": "By ticket",
+  "reports_share_team": "By team",
+  "reports_share_member": "By member",
+  "reports_breakdown_project": "By project, then member",
+  "reports_breakdown_ticket": "By ticket, then member",
+  "reports_breakdown_team": "By team, then member",
+  "reports_breakdown_member": "By member, then project",
+  "reports_breakdown_loading": "Loading the breakdown…",
   "reports_title_project_day": "Projects by day",
   "reports_title_project_week": "Projects by week",
   "reports_title_team_day": "Teams by day",
@@ -513,8 +557,8 @@
   ],
   "reports_entries_col_description": "Description",
   "reports_entries_col_days": "Days",
-  "reports_entries_hint": "Choose a name or a total in the timesheet to narrow the list.",
-  "reports_entries_pick_hint": "Lists its entries below the timesheet",
+  "reports_entries_hint": "Choose a name or a total above to narrow the list.",
+  "reports_entries_pick_hint": "Lists its entries below",
   "reports_entries_clear": "Show all entries",
   "reports_entries_view": "List entries",
   "reports_entries_by_day": "By day",

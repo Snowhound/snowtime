@@ -456,6 +456,50 @@
   "reports_unit_day": "Päev",
   "reports_unit_week": "Nädal",
   "reports_timesheet": "Tunnileht",
+  "reports_views": "Aruande vaade",
+  "reports_view_summary": "Kokkuvõte",
+  "reports_view_breakdown": "Liigendus",
+  "reports_stats_average": "Keskmiselt",
+  "reports_stats_per_day": [
+    {
+      "declarations": ["input count", "input tracked", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "päevas, {count} päevast {tracked} päeval",
+        "countPlural=*": "päevas, {count} päevast {tracked} päeval"
+      }
+    }
+  ],
+  "reports_stats_top": "Suurim projekt",
+  "reports_chart_title_day": "Aeg päevade kaupa",
+  "reports_chart_title_week": "Aeg nädalate kaupa",
+  "reports_chart_views": "Diagramm või tabel",
+  "reports_chart": "Diagramm",
+  "reports_chart_table": "Tabel",
+  "reports_chart_label_day": "Aeg päevade kaupa, tulbad jaotatud projektide järgi; vali tulp, et näha selle ajakirjeid. Vaheleht Tabel näitab samu väärtusi.",
+  "reports_chart_label_week": "Aeg nädalate kaupa, tulbad jaotatud projektide järgi; vali tulp, et näha selle ajakirjeid. Vaheleht Tabel näitab samu väärtusi.",
+  "reports_chart_band": "{bucket} ajakirjed, {duration}",
+  "reports_chart_projects": "Projektid",
+  "reports_chart_other": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Muud ({count} projekt)",
+        "countPlural=*": "Muud ({count} projekti)"
+      }
+    }
+  ],
+  "reports_chart_no_time": "Aega pole",
+  "reports_share_project": "Projektide kaupa",
+  "reports_share_ticket": "Piletite kaupa",
+  "reports_share_team": "Meeskondade kaupa",
+  "reports_share_member": "Liikmete kaupa",
+  "reports_breakdown_project": "Projektide, siis liikmete kaupa",
+  "reports_breakdown_ticket": "Piletite, siis liikmete kaupa",
+  "reports_breakdown_team": "Meeskondade, siis liikmete kaupa",
+  "reports_breakdown_member": "Liikmete, siis projektide kaupa",
+  "reports_breakdown_loading": "Liigenduse laadimine…",
   "reports_title_project_day": "Projektid päevade kaupa",
   "reports_title_project_week": "Projektid nädalate kaupa",
   "reports_title_team_day": "Meeskonnad päevade kaupa",
@@ -513,8 +557,8 @@
   ],
   "reports_entries_col_description": "Kirjeldus",
   "reports_entries_col_days": "Päevi",
-  "reports_entries_hint": "Loendi kitsendamiseks vali tabelist nimi või summa.",
-  "reports_entries_pick_hint": "Näitab selle ajakirjeid tabeli all",
+  "reports_entries_hint": "Loendi kitsendamiseks vali ülalt nimi või summa.",
+  "reports_entries_pick_hint": "Näitab selle ajakirjeid all",
   "reports_entries_clear": "Näita kõiki ajakirjeid",
   "reports_entries_view": "Ajakirjete loend",
   "reports_entries_by_day": "Päevade kaupa",

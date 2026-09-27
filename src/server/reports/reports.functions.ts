@@ -21,3 +21,9 @@ export const getReportEntries = createServerFn({ method: 'GET' })
   .middleware([scopeMiddleware])
   .validator(ReportEntriesInput)
   .handler(({ data, context }) => reports.getReportEntries(db, context.scope, data))
+
+// Breakdown's second level: time per project and member and per ticket and member.
+export const getReportBreakdown = createServerFn({ method: 'GET' })
+  .middleware([scopeMiddleware])
+  .validator(ReportInput)
+  .handler(({ data, context }) => reports.getReportBreakdown(db, context.scope, data))

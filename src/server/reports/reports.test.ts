@@ -13,8 +13,10 @@ import { as, createSeededDatabase, scopeOf } from '../testing'
 import { ENTRY_PAGE_SIZE, type ReportEntriesInput } from './reports.schemas'
 import {
   aggregate,
+  breakdownOf,
   dayPage,
   getReport,
+  getReportBreakdown,
   getReportEntries,
   getReportExport,
   mergeByDescription,
@@ -119,6 +121,7 @@ describe('aggregate', () => {
     )
     expect(report.buckets).toEqual(['2026-03-28', '2026-03-29', '2026-03-30'])
     expect(report.perBucket).toEqual([1 * HOUR, 4 * HOUR, 2 * HOUR])
+    expect(report.trackedDays).toBe(3)
     expect(report.projects).toEqual([
       { projectId: 'p1', total: 5 * HOUR, perBucket: [1 * HOUR, 4 * HOUR, 0] },
       { projectId: null, total: 2 * HOUR, perBucket: [0, 0, 2 * HOUR] },
@@ -152,6 +155,8 @@ describe('aggregate', () => {
     )
     expect(report.buckets).toEqual(['2026-09-14', '2026-09-21'])
     expect(report.perBucket).toEqual([1 * HOUR, 2 * HOUR])
+    // Two weeks, but two days with time.
+    expect(report.trackedDays).toBe(2)
 
     const sunday = aggregate([entry('a', 'p1', '2026-09-20T09:00:00Z', '2026-09-20T10:00:00Z')], {
       ...base,
@@ -169,6 +174,7 @@ describe('aggregate', () => {
       total: 0,
       perBucket: [0, 0, 0],
       buckets: ['2026-03-28', '2026-03-29', '2026-03-30'],
+      trackedDays: 0,
       projects: [],
       tickets: [],
       members: [],
@@ -190,6 +196,53 @@ describe('aggregate', () => {
       [null, HOUR / 2],
     ])
     expect(sum(tickets.map((t) => t.total))).toBe(total)
+  })
+})
+
+describe('breakdownOf', () => {
+  test('totals the range by project and member and by ticket and member', () => {
+    const a = {
+      timeZone: 'Europe/Tallinn',
+      from: '2026-03-28',
+      to: '2026-03-31',
+      now: Date.parse('2026-03-30T09:00:00Z'),
+    }
+    function entry(userId: string, projectId: string | null, ticket: string | null, h: number) {
+      const startedAt = new Date(`2026-03-${28 + h}T08:00:00Z`)
+      return { userId, projectId, ticket, startedAt, stoppedAt: new Date(+startedAt + HOUR) }
+    }
+    const breakdown = breakdownOf(
+      [
+        entry('a', 'p1', 'NBW-1', 0),
+        entry('a', 'p1', null, 1),
+        entry('b', 'p1', 'NBW-1', 1),
+        entry('b', null, 'NBW-1', 2),
+        // Running since 11:00 Tallinn time, counted to 12:00, and one before the range.
+        {
+          ...entry('a', null, null, 2),
+          startedAt: new Date('2026-03-30T08:00:00Z'),
+          stoppedAt: null,
+        },
+        {
+          ...entry('c', 'p1', null, 0),
+          startedAt: new Date('2026-03-20T08:00:00Z'),
+          stoppedAt: new Date('2026-03-20T09:00:00Z'),
+        },
+      ],
+      a,
+    )
+    // Most time first, then by member.
+    expect(breakdown.projects).toEqual([
+      { projectId: 'p1', userId: 'a', total: 2 * HOUR },
+      { projectId: null, userId: 'a', total: HOUR },
+      { projectId: 'p1', userId: 'b', total: HOUR },
+      { projectId: null, userId: 'b', total: HOUR },
+    ])
+    expect(breakdown.tickets).toEqual([
+      { ticket: null, userId: 'a', total: 2 * HOUR },
+      { ticket: 'NBW-1', userId: 'b', total: 2 * HOUR },
+      { ticket: 'NBW-1', userId: 'a', total: HOUR },
+    ])
   })
 })
 
@@ -312,6 +365,7 @@ describe('getReport', () => {
       sum(days.perBucket.filter((_, i) => Math.floor((i + 2) / 7) === w)),
     )
     expect(weeks.perBucket).toEqual(byWeek)
+    expect(weeks.trackedDays).toBe(days.perBucket.filter((ms) => ms > 0).length)
     expectConsistent(weeks)
   })
 
@@ -344,6 +398,59 @@ describe('getReport', () => {
     const after = await getReport(db, scopes.admin, input, NOW)
     expect(designOf(after)).toBe(totalOf(after, U.lead))
     expect(after.total).toBe(before.total)
+  })
+})
+
+describe('getReportBreakdown', () => {
+  const input = { from: '2026-09-14', to: '2026-09-24', unit: 'day' } as const
+
+  // The pairs' totals per first-level row and per member.
+  function totalsBy<T extends { total: number }>(rows: readonly T[], key: (r: T) => string | null) {
+    const totals = new Map<string | null, number>()
+    for (const r of rows) totals.set(key(r), (totals.get(key(r)) ?? 0) + r.total)
+    return totals
+  }
+
+  test("adds up to the report's project, ticket, and member totals", async () => {
+    for (const scope of [scopes.member, scopes.lead, scopes.admin]) {
+      const report = await getReport(db, scope, input, NOW)
+      const breakdown = await getReportBreakdown(db, scope, input, NOW)
+      const byProject = totalsBy(breakdown.projects, (r) => r.projectId)
+      expect(report.projects.map((p) => byProject.get(p.projectId))).toEqual(
+        report.projects.map((p) => p.total),
+      )
+      const byTicket = totalsBy(breakdown.tickets, (r) => r.ticket)
+      expect(report.tickets.map((t) => byTicket.get(t.ticket))).toEqual(
+        report.tickets.map((t) => t.total),
+      )
+      for (const pairs of [breakdown.projects, breakdown.tickets] as {
+        userId: string
+        total: number
+      }[][]) {
+        const byMember = totalsBy(pairs, (r) => r.userId)
+        expect(report.members.map((m) => byMember.get(m.userId))).toEqual(
+          report.members.map((m) => m.total),
+        )
+      }
+    }
+  })
+
+  test("follows getReport's rules", async () => {
+    const member = await getReportBreakdown(db, scopes.member, input, NOW)
+    expect(new Set(member.projects.map((r) => r.userId))).toEqual(new Set([U.member]))
+    // Theo leads Engineering: Max and Mia.
+    const lead = await getReportBreakdown(db, scopes.engLead, input, NOW)
+    expect([...new Set(lead.projects.map((r) => r.userId))].sort()).toEqual(
+      [U.engLead, U.engineer, U.member].sort(),
+    )
+    const one = await getReportBreakdown(db, scopes.admin, { ...input, ticket: 'MOB-214' }, NOW)
+    expect(one.tickets.map((r) => r.ticket)).toEqual(one.tickets.map(() => 'MOB-214'))
+    await expect(
+      getReportBreakdown(db, scopes.engLead, { ...input, userId: U.loner }, NOW),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
+    await expect(
+      getReportBreakdown(db, scopes.member, { ...input, teamId: T.design }, NOW),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'team_report_forbidden' })
   })
 })
 

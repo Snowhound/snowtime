@@ -496,9 +496,10 @@ The Reports page's Entries card lists the entries behind the report (task 055,
 
 - Source: `getReportEntries` reads the day pieces `getReportExport` builds, under the same role
   rules, so the card and the export list the same entries and count a running timer up to the
-  moment of the read. Choosing a timesheet row narrows the pieces to its project, team (its
+  moment of the read. Choosing a row narrows the pieces to its project, ticket, team (its
   current members), or member. Choosing a day or week narrows the report's range to that
-  bucket instead.
+  bucket instead. Every view narrows the card ("Report views"), through the same `row` and
+  `bucket` search params.
 - Loading: the card has its own query under `reportsKey`, which the route loader doesn't
   wait for, so the timesheet opens as fast as without the card. Timer writes mark it stale
   with the reports.
@@ -513,6 +514,35 @@ The Reports page's Entries card lists the entries behind the report (task 055,
   entry id, so an entry added between two pages doesn't repeat or skip a piece. Each call
   reads the report's entries again and sorts them in TypeScript: the read is the one
   `getReport` makes, and the response stays bounded.
+
+## Report views
+
+The Reports page shows one report in three views, as tabs between the filters and the report
+(task 064, `prototypes/README.md`, Reports): Timesheet, the grid; Summary, a totals line, a chart
+of time per day or week by project, and share bars; and Breakdown, a two-level outline of who
+worked on what.
+
+- The view is the `view` search param (`summary` or `breakdown`); Timesheet, the default, has
+  none, and the page doesn't remember the last view. Switching views drops the Entries card's
+  narrowing and list choice, as a filter change does. Export sits in the tab row and always
+  gives the timesheet and its entries.
+- Summary and the Timesheet read the same `getReport` result. `getReport` returns
+  `trackedDays`, the days with time, so Summary's average per tracked day holds when the
+  buckets are weeks. The chart always stacks by project, whatever the grouping, and folds the
+  projects past seven into "Other" when there are more than eight, so the colors stay apart.
+- Breakdown's second level, project × member and ticket × member, comes from
+  `getReportBreakdown`, which reads what `getReport` reads under the same role rules and sums
+  each entry's time in the range. It is a separate function, loaded only by Breakdown, so the
+  report every view loads doesn't grow by a row per pair. Member × project reuses the project
+  pairs, and team × member comes from team membership and the report's member totals, so it
+  needs no call. Members get one level, since all the time is theirs. Breakdown totals the
+  range, so Totals per is disabled on it rather than hidden, which keeps the filter row still.
+- Narrowing: a Summary chart column narrows the Entries card to its day or week, and a share
+  bar's name or a Breakdown top-level total to its row. A second-level row doesn't narrow,
+  because the card filters by one grouping at a time.
+- Width: the timesheet widens with its columns up to the window's; Summary and Breakdown keep
+  the header's 68rem. The chart is drawn to its container's width, so a container that fits
+  its content would feed the chart's width back into itself.
 
 ## Ticket keys
 

@@ -37,6 +37,7 @@ function report(ms: number): Report {
     to: new Date('2026-09-24T21:00:00Z'),
     now: new Date(Date.parse('2026-09-24T06:00:00Z') + ms),
     buckets: ['2026-09-24'],
+    trackedDays: 1,
     ...totals,
     projects: [{ projectId: null, ...totals }],
     tickets: [{ ticket: null, ...totals }],

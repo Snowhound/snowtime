@@ -523,21 +523,40 @@ admin, and owner: no horizontal page overflow, dialogs with validation, and no b
 ### [reports.html](reports.html) — Reports
 
 Decision: how day and week totals by project, team, and member read, for members, team leads,
-and admins. **02 · Timesheet** is selected for the app; the other two stay for comparison.
+and admins. The app had only the Timesheet, first chosen over the other two layouts; now the
+three are views of one report, as tabs between the filters and the report, and task 064 put
+them in the app (`docs/architecture.md`, "Report views"). The page opens on Timesheet. Export
+sits at the right of the tabs and always gives the timesheet and its entries.
 
-- **01 · Summary**: stat tiles (total, average per tracked day, top project), stacked columns per
-  day or week by project with a hover and focus tooltip, a Table tab with the same values, and
-  share bars by the chosen grouping.
-- **02 · Timesheet (selected)**: a grid of rows by the chosen grouping and a column per day or
-  week, with row and column totals and today's column shaded. It scrolls horizontally inside its
-  card with the first column sticky.
-- **03 · Breakdown**: a two-level outline (project, then member; member, then project; team, then
-  member) with share bars, the first three groups open.
+- **Timesheet**: a grid of rows by the chosen grouping and a column per day or week, with row
+  and column totals and today's column shaded. It scrolls horizontally inside its card with the
+  first column sticky.
+- **Summary**: one line with the total, the average tracked day, and the top project; stacked
+  columns per day or week by project with a hover and focus tooltip, and a Table tab with the
+  same values; and share bars by the chosen grouping. The columns always stack by project, so
+  they stay readable when grouping by member or team.
+- **Breakdown**: a two-level outline (project, then member; member, then project; ticket, then
+  member; team, then member) with share bars, the first three groups open. It totals the whole
+  range, so Totals per is disabled on it.
+
+The Entries card sits under all three and narrows from each: in the Timesheet from names and
+totals, in Summary from a chart column (its day or week) or a name, and in Breakdown from a
+top-level total. Its second level doesn't narrow; that needs the card to filter by two
+groupings at once. Switching views clears the narrowing.
+
+In the app, Breakdown hides the percentages below 640 px, so names keep their room; the bars
+show the share. The views checked in the app on 2026-09-27 in Chrome at 1440, 1280, and 390
+px, light and dark, as a member, a team lead, and an admin, on the Harbor and Lumen Works
+seeds: no horizontal page scroll and no console errors.
 
 Filters sit in one row: a range preset (today, this week, last week, this month, last month,
-custom), previous and next, from and to dates, People, Group by, and Totals per day or week.
-Ranges over 35 days switch to weeks. Days and weeks follow the user's time zone and week start
-from Settings; the subtitle links there.
+custom), previous and next, from and to dates, People, Ticket, Group by, and Totals per day or
+week. Ranges over 35 days switch to weeks. The page opens on this month, as the app does. The
+fields are sized so the row fits the header's 68rem on one line with the dates showing (about
+28 px to spare as an admin): Range and People keep 9rem and 10rem, From, To, Ticket, and Group
+by are 8rem, and Group by is a select rather than tabs, the one change big enough to make it
+fit. The browser's date field clips its calendar button at 8rem; the app's DatePicker doesn't.
+Ticket keys are made up from the descriptions.
 
 Aggregation follows task 007: entries are clipped to the range and split at midnight in the
 user's zone (a note counts the entries that crossed), and the running timer counts up to now.
@@ -546,9 +565,9 @@ each entry once.
 
 | Role      | People options                                  | Group by                 |
 | --------- | ----------------------------------------------- | ------------------------ |
-| Member    | None: own time only                             | Project only             |
-| Team lead | Their led team (Platform), and its members      | Project, team, member; teams limited to led teams |
-| Admin, owner | Everyone, each team, each member              | Project, team, member; members in no team as "No team" |
+| Member    | None: own time only                             | Project, ticket          |
+| Team lead | Their led team (Platform), and its members      | Project, ticket, team, member; teams limited to led teams |
+| Admin, owner | Everyone, each team, each member              | Project, ticket, team, member; members in no team as "No team" |
 
 Charts fold projects past seven into "Other". Fixtures: populated, empty, and long content (long
 project, member, and team names, twelve projects).
@@ -560,7 +579,7 @@ behind the report. The file name is the organization's short name and the range'
 days, such as `snowhound-2026-09-21-to-2026-09-27.xlsx`, with `-entries` before `.csv` for the
 entries. In the prototype an item only names the file the app would download.
 
-**Entries** (task 055), a card below the timesheet in 02 · Timesheet, lists the entries behind the
+**Entries** (task 055), a card below the report's view, lists the entries behind the
 report, so a team lead can see what a member worked on. The card lists the same day pieces the
 timesheet sums, so its total matches the part it shows. An entry that crosses midnight shows its
 full start and end, with a moon icon and the time that counts on that day. The card is read-only;

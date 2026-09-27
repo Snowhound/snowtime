@@ -1,6 +1,7 @@
-// The filter row above the timesheet (prototypes/reports.html): range preset, previous and
+// The filter row above the report's views (prototypes/reports.html): range preset, previous and
 // next, from and to, People, Ticket, Group by, and totals per day or week. Members get no
-// People: they see their own time. The selects mark their option
+// People: they see their own time. The fields are sized so the row fits the header's 68rem on
+// one line, which is why Group by is a select rather than tabs. The selects mark their option
 // `selected` too, because a select's value does nothing in server-rendered HTML.
 import ChevronLeftIcon from 'lucide-solid/icons/chevron-left'
 import ChevronRightIcon from 'lucide-solid/icons/chevron-right'
@@ -10,7 +11,6 @@ import { DatePicker } from '~/components/date-time/date-picker'
 import { Button } from '~/components/ui/button'
 import { Label } from '~/components/ui/label'
 import { NativeSelect } from '~/components/ui/native-select'
-import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { type IsoDate, type WeekStart, addDays } from '~/lib/calendar'
 import { TICKET_PATTERN } from '~/lib/tickets'
@@ -60,6 +60,9 @@ export function ReportFilterBar(
   }
   function people() {
     return props.filters.people
+  }
+  function breakdown() {
+    return props.filters.view === 'breakdown'
   }
 
   function peopleValue() {
@@ -135,7 +138,7 @@ export function ReportFilterBar(
             <Label for="report-from">{m.reports_from()}</Label>
             <DatePicker
               id="report-from"
-              class="w-36"
+              class="w-32"
               inputClass="h-9"
               value={props.filters.range.from}
               onChange={(value) => pickDate('from', value)}
@@ -147,7 +150,7 @@ export function ReportFilterBar(
             <Label for="report-to">{m.reports_to()}</Label>
             <DatePicker
               id="report-to"
-              class="w-36"
+              class="w-32"
               inputClass="h-9"
               value={last()}
               onChange={(value) => pickDate('to', value)}
@@ -206,22 +209,29 @@ export function ReportFilterBar(
         <TicketFilter ticket={props.filters.ticket} onTicket={props.onTicket} />
         <Show when={groupOptions(props.filters.access).length > 1}>
           <div class="grid gap-1.5">
-            <span class="text-sm leading-none font-medium" id="report-group-label">
-              {m.reports_group_by()}
-            </span>
-            <Tabs value={props.filters.group} onChange={(value) => props.onGroup(value as Group)}>
-              <TabsList aria-labelledby="report-group-label" class="h-9">
-                <For each={groupOptions(props.filters.access)}>
-                  {(group) => <TabsTrigger value={group}>{GROUP_LABELS[group]()}</TabsTrigger>}
-                </For>
-              </TabsList>
-            </Tabs>
+            <Label for="report-group">{m.reports_group_by()}</Label>
+            <NativeSelect
+              id="report-group"
+              class="h-9 w-32"
+              value={props.filters.group}
+              onChange={(event) => props.onGroup(event.currentTarget.value as Group)}
+            >
+              <For each={groupOptions(props.filters.access)}>
+                {(group) => (
+                  <option value={group} selected={group === props.filters.group}>
+                    {GROUP_LABELS[group]()}
+                  </option>
+                )}
+              </For>
+            </NativeSelect>
           </div>
         </Show>
         <div class="grid gap-1.5">
           <span class="text-sm leading-none font-medium" id="report-unit-label">
             {m.reports_totals_per()}
           </span>
+          {/* Disabled rather than hidden on Breakdown, which totals the range, so the row
+              doesn't shift between views. */}
           <ToggleGroup
             variant="outline"
             class="justify-start"
@@ -231,11 +241,13 @@ export function ReportFilterBar(
           >
             <ToggleGroupItem
               value="day"
-              disabled={rangeDays(props.filters.range) > MAX_DAY_COLUMNS}
+              disabled={breakdown() || rangeDays(props.filters.range) > MAX_DAY_COLUMNS}
             >
               {m.reports_unit_day()}
             </ToggleGroupItem>
-            <ToggleGroupItem value="week">{m.reports_unit_week()}</ToggleGroupItem>
+            <ToggleGroupItem value="week" disabled={breakdown()}>
+              {m.reports_unit_week()}
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
       </div>
@@ -270,7 +282,7 @@ function TicketFilter(props: { ticket?: string; onTicket: (ticket: string | null
           aria-invalid={invalid() || undefined}
           aria-describedby={invalid() ? 'report-ticket-error' : undefined}
           class={cn(
-            'border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-36 rounded-md border bg-transparent py-2 pr-8 pl-3 text-sm uppercase tabular-nums placeholder:normal-case focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+            'border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-32 rounded-md border bg-transparent py-2 pr-8 pl-3 text-sm uppercase tabular-nums placeholder:normal-case focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
             invalid() && 'border-destructive text-destructive',
           )}
           onChange={(event) => apply(event.currentTarget)}
@@ -290,7 +302,7 @@ function TicketFilter(props: { ticket?: string; onTicket: (ticket: string | null
         </Show>
       </div>
       <Show when={invalid()}>
-        <p id="report-ticket-error" class="text-destructive w-36 text-xs">
+        <p id="report-ticket-error" class="text-destructive w-32 text-xs">
           {m.validation_ticket_format()}
         </p>
       </Show>

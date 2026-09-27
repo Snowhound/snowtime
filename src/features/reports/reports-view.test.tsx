@@ -14,6 +14,7 @@ import { ReportsPage } from './reports-page'
 // spread over the buckets of the range it is asked for.
 const fn = vi.hoisted(() => ({
   getReport: vi.fn(),
+  getReportBreakdown: vi.fn(),
   getReportEntries: vi.fn(),
   listTeams: vi.fn(),
   listMembers: vi.fn(),
@@ -23,6 +24,7 @@ const fn = vi.hoisted(() => ({
 }))
 vi.mock('~/server/reports/reports.functions', () => ({
   getReport: fn.getReport,
+  getReportBreakdown: fn.getReportBreakdown,
   getReportEntries: fn.getReportEntries,
 }))
 vi.mock('~/server/teams/teams.functions', () => ({
@@ -126,13 +128,15 @@ function report({ data }: { data: ReportInput }) {
     return server.rows.filter((r) => r.kind === kind)
   }
   const projects = rows('project').map((r) => ({ projectId: r.id, ...totals(buckets, r.ms) }))
+  const all = totals(
+    buckets,
+    buckets.map((_, i) => projects.reduce((a, p) => a + p.perBucket[i], 0)),
+  )
   return {
-    ...totals(
-      buckets,
-      buckets.map((_, i) => projects.reduce((a, p) => a + p.perBucket[i], 0)),
-    ),
+    ...all,
     unit: data.unit,
     buckets,
+    trackedDays: all.perBucket.filter((ms) => ms > 0).length,
     projects,
     tickets: rows('ticket').map((r) => ({ ticket: r.id, ...totals(buckets, r.ms) })),
     members: rows('member').map((r) => ({ userId: r.id!, ...totals(buckets, r.ms) })),
@@ -314,7 +318,7 @@ describe('ReportsView', () => {
     const { search } = renderView()
     await screen.findByRole('table')
 
-    await userEvent.click(screen.getByRole('tab', { name: 'Ticket' }))
+    await userEvent.selectOptions(screen.getByLabelText('Group by'), 'Ticket')
     expect(await screen.findByText('Tickets by day')).toBeInTheDocument()
     const grid = screen.getByRole('table')
     expect(within(grid).getByRole('rowheader', { name: 'NBW-412' })).toBeInTheDocument()
@@ -337,7 +341,7 @@ describe('ReportsView', () => {
     const grid = await screen.findByRole('table')
     expect(lastInput()).toEqual({ from: '2026-09-21', to: '2026-09-28', unit: 'day' })
     expect(screen.queryByLabelText('People')).not.toBeInTheDocument()
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Project', 'Ticket'])
+    expect(options(screen.getByLabelText('Group by'))).toEqual(['Project', 'Ticket'])
     expect(screen.getByText(/Your own time/)).toBeInTheDocument()
     expect(
       screen.getByText(/Days and weeks in Europe\/Tallinn, starting Monday/),
@@ -372,7 +376,7 @@ describe('ReportsView', () => {
       expect(options(people)).toEqual(['Platform', 'Kadri Tamm', 'Max Member (you)']),
     )
     expect(screen.getByText(/the time of the Platform team, which you lead/)).toBeInTheDocument()
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
+    expect(options(screen.getByLabelText('Group by'))).toEqual([
       'Project',
       'Ticket',
       'Team',
@@ -381,7 +385,7 @@ describe('ReportsView', () => {
 
     await userEvent.selectOptions(people, 'Kadri Tamm')
     await waitFor(() => expect(lastInput()).toMatchObject({ userId: kadri }))
-    await userEvent.click(screen.getByRole('tab', { name: 'Team' }))
+    await userEvent.selectOptions(screen.getByLabelText('Group by'), 'Team')
     expect(await screen.findByText('Teams by day')).toBeInTheDocument()
     const grid = screen.getByRole('table')
     expect(within(grid).getByRole('rowheader', { name: 'Platform' })).toBeInTheDocument()
@@ -659,5 +663,128 @@ describe('ReportsView', () => {
         .getAllByRole('listitem')
         .map((li) => within(li).queryByText(/Kadri|Max/)?.textContent),
     ).toEqual(['Kadri Tamm', 'Max Member (you)', 'Max Member (you)'])
+  })
+
+  test('the view is a search param, and switching views clears the narrowing', async () => {
+    const { search } = renderView({
+      range: 'this-week',
+      row: snowtime.id,
+      bucket: '2026-09-23',
+      entries: 'description',
+    })
+    await screen.findByRole('table')
+    expect(screen.getByRole('tab', { name: 'Timesheet' })).toHaveAttribute('aria-selected', 'true')
+    expect(v.parse(ReportSearch, { view: 'timesheet' })).toEqual({})
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Summary' }))
+    await waitFor(() => expect(search()).toEqual({ range: 'this-week', view: 'summary' }))
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    // Export stays in the tab row.
+    expect(screen.getByRole('button', { name: 'Export the report' })).toBeInTheDocument()
+
+    // A filter change keeps the view.
+    await userEvent.click(screen.getByRole('button', { name: 'Next range' }))
+    await waitFor(() =>
+      expect(search()).toEqual({
+        range: 'custom',
+        from: '2026-09-28',
+        to: '2026-10-04',
+        view: 'summary',
+      }),
+    )
+
+    // Breakdown totals the range, so Totals per is disabled on it.
+    await userEvent.click(screen.getByRole('tab', { name: 'Breakdown' }))
+    await waitFor(() => expect(search()).toMatchObject({ view: 'breakdown' }))
+    expect(screen.getByRole('button', { name: 'Day' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Week' })).toBeDisabled()
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Timesheet' }))
+    await waitFor(() => expect(search()).not.toHaveProperty('view'))
+    expect(screen.getByRole('button', { name: 'Week' })).toBeEnabled()
+  })
+
+  test('Summary totals the range, and a column or a name narrows the Entries card', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(600)
+    const { search } = renderView({ range: 'this-week', view: 'summary' })
+    expect(await screen.findByText('Time per day')).toBeInTheDocument()
+    const stats = screen.getByText(/a day, over/).parentElement!
+    expect(stats).toHaveTextContent(
+      'Total 7:15·Average 2:25 a day, over 3 of 4 days·Top projectSnowtime90%',
+    )
+
+    const wednesday = screen.getByRole('button', { name: 'Entries for Wed, Sep 23, 3:00' })
+    await userEvent.click(wednesday)
+    await waitFor(() =>
+      expect(search()).toEqual({ range: 'this-week', view: 'summary', bucket: '2026-09-23' }),
+    )
+    expect(wednesday).toHaveAttribute('aria-pressed', 'true')
+    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({
+      report: { from: '2026-09-23', to: '2026-09-24' },
+    })
+    expect(fn.getReportEntries.mock.lastCall![0].data).not.toHaveProperty('row')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Snowtime' }))
+    await waitFor(() =>
+      expect(search()).toEqual({ range: 'this-week', view: 'summary', row: snowtime.id }),
+    )
+    const card = screen.getByRole('region', { name: 'Entries' })
+    expect(await within(card).findByText(summary('2 entries · 2:00'))).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Table' }))
+    const table = await screen.findByRole('table')
+    expect(
+      within(table)
+        .getAllByRole('row')
+        .map((r) => r.textContent)
+        .slice(0, 2),
+    ).toEqual(['DaySnowtimeNo projectTotal', 'Mon, Sep 212:000:302:30'])
+    vi.restoreAllMocks()
+  })
+
+  test('Breakdown splits rows by member, and a top-level total narrows the Entries card', async () => {
+    server.role = 'admin'
+    fn.getReportBreakdown.mockResolvedValue({
+      projects: [
+        { projectId: snowtime.id, userId: me, total: 4 * HOUR },
+        { projectId: snowtime.id, userId: kadri, total: 2.5 * HOUR },
+        { projectId: null, userId: me, total: 0.75 * HOUR },
+      ],
+      tickets: [],
+    })
+    const { search } = renderView({ range: 'this-week', view: 'breakdown' })
+    expect(await screen.findByText('By project, then member')).toBeInTheDocument()
+    // It totals the range, so the unit stays out of its input.
+    expect(fn.getReportBreakdown.mock.lastCall![0].data).toEqual({
+      organizationId,
+      from: '2026-09-21',
+      to: '2026-09-28',
+    })
+    const panel = screen.getByRole('tabpanel', { name: 'Breakdown' })
+    const snowtimeRow = (await within(panel).findByText('Snowtime')).closest('li')!
+    const members = within(snowtimeRow).getAllByRole('listitem')
+    expect(members.map((li) => li.textContent)).toEqual([
+      'Max Member (you)62%4:00',
+      'Kadri Tamm38%2:30',
+    ])
+    expect(within(members[0]).queryByRole('button')).not.toBeInTheDocument()
+
+    await userEvent.click(within(snowtimeRow).getByRole('button', { name: '6:30' }))
+    await waitFor(() =>
+      expect(search()).toEqual({ range: 'this-week', view: 'breakdown', row: snowtime.id }),
+    )
+    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({
+      row: { group: 'project', id: snowtime.id },
+    })
+  })
+
+  test('members see one level on Breakdown, without the second level’s query', async () => {
+    renderView({ range: 'this-week', view: 'breakdown' })
+    expect(await screen.findByText('By project')).toBeInTheDocument()
+    const panel = screen.getByRole('tabpanel', { name: 'Breakdown' })
+    const snowtimeRow = within(panel).getByText('Snowtime').closest('li')!
+    expect(within(snowtimeRow).queryByRole('group')).not.toBeInTheDocument()
+    expect(snowtimeRow.querySelector('details')).toBeNull()
+    expect(fn.getReportBreakdown).not.toHaveBeenCalled()
   })
 })
