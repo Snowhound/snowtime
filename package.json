@@ -22,6 +22,7 @@
     "db:verify": "bun scripts/db-verify.ts",
     "db:drift": "bun scripts/db-drift.ts",
     "db:seed": "bun scripts/db-seed.ts",
+    "holidays:update": "bun scripts/holidays-update.ts",
     "i18n:compile": "paraglide-js compile --project ./project.inlang --silent",
     "icons:check": "bun scripts/icon-names.ts",
     "icons:fix": "bun scripts/icon-names.ts --fix",

@@ -12,6 +12,7 @@ import {
   localDate,
   localTime,
   monthDates,
+  nthWeekday,
   offsetAt,
   splitByDay,
   startOfWeek,
@@ -279,5 +280,20 @@ describe('atLocalTime', () => {
     const ms = at('2026-01-15T23:45:00Z')
     const zone = 'America/New_York'
     expect(atLocalTime(localDate(ms, zone), localTime(ms, zone), zone)).toBe(ms)
+  })
+})
+
+describe('nthWeekday', () => {
+  test('counts from the start of the month', () => {
+    expect(nthWeekday(2026, 11, 4, 4)).toBe('2026-11-26')
+    expect(nthWeekday(2026, 9, 1, 1)).toBe('2026-09-07')
+    expect(nthWeekday(2026, 2, 0, 1)).toBe('2026-02-01')
+  })
+
+  test('counts from the end with a negative n', () => {
+    expect(nthWeekday(2026, 5, 1, -1)).toBe('2026-05-25')
+    expect(nthWeekday(2027, 5, 1, -1)).toBe('2027-05-31')
+    expect(nthWeekday(2026, 10, 0, -1)).toBe('2026-10-25')
+    expect(nthWeekday(2026, 10, 0, -2)).toBe('2026-10-18')
   })
 })

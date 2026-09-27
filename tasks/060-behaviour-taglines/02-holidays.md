@@ -1,6 +1,6 @@
 # 02: Working days
 
-Status: todo
+Status: done
 
 The gap taglines (subtask 04) must not count a day off as missing. Add a module that
 answers whether a date is a working day in a region: not a weekend, not a public holiday.
@@ -24,14 +24,14 @@ Other regions: weekends only.
 
 ## Acceptance criteria
 
-- [ ] `src/lib/holidays/` exports `isWorkingDay(date, region)` and
+- [x] `src/lib/holidays/` exports `isWorkingDay(date, region)` and
       `isShortDay(date, region)`, shared by the server and the browser
-- [ ] `src/lib/holidays/ee.json` holds the feed's kinds 1, 2, and 4 as
+- [x] `src/lib/holidays/ee.json` holds the feed's kinds 1, 2, and 4 as
       `{ date, kind: 'off' | 'short' }`; the app never calls riigipühad.ee at runtime
-- [ ] `bun run holidays:update` downloads the feed and rewrites `ee.json`
-- [ ] A test fails when `ee.json` doesn't cover the next calendar year, so CI flags the
+- [x] `bun run holidays:update` downloads the feed and rewrites `ee.json`
+- [x] A test fails when `ee.json` doesn't cover the next calendar year, so CI flags the
       refresh before the data runs out
-- [ ] US rules cover New Year's Day, Martin Luther King Jr. Day, Presidents' Day, Memorial
+- [x] US rules cover New Year's Day, Martin Luther King Jr. Day, Presidents' Day, Memorial
       Day, Juneteenth, Independence Day, Labor Day, Thanksgiving and the Friday after,
       Christmas Eve, and Christmas Day, with weekend dates moved as above
-- [ ] A test checks the US rules against the published federal dates for 2026 and 2027
+- [x] A test checks the US rules against the published federal dates for 2026 and 2027

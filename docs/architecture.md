@@ -436,6 +436,25 @@ works; one that lacks it gets a notice at the top of each page.
     both. Team leads report on the teams they lead; admins and owners on all.
   - A report returns ids, ISO dates, and milliseconds; the client formats them.
 
+## Working days
+
+`src/lib/holidays/` answers whether a date is a working day in a region, for the taglines
+about gaps in the timesheet (task 060). The server and the browser share it.
+
+- Saturday and Sunday are never working days, in any region and whatever the week start.
+- Estonia's days off (riigipüha and rahvuspüha) and shortened working days come from
+  riigipühad.ee, saved in `src/lib/holidays/ee.json`. The app never calls the site at
+  runtime: `bun run holidays:update` refreshes the file, and a test fails once it doesn't
+  cover the next calendar year, so CI asks for the refresh before the data runs out. The
+  site lists about five years ahead. Days of national importance (tähtpäev) are working
+  days and aren't kept.
+- US days off follow rules: the federal holidays without Columbus Day and Veterans Day,
+  which most private employers work, plus the Friday after Thanksgiving and Christmas Eve,
+  which most give off. A fixed date on a Saturday moves to the Friday before, on a Sunday to
+  the Monday after. Christmas Eve is the working day before Christmas's day off, so the two
+  never land on one day.
+- Other regions count weekends only.
+
 ## Report export
 
 Reports exports the report as shown, for the current filters (task 034, `prototypes/README.md`,
