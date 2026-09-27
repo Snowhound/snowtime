@@ -1,6 +1,6 @@
 # 057: Timer opening cost
 
-Status: in-progress
+Status: done
 
 Opening the timer is the one page over 50 ms of main-thread work. Task 053 measured it on
 2026-09-26 on a local production build with the seeded owner (35 rows over 14 days),
@@ -16,9 +16,9 @@ layout and paint but not component setup.
 ## Acceptance criteria
 
 - [x] A Performance trace splits the task into script, style, and layout, recorded here
-- [ ] Opening the timer with cached data takes under 50 ms of main-thread work at 1×, with
+- [x] Opening the timer with cached data takes under 50 ms of main-thread work at 1×, with
       the 4× figure recorded, before and after
-- [ ] Both layouts, compact rows, keyboard and touch editing, and "Show earlier" work as
+- [x] Both layouts, compact rows, keyboard and touch editing, and "Show earlier" work as
       before; `timer-view.test.tsx` passes
 
 ## Before
@@ -144,3 +144,29 @@ the same database, 2 × 3 runs each:
 - The timer is still over 50 ms at 1×. What remains per row is mostly the icons, the time
   inputs, and the day cards themselves. Mounting only the days near the viewport would
   cover the rest.
+
+## Days near the screen
+
+`01d0d45` mounts a day's rows only when the day is within the first 12 rows, comes within half
+a screen of the viewport, holds an entry just saved, or once Tab is pressed anywhere on the
+page (`lazy-days.ts`). Until then the day holds a placeholder as tall as its rows. Both
+layouts use it; the Focus layout's few days all mount at once. Measured on 2026-09-27,
+alternating the builds on the same database, 2 × 3 runs each:
+
+| Layout | Build  | Longest task, 1× | Net, 1× | Longest task, 4× | Net, 4× | DOM nodes |
+| ------ | ------ | ---------------- | ------- | ---------------- | ------- | --------- |
+| Bar    | Before | 40–46            | 57–64   | 168–213          | 220–274 | 2,517     |
+| Bar    | After  | 21–25            | 31–39   | 91–134           | 117–167 | 936       |
+| Table  | Before | 43–49            | 59–68   | 184–249          | 234–325 | 2,668     |
+| Table  | After  | 24–28            | 33–40   | 101–136          | 126–166 | 1,145     |
+
+- "Net" includes the days the observer mounts within half a screen after the first frame.
+  A margin of a whole screen mounted more of them and left the Table layout at 54–62 ms.
+- Checked against the build before, in the Bar, compact Bar, Focus, Table, and compact Table
+  layouts at 1440 and 390 px: the page's height differs by at most 7 px at rest and matches
+  once every day is mounted, and the top of the page looks the same. No placeholder shows
+  while scrolling in 300 px steps. Tab from the first row visits every row in order and then
+  "Show earlier", which still loads five more days. An entry moved to a day not yet mounted
+  mounts that day and scrolls into view. The rows' menus and popovers open from a pointer,
+  the keyboard, and a tap. A new test in `timer-view.test.tsx` covers the Tab.
+- Until a day mounts, the browser's find in page doesn't see its rows.
