@@ -77,11 +77,11 @@ up to 20% overhead and counts forced style and layout as script.
 
 ## First fixes
 
-- `7b18290`: the timesheet works out its current day or week once, in a memo.
-- `7bd727c`: the see-through sticky columns key on their own classes (`timesheet-start`,
+- `550f032`: the timesheet works out its current day or week once, in a memo.
+- `869444a`: the see-through sticky columns key on their own classes (`timesheet-start`,
   `timesheet-end`), so a change of `data-scrolled` or `data-more` restyles only those
   cells. The second style recalc is gone.
-- `b332e80`: the body's rows and cells are plain `tr`, `th`, and `td` elements with
+- `4c41701`: the body's rows and cells are plain `tr`, `th`, and `td` elements with
   `ui/table.tsx`'s classes, without its unused checkbox and selected-state variants.
 
 Measured on 2026-09-27 as above, alternating the build before and after on the same
@@ -97,7 +97,7 @@ match the build before, in screenshots too, and so do its see-through columns at
 of the scroll. The page is still over 50 ms. Style, layout, and paint take about 27 ms, and
 switching away from the timer about 10 ms of script.
 
-After task 057's resting controls (`4b51dae`), the timer the measured path leaves costs less
+After task 057's resting controls (`bc2f94e`), the timer the measured path leaves costs less
 to take down. Measured on 2026-09-27, alternating with the build before this task, 2 × 3
 runs each:
 

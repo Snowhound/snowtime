@@ -108,7 +108,7 @@ layout as script:
 
 ## Memoized row values
 
-`562b7e0` memoizes `date`, `values`, and `read` in `createEntryEditor`, and commits read the
+`1cb5ed6` memoizes `date`, `values`, and `read` in `createEntryEditor`, and commits read the
 times again so their future check is current. In the profile the rows' calendar time falls
 from 9.0 to 3.3 ms at 1×. Measured on 2026-09-27 as above, alternating the build before and
 after on the same database, 2 × 3 runs per build at 1× and at 4×:
@@ -124,7 +124,7 @@ inputs are still there; cheaper resting controls in the rows come next.
 
 ## Resting controls
 
-`4b51dae` renders a resting row's buttons (project, date, clock, continue, more) as native
+`bc2f94e` renders a resting row's buttons (project, date, clock, continue, more) as native
 buttons with `ui/button.tsx`'s classes (`PlainButton`), and the description as a native
 input. The row still has the same inputs and buttons in the same order, so row activation
 swaps in the Kobalte triggers as before. Measured on 2026-09-27, alternating the builds on
@@ -147,7 +147,7 @@ the same database, 2 × 3 runs each:
 
 ## Days near the screen
 
-`7b3bfcd` mounts a day's rows only when the day is within the first 12 rows, comes within half
+`f66f18f` mounts a day's rows only when the day is within the first 12 rows, comes within half
 a screen of the viewport, holds an entry just saved, or once Tab is pressed anywhere on the
 page (`lazy-days.ts`). Until then the day holds a placeholder as tall as its rows. Both
 layouts use it; the Focus layout's few days all mount at once. Measured on 2026-09-27,
