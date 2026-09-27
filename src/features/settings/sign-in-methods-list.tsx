@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from '~/components/ui/dialog'
 import { authClient, unwrap } from '~/lib/auth-client'
+import { errorMessage } from '~/lib/errors'
 import { formatDateTime } from '~/lib/format'
 import { passkeysQuery } from '~/lib/queries/passkeys'
 import { m } from '~/paraglide/messages.js'
@@ -108,8 +109,13 @@ export function SignInMethodsList(props: {
     setConfirmOpen(true)
   }
 
+  // Why the accounts or passkeys didn't load, as the list can't show them.
+  function loadError() {
+    const failed = accounts.error ?? passkeys.error
+    return failed ? errorMessage(failed) : null
+  }
   function alert() {
-    return error() ?? props.linkError ?? null
+    return error() ?? props.linkError ?? loadError()
   }
   function date(at: Date | string) {
     return formatDateTime(new Date(at), props.timeZone, {
@@ -195,10 +201,12 @@ export function SignInMethodsList(props: {
       <Show
         when={accounts.data}
         fallback={
-          <div class="text-muted-foreground flex items-center gap-2 rounded-md border px-4 py-3 text-sm">
-            <LoaderCircleIcon class="size-4 animate-spin" aria-hidden="true" />
-            {m.settings_methods_loading()}
-          </div>
+          <Show when={!accounts.isError}>
+            <div class="text-muted-foreground flex items-center gap-2 rounded-md border px-4 py-3 text-sm">
+              <LoaderCircleIcon class="size-4 animate-spin" aria-hidden="true" />
+              {m.settings_methods_loading()}
+            </div>
+          </Show>
         }
       >
         <ul class="divide-y rounded-md border">

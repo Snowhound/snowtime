@@ -46,6 +46,23 @@ beforeEach(() => {
 })
 
 describe('SignInMethodsList', () => {
+  test('says why when the sign-in methods fail to load, instead of loading on', async () => {
+    client.listAccounts.mockResolvedValue({ data: null, error: { status: 500 } })
+    renderList(['google', 'passkey'])
+
+    expect(await screen.findByText('Something went wrong. Try again.')).toBeInTheDocument()
+    expect(screen.queryByText('Loading sign-in methods…')).toBeNull()
+  })
+
+  test('says why when the passkeys fail to load, and lists the accounts', async () => {
+    client.listAccounts.mockResolvedValue({ data: [account('a1', 'github')], error: null })
+    client.passkey.listUserPasskeys.mockResolvedValue({ data: null, error: { status: 500 } })
+    renderList(['github', 'passkey'])
+
+    expect(await screen.findByText('Something went wrong. Try again.')).toBeInTheDocument()
+    expect(screen.getByText('GitHub', { selector: 'p' })).toBeInTheDocument()
+  })
+
   test('lists configured providers and linked ones, and keeps the last account', async () => {
     client.listAccounts.mockResolvedValue({ data: [account('a1', 'github')], error: null })
     renderList(['google', 'passkey'])
