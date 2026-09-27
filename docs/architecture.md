@@ -459,8 +459,9 @@ about gaps in the timesheet (task 060). The server and the browser share it.
   the countries with data, Estonia and the United States, plus Other, so the select is
   short and renders on the server. Null means "From time zone", and
   `src/lib/holidays/region.ts` guesses from the zone: `Europe/Tallinn` gives Estonia, the
-  six main US zones and their tzdata aliases give the United States, and any other zone
-  gives Other. The label names the guess, such as "From time zone (Estonia)".
+  US's zones in tzdata and their aliases give the United States, and any other zone gives
+  Other. The US territories, such as Puerto Rico, give Other, since their public holidays
+  differ. The label names the guess, such as "From time zone (Estonia)".
 
 ## Report export
 

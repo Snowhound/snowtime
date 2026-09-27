@@ -18,13 +18,27 @@ describe('countryFromZone', () => {
       'US/Pacific',
       'US/Hawaii',
       'EST5EDT',
+      'America/Phoenix',
+      'America/Detroit',
+      'America/Indiana/Indianapolis',
+      'America/Boise',
+      'America/Juneau',
+      'America/Adak',
     ]) {
       expect({ zone, country: countryFromZone(zone) }).toEqual({ zone, country: 'US' })
     }
   })
 
   test('guesses other for any other zone', () => {
-    for (const zone of ['Europe/Helsinki', 'Europe/Riga', 'America/Toronto', 'UTC', 'Asia/Tokyo']) {
+    for (const zone of [
+      'Europe/Helsinki',
+      'Europe/Riga',
+      'America/Toronto',
+      'America/Puerto_Rico',
+      'Pacific/Guam',
+      'UTC',
+      'Asia/Tokyo',
+    ]) {
       expect(countryFromZone(zone)).toBe('other')
     }
   })

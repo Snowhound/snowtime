@@ -6,32 +6,76 @@ import type { Region } from './holidays'
 export const COUNTRIES = ['EE', 'US', 'other'] as const
 export type Country = (typeof COUNTRIES)[number]
 
-// Each zone with its tzdata aliases; any other zone guesses 'other'.
-const ZONE_COUNTRIES: Record<string, Country> = {
-  'Europe/Tallinn': 'EE',
-  'America/New_York': 'US',
-  'US/Eastern': 'US',
-  EST5EDT: 'US',
-  'America/Chicago': 'US',
-  'US/Central': 'US',
-  CST6CDT: 'US',
-  'America/Denver': 'US',
-  'US/Mountain': 'US',
-  MST7MDT: 'US',
-  'America/Shiprock': 'US',
-  Navajo: 'US',
-  'America/Los_Angeles': 'US',
-  'US/Pacific': 'US',
-  PST8PDT: 'US',
-  'America/Anchorage': 'US',
-  'US/Alaska': 'US',
-  'Pacific/Honolulu': 'US',
-  'US/Hawaii': 'US',
-  'Pacific/Johnston': 'US',
-}
+// The US's zones in tzdata (zone1970.tab) with their aliases, without the territories, whose
+// public holidays differ. Any zone other than these and Europe/Tallinn guesses 'other'.
+const US_ZONES = [
+  // Eastern
+  'America/New_York',
+  'US/Eastern',
+  'EST5EDT',
+  'America/Detroit',
+  'US/Michigan',
+  'America/Kentucky/Louisville',
+  'America/Louisville',
+  'America/Kentucky/Monticello',
+  'America/Indiana/Indianapolis',
+  'America/Indianapolis',
+  'America/Fort_Wayne',
+  'US/East-Indiana',
+  'America/Indiana/Vincennes',
+  'America/Indiana/Winamac',
+  'America/Indiana/Marengo',
+  'America/Indiana/Petersburg',
+  'America/Indiana/Vevay',
+  // Central
+  'America/Chicago',
+  'US/Central',
+  'CST6CDT',
+  'America/Indiana/Tell_City',
+  'America/Indiana/Knox',
+  'America/Knox_IN',
+  'US/Indiana-Starke',
+  'America/Menominee',
+  'America/North_Dakota/Center',
+  'America/North_Dakota/New_Salem',
+  'America/North_Dakota/Beulah',
+  // Mountain
+  'America/Denver',
+  'US/Mountain',
+  'MST7MDT',
+  'America/Shiprock',
+  'Navajo',
+  'America/Boise',
+  'America/Phoenix',
+  'US/Arizona',
+  'MST',
+  // Pacific
+  'America/Los_Angeles',
+  'US/Pacific',
+  'PST8PDT',
+  // Alaska and Hawaii
+  'America/Anchorage',
+  'US/Alaska',
+  'America/Juneau',
+  'America/Sitka',
+  'America/Metlakatla',
+  'America/Yakutat',
+  'America/Nome',
+  'America/Adak',
+  'US/Aleutian',
+  'America/Atka',
+  'Pacific/Honolulu',
+  'US/Hawaii',
+  'Pacific/Johnston',
+]
+
+const ZONE_COUNTRIES = new Map<string, Country>([
+  ['Europe/Tallinn', 'EE'],
+  ...US_ZONES.map((zone) => [zone, 'US'] as const),
+])
 
 export function countryFromZone(timeZone: string): Country {
-  return ZONE_COUNTRIES[timeZone] ?? 'other'
+  return ZONE_COUNTRIES.get(timeZone) ?? 'other'
 }
 
 // The region whose working days count for the user: the saved country, else the guess.

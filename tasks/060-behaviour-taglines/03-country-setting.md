@@ -8,10 +8,9 @@ lists only the countries with holiday data, so the select stays short and render
 server with the page; there's no full country list to load.
 
 Options: "From time zone", Estonia, United States, and Other. "From time zone" maps
-`Europe/Tallinn` to Estonia and US zones (`America/New_York`, `America/Chicago`,
-`America/Denver`, `America/Los_Angeles`, `America/Anchorage`, `Pacific/Honolulu`, and their
-aliases) to the United States; any other zone gives Other. Its label names the guess, for
-example "From time zone (Estonia)".
+`Europe/Tallinn` to Estonia and the US's zones in tzdata (`zone1970.tab`), with their aliases,
+to the United States; any other zone gives Other. The US territories give Other, since their
+public holidays differ. Its label names the guess, for example "From time zone (Estonia)".
 
 ## Acceptance criteria
 
