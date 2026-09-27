@@ -26,7 +26,14 @@ type ListedEntry = Awaited<ReturnType<typeof listEntries>>[number]
 // The fields the view reads, so an optimistic entry needs no audit columns.
 export type Entry = Pick<
   ListedEntry,
-  'id' | 'organizationId' | 'userId' | 'projectId' | 'description' | 'startedAt' | 'stoppedAt'
+  | 'id'
+  | 'organizationId'
+  | 'userId'
+  | 'projectId'
+  | 'description'
+  | 'ticket'
+  | 'startedAt'
+  | 'stoppedAt'
 >
 
 // An entry that has ended, as the day lists show and edit them.
@@ -97,12 +104,13 @@ function earliest(first: Date | null, startedAt: Date | undefined) {
   return startedAt && (!first || startedAt < first) ? startedAt : first
 }
 
-// The changed fields of an update; projectId null removes the project.
+// The changed fields of an update; projectId or ticket null removes it.
 function patch<T extends Entry>(entry: T, input: UpdateEntryInput): T {
   return {
     ...entry,
     projectId: input.projectId === undefined ? entry.projectId : input.projectId,
     description: input.description ?? entry.description,
+    ticket: input.ticket === undefined ? entry.ticket : input.ticket,
     startedAt: input.startedAt ?? entry.startedAt,
     stoppedAt: input.stoppedAt ?? entry.stoppedAt,
   }
@@ -132,6 +140,7 @@ export function useStartTimer({ organizationId }: Keys) {
               userId: session?.user.id ?? '',
               projectId: input.projectId ?? null,
               description: input.description.trim(),
+              ticket: input.ticket ?? null,
               startedAt: new Date(),
               stoppedAt: null,
               project: null,
@@ -228,6 +237,7 @@ export function useCreateEntry({ organizationId }: Keys) {
               userId: session?.user.id ?? '',
               projectId: input.projectId ?? null,
               description: input.description.trim(),
+              ticket: input.ticket ?? null,
               startedAt: input.startedAt,
               stoppedAt: input.stoppedAt,
             }

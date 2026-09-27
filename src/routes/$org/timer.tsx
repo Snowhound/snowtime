@@ -8,6 +8,8 @@ import { m } from '~/paraglide/messages.js'
 
 // The main tracking view (prototypes/timer.html, Bar layout).
 export const Route = createFileRoute('/$org/timer')({
+  // The view sets its own width, which the Wide page setting widens.
+  staticData: { wide: true },
   loader: async ({ context }) => {
     const { queryClient, session } = context
     const organizationId = context.organization.id

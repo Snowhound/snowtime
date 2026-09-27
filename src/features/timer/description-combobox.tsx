@@ -1,9 +1,10 @@
 // The description field of the timer bar and the entry popover (prototypes/timer.html): a
 // text field that lists recent work under it, following the WAI-ARIA combobox pattern. The
 // list opens on focus and typing; arrows move through it, Enter or a click picks, and Escape
-// closes only the list. Picking fills in the description and the project; typing never
-// changes the project. Kobalte's Combobox isn't used: it has no controlled input value and
-// clears or resets free text on Escape and blur.
+// closes only the list. Picking fills in the description, the ticket, and the project; typing
+// never changes the project. The entry's ticket chip sits at the end of the field, which is
+// drawn as one input around both. Kobalte's Combobox isn't used: it has no controlled input
+// value and clears or resets free text on Escape and blur.
 import { For, Show, createMemo, createSignal, createUniqueId } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { ProjectDot } from '~/components/project-dot'
@@ -13,6 +14,7 @@ import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { suggestWork } from './entries'
 import type { Entry } from './queries'
+import { TicketLabel } from './ticket-chip'
 
 export function DescriptionCombobox(props: {
   label: string
@@ -21,11 +23,16 @@ export function DescriptionCombobox(props: {
   inputClass?: string
   placeholder: string
   value: string
-  // The project in the form, or '' for none, so its pair isn't suggested again.
+  // The project and ticket in the form, '' and null for none, so their work isn't suggested
+  // again.
   projectId: string
+  ticket: string | null
+  // The ticket's chip, at the end of the field.
+  chip?: JSX.Element
   entries: readonly Entry[]
   projects: readonly Project[]
   disabled?: boolean
+  ref?: (input: HTMLInputElement) => void
   onChange: (value: string) => void
   onPick: (entry: Entry) => void
   onBlur?: () => void
@@ -44,7 +51,7 @@ export function DescriptionCombobox(props: {
   const items = createMemo(() =>
     suggestWork(
       props.entries,
-      { description: props.value, projectId: props.projectId || null },
+      { description: props.value, projectId: props.projectId || null, ticket: props.ticket },
       pickable,
     ),
   )
@@ -101,22 +108,38 @@ export function DescriptionCombobox(props: {
         disabled={props.disabled}
       >
         <TextFieldLabel class={props.labelClass}>{props.label}</TextFieldLabel>
-        <TextFieldInput
-          class={props.inputClass}
-          placeholder={props.placeholder}
-          autocomplete="off"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={shown()}
-          aria-controls={shown() ? listId : undefined}
-          aria-activedescendant={shown() && active() >= 0 ? `${listId}-${active()}` : undefined}
-          onFocus={show}
-          onBlur={() => {
-            close()
-            props.onBlur?.()
+        <div
+          class={cn(
+            'border-input ring-offset-background focus-within:ring-ring flex min-h-10 w-full min-w-0 cursor-text items-center gap-1 rounded-md border bg-transparent py-1 pr-1.5 pl-2 text-sm focus-within:ring-2 focus-within:ring-offset-2',
+            props.disabled && 'cursor-not-allowed opacity-50',
+            props.inputClass,
+          )}
+          // A click on the field's padding puts the caret in the text.
+          onMouseDown={(event) => {
+            if (event.target !== event.currentTarget) return
+            event.preventDefault()
+            event.currentTarget.querySelector('input')?.focus()
           }}
-          onKeyDown={keyDown}
-        />
+        >
+          <TextFieldInput
+            ref={props.ref}
+            class="h-8 min-w-24 flex-1 rounded-none border-0 py-0 pr-1.5 pl-1 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-100"
+            placeholder={props.placeholder}
+            autocomplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={shown()}
+            aria-controls={shown() ? listId : undefined}
+            aria-activedescendant={shown() && active() >= 0 ? `${listId}-${active()}` : undefined}
+            onFocus={show}
+            onBlur={() => {
+              close()
+              props.onBlur?.()
+            }}
+            onKeyDown={keyDown}
+          />
+          {props.chip}
+        </div>
       </TextField>
       <Show when={shown()}>
         <div
@@ -168,6 +191,13 @@ function Suggestion(props: {
       <span class="min-w-0 flex-1 truncate">
         <Highlight text={props.entry.description} query={props.query} />
       </span>
+      <Show when={props.entry.ticket}>
+        {(ticket) => (
+          <TicketLabel>
+            <Highlight text={ticket()} query={props.query} />
+          </TicketLabel>
+        )}
+      </Show>
       <Show when={props.project}>
         {(p) => (
           <span class="text-muted-foreground max-w-[40%] shrink-0 truncate text-xs">

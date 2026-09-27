@@ -370,6 +370,21 @@ export function PreferencesCard(props: { settings: Settings }) {
           </Switch>
           <Switch
             class="flex items-center justify-between gap-4"
+            checked={props.settings.wideTimer}
+            onChange={(wideTimer) => update({ wideTimer })}
+          >
+            <div class="grid gap-1">
+              <SwitchLabel>{m.settings_wide_timer()}</SwitchLabel>
+              <SwitchDescription class="text-muted-foreground text-sm">
+                {m.settings_wide_timer_description()}
+              </SwitchDescription>
+            </div>
+            <SwitchControl>
+              <SwitchThumb />
+            </SwitchControl>
+          </Switch>
+          <Switch
+            class="flex items-center justify-between gap-4"
             checked={props.settings.showSummary}
             onChange={(showSummary) => update({ showSummary })}
           >

@@ -1,5 +1,5 @@
 // Inline editing of a stopped entry (prototypes/timer.html): the entry rows' description,
-// project, date, start, and end are fields that read as text until hovered or focused.
+// ticket, project, date, start, and end are fields that read as text until hovered or focused.
 // Their popovers and menus mount only while the row is `active` (row-activation.ts). Each
 // field saves on its own, with only what changed; an error shows under the row.
 import CalendarIcon from 'lucide-solid/icons/calendar'
@@ -22,12 +22,15 @@ import { type WeekStart, atLocalTime, localDate, localTime } from '~/lib/calenda
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
+import { detectTicket, keysIn, untick } from '~/lib/tickets'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
 import { readEntryTimes } from './entries'
 import { projectChoices } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
+import { TicketChip } from './ticket-chip'
+import { caretAfterKey } from './ticket-draft'
 
 export type EntryPatch = Omit<UpdateEntryInput, 'id'>
 export type SaveEntry = (entry: Entry, patch: EntryPatch) => Promise<unknown>
@@ -126,6 +129,12 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     return { startedAt: new Date(start), stoppedAt: new Date(stop) }
   }
 
+  // What committing the typed description gives. The keys the saved text has stay text.
+  function detected() {
+    return detectTicket(description(), new Set(keysIn(props.entry.description)), props.entry.ticket)
+  }
+  let input: HTMLInputElement | undefined
+
   return {
     errorId,
     date,
@@ -133,10 +142,25 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     readDate,
     description,
     setDescription,
+    setInput(el: HTMLInputElement) {
+      input = el
+    },
     commitDescription() {
-      const value = description().trim()
-      if (value === props.entry.description) setDescription(value)
-      else save({ description: value })
+      const result = detected()
+      const patch: EntryPatch = {}
+      if (result.description !== props.entry.description) patch.description = result.description
+      if (result.ticket !== props.entry.ticket) patch.ticket = result.ticket
+      setDescription(result.description)
+      if (Object.keys(patch).length > 0) save(patch)
+    },
+    // The chip's ×: the key goes back into the text, which then has it, so it isn't found again.
+    untick() {
+      const typed = detected()
+      if (!typed.ticket) return
+      const result = untick(typed.ticket, typed.description)
+      setDescription(result.description)
+      save({ description: result.description, ticket: null })
+      caretAfterKey(input, { description: result.description, key: typed.ticket })
     },
     resetDescription() {
       setDescription(props.entry.description)
@@ -213,6 +237,7 @@ function commitKeys(commit: () => void, reset: () => void) {
 export function DescriptionField(props: { editor: EntryEditor }) {
   return (
     <input
+      ref={(el) => props.editor.setInput(el)}
       type="text"
       autocomplete="off"
       aria-label={m.entry_description()}
@@ -228,6 +253,60 @@ export function DescriptionField(props: { editor: EntryEditor }) {
         )(event)
       }
     />
+  )
+}
+
+// The standard width's description: the input as wide as its text, which a hidden copy sizes
+// up to the room there is, and the ticket chip right after it. Without a ticket the input
+// fills the cell. The input stays mounted either way, so a commit that finds a ticket keeps
+// its focus.
+export function InlineDescription(props: {
+  editor: EntryEditor
+  entry: Entry
+  issueLinks: string | null
+}) {
+  return (
+    <div class="flex min-w-0 items-center gap-1">
+      <span
+        class={cn(
+          'inline-grid min-w-0',
+          props.entry.ticket ? 'grid-cols-[minmax(0,auto)]' : 'flex-1 grid-cols-[minmax(0,1fr)]',
+        )}
+      >
+        <span
+          aria-hidden="true"
+          class="invisible col-start-1 row-start-1 overflow-hidden border px-2 pr-3 text-sm whitespace-pre"
+        >
+          {props.editor.description() || m.timer_no_description()}
+        </span>
+        <span class="col-start-1 row-start-1 min-w-0">
+          <DescriptionField editor={props.editor} />
+        </span>
+      </span>
+      <TicketCell editor={props.editor} entry={props.entry} issueLinks={props.issueLinks} inline />
+    </div>
+  )
+}
+
+// The row's chip, after the text or in the Wide page's Ticket column; nothing without a ticket.
+export function TicketCell(props: {
+  editor: EntryEditor
+  entry: Entry
+  issueLinks: string | null
+  inline?: boolean
+}) {
+  return (
+    <Show when={props.entry.ticket}>
+      {(ticket) => (
+        <TicketChip
+          ticket={ticket()}
+          issueLinks={props.issueLinks}
+          row
+          inline={props.inline}
+          onRemove={() => props.editor.untick()}
+        />
+      )}
+    </Show>
   )
 }
 

@@ -1,5 +1,6 @@
 // The Table layout's entries (prototypes/timer.html): one dense table with a subtotal row
-// per day, newest first, and the entry fields (entry-fields.tsx) in the cells. It scrolls
+// per day, newest first, and the entry fields (entry-fields.tsx) in the cells. The ticket chip
+// follows the text, or with the Wide page setting has a column of its own. It scrolls
 // horizontally inside its border on narrow screens. Compact rows pad their cells less.
 import { For, Show } from 'solid-js'
 import { Duration } from '~/components/duration'
@@ -18,9 +19,11 @@ import {
   DateField,
   DescriptionField,
   EntryDuration,
+  InlineDescription,
   NextDayMark,
   ProjectField,
   RowError,
+  TicketCell,
   TimeField,
   createEntryEditor,
 } from './entry-fields'
@@ -49,11 +52,17 @@ export function EntryTable(
   function rowHeight() {
     return props.compact ? 37 : 57
   }
+  function columns() {
+    return props.wide ? 7 : 6
+  }
   return (
     <div class="surface bg-card overflow-hidden rounded-lg border">
-      <Table class="min-w-[48rem] table-fixed">
+      <Table class={cn('table-fixed', props.wide ? 'min-w-[56rem]' : 'min-w-[48rem]')}>
         <colgroup>
           <col />
+          <Show when={props.wide}>
+            <col class="w-32" />
+          </Show>
           <col class="w-40" />
           <col class="w-40" />
           <col class="w-36" />
@@ -63,6 +72,9 @@ export function EntryTable(
         <TableHeader>
           <TableRow>
             <TableHead>{m.entry_description()}</TableHead>
+            <Show when={props.wide}>
+              <TableHead>{m.timer_ticket()}</TableHead>
+            </Show>
             <TableHead>{m.timer_project()}</TableHead>
             <TableHead>{m.entry_start()}</TableHead>
             <TableHead>{m.entry_end()}</TableHead>
@@ -83,7 +95,7 @@ export function EntryTable(
                 <>
                   <TableRow class="bg-muted/50">
                     <th
-                      colspan={4}
+                      colspan={columns() - 2}
                       scope="rowgroup"
                       class="p-2 text-left align-middle text-xs font-medium"
                     >
@@ -99,7 +111,7 @@ export function EntryTable(
                     fallback={
                       <tr ref={lazy.placeholder}>
                         <td
-                          colspan={6}
+                          colspan={columns()}
                           style={{ height: `${groupIds(group()).length * rowHeight()}px` }}
                         />
                       </tr>
@@ -139,9 +151,27 @@ function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
       >
         <TableCell class="max-w-0">
           <div class="-ml-2">
-            <DescriptionField editor={editor} />
+            <Show
+              when={props.wide}
+              fallback={
+                <InlineDescription
+                  editor={editor}
+                  entry={props.entry}
+                  issueLinks={props.issueLinks}
+                />
+              }
+            >
+              <DescriptionField editor={editor} />
+            </Show>
           </div>
         </TableCell>
+        <Show when={props.wide}>
+          <TableCell class="max-w-0">
+            <div class="flex">
+              <TicketCell editor={editor} entry={props.entry} issueLinks={props.issueLinks} />
+            </div>
+          </TableCell>
+        </Show>
         <TableCell class="max-w-0">
           <ProjectField
             editor={editor}
@@ -183,7 +213,7 @@ function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
       </TableRow>
       <Show when={editor.error()}>
         <TableRow class="hover:bg-transparent">
-          <TableCell colspan={6} class="pt-0">
+          <TableCell colspan={props.wide ? 7 : 6} class="pt-0">
             <RowError editor={editor} />
           </TableCell>
         </TableRow>

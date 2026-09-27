@@ -91,6 +91,7 @@ describe('timer mutations', () => {
       userId,
       projectId: null,
       description: 'Left running',
+      ticket: null,
       startedAt,
       stoppedAt: null,
     }

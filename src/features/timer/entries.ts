@@ -58,17 +58,27 @@ export function recentRange(zone: string, days: number, now = Date.now()): Range
   }
 }
 
-// The newest entries with distinct descriptions and projects, for "Continue recent".
-// Entries without a description are left out: there is nothing to tell them apart by.
-export function recentWork<
-  T extends EntryTimes & { description: string; projectId: string | null },
->(entries: readonly T[], limit = 5) {
+// An entry as its labels name it: the ticket, then the description.
+export function entryName(entry: { description: string; ticket: string | null }) {
+  return [entry.ticket, entry.description].filter(Boolean).join(' ')
+}
+
+// What a piece of work is: its description, ticket, and project.
+interface Work {
+  description: string
+  ticket: string | null
+  projectId: string | null
+}
+
+// The newest entries with distinct work, for "Continue recent". Entries with neither a
+// description nor a ticket are left out: there is nothing to tell them apart by.
+export function recentWork<T extends EntryTimes & Work>(entries: readonly T[], limit = 5) {
   const seen = new Set<string>()
   const recent: T[] = []
   const sorted = [...entries].sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
   for (const entry of sorted) {
-    const key = JSON.stringify([entry.description, entry.projectId])
-    if (!entry.description || seen.has(key)) continue
+    const key = JSON.stringify([entry.description, entry.ticket, entry.projectId])
+    if ((!entry.description && !entry.ticket) || seen.has(key)) continue
     seen.add(key)
     recent.push(entry)
     if (recent.length === limit) break
@@ -76,14 +86,12 @@ export function recentWork<
   return recent
 }
 
-// Recent work whose description contains the typed text, for the description fields'
-// suggestions (prototypes/timer.html): newest first, leaving out the pair already in the
-// fields and work whose project can't be picked any more.
-export function suggestWork<
-  T extends EntryTimes & { description: string; projectId: string | null },
->(
+// Recent work whose ticket and description contain the typed text, for the description
+// fields' suggestions (prototypes/timer.html): newest first, leaving out the work already in
+// the fields and work whose project can't be picked any more.
+export function suggestWork<T extends EntryTimes & Work>(
   entries: readonly T[],
-  typed: { description: string; projectId: string | null },
+  typed: Work,
   pickable: (projectId: string | null) => boolean,
   limit = 8,
 ) {
@@ -93,8 +101,8 @@ export function suggestWork<
     .filter(
       (e) =>
         pickable(e.projectId) &&
-        e.description.toLocaleLowerCase().includes(query) &&
-        !(e.description === text && e.projectId === typed.projectId),
+        `${e.ticket ?? ''} ${e.description}`.toLocaleLowerCase().includes(query) &&
+        !(e.description === text && e.ticket === typed.ticket && e.projectId === typed.projectId),
     )
     .slice(0, limit)
 }

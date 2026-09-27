@@ -1,5 +1,5 @@
-// The timer's View popover (prototypes/timer.html): the layout, whether the summary shows, and
-// whether the rows are compact.
+// The timer's View popover (prototypes/timer.html): the layout, whether the rows are compact,
+// whether the summary shows, and whether the page is wide.
 // They are user settings, saved through useUpdateSettings, so they change at once here and on
 // the settings page. The theme is in the header's Appearance popover.
 import { Link } from '@tanstack/solid-router'
@@ -8,7 +8,13 @@ import { For, createSignal } from 'solid-js'
 import { Button, buttonVariants } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { Separator } from '~/components/ui/separator'
-import { Switch, SwitchControl, SwitchLabel, SwitchThumb } from '~/components/ui/switch'
+import {
+  Switch,
+  SwitchControl,
+  SwitchDescription,
+  SwitchLabel,
+  SwitchThumb,
+} from '~/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { cn } from '~/lib/utils'
@@ -83,6 +89,21 @@ export function ViewPopover(props: { settings: Settings; onError: (error: unknow
           onChange={(showSummary) => update({ showSummary })}
         >
           <SwitchLabel>{m.settings_show_summary()}</SwitchLabel>
+          <SwitchControl>
+            <SwitchThumb />
+          </SwitchControl>
+        </Switch>
+        <Switch
+          class="flex items-center justify-between gap-4"
+          checked={props.settings.wideTimer}
+          onChange={(wideTimer) => update({ wideTimer })}
+        >
+          <div class="grid gap-1">
+            <SwitchLabel>{m.settings_wide_timer()}</SwitchLabel>
+            <SwitchDescription class="text-muted-foreground max-w-56 text-xs">
+              {m.settings_wide_timer_description()}
+            </SwitchDescription>
+          </div>
           <SwitchControl>
             <SwitchThumb />
           </SwitchControl>

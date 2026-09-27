@@ -61,10 +61,16 @@ const snowtime = {
   teamIds: [],
 }
 
-const server: { running: RunningTimer | null; entries: Entry[]; settings: Settings } = {
+const server: {
+  running: RunningTimer | null
+  entries: Entry[]
+  settings: Settings
+  issueLinks: string | null
+} = {
   running: null,
   entries: [],
   settings: defaultSettings(),
+  issueLinks: null,
 }
 
 function defaultSettings(): Settings {
@@ -95,7 +101,7 @@ function session() {
   return {
     activeOrganizationId: organizationId,
     user: { id: userId },
-    organizations: [{ id: organizationId, name: 'Snowhound' }],
+    organizations: [{ id: organizationId, name: 'Snowhound', issueLinks: server.issueLinks }],
     settings: { ...server.settings },
   }
 }
@@ -109,6 +115,7 @@ function entry(daysAgo: number, start: string, end: string, description: string)
     userId,
     projectId: snowtime.id,
     description,
+    ticket: null,
     startedAt: new Date(atLocalTime(date, start, zone)),
     stoppedAt: new Date(atLocalTime(date, end, zone)),
   }
@@ -155,6 +162,7 @@ beforeEach(() => {
   server.running = null
   server.entries = [entry(1, '09:00', '10:30', 'Invoice export review')]
   server.settings = defaultSettings()
+  server.issueLinks = null
   fn.getAppSession.mockImplementation(async () => session())
   // Copies, as the real server sends: the query cache writes into the objects it holds.
   fn.getRunningTimer.mockImplementation(async () => server.running && { ...server.running })
@@ -729,5 +737,154 @@ describe('TimerView', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Show earlier entries' }))
     expect(await screen.findByDisplayValue('Kickoff')).toBeInTheDocument()
     expect(screen.queryByText('Something went wrong. Try again.')).not.toBeInTheDocument()
+  })
+})
+
+describe('ticket keys', () => {
+  function saveOnServer() {
+    fn.updateEntry.mockImplementation(
+      async ({ data }: { data: Partial<Entry> & { id: string } }) => {
+        Object.assign(
+          server.entries.find((e) => e.id === data.id)!,
+          data,
+        )
+      },
+    )
+  }
+
+  test('a key typed at the start of the timer becomes the ticket when it starts', async () => {
+    fn.startTimer.mockReturnValue(new Promise(() => {}))
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+
+    const input = within(timer()).getByPlaceholderText('What are you working on?')
+    await userEvent.type(input, '[[NBW-412] Fix the login{Enter}')
+    expect(fn.startTimer).toHaveBeenCalledWith({
+      data: expect.objectContaining({ description: 'Fix the login', ticket: 'NBW-412' }),
+    })
+    expect(input).toHaveValue('Fix the login')
+    expect(within(timer()).getByText('NBW-412')).toBeInTheDocument()
+  })
+
+  test('a key found in a row becomes its chip; × turns it back into text for good', async () => {
+    saveOnServer()
+    renderView()
+    const input = await screen.findByDisplayValue('Invoice export review')
+    const { id } = server.entries[0]
+
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Q3-2026 planning{Enter}')
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith({
+        data: { organizationId, id, description: 'planning', ticket: 'Q3-2026' },
+      }),
+    )
+    const remove = await screen.findByRole('button', { name: 'Turn Q3-2026 back into text' })
+    await userEvent.click(remove)
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenLastCalledWith({
+        data: { organizationId, id, description: 'Q3-2026 planning', ticket: null },
+      }),
+    )
+    expect(input).toHaveValue('Q3-2026 planning')
+    expect(input).toHaveFocus()
+
+    // Saved in the text, the key isn't found again.
+    await userEvent.type(input, ' review{Enter}')
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenLastCalledWith({
+        data: { organizationId, id, description: 'Q3-2026 planning review' },
+      }),
+    )
+    expect(screen.queryByRole('button', { name: /back into text/ })).not.toBeInTheDocument()
+  })
+
+  test('a key later in the text stays and becomes the ticket only without one', async () => {
+    saveOnServer()
+    server.entries[0].ticket = 'NBW-1'
+    renderView()
+    const input = await screen.findByDisplayValue('Invoice export review')
+
+    await userEvent.type(input, ' with CP-91{Enter}')
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith({
+        data: expect.objectContaining({ description: 'Invoice export review with CP-91' }),
+      }),
+    )
+    expect(fn.updateEntry.mock.calls[0][0].data).not.toHaveProperty('ticket')
+  })
+
+  test('chips link through Issue links, in a new tab', async () => {
+    server.issueLinks = 'https://acme.atlassian.net/browse/{key}'
+    server.entries[0].ticket = 'NBW-412'
+    renderView()
+
+    const link = await screen.findByRole('link', { name: 'NBW-412' })
+    expect(link).toHaveAttribute('href', 'https://acme.atlassian.net/browse/NBW-412')
+    expect(link).toHaveAttribute('target', '_blank')
+  })
+
+  test('Continue and recent work carry the ticket', async () => {
+    server.settings.timerLayout = 'focus'
+    server.entries[0].ticket = 'NBW-412'
+    fn.startTimer.mockReturnValue(new Promise(() => {}))
+    renderView()
+
+    const recent = await screen.findByRole('region', { name: 'Continue recent' })
+    await userEvent.click(
+      within(recent).getByRole('button', { name: 'Continue NBW-412 Invoice export review' }),
+    )
+    expect(fn.startTimer).toHaveBeenCalledWith({
+      data: expect.objectContaining({ description: 'Invoice export review', ticket: 'NBW-412' }),
+    })
+  })
+
+  test('picking recent work in the timer brings its ticket, found by its key', async () => {
+    server.entries[0].ticket = 'NBW-412'
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+
+    const input = within(timer()).getByPlaceholderText('What are you working on?')
+    await userEvent.type(input, 'nbw-4')
+    await userEvent.click(await screen.findByRole('option', { name: /Invoice export review/ }))
+    expect(input).toHaveValue('Invoice export review')
+    expect(within(timer()).getByText('NBW-412')).toBeInTheDocument()
+  })
+
+  test('Add entry finds the ticket on Save, and a pasted link becomes its key', async () => {
+    fn.createEntry.mockReturnValue(new Promise(() => {}))
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+    const dialog = await screen.findByRole('dialog')
+    const date = addDays(localDate(Date.now(), zone), -2)
+    fireEvent.input(within(dialog).getByLabelText('Date'), { target: { value: date } })
+    fireEvent.input(within(dialog).getByLabelText('Start'), { target: { value: '13:00' } })
+    fireEvent.input(within(dialog).getByLabelText('End'), { target: { value: '14:15' } })
+    await userEvent.type(
+      within(dialog).getByLabelText('Description'),
+      'https://acme.atlassian.net/browse/NBW-9 review',
+    )
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+    expect(fn.createEntry).toHaveBeenCalledWith({
+      data: expect.objectContaining({ description: 'review', ticket: 'NBW-9' }),
+    })
+  })
+
+  test('Wide page gives the table a Ticket column', async () => {
+    fn.updateSettings.mockImplementation(async (input: { data: UpdateSettingsInput }) => {
+      Object.assign(server.settings, input.data)
+      return server.settings
+    })
+    server.settings.timerLayout = 'table'
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    expect(screen.queryByRole('columnheader', { name: 'Ticket' })).not.toBeInTheDocument()
+
+    await userEvent.click(within(await openView()).getByRole('switch', { name: /Wide page/ }))
+    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { wideTimer: true } })
+    expect(await screen.findByRole('columnheader', { name: 'Ticket' })).toBeInTheDocument()
   })
 })

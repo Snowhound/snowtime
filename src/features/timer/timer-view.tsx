@@ -60,6 +60,8 @@ export function TimerView(props: {
   userId: string
   settings: Settings
   organizations: readonly { id: string; name: string }[]
+  // The organization's Issue links setting, which ticket chips link through.
+  issueLinks: string | null
 }) {
   const formatHours = useFormatHours()
   function zone() {
@@ -67,6 +69,9 @@ export function TimerView(props: {
   }
   function layout() {
     return props.settings.timerLayout
+  }
+  function wide() {
+    return props.settings.wideTimer
   }
 
   const running = useQuery(() => runningTimerQuery)
@@ -212,9 +217,9 @@ export function TimerView(props: {
     } else showError(entries.error)
   })
 
-  function start(description: string, projectId: string | null) {
+  function start(description: string, projectId: string | null, ticket: string | null) {
     setError(null)
-    startTimer.mutate({ id: newId(), description, projectId }, options)
+    startTimer.mutate({ id: newId(), description, ticket, projectId }, options)
   }
 
   function stop() {
@@ -224,7 +229,7 @@ export function TimerView(props: {
     stopTimer.mutate({ id: timer.id }, options)
   }
 
-  function update(id: string, patch: { description?: string; projectId?: string | null }) {
+  function update(id: string, patch: EntryPatch) {
     setError(null)
     updateEntry.mutate({ id, ...patch }, options)
   }
@@ -285,6 +290,12 @@ export function TimerView(props: {
     get compact() {
       return props.settings.compactRows
     },
+    get wide() {
+      return props.settings.wideTimer
+    },
+    get issueLinks() {
+      return props.issueLinks
+    },
     // A row shows its own error, so this one resolves or rejects instead of using the alert.
     onSave: async (entry: Entry, patch: EntryPatch) => {
       setError(null)
@@ -292,12 +303,12 @@ export function TimerView(props: {
       markSaved(entry.id)
     },
     justSaved: (id: string) => savedIds().has(id),
-    onContinue: (entry: Entry) => start(entry.description, entry.projectId),
+    onContinue: (entry: Entry) => start(entry.description, entry.projectId, entry.ticket),
     onDelete: remove,
   }
 
   return (
-    <div class="grid gap-4">
+    <div class={cn('mx-auto grid w-full gap-4', wide() ? 'max-w-[88rem]' : 'max-w-6xl')}>
       <div class="relative flex items-center justify-between gap-4">
         <PageTitle title={m.nav_timer()} />
         <div class="flex items-center gap-2">
@@ -313,14 +324,23 @@ export function TimerView(props: {
           <ViewPopover settings={props.settings} onError={showError} />
         </div>
       </div>
+      {/* The header's width, with the timer beside the summary; or, with the Wide page
+          setting, up to 88rem with the timer across the summary column. */}
       <div
-        class={
-          props.settings.showSummary
-            ? 'grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_auto]'
-            : 'grid grid-cols-[minmax(0,1fr)] gap-6'
-        }
+        class={cn(
+          'grid grid-cols-[minmax(0,1fr)] gap-x-6',
+          props.settings.compactRows ? 'gap-y-4' : 'gap-y-6',
+          props.settings.showSummary && 'lg:grid-cols-[minmax(0,1fr)_auto]',
+          props.settings.showSummary && !wide() && 'lg:grid-rows-[auto_1fr]',
+        )}
       >
-        <div class={cn('flex min-w-0 flex-col', props.settings.compactRows ? 'gap-4' : 'gap-6')}>
+        <div
+          class={cn(
+            'flex min-w-0 flex-col',
+            props.settings.compactRows ? 'gap-4' : 'gap-6',
+            wide() ? 'col-[1/-1]' : 'lg:col-start-1 lg:row-start-1',
+          )}
+        >
           <ErrorAlert message={error()} />
           <TimerBar
             layout={layout()}
@@ -329,6 +349,7 @@ export function TimerView(props: {
             projects={projects.data ?? []}
             entries={stopped()}
             elsewhere={elsewhere()}
+            issueLinks={props.issueLinks}
             now={now()}
             onStart={start}
             onStop={stop}
@@ -337,6 +358,14 @@ export function TimerView(props: {
               running.data && toggleEditor({ kind: 'running', entry: running.data }, anchor)
             }
           />
+        </div>
+        <div
+          class={cn(
+            'flex min-w-0 flex-col',
+            props.settings.compactRows ? 'gap-4' : 'gap-6',
+            !wide() && 'lg:col-start-1 lg:row-start-2',
+          )}
+        >
           <Show when={layout() === 'focus' && entries.data}>
             <RecentWork
               entries={recentWork(stopped())}
@@ -399,7 +428,11 @@ export function TimerView(props: {
           </section>
         </div>
         <Show when={props.settings.showSummary && entries.data}>
-          <SummaryPanel summary={summary()} projects={projects.data ?? []} />
+          <div
+            class={cn('lg:self-start', !wide() && 'lg:col-start-2 lg:row-span-2 lg:row-start-1')}
+          >
+            <SummaryPanel summary={summary()} projects={projects.data ?? []} />
+          </div>
         </Show>
       </div>
       <EntryPopover
@@ -409,6 +442,7 @@ export function TimerView(props: {
         weekStart={props.settings.weekStart}
         projects={projects.data ?? []}
         entries={stopped()}
+        issueLinks={props.issueLinks}
         onSave={save}
         onClose={() => setEditor(null)}
       />

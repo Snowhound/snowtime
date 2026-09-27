@@ -1,8 +1,9 @@
 // The entry popover (prototypes/timer.html): logs a past entry by hand under Add entry, or
 // edits the running entry's start under the timer's clock. Stopped entries are edited in
 // their rows (entry-fields.tsx). Times are read in the user's zone; an end at or before the
-// start means the next day, and a live line shows the resulting duration. Escape and a click
-// outside keep what was typed into a new entry for the next Add entry; Cancel and Save
+// start means the next day, and a live line shows the resulting duration. The ticket is found
+// in the description on blur and Save, and its chip sits at the end of the field. Escape and a
+// click outside keep what was typed into a new entry for the next Add entry; Cancel and Save
 // clear it.
 import { createForm } from '@tanstack/solid-form'
 import { Show, createMemo, createSignal } from 'solid-js'
@@ -14,16 +15,20 @@ import { Popover, PopoverContent } from '~/components/ui/popover'
 import { type IsoDate, type WeekStart, localDate, localTime, runningMs } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
 import type { Project } from '~/lib/queries/projects'
+import { detectTicket, keysIn, untick } from '~/lib/tickets'
 import { m } from '~/paraglide/messages.js'
 import { DescriptionCombobox } from './description-combobox'
 import { type EntryFormError, lastEndToday, readEntryTimes } from './entries'
 import { ProjectSelect } from './project-select'
 import type { Entry } from './queries'
+import { TicketChip } from './ticket-chip'
+import { caretAfterKey } from './ticket-draft'
 
 export type EntryPopoverTarget = { kind: 'new' } | { kind: 'running'; entry: Entry }
 
 export interface EntryPopoverValues {
   description: string
+  ticket: string | null
   projectId: string | null
   startedAt: Date
   // Null for the running entry.
@@ -32,6 +37,7 @@ export interface EntryPopoverValues {
 
 interface FormValues {
   description: string
+  ticket: string | null
   projectId: string
   date: IsoDate
   start: string
@@ -59,6 +65,8 @@ export function EntryPopover(props: {
   projects: readonly Project[]
   // Stopped entries, for the description's suggestions and a new entry's start.
   entries: readonly Entry[]
+  // The organization's Issue links setting, for the chip.
+  issueLinks: string | null
   onSave: (values: EntryPopoverValues) => void
   onClose: () => void
 }) {
@@ -116,6 +124,7 @@ export function EntryPopover(props: {
               weekStart={props.weekStart}
               projects={props.projects}
               entries={props.entries}
+              issueLinks={props.issueLinks}
               readValues={(read) => (readValues = read)}
               onSave={(values) => {
                 setDraft(null)
@@ -140,6 +149,7 @@ function EntryForm(props: {
   weekStart: WeekStart
   projects: readonly Project[]
   entries: readonly Entry[]
+  issueLinks: string | null
   readValues: (read: () => FormValues) => void
   onSave: (values: EntryPopoverValues) => void
   onCancel: () => void
@@ -155,6 +165,7 @@ function EntryForm(props: {
   const form = createForm(() => ({
     defaultValues: props.draft ?? {
       description: entry?.description ?? '',
+      ticket: entry?.ticket ?? null,
       projectId: entry?.projectId ?? '',
       date: localDate(entry?.startedAt.getTime() ?? Date.now(), props.zone),
       start: entry
@@ -171,6 +182,7 @@ function EntryForm(props: {
       if (times.error) return
       props.onSave({
         description: value.description.trim(),
+        ticket: value.ticket,
         projectId: value.projectId || null,
         startedAt: times.startedAt,
         stoppedAt: times.stoppedAt,
@@ -192,6 +204,29 @@ function EntryForm(props: {
     return state.submissionAttempts > 0 && result.error ? ERRORS[result.error]() : null
   })
   const projectId = form.useStore((state) => state.values.projectId)
+  const ticket = form.useStore((state) => state.values.ticket)
+
+  // The keys the loaded description had, and any turned back into text, stay text.
+  let known = new Set(keysIn(form.state.values.description))
+  let descriptionInput: HTMLInputElement | undefined
+
+  function commitTicket() {
+    const { values } = form.state
+    const result = detectTicket(values.description, known, values.ticket)
+    form.setFieldValue('description', result.description)
+    form.setFieldValue('ticket', result.ticket)
+    return result
+  }
+
+  function untickTicket() {
+    const key = commitTicket().ticket
+    if (!key) return
+    const result = untick(key, form.state.values.description)
+    form.setFieldValue('description', result.description)
+    form.setFieldValue('ticket', null)
+    known.add(key)
+    caretAfterKey(descriptionInput, { description: result.description, key })
+  }
 
   function summary() {
     const result = times()
@@ -209,6 +244,7 @@ function EntryForm(props: {
       novalidate
       onSubmit={(event) => {
         event.preventDefault()
+        commitTicket()
         void form.handleSubmit()
       }}
     >
@@ -227,12 +263,28 @@ function EntryForm(props: {
             placeholder={m.entry_description_placeholder()}
             value={field().state.value}
             projectId={projectId()}
+            ticket={ticket()}
+            chip={
+              <Show when={ticket()}>
+                {(key) => (
+                  <TicketChip
+                    ticket={key()}
+                    issueLinks={props.issueLinks}
+                    onRemove={untickTicket}
+                  />
+                )}
+              </Show>
+            }
             entries={props.entries}
             projects={props.projects}
+            ref={(el) => (descriptionInput = el)}
             onChange={field().handleChange}
+            onBlur={commitTicket}
             onPick={(picked) => {
               field().handleChange(picked.description)
+              form.setFieldValue('ticket', picked.ticket)
               form.setFieldValue('projectId', picked.projectId ?? '')
+              known = new Set(keysIn(picked.description))
             }}
           />
         )}

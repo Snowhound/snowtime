@@ -18,7 +18,6 @@ const ISSUE_LINK = new RegExp(
 const NOT_TICKETS = new Set(['UTF', 'ISO', 'SHA', 'COVID'])
 
 export const TICKET_PATTERN = new RegExp(`^${KEY}$`)
-export const TICKET_MAX_LENGTH = 18
 
 // The keys in a text, in order. The keys a saved description has are the `known` keys of
 // detectTicket.

@@ -38,17 +38,29 @@ describe('recentRange', () => {
   })
 })
 
-describe('recentWork', () => {
-  function work(start: string, description: string, projectId: string | null) {
-    return { ...entry(start, start), description, projectId }
-  }
+function work(
+  start: string,
+  description: string,
+  projectId: string | null,
+  ticket = null as string | null,
+) {
+  return { ...entry(start, start), description, ticket, projectId }
+}
 
-  test('the newest entry of each description and project, without blank descriptions', () => {
+describe('recentWork', () => {
+  test('the newest entry of each piece of work, without blank ones', () => {
     const newest = work('2026-09-24T09:00:00Z', 'Review', 'p1')
     const otherProject = work('2026-09-24T08:00:00Z', 'Review', 'p2')
     const older = work('2026-09-23T09:00:00Z', 'Review', 'p1')
     const blank = work('2026-09-24T10:00:00Z', '', 'p1')
     expect(recentWork([older, blank, otherProject, newest])).toEqual([newest, otherProject])
+  })
+
+  test('tells work apart by its ticket, and keeps work with only a ticket', () => {
+    const one = work('2026-09-24T09:00:00Z', 'Review', 'p1', 'NBW-1')
+    const two = work('2026-09-24T08:00:00Z', 'Review', 'p1', 'NBW-2')
+    const bare = work('2026-09-24T07:00:00Z', '', 'p1', 'NBW-3')
+    expect(recentWork([bare, two, one])).toEqual([one, two, bare])
   })
 
   test('stops at the limit', () => {
@@ -58,31 +70,31 @@ describe('recentWork', () => {
 })
 
 describe('suggestWork', () => {
-  function work(start: string, description: string, projectId: string | null) {
-    return { ...entry(start, start), description, projectId }
-  }
   const review = work('2026-09-24T09:00:00Z', 'Code review', 'p1')
   const archived = work('2026-09-24T08:00:00Z', 'Review copy', 'old')
-  const planning = work('2026-09-23T09:00:00Z', 'Planning', null)
+  const planning = work('2026-09-23T09:00:00Z', 'Planning', null, 'NBW-412')
+  const none = { projectId: null, ticket: null }
   function pickable(id: string | null) {
     return id !== 'old'
   }
 
   test('newest work containing the text in any case, without unpickable projects', () => {
     const entries = [planning, archived, review]
-    expect(suggestWork(entries, { description: ' REV', projectId: null }, pickable)).toEqual([
-      review,
-    ])
-    expect(suggestWork(entries, { description: '', projectId: null }, pickable)).toEqual([
-      review,
+    expect(suggestWork(entries, { ...none, description: ' REV' }, pickable)).toEqual([review])
+    expect(suggestWork(entries, { ...none, description: '' }, pickable)).toEqual([review, planning])
+  })
+
+  test('finds work by its ticket', () => {
+    expect(suggestWork([planning, review], { ...none, description: 'nbw-4' }, pickable)).toEqual([
       planning,
     ])
   })
 
-  test('leaves out the pair already in the fields, but not the same text elsewhere', () => {
+  test('leaves out the work already in the fields, but not the same text elsewhere', () => {
     const other = work('2026-09-22T09:00:00Z', 'Code review', 'p2')
-    const typed = { description: 'Code review', projectId: 'p1' }
+    const typed = { description: 'Code review', projectId: 'p1', ticket: null }
     expect(suggestWork([review, other], typed, pickable)).toEqual([other])
+    expect(suggestWork([review], { ...typed, ticket: 'NBW-1' }, pickable)).toEqual([review])
   })
 })
 

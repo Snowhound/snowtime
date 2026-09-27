@@ -1,13 +1,15 @@
 // The Focus layout's "Continue recent" chips (prototypes/timer.html): the newest distinct
-// work (recentWork), each starting a timer with its description and project.
+// work (recentWork), each starting a timer with its description, ticket, and project.
 import PlayIcon from 'lucide-solid/icons/play'
 import { For, Show } from 'solid-js'
 import { ProjectDot } from '~/components/project-dot'
 import { Button } from '~/components/ui/button'
 import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
+import { entryName } from './entries'
 import { entryProject } from './entry-fields'
 import type { Entry } from './queries'
+import { TicketLabel } from './ticket-chip'
 
 export function RecentWork(props: {
   entries: readonly Entry[]
@@ -29,7 +31,7 @@ export function RecentWork(props: {
               variant="outline"
               size="sm"
               class="max-w-full"
-              aria-label={m.timer_continue({ description: entry.description })}
+              aria-label={m.timer_continue({ description: entryName(entry) })}
               onClick={() => props.onContinue(entry)}
             >
               <PlayIcon class="size-3" aria-hidden="true" />
@@ -37,6 +39,7 @@ export function RecentWork(props: {
                 {(p) => <ProjectDot color={p().color} />}
               </Show>
               <span class="min-w-0 truncate">{entry.description}</span>
+              <Show when={entry.ticket}>{(ticket) => <TicketLabel>{ticket()}</TicketLabel>}</Show>
             </Button>
           )}
         </For>

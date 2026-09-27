@@ -17,6 +17,9 @@ export function TimerPage(props: { organizationId: string }) {
               userId={data().user.id}
               settings={data().settings!}
               organizations={data().organizations}
+              issueLinks={
+                data().organizations.find((o) => o.id === organizationId)?.issueLinks ?? null
+              }
             />
           )}
         </Show>

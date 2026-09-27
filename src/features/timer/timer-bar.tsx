@@ -1,6 +1,7 @@
-// The timer (prototypes/timer.html): description, project, the elapsed time, and Start or
-// Stop. While it runs, the fields edit the running entry, and the elapsed time opens its
-// start in the entry popover. The layouts share these controls and differ only in classes.
+// The timer (prototypes/timer.html): description with its ticket chip, project, the elapsed
+// time, and Start or Stop. While it runs, the fields edit the running entry, and the elapsed
+// time opens its start in the entry popover. The layouts share these controls and differ
+// only in classes.
 import PlayIcon from 'lucide-solid/icons/play'
 import SquareIcon from 'lucide-solid/icons/square'
 import { Show, createEffect, createSignal, on } from 'solid-js'
@@ -14,6 +15,8 @@ import { m } from '~/paraglide/messages.js'
 import { DescriptionCombobox } from './description-combobox'
 import { ProjectSelect } from './project-select'
 import type { Entry, RunningTimer } from './queries'
+import { TicketChip } from './ticket-chip'
+import { caretAfterKey, createTicketDraft } from './ticket-draft'
 
 const LAYOUTS: Record<
   Settings['timerLayout'],
@@ -50,6 +53,9 @@ const COMPACT: typeof LAYOUTS = {
 }
 // Controls the layouts leave at their default height.
 const COMPACT_CONTROL = 'h-9'
+const COMPACT_FIELD = 'min-h-9 py-0'
+
+type TimerPatch = { description?: string; ticket?: string | null; projectId?: string | null }
 
 export function TimerBar(props: {
   layout: Settings['timerLayout']
@@ -61,26 +67,35 @@ export function TimerBar(props: {
   // The organization the running timer is in, when it isn't the active one. Entries
   // there are edited from that organization.
   elsewhere: string | null
+  // The organization's Issue links setting, for the chip.
+  issueLinks: string | null
   now: number
-  onStart: (description: string, projectId: string | null) => void
+  onStart: (description: string, projectId: string | null, ticket: string | null) => void
   onStop: () => void
-  onUpdate: (patch: { description?: string; projectId?: string | null }) => void
+  onUpdate: (patch: TimerPatch) => void
   onEditStart: (anchor: HTMLElement) => void
 }) {
-  const [description, setDescription] = createSignal('')
+  const draft = createTicketDraft()
   const [projectId, setProjectId] = createSignal('')
+  let input: HTMLInputElement | undefined
 
   // The fields show the running entry, and clear when it stops. Only a changed value is
   // copied, so a refetch doesn't overwrite what is being typed.
   createEffect(
     on(
-      () => [props.running?.id, props.running?.description, props.running?.projectId] as const,
-      ([id, text, project], previous) => {
+      () =>
+        [
+          props.running?.id,
+          props.running?.description,
+          props.running?.ticket,
+          props.running?.projectId,
+        ] as const,
+      ([id, text, ticket, project], previous) => {
         if (id) {
-          setDescription(text ?? '')
+          draft.reset(text ?? '', ticket ?? null)
           setProjectId(project ?? '')
         } else if (previous?.[0]) {
-          setDescription('')
+          draft.reset('', null)
           setProjectId('')
         }
       },
@@ -96,22 +111,38 @@ export function TimerBar(props: {
   }
 
   function start() {
-    props.onStart(description().trim(), projectId() || null)
+    const { description, ticket } = draft.commit()
+    props.onStart(description, projectId() || null, ticket)
   }
 
   function pick(entry: Entry) {
-    setDescription(entry.description)
+    draft.reset(entry.description, entry.ticket)
     setProjectId(entry.projectId ?? '')
     if (props.running) {
-      props.onUpdate({ description: entry.description, projectId: entry.projectId })
+      props.onUpdate({
+        description: entry.description,
+        ticket: entry.ticket,
+        projectId: entry.projectId,
+      })
     }
   }
 
+  // Commits what was typed; the running entry saves its description and ticket.
   function saveDescription() {
+    const { description, ticket } = draft.commit()
     const running = props.running
-    if (running && description().trim() !== running.description) {
-      props.onUpdate({ description: description().trim() })
-    }
+    if (!running) return
+    const patch: TimerPatch = {}
+    if (description !== running.description) patch.description = description
+    if (ticket !== running.ticket) patch.ticket = ticket
+    if (Object.keys(patch).length > 0) props.onUpdate(patch)
+  }
+
+  function untick() {
+    const turned = draft.untick()
+    if (!turned) return
+    if (props.running) props.onUpdate({ description: turned.description, ticket: null })
+    caretAfterKey(input, turned)
   }
 
   function classes() {
@@ -129,6 +160,9 @@ export function TimerBar(props: {
   function control() {
     return props.compact ? COMPACT_CONTROL : undefined
   }
+  function field() {
+    return props.compact ? COMPACT_FIELD : undefined
+  }
 
   return (
     // Above the entries, so the description's suggestions aren't covered by the cards,
@@ -145,14 +179,27 @@ export function TimerBar(props: {
             class="flex-1"
             label={m.timer_description_placeholder()}
             labelClass="sr-only"
-            inputClass={control()}
+            inputClass={field()}
             placeholder={m.timer_description_placeholder()}
-            value={description()}
+            value={draft.description()}
             projectId={projectId()}
+            ticket={draft.ticket()}
+            chip={
+              <Show when={draft.ticket()}>
+                {(ticket) => (
+                  <TicketChip
+                    ticket={ticket()}
+                    issueLinks={props.issueLinks}
+                    onRemove={props.elsewhere ? undefined : untick}
+                  />
+                )}
+              </Show>
+            }
             entries={props.entries}
             projects={props.projects}
             disabled={!!props.elsewhere}
-            onChange={setDescription}
+            ref={(el) => (input = el)}
+            onChange={draft.setDescription}
             onPick={pick}
             onBlur={saveDescription}
             onKeyDown={(event) => {
