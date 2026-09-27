@@ -8,6 +8,7 @@ import { Show } from 'solid-js'
 import { intro } from '~/lib/scene/intro'
 import type { Season } from '~/lib/scene/scene'
 import { SEASON_COPY } from '~/lib/scene/seasons'
+import type { FillSummary } from '~/lib/taglines/fill'
 import { taglineLines } from '~/lib/taglines/taglines'
 import { cn } from '~/lib/utils'
 
@@ -15,6 +16,7 @@ export function SeasonTagline(props: {
   season: Season
   // The user's zone, for the catalogue's taglines; without it, the tagline stays seasonal.
   timeZone?: string
+  fill?: FillSummary | null
   cue?: boolean
   roll?: boolean
   class?: string
@@ -27,7 +29,9 @@ export function SeasonTagline(props: {
   // tagline; the page is hidden under it then, so the switch to its set isn't seen.
   function lines() {
     const played = intro.lines()
-    return played.length > 0 ? played : taglineLines(props.season, { timeZone: props.timeZone })
+    return played.length > 0
+      ? played
+      : taglineLines(props.season, { timeZone: props.timeZone, fill: props.fill })
   }
   function rolling() {
     return !!(props.cue && props.roll && lines()[2])

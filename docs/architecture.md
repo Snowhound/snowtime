@@ -584,10 +584,11 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
 - Tagline (`src/lib/taglines/`, `src/components/page-title.tsx`): the season's own sets are
   Paraglide messages in `src/lib/scene/seasons.ts`, since the intro shows them too. Every other
   set is in the catalogue, `src/lib/taglines/catalogue.ts`, where each set holds its lines per
-  language and a `when`: a date rule, a date range, or a timesheet period. The sets had stopped
-  being translations of each other, and a message must exist in every language; a catalogue set
-  shows only in the languages it has. Each signed-in page's title row places the tagline in the
-  browser, from its measured size, so it moves under the title when it doesn't fit.
+  language and a `when`: a date rule, a date range, a timesheet period, or a behaviour in the
+  user's timesheet. The sets had stopped being translations of each other, and a message must
+  exist in every language; a catalogue set shows only in the languages it has. Each signed-in
+  page's title row places the tagline in the browser, from its measured size, so it moves under
+  the title when it doesn't fit.
   - A season's sets take turns, one per UTC day, so the tagline doesn't wear out. The day is
     UTC's so the server and the browser pick the same set without knowing the user's zone; the
     set changes at 02:00 or 03:00 in Tallinn.
@@ -598,15 +599,58 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
     EU's clock changes, Midsummer, Halloween, St Martin's Day, and Santa. A set can be in one
     language only, such as St Martin's Day in Estonian, where it's a custom. Several sets on
     one date take turns.
-  - Otherwise, on a timesheet period's last days, a period tagline replaces the season's:
-    the month's last three days, else Friday, whatever the week start.
+  - Signed in, the tagline also reacts to the user's own timesheet, through a fill summary
+    (`src/lib/taglines/fill.ts`). `appSession` computes it with the session in the frame's
+    loader, so the server and the browser pick the same set. It covers the user's entries in
+    all their organizations, from the start of last month, in their zone and region (see
+    "Working days"):
+    - A working day counts as filled at 6 hours or more, a running timer's time included,
+      and a shortened working day at 3 hours less. A week or month counts as filled when all
+      its working days are. The threshold is lax on purpose: the taglines are jokes and
+      mustn't nag over a short day.
+    - A working day with nothing logged is empty. One with some time but under 6 hours is
+      neither, so it ends a streak but isn't a gap.
+    - Weekends, public holidays, and the days before the account was created are never
+      expected, so they're never gaps.
+    - The summary holds when the running timer started; whether today, the last working
+      day, last week, and last month are filled; whether every working day back to the start
+      of last month is; how many working days in a row before today are empty; and the
+      streak of filled working days, ending today or, while today isn't filled, before it.
+    - It adds one query, a `UNION ALL` of two index searches: the entries started since the
+      start of last month, less the 24 hours an entry can last, in the user's organizations;
+      and a timer left running from before then. With `OR` in one `WHERE`, SQLite scanned the
+      table. On the company seed data (21,234 entries), it takes about 0.6 ms.
+  - The tagline picks its set in this order, and the first match wins:
+    1. A timer that has run 8 hours or more, or since before midnight in the user's zone.
+       Its sets show the timer's hours through `{hours}`; a timer at the 24-hour cap has its
+       own set.
+    2. A date's set.
+    3. A period's set, on a timesheet period's last days: the month's last three days, else
+       Friday, whatever the week start.
+    4. 1–2 empty working days in a row before today: the gap sets, which name yesterday, or
+       Friday on a Monday. 3 or more: the welcome back set.
+    5. On a working day, today and every working day before it filled: the praise sets. The
+       streak's set shows the streak through `{days}`.
+    6. On a working day, today not filled but the last working day, last week, or last
+       month filled: the "and today?" sets.
+    7. The season's sets and the day's ranges, in turn.
+
+    Several sets that match one step take turns by UTC day. `taglinePick` in
+    `src/lib/taglines/taglines.ts` fills the placeholders, which the catalogue test checks
+    are the same in every language.
+
+  - A summary from another day, such as on a tab left open overnight, counts only for the
+    running timer.
+  - The tagline keeps its set while the page is open: the page title keeps the summary it
+    picked with. Entry writes refetch the session, and when the new summary brings on the
+    praise sets, the tagline switches to one, with its cue.
   - The intro and the tagline pick separately. The intro plays about four times a year and
     opens the season, so it shows only the season's sets, in turn by UTC day, never a date's
     or a range's. On the visit where the intro plays, the tagline switches to the intro's set,
     so the page picks up what the user just watched. The browser decides whether the intro
     plays, after the server has rendered the tagline; the page is hidden under the intro
     then, so the switch isn't seen.
-  - The sign-in page has no zone, so it shows only the season's sets.
+  - The sign-in page has no zone and no summary, so it shows only the season's sets.
   - A tagline the browser hasn't shown before gets a cue once it's placed: a light sweeps
     across it. When it's centered and the set has a third line, the first two lines then roll
     up and fade for the third, which holds for about four seconds before they roll back. The

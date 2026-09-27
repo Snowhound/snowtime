@@ -15,8 +15,9 @@ A timer left running isn't stopped or flagged today. The server caps the entry a
 
 Decided on 2026-09-27:
 
-- A working day counts as filled at 6 hours or more. The threshold is lax on purpose: the
-  taglines are jokes and mustn't nag over a short day.
+- A working day counts as filled at 6 hours or more, and a shortened working day, such as
+  the day before Christmas Eve in Estonia, at 3 hours less (decided later on 2026-09-27). The
+  threshold is lax on purpose: the taglines are jokes and mustn't nag over a short day.
 - Weekends and public holidays never count as gaps. Estonian holidays come from
   riigipühad.ee, US holidays from rules, and other countries count weekends only.
 - The holidays follow the user's country, not their language. A Country setting defaults to
@@ -38,10 +39,11 @@ Subtasks, in order:
 3. `03-country-setting.md`: the Country setting
 4. `04-timesheet-taglines.md`: the fill summary and the behaviour sets
 5. `05-more-dates.md`: sets for uncovered dates
+6. `06-estonian-review.md`: a review of the Estonian lines by Gemini 3.8
 
 ## Acceptance criteria
 
 - [ ] The subtasks are done
-- [ ] `docs/architecture.md`, "Tagline", records the catalogue, the order sets are picked
+- [x] `docs/architecture.md`, "Tagline", records the catalogue, the order sets are picked
       in, and the fill rules
-- [ ] `docs/product.md` mentions the Country setting and what it affects
+- [x] `docs/product.md` mentions the Country setting and what it affects

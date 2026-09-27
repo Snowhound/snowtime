@@ -1,6 +1,6 @@
 # 04: Taglines about the timesheet
 
-Status: todo
+Status: done
 
 Pick taglines from the user's own entries. The server computes a small fill summary in
 the frame's loader, so the server and the browser pick the same set.
@@ -10,7 +10,8 @@ organizations:
 
 - How long the running timer has run, if one runs
 - Whether today, the last working day, last week, and last month are filled. A working day
-  is filled at 6 hours or more; a week or month when all its working days are.
+  is filled at 6 hours or more, a shortened one at 3; a week or month when all its working
+  days are.
 - How many working days in a row before today are empty
 - How many filled working days in a row end yesterday or today (the streak)
 
@@ -47,11 +48,19 @@ Draft lines, English (Estonian written separately, not translated):
 
 ## Acceptance criteria
 
-- [ ] The frame's loader returns the fill summary with the session; it adds one query, and
+- [x] The frame's loader returns the fill summary with the session; it adds one query, and
       the query's time on the seed data is recorded here
-- [ ] The tagline picks sets in the order above, and the sign-in page stays seasonal
-- [ ] The timer set shows the timer's hours through a placeholder
-- [ ] Saving the entry that fills today switches the tagline to a praise set with its cue
-- [ ] Tests cover each trigger, holidays and weekends not counting as gaps, and the 3-day
+- [x] The tagline picks sets in the order above, and the sign-in page stays seasonal
+- [x] The timer set shows the timer's hours through a placeholder
+- [x] Saving the entry that fills today switches the tagline to a praise set with its cue
+- [x] Tests cover each trigger, holidays and weekends not counting as gaps, and the 3-day
       absence
-- [ ] Every set has English and Estonian lines
+- [x] Every set has English and Estonian lines
+
+## Query time
+
+`appSession` reads the summary's entries in one query, a `UNION ALL` of two index searches
+(`docs/architecture.md`, "Tagline"). On the seed data from `bun run db:seed --company` (21,234
+entries), over 26 users with up to 237 rows each, it took 0.59 ms at the median, 1.13 ms at
+the 95th percentile, and 1.99 ms at most. The first version, with `OR` in one `WHERE`, scanned
+the table and took 11.6 ms at the median.

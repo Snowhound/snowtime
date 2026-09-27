@@ -5,7 +5,8 @@ import { v7 as uuidv7 } from 'uuid'
 import type { Database } from '~/db'
 import { invitation, user } from '~/db/schema'
 import { seedIds } from '~/db/seed'
-import { createSeededDatabase } from '../testing'
+import { getSettings } from '../settings/settings.server'
+import { as, createSeededDatabase } from '../testing'
 import { appSession } from './session.server'
 
 const { users: U, orgs: O } = seedIds
@@ -22,14 +23,14 @@ beforeAll(async () => {
 afterAll(() => cleanup())
 
 function seeded(id: string, email: string) {
-  return { id, email }
+  return { id, email, createdAt: new Date('2026-01-01T00:00:00Z') }
 }
 
 // A signed-up user in no organization and without settings.
 async function newUser(email: string) {
   const id = uuidv7()
   await db.insert(user).values({ id, name: 'New', email, createdAt: NOW, updatedAt: NOW })
-  return { id, email }
+  return { id, email, createdAt: NOW }
 }
 
 async function invite(email: string, values: { status?: string; expiresAt?: Date } = {}) {
@@ -79,6 +80,27 @@ describe('appSession', () => {
     expect(session.invitationId).toBeNull()
   })
 
+  test("carries the fill summary of the user's entries in their zone, with a running timer", async () => {
+    const session = await appSession(db, seeded(U.member, 'member@example.com'), null, NOW)
+    expect(session.fill).toMatchObject({
+      date: '2026-09-23',
+      lastWorkingDay: { date: '2026-09-22', filled: true },
+      emptyDays: 0,
+    })
+    expect(session.fill?.timerStartedAt).toBeLessThan(NOW.getTime())
+    // Without settings there's no zone to sum in; without an organization, no entries.
+    const loner = await newUser('fill@example.com')
+    expect((await appSession(db, loner, null, NOW)).fill).toBeNull()
+    await as({ userId: loner.id }, () =>
+      getSettings(db, loner.id, { timeZone: 'Europe/Tallinn', locale: 'en' }),
+    )
+    expect((await appSession(db, loner, null, NOW)).fill).toMatchObject({
+      timerStartedAt: null,
+      today: 'open',
+      lastWorkingDay: null,
+    })
+  })
+
   test('without an active organization, the first by name stands in', async () => {
     const session = await appSession(db, seeded(U.admin, 'admin@example.com'), null, NOW)
     expect(session.activeOrganizationId).toBe(O.harbor)
@@ -100,6 +122,7 @@ describe('appSession', () => {
       organizations: [],
       activeOrganizationId: null,
       settings: null,
+      fill: null,
       invitationId: open,
     })
   })

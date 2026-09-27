@@ -4,6 +4,7 @@
 // timesheet does the same. The tagline's other sets are in src/lib/taglines/;
 // docs/architecture.md, "Tagline", has the rules for which set shows.
 import { type Accessor, createContext, useContext } from 'solid-js'
+import type { FillSummary } from '~/lib/taglines/fill'
 import { m } from '~/paraglide/messages.js'
 import { type Locale, getLocale } from '~/paraglide/runtime.js'
 import { type Season, seasonByMonth } from './scene'
@@ -88,8 +89,9 @@ export function useSeason() {
 }
 
 // The page tagline's settings, which the frame provides from the account's: whether it shows,
-// and the user's zone for the catalogue's taglines. Without a zone it stays seasonal.
-type TaglineSettings = { show: boolean; timeZone?: string }
+// the user's zone for the catalogue's taglines, and the session's fill summary. Without a zone
+// it stays seasonal.
+type TaglineSettings = { show: boolean; timeZone?: string; fill?: FillSummary | null }
 const TaglineContext = createContext<Accessor<TaglineSettings>>(() => ({ show: true }))
 export const TaglineProvider = TaglineContext.Provider
 
