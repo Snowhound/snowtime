@@ -61,8 +61,8 @@ export const TAGLINES: TaglineSet[] = [
       ],
       et: [
         'Head uut aastat!',
-        'Sa ju ei taha alustada seda täitmata tundidega.',
-        'Täida oma tunnileht.',
+        'Uut aastat ei alustata vanade võlgadega.',
+        'Täida oma tunnileht ära.',
       ],
     },
   },
@@ -171,9 +171,9 @@ export const TAGLINES: TaglineSet[] = [
         "Fill in your timesheet; nobody's hunting for those.",
       ],
       et: [
-        'Lihavõttemunad on ära peidetud.',
-        'Nagu ka mõned su tunnid.',
-        'Täida oma tunnileht, neid ei hakka keegi otsima.',
+        'Munad on peidus.',
+        'Mõned sinu tunnid samuti.',
+        'Täida oma tunnileht ära – neid ei hakka keegi otsima.',
       ],
     },
   },
@@ -252,7 +252,7 @@ export const TAGLINES: TaglineSet[] = [
         'Something unlucky is coming.',
         "It's the deadline. Fill in your timesheet.",
       ],
-      et: ['Reede, 13.', 'Õnnetus on tulemas.', 'Selle nimi on tähtaeg. Täida oma tunnileht.'],
+      et: ['Reede ja 13.', 'Õnnetus on tulemas.', 'Selle nimi on tähtaeg. Täida oma tunnileht.'],
     },
   },
   {
@@ -406,8 +406,8 @@ export const TAGLINES: TaglineSet[] = [
     lines: {
       et: [
         'Päkapikud piiluvad aknast sisse.',
-        'Tühja tunnilehe eest kommi ei saa.',
-        'Sa ju ei tahaks, et keegi su sokki pissiks?',
+        'Tühja tunnilehe eest sussi sisse kommi ei saa.',
+        'Täida see ära, muidu leiad sussist toore kartuli.',
       ],
     },
   },
@@ -460,7 +460,11 @@ export const TAGLINES: TaglineSet[] = [
     when: { behaviour: 'timer', if: timerLong },
     lines: {
       en: ['Your timer has run for {hours} hours.', 'Have you?', "Stop it if you've gone home."],
-      et: ['Su taimer on käinud {hours} tundi.', 'Kas sina ka?', 'Peata see, kui oled juba kodus.'],
+      et: [
+        'Su taimer on tiksunud juba {hours} tundi.',
+        'Kas sina ka?',
+        'Peata see, kui oled juba kodus.',
+      ],
     },
   },
   {
@@ -538,7 +542,7 @@ export const TAGLINES: TaglineSet[] = [
       en: ['A perfect timesheet.', "Frame it; it won't last.", 'See you tomorrow at 9.'],
       et: [
         'Laitmatu tunnileht.',
-        'Raami see ära, kauaks ta selliseks ei jää.',
+        'Pane see või raami – kauaks see nii ei jää.',
         'Homme kell üheksa näeme.',
       ],
     },
@@ -584,7 +588,11 @@ export const TAGLINES: TaglineSet[] = [
     when: { behaviour: 'andToday', if: lastWeekFilled },
     lines: {
       en: ['Last week is complete.', 'This week has noticed.', 'It expects the same treatment.'],
-      et: ['Eelmine nädal on täis.', 'See nädal pani tähele.', 'Ta ootab samasugust kohtlemist.'],
+      et: [
+        'Eelmise nädala tunnid on koos.',
+        'Uus nädal pani seda tähele.',
+        'Ja ootab nüüd samasugust hoolt.',
+      ],
     },
   },
   {
@@ -596,7 +604,7 @@ export const TAGLINES: TaglineSet[] = [
         "Don't get used to the feeling.",
         "This one's already started.",
       ],
-      et: ['Eelmine kuu on suletud.', 'Ära sellega liiga ära harju.', 'Uus on juba alanud.'],
+      et: ['Eelmine kuu on lukus.', 'Ära selle tundega liialt harju.', 'Uus on juba alanud.'],
     },
   },
 ]

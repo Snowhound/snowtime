@@ -1,6 +1,6 @@
 # 061: Taglines about the user's timesheet
 
-Status: in-progress
+Status: done
 
 The tagline picks its set from the date and season only (`src/lib/scene/seasons.ts`,
 `docs/architecture.md`, "Tagline"). Add sets that react to the user's own timesheet: a timer
@@ -43,7 +43,7 @@ Subtasks, in order:
 
 ## Acceptance criteria
 
-- [ ] The subtasks are done
+- [x] The subtasks are done
 - [x] `docs/architecture.md`, "Tagline", records the catalogue, the order sets are picked
       in, and the fill rules
 - [x] `docs/product.md` mentions the Country setting and what it affects
