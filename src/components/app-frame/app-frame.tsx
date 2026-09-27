@@ -3,6 +3,7 @@ import { useMatches } from '@tanstack/solid-router'
 import { type ParentProps, createContext, onMount } from 'solid-js'
 import { Intro, IntroPage } from '~/components/scene/intro'
 import { SceneLayer } from '~/components/scene/scene-layer'
+import { LAYERS_ID } from '~/lib/layers'
 import { sessionQuery } from '~/lib/queries/session'
 import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/scene/intro'
 import { SCENE_DEFAULTS, currentSeason, sceneAttributes } from '~/lib/scene/scene'
@@ -75,6 +76,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
           </TaglineProvider>
         </SeasonProvider>
       </IntroPage>
+      <div id={LAYERS_ID} />
       <Intro />
     </div>
   )

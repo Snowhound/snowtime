@@ -3,6 +3,7 @@ import * as SelectPrimitive from '@kobalte/core/select'
 import { cva } from 'class-variance-authority'
 import type { JSX, ValidComponent } from 'solid-js'
 import { splitProps } from 'solid-js'
+import { layerRoot } from '~/lib/layers'
 import { cn } from '~/lib/utils'
 
 const Select = SelectPrimitive.Root
@@ -54,10 +55,10 @@ const SelectContent = <T extends ValidComponent = 'div'>(
 ) => {
   const [local, others] = splitProps(props as SelectContentProps, ['class'])
   return (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal mount={layerRoot()}>
       <SelectPrimitive.Content
         class={cn(
-          'relative z-50 min-w-32 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-80',
+          'relative z-20 min-w-32 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-80',
           local.class,
         )}
         {...others}

@@ -2,6 +2,7 @@ import * as DialogPrimitive from '@kobalte/core/dialog'
 import type { PolymorphicProps } from '@kobalte/core/polymorphic'
 import type { Component, ComponentProps, JSX, ValidComponent } from 'solid-js'
 import { splitProps } from 'solid-js'
+import { layerRoot } from '~/lib/layers'
 import { cn } from '~/lib/utils'
 
 const Dialog = DialogPrimitive.Root
@@ -10,7 +11,7 @@ const DialogTrigger = DialogPrimitive.Trigger
 const DialogPortal: Component<DialogPrimitive.DialogPortalProps> = (props) => {
   const [, rest] = splitProps(props, ['children'])
   return (
-    <DialogPrimitive.Portal {...rest}>
+    <DialogPrimitive.Portal mount={layerRoot()} {...rest}>
       <div class="fixed inset-0 z-50 flex items-start justify-center sm:items-center">
         {props.children}
       </div>

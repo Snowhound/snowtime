@@ -2,6 +2,7 @@ import * as DropdownMenuPrimitive from '@kobalte/core/dropdown-menu'
 import type { PolymorphicProps } from '@kobalte/core/polymorphic'
 import type { Component, ComponentProps, JSX, ValidComponent } from 'solid-js'
 import { splitProps } from 'solid-js'
+import { layerRoot } from '~/lib/layers'
 import { cn } from '~/lib/utils'
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
@@ -24,10 +25,10 @@ const DropdownMenuContent = <T extends ValidComponent = 'div'>(
 ) => {
   const [, rest] = splitProps(props as DropdownMenuContentProps, ['class'])
   return (
-    <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Portal mount={layerRoot()}>
       <DropdownMenuPrimitive.Content
         class={cn(
-          'z-50 min-w-32 origin-[var(--kb-menu-content-transform-origin)] animate-content-hide overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[expanded]:animate-content-show',
+          'z-20 min-w-32 origin-[var(--kb-menu-content-transform-origin)] animate-content-hide overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[expanded]:animate-content-show',
           props.class,
         )}
         {...rest}
@@ -135,7 +136,7 @@ const DropdownMenuSubContent = <T extends ValidComponent = 'div'>(
   return (
     <DropdownMenuPrimitive.SubContent
       class={cn(
-        'z-50 min-w-32 origin-[var(--kb-menu-content-transform-origin)] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in',
+        'z-20 min-w-32 origin-[var(--kb-menu-content-transform-origin)] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in',
         props.class,
       )}
       {...rest}

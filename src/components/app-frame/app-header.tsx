@@ -1,7 +1,8 @@
 // The signed-in header every page shares (prototypes/app-frame.js): the app icon, the organization
 // switcher, the navigation, the Appearance popover, and the user menu, which also switches the
 // language. Below 768 px the navigation moves to a second row of equal-width links. It sticks to
-// the top, above the cards and below popovers (z-50).
+// the top (z-30), so the popovers and menus the page opens (z-20) scroll under it with their
+// buttons; its own menus stay above it (z-50), over the second row.
 import { useQuery, useQueryClient } from '@tanstack/solid-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/solid-router'
 import BuildingComplexIcon from 'lucide-solid/icons/building-complex'
@@ -177,7 +178,7 @@ function OrganizationSwitcher(props: { session: AppSession; organization: Organi
         <span class="truncate text-sm">{props.organization.name}</span>
         <ChevronsUpDownIcon class="opacity-50" aria-hidden="true" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="w-64">
+      <DropdownMenuContent class="z-50 w-64">
         <DropdownMenuRadioGroup value={props.organization.id} onChange={switchTo}>
           <DropdownMenuGroupLabel class="text-muted-foreground text-xs font-medium">
             {m.org_menu_title()}
@@ -220,7 +221,7 @@ function UserMenu(props: { session: AppSession; organizationSlug: string }) {
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="w-60">
+      <DropdownMenuContent class="z-50 w-60">
         <DropdownMenuLabel class="flex flex-col gap-0.5 font-normal">
           <span class="truncate text-sm font-medium">{props.session.user.name}</span>
           <span class="text-muted-foreground truncate text-xs">{props.session.user.email}</span>
