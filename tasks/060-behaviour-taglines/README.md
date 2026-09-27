@@ -1,6 +1,6 @@
 # 060: Taglines about the user's timesheet
 
-Status: todo
+Status: in-progress
 
 The tagline picks its set from the date and season only (`src/lib/scene/seasons.ts`,
 `docs/architecture.md`, "Tagline"). Add sets that react to the user's own timesheet: a timer

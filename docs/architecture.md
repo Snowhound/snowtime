@@ -553,22 +553,31 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   and the sign-in page at full pace. It runs only with the Weather switch on, without reduced
   motion, and in a visible tab. Without WebGL 2, or when an effect's shaders don't compile, it
   stays off and the Weather hint says why. Unmounting cancels the frame and loses the context.
-- Tagline (`src/lib/scene/seasons.ts`, `src/components/page-title.tsx`): the seasonal copy is
-  Paraglide messages. Each signed-in page's title row places the tagline in the browser, from
-  its measured size, so it moves under the title when it doesn't fit.
-  - A season's sets of lines take turns, one per UTC day, so the tagline doesn't wear out and
-    the intro and the tagline show the same set. The day is UTC's so the server and the
-    browser pick the same set without knowing the user's zone; the set changes at 02:00 or
-    03:00 in Tallinn.
+- Tagline (`src/lib/taglines/`, `src/components/page-title.tsx`): the season's own sets are
+  Paraglide messages in `src/lib/scene/seasons.ts`, since the intro shows them too. Every other
+  set is in the catalogue, `src/lib/taglines/catalogue.ts`, where each set holds its lines per
+  language and a `when`: a date rule, a date range, or a timesheet period. The sets had stopped
+  being translations of each other, and a message must exist in every language; a catalogue set
+  shows only in the languages it has. Each signed-in page's title row places the tagline in the
+  browser, from its measured size, so it moves under the title when it doesn't fit.
+  - A season's sets take turns, one per UTC day, so the tagline doesn't wear out. The day is
+    UTC's so the server and the browser pick the same set without knowing the user's zone; the
+    set changes at 02:00 or 03:00 in Tallinn.
   - Signed in, the calendar adds sets, by the date in the user's zone from their settings,
     which the server and the browser both have. A date range's set joins the season's in
     the turn: the holidays in July, school in September, and the elves from 1 to 19
-    December. A date's set replaces the tagline, but not the intro: New Year, leap day, the
-    Mondays after the EU's clock changes, Midsummer, Halloween, St Martin's Day, and Santa.
-    A set can be in one language only, such as St Martin's Day in Estonian, where it's a
-    custom. Several sets on one date take turns.
+    December. A date's set replaces the tagline: New Year, leap day, the Mondays after the
+    EU's clock changes, Midsummer, Halloween, St Martin's Day, and Santa. A set can be in one
+    language only, such as St Martin's Day in Estonian, where it's a custom. Several sets on
+    one date take turns.
   - Otherwise, on a timesheet period's last days, a period tagline replaces the season's:
     the month's last three days, else Friday, whatever the week start.
+  - The intro and the tagline pick separately. The intro plays about four times a year and
+    opens the season, so it shows only the season's sets, in turn by UTC day, never a date's
+    or a range's. On the visit where the intro plays, the tagline switches to the intro's set,
+    so the page picks up what the user just watched. The browser decides whether the intro
+    plays, after the server has rendered the tagline; the page is hidden under the intro
+    then, so the switch isn't seen.
   - The sign-in page has no zone, so it shows only the season's sets.
   - A tagline the browser hasn't shown before gets a cue once it's placed: a light sweeps
     across it. When it's centered and the set has a third line, the first two lines then roll

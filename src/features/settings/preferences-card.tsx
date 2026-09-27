@@ -399,9 +399,7 @@ export function PreferencesCard(props: { settings: Settings }) {
               checked: props.settings.sceneTagline,
               onChange: (sceneTagline) => update({ sceneTagline }),
             }}
-            onReplay={(focus) =>
-              playIntro({ season: season(), timeZone: props.settings.timeZone, focus })
-            }
+            onReplay={(focus) => playIntro({ season: season(), focus })}
           />
         </div>
       </CardContent>

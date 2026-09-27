@@ -122,8 +122,9 @@ function handFocus() {
 }
 
 // Returns false when it can't play: with reduced motion. `focus` gets the focus back afterwards.
-// `timeZone`, the user's, lets the lines match the tagline's set on dates with their own.
-export function playIntro(options: { season: Season; timeZone?: string; focus?: HTMLElement }) {
+// The lines stay in `intro.lines` for the rest of the visit, so the page tagline shows the set
+// the user just watched.
+export function playIntro(options: { season: Season; focus?: HTMLElement }) {
   const root = document.documentElement
   if (reducedMotion()) {
     releaseIntroPending()
@@ -132,7 +133,7 @@ export function playIntro(options: { season: Season; timeZone?: string; focus?: 
   clearTimers()
   returnFocus = options.focus ?? null
   setSeason(options.season)
-  setLines(introLines(options.season, { timeZone: options.timeZone }))
+  setLines(introLines(options.season))
 
   // At the start the image, the page, and the theme switch at once, with transitions off, so
   // the image doesn't show as the black lifts and the page doesn't fade out. From onMount, Solid

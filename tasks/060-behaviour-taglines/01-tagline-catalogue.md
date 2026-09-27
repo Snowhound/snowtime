@@ -1,6 +1,6 @@
 # 01: Tagline catalogue
 
-Status: todo
+Status: done
 
 Dated, range, and period sets are Paraglide messages that must exist in every language, but
 the sets have stopped being translations of each other: school and Santa differ by
@@ -27,16 +27,32 @@ it plays. The page is hidden under the intro then, so the switch isn't seen.
 
 ## Acceptance criteria
 
-- [ ] Dated, range, and period sets live in `src/lib/taglines/`, and their messages are gone
+- [x] Dated, range, and period sets live in `src/lib/taglines/`, and their messages are gone
       from `messages/en.json` and `messages/et.json`
-- [ ] The four seasons' sets and their alternates stay Paraglide messages
-- [ ] On visits without the intro, the shown taglines are unchanged for every date in both
+- [x] The four seasons' sets and their alternates stay Paraglide messages
+- [x] On visits without the intro, the shown taglines are unchanged for every date in both
       languages
-- [ ] The intro shows only the season's sets, in turn by UTC day, and never a range's set
-- [ ] On the visit where the intro plays, the tagline shows the intro's set; a test covers it
-- [ ] `docs/architecture.md`, "Tagline", replaces "the intro and the tagline show the same
+- [x] The intro shows only the season's sets, in turn by UTC day, and never a range's set
+- [x] On the visit where the intro plays, the tagline shows the intro's set; a test covers it
+- [x] `docs/architecture.md`, "Tagline", replaces "the intro and the tagline show the same
       set" with the new rule and its reason
-- [ ] A test checks that each set has three lines (two for period sets) in each language it
+- [x] A test checks that each set has three lines (two for period sets) in each language it
       has, that ids are unique, and that placeholders match between languages
-- [ ] A page loads only its own language's lines, or the catalogue adds less than 5 KB
+- [x] A page loads only its own language's lines, or the catalogue adds less than 5 KB
       gzipped to the client bundle
+
+## Bundle
+
+Measured with `bun run build`, each `.output/public/assets/*.js` file gzipped at level 9, on
+2026-09-27:
+
+| Build  | Files | Raw         | Gzipped   |
+| ------ | ----- | ----------- | --------- |
+| Before | 60    | 1,006,412 B | 331,510 B |
+| After  | 60    | 1,005,523 B | 332,299 B |
+| Change |       | −889 B      | +789 B    |
+
+Both languages' lines load on every page, well under the 5 KB limit. The tagline messages were
+in the shared `session` chunk; the catalogue is in the tagline's own chunk (`season-tagline-*.js`,
+3.8 KB gzipped with the component and the pick); the gzipped total grows slightly because
+that chunk compresses on its own.

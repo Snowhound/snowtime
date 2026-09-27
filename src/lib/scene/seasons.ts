@@ -1,17 +1,15 @@
 // The seasonal copy (prototypes/seasons.js, prototypes/README.md, "Seasonal copy"): each
-// season's sets of three intro lines, whose first two are the tagline on every page, sets for
-// dates and date ranges, the taglines for a timesheet period's last days, and the intro's text
-// colors. Every set follows one pattern: the season does something, then the timesheet does the
-// same. docs/architecture.md, "Tagline", has the rules for which set shows.
+// season's sets of three intro lines, which are also the page tagline's fallback, and the
+// intro's text colors. Every set follows one pattern: the season does something, then the
+// timesheet does the same. The tagline's other sets are in src/lib/taglines/;
+// docs/architecture.md, "Tagline", has the rules for which set shows.
 import { type Accessor, createContext, useContext } from 'solid-js'
-import { type IsoDate, addDays, localDate, monthDates } from '~/lib/calendar'
 import { m } from '~/paraglide/messages.js'
-import { getLocale } from '~/paraglide/runtime.js'
+import { type Locale, getLocale } from '~/paraglide/runtime.js'
 import { type Season, seasonByMonth } from './scene'
 
-type Line = () => string
+type Line = (inputs?: object, options?: { locale?: Locale }) => string
 type Lines = [Line, Line, Line]
-type Locale = ReturnType<typeof getLocale>
 
 // `title` and `sub` are the intro's headline and second line on the dark scene. `titleLight` is
 // the headline's hue darkened for the tagline on light pages, at least 5:1 on the page, tint, and
@@ -61,144 +59,23 @@ export const SEASON_COPY: Record<Season, SeasonCopy> = {
   },
 }
 
-// A set for some days in the user's zone, whatever the season, in one language when `locales`
-// says so. `on` takes the local date.
-type DatedLines = { lines: Lines; on: (date: IsoDate) => boolean; locales?: Locale[] }
-
-function weekday(date: IsoDate) {
-  return new Date(`${date}T00:00:00Z`).getUTCDay()
-}
-
-// From one month and day to another, inclusive, as 'MM-DD'.
-function days(from: string, to = from) {
-  return (date: IsoDate) => date.slice(5) >= from && date.slice(5) <= to
-}
-
-// The Monday after the month's last Sunday, the night the EU's clocks change.
-function mondayAfterLastSunday(month: string) {
-  return (date: IsoDate) => {
-    const sunday = addDays(date, -1)
-    return (
-      weekday(date) === 1 &&
-      sunday.slice(5, 7) === month &&
-      addDays(sunday, 7).slice(5, 7) !== month
-    )
-  }
-}
-
-// Dates whose sets replace the tagline.
-const DATES: DatedLines[] = [
-  {
-    lines: [m.tagline_new_year_1, m.tagline_new_year_2, m.tagline_new_year_3],
-    on: days('01-02', '01-04'),
-  },
-  {
-    lines: [m.tagline_leap_day_1, m.tagline_leap_day_2, m.tagline_leap_day_3],
-    on: days('02-29'),
-  },
-  {
-    lines: [m.tagline_clocks_forward_1, m.tagline_clocks_forward_2, m.tagline_clocks_forward_3],
-    on: mondayAfterLastSunday('03'),
-  },
-  {
-    lines: [m.tagline_midsummer_1, m.tagline_midsummer_2, m.tagline_midsummer_3],
-    on: days('06-25', '06-27'),
-    locales: ['et'],
-  },
-  {
-    lines: [m.tagline_clocks_back_1, m.tagline_clocks_back_2, m.tagline_clocks_back_3],
-    on: mondayAfterLastSunday('10'),
-  },
-  {
-    lines: [m.tagline_halloween_1, m.tagline_halloween_2, m.tagline_halloween_3],
-    on: days('10-31'),
-  },
-  {
-    lines: [m.tagline_st_martins_1, m.tagline_st_martins_2, m.tagline_st_martins_3],
-    on: days('11-10'),
-    locales: ['et'],
-  },
-  {
-    lines: [m.tagline_santa_1, m.tagline_santa_2, m.tagline_santa_3],
-    on: days('12-20', '12-23'),
-  },
-  {
-    lines: [m.tagline_santa_verse_1, m.tagline_santa_verse_2, m.tagline_santa_verse_3],
-    on: days('12-20', '12-23'),
-    locales: ['et'],
-  },
-]
-
-// Date ranges whose sets join the season's in the daily turn.
-const RANGES: DatedLines[] = [
-  {
-    lines: [m.tagline_holidays_1, m.tagline_holidays_2, m.tagline_holidays_3],
-    on: days('07-01', '07-31'),
-  },
-  {
-    lines: [m.tagline_school_en_1, m.tagline_school_en_2, m.tagline_school_en_3],
-    on: days('09-01', '09-30'),
-    locales: ['en'],
-  },
-  {
-    lines: [m.tagline_school_et_1, m.tagline_school_et_2, m.tagline_school_et_3],
-    on: days('09-01', '09-30'),
-    locales: ['et'],
-  },
-  {
-    lines: [m.tagline_elves_1, m.tagline_elves_2, m.tagline_elves_3],
-    on: days('12-01', '12-19'),
-    locales: ['et'],
-  },
-]
-
-// Taglines for a timesheet period's last days, whatever the season.
-export const PERIODS: Record<'weekEnd' | 'monthEnd', [Line, Line]> = {
-  weekEnd: [m.tagline_week_end_1, m.tagline_week_end_2],
-  monthEnd: [m.tagline_month_end_1, m.tagline_month_end_2],
-}
-
 const DAY = 86_400_000
-// The month's last days that count as its end.
-const MONTH_END_DAYS = 3
-
-// When the copy is for. Without a zone, as on the sign-in page, only the season's own sets show.
-type When = { now?: number; timeZone?: string; locale?: Locale }
-
-function dated(sets: DatedLines[], date: IsoDate, locale: Locale) {
-  return sets.filter((s) => s.on(date) && (!s.locales || s.locales.includes(locale)))
-}
 
 // One per UTC day, so the server and the browser pick the same one.
-function inTurn<T>(sets: T[], now: number) {
+export function inTurn<T>(sets: T[], now: number) {
   return sets[Math.floor(now / DAY) % sets.length]
 }
 
-// The intro's set for the day: the season's sets and the day's ranges, in turn.
-export function seasonLines(season: Season, when: When = {}): Lines {
-  const { now = Date.now(), timeZone, locale = getLocale() } = when
-  const ranges = timeZone ? dated(RANGES, localDate(now, timeZone), locale) : []
+// The season's sets in the order they take turns, in the language.
+export function seasonSets(season: Season, locale: Locale = getLocale()) {
   const { lines, alternates } = SEASON_COPY[season]
-  return inTurn([lines, ...alternates, ...ranges.map((r) => r.lines)], now)
+  return [lines, ...alternates].map((set) => set.map((line) => line({}, { locale })))
 }
 
-// The tagline's lines: a date's set, else a period's on its last days (the month's last three,
-// else Friday), else the intro's set. The tagline shows the first two; a set's third line can
-// rise in under them.
-export function taglineLines(season: Season, when: When = {}): [Line, Line] | Lines {
-  const { now = Date.now(), timeZone, locale = getLocale() } = when
-  if (timeZone) {
-    const today = localDate(now, timeZone)
-    const dates = dated(DATES, today, locale)
-    if (dates.length > 0) return inTurn(dates, now).lines
-    if (today >= addDays(monthDates(today).to, -MONTH_END_DAYS)) return PERIODS.monthEnd
-    if (weekday(today) === 5) return PERIODS.weekEnd
-  }
-  return seasonLines(season, when)
-}
-
-export function introLines(season: Season, when: When = {}) {
-  return seasonLines(season, when).map((line) => line())
+// The intro's lines for the day: only the season's sets, in turn, since the intro opens the
+// season. The page tagline picks its own (src/lib/taglines/).
+export function introLines(season: Season, now = Date.now()) {
+  return inTurn(seasonSets(season), now)
 }
 
 // The season the page shows, which the frame provides from the Season setting. Without a frame,
@@ -211,7 +88,7 @@ export function useSeason() {
 }
 
 // The page tagline's settings, which the frame provides from the account's: whether it shows,
-// and the user's zone for the dated and period taglines. Without a zone it stays seasonal.
+// and the user's zone for the catalogue's taglines. Without a zone it stays seasonal.
 type TaglineSettings = { show: boolean; timeZone?: string }
 const TaglineContext = createContext<Accessor<TaglineSettings>>(() => ({ show: true }))
 export const TaglineProvider = TaglineContext.Provider

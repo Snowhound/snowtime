@@ -895,8 +895,8 @@ intro.
 `seasons.PERIODS` adds taglines for a timesheet period's last days, whatever the season: "It's
 Friday. So is the deadline." and "The month is almost out. Your hours shouldn't be." The app
 rotates the alternates in and shows the period lines (`docs/architecture.md`, "Tagline"); the
-prototypes show each season's first set only. The app's copy, with more sets per season and sets
-for dates, is in `src/lib/scene/seasons.ts`.
+prototypes show each season's first set only. The app's season sets, more per season, are in
+`src/lib/scene/seasons.ts`; its sets for dates and periods are in `src/lib/taglines/catalogue.ts`.
 
 Simulated with fictional rules: the password `wrong` fails sign-in, `taken@example.com` is
 already registered, and the short name `snowhound` is taken. Provider, passkey, and email steps
