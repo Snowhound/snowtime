@@ -18,6 +18,10 @@ type EffectDef = {
   fs: string
   // Draw each item as a quad of two triangles (six vertices) instead of a point.
   quads?: boolean
+  // Target frames per second. Rain and leaves move far enough per frame that 30 looks steppy on
+  // fast screens; the slow effects keep 30, since each frame also redraws the blur of the glass
+  // surfaces over the canvas.
+  fps: number
   // A and B: two colors each effect mixes, for dark pages and for the image or the plain page.
   colors: (scene: { dark: boolean; background: boolean }) => [Rgb, Rgb]
 }
@@ -58,6 +62,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     density: 500,
     min: 150,
     max: 900,
+    fps: 30,
     vs: `${HEAD}
     out float v_alpha, v_depth, v_rnd;
     void main() {
@@ -110,6 +115,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     density: 45,
     min: 20,
     max: 60,
+    fps: 60,
     vs: `${HEAD}
     out float v_alpha, v_rnd, v_angle, v_flip;
     void main() {
@@ -165,6 +171,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     density: 40,
     min: 18,
     max: 60,
+    fps: 30,
     vs: `${HEAD}
     out float v_alpha;
     void main() {
@@ -204,6 +211,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     density: 70,
     min: 30,
     max: 110,
+    fps: 30,
     vs: `${HEAD}
     out float v_alpha, v_kind;
     void main() {
@@ -258,6 +266,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     density: 260,
     min: 90,
     max: 450,
+    fps: 60,
     // Each streak is a thin quad along its slant, since a point covering it would shade about
     // 15 times as many pixels, nearly all of them transparent.
     quads: true,
@@ -404,11 +413,80 @@ export function createWeatherRenderer(
   let elapsed = 0
   let current: Effect | null = null
   let colors: (() => [Rgb, Rgb]) | null = null
+
+  // The weather draws every nth display refresh, so its frames are evenly spaced at any refresh
+  // rate; a millisecond threshold gives uneven gaps wherever it falls near a multiple of the
+  // refresh interval. The rate comes from the first frame gaps after each start: busy frames only
+  // lengthen gaps, and under load they alternate between one refresh and two, so it takes the low
+  // quartile rather than the median.
+  const MEASURED_GAPS = 10
+  let gaps: number[] = []
+  let hz = 0
+  let prev = 0
+  // Refreshes added to each frame after dropped frames, until the next start or effect.
+  let slower = 0
+  function fewestRefreshes(effect: Effect) {
+    return Math.max(1, Math.round(hz / EFFECTS[effect].fps))
+  }
+  function mostRefreshes(effect: Effect) {
+    return Math.max(fewestRefreshes(effect), Math.round(hz / 30))
+  }
+  function refreshesPerFrame(effect: Effect) {
+    return Math.min(fewestRefreshes(effect) + slower, mostRefreshes(effect))
+  }
+
+  // Frame gaps over half-second windows. Gaps longer than 1.5 refreshes are dropped frames: when
+  // they make up a quarter of two windows in a row, frames step down a refresh, to about 30 fps
+  // at the slowest; two windows, so a page load's long tasks don't count. Gaps shorter than a
+  // refresh mean the measured rate is too low, so when they make up a quarter of a window, it's
+  // measured again.
+  const WINDOW = 500
+  let windowStart = 0
+  let windowGaps = 0
+  let windowDrops = 0
+  let windowShort = 0
+  let droppedBefore = false
+  function newWindow(now: number) {
+    windowStart = now
+    windowGaps = windowDrops = windowShort = 0
+  }
+  function watch(now: number, gap: number, effect: Effect) {
+    const refresh = 1000 / hz
+    windowGaps++
+    if (gap > refresh * 1.5) windowDrops++
+    if (gap < refresh * 0.75) windowShort++
+    if (now - windowStart < WINDOW) return
+    const dropped = windowDrops * 4 >= windowGaps
+    if (windowShort * 4 >= windowGaps) {
+      hz = 0
+      gaps = []
+    } else if (dropped && droppedBefore && refreshesPerFrame(effect) < mostRefreshes(effect)) {
+      slower++
+    }
+    droppedBefore = dropped && !droppedBefore
+    newWindow(now)
+  }
+
   function frame(now: number) {
     raf = requestAnimationFrame(frame)
-    // About 30 fps on 60, 90, 120, and 144 Hz screens: plenty for slow effects, and each frame
-    // also redraws the blur of the glass surfaces over the canvas.
-    if (now - last < 30 || !current || !colors) return
+    if (!current || !colors) return
+    const gap = prev ? now - prev : 0
+    prev = now
+    if (gap && hz) watch(now, gap, current)
+    else if (gap) {
+      gaps.push(gap)
+      if (gaps.length === MEASURED_GAPS) {
+        hz = Math.round(1000 / gaps.sort((a, b) => a - b)[MEASURED_GAPS >> 2])
+        newWindow(now)
+        droppedBefore = false
+      }
+    }
+    // Timestamps are whole refreshes apart, give or take jitter. Until the rate is known, frames
+    // follow the target in milliseconds, with room for the jitter.
+    const due = hz
+      ? Math.round(((now - last) * hz) / 1000) >= refreshesPerFrame(current)
+      : now - last >= (1000 / EFFECTS[current].fps) * 0.8
+    if (!due) return
     elapsed += (Math.min(now - (last || now), 100) / 1000) * pace().speed
     last = now
     const dpr = Math.min(devicePixelRatio || 1, 1.5)
@@ -445,10 +523,14 @@ export function createWeatherRenderer(
   return {
     start(name, colorsFn) {
       program(name)
+      if (name !== current) slower = 0
       current = name
       colors = colorsFn
       if (raf) return
       last = 0
+      prev = 0
+      hz = 0
+      gaps = []
       raf = requestAnimationFrame(frame)
     },
     stop,

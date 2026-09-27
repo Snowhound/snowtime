@@ -650,12 +650,23 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   server renders, and `src/styles.css` styles `surface` elements, the header, and the text over
   the image from them. Popovers, menus, and dialogs render into `<body>`, outside the frame, so
   they stay solid.
-- Weather (`src/lib/scene/weather.ts`): each season's effect is a WebGL 2 program that draws all its
-  points (rain's thin quads) in one call with no buffers, on one canvas in the scene layer, at about 30 fps, with
-  point counts scaled to the screen's area. Its WebGL context starts the first time it runs. App pages run it calm (half the points, 70% speed),
-  and the sign-in page at full pace. It runs only with the Weather switch on, without reduced
-  motion, and in a visible tab. Without WebGL 2, or when an effect's shaders don't compile, it
-  stays off and the Weather hint says why. Unmounting cancels the frame and loses the context.
+- Weather (`src/lib/scene/weather.ts`): each season's effect is a WebGL 2 program that draws
+  all its points (rain's thin quads) in one call with no buffers, on one canvas in the scene
+  layer, with point counts scaled to the screen's area. Its WebGL context starts the first time
+  it runs. App pages run it calm (half the points, 70% speed), and the sign-in page at full
+  pace. It runs only with the Weather switch on, without reduced motion, and in a visible tab.
+  Without WebGL 2, or when an effect's shaders don't compile, it stays off and the Weather hint
+  says why. Unmounting cancels the frame and loses the context.
+- Weather frame rate: each effect sets a target. Rain and leaves run at 60 fps, since they
+  move far enough per frame that 30 looks steppy on fast screens. Snow, seeds, and fireflies
+  run at 30, since every frame also redraws the blur of the glass surfaces over the canvas;
+  at 120 Hz, 60 fps doubles the weather's cost in the GPU process (task 063). The renderer
+  draws every nth display refresh, with n from the refresh rate it measures from its first
+  frame gaps, so frames are evenly spaced: rain draws 60, 45, 60, 72, and 60 fps at 60, 90,
+  120, 144, and 240 Hz. A millisecond threshold can't do this; 22 ms gives 30 fps at 60 Hz
+  and gaps alternating between two and three refreshes at 90 Hz. When frame gaps show dropped
+  frames, each frame waits one refresh more, down to about 30 fps. Speed comes from the frame
+  timestamps, so it doesn't depend on the rate.
 - Tagline (`src/lib/taglines/`, `src/components/page-title.tsx`): the season's own sets are
   Paraglide messages in `src/lib/scene/seasons.ts`, since the intro shows them too. Every other
   set is in the catalogue, `src/lib/taglines/catalogue.ts`, where each set holds its lines per
