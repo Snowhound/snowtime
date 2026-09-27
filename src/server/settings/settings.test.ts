@@ -41,6 +41,7 @@ const DEFAULTS = {
   durationFormat: 'clock',
   dateFormat: 'dmy',
   timeFormat: '24h',
+  country: null,
 } as const
 
 // A signed-up user who has not loaded the app yet, so has no settings row.
@@ -126,6 +127,17 @@ describe('updateSettings', () => {
     expect(await save({})).toEqual(last)
   })
 
+  test('the country saves, and null brings back the time zone guess', async () => {
+    const userId = await newUser()
+    await as({ userId }, () =>
+      getSettings(db, userId, { timeZone: 'Europe/Tallinn', locale: 'en' }),
+    )
+    const set = await as({ userId }, () => updateSettings(db, userId, { country: 'US' }))
+    expect(set.country).toBe('US')
+    const cleared = await as({ userId }, () => updateSettings(db, userId, { country: null }))
+    expect(cleared.country).toBeNull()
+  })
+
   test('a user without settings is told to load them first', async () => {
     const userId = await newUser()
     await expect(
@@ -206,5 +218,14 @@ describe('settings input', () => {
     expect(v.parse(GetSettingsInput, { timeZone: 'UTC' }).locale).toBe('en')
     expect(v.safeParse(UpdateSettingsInput, { locale: 'et' }).success).toBe(true)
     expect(v.safeParse(UpdateSettingsInput, { locale: 'fi' }).success).toBe(false)
+  })
+
+  test('the country is EE, US, other, or null for the time zone guess', () => {
+    for (const country of ['EE', 'US', 'other', null]) {
+      expect(v.safeParse(UpdateSettingsInput, { country }).success).toBe(true)
+    }
+    for (const country of ['ee', 'FI', '', 1]) {
+      expect(v.safeParse(UpdateSettingsInput, { country }).success).toBe(false)
+    }
   })
 })

@@ -74,7 +74,7 @@ export function daysBetween(from: IsoDate, to: IsoDate): number {
 }
 
 // 0 for Sunday through 6 for Saturday, as Date.getUTCDay().
-function weekday(date: IsoDate): number {
+export function weekday(date: IsoDate): number {
   return new Date(dayNumber(date)).getUTCDay()
 }
 
@@ -193,4 +193,16 @@ export function atLocalTime(date: IsoDate, time: string, zone: string): number {
 // The zone's wall-clock time at the instant, as 'HH:MM'.
 export function localTime(ms: number, zone: string): string {
   return new Date(wallClock(ms, zone)).toISOString().slice(11, 16)
+}
+
+// The month's `n`th weekday (0 for Sunday through 6 for Saturday), counting from its end when
+// `n` is negative: nthWeekday(2026, 11, 4, 4) is the fourth Thursday of November 2026, and
+// nthWeekday(2026, 5, 1, -1) the last Monday of May.
+export function nthWeekday(year: number, month: number, day: number, n: number): IsoDate {
+  if (n > 0) {
+    const first = toIsoDate(Date.UTC(year, month - 1, 1))
+    return addDays(first, ((day - weekday(first) + 7) % 7) + (n - 1) * 7)
+  }
+  const last = toIsoDate(Date.UTC(year, month, 0))
+  return addDays(last, -((weekday(last) - day + 7) % 7) + (n + 1) * 7)
 }

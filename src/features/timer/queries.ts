@@ -78,8 +78,9 @@ function firstEntryKey(organizationId: string) {
   return ['first-entry', organizationId]
 }
 
-// Every write changes logged time, which Reports and the Projects view total.
-const settled = { invalidate: [reportsKey] }
+// Every write changes logged time, which Reports and the Projects view total, and the
+// session's fill summary for the tagline.
+const settled = { invalidate: [reportsKey, sessionQuery.queryKey] }
 
 // Whether an entry belongs in the list cached under `key`: the list's organization and user,
 // and a range it overlaps, as listEntries reads them.
@@ -214,7 +215,7 @@ export function useDeleteEntry({ organizationId }: Keys) {
         ),
       ],
       // The earliest start may have been this entry's.
-      { invalidate: [reportsKey, firstEntryKey(organizationId)] },
+      { invalidate: [...settled.invalidate, firstEntryKey(organizationId)] },
     ),
   }))
 }

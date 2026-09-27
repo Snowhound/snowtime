@@ -11,9 +11,15 @@
 //
 // Once placed, a tagline this browser hasn't shown before gets a cue (`SeasonTagline`), unless
 // the intro is showing the lines or the device reduces motion. The Tagline setting hides it.
-import { Show, createEffect, createSignal, on, onCleanup, onMount } from 'solid-js'
+//
+// The tagline keeps the fill summary it picked with while the page is open, so a refetched
+// session doesn't change its set, except that a save that brings on the praise sets switches
+// to one, with its cue.
+import { Show, createEffect, createSignal, on, onCleanup, onMount, untrack } from 'solid-js'
 import { intro } from '~/lib/scene/intro'
 import { useSeason, useTagline } from '~/lib/scene/seasons'
+import type { FillSummary } from '~/lib/taglines/fill'
+import { taglinePick } from '~/lib/taglines/taglines'
 import { cn } from '~/lib/utils'
 import { SeasonTagline } from './scene/season-tagline'
 
@@ -46,6 +52,27 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
   let checked = false
   let cueTimer: ReturnType<typeof setTimeout> | undefined
   onCleanup(() => clearTimeout(cueTimer))
+
+  const [fill, setFill] = createSignal(untrack(() => settings().fill))
+  function praised(summary: FillSummary | null | undefined) {
+    const when = { timeZone: settings().timeZone, fill: summary }
+    return taglinePick(season(), when).source === 'praise'
+  }
+  createEffect(
+    on(
+      () => settings().fill,
+      (next) => {
+        if (!next || !praised(next) || praised(fill())) return
+        setFill(next)
+        clearTimeout(cueTimer)
+        setCue(false)
+        setRoll(false)
+        checked = false
+        queueMicrotask(placeAndShow)
+      },
+      { defer: true },
+    ),
+  )
 
   function place() {
     const area = row.parentElement
@@ -135,6 +162,7 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
           ref={(el) => (tagline = el)}
           season={season()}
           timeZone={settings().timeZone}
+          fill={fill()}
           cue={cue()}
           roll={roll()}
           class={cn(

@@ -79,7 +79,6 @@ export function IntroPage(props: { class?: string; children: JSX.Element }) {
 // doesn't play. `onPlay` closes the menu; focus returns to `focus()` after the intro.
 export function ReplayIntroButton(props: {
   season: Season
-  timeZone?: string
   focus: () => HTMLElement | undefined
   onPlay: () => void
   class?: string
@@ -87,7 +86,7 @@ export function ReplayIntroButton(props: {
   const reducedMotion = createReducedMotion()
   function replay() {
     props.onPlay()
-    playIntro({ season: props.season, timeZone: props.timeZone, focus: props.focus() })
+    playIntro({ season: props.season, focus: props.focus() })
   }
   return (
     <Button

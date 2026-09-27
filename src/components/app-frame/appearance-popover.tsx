@@ -114,7 +114,6 @@ export function AppearancePopover(props: { settings: Settings; organizationSlug:
             </Link>
             <ReplayIntroButton
               season={currentSeason(props.settings.sceneSeason)}
-              timeZone={props.settings.timeZone}
               focus={() => trigger}
               onPlay={() => setOpen(false)}
             />

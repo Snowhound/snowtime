@@ -22,7 +22,7 @@ companies can use it too.
 | Entries  | List, edit, delete, and manually add past entries                                                                                |
 | Projects | Org-level projects, optionally assigned to teams; CRUD                                                                           |
 | Reports  | Totals per day / week / project / team / member, user's zone; their entries, read-only; CSV and XLSX export of a report as shown |
-| Settings | Time zone and week start                                                                                                         |
+| Settings | Time zone, week start, and country, whose public holidays the taglines don't count as missing hours                              |
 
 ## Not in MVP
 

@@ -2069,6 +2069,23 @@
         },
         {
           "id": "t10f23",
+          "name": "country",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "EE, US, other, or null to guess from time_zone (src/lib/holidays/region.ts). Whose public holidays the taglines skip. Validated in the app, no CHECK."
+        },
+        {
+          "id": "t10f24",
           "name": "wide_timer",
           "type": {
             "id": "integer",

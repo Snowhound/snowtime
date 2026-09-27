@@ -187,6 +187,8 @@ export const tables: Record<string, TableNotes> = {
         'dmy (30.09.2026), mdy (09/30/2026), default dmy. Numeric dates. Validated in the app, no CHECK.',
       time_format:
         '24h, 12h, default 24h. Clock times and the time picker. Validated in the app, no CHECK.',
+      country:
+        'EE, US, other, or null to guess from time_zone (src/lib/holidays/region.ts). Whose public holidays the taglines skip. Validated in the app, no CHECK.',
       wide_timer:
         'Boolean 0/1 (CHECK), default 0. Wide page: the timer page up to 88rem, with a Ticket column in the rows.',
     },

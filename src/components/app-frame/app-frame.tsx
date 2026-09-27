@@ -40,10 +40,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
   // The intro plays on the first page opened in a calendar season it hasn't played in.
   onMount(() => {
     if (introDue('app', scene().sceneIntro)) {
-      playIntro({
-        season: currentSeason(scene().sceneSeason),
-        timeZone: session.data?.settings?.timeZone,
-      })
+      playIntro({ season: currentSeason(scene().sceneSeason) })
     } else releaseIntroPending()
   })
 
@@ -67,6 +64,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
             value={() => ({
               show: session.data?.settings?.sceneTagline ?? true,
               timeZone: session.data?.settings?.timeZone,
+              fill: session.data?.fill,
             })}
           >
             <main class={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-8', !wide() && 'max-w-6xl')}>
