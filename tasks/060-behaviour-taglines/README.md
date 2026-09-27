@@ -24,7 +24,12 @@ Decided on 2026-09-27:
 - 1–2 empty working days in a row count as missing. 3 or more count as an absence, which
   gets a welcome back instead of a gap.
 - Taglines move to a catalogue in `src/lib/taglines/`. The season sets stay in
-  `messages/`, as the sign-in intro and the fallback.
+  `messages/`, as the intro's lines and the tagline's fallback.
+- The intro and the tagline pick separately. The intro plays about four times a year and
+  opens the season, so it shows only the season's sets, never a date range's or one about
+  the user's timesheet. On the visit where the intro plays, the tagline repeats the
+  intro's set, so the page picks up what the user just watched; on other visits it picks
+  its own.
 
 Subtasks, in order:
 
