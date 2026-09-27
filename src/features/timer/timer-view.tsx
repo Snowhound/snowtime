@@ -195,6 +195,23 @@ export function TimerView(props: {
   }
   const options = { onError: showError }
 
+  // Why the last Show earlier failed, shown by its button.
+  const [earlierError, setEarlierError] = createSignal<string | null>(null)
+  function showEarlier() {
+    setEarlierError(null)
+    setDays((d) => d + RECENT_DAYS)
+  }
+
+  // A range that fails to load says why, and earlier days go back to the days shown before,
+  // so the list stays up and Show earlier tries again.
+  createEffect(() => {
+    if (!entries.isError || entries.data) return
+    if (days() > RECENT_DAYS) {
+      setEarlierError(errorMessage(entries.error))
+      setDays((d) => d - RECENT_DAYS)
+    } else showError(entries.error)
+  })
+
   function start(description: string, projectId: string | null) {
     setError(null)
     startTimer.mutate({ id: newId(), description, projectId }, options)
@@ -363,14 +380,17 @@ export function TimerView(props: {
                         </p>
                       }
                     >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={entries.isPlaceholderData}
-                        onClick={() => setDays((d) => d + RECENT_DAYS)}
-                      >
-                        {m.timer_show_earlier()}
-                      </Button>
+                      <div class="flex w-full flex-col items-center gap-3">
+                        <ErrorAlert message={earlierError()} />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={entries.isPlaceholderData}
+                          onClick={showEarlier}
+                        >
+                          {m.timer_show_earlier()}
+                        </Button>
+                      </div>
                     </Show>
                   </Show>
                 </div>

@@ -708,4 +708,25 @@ describe('TimerView', () => {
     expect(screen.queryByRole('button', { name: 'Show earlier entries' })).not.toBeInTheDocument()
     expect(screen.getByText(/^That's everything since .+: 2:30 in total\.$/)).toBeInTheDocument()
   })
+
+  test('keeps the shown days when earlier ones fail to load, says why, and tries again', async () => {
+    server.entries = [
+      entry(1, '09:00', '10:30', 'Invoice export review'),
+      entry(20, '09:00', '10:00', 'Kickoff'),
+    ]
+    fn.listEntries.mockImplementation(async ({ data }: { data: { from: Date } }) =>
+      server.entries.filter((e) => e.startedAt >= data.from),
+    )
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+
+    fn.listEntries.mockRejectedValueOnce(new Error('offline'))
+    await userEvent.click(await screen.findByRole('button', { name: 'Show earlier entries' }))
+    expect(await screen.findByText('Something went wrong. Try again.')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Invoice export review')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show earlier entries' }))
+    expect(await screen.findByDisplayValue('Kickoff')).toBeInTheDocument()
+    expect(screen.queryByText('Something went wrong. Try again.')).not.toBeInTheDocument()
+  })
 })
