@@ -63,8 +63,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-01-30 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
 2028-01-31 en The month is almost out. | Your hours shouldn't be.
 2028-01-31 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
-2028-02-01 en Everything around is freezing. | But your timesheet is still open. | Fill it in before the month's end freezes it too.
-2028-02-01 et Kõik ümberringi jäätub. | Aga su tunnileht on endiselt avatud. | Täida see ära, enne kui kuu lõpp ka selle külmutab.
+2028-02-01 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-02-01 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-02-02 en Winter is coming. | So is the end of the month. | Before the snow gets deeper, fill in your timesheet.
 2028-02-02 et Talv on tulekul. | Nagu ka kuu lõpp. | Täida oma tunnileht, enne kui hanged üle pea kasvavad.
 2028-02-03 en Everything around is freezing. | But your timesheet is still open. | Fill it in before the month's end freezes it too.
@@ -89,8 +89,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-02-12 et Talv on tulekul. | Nagu ka kuu lõpp. | Täida oma tunnileht, enne kui hanged üle pea kasvavad.
 2028-02-13 en Everything around is freezing. | But your timesheet is still open. | Fill it in before the month's end freezes it too.
 2028-02-13 et Kõik ümberringi jäätub. | Aga su tunnileht on endiselt avatud. | Täida see ära, enne kui kuu lõpp ka selle külmutab.
-2028-02-14 en Winter is coming. | So is the end of the month. | Before the snow gets deeper, fill in your timesheet.
-2028-02-14 et Talv on tulekul. | Nagu ka kuu lõpp. | Täida oma tunnileht, enne kui hanged üle pea kasvavad.
+2028-02-14 en It's Valentine's Day. | Show your timesheet some love. | Fill it in; it's all it ever asks for.
+2028-02-14 et Täna on sõbrapäev. | Ole oma tunnilehele hea sõber. | Täida see ära, rohkem ta ei palugi.
 2028-02-15 en Everything around is freezing. | But your timesheet is still open. | Fill it in before the month's end freezes it too.
 2028-02-15 et Kõik ümberringi jäätub. | Aga su tunnileht on endiselt avatud. | Täida see ära, enne kui kuu lõpp ka selle külmutab.
 2028-02-16 en Winter is coming. | So is the end of the month. | Before the snow gets deeper, fill in your timesheet.
@@ -120,9 +120,9 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-02-28 en The month is almost out. | Your hours shouldn't be.
 2028-02-28 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
 2028-02-29 en An extra day this year. | Make sure it's logged too. | Fill in your timesheet; the next one is four years away.
-2028-02-29 et Sel aastal on üks päev rohkem. | Vaata, et ka see kirja saaks. | Täida oma tunnileht, järgmist tuleb oodata neli aastat.
-2028-03-01 en The snow is melting. | So is your memory of last week. | Before it's gone, fill in your timesheet.
-2028-03-01 et Lumi sulab. | Koos sellega mälestus eelmisest nädalast. | Enne kui kõik ununeb, pane tunnid kirja.
+2028-02-29 et Vastlapäeval lastakse liugu. | Mida pikem liug, seda pikem lina. | Pikka auku tunnilehes ei taha aga keegi. Täida see ära.
+2028-03-01 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-03-01 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-03-02 en Everything's growing. | So are your unlogged hours. | Before they grow any further, fill in your timesheet.
 2028-03-02 et Kevad tärkab ja kasvab. | Nii ka märkimata tunnid. | Enne kui need üle pea kasvavad, täida oma tunnileht.
 2028-03-03 en It's Friday. | So is the deadline.
@@ -147,7 +147,7 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-03-12 et Rändlinnud tulevad koju. | Kas ka sinu kadunud tunnid? | Märgi need üles, enne kui nad pesitsema asuvad.
 2028-03-13 en The snow is melting. | So is your memory of last week. | Before it's gone, fill in your timesheet.
 2028-03-13 et Lumi sulab. | Koos sellega mälestus eelmisest nädalast. | Enne kui kõik ununeb, pane tunnid kirja.
-2028-03-14 en Everything's growing. | So are your unlogged hours. | Before they grow any further, fill in your timesheet.
+2028-03-14 en Pi is irrational. | Your hours shouldn't be. | Fill in your timesheet; 3.14 hours is a start.
 2028-03-14 et Kevad tärkab ja kasvab. | Nii ka märkimata tunnid. | Enne kui need üle pea kasvavad, täida oma tunnileht.
 2028-03-15 en The rivers are rising. | So are your unlogged hours. | Fill in your timesheet before they flood.
 2028-03-15 et Suurvesi tõuseb. | Nii ka märkimata tunnid. | Täida oma tunnileht, enne kui need üle kallaste tõusevad.
@@ -183,12 +183,12 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-03-30 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
 2028-03-31 en The month is almost out. | Your hours shouldn't be.
 2028-03-31 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
-2028-04-01 en The birds are coming home. | Are your missing hours? | Log them before they start nesting.
-2028-04-01 et Rändlinnud tulevad koju. | Kas ka sinu kadunud tunnid? | Märgi need üles, enne kui nad pesitsema asuvad.
+2028-04-01 en Your timesheet filled itself in. | April fool. | It's still empty. Fill it in.
+2028-04-01 et Su tunnileht täitis end ise ära. | Aprill! | See on ikka veel tühi. Täida see ära.
 2028-04-02 en The snow is melting. | So is your memory of last week. | Before it's gone, fill in your timesheet.
 2028-04-02 et Lumi sulab. | Koos sellega mälestus eelmisest nädalast. | Enne kui kõik ununeb, pane tunnid kirja.
-2028-04-03 en Everything's growing. | So are your unlogged hours. | Before they grow any further, fill in your timesheet.
-2028-04-03 et Kevad tärkab ja kasvab. | Nii ka märkimata tunnid. | Enne kui need üle pea kasvavad, täida oma tunnileht.
+2028-04-03 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-04-03 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-04-04 en The rivers are rising. | So are your unlogged hours. | Fill in your timesheet before they flood.
 2028-04-04 et Suurvesi tõuseb. | Nii ka märkimata tunnid. | Täida oma tunnileht, enne kui need üle kallaste tõusevad.
 2028-04-05 en The birds are coming home. | Are your missing hours? | Log them before they start nesting.
@@ -209,14 +209,14 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-04-12 et Suurvesi tõuseb. | Nii ka märkimata tunnid. | Täida oma tunnileht, enne kui need üle kallaste tõusevad.
 2028-04-13 en The birds are coming home. | Are your missing hours? | Log them before they start nesting.
 2028-04-13 et Rändlinnud tulevad koju. | Kas ka sinu kadunud tunnid? | Märgi need üles, enne kui nad pesitsema asuvad.
-2028-04-14 en It's Friday. | So is the deadline.
-2028-04-14 et On reede. | Täna kukub ka tähtaeg.
-2028-04-15 en Everything's growing. | So are your unlogged hours. | Before they grow any further, fill in your timesheet.
-2028-04-15 et Kevad tärkab ja kasvab. | Nii ka märkimata tunnid. | Enne kui need üle pea kasvavad, täida oma tunnileht.
-2028-04-16 en The rivers are rising. | So are your unlogged hours. | Fill in your timesheet before they flood.
-2028-04-16 et Suurvesi tõuseb. | Nii ka märkimata tunnid. | Täida oma tunnileht, enne kui need üle kallaste tõusevad.
-2028-04-17 en The birds are coming home. | Are your missing hours? | Log them before they start nesting.
-2028-04-17 et Rändlinnud tulevad koju. | Kas ka sinu kadunud tunnid? | Märgi need üles, enne kui nad pesitsema asuvad.
+2028-04-14 en The Easter eggs are hidden. | So are some of your hours. | Fill in your timesheet; nobody's hunting for those.
+2028-04-14 et Lihavõttemunad on ära peidetud. | Nagu ka mõned su tunnid. | Täida oma tunnileht, neid ei hakka keegi otsima.
+2028-04-15 en The Easter eggs are hidden. | So are some of your hours. | Fill in your timesheet; nobody's hunting for those.
+2028-04-15 et Lihavõttemunad on ära peidetud. | Nagu ka mõned su tunnid. | Täida oma tunnileht, neid ei hakka keegi otsima.
+2028-04-16 en The Easter eggs are hidden. | So are some of your hours. | Fill in your timesheet; nobody's hunting for those.
+2028-04-16 et Lihavõttemunad on ära peidetud. | Nagu ka mõned su tunnid. | Täida oma tunnileht, neid ei hakka keegi otsima.
+2028-04-17 en The Easter eggs are hidden. | So are some of your hours. | Fill in your timesheet; nobody's hunting for those.
+2028-04-17 et Lihavõttemunad on ära peidetud. | Nagu ka mõned su tunnid. | Täida oma tunnileht, neid ei hakka keegi otsima.
 2028-04-18 en The snow is melting. | So is your memory of last week. | Before it's gone, fill in your timesheet.
 2028-04-18 et Lumi sulab. | Koos sellega mälestus eelmisest nädalast. | Enne kui kõik ununeb, pane tunnid kirja.
 2028-04-19 en Everything's growing. | So are your unlogged hours. | Before they grow any further, fill in your timesheet.
@@ -242,9 +242,9 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-04-29 en The month is almost out. | Your hours shouldn't be.
 2028-04-29 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
 2028-04-30 en The month is almost out. | Your hours shouldn't be.
-2028-04-30 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
-2028-05-01 en Everything's growing. | So are your unlogged hours. | Before they grow any further, fill in your timesheet.
-2028-05-01 et Kevad tärkab ja kasvab. | Nii ka märkimata tunnid. | Enne kui need üle pea kasvavad, täida oma tunnileht.
+2028-04-30 et Täna öösel lendavad nõiad välja. | Su tunnid on juba ammu lennanud. | Püüa need kinni ja pane kirja.
+2028-05-01 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-05-01 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-05-02 en The rivers are rising. | So are your unlogged hours. | Fill in your timesheet before they flood.
 2028-05-02 et Suurvesi tõuseb. | Nii ka märkimata tunnid. | Täida oma tunnileht, enne kui need üle kallaste tõusevad.
 2028-05-03 en The birds are coming home. | Are your missing hours? | Log them before they start nesting.
@@ -305,8 +305,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-05-30 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
 2028-05-31 en The month is almost out. | Your hours shouldn't be.
 2028-05-31 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
-2028-06-01 en The days are long. | Your timesheet doesn't have to be. | While the sun's still up, fill it in.
-2028-06-01 et Päevad on pikad. | Aga sinu tunnileht ei pea seda olema. | Täida see, enne kui päike looja läheb.
+2028-06-01 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-06-01 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-06-02 en It's Friday. | So is the deadline.
 2028-06-02 et On reede. | Täna kukub ka tähtaeg.
 2028-06-03 en The strawberries are ripe. | Your timesheet isn't. | Fill it in quickly and you'll still grab a few.
@@ -345,14 +345,14 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-06-19 et Päevad on pikad. | Aga sinu tunnileht ei pea seda olema. | Täida see, enne kui päike looja läheb.
 2028-06-20 en Summer is here. | Your hours didn't go on holiday. | Before you do, fill in your timesheet.
 2028-06-20 et Suvi on käes. | Sinu tunnid puhkusele ei läinud. | Enne kui ise puhkama lähed, täida oma tunnileht.
-2028-06-21 en The strawberries are ripe. | Your timesheet isn't. | Fill it in quickly and you'll still grab a few.
-2028-06-21 et Maasikad on valmis. | Sinu tunnileht veel mitte. | Täida see kiirelt, siis jõuad veel mõne haarata.
+2028-06-21 en The longest day of the year. | Log all of it. | Fill in your timesheet while the sun is still up.
+2028-06-21 et Käes on aasta pikim päev. | Valgust jagub ka tunnilehe jaoks. | Täida see ära, enne kui päike korraks loojub.
 2028-06-22 en The days are long. | Your timesheet doesn't have to be. | While the sun's still up, fill it in.
-2028-06-22 et Päevad on pikad. | Aga sinu tunnileht ei pea seda olema. | Täida see, enne kui päike looja läheb.
+2028-06-22 et Jaanituli ootab. | Tunnileht ootab ka, ainult vähem kannatlikult. | Sõnajalaõit otsid öösel, tunnid pane kirja kohe.
 2028-06-23 en It's Friday. | So is the deadline.
-2028-06-23 et On reede. | Täna kukub ka tähtaeg.
+2028-06-23 et Jaanituli ootab. | Tunnileht ootab ka, ainult vähem kannatlikult. | Sõnajalaõit otsid öösel, tunnid pane kirja kohe.
 2028-06-24 en The strawberries are ripe. | Your timesheet isn't. | Fill it in quickly and you'll still grab a few.
-2028-06-24 et Maasikad on valmis. | Sinu tunnileht veel mitte. | Täida see kiirelt, siis jõuad veel mõne haarata.
+2028-06-24 et Jaanituli ootab. | Tunnileht ootab ka, ainult vähem kannatlikult. | Sõnajalaõit otsid öösel, tunnid pane kirja kohe.
 2028-06-25 en The days are long. | Your timesheet doesn't have to be. | While the sun's still up, fill it in.
 2028-06-25 et Jaanid on peetud. | Nüüd pane kirja ka tunnid. | Täida oma tunnileht, enne kui lõkkesuits hajub.
 2028-06-26 en Summer is here. | Your hours didn't go on holiday. | Before you do, fill in your timesheet.
@@ -369,8 +369,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-07-01 et Maasikad on valmis. | Sinu tunnileht veel mitte. | Täida see kiirelt, siis jõuad veel mõne haarata.
 2028-07-02 en Out of office? | Your timesheet isn't. | Fill it in before you switch off.
 2028-07-02 et Puhkusel? | Sinu tunnileht mitte. | Täida see ära, enne kui arvuti kinni paned.
-2028-07-03 en The days are long. | Your timesheet doesn't have to be. | While the sun's still up, fill it in.
-2028-07-03 et Päevad on pikad. | Aga sinu tunnileht ei pea seda olema. | Täida see, enne kui päike looja läheb.
+2028-07-03 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-07-03 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-07-04 en Summer is here. | Your hours didn't go on holiday. | Before you do, fill in your timesheet.
 2028-07-04 et Suvi on käes. | Sinu tunnid puhkusele ei läinud. | Enne kui ise puhkama lähed, täida oma tunnileht.
 2028-07-05 en The strawberries are ripe. | Your timesheet isn't. | Fill it in quickly and you'll still grab a few.
@@ -427,8 +427,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-07-30 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
 2028-07-31 en The month is almost out. | Your hours shouldn't be.
 2028-07-31 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
-2028-08-01 en Summer is here. | Your hours didn't go on holiday. | Before you do, fill in your timesheet.
-2028-08-01 et Suvi on käes. | Sinu tunnid puhkusele ei läinud. | Enne kui ise puhkama lähed, täida oma tunnileht.
+2028-08-01 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-08-01 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-08-02 en The strawberries are ripe. | Your timesheet isn't. | Fill it in quickly and you'll still grab a few.
 2028-08-02 et Maasikad on valmis. | Sinu tunnileht veel mitte. | Täida see kiirelt, siis jõuad veel mõne haarata.
 2028-08-03 en The days are long. | Your timesheet doesn't have to be. | While the sun's still up, fill it in.
@@ -489,8 +489,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-08-30 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
 2028-08-31 en The month is almost out. | Your hours shouldn't be.
 2028-08-31 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
-2028-09-01 en It's Friday. | So is the deadline.
-2028-09-01 et On reede. | Täna kukub ka tähtaeg.
+2028-09-01 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-09-01 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-09-02 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
 2028-09-02 et Ööd on järjest pimedamad. | Nagu su projektijuht täitmata tundide korral. | Täida oma tunnileht, enne kui pimedus katab maa.
 2028-09-03 en The birds are flying south. | Don't let your hours follow them. | Log them now.
@@ -511,8 +511,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-09-10 et Ööd on järjest pimedamad. | Nagu su projektijuht täitmata tundide korral. | Täida oma tunnileht, enne kui pimedus katab maa.
 2028-09-11 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-09-11 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Märgi need kohe üles.
-2028-09-12 en School is back. | The kids have homework. | So do you: fill in your timesheet.
-2028-09-12 et Kool algas. | Mäletad veel, kuidas sa oma päevikut täitsid? | Täida oma tunnileht korralikumalt!
+2028-09-12 en Day 256: Programmers' Day. | Your timesheet says 0 hours. | That's not an off-by-one error. Fill it in.
+2028-09-12 et Aasta 256. päev: programmeerijate päev. | Programmeerijad loevad nullist. | Su tunnileht ei pea sinna kinni jääma. Täida see ära.
 2028-09-13 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-09-13 et Lehed langevad unustusse. | Nagu sinu kirja panemata tunnid. | Märgi need üles, enne kui viimanegi leht kaob.
 2028-09-14 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
@@ -551,8 +551,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-09-30 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
 2028-10-01 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-10-01 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Märgi need kohe üles.
-2028-10-02 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
-2028-10-02 et Lehed langevad unustusse. | Nagu sinu kirja panemata tunnid. | Märgi need üles, enne kui viimanegi leht kaob.
+2028-10-02 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-10-02 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-10-03 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
 2028-10-03 et Ööd on järjest pimedamad. | Nagu su projektijuht täitmata tundide korral. | Täida oma tunnileht, enne kui pimedus katab maa.
 2028-10-04 en The birds are flying south. | Don't let your hours follow them. | Log them now.
@@ -573,8 +573,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-10-11 et Lehed langevad unustusse. | Nagu sinu kirja panemata tunnid. | Märgi need üles, enne kui viimanegi leht kaob.
 2028-10-12 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
 2028-10-12 et Ööd on järjest pimedamad. | Nagu su projektijuht täitmata tundide korral. | Täida oma tunnileht, enne kui pimedus katab maa.
-2028-10-13 en It's Friday. | So is the deadline.
-2028-10-13 et On reede. | Täna kukub ka tähtaeg.
+2028-10-13 en Friday the 13th. | Something unlucky is coming. | It's the deadline. Fill in your timesheet.
+2028-10-13 et Reede, 13. | Õnnetus on tulemas. | Selle nimi on tähtaeg. Täida oma tunnileht.
 2028-10-14 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-10-14 et Lehed langevad unustusse. | Nagu sinu kirja panemata tunnid. | Märgi need üles, enne kui viimanegi leht kaob.
 2028-10-15 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
@@ -611,10 +611,10 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-10-30 et Kella keerati tagasi. | Tähtaega kahjuks mitte. | Täida oma tunnileht, lisatund sul selleks ju on.
 2028-10-31 en Something scary is lurking. | It's your empty timesheet. | Fill it in before your project manager comes to haunt you.
 2028-10-31 et Midagi hirmsat varitseb. | See on sinu tühi tunnileht. | Täida see ära, enne kui projektijuht sind kummitama tuleb.
-2028-11-01 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
-2028-11-01 et Lehed langevad unustusse. | Nagu sinu kirja panemata tunnid. | Märgi need üles, enne kui viimanegi leht kaob.
+2028-11-01 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-11-01 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-11-02 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-11-02 et Ööd on järjest pimedamad. | Nagu su projektijuht täitmata tundide korral. | Täida oma tunnileht, enne kui pimedus katab maa.
+2028-11-02 et Hingedepäeval käivad hinged kodus. | Su kirja panemata tunnid ekslevad veel ringi. | Pane need kirja, et nad rahu leiaksid.
 2028-11-03 en It's Friday. | So is the deadline.
 2028-11-03 et On reede. | Täna kukub ka tähtaeg.
 2028-11-04 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
@@ -660,7 +660,7 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-11-24 en It's Friday. | So is the deadline.
 2028-11-24 et On reede. | Täna kukub ka tähtaeg.
 2028-11-25 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
-2028-11-25 et Lehed langevad unustusse. | Nagu sinu kirja panemata tunnid. | Märgi need üles, enne kui viimanegi leht kaob.
+2028-11-25 et Kadrisandid on ukse taga. | Mardid käisid ka ja su tunnileht on ikka tühi. | Täida see ära, enne kui kadrid laulma hakkavad.
 2028-11-26 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
 2028-11-26 et Ööd on järjest pimedamad. | Nagu su projektijuht täitmata tundide korral. | Täida oma tunnileht, enne kui pimedus katab maa.
 2028-11-27 en The birds are flying south. | Don't let your hours follow them. | Log them now.
@@ -671,8 +671,8 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-11-29 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
 2028-11-30 en The month is almost out. | Your hours shouldn't be.
 2028-11-30 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
-2028-12-01 en It's Friday. | So is the deadline.
-2028-12-01 et On reede. | Täna kukub ka tähtaeg.
+2028-12-01 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
+2028-12-01 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-12-02 en Winter is coming. | So is the end of the month. | Before the snow gets deeper, fill in your timesheet.
 2028-12-02 et Kõik ümberringi jäätub. | Aga su tunnileht on endiselt avatud. | Täida see ära, enne kui kuu lõpp ka selle külmutab.
 2028-12-03 en Everything around is freezing. | But your timesheet is still open. | Fill it in before the month's end freezes it too.
@@ -723,14 +723,14 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-12-25 et Kõik ümberringi jäätub. | Aga su tunnileht on endiselt avatud. | Täida see ära, enne kui kuu lõpp ka selle külmutab.
 2028-12-26 en Winter is coming. | So is the end of the month. | Before the snow gets deeper, fill in your timesheet.
 2028-12-26 et Talv on tulekul. | Nagu ka kuu lõpp. | Täida oma tunnileht, enne kui hanged üle pea kasvavad.
-2028-12-27 en Everything around is freezing. | But your timesheet is still open. | Fill it in before the month's end freezes it too.
-2028-12-27 et Kõik ümberringi jäätub. | Aga su tunnileht on endiselt avatud. | Täida see ära, enne kui kuu lõpp ka selle külmutab.
-2028-12-28 en Winter is coming. | So is the end of the month. | Before the snow gets deeper, fill in your timesheet.
-2028-12-28 et Talv on tulekul. | Nagu ka kuu lõpp. | Täida oma tunnileht, enne kui hanged üle pea kasvavad.
-2028-12-29 en The month is almost out. | Your hours shouldn't be.
-2028-12-29 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
-2028-12-30 en The month is almost out. | Your hours shouldn't be.
-2028-12-30 et Kuu saab kohe otsa. | Ära jäta tunde ripakile.
-2028-12-31 en The month is almost out. | Your hours shouldn't be.
-2028-12-31 et Kuu saab kohe otsa. | Ära jäta tunde ripakile."
+2028-12-27 en Nobody is working this week. | Your timesheet still is. | Fill it in before the year runs out.
+2028-12-27 et Pühade vahel ei tööta keegi. | Välja arvatud sinu tunnileht. | Täida see ära, enne kui aasta otsa saab.
+2028-12-28 en Nobody is working this week. | Your timesheet still is. | Fill it in before the year runs out.
+2028-12-28 et Pühade vahel ei tööta keegi. | Välja arvatud sinu tunnileht. | Täida see ära, enne kui aasta otsa saab.
+2028-12-29 en Nobody is working this week. | Your timesheet still is. | Fill it in before the year runs out.
+2028-12-29 et Pühade vahel ei tööta keegi. | Välja arvatud sinu tunnileht. | Täida see ära, enne kui aasta otsa saab.
+2028-12-30 en Nobody is working this week. | Your timesheet still is. | Fill it in before the year runs out.
+2028-12-30 et Pühade vahel ei tööta keegi. | Välja arvatud sinu tunnileht. | Täida see ära, enne kui aasta otsa saab.
+2028-12-31 en Last chance this year. | The fireworks can wait; your timesheet can't. | Fill it in before midnight.
+2028-12-31 et Aasta viimane päev. | Ilutulestik võib oodata, tunnileht mitte. | Täida see ära enne südaööd."
 `;

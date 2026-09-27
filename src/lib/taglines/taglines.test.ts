@@ -49,6 +49,19 @@ describe('TAGLINES', () => {
     }
   })
 
+  test('has no date set on the days of mourning, over years of movable dates', () => {
+    const found: string[] = []
+    for (let year = 2026; year <= 2050; year++) {
+      for (const day of ['06-14', '08-23', '09-22']) {
+        const date = `${year}-${day}`
+        for (const set of TAGLINES) {
+          if ('date' in set.when && set.when.date(date)) found.push(`${date} ${set.id}`)
+        }
+      }
+    }
+    expect(found).toEqual([])
+  })
+
   test('has the same placeholders in every language', () => {
     for (const set of TAGLINES) {
       const placeholders = Object.values(set.lines).map((lines) =>
@@ -97,6 +110,13 @@ describe('taglineLines', () => {
     expect(tagline('2026-10-31T12:00:00Z')).toEqual(lines('halloween'))
     expect(tagline('2028-02-29T12:00:00Z')).toEqual(lines('leap-day'))
     expect(tagline('2027-01-03T12:00:00Z')).toEqual(lines('new-year'))
+    expect(tagline('2026-12-29T12:00:00Z')).toEqual(lines('between-holidays'))
+    expect(tagline('2026-12-31T12:00:00Z')).toEqual(lines('new-years-eve'))
+  })
+
+  test("shows a date's set ahead of Friday's", () => {
+    expect(tagline('2026-11-13T12:00:00Z')).toEqual(lines('friday-13th'))
+    expect(tagline('2027-03-26T12:00:00Z')).toEqual(lines('easter')) // Good Friday.
   })
 
   test('shows a set only in the languages it has', () => {

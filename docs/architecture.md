@@ -595,10 +595,24 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   - Signed in, the calendar adds sets, by the date in the user's zone from their settings,
     which the server and the browser both have. A date range's set joins the season's in
     the turn: the holidays in July, school in September, and the elves from 1 to 19
-    December. A date's set replaces the tagline: New Year, leap day, the Mondays after the
-    EU's clock changes, Midsummer, Halloween, St Martin's Day, and Santa. A set can be in one
-    language only, such as St Martin's Day in Estonian, where it's a custom. Several sets on
-    one date take turns.
+    December. A date's set replaces the tagline. A set can be in one language only, such as
+    St Martin's Day in Estonian, where it's a custom. Several sets on one date take turns.
+    The dated sets (`et` or `en` marks one language):
+    - Fixed dates: New Year (2–4 January), Valentine's Day, leap day, Pi Day (`en`), April
+      Fools' Day, Walpurgis Night (`et`), the solstice (21 June), the days before Midsummer
+      (22–24 June, `et`), Midsummer (25–27 June, `et`), Halloween, All Souls' Day (`et`),
+      St Martin's Day (`et`), St Catherine's Day (`et`), Santa (20–23 December), the days
+      between the holidays (27–30 December), and New Year's Eve.
+    - Movable dates: the month's first weekday, except January's, which the New Year set has;
+      Shrove Tuesday (`et`, Easter − 47); Easter, from Good Friday to Easter Monday, the
+      working days around it; the Mondays after the EU's clock changes; Programmers' Day,
+      the year's 256th day; and Friday the 13th. `easter` in `src/lib/taglines/rules.ts`
+      computes Easter.
+    - The month's first weekday stands in for its first working day. A date rule gets only
+      the date, not the user's region, so the first weekday is wrong only when the 1st is a
+      weekday holiday, such as 1 May in Estonia.
+    - No dated set falls on Estonia's days of mourning: 14 June, 23 August, and
+      22 September. A test checks this over 25 years of movable dates.
   - Signed in, the tagline also reacts to the user's own timesheet, through a fill summary
     (`src/lib/taglines/fill.ts`). `appSession` computes it with the session in the frame's
     loader, so the server and the browser pick the same set. It covers the user's entries in
@@ -624,7 +638,8 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
     1. A timer that has run 8 hours or more, or since before midnight in the user's zone.
        Its sets show the timer's hours through `{hours}`; a timer at the 24-hour cap has its
        own set.
-    2. A date's set.
+    2. A date's set. It hides a period's set on its days, so Friday the 13th and the sets
+       from 27 December name the deadline or the year's end themselves.
     3. A period's set, on a timesheet period's last days: the month's last three days, else
        Friday, whatever the week start.
     4. 1–2 empty working days in a row before today: the gap sets, which name yesterday, or

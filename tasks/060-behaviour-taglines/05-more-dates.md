@@ -1,6 +1,6 @@
 # 05: More dated sets
 
-Status: todo
+Status: done
 
 Much of the calendar has no set: most of January, February, spring, June before
 Midsummer, and the days after Christmas. Add sets for these dates, most in both languages,
@@ -28,9 +28,12 @@ Candidates:
 
 Days of mourning never get a set: 14 June, 23 August, and 22 September in Estonia.
 
+Decided on 2026-09-27: the month's first working day is its first weekday, since date
+rules don't get the region. Easter shows from Good Friday to Easter Monday.
+
 ## Acceptance criteria
 
-- [ ] The sets above are in the catalogue (subtask 01), with Easter computed for movable
+- [x] The sets above are in the catalogue (subtask 01), with Easter computed for movable
       dates
-- [ ] A test checks that no set falls on 14 June, 23 August, or 22 September
-- [ ] `docs/architecture.md`, "Tagline", lists the dated sets
+- [x] A test checks that no set falls on 14 June, 23 August, or 22 September
+- [x] `docs/architecture.md`, "Tagline", lists the dated sets

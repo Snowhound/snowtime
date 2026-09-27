@@ -9,7 +9,10 @@ import {
   type DateRule,
   type FillRule,
   all,
+  dayOfYear,
   days,
+  fridayThe13th,
+  fromEaster,
   lastFilled,
   lastMonthFilled,
   lastWasEarlier,
@@ -17,6 +20,7 @@ import {
   lastWasYesterday,
   lastWeekFilled,
   mondayAfterLastSunday,
+  monthStart,
   streakOf,
   timerCapped,
   timerLong,
@@ -63,6 +67,38 @@ export const TAGLINES: TaglineSet[] = [
     },
   },
   {
+    id: 'new-month',
+    when: { date: monthStart },
+    lines: {
+      en: [
+        'A new month.',
+        "Last month's hours aren't coming with you.",
+        'Log them before the books close.',
+      ],
+      et: [
+        'Uus kuu, uus leht.',
+        'Vana lehe tühjad read jäävad aga sinuga.',
+        'Täida need ära, enne kui keegi küsima tuleb.',
+      ],
+    },
+  },
+  {
+    id: 'valentines',
+    when: { date: days('02-14') },
+    lines: {
+      en: [
+        "It's Valentine's Day.",
+        'Show your timesheet some love.',
+        "Fill it in; it's all it ever asks for.",
+      ],
+      et: [
+        'Täna on sõbrapäev.',
+        'Ole oma tunnilehele hea sõber.',
+        'Täida see ära, rohkem ta ei palugi.',
+      ],
+    },
+  },
+  {
     id: 'leap-day',
     when: { date: days('02-29') },
     lines: {
@@ -75,6 +111,28 @@ export const TAGLINES: TaglineSet[] = [
         'Sel aastal on üks päev rohkem.',
         'Vaata, et ka see kirja saaks.',
         'Täida oma tunnileht, järgmist tuleb oodata neli aastat.',
+      ],
+    },
+  },
+  {
+    id: 'shrove-tuesday',
+    when: { date: fromEaster(-47) },
+    lines: {
+      et: [
+        'Vastlapäeval lastakse liugu.',
+        'Mida pikem liug, seda pikem lina.',
+        'Pikka auku tunnilehes ei taha aga keegi. Täida see ära.',
+      ],
+    },
+  },
+  {
+    id: 'pi-day',
+    when: { date: days('03-14') },
+    lines: {
+      en: [
+        'Pi is irrational.',
+        "Your hours shouldn't be.",
+        'Fill in your timesheet; 3.14 hours is a start.',
       ],
     },
   },
@@ -95,6 +153,69 @@ export const TAGLINES: TaglineSet[] = [
     },
   },
   {
+    id: 'april-fools',
+    when: { date: days('04-01') },
+    lines: {
+      en: ['Your timesheet filled itself in.', 'April fool.', "It's still empty. Fill it in."],
+      et: ['Su tunnileht täitis end ise ära.', 'Aprill!', 'See on ikka veel tühi. Täida see ära.'],
+    },
+  },
+  {
+    // Good Friday to Easter Monday, the working days around it.
+    id: 'easter',
+    when: { date: fromEaster(-2, 1) },
+    lines: {
+      en: [
+        'The Easter eggs are hidden.',
+        'So are some of your hours.',
+        "Fill in your timesheet; nobody's hunting for those.",
+      ],
+      et: [
+        'Lihavõttemunad on ära peidetud.',
+        'Nagu ka mõned su tunnid.',
+        'Täida oma tunnileht, neid ei hakka keegi otsima.',
+      ],
+    },
+  },
+  {
+    id: 'walpurgis',
+    when: { date: days('04-30') },
+    lines: {
+      et: [
+        'Täna öösel lendavad nõiad välja.',
+        'Su tunnid on juba ammu lennanud.',
+        'Püüa need kinni ja pane kirja.',
+      ],
+    },
+  },
+  {
+    id: 'solstice',
+    when: { date: days('06-21') },
+    lines: {
+      en: [
+        'The longest day of the year.',
+        'Log all of it.',
+        'Fill in your timesheet while the sun is still up.',
+      ],
+      et: [
+        'Käes on aasta pikim päev.',
+        'Valgust jagub ka tunnilehe jaoks.',
+        'Täida see ära, enne kui päike korraks loojub.',
+      ],
+    },
+  },
+  {
+    id: 'before-midsummer',
+    when: { date: days('06-22', '06-24') },
+    lines: {
+      et: [
+        'Jaanituli ootab.',
+        'Tunnileht ootab ka, ainult vähem kannatlikult.',
+        'Sõnajalaõit otsid öösel, tunnid pane kirja kohe.',
+      ],
+    },
+  },
+  {
     id: 'midsummer',
     when: { date: days('06-25', '06-27') },
     lines: {
@@ -103,6 +224,35 @@ export const TAGLINES: TaglineSet[] = [
         'Nüüd pane kirja ka tunnid.',
         'Täida oma tunnileht, enne kui lõkkesuits hajub.',
       ],
+    },
+  },
+  {
+    // The year's 256th day: 13 September, or 12 September in a leap year.
+    id: 'programmers-day',
+    when: { date: dayOfYear(256) },
+    lines: {
+      en: [
+        "Day 256: Programmers' Day.",
+        'Your timesheet says 0 hours.',
+        "That's not an off-by-one error. Fill it in.",
+      ],
+      et: [
+        'Aasta 256. päev: programmeerijate päev.',
+        'Programmeerijad loevad nullist.',
+        'Su tunnileht ei pea sinna kinni jääma. Täida see ära.',
+      ],
+    },
+  },
+  {
+    id: 'friday-13th',
+    when: { date: fridayThe13th },
+    lines: {
+      en: [
+        'Friday the 13th.',
+        'Something unlucky is coming.',
+        "It's the deadline. Fill in your timesheet.",
+      ],
+      et: ['Reede, 13.', 'Õnnetus on tulemas.', 'Selle nimi on tähtaeg. Täida oma tunnileht.'],
     },
   },
   {
@@ -138,6 +288,17 @@ export const TAGLINES: TaglineSet[] = [
     },
   },
   {
+    id: 'all-souls',
+    when: { date: days('11-02') },
+    lines: {
+      et: [
+        'Hingedepäeval käivad hinged kodus.',
+        'Su kirja panemata tunnid ekslevad veel ringi.',
+        'Pane need kirja, et nad rahu leiaksid.',
+      ],
+    },
+  },
+  {
     id: 'st-martins',
     when: { date: days('11-10') },
     lines: {
@@ -145,6 +306,17 @@ export const TAGLINES: TaglineSet[] = [
         'Mardipäev on käes.',
         'Ära sunni oma tunnilehte laulma.',
         'Täida see ruttu, sest viisi ta küll ei pea.',
+      ],
+    },
+  },
+  {
+    id: 'st-catherines',
+    when: { date: days('11-25') },
+    lines: {
+      et: [
+        'Kadrisandid on ukse taga.',
+        'Mardid käisid ka ja su tunnileht on ikka tühi.',
+        'Täida see ära, enne kui kadrid laulma hakkavad.',
       ],
     },
   },
@@ -172,6 +344,39 @@ export const TAGLINES: TaglineSet[] = [
         'Jõuluvana tuleb.',
         'Salmi asemel küsib ta tunnilehte.',
         'Täida see ära, enne kui ta uksele koputab.',
+      ],
+    },
+  },
+  {
+    // Ahead of the month's end, 29–31 December, so the year's end names it.
+    id: 'between-holidays',
+    when: { date: days('12-27', '12-30') },
+    lines: {
+      en: [
+        'Nobody is working this week.',
+        'Your timesheet still is.',
+        'Fill it in before the year runs out.',
+      ],
+      et: [
+        'Pühade vahel ei tööta keegi.',
+        'Välja arvatud sinu tunnileht.',
+        'Täida see ära, enne kui aasta otsa saab.',
+      ],
+    },
+  },
+  {
+    id: 'new-years-eve',
+    when: { date: days('12-31') },
+    lines: {
+      en: [
+        'Last chance this year.',
+        "The fireworks can wait; your timesheet can't.",
+        'Fill it in before midnight.',
+      ],
+      et: [
+        'Aasta viimane päev.',
+        'Ilutulestik võib oodata, tunnileht mitte.',
+        'Täida see ära enne südaööd.',
       ],
     },
   },
