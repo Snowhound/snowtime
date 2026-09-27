@@ -451,8 +451,8 @@ each.
   files out of the Vercel functions and their response limits, and the XLSX library loads only
   when someone exports.
 - Entries: each entry's time on each day, clipped to the range and split at the user's
-  midnights like the totals, with its start and end in the user's zone; a running entry counts up
-  to now and has no end. The entries add up to the report's totals.
+  midnights like the totals, with its ticket, and its start and end in the user's zone; a
+  running entry counts up to now and has no end. The entries add up to the report's totals.
 - Durations: decimal hours in CSV (two places), and numbers in XLSX, as fractions of a day with
   the `[h]:mm` format, so they add up in the spreadsheet. Dates are ISO days, since they're the
   user's days, not instants.
@@ -487,11 +487,51 @@ The Reports page's Entries card lists the entries behind the report (task 055,
   reads the report's entries again and sorts them in TypeScript: the read is the one
   `getReport` makes, and the response stays bounded.
 
+## Ticket keys
+
+An entry has at most one ticket key, such as `NBW-412` (task 060, `prototypes/README.md`,
+timer.html, "Ticket keys").
+
+- Storage: the nullable `time_entry.ticket` column, indexed on `(organization_id, ticket)`
+  for reports. One ticket per entry keeps reports by ticket adding up to the total and
+  matches tracker worklogs, which belong to one issue each. Work on two tickets is two
+  entries, or one with the second key in its text. A `time_entry_ticket` table would be
+  needed only for several tickets per entry.
+- Detection: the client finds the ticket when a description is committed (Enter, blur,
+  Start, Save), never while typing, with `detectTicket` in `src/lib/tickets.ts`, which the
+  seeds also use. A key is a letter, one to nine more letters or digits, a dash, and a number
+  of one to seven digits that doesn't start with 0.
+  - A key at the start, optionally in brackets and followed by `:`, `|`, `,`, `/`, a dash,
+    white space, or the end, becomes the ticket and leaves the text. It replaces any ticket
+    the entry had.
+  - A key later in the text becomes the ticket only when the entry has none, and stays in
+    the text, so the sentence still reads.
+  - A pasted issue link (`…/browse/KEY`, `…/issue/KEY`, `…/issues/KEY`) becomes its key.
+  - `UTF-`, `ISO-`, `SHA-`, and `COVID-` numbers stay text, and so do keys the saved
+    description already has. A chip's × puts its key back at the start of the text, so the
+    key isn't found again.
+- The server checks only the ticket's format (`Ticket` in `src/server/schemas.ts`).
+  `createEntry`, `updateEntry` (the running entry's too), and `startTimer` take it, and
+  `updateEntry` removes it with null.
+- Existing entries: the `time_entry_ticket` migration moved the key at the start of each
+  description into the ticket, in SQL that follows the same rules;
+  `src/db/ticket-backfill.test.ts` checks the SQL against `detectTicket`. It left pasted
+  links and later keys as they were, since those don't change the text.
+- Issue links: `organization.issue_links`, an app column that Better Auth never reads or
+  writes, like `team_member.role` ("Tenancy"). `updateIssueLinks` in the auth domain lets
+  admins and owners set it to an `https://` address with a host name that has a dot, a path,
+  and `{key}`, or clear it to null. `getAppSession` returns it with each organization; with
+  it set, chips link to the issue in a new tab, and without it they are plain labels.
+- Reports group by ticket, with a "No ticket" row, and filter to one ticket (`ticket` in
+  `ReportInput`). By description keeps work on different tickets apart, and both exports
+  have a Ticket column.
+
 ## User settings
 
 - All of a user's settings live in `user_settings`, one row per user, so they follow the
   user across devices: time zone, week start, language (`locale`), theme, timer layout,
-  whether the summary shows, compact entry rows (`compact_rows`), the app icon
+  whether the summary shows, compact entry rows (`compact_rows`), the Wide page setting
+  (`wide_timer`), the app icon
   (`app_icon`, the header mark and favicon), the seasonal scene (`scene_season`,
   `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`,
   `scene_tagline`), and
@@ -520,7 +560,11 @@ The Reports page's Entries card lists the entries behind the report (task 055,
   passes it to Paraglide, which sets the cookie, and renders the page again.
 - The app validates the text values (`src/server/settings/settings.schemas.ts`); their columns have no
   `CHECK`, so adding a value needs no table rebuild. The booleans (`show_summary`,
-  `compact_rows`, and the scene's switches) keep the usual 0/1 `CHECK`.
+  `compact_rows`, `wide_timer`, and the scene's switches) keep the usual 0/1 `CHECK`.
+- Wide page (`wide_timer`, off by default) widens the Timer page from the header's width to
+  88rem and puts the timer across the summary column, so rows have room for a Ticket column.
+  Off, the page keeps the header's width and each row's chip sits at the end of its
+  description. The Timer route is `wide` (its `staticData`), so the view sets its own width.
 
 ## Seasonal scene
 

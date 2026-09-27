@@ -731,15 +731,19 @@ Decisions:
   without losing what was typed; a wrong ticket is then deleted as text. In rows the × shows
   on hover and focus, like the row's actions.
 - **The ticket goes after the description**, so the text starts in the same place with or
-  without one. At the standard width the chip follows the row's text, taking at most 45% of
-  the cell, and its × takes no room until the row is hovered or focused. With Wide page on,
-  rows have an 8rem Ticket column between the description and the project, empty without a
-  ticket, so the tickets line up. A long key is cut short, with the whole key on hover. Below
-  768 px the chip follows the text in the standard width and joins the project on the row's
-  second line in the wide one. The timer and the entry popover show the chip
-  at the end of their field; recent-work suggestions and Continue recent show it after the
-  text. A chip before the text moved each row's text by the chip's width. Picking recent work
-  or Continue brings the ticket along, and typing a key finds recent work by it.
+  without one. At the standard width the description's input fills the cell and the chip
+  sits at its end, taking at most 60% of the cell, so every row's chip lines up and the
+  input gets the room the chip doesn't need. Its × keeps its room and shows on hover or
+  focus, so the key doesn't move. With Wide page on, rows have an 8rem Ticket column between
+  the description and the project from 1280 px, empty without a ticket; below 1280 px the
+  summary or the window leaves no room for the column, so the chip stays at the end of the
+  description, and below 768 px it joins the project on the row's second line. A long key is
+  cut short, with the whole key on hover. The timer and the entry popover show the chip at the
+  end of their field; recent-work suggestions and Continue recent show it after the text. A
+  chip before the text moved each row's text by the chip's width, and a chip right after the
+  text (the first design, changed on 2026-09-27) left the input only as wide as its text.
+  Picking recent work or Continue brings the ticket along, and typing a key finds recent work
+  by it.
 - **Links: the organization's Issue links setting** (`organization.html`, General). With it set,
   a chip's key is an underlined link to the issue, opening in a new tab; the prototype bar's
   Issue links select stands in for it.
@@ -747,8 +751,8 @@ Decisions:
   the app's Compact rows is (`user_settings.wide_timer`, task 060). Off, the page keeps the
   header's width with the timer beside the summary, as before tickets; at 1440 px a row has
   about 200 px for its text and chip, so a long description with a ticket keeps about 100.
-  On, the page is up to 88rem, as Reports is, and the timer spans the summary column; a row's
-  text gets about 330 px beside the Ticket column.
+  On, the page is up to 88rem, and the timer spans the summary column; a row's text gets about
+  330 px beside the Ticket column at 1440 px.
 
 Inline fields add `border-transparent shadow-none` to `input` and `button`, with the border
 back on hover and focus; the app passes the same classes at the call site
