@@ -109,6 +109,7 @@ export function DescriptionCombobox(props: {
       >
         <TextFieldLabel class={props.labelClass}>{props.label}</TextFieldLabel>
         <div
+          data-input-field
           class={cn(
             'border-input ring-offset-background focus-within:ring-ring flex min-h-10 w-full min-w-0 cursor-text items-center gap-1 rounded-md border bg-transparent py-1 pr-1.5 pl-2 text-sm focus-within:ring-2 focus-within:ring-offset-2',
             props.disabled && 'cursor-not-allowed opacity-50',

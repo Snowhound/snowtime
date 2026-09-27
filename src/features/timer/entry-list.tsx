@@ -27,7 +27,6 @@ import type { DayGroup } from './entries'
 import { entryName } from './entries'
 import {
   DateField,
-  DescriptionField,
   EntryDuration,
   InlineDescription,
   NextDayMark,
@@ -179,23 +178,18 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
     >
       <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 md:flex">
         <div class="col-span-2 -ml-2 min-w-0 md:flex-1">
-          <Show
-            when={props.wide}
-            fallback={
-              <InlineDescription
-                editor={editor}
-                entry={props.entry}
-                issueLinks={props.issueLinks}
-              />
-            }
-          >
-            <DescriptionField editor={editor} />
-          </Show>
+          {/* With Wide page, the chip moves to the Ticket column from 1280 px, and below
+              768 px to the project's line; between them a column leaves no room for the text. */}
+          <InlineDescription
+            editor={editor}
+            entry={props.entry}
+            issueLinks={props.issueLinks}
+            chipClass={props.wide ? 'max-md:hidden xl:hidden' : undefined}
+          />
         </div>
-        {/* Below 768 px the Ticket column joins the project on the row's second line. */}
         <div class="-ml-2 flex min-w-0 items-center gap-2 md:contents">
           <Show when={props.wide}>
-            <div class="order-last flex min-w-0 shrink-0 md:order-none md:w-32">
+            <div class="order-last flex min-w-0 shrink-0 md:hidden xl:order-none xl:flex xl:w-32">
               <TicketCell editor={editor} entry={props.entry} issueLinks={props.issueLinks} />
             </div>
           </Show>

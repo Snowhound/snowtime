@@ -103,10 +103,6 @@
       .entry-ticket-remove {
         @apply sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100;
       }
-      /* After the text, the button takes no room until then, so the text keeps it. */
-      .entry-ticket-remove.inline-ticket-remove {
-        @apply sm:hidden sm:group-hover:inline-flex sm:group-focus-within:inline-flex;
-      }
     </style>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -398,8 +394,8 @@
         const label = href
           ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="Open ${key}" class="min-w-0 truncate rounded-sm underline decoration-foreground/30 underline-offset-2 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">${key}</a>`
           : `<span class="min-w-0 truncate" title="${key}">${key}</span>`
-        return `<span data-ui="badge" data-variant="secondary" class="ticket h-6 min-w-0 ${inline ? 'max-w-[45%]' : 'max-w-full'} shrink-0 gap-0.5 pl-1.5 pr-0.5 tabular-nums">${label}<button type="button" data-untick="${key}" data-owner="${owner}"
-          class="${row ? 'entry-ticket-remove ' : ''}${inline ? 'inline-ticket-remove ' : ''}inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        return `<span data-ui="badge" data-variant="secondary" class="ticket h-6 min-w-0 ${inline ? 'max-w-[60%]' : 'max-w-full'} shrink-0 gap-0.5 pl-1.5 pr-0.5 tabular-nums">${label}<button type="button" data-untick="${key}" data-owner="${owner}"
+          class="${row ? 'entry-ticket-remove ' : ''}inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Turn ${key} back into text" title="Turn back into text">${icon('x', 'size-3')}</button></span>`
       }
       // The ticket in a suggestion or a Continue recent chip: a label only.
@@ -455,16 +451,13 @@
         return e.ticket ? ticketChip(e.ticket, e.id, { row: true, inline }) : ''
       }
 
-      // Standard width: the chip right after the text. The input is as wide as its text: a hidden
-      // copy of the text sizes the grid cell it shares, up to the room there is.
-      function inlineDescription(e) {
-        const text = draft(e.id, 'description') ?? e.description
+      // The input fills the cell and the chip sits at its end, where every row's chip lines up.
+      // With Wide page the chip moves to the Ticket column from 1280 px and to the project's
+      // line below 768 px (`hide`).
+      function inlineDescription(e, hide = '') {
         return `<div class="flex min-w-0 items-center gap-1">
-          <span class="inline-grid min-w-0 grid-cols-[minmax(0,auto)]">
-            <span aria-hidden="true" data-mirror="${e.id}" class="invisible col-start-1 row-start-1 overflow-hidden whitespace-pre border px-2 pr-3 text-sm">${escapeHtml(text || 'No description')}</span>
-            <span class="col-start-1 row-start-1 min-w-0">${descriptionInput(e)}</span>
-          </span>
-          ${ticketCell(e, { inline: true })}
+          <div class="min-w-0 flex-1">${descriptionInput(e)}</div>
+          <span class="contents ${hide}">${ticketCell(e, { inline: true })}</span>
         </div>`
       }
 
@@ -530,9 +523,9 @@
         const ticketColumn = settings.wideTimer
         return `<li class="group px-4 ${compact ? 'py-2' : 'py-3'}" data-row="${e.id}">
           <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 md:flex">
-            <div class="col-span-2 -ml-2 min-w-0 md:flex-1">${ticketColumn ? descriptionInput(e) : inlineDescription(e)}</div>
+            <div class="col-span-2 -ml-2 min-w-0 md:flex-1">${inlineDescription(e, ticketColumn ? '[&>*]:max-md:hidden [&>*]:xl:hidden' : '')}</div>
             <div class="-ml-2 flex min-w-0 items-center gap-2 md:contents">
-              ${ticketColumn ? `<div class="order-last flex min-w-0 shrink-0 md:order-none md:w-32">${ticketCell(e)}</div>` : ''}
+              ${ticketColumn ? `<div class="order-last flex min-w-0 shrink-0 md:hidden xl:order-none xl:flex xl:w-32">${ticketCell(e)}</div>` : ''}
               <div class="min-w-0 md:w-36 md:shrink-0">${projectMenu(e)}</div>
             </div>
             <div class="row-start-3 -ml-2 flex shrink-0 items-center gap-1 text-muted-foreground md:ml-0">${datePicker(e)}${timeInput(e, 'start')}<span aria-hidden="true">–</span>${timeInput(e, 'end')}${nextDayMark(e)}</div>

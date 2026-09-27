@@ -256,46 +256,38 @@ export function DescriptionField(props: { editor: EntryEditor }) {
   )
 }
 
-// The standard width's description: the input as wide as its text, which a hidden copy sizes
-// up to the room there is, and the ticket chip right after it. Without a ticket the input
-// fills the cell. The input stays mounted either way, so a commit that finds a ticket keeps
-// its focus.
+// The description: the input fills the cell and the ticket chip sits at its end, where each
+// row's chip lines up. `chipClass` hides it where the Wide page's Ticket column shows it.
 export function InlineDescription(props: {
   editor: EntryEditor
   entry: Entry
   issueLinks: string | null
+  chipClass?: string
 }) {
   return (
     <div class="flex min-w-0 items-center gap-1">
-      <span
-        class={cn(
-          'inline-grid min-w-0',
-          props.entry.ticket ? 'grid-cols-[minmax(0,auto)]' : 'flex-1 grid-cols-[minmax(0,1fr)]',
-        )}
-      >
-        <span
-          aria-hidden="true"
-          class="invisible col-start-1 row-start-1 overflow-hidden border px-2 pr-3 text-sm whitespace-pre"
-        >
-          {props.editor.description() || m.timer_no_description()}
-        </span>
-        {/* No width of its own: an input's default of about 20 characters would size the
-            column instead of the text. */}
-        <span class="col-start-1 row-start-1 w-0 min-w-full">
-          <DescriptionField editor={props.editor} />
-        </span>
-      </span>
-      <TicketCell editor={props.editor} entry={props.entry} issueLinks={props.issueLinks} inline />
+      <div class="min-w-0 flex-1">
+        <DescriptionField editor={props.editor} />
+      </div>
+      <TicketCell
+        editor={props.editor}
+        entry={props.entry}
+        issueLinks={props.issueLinks}
+        class={props.chipClass}
+        inline
+      />
     </div>
   )
 }
 
-// The row's chip, after the text or in the Wide page's Ticket column; nothing without a ticket.
+// The row's chip, at the end of the description or in the Wide page's Ticket column; nothing
+// without a ticket.
 export function TicketCell(props: {
   editor: EntryEditor
   entry: Entry
   issueLinks: string | null
   inline?: boolean
+  class?: string
 }) {
   return (
     <Show when={props.entry.ticket}>
@@ -303,6 +295,7 @@ export function TicketCell(props: {
         <TicketChip
           ticket={ticket()}
           issueLinks={props.issueLinks}
+          class={props.class}
           row
           inline={props.inline}
           onRemove={() => props.editor.untick()}

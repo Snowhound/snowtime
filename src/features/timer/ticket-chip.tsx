@@ -12,18 +12,17 @@ import { m } from '~/paraglide/messages.js'
 // A row's × shows on hover and focus, like the row's actions.
 const ROW_REMOVE =
   'sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100'
-// After the row's text, the × takes no room until then, so the text keeps it.
-const INLINE_REMOVE = 'sm:hidden sm:group-hover:inline-flex sm:group-focus-within:inline-flex'
 
 export function TicketChip(props: {
   ticket: string
   issueLinks: string | null
-  // In a row: the × shows on hover and focus; `inline` after the text, where it also takes
-  // no room until then and the chip takes at most 45% of the cell.
+  // In a row: the × shows on hover and focus, keeping its room so the key doesn't move.
+  // `inline` at the end of the description cell, where the chip takes at most 60% of it.
   row?: boolean
   inline?: boolean
   // Without it, as for a timer running in another organization, the chip has no ×.
   onRemove?: () => void
+  class?: string
 }) {
   function href() {
     return issueUrl(props.issueLinks, props.ticket)
@@ -33,8 +32,9 @@ export function TicketChip(props: {
       variant="secondary"
       class={cn(
         'h-6 min-w-0 shrink-0 gap-0.5 pr-0.5 pl-1.5 tabular-nums',
-        props.inline ? 'max-w-[45%]' : 'max-w-full',
+        props.inline ? 'max-w-[60%]' : 'max-w-full',
         !props.onRemove && 'pr-1.5',
+        props.class,
       )}
     >
       <Show
@@ -64,7 +64,6 @@ export function TicketChip(props: {
             class={cn(
               'text-muted-foreground hover:bg-background hover:text-foreground focus-visible:ring-ring inline-flex size-5 shrink-0 items-center justify-center rounded-sm focus-visible:ring-2 focus-visible:outline-none',
               props.row && ROW_REMOVE,
-              props.row && props.inline && INLINE_REMOVE,
             )}
             aria-label={m.ticket_untick({ ticket: props.ticket })}
             title={m.ticket_untick_title()}
