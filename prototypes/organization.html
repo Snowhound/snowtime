@@ -100,7 +100,7 @@
           <form id="general-form" data-ui="card" class="max-w-2xl" novalidate>
             <div data-ui="card-header">
               <h2 data-ui="card-title">General</h2>
-              <p data-ui="card-description">The organization's name, shown in the switcher and in invitations.</p>
+              <p data-ui="card-description">The organization's name, shown in the switcher and in invitations, and where ticket keys link.</p>
             </div>
             <div data-ui="card-content" class="grid grid-cols-[minmax(0,1fr)] gap-4">
               <div class="grid gap-2">
@@ -112,6 +112,12 @@
                 <label data-ui="label" for="org-slug">Short name</label>
                 <input id="org-slug" data-ui="input" type="text" readonly class="bg-muted/50 text-muted-foreground" aria-describedby="org-slug-hint" />
                 <p id="org-slug-hint" class="text-xs text-muted-foreground">Set when the organization was created. Invitation links use it.</p>
+              </div>
+              <div class="grid gap-2">
+                <label data-ui="label" for="org-issue-links">Issue links</label>
+                <input id="org-issue-links" data-ui="input" type="url" inputmode="url" autocomplete="off" placeholder="https://yourcompany.atlassian.net/browse/{key}" aria-describedby="org-issue-links-hint org-issue-links-error" />
+                <p id="org-issue-links-hint" class="text-xs text-muted-foreground">Ticket keys in entries, such as ABC-123, link here. <code>{key}</code> stands for the key. Leave it empty to show keys as plain labels.</p>
+                <p id="org-issue-links-error" data-ui="error-message" class="empty:hidden"></p>
               </div>
               <div data-ui="alert">
                 <svg class="prototype-icon" aria-hidden="true"><use href="#icon-info" /></svg>
@@ -234,10 +240,12 @@
           state.invitations = []
           state.name = 'Lumi Design Collective'
           state.slug = 'lumi'
+          state.issueLinks = ''
         } else {
           state.org = appData.organization({ role, long: name === 'long' })
           state.name = name === 'long' ? 'Põhjamaade Logistika- ja Laohaldusteenuste Konsortsium OÜ' : 'Snowhound'
           state.slug = name === 'long' ? 'pohjamaade-logistika-ja-laohaldusteenuste-konsortsium' : 'snowhound'
+          state.issueLinks = name === 'long' ? 'https://pohjamaade-logistika-ja-laohaldusteenuste-konsortsium.atlassian.net/browse/{key}' : 'https://snowhound.atlassian.net/browse/{key}'
           state.invitations = [
             { id: 'inv-1', email: 'kristjan@snowhound.eu', role: 'member', teamId: 't-platform', inviterId: 'u-mari', expiresAt: now + 40 * HOUR, status: 'pending' },
             { id: 'inv-2', email: 'helena.kuusk@gmail.com', role: 'admin', teamId: null, inviterId: 'u-jaan', expiresAt: now + 5 * HOUR, status: 'pending' },
@@ -607,21 +615,39 @@
       function renderGeneral() {
         document.getElementById('org-name').value = state.name
         document.getElementById('org-slug').value = state.slug
+        document.getElementById('org-issue-links').value = state.issueLinks ?? ''
         document.getElementById('general-save').disabled = true
         document.getElementById('general-status').textContent = ''
       }
-      document.getElementById('org-name').addEventListener('input', (event) => {
-        document.getElementById('general-save').disabled = event.currentTarget.value.trim() === state.name
+      document.getElementById('general-form').addEventListener('input', () => {
+        const changed =
+          document.getElementById('org-name').value.trim() !== state.name ||
+          document.getElementById('org-issue-links').value.trim() !== (state.issueLinks ?? '')
+        document.getElementById('general-save').disabled = !changed
         document.getElementById('general-status').textContent = ''
       })
+      // An https URL with {key} where the ticket key goes, or empty.
+      function issueLinksError(value) {
+        if (!value) return ''
+        if (!/^https:\/\/[^\s/]+\.[^\s/]+\//.test(value)) return 'Enter an https:// address, such as https://yourcompany.atlassian.net/browse/{key}.'
+        if (!value.includes('{key}')) return 'Put {key} where the ticket key goes, such as …/browse/{key}.'
+        return ''
+      }
       document.getElementById('general-form').addEventListener('submit', (event) => {
         event.preventDefault()
         const input = document.getElementById('org-name')
+        const links = document.getElementById('org-issue-links')
         const name = input.value.trim()
+        const issueLinks = links.value.trim()
+        const linksError = issueLinksError(issueLinks)
         document.getElementById('org-name-error').textContent = name ? '' : 'Enter a name.'
+        document.getElementById('org-issue-links-error').textContent = linksError
         input.toggleAttribute('data-invalid', !name)
+        links.toggleAttribute('data-invalid', !!linksError)
         if (!name) return input.focus()
+        if (linksError) return links.focus()
         state.name = name // organization.update
+        state.issueLinks = issueLinks // updateIssueLinks
         render()
         document.getElementById('general-status').textContent = 'Saved.'
       })

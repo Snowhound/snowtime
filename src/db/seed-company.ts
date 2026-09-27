@@ -164,6 +164,8 @@ interface ProjectSpec {
   to?: number
   internal?: boolean
   deleted?: boolean
+  // The client's issue tracker prefix, as in NBW-412.
+  key?: string
 }
 
 const projectSpecs: ProjectSpec[] = [
@@ -171,23 +173,36 @@ const projectSpecs: ProjectSpec[] = [
   { name: 'Sales and pitches', color: '#c9759f', teams: [], internal: true },
   { name: 'Hiring', color: '#8a8f3a', teams: [], internal: true },
   { name: 'Training', color: '#5a4fa8', teams: [], internal: true },
-  { name: 'Nordbank brand refresh', color: '#3b82b8', teams: [T.design], to: 0.35 },
-  { name: 'Nordbank website', color: '#2f6f9f', teams: [T.design, T.web], from: 0.2 },
-  { name: 'Kalev Foods packaging', color: '#d9703f', teams: [T.design], from: 0.4, to: 0.75 },
-  { name: 'Museum wayfinding', color: '#b0613a', teams: [T.design], from: 0.7 },
-  { name: 'Design system', color: '#7a6fc8', teams: [T.design, T.web] },
-  { name: 'Ferry booking', color: '#4f8f3a', teams: [T.web], to: 0.6 },
-  { name: 'Ferry booking support', color: '#6aa84f', teams: [T.web, T.mobile], from: 0.6 },
-  { name: 'City permits portal', color: '#c9514f', teams: [T.web], from: 0.15 },
-  { name: 'Clinic scheduling', color: '#e0a030', teams: [T.web, T.data], from: 0.55 },
-  { name: 'Webshop migration', color: '#8b5a2b', teams: [T.web], to: 0.25 },
-  { name: 'Parking app', color: '#d94f7a', teams: [T.mobile] },
-  { name: 'Fitness tracker', color: '#3f9fbf', teams: [T.mobile], from: 0.3, to: 0.85 },
-  { name: 'Transit card app', color: '#9f3fbf', teams: [T.mobile], from: 0.8 },
-  { name: 'Energy dashboard', color: '#2e8b57', teams: [T.data], to: 0.5 },
-  { name: 'Retail forecasting', color: '#b8860b', teams: [T.data], from: 0.35 },
-  { name: 'Data platform', color: '#4682b4', teams: [T.data, T.web] },
-  { name: 'Analytics audits', color: '#708090', teams: [T.data], from: 0.1, to: 0.3 },
+  { name: 'Nordbank brand refresh', key: 'NBR', color: '#3b82b8', teams: [T.design], to: 0.35 },
+  { name: 'Nordbank website', key: 'NBW', color: '#2f6f9f', teams: [T.design, T.web], from: 0.2 },
+  {
+    name: 'Kalev Foods packaging',
+    key: 'KAL',
+    color: '#d9703f',
+    teams: [T.design],
+    from: 0.4,
+    to: 0.75,
+  },
+  { name: 'Museum wayfinding', key: 'MUS', color: '#b0613a', teams: [T.design], from: 0.7 },
+  { name: 'Design system', key: 'DS', color: '#7a6fc8', teams: [T.design, T.web] },
+  { name: 'Ferry booking', key: 'FERRY', color: '#4f8f3a', teams: [T.web], to: 0.6 },
+  {
+    name: 'Ferry booking support',
+    key: 'FERRY',
+    color: '#6aa84f',
+    teams: [T.web, T.mobile],
+    from: 0.6,
+  },
+  { name: 'City permits portal', key: 'PERMIT', color: '#c9514f', teams: [T.web], from: 0.15 },
+  { name: 'Clinic scheduling', key: 'CLIN', color: '#e0a030', teams: [T.web, T.data], from: 0.55 },
+  { name: 'Webshop migration', key: 'SHOP', color: '#8b5a2b', teams: [T.web], to: 0.25 },
+  { name: 'Parking app', key: 'PARK', color: '#d94f7a', teams: [T.mobile] },
+  { name: 'Fitness tracker', key: 'FIT', color: '#3f9fbf', teams: [T.mobile], from: 0.3, to: 0.85 },
+  { name: 'Transit card app', key: 'TRANSIT', color: '#9f3fbf', teams: [T.mobile], from: 0.8 },
+  { name: 'Energy dashboard', key: 'ENRG', color: '#2e8b57', teams: [T.data], to: 0.5 },
+  { name: 'Retail forecasting', key: 'RF', color: '#b8860b', teams: [T.data], from: 0.35 },
+  { name: 'Data platform', key: 'DP', color: '#4682b4', teams: [T.data, T.web] },
+  { name: 'Analytics audits', key: 'AUD', color: '#708090', teams: [T.data], from: 0.1, to: 0.3 },
   { name: 'Hackathon', color: '#ff7f50', teams: [], from: 0.62, to: 0.64 },
   { name: 'Grant application', color: '#6b8e23', teams: [], from: 0.05, to: 0.12 },
   { name: 'Duplicate of Parking app', color: '#999999', teams: [T.mobile], deleted: true },
@@ -195,69 +210,83 @@ const projectSpecs: ProjectSpec[] = [
 
 const projectIds = projectSpecs.map((_, i) => id(0x3000 + i))
 
-// Work per team, with ticket prefixes; a ticket's description repeats through its week.
-const teamWork: Record<string, { prefix: string; tasks: string[] }> = {
-  [T.design]: {
-    prefix: 'DES',
-    tasks: [
-      'Wireframes',
-      'Visual design',
-      'Design review',
-      'Prototype',
-      'User interviews',
-      'Icon set',
-      'Handoff to developers',
-      'Style guide',
-    ],
-  },
-  [T.web]: {
-    prefix: 'WEB',
-    tasks: [
-      'Frontend',
-      'API integration',
-      'Code review',
-      'Bug fixing',
-      'Accessibility fixes',
-      'Performance',
-      'Deploy',
-      'Tests',
-    ],
-  },
-  [T.mobile]: {
-    prefix: 'APP',
-    tasks: [
-      'iOS build',
-      'Android build',
-      'Code review',
-      'Crash fixes',
-      'Push notifications',
-      'Store release',
-      'Offline mode',
-      'QA',
-    ],
-  },
-  [T.data]: {
-    prefix: 'DATA',
-    tasks: [
-      'Pipeline',
-      'Data modelling',
-      'Dashboard',
-      'Model training',
-      'Data cleaning',
-      'Query tuning',
-      'Code review',
-      'Report for client',
-    ],
-  },
+// Work per team. Client work mostly starts with a ticket key; the ticket repeats through its
+// week.
+const teamWork: Record<string, string[]> = {
+  [T.design]: [
+    'Wireframes for the onboarding flow, second round after the client workshop',
+    'Visual design for the account overview, dark mode variants',
+    'Design review with the client: navigation, typography and colour contrast',
+    'Clickable prototype for the usability test on Thursday',
+    'User interviews: notes and affinity map',
+    'Icon set: 24 px grid, outline and filled states',
+    'Handoff to developers, annotate spacing and breakpoints',
+    'Style guide update for buttons, form fields and error states',
+    'Moodboard and first concepts',
+    'Design review',
+  ],
+  [T.web]: [
+    'Checkout: validate Finnish and Swedish postcodes before the payment step',
+    'API integration for the booking calendar, handle 409 conflicts',
+    'Code review',
+    'Fix the date picker losing focus in Safari when the month changes',
+    'Accessibility fixes from the audit: focus order, labels and landmarks',
+    'Performance: cut the product list query from 1.2 s to under 200 ms',
+    'Deploy to staging and smoke test the release candidate',
+    'Unit and end-to-end tests for the permit application form',
+    'Migrate the UTF-8 CSV import to the new upload service',
+    'Refactor the session handling and remove the legacy cookie',
+    'Bug fixing',
+  ],
+  [T.mobile]: [
+    'iOS build: update to the new SDK and fix the deprecation warnings',
+    'Android build: crash on devices with the system font scaled to 200%',
+    'Code review',
+    'Crash fixes from the store reports, top three by volume',
+    'Push notifications for expiring parking sessions',
+    'Store release: screenshots, release notes and phased rollout',
+    'Offline mode: queue payments and retry when the connection returns',
+    'QA pass on the release branch with the test devices',
+    'Pair with the designers on the new onboarding screens',
+  ],
+  [T.data]: [
+    'Pipeline: nightly load of the sales data, handle late-arriving rows',
+    'Data modelling for the store hierarchy and regions',
+    'Dashboard for weekly energy use per building',
+    'Model training: retrain the forecast with the holiday calendar',
+    'Data cleaning: duplicate customers and ISO-8601 timestamps with no zone',
+    'Query tuning on the warehouse, partitions and clustering keys',
+    'Code review',
+    'Monthly report for the client with the forecast accuracy',
+  ],
 }
 
 const internalWork: Record<string, string[]> = {
-  Internal: ['Team meeting', 'All hands', 'Email', 'Planning', 'Retro', '1:1', ''],
-  'Sales and pitches': ['Pitch deck', 'Client call', 'Proposal', 'Estimate'],
-  Hiring: ['Interview', 'CV screening', 'Test task review'],
-  Training: ['Conference talk', 'Course', 'Reading', 'Workshop'],
-  Hackathon: ['Hackathon'],
-  'Grant application': ['Grant budget', 'Grant text'],
+  Internal: [
+    'Team meeting',
+    'All hands: company update and Q&A',
+    'Email and Slack',
+    'Planning for next week',
+    'Retro',
+    '1:1',
+    'Q3-2026 roadmap review with the leads',
+    '',
+  ],
+  'Sales and pitches': [
+    'Pitch deck for the transit authority tender',
+    'Client call: scope and timeline for phase two',
+    'Proposal and estimate for the clinic chain',
+    'Estimate',
+  ],
+  Hiring: ['Interview: senior frontend developer', 'CV screening', 'Test task review'],
+  Training: [
+    'Conference talk rehearsal',
+    'Online course: accessibility testing',
+    'Reading',
+    'Workshop',
+  ],
+  Hackathon: ['Hackathon: offline-first prototype', 'Hackathon'],
+  'Grant application': ['Grant budget and work plan', 'Grant application text'],
 }
 
 // Estonian public holidays, as month and day.
@@ -454,14 +483,24 @@ function entries(now: Date, yearStart: number, days: number): NewEntry[] {
     let focus: { spec: ProjectSpec; id: string } | undefined
     let week = -1
 
+    // Keys as people type them: mostly at the start, sometimes in brackets or after a
+    // colon, sometimes mid-sentence, now and then two.
     function describe(spec: ProjectSpec, weekNumber: number) {
       if (internalWork[spec.name]) return pick(internalWork[spec.name])
-      if (work.length === 0 || rand() < 0.1) return ''
-      const w = pick(work)
-      const task = pick(w.tasks)
-      if (rand() < 0.5) return task
-      const ticket = 100 + weekNumber * 7 + Math.floor(rand() * 3)
-      return `${w.prefix}-${ticket} ${task.toLowerCase()}`
+      if (work.length === 0 || rand() < 0.08) return ''
+      const text = pick(pick(work))
+      if (!spec.key || rand() < 0.3) return text
+      function ticket() {
+        return `${spec.key}-${100 + weekNumber * 4 + Math.floor(rand() * 4)}`
+      }
+      const r = rand()
+      if (r < 0.6) return `${ticket()} ${text}`
+      if (r < 0.7) return `[${ticket()}] ${text}`
+      if (r < 0.8) return `${ticket()}: ${text}`
+      if (r < 0.92) return `${text} (${ticket()})`
+      const first = ticket()
+      const second = ticket()
+      return first === second ? `${first} ${text}` : `${first} ${second} ${text}`
     }
 
     function add(projectId: string | null, description: string, start: number, stop: number) {
@@ -487,6 +526,8 @@ function entries(now: Date, yearStart: number, days: number): NewEntry[] {
       const dayStart = startOfDay(date, p.timeZone)
       const weekNumber = Math.floor((dayStart - yearStart) / (7 * DAY))
       const projects = open(date)
+      // The year's first day starts before any project does.
+      if (projects.length === 0) continue
       const client = projects.filter((q) => !q.spec.internal)
       const internal = projects.filter((q) => q.spec.internal)
       const sales = internal.find((q) => q.spec.name === 'Sales and pitches')!

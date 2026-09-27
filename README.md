@@ -80,7 +80,8 @@ To start over: `rm local.db && bun run db:migrate && bun run db:seed`.
 queries and pages at a realistic size: 18 members in four teams, one former member, and
 about 20,000 entries over the year before the seed ran. The year has weekends, holidays,
 vacations, part-time and late-joining members, projects archived partway through, evening
-and overnight work, and three running timers. Run it on a database seeded without it to
+and overnight work, descriptions with ticket keys such as `NBW-412`, and three running
+timers. Run it on a database seeded without it to
 add the company. It takes under a second.
 
 The sign-in page also lists five of its users, with the same password:
