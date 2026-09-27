@@ -63,7 +63,7 @@ export const TIME_FORMATS = ['24h', '12h'] as const
 export const TimeFormat = v.picklist(TIME_FORMATS)
 export type TimeFormat = v.InferOutput<typeof TimeFormat>
 // Whose working days count for the taglines; null guesses from the time zone.
-export const Country = v.nullable(v.picklist(COUNTRIES))
+const Country = v.nullable(v.picklist(COUNTRIES))
 
 // The browser's zone (Intl.DateTimeFormat().resolvedOptions().timeZone) and the supported
 // locale that best matches its languages, used only when the user has no settings yet.

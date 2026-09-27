@@ -19,7 +19,7 @@ import { type Region, isShortDay, isWorkingDay } from '~/lib/holidays/holidays'
 
 // A working day counts as filled at this much logged time. Lax on purpose: the taglines are
 // jokes and mustn't nag over a short day.
-export const FILLED_MS = 6 * 3_600_000
+const FILLED_MS = 6 * 3_600_000
 // A shortened working day, such as the day before Christmas Eve in Estonia, is 3 hours shorter
 // by law, so it's filled at 3 hours less.
 const SHORT_DAY_MS = 3 * 3_600_000
