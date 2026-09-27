@@ -1,10 +1,10 @@
-# 061: A background for every month
+# 062: A background for every month
 
 Status: todo
 
 The scene shows one image per season, so the same picture stays up for three months
 (`seasonByMonth` in `src/lib/scene/scene.ts`). The taglines already follow the month and
-the date (task 060), and a picture that changes with them would keep the page fresh. Give
+the date (task 061), and a picture that changes with them would keep the page fresh. Give
 each month its own light and dark image, and keep the four current seasonal images for
 the months they fit best.
 
@@ -52,7 +52,7 @@ Alternatives to weigh:
   and its stored values don't change. The "Auto (season)" label becomes the month, for
   example "Auto (September)". A month picker is possible but adds 12 options for little
   gain.
-- **Intro.** The intro plays once a season with the season's lines (task 060, subtask
+- **Intro.** The intro plays once a season with the season's lines (task 061, subtask
   01). It can stay seasonal and play over the month's image, or play once a month. Once a
   season keeps it rare, which is why it was set that way.
 - **File names.** A table in `scene.ts` maps each month to an image id, so the months
