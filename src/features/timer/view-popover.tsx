@@ -1,5 +1,5 @@
-// The timer's View popover (prototypes/timer.html): the layout, whether the rows are compact,
-// whether the summary shows, and whether the page is wide.
+// The timer's View popover (prototypes/timer.html): the layout, whether the summary shows,
+// whether the rows are compact, and whether the page is wide.
 // They are user settings, saved through useUpdateSettings, so they change at once here and on
 // the settings page. The theme is in the header's Appearance popover.
 import { Link } from '@tanstack/solid-router'
@@ -75,20 +75,20 @@ export function ViewPopover(props: { settings: Settings; onError: (error: unknow
         </div>
         <Switch
           class="flex items-center justify-between gap-4"
-          checked={props.settings.compactRows}
-          onChange={(compactRows) => update({ compactRows })}
+          checked={props.settings.showSummary}
+          onChange={(showSummary) => update({ showSummary })}
         >
-          <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
+          <SwitchLabel>{m.settings_show_summary()}</SwitchLabel>
           <SwitchControl>
             <SwitchThumb />
           </SwitchControl>
         </Switch>
         <Switch
           class="flex items-center justify-between gap-4"
-          checked={props.settings.showSummary}
-          onChange={(showSummary) => update({ showSummary })}
+          checked={props.settings.compactRows}
+          onChange={(compactRows) => update({ compactRows })}
         >
-          <SwitchLabel>{m.settings_show_summary()}</SwitchLabel>
+          <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
           <SwitchControl>
             <SwitchThumb />
           </SwitchControl>
