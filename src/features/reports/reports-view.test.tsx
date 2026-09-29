@@ -547,6 +547,26 @@ describe('ReportsView', () => {
     expect(lastInput()).toMatchObject({ from: '2026-09-10' })
   })
 
+  test('a slow report dims the last one after a moment, until it lands', async () => {
+    renderView()
+    const views = (await screen.findByRole('table')).closest('[aria-busy]')!
+    let answer: (value: unknown) => void = () => {}
+    fn.getReport.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'], now: NOW })
+    fireEvent.click(screen.getByRole('button', { name: 'Next range' }))
+    await vi.advanceTimersByTimeAsync(150)
+    expect(lastInput()).toMatchObject({ from: '2026-09-28' })
+    expect(views).toHaveAttribute('aria-busy', 'false')
+    await vi.advanceTimersByTimeAsync(100)
+    expect(views).toHaveAttribute('aria-busy', 'true')
+    expect(views).toHaveClass('opacity-60')
+
+    answer(report(fn.getReport.mock.lastCall![0]))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(views).toHaveAttribute('aria-busy', 'false')
+    expect(views).not.toHaveClass('opacity-60')
+  })
+
   test('an empty range says so', async () => {
     server.rows = []
     renderView()

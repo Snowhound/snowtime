@@ -3,7 +3,7 @@
 // filters and the view live in the URL, so a report reloads and shares; each change
 // navigates, and the page reads them back from the search params.
 import { Link, useNavigate } from '@tanstack/solid-router'
-import { Show, createMemo, createSignal } from 'solid-js'
+import { Show, createEffect, createMemo, createSignal, onCleanup } from 'solid-js'
 import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
 import { Card, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -53,6 +53,8 @@ const TITLES = {
   ticket: { day: m.reports_title_ticket_day, week: m.reports_title_ticket_week },
 } satisfies Record<Group, Record<Unit, () => string>>
 
+const STALE_DELAY_MS = 200
+
 export function ReportsView(props: {
   organizationId: string
   organizationSlug: string
@@ -87,6 +89,15 @@ export function ReportsView(props: {
     ...reportQuery(props.organizationId, filters().input),
     enabled: teams.isSuccess && members.isSuccess,
   }))
+  // The views dim while they show the last report for new filters, after a moment so that a
+  // quick load doesn't flicker.
+  const [stale, setStale] = createSignal(false)
+  createEffect(() => {
+    setStale(false)
+    if (!report.isPlaceholderData) return
+    const timer = setTimeout(() => setStale(true), STALE_DELAY_MS)
+    onCleanup(() => clearTimeout(timer))
+  })
   // Apart from filters(), which changes with every search param, so that narrowing the
   // Entries card doesn't build the timesheet's rows again.
   const group = createMemo(() => filters().group)
@@ -333,21 +344,48 @@ export function ReportsView(props: {
               : 'w-full max-w-[68rem]',
           )}
         >
-          <TabsContent value="timesheet" class="mt-0 min-w-0">
-            <Card class="min-w-0 overflow-hidden">
-              <CardHeader class="pb-4">
-                <CardTitle class="text-base">{TITLES[filters().group][filters().unit]()}</CardTitle>
-                <Show when={filters().group === 'team'}>
-                  <CardDescription>{m.reports_team_note()}</CardDescription>
+          <div
+            class={cn(
+              'grid min-w-0 grid-cols-[minmax(0,1fr)] transition-opacity',
+              stale() && 'opacity-60',
+            )}
+            aria-busy={stale()}
+          >
+            <TabsContent value="timesheet" class="mt-0 min-w-0">
+              <Card class="min-w-0 overflow-hidden">
+                <CardHeader class="pb-4">
+                  <CardTitle class="text-base">
+                    {TITLES[filters().group][filters().unit]()}
+                  </CardTitle>
+                  <Show when={filters().group === 'team'}>
+                    <CardDescription>{m.reports_team_note()}</CardDescription>
+                  </Show>
+                </CardHeader>
+                <Show when={report.data}>
+                  {(data) => (
+                    <Timesheet
+                      report={data()}
+                      rows={rows()}
+                      group={filters().group}
+                      unit={data().unit}
+                      today={today()}
+                      weekStart={props.weekStart}
+                      picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
+                      onPick={(part) => void pick(part)}
+                    />
+                  )}
                 </Show>
-              </CardHeader>
+              </Card>
+            </TabsContent>
+            <TabsContent value="summary" class="mt-0 min-w-0">
               <Show when={report.data}>
                 {(data) => (
-                  <Timesheet
+                  <Summary
                     report={data()}
+                    projectRows={projectRows()}
                     rows={rows()}
                     group={filters().group}
-                    unit={data().unit}
+                    range={filters().range}
                     today={today()}
                     weekStart={props.weekStart}
                     picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
@@ -355,37 +393,20 @@ export function ReportsView(props: {
                   />
                 )}
               </Show>
-            </Card>
-          </TabsContent>
-          <TabsContent value="summary" class="mt-0 min-w-0">
-            <Show when={report.data}>
-              {(data) => (
-                <Summary
-                  report={data()}
-                  projectRows={projectRows()}
-                  rows={rows()}
+            </TabsContent>
+            <TabsContent value="breakdown" class="mt-0 min-w-0">
+              <Show when={report.data}>
+                <Breakdown
+                  total={outlined().total}
+                  groups={outlined().groups}
                   group={filters().group}
-                  range={filters().range}
-                  today={today()}
-                  weekStart={props.weekStart}
+                  nested={subgroupOf(filters().group, filters().access) !== null}
                   picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
                   onPick={(part) => void pick(part)}
                 />
-              )}
-            </Show>
-          </TabsContent>
-          <TabsContent value="breakdown" class="mt-0 min-w-0">
-            <Show when={report.data}>
-              <Breakdown
-                total={outlined().total}
-                groups={outlined().groups}
-                group={filters().group}
-                nested={subgroupOf(filters().group, filters().access) !== null}
-                picked={{ row: filters().entries.row, bucket: filters().entries.bucket }}
-                onPick={(part) => void pick(part)}
-              />
-            </Show>
-          </TabsContent>
+              </Show>
+            </TabsContent>
+          </div>
           {/* Its own query, so it shows its loading state while the timesheet is already up. It
             hides when the range has no time. It takes the timesheet's width, and its contain
             keeps a long description from widening both. */}
