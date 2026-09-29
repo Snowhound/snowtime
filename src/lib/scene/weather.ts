@@ -110,6 +110,12 @@ precision mediump float;
 uniform vec3 u_colorA, u_colorB;
 out vec4 outColor;
 `
+// A firefly's core and halo, the same on every page.
+const FIREFLY: [Rgb, Rgb] = [
+  [1.0, 0.98, 0.72],
+  [0.74, 0.9, 0.32],
+]
+
 export const EFFECTS: Record<Effect, EffectDef> = {
   // Snow. A is the near flakes' color, B the far ones'.
   snow: {
@@ -256,20 +262,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       // Less alpha than color, so the glow adds light like it would at night.
       outColor = vec4(col * a, a * .7);
     }`,
-    colors: {
-      dark: [
-        [1.0, 0.98, 0.72],
-        [0.74, 0.9, 0.32],
-      ],
-      image: [
-        [1.0, 0.98, 0.72],
-        [0.74, 0.9, 0.32],
-      ],
-      plain: [
-        [1.0, 0.98, 0.72],
-        [0.74, 0.9, 0.32],
-      ],
-    },
+    colors: { dark: FIREFLY, image: FIREFLY, plain: FIREFLY },
   },
   // Summer days: soft dandelion fluff and pollen drifting on the breeze, the pollen catching the
   // light. A is the seeds' color, B the pollen's. Without fluff (`share` 0), it's motes in the sun.
