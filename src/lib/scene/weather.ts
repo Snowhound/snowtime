@@ -58,11 +58,11 @@ uniform vec2 u_band;
 // The image's horizon in clip space; below the screen without one.
 uniform float u_horizon;
 uniform float u_time, u_dpr, u_wind, u_gust, u_shear, u_size, u_fall, u_opacity, u_share, u_glow, u_tempo, u_gather;
-// Up to three rectangles of the image in clip space (left, top, right, bottom), and how many.
-uniform vec4 u_zones[3];
+// Up to four rectangles of the image in clip space (left, top, right, bottom), and how many.
+uniform vec4 u_zones[4];
 uniform float u_zoneCount;
 // Each zone's factor of glitter's opacity.
-uniform vec3 u_zoneGain;
+uniform vec4 u_zoneGain;
 float hash(float n){ return fract(sin(n*127.1)*43758.5453123); }
 float hash2(float n){ return fract(sin(n*269.5+31.7)*17358.5453123); }
 // An integer hash for a falling item's column on each pass. The pass count grows without bound,
@@ -622,7 +622,7 @@ type Zone = [number, number, number, number] | [number, number, number, number, 
 //   screen.
 // - `share`: the share of special items: fluff among seeds, glints among midges. `glow`: how many
 //   fireflies fly apart from the midges.
-// - `zones`: up to three rectangles of the image: where glitter lies, so it misses water (without
+// - `zones`: up to four rectangles of the image: where glitter lies, so it misses water (without
 //   them, the ground below the horizon), where midges and fireflies keep, or where mist lies: each
 //   bank keeps to one zone, in place of the band.
 // - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight.
@@ -815,6 +815,14 @@ const ZONES = {
     [0.25, 0.4, 1, 0.58, 1.2],
     [0.33, 0.5, 1, 0.78],
     [0, 0.72, 1, 0.97, 0.6],
+  ],
+  // The snow off the stream by night, glinting most in the moonlight under the moon, less over
+  // the far field, on the bank and the bush right of the stream, and on the moon's reflection.
+  'land-january': [
+    [0.36, 0.35, 1, 0.47, 1.1],
+    [0.58, 0.35, 0.74, 0.55, 1.5],
+    [0.63, 0.47, 1, 0.66, 0.95],
+    [0.59, 0.67, 0.69, 0.86, 1],
   ],
   // The lake's snow away from the jetty, which doesn't glint. Each zone gets a third of the
   // specks, so the small second one, around the sun's and the moon's reflection, glints most.
@@ -1010,8 +1018,21 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
     }),
     dark: wx('blowing', { wind: -0.2, amount: 0.1, size: 1.1, opacity: 0.85, fall: 2.5, shear: 2 }),
   },
-  // Sparse snow on the stream; February's open lake has the room for glitter.
-  'land-january': { light: wx('flurries'), dark: wx('flurries') },
+  // Sparse snow on the stream by day; by night the moonlit snow glitters, as February's.
+  'land-january': {
+    light: wx('flurries'),
+    dark: wx('glitter', {
+      zones: ZONES['land-january'],
+      // A quarter of the specks per zone, so each of the first three keeps a third's worth.
+      amount: 1.33,
+      size: 1.35,
+      opacity: 0.85,
+      shimmer: 0.72,
+      tempo: 1.15,
+      peaks: 5.1,
+      peakTime: 2.8,
+    }),
+  },
   // Strong, or it doesn't show on the bright snow; very little snow instead if it still doesn't.
   'land-february': {
     light: wx('glitter-day', {
@@ -1306,7 +1327,7 @@ export function createWeatherRenderer(
     const t = { ...TUNING, ...weather }
     const fx = EFFECTS[weather.effect]
     const zones = (t.zones ?? [[0, t.horizon ?? 1, 1, 1] as Zone])
-      .slice(0, 3)
+      .slice(0, 4)
       .map((zone) => zoneClip(zone, w, h))
     // Item counts scale with the drawn area. A band's effect keeps the count of its full-screen
     // version, so it's thicker in the band.
@@ -1320,9 +1341,9 @@ export function createWeatherRenderer(
       program: program(weather.effect),
       band: bandClip(t.band, w, h),
       horizon: t.horizon === undefined ? FULL_BAND[1] : bandClip([t.horizon], w, h)[0],
-      zones: [...zones.flat(), ...Array<number>((3 - zones.length) * 4).fill(0)],
+      zones: [...zones.flat(), ...Array<number>((4 - zones.length) * 4).fill(0)],
       zoneCount: zones.length,
-      zoneGain: [0, 1, 2].map((i) => t.zones?.[i]?.[4] ?? 1),
+      zoneGain: [0, 1, 2, 3].map((i) => t.zones?.[i]?.[4] ?? 1),
       cycle: glitterCycle(t),
       count: Math.min(fx.max, Math.max(fx.min, fx.density * area)) * t.amount,
     }
@@ -1439,7 +1460,7 @@ export function createWeatherRenderer(
     gl.uniform1f(u.u_horizon, setup.horizon)
     gl.uniform4fv(u.u_zones, setup.zones)
     gl.uniform1f(u.u_zoneCount, setup.zoneCount)
-    gl.uniform3fv(u.u_zoneGain, setup.zoneGain)
+    gl.uniform4fv(u.u_zoneGain, setup.zoneGain)
     gl.uniform1f(u.u_cycle, setup.cycle)
     gl.uniform1f(u.u_dpr, setup.dpr)
     for (const key of TUNED) gl.uniform1f(u[`u_${key}`], t[key])

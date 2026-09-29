@@ -102,7 +102,7 @@ Countryside:
 
 | Month | The picture                                   | Light                       | Dark                                  | Wind           |
 | ----- | --------------------------------------------- | --------------------------- | ------------------------------------- | -------------- |
-| Jan   | Frozen stream, hoar frost, clear sky          | flurries                    | flurries                              | calm           |
+| Jan   | Frozen stream, hoar frost, clear sky          | flurries                    | glitter                               | calm           |
 | Feb   | Frozen lake, ski tracks, sun                  | glitter                     | glitter                               | calm           |
 | Mar   | Bog, snow patches, bright overcast            | drizzle                     | mist                                  | calm           |
 | Apr   | Manor park, clear sky                         | dust, one pixel             | none                                  | calm           |
@@ -259,6 +259,9 @@ the finals:
   stood out too much.
 - Coast December (Kait, 2026-09-29): a very slight snow blowing in off the sea, in place of
   the frost. By day its far flakes are grey-blue, as coast March's.
+- Land January by night (Kait, 2026-09-29): glitter in place of the flurries, most on the
+  moonlit snow under the moon, less over the far field, the bank right of the stream, and the
+  moon's reflection in the stream. The weather takes up to four zones for it, up from three.
 
 ## Approach
 

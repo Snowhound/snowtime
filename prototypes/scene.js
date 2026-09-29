@@ -54,7 +54,7 @@
   //   screen.
   // - `share`: the share of special items: fluff among seeds, glints among midges. `glow`: how many
   //   fireflies fly apart from the midges.
-  // - `zones`: up to three rectangles of the image, [left, top, right, bottom] as fractions of its
+  // - `zones`: up to four rectangles of the image, [left, top, right, bottom] as fractions of its
   //   width and height: where glitter lies, so it misses water (without them, the ground below the
   //   horizon), or where midges and fireflies keep. A fifth number scales glitter's opacity there.
   // - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight.
@@ -159,6 +159,14 @@
     ],
     // The lake's snow away from the jetty, which doesn't glint. Each zone gets a third of the
     // specks, so the small second one, around the sun's and the moon's reflection, glints most.
+    // The snow off the stream by night, glinting most in the moonlight under the moon, less over
+    // the far field, on the bank and the bush right of the stream, and on the moon's reflection.
+    'land-january': [
+      [0.36, 0.35, 1, 0.47, 1.1],
+      [0.58, 0.35, 0.74, 0.55, 1.5],
+      [0.63, 0.47, 1, 0.66, 0.95],
+      [0.59, 0.67, 0.69, 0.86, 1],
+    ],
     'land-february': [
       [0, 0.46, 0.7, 0.62],
       [0.7, 0.46, 1, 0.8, 1.25],
@@ -215,8 +223,8 @@
     'coast-november': { light: wx('spray', { wind: -0.5, band: [0.3, 1.05] }), dark: wx('mist', { wind: -0.03, band: [0.32, 0.58] }) },
     // A few flakes blowing in off the sea, on the right.
     'coast-december': { light: wx('blowing', { wind: -0.2, amount: 0.12, size: 1.1, fall: 2.5, shear: 2, colors: WET_SNOW }), dark: wx('blowing', { wind: -0.2, amount: 0.1, size: 1.1, opacity: 0.85, fall: 2.5, shear: 2 }) },
-    // Sparse snow on the stream; February's open lake has the room for glitter.
-    'land-january': { light: wx('flurries'), dark: wx('flurries') },
+    // Sparse snow on the stream by day; by night the moonlit snow glitters, as February's.
+    'land-january': { light: wx('flurries'), dark: wx('glitter', { zones: ZONES['land-january'], amount: 1.33, size: 1.35, opacity: 0.85, shimmer: 0.72, tempo: 1.15, peaks: 5.1, peakTime: 2.8 }) },
     // Strong, or it doesn't show on the bright snow; very little snow instead if it still doesn't.
     'land-february': {
       light: wx('glitter-day', { zones: ZONES['land-february'], amount: 4, size: 2.8, opacity: 1.5, shimmer: 1, tempo: 1.7, peaks: 6, peakTime: 2.6, peakSize: 3 }),
@@ -392,11 +400,11 @@
   // The image's horizon in clip space; below the screen without one.
   uniform float u_horizon;
   uniform float u_time, u_dpr, u_wind, u_gust, u_shear, u_size, u_fall, u_opacity, u_share, u_glow, u_tempo, u_gather;
-  // Up to three rectangles of the image in clip space (left, top, right, bottom), and how many.
-  uniform vec4 u_zones[3];
+  // Up to four rectangles of the image in clip space (left, top, right, bottom), and how many.
+  uniform vec4 u_zones[4];
   uniform float u_zoneCount;
   // Each zone's factor of glitter's opacity.
-  uniform vec3 u_zoneGain;
+  uniform vec4 u_zoneGain;
   vec4 zoneAt(float r){ return u_zones[int(min(floor(r * u_zoneCount), u_zoneCount - 1.0))]; }
   float hash(float n){ return fract(sin(n*127.1)*43758.5453123); }
   float hash2(float n){ return fract(sin(n*269.5+31.7)*17358.5453123); }
@@ -930,7 +938,7 @@
     function prepare(w, h) {
       const t = { ...TUNING, ...current }
       const fx = EFFECTS[current.effect]
-      const zones = (t.zones ?? [[0, t.horizon ?? 1, 1, 1]]).slice(0, 3).map((zone) => zoneClip(zone.slice(0, 4), w, h))
+      const zones = (t.zones ?? [[0, t.horizon ?? 1, 1, 1]]).slice(0, 4).map((zone) => zoneClip(zone.slice(0, 4), w, h))
       // Item counts scale with the drawn area. A band's effect keeps the count of its full-screen
       // version, so it's thicker in the band.
       const area = (cssWidth * cssHeight) / (1440 * 900)
@@ -941,9 +949,9 @@
         fx,
         band: bandClip(t.band, w, h),
         horizon: t.horizon == null ? FULL_BAND[1] : bandClip([t.horizon, 1], w, h)[0],
-        zones: [...zones.flat(), ...Array((3 - zones.length) * 4).fill(0)],
+        zones: [...zones.flat(), ...Array((4 - zones.length) * 4).fill(0)],
         zoneCount: zones.length,
-        zoneGain: [0, 1, 2].map((i) => t.zones?.[i]?.[4] ?? 1),
+        zoneGain: [0, 1, 2, 3].map((i) => t.zones?.[i]?.[4] ?? 1),
         count: Math.round(Math.min(fx.max, Math.max(fx.min, fx.density * area)) * t.amount * pace().density),
       }
     }
@@ -988,7 +996,7 @@
         gl.uniform1f(u.u_horizon, setup.horizon)
         gl.uniform4fv(u.u_zones, setup.zones)
         gl.uniform1f(u.u_zoneCount, setup.zoneCount)
-        gl.uniform3fv(u.u_zoneGain, setup.zoneGain)
+        gl.uniform4fv(u.u_zoneGain, setup.zoneGain)
         gl.uniform1f(u.u_dpr, dpr)
         for (const key of ['wind', 'gust', 'shear', 'size', 'fall', 'opacity', 'share', 'glow', 'tempo', 'gather', 'shimmer', 'peakTime', 'peakSize']) gl.uniform1f(u[`u_${key}`], t[key])
         gl.uniform1f(u.u_cycle, glitterCycle(t))

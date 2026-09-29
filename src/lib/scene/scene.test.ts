@@ -145,7 +145,7 @@ describe('weather', () => {
           // A spray band may reach past the foot, so the droplets fade out off-screen.
           expect(bottom).toBeLessThanOrEqual(1.1)
         }
-        expect(zones?.length ?? 0).toBeLessThanOrEqual(3)
+        expect(zones?.length ?? 0).toBeLessThanOrEqual(4)
         for (const [left, top, right, bottom, gain = 1] of zones ?? []) {
           for (const f of [left, top, right, bottom]) {
             expect(f).toBeGreaterThanOrEqual(0)
