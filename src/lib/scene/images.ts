@@ -1,6 +1,6 @@
 // The scene's image ids and the collections that hold them (docs/architecture.md, "Seasonal
 // scene"). An id and its collection name the image's files,
-// /backgrounds/<collection>/<id>-<theme>-01-<width>.avif. The settings schemas and the database
+// /backgrounds/<collection>/<id>-<theme>-<version>-<width>.avif. The settings schemas and the database
 // schema import these, so this file imports nothing.
 
 export const SEASONS = ['winter', 'spring', 'summer', 'autumn'] as const

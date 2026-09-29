@@ -22,13 +22,13 @@ import {
   photoWidth,
 } from '~/lib/scene/scene'
 import {
-  EFFECTS,
   type Effect,
   PACES,
   type Pace,
   type WeatherRenderer,
   createWeatherRenderer,
   setWeatherProblem,
+  weatherColors,
   weatherFor,
   weatherSupported,
 } from '~/lib/scene/weather'
@@ -171,9 +171,9 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         if (!renderer) setWeatherProblem('webgl')
       }
       if (renderer && on && effect) {
-        const colors = weather.colors ?? EFFECTS[effect].colors
+        const shown = { ...weather, effect }
         try {
-          renderer.start({ ...weather, effect }, () => colors({ dark: isDark, background }))
+          renderer.start(shown, weatherColors(shown, { dark: isDark, background }))
         } catch (error) {
           console.warn(`Weather effect ${effect} unavailable:`, error)
           failed.add(effect)

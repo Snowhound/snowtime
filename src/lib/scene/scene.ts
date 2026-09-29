@@ -203,34 +203,24 @@ export function photoWidth(viewport: { width: number; height: number; dpr: numbe
 }
 
 // public/ files are cached for a week, so a replaced image needs a new file name: its version,
-// raised by one for both themes. An id left out is version 1.
+// raised by one for both themes. An id left out is version 2.
 const PHOTO_VERSIONS: Partial<Record<ImageId, number>> = {
-  'coast-february': 2,
-  'coast-march': 2,
-  'coast-april': 2,
-  'coast-may': 2,
-  'coast-july': 2,
-  'coast-august': 2,
-  'coast-september': 2,
-  'coast-october': 2,
-  'coast-november': 2,
-  'coast-december': 2,
-  'land-march': 2,
-  'land-april': 2,
-  'land-may': 2,
-  'land-june': 2,
-  'land-july': 2,
-  'land-september': 2,
-  'land-october': 2,
-  'land-november': 2,
-  'land-december': 2,
+  winter: 1,
+  spring: 1,
+  summer: 1,
+  autumn: 1,
+  'coast-january': 1,
+  'coast-june': 1,
+  'land-january': 1,
+  'land-february': 1,
+  'land-august': 1,
 }
 
 // Each collection's files are in a folder of its own, public/backgrounds/<collection>/. They're
 // AVIF only: every supported browser decodes it (docs/architecture.md, "Supported browsers"). One
 // that doesn't fails the load, which leaves the page color behind the scene.
 export function photoUrl(id: ImageId, theme: PhotoTheme, width: number) {
-  const version = String(PHOTO_VERSIONS[id] ?? 1).padStart(2, '0')
+  const version = String(PHOTO_VERSIONS[id] ?? 2).padStart(2, '0')
   return `/backgrounds/${imageCollection(id)}/${id}-${theme}-${version}-${width}.avif`
 }
 

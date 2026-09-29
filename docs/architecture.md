@@ -682,7 +682,7 @@ collections".
   collection's files are in a folder of its own, and the image id names them:
   `/backgrounds/<collection>/<id>-<theme>-<version>-<width>.avif`. One folder per collection keeps
   each set together as the collections grow (Kait, 2026-09-28). The version is two digits,
-  `01` unless `PHOTO_VERSIONS` in `scene.ts` raises it: `public/` files are cached for a week, so
+  `02` unless `PHOTO_VERSIONS` in `scene.ts` lists the image at `01`: `public/` files are cached for a week, so
   a replaced image needs a new name (task 065).
 - Setting: `scene_collection` and `scene_pin`, an image id in the collection or null to follow
   the calendar. They replaced `scene_season`: the migration turned a season into Mountain
@@ -729,11 +729,14 @@ collections".
   `strength × 70%` at the top and `strength × 115%` at the bottom. Dimmed, the default, is 0.4
   light and 0.55 dark; Full is 0.2 and 0.3. Dimmed light was 0.5 until 2026-09-28, which turned
   bright scenes very white, so Kait chose a lighter tint over regenerating the images (task 065).
-- Weather (`src/lib/scene/weather.ts`, task 066): `IMAGE_WEATHER` gives each image a preset
-  for light and dark pages, by name, and the fields it changes; `weatherFor` merges the preset,
-  then the image's horizon and fields. Task 066 records which image gets which and why, and
-  `prototypes/weather.html` shows them. The data keeps the prototype's shape, so a tuned image
-  moves from `prototypes/scene.js` as it is.
+- Weather (`src/lib/scene/weather.ts`, task 066): `IMAGE_WEATHER` gives each image its horizon
+  and zones, and a preset for light and dark pages (or one for both), by name, with the fields it
+  changes; `weatherFor` merges the preset, then the image's horizon, zones, and fields. Task 066
+  records which image gets which and why, and `prototypes/weather.html` shows them. A preset
+  holds only values two or more images share, so the app's presets and table differ from the
+  prototype's, though each image resolves to the same weather (task 073).
+  - Colors are data: each effect has two colors for dark pages, light pages over the image, and
+    the plain light page, and a preset or an image can replace them for any of the three.
   - Presets tune one of eight effects: snow (and flurries, blowing snow, sea spray), rain
     (squalls), seeds (fine seeds, motes, dust), fireflies, leaves, glitter
     (snow and frost), insects (midges, with fireflies at night), and mist. The `none` preset has
@@ -745,7 +748,7 @@ collections".
     then. The mountain images keep the drift they had before.
   - Tuning: factors of each effect's amount, size, fall, and opacity, and fields for glitter's
     shimmer and glints and the midges' groups, go to the shaders as uniforms.
-  - Parts of the image: each Baltic image's horizon (`HORIZONS`), the band that mist, spray,
+  - Parts of the image: each Baltic image's horizon, the band that mist, spray,
     and midges keep to, and zones (up to three rectangles: where glitter lies, so it misses water,
     where midges and fireflies keep, and where mist lies) are fractions of the image. The renderer maps them to the screen the way `cover` and
     `background-position: center 20%` crop the photo, so they stay on the ice or the water on
@@ -755,8 +758,8 @@ collections".
 - Weather rendering: each effect is a WebGL 2 program that draws all its points (rain's and
   the mist's quads) in one call with no buffers, on one canvas in the scene layer, with item
   counts scaled to the screen's area. The band, horizon, zones, count, and the uniforms that
-  follow from them are worked out on a start or a resize; a frame uploads only the time and the
-  colors. The canvas has at most 1.5 backing pixels per CSS pixel, and the mist, which is soft
+  follow from them, and the colors, are worked out on a start or a resize; a frame uploads only
+  the time. The canvas has at most 1.5 backing pixels per CSS pixel, and the mist, which is soft
   and the costliest per pixel, 0.5. Its WebGL context starts the first time it runs. App pages
   run it calm (half the points, 70% speed), and the sign-in page at full pace. It runs only with
   the Weather switch on, without reduced motion, and in a visible tab. Without WebGL 2, or when

@@ -12,7 +12,7 @@ import {
   shownSeason,
   thumbUrl,
 } from './scene'
-import { EFFECTS, HORIZONS, IMAGE_WEATHER, PRESETS, weatherFor } from './weather'
+import { EFFECTS, IMAGE_WEATHER, PRESETS, weatherFor } from './weather'
 
 describe('seasons', () => {
   test('the month picks the season, with December in winter', () => {
@@ -105,8 +105,9 @@ describe('weather', () => {
   test('every image has weather for both themes, from a known preset', () => {
     expect(Object.keys(IMAGE_WEATHER).sort()).toEqual([...IMAGE_IDS].sort())
     for (const id of IMAGE_IDS) {
-      for (const theme of THEMES) {
-        expect(Object.keys(PRESETS)).toContain(IMAGE_WEATHER[id][theme].preset)
+      const image = IMAGE_WEATHER[id]
+      for (const { preset } of 'both' in image ? [image.both] : [image.light, image.dark]) {
+        expect(Object.keys(PRESETS)).toContain(preset)
       }
     }
   })
@@ -127,17 +128,15 @@ describe('weather', () => {
     const weather = weatherFor('coast-february', 'dark')
     expect(weather).toMatchObject({ effect: 'snow', hint: 'blowing', fps: 60, wind: -0.24 })
     expect(weather.shear).toBe(PRESETS.blowing.shear)
-    expect(weather.horizon).toBe(HORIZONS['coast-february'])
+    expect(weather.horizon).toBe(IMAGE_WEATHER['coast-february'].horizon)
   })
 
   test('horizons, bands, and zones lie within the image', () => {
-    for (const horizon of Object.values(HORIZONS)) {
-      expect(horizon).toBeGreaterThan(0)
-      expect(horizon).toBeLessThan(1)
-    }
     for (const id of IMAGE_IDS) {
       for (const theme of THEMES) {
-        const { band, zones } = weatherFor(id, theme)
+        const { band, zones, horizon = 0.5 } = weatherFor(id, theme)
+        expect(horizon).toBeGreaterThan(0)
+        expect(horizon).toBeLessThan(1)
         if (band) {
           const [top, bottom] = band
           expect(top).toBeGreaterThanOrEqual(0)

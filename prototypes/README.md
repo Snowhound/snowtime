@@ -352,8 +352,8 @@ Decision: how the user picks the images behind the scene, now that there is more
 | Baltic coast       | 12 coastal scenes               | By month     | `coast-january` to `coast-december` |
 
 Mountain valley is the default. Each collection's files are in a folder of their own,
-`public/backgrounds/<collection>/<id>-<theme>-<version>-<width>.avif`, the version `01` unless
-`PHOTO_VERSIONS` raises it. The pickers show the 400 px files. Weather comes
+`public/backgrounds/<collection>/<id>-<theme>-<version>-<width>.avif`, the version `02` unless
+`PHOTO_VERSIONS` lists the image at `01`. The pickers show the 400 px files. Weather comes
 from `IMAGE_WEATHER`, keyed by image id, tuned to each picture (task 066; see
 [weather.html](#weatherhtml--weather-by-image)).
 
@@ -1124,8 +1124,10 @@ fields it changes, from the list in its comment. `weatherFor()` merges them in o
 then the image's horizon and fields, then the sliders' overrides. Task 066 records which image
 gets which and why.
 
-The app (`src/lib/scene/weather.ts`) has the same presets, `HORIZONS`, `ZONES`, and
-`IMAGE_WEATHER`, so a change here moves over as it is. It differs where the notes below say so:
+The app (`src/lib/scene/weather.ts`) resolves every image to the same weather, but keeps its
+horizons and zones in `IMAGE_WEATHER`, colors as data, and presets that hold only values two or
+more images share, so a change here moves over by hand (task 073). It also differs where the
+notes below say so:
 it draws rain as quads rather than points, its fragment shaders are `mediump`, its photo sits
 at `center 20%`, it steps a frame down a refresh when frames drop, and it leaves out
 `LEGACY_WEATHER`, the sliders, and the Tune panel.

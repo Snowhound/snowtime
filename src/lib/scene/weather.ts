@@ -18,7 +18,9 @@ export type Effect =
 
 type Rgb = [number, number, number]
 
-type Colors = (scene: { dark: boolean; background: boolean }) => [Rgb, Rgb]
+// The two colors, A and B, an effect mixes: on dark pages, on light pages over the image, and on
+// the plain light page.
+type Colors = Record<'dark' | 'image' | 'plain', [Rgb, Rgb]>
 
 type EffectDef = {
   // Items per 1440 × 900, and the bounds for other sizes.
@@ -36,7 +38,6 @@ type EffectDef = {
   // Backing pixels per CSS pixel, when less than the usual MAX_DPR: a soft effect draws fewer
   // pixels, and the browser scales the canvas up.
   resolution?: number
-  // A and B: two colors each effect mixes, for dark pages and for the image or the plain page.
   colors: Colors
 }
 
@@ -146,21 +147,20 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     }`,
     // White on the dark scene and on the light image; on the plain light page white flakes would
     // vanish, so they turn blue-grey there.
-    colors: ({ dark, background }) =>
-      dark
-        ? [
-            [0.96, 0.98, 1.0],
-            [0.66, 0.78, 0.9],
-          ]
-        : background
-          ? [
-              [1.0, 1.0, 1.0],
-              [0.9, 0.94, 0.98],
-            ]
-          : [
-              [0.44, 0.58, 0.69],
-              [0.72, 0.83, 0.9],
-            ],
+    colors: {
+      dark: [
+        [0.96, 0.98, 1.0],
+        [0.66, 0.78, 0.9],
+      ],
+      image: [
+        [1.0, 1.0, 1.0],
+        [0.9, 0.94, 0.98],
+      ],
+      plain: [
+        [0.44, 0.58, 0.69],
+        [0.72, 0.83, 0.9],
+      ],
+    },
   },
   // Autumn: leaves that sway as they fall and tumble, each turning on its own. A is rust, B ochre.
   leaves: {
@@ -206,16 +206,20 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       col *= 1.0 - .25 * (1.0 - smoothstep(.0, .05, abs(xr))) * step(abs(q.y), .8);
       outColor = vec4(col * a, a);
     }`,
-    colors: ({ dark }) =>
-      dark
-        ? [
-            [0.58, 0.27, 0.13],
-            [0.7, 0.47, 0.18],
-          ]
-        : [
-            [0.71, 0.32, 0.15],
-            [0.85, 0.58, 0.2],
-          ],
+    colors: {
+      dark: [
+        [0.58, 0.27, 0.13],
+        [0.7, 0.47, 0.18],
+      ],
+      image: [
+        [0.71, 0.32, 0.15],
+        [0.85, 0.58, 0.2],
+      ],
+      plain: [
+        [0.71, 0.32, 0.15],
+        [0.85, 0.58, 0.2],
+      ],
+    },
   },
   // Summer nights: fireflies that wander over the meadow and glow on and off. A is the core, B the
   // halo.
@@ -252,10 +256,20 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       // Less alpha than color, so the glow adds light like it would at night.
       outColor = vec4(col * a, a * .7);
     }`,
-    colors: () => [
-      [1.0, 0.98, 0.72],
-      [0.74, 0.9, 0.32],
-    ],
+    colors: {
+      dark: [
+        [1.0, 0.98, 0.72],
+        [0.74, 0.9, 0.32],
+      ],
+      image: [
+        [1.0, 0.98, 0.72],
+        [0.74, 0.9, 0.32],
+      ],
+      plain: [
+        [1.0, 0.98, 0.72],
+        [0.74, 0.9, 0.32],
+      ],
+    },
   },
   // Summer days: soft dandelion fluff and pollen drifting on the breeze, the pollen catching the
   // light. A is the seeds' color, B the pollen's. Without fluff (`share` 0), it's motes in the sun.
@@ -301,16 +315,20 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       }
       outColor = vec4(col * a, a);
     }`,
-    colors: ({ dark, background }) =>
-      dark || background
-        ? [
-            [1.0, 0.99, 0.93],
-            [1.0, 0.93, 0.66],
-          ]
-        : [
-            [0.54, 0.5, 0.4],
-            [0.72, 0.58, 0.26],
-          ],
+    colors: {
+      dark: [
+        [1.0, 0.99, 0.93],
+        [1.0, 0.93, 0.66],
+      ],
+      image: [
+        [1.0, 0.99, 0.93],
+        [1.0, 0.93, 0.66],
+      ],
+      plain: [
+        [0.54, 0.5, 0.4],
+        [0.72, 0.58, 0.26],
+      ],
+    },
   },
   // Rain: thin streaks that come in soft bursts, slanted by the wind against their fall. A is the
   // near streaks' color, B the far ones'.
@@ -364,21 +382,20 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       vec3 col = mix(u_colorB, u_colorA, v_depth);
       outColor = vec4(col * a, a);
     }`,
-    colors: ({ dark, background }) =>
-      dark
-        ? [
-            [0.8, 0.87, 0.96],
-            [0.56, 0.66, 0.8],
-          ]
-        : background
-          ? [
-              [0.4, 0.48, 0.6],
-              [0.58, 0.65, 0.75],
-            ]
-          : [
-              [0.4, 0.5, 0.63],
-              [0.6, 0.68, 0.78],
-            ],
+    colors: {
+      dark: [
+        [0.8, 0.87, 0.96],
+        [0.56, 0.66, 0.8],
+      ],
+      image: [
+        [0.4, 0.48, 0.6],
+        [0.58, 0.65, 0.75],
+      ],
+      plain: [
+        [0.4, 0.5, 0.63],
+        [0.6, 0.68, 0.78],
+      ],
+    },
   },
   // Snow or frost glittering in the image's snowy zones (`zones`, so it misses water): specks that
   // shimmer faintly and slowly (`shimmer`, `tempo`), and now and then a glint at full brightness,
@@ -420,16 +437,20 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       vec3 col = mix(u_colorB, u_colorA, exp(-d * d * 9.0));
       outColor = vec4(col * a, a);
     }`,
-    colors: ({ dark, background }) =>
-      dark || background
-        ? [
-            [1.0, 1.0, 1.0],
-            [0.9, 0.95, 1.0],
-          ]
-        : [
-            [0.36, 0.52, 0.7],
-            [0.55, 0.68, 0.8],
-          ],
+    colors: {
+      dark: [
+        [1.0, 1.0, 1.0],
+        [0.9, 0.95, 1.0],
+      ],
+      image: [
+        [1.0, 1.0, 1.0],
+        [0.9, 0.95, 1.0],
+      ],
+      plain: [
+        [0.36, 0.52, 0.7],
+        [0.55, 0.68, 0.8],
+      ],
+    },
   },
   // Summer by the water: small groups of midges, a pixel or two each, idling over the water; a
   // share (`share`) glint by day. `zones` places them: three quarters of the groups in the first,
@@ -483,21 +504,20 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       vec3 col = mix(u_colorA, u_colorB, min(v_kind, 1.0));
       outColor = vec4(col * a, a * mix(1.0, .7, firefly));
     }`,
-    colors: ({ dark, background }) =>
-      dark
-        ? [
-            [0.6, 0.66, 0.76],
-            [1.0, 0.98, 0.72],
-          ]
-        : background
-          ? [
-              [0.16, 0.15, 0.12],
-              [1.0, 0.96, 0.82],
-            ]
-          : [
-              [0.3, 0.3, 0.28],
-              [0.72, 0.58, 0.26],
-            ],
+    colors: {
+      dark: [
+        [0.6, 0.66, 0.76],
+        [1.0, 0.98, 0.72],
+      ],
+      image: [
+        [0.16, 0.15, 0.12],
+        [1.0, 0.96, 0.82],
+      ],
+      plain: [
+        [0.3, 0.3, 0.28],
+        [0.72, 0.58, 0.26],
+      ],
+    },
   },
   // Night mist: wide, soft banks of uneven density that drift along a band near the horizon. Each
   // bank is one quad. A is the thick parts' color, B the thin parts'.
@@ -586,21 +606,20 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       outColor = vec4(col * a, a);
       if (outColor.a < .004) discard;
     }`,
-    colors: ({ dark, background }) =>
-      dark
-        ? [
-            [0.66, 0.74, 0.84],
-            [0.5, 0.58, 0.7],
-          ]
-        : background
-          ? [
-              [1.0, 1.0, 1.0],
-              [0.92, 0.95, 0.98],
-            ]
-          : [
-              [0.7, 0.78, 0.86],
-              [0.8, 0.86, 0.92],
-            ],
+    colors: {
+      dark: [
+        [0.66, 0.74, 0.84],
+        [0.5, 0.58, 0.7],
+      ],
+      image: [
+        [1.0, 1.0, 1.0],
+        [0.92, 0.95, 0.98],
+      ],
+      plain: [
+        [0.7, 0.78, 0.86],
+        [0.8, 0.86, 0.92],
+      ],
+    },
   },
 }
 
@@ -631,7 +650,7 @@ type Zone = [number, number, number, number] | [number, number, number, number, 
 //   rest drift across the whole screen and fade in and out at the zone's sides.
 // - `shimmer`, `peaks`, `peakTime`, `peakSize`: glitter's faint shimmer, and how many full glints
 //   show at once on a 1440 × 900 screen, for how many seconds, and how much larger.
-// - `colors`: in place of the effect's colors.
+// - `colors`: in place of the effect's colors, on the pages it names.
 type Tuning = {
   wind?: number
   gust?: number
@@ -650,7 +669,7 @@ type Tuning = {
   peaks?: number
   peakTime?: number
   peakSize?: number
-  colors?: Colors
+  colors?: Partial<Colors>
 }
 
 // The Weather hint's name for a preset: `scene_effect_<hint>` in messages/.
@@ -697,9 +716,8 @@ const TUNING = {
 
 export const PRESETS = {
   snow: { effect: 'snow', hint: 'snow' },
-  flurries: { effect: 'snow', hint: 'flurries', amount: 0.22, size: 1.45, fall: 0.75 },
-  // After Kait's weather prototype: fine grains, falling fast, in gusts, blown flatter near the
-  // ground.
+  flurries: { effect: 'snow', hint: 'flurries' },
+  // Fine grains, falling fast, in gusts, blown flatter near the ground.
   blowing: {
     effect: 'snow',
     hint: 'blowing',
@@ -722,7 +740,7 @@ export const PRESETS = {
     shear: 1.5,
   },
   rain: { effect: 'rain', hint: 'rain' },
-  squall: { effect: 'rain', hint: 'squall', amount: 1.2, size: 1.35, fall: 1.25, gust: 0.8 },
+  squall: { effect: 'rain', hint: 'squall', size: 1.35, fall: 1.25, gust: 0.8 },
   seeds: { effect: 'seeds', hint: 'seeds' },
   // A few pixels across, for the open coast, where big tufts looked too near.
   'seeds-fine': { effect: 'seeds', hint: 'seeds', size: 0.4 },
@@ -738,23 +756,33 @@ export const PRESETS = {
     amount: 4,
     opacity: 1,
     gust: 0.4,
-    colors: ({ dark, background }) =>
-      dark || background
-        ? [
-            [1.0, 1.0, 0.97],
-            [1.0, 0.99, 0.93],
-          ]
-        : EFFECTS.seeds.colors({ dark, background }),
+    colors: {
+      dark: [
+        [1.0, 1.0, 0.97],
+        [1.0, 0.99, 0.93],
+      ],
+      image: [
+        [1.0, 1.0, 0.97],
+        [1.0, 0.99, 0.93],
+      ],
+    },
   },
   fireflies: { effect: 'fireflies', hint: 'fireflies' },
   midges: { effect: 'insects', hint: 'midges', share: 0.25 },
   'midges-night': { effect: 'insects', hint: 'midges_night', share: 0, glow: 2 },
   leaves: { effect: 'leaves', hint: 'leaves' },
-  glitter: { effect: 'glitter', hint: 'glitter', opacity: 0.85 },
-  // By day the glints need more size to show on the bright snow.
-  'glitter-day': { effect: 'glitter', hint: 'glitter', size: 1.4, shimmer: 0.4, peakSize: 2.6 },
-  frost: { effect: 'glitter', hint: 'frost', opacity: 0.85 },
-  'frost-day': { effect: 'glitter', hint: 'frost', size: 1.4, shimmer: 0.4, peakSize: 2.6 },
+  glitter: { effect: 'glitter', hint: 'glitter' },
+  'glitter-night': {
+    effect: 'glitter',
+    hint: 'glitter',
+    size: 1.35,
+    opacity: 0.85,
+    shimmer: 0.72,
+    tempo: 1.15,
+    peaks: 5.1,
+    peakTime: 2.8,
+  },
+  frost: { effect: 'glitter', hint: 'frost' },
   mist: { effect: 'mist', hint: 'mist' },
   none: { effect: null, hint: 'none' },
 } satisfies Record<string, Preset>
@@ -764,140 +792,53 @@ type PresetName = keyof typeof PRESETS
 // An image's weather in a theme: its preset and the fields it changes.
 type Entry = Tuning & { preset: PresetName }
 
-// Each Baltic image's horizon, as a fraction of its height: where the sea, the ice, or the ground
-// meets the sky or the tree line. Glitter grows toward the viewer below it, and shear starts
-// there. A recomposed image (task 065) updates these, the bands, and the zones.
-export const HORIZONS: Partial<Record<ImageId, number>> = {
-  'coast-january': 0.38,
-  'coast-february': 0.43,
-  'coast-march': 0.51,
-  'coast-april': 0.55,
-  'coast-may': 0.53,
-  'coast-june': 0.47,
-  'coast-july': 0.74,
-  'coast-august': 0.45,
-  'coast-september': 0.48,
-  'coast-october': 0.58,
-  'coast-november': 0.43,
-  'coast-december': 0.36,
-  'land-january': 0.35,
-  'land-february': 0.43,
-  'land-march': 0.31,
-  'land-april': 0.75,
-  'land-may': 0.75,
-  'land-june': 0.44,
-  'land-july': 0.76,
-  'land-august': 0.39,
-  'land-september': 0.68,
-  'land-october': 0.77,
-  'land-november': 0.57,
-  'land-december': 0.74,
-}
-
-// Where snow or frost lies in the glitter images, away from open water, where insects keep, and
-// where fog lies.
-const ZONES = {
-  // Brighter on the ice than on the snowy shore, and brightest on the sunny side by day and
-  // around the moon's path by night, most along the path itself. Each zone gets an equal share
-  // of the specks.
-  'coast-january-day': [
-    [0, 0.4, 0.55, 0.82, 0.9],
-    [0.55, 0.4, 1, 0.82, 1.25],
-    [0, 0.82, 1, 1, 0.5],
-  ],
-  'coast-january': [
-    [0, 0.4, 0.62, 0.82, 0.8],
-    [0.62, 0.4, 0.92, 0.75, 1.2],
-    [0, 0.82, 1, 1, 0.4],
-    [0.74, 0.39, 0.8, 0.7, 1.6],
-  ],
-  // Fog over the bay and the far shore, low in the reeds right of the haystack, and thinner over
-  // the near grass at the haystack's foot, so it stays off the haystack itself.
-  'coast-september': [
-    [0.25, 0.4, 1, 0.58, 1.2],
-    [0.33, 0.5, 1, 0.78],
-    [0, 0.72, 1, 0.97, 0.6],
-  ],
-  // The snow off the stream by night, glinting most in the moonlight under the moon, less over
-  // the far field, on the bank and the bush right of the stream, and on the moon's reflection.
-  'land-january': [
-    [0.36, 0.35, 1, 0.47, 1.1],
-    [0.58, 0.35, 0.74, 0.55, 1.5],
-    [0.63, 0.47, 1, 0.66, 0.95],
-    [0.59, 0.67, 0.69, 0.86, 1],
-  ],
-  // The lake's snow away from the jetty, which doesn't glint. Each zone gets a third of the
-  // specks, so the small second one, around the sun's and the moon's reflection, glints most.
-  'land-february': [
-    [0, 0.46, 0.7, 0.62],
-    [0.7, 0.46, 1, 0.8, 1.25],
-    [0.36, 0.62, 1, 1],
-  ],
-  'land-november': [[0, 0.6, 1, 1]],
-  // By night, midges mostly by the cliff, the rest over the river, and the fireflies on the far
-  // bank. By day, all by the cliff, where they show.
-  'land-july': [
-    [0.05, 0.64, 0.33, 0.9],
-    [0.34, 0.82, 0.88, 0.97],
-    [0.58, 0.68, 1, 0.78],
-  ],
-  'land-july-day': [
-    [0.05, 0.64, 0.33, 0.9],
-    [0.05, 0.64, 0.33, 0.9],
-  ],
-} satisfies Record<string, Zone[]>
+// An image's weather, in `both` themes or in each. `horizon`: where the sea, the ice, or the
+// ground meets the sky or the tree line, as a fraction of the image's height; glitter grows toward
+// the viewer below it, and shear starts there. `zones`: the entries' zones, unless an entry sets
+// its own. A recomposed image updates its horizon, bands, and zones.
+type ImageWeather = { horizon?: number; zones?: Zone[] } & (
+  | { both: Entry }
+  | { light: Entry; dark: Entry }
+)
 
 function wx(preset: PresetName, tuning: Tuning = {}): Entry {
   return { preset, ...tuning }
 }
 
-// The mountain images' winds reproduce the drift each effect had before winds were per image.
-function mountain(preset: 'snow' | 'rain' | 'seeds' | 'leaves' | 'fireflies') {
-  const wind = { snow: -0.02, rain: 0.22, seeds: 0.028, leaves: 0.026, fireflies: 0 }[preset]
-  return wx(preset, { wind })
-}
-
-// Early autumn's leaves, from land September's birches and rowans.
-function birchLeaves({ dark }: { dark: boolean }): [Rgb, Rgb] {
-  return dark
-    ? [
-        [0.66, 0.54, 0.16],
-        [0.6, 0.3, 0.12],
-      ]
-    : [
-        [0.84, 0.68, 0.18],
-        [0.78, 0.36, 0.14],
-      ]
-}
-
-// The coast's seeds and motes on a light page with the picture: warm mid-tones, since the default
-// near-white vanishes against the pale coast skies.
-function coastSpecks(scene: { dark: boolean; background: boolean }): [Rgb, Rgb] {
-  if (scene.dark || !scene.background) return EFFECTS.seeds.colors(scene)
-  return [
-    [0.7, 0.68, 0.62],
-    [0.62, 0.52, 0.34],
-  ]
-}
-
 // Wet snow by day: the far flakes grey-blue, so they show against the pale sky.
-function wetSnow(scene: { dark: boolean; background: boolean }): [Rgb, Rgb] {
-  if (scene.dark || !scene.background) return EFFECTS.snow.colors(scene)
-  return [
+const WET_SNOW: Partial<Colors> = {
+  image: [
     [0.96, 0.97, 1],
     [0.64, 0.71, 0.8],
-  ]
+  ],
 }
 
-// Each image's weather on light and dark pages, from what it shows; task 066 records why.
-export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
-  winter: { light: mountain('snow'), dark: mountain('snow') },
-  spring: { light: mountain('rain'), dark: mountain('rain') },
-  summer: { light: mountain('seeds'), dark: mountain('fireflies') },
-  autumn: { light: mountain('leaves'), dark: mountain('leaves') },
+// The coast's seeds and motes over the picture: warm mid-tones, since the default near-white
+// vanishes against the pale coast skies.
+const COAST_SPECKS: Partial<Colors> = {
+  image: [
+    [0.7, 0.68, 0.62],
+    [0.62, 0.52, 0.34],
+  ],
+}
+
+// Each image's weather from what it shows; task 066 records why.
+export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
+  winter: { both: wx('snow', { wind: -0.02 }) },
+  spring: { both: wx('rain', { wind: 0.22 }) },
+  summer: { light: wx('seeds', { wind: 0.028 }), dark: wx('fireflies') },
+  autumn: { both: wx('leaves', { wind: 0.026 }) },
   'coast-january': {
-    light: wx('glitter-day', {
-      zones: ZONES['coast-january-day'],
+    horizon: 0.38,
+    // Brighter on the ice than on the snowy shore, and brightest on the sunny side by day and
+    // around the moon's path by night, most along the path itself. Each zone gets an equal share
+    // of the specks.
+    light: wx('glitter', {
+      zones: [
+        [0, 0.4, 0.55, 0.82, 0.9],
+        [0.55, 0.4, 1, 0.82, 1.25],
+        [0, 0.82, 1, 1, 0.5],
+      ],
       amount: 4,
       size: 2.3,
       opacity: 1.05,
@@ -908,19 +849,22 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
       peakSize: 2.3,
     }),
     // Land February's night, a little fainter and slower, gathered along the moon's path.
-    dark: wx('glitter', {
-      zones: ZONES['coast-january'],
+    dark: wx('glitter-night', {
+      zones: [
+        [0, 0.4, 0.62, 0.82, 0.8],
+        [0.62, 0.4, 0.92, 0.75, 1.2],
+        [0, 0.82, 1, 1, 0.4],
+        [0.74, 0.39, 0.8, 0.7, 1.6],
+      ],
       // A quarter of the specks per zone, so each of the first three keeps a third's worth.
       amount: 1.33,
-      size: 1.35,
       opacity: 0.75,
-      shimmer: 0.72,
       tempo: 1,
-      peaks: 5.1,
       peakTime: 3.2,
     }),
   },
   'coast-february': {
+    horizon: 0.43,
     light: wx('blowing', {
       amount: 0.55,
       size: 1.2,
@@ -934,6 +878,7 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
   },
   // Wet snow blowing in off the sea, on the right, falling faster than dry flakes.
   'coast-march': {
+    horizon: 0.51,
     light: wx('flurries', {
       wind: -0.15,
       gust: 0.5,
@@ -941,12 +886,13 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
       amount: 0.6,
       size: 1.4,
       fall: 1.3,
-      colors: wetSnow,
+      colors: WET_SNOW,
     }),
     dark: wx('flurries', { wind: -0.15, gust: 0.5, shear: 1, amount: 0.25, size: 1.2, fall: 1.3 }),
   },
   'coast-april': {
-    light: wx('motes-fine', { wind: -0.02, size: 0.9, opacity: 0.95, colors: coastSpecks }),
+    horizon: 0.55,
+    light: wx('motes-fine', { wind: -0.02, size: 0.9, opacity: 0.95, colors: COAST_SPECKS }),
     // Sea fog below the moon, clear of the cliff.
     dark: wx('mist', {
       wind: -0.01,
@@ -956,19 +902,23 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
     }),
   },
   'coast-may': {
-    light: wx('seeds-fine', { wind: 0.03, amount: 0.6, colors: coastSpecks }),
+    horizon: 0.53,
+    light: wx('seeds-fine', { wind: 0.03, amount: 0.6, colors: COAST_SPECKS }),
     dark: wx('seeds-fine', { wind: 0.03, amount: 0.45, opacity: 0.55 }),
   },
   'coast-june': {
-    light: wx('seeds-fine', { wind: -0.08, gust: 0.4, colors: coastSpecks }),
+    horizon: 0.47,
+    light: wx('seeds-fine', { wind: -0.08, gust: 0.4, colors: COAST_SPECKS }),
     dark: wx('seeds-fine', { wind: -0.08, gust: 0.4, amount: 0.75, opacity: 0.75 }),
   },
   'coast-july': {
-    light: wx('seeds-fine', { wind: 0.03, colors: coastSpecks }),
+    horizon: 0.74,
+    light: wx('seeds-fine', { wind: 0.03, colors: COAST_SPECKS }),
     dark: wx('fireflies', { amount: 0.3 }),
   },
   'coast-august': {
-    light: wx('motes', { wind: 0.008, colors: coastSpecks }),
+    horizon: 0.45,
+    light: wx('motes', { wind: 0.008, colors: COAST_SPECKS }),
     // On the open water, fading out at the rocks on the left: across the rocks it lay as a flat
     // smear. Half the banks lie low and heavier along the island's foot, below the trunks. Half
     // stay in their zones, so the island has mist from the start, clearing now and then.
@@ -985,41 +935,47 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
     }),
   },
   'coast-september': {
+    horizon: 0.48,
     light: wx('seeds-fine', {
       wind: 0.16,
       gust: 0.5,
       fall: 0.5,
       size: 0.3,
       amount: 0.7,
-      colors: coastSpecks,
+      colors: COAST_SPECKS,
     }),
-    // Thick fog over the bay and the reed meadow, drifting the way the grass leans.
+    // Thick fog, drifting the way the grass leans: over the bay and the far shore, low in the
+    // reeds right of the haystack, and thinner over the near grass at its foot, so it stays off
+    // the haystack itself.
     dark: wx('mist', {
       wind: 0.012,
-      zones: ZONES['coast-september'],
+      zones: [
+        [0.25, 0.4, 1, 0.58, 1.2],
+        [0.33, 0.5, 1, 0.78],
+        [0, 0.72, 1, 0.97, 0.6],
+      ],
       amount: 1.6,
       size: 1.3,
       opacity: 1.1,
     }),
   },
   // The waves break from the right.
-  'coast-october': {
-    light: wx('squall', { wind: -0.6, amount: 1 }),
-    dark: wx('squall', { wind: -0.6, amount: 1 }),
-  },
+  'coast-october': { horizon: 0.58, both: wx('squall', { wind: -0.6 }) },
   'coast-november': {
+    horizon: 0.43,
     light: wx('spray', { wind: -0.5, band: [0.3, 1.05] }),
     dark: wx('mist', { wind: -0.03, band: [0.32, 0.58] }),
   },
   // A few flakes blowing in off the sea, on the right.
   'coast-december': {
+    horizon: 0.36,
     light: wx('blowing', {
       wind: -0.2,
       amount: 0.12,
       size: 1.1,
       fall: 2.5,
       shear: 2,
-      colors: wetSnow,
+      colors: WET_SNOW,
     }),
     // Under the cloudless night sky, fewer and fainter.
     dark: wx('blowing', {
@@ -1033,23 +989,32 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
   },
   // Sparse snow on the stream by day; by night the moonlit snow glitters, as February's.
   'land-january': {
-    light: wx('flurries'),
-    dark: wx('glitter', {
-      zones: ZONES['land-january'],
+    horizon: 0.35,
+    light: wx('flurries', { amount: 0.22, size: 1.45, fall: 0.75 }),
+    // The snow off the stream, glinting most in the moonlight under the moon, less over the far
+    // field, on the bank and the bush right of the stream, and on the moon's reflection.
+    dark: wx('glitter-night', {
+      zones: [
+        [0.36, 0.35, 1, 0.47, 1.1],
+        [0.58, 0.35, 0.74, 0.55, 1.5],
+        [0.63, 0.47, 1, 0.66, 0.95],
+        [0.59, 0.67, 0.69, 0.86, 1],
+      ],
       // A quarter of the specks per zone, so each of the first three keeps a third's worth.
       amount: 1.33,
-      size: 1.35,
-      opacity: 0.85,
-      shimmer: 0.72,
-      tempo: 1.15,
-      peaks: 5.1,
-      peakTime: 2.8,
     }),
   },
-  // Strong, or it doesn't show on the bright snow; very little snow instead if it still doesn't.
+  // The lake's snow away from the jetty, which doesn't glint. Each zone gets a third of the
+  // specks, so the small second one, around the sun's and the moon's reflection, glints most.
   'land-february': {
-    light: wx('glitter-day', {
-      zones: ZONES['land-february'],
+    horizon: 0.43,
+    zones: [
+      [0, 0.46, 0.7, 0.62],
+      [0.7, 0.46, 1, 0.8, 1.25],
+      [0.36, 0.62, 1, 1],
+    ],
+    // Strong, or it doesn't show on the bright snow; very little snow instead if it still doesn't.
+    light: wx('glitter', {
       amount: 4,
       size: 2.8,
       opacity: 1.5,
@@ -1059,18 +1024,11 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
       peakTime: 2.6,
       peakSize: 3,
     }),
-    dark: wx('glitter', {
-      zones: ZONES['land-february'],
-      size: 1.35,
-      opacity: 0.85,
-      shimmer: 0.72,
-      tempo: 1.15,
-      peaks: 5.1,
-      peakTime: 2.8,
-    }),
+    dark: wx('glitter-night'),
   },
   // Wet snow over the thawing bog, in a gentler wind than on the coast.
   'land-march': {
+    horizon: 0.31,
     light: wx('flurries', {
       wind: 0.06,
       gust: 0.4,
@@ -1078,12 +1036,13 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
       amount: 0.5,
       size: 1.3,
       fall: 1.3,
-      colors: wetSnow,
+      colors: WET_SNOW,
     }),
     dark: wx('mist', { wind: 0.008, band: [0.3, 0.68], amount: 1.3, opacity: 1.3 }),
   },
   // By day, clear skies, as on the coast.
   'land-april': {
+    horizon: 0.75,
     light: wx('motes-fine', { wind: 0.01, size: 0.9, opacity: 0.95 }),
     // Ground mist at the foot of the near trunks, just above the flower bed, fainter along the far
     // trees, and hardly any by the manor.
@@ -1098,42 +1057,83 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
     }),
   },
   'land-may': {
+    horizon: 0.75,
     light: wx('seeds', { wind: 0.015, share: 0.5, amount: 2.5, size: 0.5 }),
     dark: wx('mist', { wind: 0.008, band: [0.66, 0.86] }),
   },
   'land-june': {
+    horizon: 0.44,
     light: wx('seeds', { wind: 0.015, amount: 2.5, size: 0.6, opacity: 0.9, gust: 0 }),
     dark: wx('fireflies', { amount: 2.2, size: 0.5, opacity: 0.75 }),
   },
+  // By night, midges mostly by the cliff, the rest over the river, and the fireflies on the far
+  // bank. By day, all by the cliff, where they show.
   'land-july': {
-    light: wx('midges', { wind: 0.005, zones: ZONES['land-july-day'], amount: 1.95, tempo: 1.15 }),
-    dark: wx('midges-night', { wind: 0.005, zones: ZONES['land-july'] }),
+    horizon: 0.76,
+    light: wx('midges', {
+      wind: 0.005,
+      zones: [
+        [0.05, 0.64, 0.33, 0.9],
+        [0.05, 0.64, 0.33, 0.9],
+      ],
+      amount: 1.95,
+      tempo: 1.15,
+    }),
+    dark: wx('midges-night', {
+      wind: 0.005,
+      zones: [
+        [0.05, 0.64, 0.33, 0.9],
+        [0.34, 0.82, 0.88, 0.97],
+        [0.58, 0.68, 1, 0.78],
+      ],
+    }),
   },
   'land-august': {
+    horizon: 0.39,
     light: wx('dust', { wind: 0.03 }),
     dark: wx('mist', { wind: 0.01, band: [0.32, 0.56] }),
   },
   'land-september': {
-    light: wx('leaves', { wind: 0.07, gust: 0.5, amount: 0.15, colors: birchLeaves }),
+    horizon: 0.68,
+    // Early autumn's leaves, from the birches and rowans.
+    light: wx('leaves', {
+      wind: 0.07,
+      gust: 0.5,
+      amount: 0.15,
+      colors: {
+        image: [
+          [0.84, 0.68, 0.18],
+          [0.78, 0.36, 0.14],
+        ],
+        plain: [
+          [0.84, 0.68, 0.18],
+          [0.78, 0.36, 0.14],
+        ],
+      },
+    }),
     dark: wx('mist', { wind: 0.008, band: [0.57, 0.9], amount: 1.4, size: 1.2 }),
   },
   // Smaller and fainter, so they sit in the tinted picture rather than in front of it.
   'land-october': {
+    horizon: 0.77,
     light: wx('leaves', { wind: 0.04, amount: 1.3, size: 0.7, opacity: 0.65 }),
     // The moonlit trees are near grey, so the leaves are dull rust and olive, not bright orange.
     dark: wx('leaves', {
       wind: 0.04,
       size: 0.7,
       opacity: 0.6,
-      colors: () => [
-        [0.42, 0.3, 0.18],
-        [0.5, 0.44, 0.26],
-      ],
+      colors: {
+        dark: [
+          [0.42, 0.3, 0.18],
+          [0.5, 0.44, 0.26],
+        ],
+      },
     }),
   },
   'land-november': {
-    light: wx('frost-day', {
-      zones: ZONES['land-november'],
+    horizon: 0.57,
+    zones: [[0, 0.6, 1, 1]],
+    light: wx('frost', {
       amount: 2.9,
       size: 2.4,
       opacity: 1.05,
@@ -1144,7 +1144,6 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
     }),
     // No moon, so the frost barely catches light: few, faint specks that change slowly.
     dark: wx('frost', {
-      zones: ZONES['land-november'],
       amount: 1.8,
       size: 2.2,
       opacity: 0.55,
@@ -1154,6 +1153,7 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
     }),
   },
   'land-december': {
+    horizon: 0.74,
     light: wx('snow', { amount: 0.3, fall: 0.8 }),
     dark: wx('snow', { amount: 0.2, fall: 0.8, opacity: 0.4 }),
   },
@@ -1163,8 +1163,19 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
 export type Weather = Preset & { horizon?: number }
 
 export function weatherFor(id: ImageId, theme: 'light' | 'dark'): Weather {
-  const { preset, ...tuning } = IMAGE_WEATHER[id][theme]
-  return { ...PRESETS[preset], horizon: HORIZONS[id], ...tuning }
+  const { horizon, zones, ...image } = IMAGE_WEATHER[id]
+  const { preset, ...tuning } = 'both' in image ? image.both : image[theme]
+  return { ...PRESETS[preset], horizon, zones, ...tuning }
+}
+
+// The two colors the weather's effect mixes on the page: the image's or the preset's for the
+// page, else the effect's.
+export function weatherColors(
+  weather: Weather & { effect: Effect },
+  page: { dark: boolean; background: boolean },
+): [Rgb, Rgb] {
+  const key = page.dark ? 'dark' : page.background ? 'image' : 'plain'
+  return weather.colors?.[key] ?? EFFECTS[weather.effect].colors[key]
 }
 
 // The photos' aspect ratio and `background-position` y (.scene-photo-image in src/styles.css), to
@@ -1210,9 +1221,9 @@ export function weatherSupported() {
 }
 
 export type WeatherRenderer = {
-  // Draws `weather`, which has an effect (see weatherFor), with its two colors. Throws if the
-  // effect's shaders don't compile.
-  start(weather: Weather & { effect: Effect }, colors: () => [Rgb, Rgb]): void
+  // Draws `weather`, which has an effect (see weatherFor), with its two colors (weatherColors).
+  // Throws if the effect's shaders don't compile.
+  start(weather: Weather & { effect: Effect }, colors: [Rgb, Rgb]): void
   stop(): void
   // Stops and frees the context.
   destroy(): void
@@ -1331,7 +1342,7 @@ export function createWeatherRenderer(
   let last = 0
   let elapsed = 0
   let current: (Weather & { effect: Effect }) | null = null
-  let colors: (() => [Rgb, Rgb]) | null = null
+  let colors: [Rgb, Rgb] | null = null
 
   // What a frame draws with, worked out again only on a start or a resize.
   type Setup = ReturnType<typeof prepare>
@@ -1451,23 +1462,22 @@ export function createWeatherRenderer(
     }
     if (!setup || setup.w !== w || setup.h !== h || setup.dpr !== dpr) {
       setup = prepare(current, w, h, dpr)
-      upload(setup)
+      upload(setup, colors)
     }
     const { u } = setup.program
     // The clear color is WebGL's default, transparent.
     gl.clear(gl.COLOR_BUFFER_BIT)
     gl.uniform1f(u.u_time, elapsed)
-    const [a, b] = colors()
-    gl.uniform3f(u.u_colorA, ...a)
-    gl.uniform3f(u.u_colorB, ...b)
     const count = Math.round(setup.count * pace().density)
     if (setup.fx.quads) gl.drawArrays(gl.TRIANGLES, 0, count * 6)
     else gl.drawArrays(gl.POINTS, 0, count)
   }
   // The uniforms that change only with the setup. A program keeps its uniforms, and only one
   // program is in use until the next start, which makes a new setup.
-  function upload({ program: { p, u }, t, ...setup }: Setup) {
+  function upload({ program: { p, u }, t, ...setup }: Setup, [a, b]: [Rgb, Rgb]) {
     gl.useProgram(p)
+    gl.uniform3f(u.u_colorA, ...a)
+    gl.uniform3f(u.u_colorB, ...b)
     gl.uniform2f(u.u_res, setup.w, setup.h)
     gl.uniform2f(u.u_band, setup.band[0], setup.band[1])
     gl.uniform1f(u.u_horizon, setup.horizon)
@@ -1484,11 +1494,11 @@ export function createWeatherRenderer(
     gl.clear(gl.COLOR_BUFFER_BIT)
   }
   return {
-    start(weather, colorsFn) {
+    start(weather, pair) {
       program(weather.effect)
       if (!current || fps(weather) !== fps(current)) slower = 0
       current = weather
-      colors = colorsFn
+      colors = pair
       setup = null
       if (raf) return
       last = 0
