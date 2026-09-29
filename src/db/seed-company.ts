@@ -10,6 +10,7 @@
 import { hashPassword } from 'better-auth/crypto'
 import { v7 as uuidv7 } from 'uuid'
 import { addDays, datesBetween, type IsoDate, localDate, startOfDay } from '~/lib/calendar'
+import { isWorkingDay } from '~/lib/holidays/holidays'
 import { detectTicket } from '~/lib/tickets'
 import type { Database } from '.'
 import { SYSTEM_USER_ID, withActor } from './actor'
@@ -289,9 +290,6 @@ const internalWork: Record<string, string[]> = {
   Hackathon: ['Hackathon: offline-first prototype', 'Hackathon'],
   'Grant application': ['Grant budget and work plan', 'Grant application text'],
 }
-
-// Estonian public holidays, as month and day.
-const holidays = new Set(['01-01', '02-24', '05-01', '06-23', '06-24', '08-20', '12-24', '12-25'])
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
@@ -627,10 +625,10 @@ function entries(now: Date, yearStart: number, days: number): NewEntry[] {
   )
 }
 
-// Public holidays, a summer vacation of two to three weeks, two shorter breaks, and sick
-// days.
+// The company's public holidays, Estonia's for everyone, a summer vacation of two to three
+// weeks, two shorter breaks, and sick days. Weekends count too.
 function daysOff(dates: IsoDate[], rand: () => number): Set<IsoDate> {
-  const off = new Set(dates.filter((d) => holidays.has(d.slice(5))))
+  const off = new Set(dates.filter((d) => !isWorkingDay(d, 'EE')))
   function block(start: IsoDate | undefined, length: number) {
     if (!start) return
     for (let i = 0; i < length; i++) off.add(addDays(start, i))
