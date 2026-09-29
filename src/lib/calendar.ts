@@ -157,6 +157,32 @@ export function splitByDay(start: number, end: number, zone: string): DayPiece[]
   return pieces
 }
 
+// splitByDay for many spans within the dates from `from` up to `to`. It finds each day's
+// start once, so splitting a year of entries runs Intl per day, not per entry. A span
+// reaching outside the dates falls back to splitByDay.
+export function daySplitter(from: IsoDate, to: IsoDate, zone: string) {
+  const dates = datesBetween(from, addDays(to, 1))
+  const starts = dates.map((date) => startOfDay(date, zone))
+  return function split(start: number, end: number): DayPiece[] {
+    if (start < starts[0] || end > starts[starts.length - 1]) return splitByDay(start, end, zone)
+    // The day holding start: starts[lo] <= start < starts[hi].
+    let lo = 0
+    let hi = starts.length - 1
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1
+      if (starts[mid] <= start) lo = mid
+      else hi = mid
+    }
+    const pieces: DayPiece[] = []
+    for (let i = lo; start < end; i++) {
+      const next = Math.min(starts[i + 1], end)
+      pieces.push({ date: dates[i], ms: next - start })
+      start = next
+    }
+    return pieces
+  }
+}
+
 // How long a running entry has run at `now`, up to the longest an entry runs, where stopping
 // it would end it.
 export function runningMs(startedAt: Date, now: number) {

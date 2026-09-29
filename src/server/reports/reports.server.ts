@@ -22,10 +22,11 @@ import { member, team, teamMember, timeEntry, user, userSettings } from '~/db/sc
 import {
   addDays,
   countedSpan,
+  datesBetween,
+  daySplitter,
   daysBetween,
   type IsoDate,
   type Range,
-  splitByDay,
   startOfDay,
   startOfWeek,
   type WeekStart,
@@ -122,6 +123,10 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
   const buckets = bucketsOf(a)
   const range = rangeOf(a)
   const step = a.unit === 'week' ? 7 : 1
+  const split = daySplitter(a.from, a.to, a.timeZone)
+  const bucketOf = new Map(
+    datesBetween(a.from, a.to).map((d) => [d, Math.floor(daysBetween(buckets[0], d) / step)]),
+  )
   function empty() {
     return { total: 0, perBucket: buckets.map(() => 0) }
   }
@@ -149,8 +154,8 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
     const project = rowOf(projects, entry.projectId)
     const ticket = a.tickets ? rowOf(tickets, entry.ticket ?? null) : undefined
     const member = rowOf(members, entry.userId)
-    for (const piece of splitByDay(span.from, span.to, a.timeZone)) {
-      const bucket = Math.floor(daysBetween(buckets[0], piece.date) / step)
+    for (const piece of split(span.from, span.to)) {
+      const bucket = bucketOf.get(piece.date)!
       add(all, bucket, piece.ms)
       add(project, bucket, piece.ms)
       add(ticket, bucket, piece.ms)
@@ -494,11 +499,12 @@ export interface ReportEntryPiece {
 // The pieces of the entries, oldest first.
 function piecesOf(c: ReportContext, entries: ListedEntry[], now: Date): ReportEntryPiece[] {
   const pieces: ReportEntryPiece[] = []
+  const split = daySplitter(c.a.from, c.a.to, c.a.timeZone)
   for (const entry of entries) {
     const span = countedSpan(entry, c.range, now.getTime())
     if (!span) continue
     let from = span.from
-    for (const piece of splitByDay(span.from, span.to, c.a.timeZone)) {
+    for (const piece of split(span.from, span.to)) {
       const to = from + piece.ms
       pieces.push({
         entryId: entry.id,

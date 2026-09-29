@@ -8,6 +8,7 @@ import {
   runningMs,
   datesBetween,
   dayRange,
+  daySplitter,
   daysBetween,
   localDate,
   localTime,
@@ -201,6 +202,49 @@ describe('splitByDay', () => {
   test('an empty or reversed span has no pieces', () => {
     expect(splitByDay(at('2026-09-24T06:00:00Z'), at('2026-09-24T06:00:00Z'), 'UTC')).toEqual([])
     expect(splitByDay(at('2026-09-24T07:00:00Z'), at('2026-09-24T06:00:00Z'), 'UTC')).toEqual([])
+  })
+})
+
+describe('daySplitter', () => {
+  test('splits as splitByDay does, over both DST changes and at midnight', () => {
+    const zone = 'Europe/Tallinn'
+    const split = daySplitter('2026-03-01', '2026-11-01', zone)
+    const spans = [
+      // 23:30 to 02:15, crossing midnight.
+      ['2026-09-23T20:30:00Z', '2026-09-23T23:15:00Z'],
+      // Over the spring-forward and the fall-back Sundays.
+      ['2026-03-27T20:00:00Z', '2026-03-30T00:00:00Z'],
+      ['2026-10-24T20:00:00Z', '2026-10-26T01:00:00Z'],
+      // Exactly one local day, and a span ending at midnight.
+      ['2026-10-24T21:00:00Z', '2026-10-25T22:00:00Z'],
+      ['2026-09-24T18:00:00Z', '2026-09-24T21:00:00Z'],
+      // The first and last instants the dates hold.
+      ['2026-02-28T22:00:00Z', '2026-03-01T01:00:00Z'],
+      ['2026-10-31T20:00:00Z', '2026-10-31T22:00:00Z'],
+    ]
+    for (const [from, to] of spans) {
+      expect(split(at(from), at(to))).toEqual(splitByDay(at(from), at(to), zone))
+    }
+    expect(split(at('2026-10-25T20:00:00Z'), at('2026-10-26T01:00:00Z'))).toEqual([
+      { date: '2026-10-25', ms: 2 * HOUR },
+      { date: '2026-10-26', ms: 3 * HOUR },
+    ])
+  })
+
+  test('handles a zone that skips midnight', () => {
+    // Chile springs forward from 00:00 to 01:00 on 6 September 2026.
+    const zone = 'America/Santiago'
+    const split = daySplitter('2026-09-01', '2026-09-10', zone)
+    const [from, to] = [at('2026-09-05T23:00:00Z'), at('2026-09-07T12:00:00Z')]
+    expect(split(from, to)).toEqual(splitByDay(from, to, zone))
+  })
+
+  test('falls back to splitByDay outside the dates, and an empty span has no pieces', () => {
+    const split = daySplitter('2026-09-24', '2026-09-25', 'UTC')
+    const [from, to] = [at('2026-09-23T20:00:00Z'), at('2026-09-26T02:00:00Z')]
+    expect(split(from, to)).toEqual(splitByDay(from, to, 'UTC'))
+    expect(split(at('2026-09-24T06:00:00Z'), at('2026-09-24T06:00:00Z'))).toEqual([])
+    expect(split(at('2026-09-24T07:00:00Z'), at('2026-09-24T06:00:00Z'))).toEqual([])
   })
 })
 
