@@ -1,3 +1,4 @@
+import { noop } from '@tanstack/solid-query'
 import { createFileRoute } from '@tanstack/solid-router'
 import * as v from 'valibot'
 import { ReportSearch, requestedInput } from '~/features/reports/filters'
@@ -34,7 +35,7 @@ export const Route = createFileRoute('/$org/reports')({
       queryClient.query({ ...teamsQuery(organizationId), staleTime: 'static' }),
       queryClient.query({ ...membersQuery(organizationId), staleTime: 'static' }),
       // A refused report shows in the view, so it doesn't fail the route.
-      input && queryClient.prefetchQuery(reportQuery(organizationId, input)),
+      input && queryClient.query(reportQuery(organizationId, input)).catch(noop),
     ])
   },
   pendingComponent: ReportsPending,

@@ -28,7 +28,7 @@ describe('followSession', () => {
     let signedIn = ada
     const projects = { [ada]: ['Everything Ada sees'], [ben]: ['What Ben sees'] }
     queryClient.setQueryData(sessionQuery.queryKey, sessionOf(ada))
-    await queryClient.fetchQuery({ queryKey: ['teams', organizationId], queryFn: () => ['Ada’s'] })
+    await queryClient.query({ queryKey: ['teams', organizationId], queryFn: () => ['Ada’s'] })
     const observer = new QueryObserver(queryClient, {
       queryKey: projectsKey,
       queryFn: () => projects[signedIn],
