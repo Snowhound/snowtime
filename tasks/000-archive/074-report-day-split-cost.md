@@ -1,6 +1,6 @@
 # 074: Report day-split cost
 
-Status: todo
+Status: done
 
 The owner's year report on the Lumen Works seed takes about 345 ms on the server (task
 073, 2026-09-29), most of the year page's ~407 ms. `aggregate` in
@@ -12,11 +12,12 @@ midnights once, about 370 `Intl` calls for a year, and place each entry against 
 
 ## Acceptance criteria
 
-- [ ] A CPU profile of `getReport` for the owner's year confirms where the time goes
-      before any change
-- [ ] The year report, the Entries card, and the export split entries without per-entry
-      `Intl` calls, or the profile shows why that isn't the cost
-- [ ] Day totals are unchanged, including across a daylight-saving change and for entries
+- [x] A CPU profile of `getReport` for the owner's year confirms where the time goes
+      before any change: `splitByDay` held 82% of the samples, `formatToParts` alone 57%
+- [x] The year report, the Entries card, and the export split entries without per-entry
+      `Intl` calls, through `daySplitter` in `src/lib/calendar.ts`
+- [x] Day totals are unchanged, including across a daylight-saving change and for entries
       that cross midnight, with tests for both
-- [ ] The owner's year report takes under 100 ms on local SQLite, measured with
-      `temp/perf073/api.ts`
+- [x] The owner's year report takes under 100 ms on local SQLite, measured with
+      `temp/perf073/api.ts`: 326 ms before, 48 ms after. The year's Entries card by
+      description fell from 324 to 64 ms and a year's export from 620 to 99 ms
