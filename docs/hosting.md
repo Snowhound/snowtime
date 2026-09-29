@@ -11,9 +11,9 @@ Goal: run initially on the Vercel and Turso free tiers. Setup steps are in
   and may require the Pro plan. Confirm before relying on Hobby in production.
 - Functions run in a single region; pick it to match the Turso `prod` database.
 - A function's response is at most 4.5 MB. The largest is the report export's entry list
-  (`architecture.md`, "Report export"): on 2026-09-29 the owner's year on the Lumen Works
-  seed (19 people, 20,300 entries) was 7.8 MB as sent, down from 13.9 MB, so a year's export
-  of an organization that size fails on Vercel. A month is about a twelfth of that.
+  (`architecture.md`, "Report export"), which the browser fetches a calendar month at a time.
+  On 2026-09-29 the owner's year on the Lumen Works seed (19 people, 20,300 entries) came in
+  13 pieces of at most 755 KB as sent, 8.1 MB in all; in one response it had been 7.8 MB.
 - Each function instance has its own memory, so in-memory state doesn't hold across
   requests. Rate-limit counts therefore need Upstash Redis on Vercel: set
   `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, with the Upstash database in

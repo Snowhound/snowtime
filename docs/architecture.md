@@ -481,14 +481,21 @@ that project's report for its client (task 068).
 - Where: the browser builds the files (`src/features/reports/export.ts`), naming the rows from
   the cached lists as the grid does. The timesheet CSV is the report already on screen, counted
   up to when it loaded. The entry list and the XLSX come from `getReportExport`, which reads
-  what `getReport` reads under the same role rules, so the server enforces them. It returns the
-  report and its entries from one read, counted up to the same moment, and the XLSX's timesheet
-  is that report, so its two sheets agree while a timer runs. Building in the browser keeps the
-  files out of the Vercel functions, and the XLSX library loads only when someone exports.
+  what `getReport` reads under the same role rules, so the server enforces them. Building in the
+  browser keeps the files out of the Vercel functions, and the XLSX library loads only when
+  someone exports.
+- Pieces: the browser fetches the entries one calendar month of the range at a time, or in one
+  call for a range within a month, and the server takes a piece of at most 31 days, so each
+  response stays well under Vercel's 4.5 MB limit whatever the organization's size
+  (`hosting.md`). The Export menu shows how many pieces have loaded, and a failed piece fails
+  the export.
+- One moment: the first piece also returns the report, counted up to the server's now, and
+  the browser passes that `now` to every later piece; the server counts a piece up to it, or
+  up to its own now if that is earlier. So a running entry counts up to the same moment in
+  every piece and in the report, which the XLSX's timesheet shows, and the two sheets agree
+  while a timer runs. An entry edited while the pieces load can still make them differ.
 - Size: each entry row carries only what the files show, a piece's start and duration rather
-  than its end, and no entry id or whole-entry times, which only the Entries card needs. A
-  year of the 19 people in the Lumen Works seed is still about 8 MB, over Vercel's 4.5 MB response limit
-  (`hosting.md`).
+  than its end, and no entry id or whole-entry times, which only the Entries card needs.
 - Order: the XLSX opens on the entries, the part a client or an invoice needs, with the
   timesheet as a second sheet; the menu lists them in the same order.
 - For a client: the files are in English whatever the UI language, headers, sheet names, and
@@ -567,7 +574,9 @@ worked on what.
   needs no call. Members get one level, since all the time is theirs. Breakdown totals the
   range, so Totals per is disabled on it rather than hidden, which keeps the filter row still.
 - Narrowing: a Summary chart column narrows the Entries card to its day or week, and a share
-  bar's name or a Breakdown top-level total to its row. A second-level row doesn't narrow,
+  row's total to its row. Summary's share rows and Breakdown's top level are one `ShareRow`
+  (`share-bar.tsx`), which narrows from the total rather than the name, since Breakdown's
+  names sit in a `<summary>` that can't hold a button. A second-level row doesn't narrow,
   because the card filters by one grouping at a time.
 - Width: the timesheet widens with its columns up to the window's; Summary and Breakdown keep
   the header's 68rem. The chart is drawn to its container's width, so a container that fits

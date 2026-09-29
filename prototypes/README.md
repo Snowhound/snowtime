@@ -603,8 +603,9 @@ totals, in Summary from a chart column (its day or week) or a name, and in Break
 top-level total. Its second level doesn't narrow; that needs the card to filter by two
 groupings at once. Switching views clears the narrowing.
 
-In the app, Breakdown hides the percentages below 640 px, so names keep their room; the bars
-show the share. The views checked in the app on 2026-09-27 in Chrome at 1440, 1280, and 390
+In the app, Summary's share rows and Breakdown's top level are one component: both hide the
+percentages below 640 px, so names keep their room, and both narrow from a row's total, since
+Breakdown's names sit in a `<summary>` that can't hold a button. The views checked in the app on 2026-09-27 in Chrome at 1440, 1280, and 390
 px, light and dark, as a member, a team lead, and an admin, on the Harbor and Lumen Works
 seeds: no horizontal page scroll and no console errors.
 
