@@ -1,10 +1,10 @@
-// The timer's View popover (prototypes/timer.html): the layout, whether the summary shows,
-// whether the rows are compact, and whether the page is wide.
+// The timer's View popover (prototypes/timer.html): the layout, whether the summary shows (in
+// List view only), whether the rows are compact, and whether the page is wide.
 // They are user settings, saved through useUpdateSettings, so they change at once here and on
 // the settings page. The theme is in the header's Appearance popover.
 import { Link } from '@tanstack/solid-router'
 import SettingsIcon from 'lucide-solid/icons/settings'
-import { For, createSignal } from 'solid-js'
+import { For, Show, createSignal } from 'solid-js'
 import { Button, buttonVariants } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { Separator } from '~/components/ui/separator'
@@ -73,16 +73,19 @@ export function ViewPopover(props: { settings: Settings; onError: (error: unknow
             </For>
           </ToggleGroup>
         </div>
-        <Switch
-          class="flex items-center justify-between gap-4"
-          checked={props.settings.showSummary}
-          onChange={(showSummary) => update({ showSummary })}
-        >
-          <SwitchLabel>{m.settings_show_summary()}</SwitchLabel>
-          <SwitchControl>
-            <SwitchThumb />
-          </SwitchControl>
-        </Switch>
+        {/* The calendar has no summary: its day and week totals take its place. */}
+        <Show when={props.settings.timerView === 'list'}>
+          <Switch
+            class="flex items-center justify-between gap-4"
+            checked={props.settings.showSummary}
+            onChange={(showSummary) => update({ showSummary })}
+          >
+            <SwitchLabel>{m.settings_show_summary()}</SwitchLabel>
+            <SwitchControl>
+              <SwitchThumb />
+            </SwitchControl>
+          </Switch>
+        </Show>
         <Switch
           class="flex items-center justify-between gap-4"
           checked={props.settings.compactRows}

@@ -597,7 +597,8 @@ timer.html, "Ticket keys").
 - All of a user's settings live in `user_settings`, one row per user, so they follow the
   user across devices: time zone, week start, language (`locale`), theme, timer layout,
   whether the summary shows, compact entry rows (`compact_rows`), the Wide page setting
-  (`wide_timer`), the app icon
+  (`wide_timer`), the Timer page's view and the calendar's weekend (`timer_view`,
+  `calendar_weekend`; see "Timer calendar"), the app icon
   (`app_icon`, the header mark and favicon), the seasonal scene (`scene_collection`,
   `scene_pin`, `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`,
   `scene_tagline`), and
@@ -627,11 +628,40 @@ timer.html, "Ticket keys").
   passes it to Paraglide, which sets the cookie, and renders the page again.
 - The app validates the text values (`src/server/settings/settings.schemas.ts`); their columns have no
   `CHECK`, so adding a value needs no table rebuild. The booleans (`show_summary`,
-  `compact_rows`, `wide_timer`, and the scene's switches) keep the usual 0/1 `CHECK`.
+  `compact_rows`, `wide_timer`, `calendar_weekend`, and the scene's switches) keep the usual
+  0/1 `CHECK`.
 - Wide page (`wide_timer`, off by default) widens the Timer page from the header's width to
   88rem and puts the timer across the summary column, so rows have room for a Ticket column.
   Off, the page keeps the header's width and each row's chip sits at the end of its
   description. The Timer route is `wide` (its `staticData`), so the view sets its own width.
+
+## Timer calendar
+
+The Timer page shows the user's entries as a list by day or as a week calendar
+(`prototypes/calendar.html`, task 069). The calendar replaces the entry list and the summary;
+the timer bar stays. Its code is in `src/features/timer/calendar/`, with the time math in
+`week-grid.ts`.
+
+- Settings: `timer_view` (`list` or `calendar`, default `list`) is the header's List | Calendar
+  switch, so the page opens the way the user left it. `calendar_weekend` (default off) is the
+  toolbar's Weekend toggle; a week with weekend time shows the weekend anyway. Show summary
+  applies to the list only, so the View popover hides it in Calendar view.
+- Data: the calendar loads each shown week with `listEntries`, from the week's first day to
+  the next week's in the user's zone and week start, which is well within its 93-day limit.
+  The route's loader loads the current week when the view is Calendar. The running entry
+  comes from the running timer's cache, which the timer bar edits.
+- Positions are wall-clock minutes from the day's midnight, so the hour lines stay right on
+  the days clocks change. An entry that crosses midnight has a piece on each day.
+- Mutations: the calendar uses the list's `createEntry`, `updateEntry`, and `deleteEntry`
+  mutations and their optimistic updates (`src/features/timer/queries.ts`). A drag or an
+  Alt+arrow key is one `updateEntry`. The status line names each change with an Undo, which
+  writes the old values back; undoing a delete creates the entry again under a new id,
+  because a deleted row keeps its id. `updateEntry`'s optimistic update moves an entry
+  between the cached ranges it leaves and enters, so an entry moved into another week shows
+  there at once.
+- The entry popover is the list's, with its fields and validation: no end in the future, and
+  an end at or before the start means the next day. The calendar opens it beside the slot
+  or the entry, with Delete for a stopped entry.
 
 ## Seasonal scene
 

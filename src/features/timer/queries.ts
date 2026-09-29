@@ -94,6 +94,10 @@ function listed(entry: Entry, key: QueryKey) {
   )
 }
 
+function newestFirst(entries: Entry[]) {
+  return entries.sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
+}
+
 // Where the server stops a timer now: at most MAX_ENTRY_HOURS after its start (stopAt in
 // timer.server.ts).
 function stoppedNow(entry: Entry) {
@@ -182,8 +186,22 @@ export function useUpdateEntry({ organizationId }: Keys) {
     ...optimistic(
       queryClient,
       [
-        cacheUpdate<Entry[], UpdateEntryInput>(entriesKey(organizationId), (entries, input) =>
-          entries.map((e) => (e.id === input.id ? patch(e, input) : e)),
+        // An entry moved out of a range leaves its list, and one moved into a range joins
+        // it, so the calendar's week shows an entry moved there at once.
+        cacheUpdate<Entry[], UpdateEntryInput>(
+          entriesKey(organizationId),
+          (entries, input, key) => {
+            const entry =
+              entries.find((e) => e.id === input.id) ??
+              queryClient
+                .getQueriesData<Entry[]>({ queryKey: entriesKey(organizationId) })
+                .flatMap(([, data]) => data ?? [])
+                .find((e) => e.id === input.id)
+            if (!entry) return entries
+            const updated = patch(entry, input)
+            const rest = entries.filter((e) => e.id !== input.id)
+            return listed(updated, key) ? newestFirst([updated, ...rest]) : rest
+          },
         ),
         cacheUpdate<Date | null, UpdateEntryInput>(firstEntryKey(organizationId), (first, input) =>
           earliest(first, input.startedAt),
@@ -243,7 +261,7 @@ export function useCreateEntry({ organizationId }: Keys) {
               stoppedAt: input.stoppedAt,
             }
             if (!listed(entry, key)) return entries
-            return [entry, ...entries].sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
+            return newestFirst([entry, ...entries])
           },
         ),
         cacheUpdate<Date | null, CreateEntryInput>(firstEntryKey(organizationId), (first, input) =>

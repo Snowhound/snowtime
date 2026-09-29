@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timer calendar</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
+    <script src="seasons.js"></script>
+    <script src="scene.js"></script>
+    <script src="intro.js"></script>
+    <script src="app-frame.js"></script>
+    <script src="app-data.js"></script>
+    <style type="text/tailwindcss">
+      /* One hour is 48 px, so the 15-minute snap is 12 px. */
+      :root {
+        --hour: 48px;
+      }
+      /* The header and the body share their columns; both reserve the scrollbar's gutter so
+         they line up. */
+      .cal-cols {
+        display: grid;
+        grid-template-columns: 3.5rem repeat(var(--days), minmax(0, 1fr));
+        scrollbar-gutter: stable;
+      }
+      .cal-day {
+        @apply relative border-l;
+        height: calc(24 * var(--hour));
+        background-image:
+          linear-gradient(to bottom, var(--border) 1px, transparent 1px),
+          linear-gradient(to bottom, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px);
+        background-size:
+          100% var(--hour),
+          100% var(--hour);
+        background-position:
+          0 0,
+          0 calc(var(--hour) / 2);
+      }
+      .cal-day[data-today] {
+        background-color: color-mix(in oklab, var(--accent) 35%, transparent);
+      }
+      /* Time that hasn't happened yet: entries can't end there. */
+      .cal-future {
+        @apply pointer-events-none absolute inset-x-0 bottom-0;
+        background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--muted-foreground) 10%, transparent) 0 6px, transparent 6px 12px);
+      }
+      .cal-now {
+        @apply pointer-events-none absolute inset-x-0 z-20 h-0.5 bg-primary;
+      }
+      .cal-now::before {
+        content: '';
+        @apply absolute -left-1 -top-[3px] size-2 rounded-full bg-primary;
+      }
+      /* An entry: a tint of its project's color with a bar in the full color. */
+      .cal-block {
+        @apply absolute z-10 flex flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight text-foreground outline-none select-none;
+        border-color: var(--p);
+        background-color: color-mix(in oklab, var(--p) 18%, var(--card));
+        touch-action: pan-y;
+      }
+      .cal-block:hover {
+        background-color: color-mix(in oklab, var(--p) 26%, var(--card));
+      }
+      .cal-block:focus-visible,
+      .cal-block[data-editing] {
+        @apply ring-2 ring-ring ring-offset-1 ring-offset-background;
+      }
+      /* Up to 20 minutes: one tight line, centered. */
+      .cal-block[data-short] {
+        @apply justify-center py-0 text-[11px] leading-none;
+      }
+      .cal-block[data-muted] {
+        @apply border-dashed;
+      }
+      .cal-block[data-dragging] {
+        @apply opacity-40;
+      }
+      .cal-block[data-running] {
+        background-image: linear-gradient(to bottom, transparent 60%, color-mix(in oklab, var(--p) 22%, transparent));
+      }
+      /* The edges resize the entry with a mouse or pen. */
+      .cal-handle {
+        @apply absolute inset-x-0 z-10 h-1.5 cursor-ns-resize;
+      }
+      @media (pointer: coarse) {
+        .cal-handle {
+          display: none;
+        }
+      }
+      .cal-ghost {
+        @apply pointer-events-none absolute z-30 overflow-hidden rounded-md border-2 border-dashed px-1.5 py-0.5 text-xs font-medium tabular-nums;
+        border-color: var(--p, var(--ring));
+        background-color: color-mix(in oklab, var(--p, var(--ring)) 14%, var(--card));
+      }
+      .cal-ghost[data-invalid] {
+        @apply border-destructive text-destructive;
+      }
+      @keyframes cal-flash {
+        from {
+          box-shadow: 0 0 0 3px var(--ring);
+        }
+      }
+      .cal-flash {
+        animation: cal-flash 1.4s ease-out;
+      }
+      @keyframes cal-pulse {
+        50% {
+          opacity: 0.35;
+        }
+      }
+      .cal-pulse {
+        animation: cal-pulse 1.6s ease-in-out infinite;
+      }
+      .inline-time::-webkit-calendar-picker-indicator {
+        display: none;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body class="bg-muted/40">
+    <div id="prototype-controls">
+      <label for="fixture" class="sr-only">Fixture</label>
+      <select id="fixture" data-ui="select" class="h-9 w-44">
+        <option value="running">Running</option>
+        <option value="idle">Idle</option>
+        <option value="overlaps">Overlaps and midnight</option>
+        <option value="long">Long content</option>
+        <option value="empty">Empty</option>
+      </select>
+      <label class="flex items-center gap-2 text-sm" title="Prototype only: saves fail and roll back">
+        <input id="fail-saves" type="checkbox" data-ui="checkbox" />Fail saves
+      </label>
+    </div>
+
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 pt-6 sm:px-8">
+      <h1 class="text-2xl font-semibold tracking-tight">Timer</h1>
+      <div class="flex items-center gap-2">
+        <!-- The view switch leads the actions, set apart from them. -->
+        <div data-ui="toggle-group" role="group" class="mr-2" aria-label="Entries as">
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="list" aria-pressed="false" class="gap-1.5"></button>
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="calendar" aria-pressed="true" data-pressed class="gap-1.5"></button>
+        </div>
+        <button id="add-entry" type="button" data-ui="button" data-variant="outline" class="h-9"></button>
+      </div>
+    </div>
+
+    <main class="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-6 pt-4 sm:px-8">
+      <section id="timer" class="surface flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center" aria-label="Timer">
+        <div class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+          <label for="description" class="sr-only">What are you working on?</label>
+          <input id="description" data-ui="input" type="text" placeholder="What are you working on?" autocomplete="off" class="flex-1" />
+          <label for="project" class="sr-only">Project</label>
+          <select id="project" data-ui="select" class="sm:w-48"></select>
+        </div>
+        <span id="elapsed" class="flex h-9 items-center justify-start px-2 text-lg tabular-nums sm:w-28 sm:justify-end">0:00:00</span>
+        <button id="toggle" data-ui="button" type="button"></button>
+      </section>
+
+      <section data-ui="card" class="gap-0 overflow-hidden py-0" aria-labelledby="week-label">
+        <div class="flex flex-wrap items-center gap-2 border-b px-3 py-2.5 sm:px-4">
+          <div class="flex items-center gap-1">
+            <button type="button" id="prev" data-ui="button" data-variant="outline" data-size="icon" class="size-8"></button>
+            <button type="button" id="next" data-ui="button" data-variant="outline" data-size="icon" class="size-8"></button>
+          </div>
+          <button type="button" id="today" data-ui="button" data-variant="outline" data-size="sm">Today</button>
+          <h2 id="week-label" class="ml-1 font-medium" aria-live="polite"></h2>
+          <div class="ml-auto flex items-center gap-3">
+            <span id="week-total" class="text-sm text-muted-foreground tabular-nums"></span>
+            <button type="button" id="weekend" data-ui="toggle" data-variant="outline" data-size="sm"></button>
+          </div>
+        </div>
+        <!-- Below 640 px, one day at a time, picked from a strip of the week's days. -->
+        <div id="day-strip" class="flex gap-1 overflow-x-auto border-b px-2 py-1.5 sm:hidden" role="group" aria-label="Day"></div>
+        <div id="cal-head" class="cal-cols overflow-y-hidden border-b max-sm:hidden"></div>
+        <div id="cal-scroll" class="h-[max(24rem,min(40rem,calc(100dvh-17rem)))] overflow-y-auto overscroll-contain">
+          <div id="cal-body" class="cal-cols"></div>
+        </div>
+        <div class="flex min-h-10 items-center justify-between gap-3 border-t px-3 py-1.5 text-sm sm:px-4">
+          <p id="cal-status" class="min-w-0 text-muted-foreground" role="status"></p>
+          <p class="hidden shrink-0 text-xs text-muted-foreground md:block">Drag to add · drag an entry to move it, its edges to change its times · Alt+arrows move a selected entry</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Opened by the page next to the entry or the new slot, not by a popovertarget button. -->
+    <div id="entry-popover" popover data-ui="popover" role="dialog" aria-labelledby="entry-title" class="max-h-[calc(100dvh-16px)] w-[28rem] overflow-y-auto">
+      <form id="entry-form" class="grid gap-4" novalidate>
+        <h2 id="entry-title" class="font-medium leading-none">Add entry</h2>
+        <div class="grid gap-1.5">
+          <label data-ui="label" for="edit-description">Description</label>
+          <input id="edit-description" data-ui="input" type="text" autocomplete="off" placeholder="What did you work on?" />
+        </div>
+        <div class="grid gap-1.5">
+          <label data-ui="label" for="edit-project">Project</label>
+          <select id="edit-project" data-ui="select"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div class="col-span-2 grid gap-1.5 sm:col-span-1">
+            <label data-ui="label" for="edit-date">Date</label>
+            <input id="edit-date" data-ui="input" type="date" required />
+          </div>
+          <div class="grid gap-1.5">
+            <label data-ui="label" for="edit-start">Start</label>
+            <input id="edit-start" data-ui="input" type="time" required />
+          </div>
+          <div class="grid gap-1.5" id="edit-end-field">
+            <label data-ui="label" for="edit-end">End</label>
+            <input id="edit-end" data-ui="input" type="time" required />
+          </div>
+        </div>
+        <p id="edit-summary" class="-mt-1 text-sm text-muted-foreground" aria-live="polite"></p>
+        <p id="edit-error" data-ui="error-message" class="-mt-3" role="alert" hidden></p>
+        <div class="flex items-center gap-2">
+          <button type="button" id="edit-delete" data-ui="button" data-variant="ghost" data-size="sm" class="text-destructive hover:text-destructive"></button>
+          <div class="ml-auto flex gap-2">
+            <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-entry-cancel>Cancel</button>
+            <button type="submit" data-ui="button" data-size="sm">Save</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      appFrame.mount({ page: 'timer', title: 'Timer calendar', scene: true })
+
+      const { escapeHtml, icon } = appFrame
+      const Z = appData.tz
+      const { MIN, HOUR } = appData
+      const SNAP = 15
+      // A click without a drag adds this much.
+      const CLICK_MINUTES = 30
+      const px = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hour'))
+      const narrow = matchMedia('(max-width: 639px)')
+
+      // --- Data ---------------------------------------------------------------------------------
+      const org = appData.organization()
+      const ME = appData.currentUserId
+      const projects = org.projects.map((p) => ({ ...p, color: appData.colorVar(p.color) }))
+      const mine = appData.projectsFor(ME, org.teams, org.projects).map((p) => p.id)
+      const NO_PROJECT = { id: 'none', name: 'No project', color: 'var(--muted-foreground)', muted: true }
+      const project = (id) => (id === 'none' ? NO_PROJECT : projects.find((p) => p.id === id) ?? { id, name: 'Unavailable project', color: 'var(--muted-foreground)', muted: true })
+
+      const zone = () => appFrame.settings.get().timeZone
+      const weekStartSetting = () => appFrame.settings.get().weekStart
+      const state = {
+        fixture: 'running',
+        week: 0, // first day of the shown week
+        day: 0, // below 640 px: the day shown
+        entries: [],
+        running: null,
+        // A new entry's slot while its popover is open: { start, end }.
+        draft: null,
+        editing: null,
+        undo: null,
+        drag: null,
+      }
+      let nextId = 1
+
+      // An entry on a day of a week relative to this one (0 is the week's first day).
+      function at(week, day, hour, minutes, description, projectId) {
+        const first = Z.addDays(Z.startOfWeek(Date.now(), zone(), weekStartSetting()), week * 7 + day, zone())
+        const p = Z.zonedParts(first + 12 * HOUR, zone())
+        const startedAt = Z.zonedTime(p.y, p.m, p.d, 0, Math.round(hour * 60), zone())
+        return { id: `e${nextId++}`, description, projectId, startedAt, stoppedAt: startedAt + minutes * MIN }
+      }
+      // The same working days for this week and the two before it; today's later entries and
+      // any day still to come drop out.
+      function workWeek(week) {
+        return [0, 1, 2, 3, 4].flatMap((d) => [
+          at(week, d, 8.5, 25, 'Standup and planning', 'p3'),
+          at(week, d, 9, d % 2 ? 150 : 110, d % 2 ? 'Report time zone boundaries' : 'Timer schema and partial unique index', 'p1'),
+          at(week, d, 11.5 + (d % 3) * 0.25, 75, d === 2 ? 'Sprint demo with the client' : 'Invoice export review', 'p2'),
+          at(week, d, 13.5, d === 4 ? 45 : 120, d === 4 ? '' : 'Stock adjustment import', d === 4 ? 'none' : 'p4'),
+          ...(d === 3 ? [at(week, d, 16, 50, 'Retro', 'p3')] : []),
+        ])
+      }
+      const past = (list) => list.filter((e) => e.stoppedAt <= Date.now())
+      const fixtures = {
+        running: () => ({
+          entries: past([...workWeek(0), ...workWeek(-1), ...workWeek(-2), at(-1, 5, 10, 95, 'Migration dry run', 'p4')]),
+          running: { id: `e${nextId++}`, description: 'Prototype timer layouts', projectId: 'p1', startedAt: Date.now() - 25 * MIN - 12_000 },
+        }),
+        idle: () => ({ entries: fixtures.running().entries, running: null }),
+        overlaps: () => ({
+          entries: past([
+            ...workWeek(0),
+            ...workWeek(-1),
+            // Two entries at once, and a third over both.
+            at(0, 0, 9.25, 60, 'Pair review of the report filters', 'p2'),
+            at(0, 0, 9.5, 30, 'Call with Nordic Logistics', 'p4'),
+            // Five minutes: the shortest block still shows a line.
+            at(0, 0, 12.75, 5, 'Deploy', 'p1'),
+            // Crosses midnight into the next day.
+            at(-1, 2, 22.5, 170, 'Production cutover', 'p4'),
+            // Archived project.
+            at(-1, 1, 16.5, 40, 'Landing page copy fixes', 'p6'),
+          ]),
+          running: null,
+        }),
+        long: () => {
+          const long = 'Workshop with the logistics team about migrating legacy warehouse stock adjustments, including edge cases for partial deliveries'
+          const entries = []
+          for (let week = -1; week <= 0; week++)
+            for (let d = 0; d < 5; d++)
+              for (let i = 0; i < 9; i++) entries.push(at(week, d, 8 + i * 0.75, i % 3 ? 20 : 40, i % 2 ? long : 'Code review', i % 2 ? 'p4' : 'p2'))
+          return { entries: past(entries), running: { id: `e${nextId++}`, description: long, projectId: 'p4', startedAt: Date.now() - 3 * HOUR - 3 * MIN } }
+        },
+        empty: () => ({ entries: [], running: null }),
+      }
+
+      // --- Time helpers -------------------------------------------------------------------------
+      const fmt = (opts) => new Intl.DateTimeFormat(undefined, { timeZone: zone(), ...opts })
+      const clock = (t) => fmt({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(t)
+      const hm = (ms) => {
+        const m = Math.round(ms / MIN)
+        return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
+      }
+      const dateValue = (t) => {
+        const p = Z.zonedParts(t, zone())
+        return `${p.y}-${String(p.m).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`
+      }
+      // The instant of a wall-clock minute on a day; minutes may run past midnight.
+      const timeOn = (day, minutes) => {
+        const p = Z.zonedParts(day + 12 * HOUR, zone())
+        return Z.zonedTime(p.y, p.m, p.d, 0, minutes, zone())
+      }
+      const minuteOf = (t, day) => Math.round((t - day) / MIN)
+      const weekday = (day) => Z.zonedParts(day + 12 * HOUR, zone()).weekday
+      const isWeekend = (day) => [0, 6].includes(weekday(day))
+      const today = () => Z.startOfDay(Date.now(), zone())
+      const endOf = (e) => e.stoppedAt ?? Date.now()
+      const allEntries = () => (state.running ? [...state.entries, state.running] : state.entries)
+
+      function weekDays() {
+        return Array.from({ length: 7 }, (_, i) => Z.addDays(state.week, i, zone()))
+      }
+      // The weekend shows when the user turned it on, or when the week has time on it.
+      function weekendHasTime() {
+        return weekDays().filter(isWeekend).some((day) => allEntries().some((e) => e.startedAt < Z.addDays(day, 1, zone()) && endOf(e) > day))
+      }
+      const weekendShown = () => appFrame.settings.get().calendarWeekend || weekendHasTime()
+      function shownDays() {
+        const days = weekDays().filter((d) => weekendShown() || !isWeekend(d))
+        return narrow.matches ? days.filter((d) => d === state.day) : days
+      }
+
+      // An entry's pieces on the shown days, clipped at midnight.
+      function pieces(e, days = shownDays()) {
+        return days.flatMap((day) => {
+          const next = Z.addDays(day, 1, zone())
+          const from = Math.max(e.startedAt, day)
+          const to = Math.min(endOf(e), next)
+          return to > from ? [{ entry: e, day, from, to, first: from === e.startedAt, last: to === endOf(e) }] : []
+        })
+      }
+
+      // Side by side where entries overlap: each cluster of overlapping pieces splits the width.
+      function layout(list) {
+        const sorted = [...list].sort((a, b) => a.from - b.from || b.to - a.to)
+        const out = []
+        let cluster = []
+        let clusterEnd = -Infinity
+        const flush = () => {
+          const columns = []
+          for (const p of cluster) {
+            let c = columns.findIndex((end) => end <= p.from)
+            if (c < 0) c = columns.push(0) - 1
+            columns[c] = p.to
+            p.col = c
+          }
+          cluster.forEach((p) => out.push({ ...p, cols: columns.length }))
+          cluster = []
+        }
+        for (const p of sorted) {
+          if (p.from >= clusterEnd) flush()
+          cluster.push(p)
+          clusterEnd = Math.max(clusterEnd, p.to)
+        }
+        flush()
+        return out
+      }
+
+      // --- Rendering ----------------------------------------------------------------------------
+      function renderHeader() {
+        document.querySelector('[data-view="list"]').innerHTML = `${icon('list')}List`
+        document.querySelector('[data-view="calendar"]').innerHTML = `${icon('calendar-days')}Calendar`
+        document.getElementById('add-entry').innerHTML = `${icon('plus')}Add entry`
+        document.getElementById('prev').innerHTML = icon('chevron-left')
+        document.getElementById('next').innerHTML = icon('chevron-right')
+        document.getElementById('edit-delete').innerHTML = `${icon('trash-2')}Delete`
+      }
+
+      function renderToolbar() {
+        const days = weekDays()
+        const last = days[6]
+        document.getElementById('week-label').textContent = fmt({ day: 'numeric', month: 'short', year: 'numeric' }).formatRange(days[0], last)
+        document.getElementById('prev').setAttribute('aria-label', 'Previous week')
+        document.getElementById('next').setAttribute('aria-label', 'Next week')
+        const total = allEntries().reduce((sum, e) => sum + pieces(e, days).reduce((s, p) => s + p.to - p.from, 0), 0)
+        document.getElementById('week-total').textContent = total ? `${hm(total)} this week` : ''
+        const weekend = document.getElementById('weekend')
+        const forced = weekendHasTime()
+        const on = weekendShown()
+        weekend.innerHTML = 'Weekend'
+        weekend.setAttribute('aria-pressed', String(on))
+        weekend.toggleAttribute('data-pressed', on)
+        weekend.disabled = forced
+        weekend.title = forced ? 'This week has weekend time, so the weekend shows' : ''
+        const current = state.week === Z.startOfWeek(Date.now(), zone(), weekStartSetting())
+        document.getElementById('today').disabled = current && (!narrow.matches || state.day === today())
+      }
+
+      function renderStrip() {
+        const days = weekDays().filter((d) => weekendShown() || !isWeekend(d))
+        document.getElementById('day-strip').innerHTML = days
+          .map((day) => {
+            const total = allEntries().reduce((s, e) => s + pieces(e, [day]).reduce((a, p) => a + p.to - p.from, 0), 0)
+            const pressed = day === state.day
+            return `<button type="button" data-day="${day}" aria-pressed="${pressed}" class="flex min-w-11 flex-1 flex-col items-center rounded-md px-1 py-1 text-xs ${pressed ? 'bg-primary text-primary-foreground' : day === today() ? 'bg-accent' : 'hover:bg-accent'}">
+              <span>${escapeHtml(fmt({ weekday: 'short' }).format(day))}</span>
+              <span class="text-sm font-medium tabular-nums">${fmt({ day: 'numeric' }).format(day)}</span>
+              <span class="tabular-nums ${pressed ? '' : 'text-muted-foreground'}">${total ? hm(total) : '·'}</span>
+            </button>`
+          })
+          .join('')
+      }
+
+      function renderGrid() {
+        const days = shownDays()
+        const now = Date.now()
+        const head = document.getElementById('cal-head')
+        const body = document.getElementById('cal-body')
+        for (const el of [head, body]) el.style.setProperty('--days', days.length)
+        head.innerHTML =
+          `<div></div>` +
+          days
+            .map((day) => {
+              const total = allEntries().reduce((s, e) => s + pieces(e, [day]).reduce((a, p) => a + p.to - p.from, 0), 0)
+              const isToday = day === today()
+              return `<div class="flex items-baseline justify-between gap-1 border-l px-2 py-1.5 ${isToday ? 'bg-accent/60' : ''}">
+                <span class="truncate text-sm ${isToday ? 'font-semibold' : 'font-medium'}">${escapeHtml(fmt({ weekday: 'short', day: 'numeric' }).format(day))}</span>
+                <span class="text-xs text-muted-foreground tabular-nums">${total ? hm(total) : ''}</span>
+              </div>`
+            })
+            .join('')
+        const hours = Array.from({ length: 23 }, (_, i) => i + 1)
+          .map((h) => `<span class="absolute right-2 -translate-y-1/2 text-[11px] text-muted-foreground tabular-nums" style="top: calc(${h} * var(--hour))">${String(h).padStart(2, '0')}:00</span>`)
+          .join('')
+        const unit = px() / 60
+        body.innerHTML =
+          `<div class="relative" aria-hidden="true">${hours}</div>` +
+          days
+            .map((day) => {
+              const next = Z.addDays(day, 1, zone())
+              const future = now >= next ? '' : `<div class="cal-future" style="top: ${Math.max(0, minuteOf(now, day)) * unit}px"></div>`
+              const nowLine = now >= day && now < next ? `<div class="cal-now" style="top: ${minuteOf(now, day) * unit}px"></div>` : ''
+              const blocks = layout(allEntries().flatMap((e) => pieces(e, [day])))
+                .map((p) => block(p, unit))
+                .join('')
+              const draft = state.draft ? ghosts(state.draft.start, state.draft.end, day, unit, { p: state.draft.color }) : ''
+              return `<div class="cal-day" data-day="${day}" ${day === today() ? 'data-today' : ''} aria-label="${escapeHtml(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(day))}">${future}${blocks}${draft}${nowLine}</div>`
+            })
+            .join('')
+      }
+
+      function block(p, unit) {
+        const e = p.entry
+        const proj = project(e.projectId)
+        const top = minuteOf(p.from, p.day) * unit
+        const height = Math.max(((p.to - p.from) / MIN) * unit, 14) - 2
+        const running = !e.stoppedAt
+        const description = e.description || 'No description'
+        const times = `${clock(e.startedAt)}–${running ? 'now' : clock(e.stoppedAt)}`
+        const label = `${description}, ${proj.name}, ${times}, ${hm(endOf(e) - e.startedAt)}${running ? ', running' : ''}`
+        const lines =
+          height >= 44
+            ? `<span class="line-clamp-2 font-medium ${e.description ? '' : 'italic text-muted-foreground'}">${escapeHtml(description)}</span>
+               <span class="truncate text-muted-foreground">${escapeHtml(proj.name)}</span>
+               <span class="mt-auto truncate text-muted-foreground tabular-nums">${running ? `<span class="cal-pulse mr-1 inline-block size-1.5 rounded-full bg-primary align-middle"></span>` : ''}${times} · ${hm(endOf(e) - e.startedAt)}</span>`
+            : `<span class="truncate"><span class="font-medium ${e.description ? '' : 'italic text-muted-foreground'}">${escapeHtml(description)}</span> <span class="text-muted-foreground tabular-nums">${clock(e.startedAt)}</span></span>`
+        const handles = `${p.first ? `<span class="cal-handle -top-0.5" data-handle="start" aria-hidden="true"></span>` : ''}${p.last && !running ? `<span class="cal-handle -bottom-0.5" data-handle="end" aria-hidden="true"></span>` : ''}`
+        const attrs = [height < 22 && 'data-short', proj.muted && 'data-muted', running && 'data-running', state.editing === e.id && 'data-editing', state.drag?.id === e.id && state.drag.active && 'data-dragging']
+          .filter(Boolean)
+          .join(' ')
+        return `<button type="button" class="cal-block" data-entry="${e.id}" ${attrs} aria-label="${escapeHtml(label)}"
+          style="--p: ${proj.color}; top: ${top + 1}px; height: ${height}px; left: calc(${(p.col / p.cols) * 100}% + 2px); width: calc(${100 / p.cols}% - 4px)">${lines}${handles}</button>`
+      }
+
+      // A dashed outline for a slot being dragged or added, with its times, on one day.
+      function ghosts(start, end, day, unit, { p, invalid } = {}) {
+        const next = Z.addDays(day, 1, zone())
+        const from = Math.max(start, day)
+        const to = Math.min(end, next)
+        if (to <= from) return ''
+        const top = minuteOf(from, day) * unit
+        const height = Math.max(((to - from) / MIN) * unit, 14) - 2
+        const text = invalid ?? `${clock(start)}–${clock(end)} · ${hm(end - start)}`
+        return `<div class="cal-ghost" ${invalid ? 'data-invalid' : ''} style="${p ? `--p: ${p};` : ''} top: ${top + 1}px; height: ${height}px; left: 2px; right: 2px">${escapeHtml(text)}</div>`
+      }
+
+      function render() {
+        renderToolbar()
+        renderStrip()
+        renderGrid()
+      }
+
+      // Opens the week at 07:00, or earlier when its first entry starts before.
+      function scrollToMorning() {
+        const starts = allEntries()
+          .flatMap((e) => pieces(e))
+          .map((p) => minuteOf(p.from, p.day))
+        const first = Math.min(7 * 60, ...starts.map((m) => m - 30))
+        // A little above the hour, so its label shows.
+        document.getElementById('cal-scroll').scrollTop = (Math.max(0, first) / 60) * px() - 10
+      }
+
+      // --- Mutations (updateEntry, createEntry, deleteEntry) -----------------------------------
+      const status = (html) => (document.getElementById('cal-status').innerHTML = html)
+
+      function save(apply, undo, message) {
+        if (document.getElementById('fail-saves').checked) {
+          status(`<span class="text-destructive">Couldn't save. The entry is back as it was.</span>`)
+          render()
+          return false
+        }
+        apply()
+        state.undo = undo
+        status(`${escapeHtml(message)}${undo ? ` <button type="button" id="undo" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0">${icon('undo-2')}Undo</button>` : ''}`)
+        render()
+        return true
+      }
+
+      function updateEntry(id, patch, verb = 'Updated') {
+        const e = allEntries().find((x) => x.id === id)
+        const before = { ...e }
+        const ok = save(
+          () => Object.assign(e, patch),
+          () => Object.assign(e, before),
+          `${verb} “${e.description || 'No description'}”: ${fmt({ weekday: 'short' }).format(patch.startedAt ?? e.startedAt)} ${clock(patch.startedAt ?? e.startedAt)}–${e.stoppedAt || patch.stoppedAt ? clock(patch.stoppedAt ?? e.stoppedAt) : 'now'}.`
+        )
+        if (ok) flash(id)
+      }
+
+      function flash(id) {
+        requestAnimationFrame(() => document.querySelectorAll(`[data-entry="${id}"]`).forEach((b) => b.classList.add('cal-flash')))
+      }
+
+      // --- Dragging -----------------------------------------------------------------------------
+      // With a mouse or pen: drag on empty time to add, drag an entry to move it, drag its top or
+      // bottom edge to change its start or end. On touch, a tap adds or edits and dragging
+      // scrolls. Times snap to 15 minutes; nothing ends in the future.
+      function slotAt(x, y) {
+        const cols = [...document.querySelectorAll('#cal-body .cal-day')]
+        const col = cols.find((c) => {
+          const r = c.getBoundingClientRect()
+          return x >= r.left && x < r.right
+        }) ?? (x < cols[0].getBoundingClientRect().left ? cols[0] : cols.at(-1))
+        const r = col.getBoundingClientRect()
+        const minutes = Math.max(0, Math.min(24 * 60, ((y - r.top) / px()) * 60))
+        return { day: Number(col.dataset.day), minutes }
+      }
+      const snap = (m) => Math.round(m / SNAP) * SNAP
+
+      const body = document.getElementById('cal-body')
+      body.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0 || state.draft) return
+        const handle = event.target.closest('[data-handle]')
+        const blockEl = event.target.closest('[data-entry]')
+        const slot = slotAt(event.clientX, event.clientY)
+        const touch = event.pointerType === 'touch'
+        if (blockEl) {
+          const e = allEntries().find((x) => x.id === blockEl.dataset.entry)
+          const mode = handle ? `resize-${handle.dataset.handle}` : 'move'
+          // A running entry keeps its end at now: only its start moves.
+          if (touch || (mode === 'move' && !e.stoppedAt)) return
+          state.drag = { mode, id: e.id, x: event.clientX, y: event.clientY, slot, active: false, start: e.startedAt, end: e.stoppedAt }
+        } else if (event.target.closest('.cal-day')) {
+          state.drag = { mode: 'create', x: event.clientX, y: event.clientY, slot, active: false, touch }
+        } else return
+        // No text selection while dragging; the pointer is captured once the drag starts, so a
+        // plain click still reaches the entry.
+        if (!touch) event.preventDefault()
+      })
+
+      function dragRange(d, slot) {
+        const now = Date.now()
+        if (d.mode === 'create') {
+          const a = timeOn(d.slot.day, snap(d.slot.minutes))
+          const b = timeOn(slot.day === d.slot.day ? slot.day : d.slot.day, snap(slot.minutes))
+          let start = Math.min(a, b)
+          let end = Math.max(a, b)
+          if (end - start < SNAP * MIN) end = start + SNAP * MIN
+          end = Math.min(end, Math.floor(now / (SNAP * MIN)) * SNAP * MIN)
+          return end > start ? { start, end } : { start, end: start, invalid: "Can't add time in the future" }
+        }
+        const delta = snap(slot.minutes - d.slot.minutes) * MIN
+        const days = Math.round((slot.day - d.slot.day) / 86_400_000)
+        if (d.mode === 'move') {
+          const start = Z.addDays(Z.startOfDay(d.start, zone()), days, zone()) + (d.start - Z.startOfDay(d.start, zone())) + delta
+          const end = start + (d.end - d.start)
+          return end > now ? { start, end, invalid: "Can't end in the future" } : { start, end }
+        }
+        const endOrNow = d.end ?? now
+        if (d.mode === 'resize-start') {
+          const start = Math.min(timeOn(Z.startOfDay(d.start, zone()), snap(minuteOf(d.start, Z.startOfDay(d.start, zone())) + delta / MIN)), endOrNow - SNAP * MIN)
+          return { start, end: endOrNow }
+        }
+        const endDay = Z.startOfDay(d.end - 1, zone())
+        const end = Math.max(timeOn(endDay, snap(minuteOf(d.end, endDay) + delta / MIN)), d.start + SNAP * MIN)
+        return end > now ? { start: d.start, end: Math.floor(now / MIN) * MIN } : { start: d.start, end }
+      }
+
+      body.addEventListener('pointermove', (event) => {
+        const d = state.drag
+        if (!d || d.touch) return
+        if (!d.active && Math.hypot(event.clientX - d.x, event.clientY - d.y) < 4) return
+        if (!d.active) body.setPointerCapture(event.pointerId)
+        d.active = true
+        d.range = dragRange(d, slotAt(event.clientX, event.clientY))
+        drawDrag()
+      })
+
+      function drawDrag() {
+        const d = state.drag
+        const unit = px() / 60
+        document.querySelectorAll('#cal-body .cal-ghost:not([data-draft])').forEach((g) => g.remove())
+        const color = d.id ? project(allEntries().find((x) => x.id === d.id).projectId).color : undefined
+        document.querySelectorAll('#cal-body .cal-day').forEach((col) => {
+          col.insertAdjacentHTML('beforeend', ghosts(d.range.start, Math.max(d.range.end, d.range.start + SNAP * MIN), Number(col.dataset.day), unit, { p: color, invalid: d.range.invalid }))
+        })
+        if (d.id) document.querySelectorAll(`[data-entry="${d.id}"]`).forEach((b) => b.setAttribute('data-dragging', ''))
+      }
+
+      body.addEventListener('pointerup', (event) => {
+        const d = state.drag
+        state.drag = null
+        if (!d) return
+        if (!d.active) {
+          if (d.mode === 'create') {
+            const start = timeOn(d.slot.day, Math.floor(d.slot.minutes / SNAP) * SNAP)
+            const end = Math.min(start + CLICK_MINUTES * MIN, Math.floor(Date.now() / MIN) * MIN)
+            if (end <= start) {
+              status("You can add time up to now.")
+              return
+            }
+            openNew(start, end)
+          }
+          // A click on an entry opens it through the button's click.
+          return
+        }
+        const { start, end, invalid } = d.range
+        if (invalid) {
+          status(`<span class="text-destructive">${escapeHtml(invalid)}. Nothing changed.</span>`)
+          render()
+        } else if (d.mode === 'create') openNew(start, end)
+        else {
+          const e = allEntries().find((x) => x.id === d.id)
+          const patch = d.mode === 'resize-start' || !e.stoppedAt ? { startedAt: start } : { startedAt: start, stoppedAt: end }
+          if (patch.startedAt === e.startedAt && (patch.stoppedAt ?? e.stoppedAt) === e.stoppedAt) render()
+          else updateEntry(d.id, patch, d.mode === 'move' ? 'Moved' : 'Changed')
+        }
+        // The click that follows a drag isn't an edit.
+        suppressClick = true
+        setTimeout(() => (suppressClick = false))
+      })
+      body.addEventListener('pointercancel', () => {
+        state.drag = null
+        render()
+      })
+      let suppressClick = false
+
+      body.addEventListener('click', (event) => {
+        const b = event.target.closest('[data-entry]')
+        if (!b || suppressClick) return
+        openEdit(b.dataset.entry, b)
+      })
+
+      // With the keyboard: on a focused entry, Alt+Up and Alt+Down move it by 15 minutes and
+      // Alt+Left and Alt+Right by a day; with Shift, Alt+Up and Alt+Down change its end. The
+      // running entry's start moves; its end stays at now. Focus stays on the entry.
+      body.addEventListener('keydown', (event) => {
+        const b = event.target.closest('[data-entry]')
+        const step = { ArrowUp: -SNAP * MIN, ArrowDown: SNAP * MIN }[event.key]
+        const days = { ArrowLeft: -1, ArrowRight: 1 }[event.key]
+        if (!b || !event.altKey || (step === undefined && days === undefined)) return
+        // Alt+Left is the browser's Back on Windows and Linux.
+        event.preventDefault()
+        const e = allEntries().find((x) => x.id === b.dataset.entry)
+        const now = Date.now()
+        let patch
+        if (event.shiftKey) {
+          if (!step || !e.stoppedAt) return
+          patch = { stoppedAt: Math.max(e.stoppedAt + step, e.startedAt + SNAP * MIN) }
+        } else if (!e.stoppedAt) {
+          if (!step) return
+          patch = { startedAt: Math.min(e.startedAt + step, now - MIN) }
+        } else {
+          const shift = step ?? Z.addDays(Z.startOfDay(e.startedAt, zone()), days, zone()) - Z.startOfDay(e.startedAt, zone())
+          patch = { startedAt: e.startedAt + shift, stoppedAt: e.stoppedAt + shift }
+        }
+        if ((patch.stoppedAt ?? e.stoppedAt ?? 0) > now) {
+          status(`<span class="text-destructive">Can't end in the future. Nothing changed.</span>`)
+          return
+        }
+        // The view follows the entry to its day, and to its week past the shown ones.
+        const start = patch.startedAt ?? e.startedAt
+        state.week = Z.startOfWeek(start, zone(), weekStartSetting())
+        state.day = Z.startOfDay(start, zone())
+        updateEntry(e.id, patch, event.shiftKey ? 'Changed' : 'Moved')
+        document.querySelector(`[data-entry="${e.id}"]`)?.focus()
+      })
+
+      // --- The entry popover -------------------------------------------------------------------
+      const popover = document.getElementById('entry-popover')
+      const f = (id) => document.getElementById(id)
+      let returnFocus = null
+
+      function projectOptions(currentId) {
+        const list = [NO_PROJECT, ...projects.filter((p) => mine.includes(p.id))]
+        if (!list.some((p) => p.id === currentId)) {
+          const current = project(currentId)
+          list.push({ ...current, name: current.archivedAt ? `${current.name} (archived)` : current.name })
+        }
+        return list.map((p) => `<option value="${p.id}"${p.id === currentId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')
+      }
+
+      function fillForm(e, isNew) {
+        f('entry-title').textContent = isNew ? 'Add entry' : e.stoppedAt ? 'Edit entry' : 'Running entry'
+        f('edit-description').value = e.description ?? ''
+        f('edit-project').innerHTML = projectOptions(e.projectId ?? 'none')
+        f('edit-date').value = dateValue(e.startedAt)
+        f('edit-start').value = clock(e.startedAt)
+        f('edit-end').value = e.stoppedAt ? clock(e.stoppedAt) : ''
+        f('edit-end').disabled = !e.stoppedAt
+        f('edit-end-field').hidden = !e.stoppedAt
+        f('edit-delete').hidden = isNew || !e.stoppedAt
+        f('edit-error').hidden = true
+        summarize()
+      }
+
+      function openNew(start, end) {
+        const last = [...state.entries].filter((e) => e.stoppedAt <= start).sort((a, b) => b.stoppedAt - a.stoppedAt)[0]
+        state.draft = { start, end, projectId: last?.projectId ?? 'none', color: project(last?.projectId ?? 'none').color }
+        state.editing = null
+        render()
+        fillForm({ description: '', projectId: state.draft.projectId, startedAt: start, stoppedAt: end }, true)
+        const ghost = document.querySelector('#cal-body .cal-ghost')
+        ghost?.setAttribute('data-draft', '')
+        show(ghost)
+      }
+
+      function openEdit(id, anchor) {
+        const e = allEntries().find((x) => x.id === id)
+        state.editing = id
+        state.draft = null
+        returnFocus = anchor
+        render()
+        fillForm(e, false)
+        show(document.querySelector(`[data-entry="${id}"]`))
+      }
+
+      // Beside the anchor where there's room, else under it; kept inside the window.
+      function show(anchor) {
+        popover.showPopover()
+        const r = anchor?.getBoundingClientRect() ?? document.getElementById('add-entry').getBoundingClientRect()
+        const w = popover.offsetWidth
+        const h = popover.offsetHeight
+        let left = r.right + 8
+        let top = r.top
+        if (left + w > innerWidth - 8) left = r.left - 8 - w
+        if (left < 8) {
+          left = Math.max(8, Math.min(r.left, innerWidth - w - 8))
+          top = r.bottom + 8
+        }
+        popover.style.inset = 'auto'
+        popover.style.left = `${left}px`
+        popover.style.top = `${Math.max(8, Math.min(top, innerHeight - h - 8))}px`
+        f('edit-description').focus()
+      }
+
+      // Start and end on the date; an end at or before the start is the next day.
+      function formRange() {
+        const [y, m, d] = f('edit-date').value.split('-').map(Number)
+        const [sh, sm] = f('edit-start').value.split(':').map(Number)
+        const start = Z.zonedTime(y, m, d, sh, sm, zone())
+        if (f('edit-end').disabled) return { start, end: null }
+        const [eh, em] = f('edit-end').value.split(':').map(Number)
+        let end = Z.zonedTime(y, m, d, eh, em, zone())
+        const nextDay = end <= start
+        if (nextDay) end = Z.zonedTime(y, m, d + 1, eh, em, zone())
+        return { start, end, nextDay }
+      }
+
+      function validate() {
+        if (!f('edit-date').value || !f('edit-start').value || (!f('edit-end').disabled && !f('edit-end').value)) return 'Enter a date and times.'
+        const { start, end } = formRange()
+        if ((end ?? start) > Date.now()) return end ? "The end can't be in the future." : "The start can't be in the future."
+        return null
+      }
+
+      function summarize() {
+        if (validate()) {
+          f('edit-summary').textContent = ''
+          return
+        }
+        const { start, end, nextDay } = formRange()
+        f('edit-summary').textContent = end ? `${hm(end - start)}${nextDay ? ', ending the next day' : ''}` : `Running for ${hm(Date.now() - start)}`
+      }
+      popover.addEventListener('input', () => {
+        summarize()
+        if (!f('edit-error').hidden) showError(validate())
+      })
+      function showError(message) {
+        f('edit-error').hidden = !message
+        f('edit-error').textContent = message ?? ''
+      }
+
+      f('entry-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const error = validate()
+        if (error) return showError(error)
+        const { start, end } = formRange()
+        const fields = { description: f('edit-description').value.trim(), projectId: f('edit-project').value }
+        if (state.draft) {
+          const e = { id: `e${nextId++}`, ...fields, startedAt: start, stoppedAt: end }
+          state.draft = null
+          const ok = save(
+            () => state.entries.push(e),
+            () => (state.entries = state.entries.filter((x) => x.id !== e.id)),
+            `Added “${e.description || 'No description'}”: ${fmt({ weekday: 'short' }).format(start)} ${clock(start)}–${clock(end)}.`
+          )
+          if (ok) flash(e.id)
+        } else {
+          updateEntry(state.editing, { ...fields, startedAt: start, ...(end ? { stoppedAt: end } : {}) })
+          if (state.running?.id === state.editing) renderTimer()
+        }
+        popover.hidePopover()
+      })
+      popover.querySelector('[data-entry-cancel]').addEventListener('click', () => popover.hidePopover())
+      f('edit-delete').addEventListener('click', () => {
+        const e = state.entries.find((x) => x.id === state.editing)
+        const index = state.entries.indexOf(e)
+        popover.hidePopover()
+        save(
+          () => state.entries.splice(index, 1),
+          () => state.entries.splice(index, 0, e),
+          `Deleted “${e.description || 'No description'}”.`
+        )
+      })
+      popover.addEventListener('toggle', (event) => {
+        if (event.newState !== 'closed') return
+        const edited = state.editing
+        state.draft = null
+        state.editing = null
+        render()
+        const target = edited && document.querySelector(`[data-entry="${edited}"]`)
+        ;(target ?? returnFocus)?.focus?.()
+        returnFocus = null
+      })
+
+      // --- Timer bar ----------------------------------------------------------------------------
+      function renderTimer() {
+        const r = state.running
+        f('project').innerHTML = projectOptions(r?.projectId ?? 'p1')
+        f('description').value = r?.description ?? f('description').value
+        f('toggle').innerHTML = r ? `${icon('square')}Stop` : `${icon('play')}Start`
+        f('toggle').dataset.variant = r ? 'destructive' : 'default'
+        tick()
+      }
+      function tick() {
+        const ms = state.running ? Date.now() - state.running.startedAt : 0
+        const s = Math.floor(ms / 1000)
+        f('elapsed').textContent = `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+      }
+      f('toggle').addEventListener('click', () => {
+        if (state.running) {
+          const e = { ...state.running, stoppedAt: Date.now() }
+          state.entries.push(e)
+          state.running = null
+          f('description').value = ''
+        } else {
+          state.running = { id: `e${nextId++}`, description: f('description').value.trim(), projectId: f('project').value, startedAt: Date.now() }
+        }
+        renderTimer()
+        render()
+      })
+      for (const [id, key] of [['description', 'description'], ['project', 'projectId']])
+        f(id).addEventListener('change', (event) => {
+          if (!state.running) return
+          state.running[key] = key === 'description' ? event.currentTarget.value.trim() : event.currentTarget.value
+          render()
+        })
+      setInterval(tick, 1000)
+      // The running block and the now line move each half minute, unless something is held.
+      setInterval(() => !state.drag && !popover.matches(':popover-open') && render(), 30_000)
+
+      // --- Controls -----------------------------------------------------------------------------
+      function goToWeek(week, day) {
+        state.week = week
+        state.day = day ?? (narrow.matches ? (week === Z.startOfWeek(Date.now(), zone(), weekStartSetting()) ? today() : week) : state.day)
+        state.undo = null
+        status('')
+        render()
+        scrollToMorning()
+      }
+      f('prev').addEventListener('click', () => goToWeek(Z.addDays(state.week, -7, zone())))
+      f('next').addEventListener('click', () => goToWeek(Z.addDays(state.week, 7, zone())))
+      f('today').addEventListener('click', () => goToWeek(Z.startOfWeek(Date.now(), zone(), weekStartSetting()), today()))
+      f('weekend').addEventListener('click', () => {
+        appFrame.settings.set({ calendarWeekend: !appFrame.settings.get().calendarWeekend })
+        if (!weekendShown() && isWeekend(state.day)) state.day = weekDays().find((d) => !isWeekend(d))
+        render()
+      })
+      f('day-strip').addEventListener('click', (event) => {
+        const b = event.target.closest('[data-day]')
+        if (!b) return
+        state.day = Number(b.dataset.day)
+        render()
+      })
+      f('add-entry').addEventListener('click', () => {
+        const last = [...state.entries].filter((e) => e.stoppedAt <= Date.now()).sort((a, b) => b.stoppedAt - a.stoppedAt)[0]
+        // Like the list's Add entry: from the end of today's last entry, for half an hour.
+        const start = last && last.stoppedAt >= today() ? last.stoppedAt : Math.floor((Date.now() - HOUR) / (SNAP * MIN)) * SNAP * MIN
+        const end = Math.min(start + CLICK_MINUTES * MIN, Math.floor(Date.now() / MIN) * MIN)
+        const week = Z.startOfWeek(start, zone(), weekStartSetting())
+        if (week !== state.week || (narrow.matches && state.day !== Z.startOfDay(start, zone()))) goToWeek(week, Z.startOfDay(start, zone()))
+        returnFocus = f('add-entry')
+        openNew(start, end)
+      })
+      document.querySelectorAll('[data-view]').forEach((b) =>
+        b.addEventListener('click', () => {
+          if (b.dataset.view === 'calendar') return
+          appFrame.settings.set({ timerView: 'list' })
+          location.href = appFrame.link('timer.html')
+        })
+      )
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('#undo') && state.undo) {
+          const undo = state.undo
+          state.undo = null
+          undo()
+          status('Undone.')
+          render()
+        }
+      })
+      f('fixture').addEventListener('change', (event) => loadFixture(event.currentTarget.value))
+      narrow.addEventListener('change', () => {
+        if (!weekDays().includes(state.day)) state.day = state.week
+        render()
+      })
+      appFrame.on('settings', () => {
+        const week = Z.startOfWeek(state.week + 12 * HOUR, zone(), weekStartSetting())
+        if (week !== state.week) goToWeek(week)
+        else render()
+      })
+
+      function loadFixture(name) {
+        state.fixture = name
+        const data = fixtures[name]()
+        state.entries = data.entries
+        state.running = data.running
+        f('description').value = ''
+        renderTimer()
+        goToWeek(Z.startOfWeek(Date.now(), zone(), weekStartSetting()), today())
+      }
+
+      ui.ready.then(() => {
+        renderHeader()
+        loadFixture('running')
+      })
+    </script>
+  </body>
+</html>

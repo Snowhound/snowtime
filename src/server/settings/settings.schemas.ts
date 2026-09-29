@@ -38,6 +38,9 @@ export const THEMES = ['system', 'light', 'dark'] as const
 export const Theme = v.picklist(THEMES)
 export const TIMER_LAYOUTS = ['bar', 'focus', 'table'] as const
 const TimerLayout = v.picklist(TIMER_LAYOUTS)
+// The Timer page's entries as a list or a week calendar.
+export const TIMER_VIEWS = ['list', 'calendar'] as const
+const TimerView = v.picklist(TIMER_VIEWS)
 // The brand concepts in src/lib/app-icon.ts; '02' is the default.
 export const AppIcon = v.picklist(APP_ICON_IDS)
 // The seasonal scene (prototypes/README.md, "Seasonal scene in the app"): the image collection,
@@ -85,6 +88,8 @@ export const UpdateSettingsInput = v.object({
   showSummary: v.optional(v.boolean()),
   compactRows: v.optional(v.boolean()),
   wideTimer: v.optional(v.boolean()),
+  timerView: v.optional(TimerView),
+  calendarWeekend: v.optional(v.boolean()),
   appIcon: v.optional(AppIcon),
   sceneCollection: v.optional(SceneCollection),
   scenePin: v.optional(ScenePin),

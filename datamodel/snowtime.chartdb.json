@@ -2134,6 +2134,40 @@
           "scale": null,
           "default": null,
           "comments": "An image id in scene_collection, or null to follow the calendar. The season of the image picks the tagline. Validated in the app, no CHECK."
+        },
+        {
+          "id": "t10f27",
+          "name": "timer_view",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "'list'",
+          "comments": "list, calendar, default list. The Timer page shows entries as a list or a week calendar. Validated in the app, no CHECK."
+        },
+        {
+          "id": "t10f28",
+          "name": "calendar_weekend",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comments": "Boolean 0/1 (CHECK), default 0. The calendar shows Saturday and Sunday even when they have no time."
         }
       ],
       "indexes": [],

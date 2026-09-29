@@ -736,7 +736,8 @@ user-selectable options.
 - **Table**: dense table with day subtotal rows; scrolls horizontally inside its container on
   narrow screens.
 
-The settings button opens a **View** popover: layout, whether the summary panel (today / this
+The **List | Calendar** switch before Add entry opens the week calendar,
+[calendar.html](calendar.html). The settings button opens a **View** popover: layout, whether the summary panel (today / this
 week, per-project bars) is shown, and Wide page, plus a link to Settings. The theme is in the header's
 Appearance popover.
 These are user settings, saved through the app frame (`user_settings` in the app).
@@ -867,6 +868,63 @@ all three layouts: no horizontal page overflow, detection on Enter, blur, and Sa
 start, in brackets, mid-sentence, and in pasted links, a key at the start replacing the ticket,
 standards left as text, × turning a chip back into text without it being found again, the
 ticket carried by recent work, links from the Issue links setting, and no browser errors.
+
+### [calendar.html](calendar.html) — Timer calendar
+
+Decision: how a user sees and adds their own time as a week calendar (task 069), like
+booking a slot in a clinic's calendar. The Timer page has a **List | Calendar** switch before
+Add entry, in both `timer.html` and `calendar.html`. The choice is a user setting
+(`timerView` in the prototype), so the Timer page opens the way the user left it. The timer
+bar stays on top; the calendar takes the place of the entry list and the summary.
+
+- **Week**: Monday to Friday by the week-start setting, one column per day with its total, and
+  the week's total in the toolbar. **Weekend** shows Saturday and Sunday. It is a user setting
+  (`calendarWeekend`), and a week with weekend time shows them anyway, with the toggle pressed
+  and disabled. Previous, next, and Today move by week.
+- **Grid**: 48 px per hour, snapping to 15 minutes. The body scrolls inside the card and
+  opens at 07:00, or half an hour before the week's first entry when that is earlier. Today's
+  column is tinted and has a now line. Time after now is hatched, since entries can't end in
+  the future.
+- **Entries**: a block per entry in a tint of its project's color, with a bar in the full
+  color; no project and unavailable projects are muted with a dashed bar. Tall blocks show the
+  description, the project, and the times with the duration; short ones one line with the
+  start. Entries that overlap share the width. An entry that crosses midnight shows a piece on
+  each day. The running entry grows to now with a pulsing dot.
+- **Adding**: drag on empty time for a slot, or click for the half-hour cell clicked. The entry popover opens
+  beside the slot with the date and times filled in and the project of the entry before it.
+  Add entry opens it for half an hour from the end of today's last entry.
+- **Changing**: drag an entry to move it within or across days; drag its top or bottom edge
+  to change its start or end. A drop that would end in the future shows red and changes
+  nothing. The running entry's start can move; its end stays at now. Each change is one
+  `updateEntry`, and the status line under the grid names it with an **Undo** button,
+  because a drag is easy to make by accident.
+- **Editing**: a click, or Enter on a focused block, opens the same popover as Add entry with
+  Delete. Escape and a click outside close it and return focus to the block.
+- **Touch**: a tap adds 30 minutes or opens an entry; dragging scrolls. The edge handles
+  don't show on coarse pointers. Moving by touch needs a long press, left for the app.
+- **Below 640 px**: one day at a time, picked from a strip of the week's days with their
+  totals.
+
+Fixtures: running, idle, overlaps and midnight (last week has an entry from 22:30 to 01:20),
+long content, and empty; the running fixture's last week has a Saturday entry, so its weekend
+shows. Checked on 2026-09-29 in Chrome at 1440, 850, and 390 px, light and dark, with every
+fixture: no horizontal page scroll and no console errors.
+
+Decided on 2026-09-29:
+
+- A click on empty time adds 30 minutes rather than opening an empty form: the half-hour
+  cell clicked, as the grid's lines draw it, not the 30 minutes from the quarter hour
+  clicked. A click within 4 px above a line counts as the cell below it (changed in the app
+  on 2026-09-29; the prototype still starts at the quarter hour).
+- The calendar has no summary panel; its day and week totals take its place.
+- The List | Calendar switch leads the header's buttons, with more space before Add entry
+  and the settings button. Beside the title, the seasonal tagline under it left the switch
+  in the middle of the row. It shows the page's content one way or the other, so it
+  doesn't go in the settings popover.
+- Keyboard: on a focused entry, Alt+Up and Alt+Down move it by 15 minutes and Alt+Left and
+  Alt+Right by a day; Shift+Alt+Up and Shift+Alt+Down change its end. They go through
+  `updateEntry` with Undo like a drag, and focus stays on the entry. Alt+Left is the
+  browser's Back on Windows and Linux, so the page prevents it on an entry.
 
 ### [auth.html](auth.html) — Sign-in flows
 

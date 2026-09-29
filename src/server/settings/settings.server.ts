@@ -17,6 +17,8 @@ const columns = {
   showSummary: userSettings.showSummary,
   compactRows: userSettings.compactRows,
   wideTimer: userSettings.wideTimer,
+  timerView: userSettings.timerView,
+  calendarWeekend: userSettings.calendarWeekend,
   appIcon: userSettings.appIcon,
   sceneCollection: userSettings.sceneCollection,
   scenePin: userSettings.scenePin,

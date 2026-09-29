@@ -195,6 +195,10 @@ export const tables: Record<string, TableNotes> = {
         'EE, US, other, or null to guess from time_zone (src/lib/holidays/region.ts). Whose public holidays the taglines skip. Validated in the app, no CHECK.',
       wide_timer:
         'Boolean 0/1 (CHECK), default 0. Wide page: the timer page up to 88rem, with a Ticket column in the rows.',
+      timer_view:
+        'list, calendar, default list. The Timer page shows entries as a list or a week calendar. Validated in the app, no CHECK.',
+      calendar_weekend:
+        'Boolean 0/1 (CHECK), default 0. The calendar shows Saturday and Sunday even when they have no time.',
     },
   },
   project: {

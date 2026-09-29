@@ -1,7 +1,11 @@
 // The timer view (prototypes/timer.html): the timer, the user's recent entries by day, the
-// summary, and the entry popover, in the Bar, Focus, or Table layout. Every write is
-// optimistic (queries.ts); its error shows under the edited row or above the timer.
+// summary, and the entry popover, in the Bar, Focus, or Table layout; or, with the List |
+// Calendar switch on Calendar, the timer over the week calendar (calendar/timer-calendar.tsx).
+// Every write is optimistic (queries.ts); its error shows under the edited row or above the
+// timer.
 import { keepPreviousData, useQuery } from '@tanstack/solid-query'
+import CalendarDaysIcon from 'lucide-solid/icons/calendar-days'
+import ListIcon from 'lucide-solid/icons/list'
 import PlusIcon from 'lucide-solid/icons/plus'
 import {
   Match,
@@ -16,15 +20,17 @@ import {
 import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
 import { Button } from '~/components/ui/button'
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { addDays, localDate, runningMs, startOfDay } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
-import type { Settings } from '~/lib/queries/settings'
+import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import { type CalendarControls, TimerCalendar } from './calendar/timer-calendar'
 import { RECENT_DAYS, groupByDay, recentRange, recentWork, summarize } from './entries'
 import type { EntryPatch } from './entry-fields'
 import { EmptyState, EntryList } from './entry-list'
@@ -73,6 +79,15 @@ export function TimerView(props: {
   function wide() {
     return props.settings.wideTimer
   }
+  function calendar() {
+    return props.settings.timerView === 'calendar'
+  }
+  // The calendar's day and week totals take the summary's place.
+  function summaryShown() {
+    return props.settings.showSummary && !calendar()
+  }
+  const saveSettings = useUpdateSettings()
+  let calendarControls: CalendarControls | undefined
 
   const running = useQuery(() => runningTimerQuery)
 
@@ -309,14 +324,41 @@ export function TimerView(props: {
 
   return (
     <div class={cn('mx-auto grid w-full gap-4', wide() ? 'max-w-[88rem]' : 'max-w-6xl')}>
-      <div class="relative flex items-center justify-between gap-4">
+      <div class="relative flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <PageTitle title={m.nav_timer()} />
         <div class="flex items-center gap-2">
+          {/* The view switch leads the actions, set apart from them. */}
+          <ToggleGroup
+            variant="outline"
+            class="mr-2"
+            aria-label={m.timer_view_as()}
+            value={props.settings.timerView}
+            onChange={(value) =>
+              value &&
+              saveSettings.mutate(
+                { timerView: value as Settings['timerView'] },
+                { onError: showError },
+              )
+            }
+          >
+            <ToggleGroupItem value="list" class="gap-1.5">
+              <ListIcon aria-hidden="true" class="size-4" />
+              {m.timer_view_list()}
+            </ToggleGroupItem>
+            <ToggleGroupItem value="calendar" class="gap-1.5">
+              <CalendarDaysIcon aria-hidden="true" class="size-4" />
+              {m.timer_view_calendar()}
+            </ToggleGroupItem>
+          </ToggleGroup>
           <Button
             variant="secondary"
             class="border-input text-primary h-9 border px-3"
             data-entry-trigger
-            onClick={(event) => toggleEditor({ kind: 'new' }, event.currentTarget)}
+            onClick={(event) =>
+              calendar()
+                ? calendarControls?.addEntry(event.currentTarget)
+                : toggleEditor({ kind: 'new' }, event.currentTarget)
+            }
           >
             <PlusIcon aria-hidden="true" />
             {m.timer_add_entry()}
@@ -330,8 +372,8 @@ export function TimerView(props: {
         class={cn(
           'grid grid-cols-[minmax(0,1fr)] gap-x-6',
           props.settings.compactRows ? 'gap-y-4' : 'gap-y-6',
-          props.settings.showSummary && 'lg:grid-cols-[minmax(0,1fr)_auto]',
-          props.settings.showSummary && !wide() && 'lg:grid-rows-[auto_1fr]',
+          summaryShown() && 'lg:grid-cols-[minmax(0,1fr)_auto]',
+          summaryShown() && !wide() && 'lg:grid-rows-[auto_1fr]',
         )}
       >
         <div
@@ -366,62 +408,86 @@ export function TimerView(props: {
             !wide() && 'lg:col-start-1 lg:row-start-2',
           )}
         >
-          <Show when={layout() === 'focus' && entries.data}>
-            <RecentWork
-              entries={recentWork(stopped())}
-              projects={projects.data ?? []}
-              onContinue={listProps.onContinue}
-            />
-          </Show>
-          <section class="flex min-w-0 flex-col gap-4" aria-label={m.timer_entries()}>
-            <Show when={entries.data}>
-              <Show when={groups().length > 0} fallback={<EmptyState />}>
-                <Switch>
-                  <Match when={layout() === 'table'}>
-                    <EntryTable groups={groups()} {...listProps} />
-                  </Match>
-                  <Match when={layout() !== 'table'}>
-                    <EntryList groups={shownGroups()} focus={layout() === 'focus'} {...listProps} />
-                  </Match>
-                </Switch>
-              </Show>
-              <Show when={layout() !== 'focus' && firstEntry.isSuccess}>
-                <div class="flex justify-center">
-                  <Show
-                    when={hasEarlier()}
-                    fallback={
-                      <Show when={groups().length > 0 && allTime()}>
-                        {(text) => <p class="page-note text-muted-foreground text-sm">{text()}</p>}
-                      </Show>
-                    }
-                  >
-                    <Show
-                      when={days() < MAX_DAYS}
-                      fallback={
-                        <p class="page-note text-muted-foreground text-sm">
-                          {m.timer_earlier_in_reports()}
-                        </p>
-                      }
-                    >
-                      <div class="flex w-full flex-col items-center gap-3">
-                        <ErrorAlert message={earlierError()} />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={entries.isPlaceholderData}
-                          onClick={showEarlier}
+          <Show
+            when={calendar()}
+            fallback={
+              <>
+                <Show when={layout() === 'focus' && entries.data}>
+                  <RecentWork
+                    entries={recentWork(stopped())}
+                    projects={projects.data ?? []}
+                    onContinue={listProps.onContinue}
+                  />
+                </Show>
+                <section class="flex min-w-0 flex-col gap-4" aria-label={m.timer_entries()}>
+                  <Show when={entries.data}>
+                    <Show when={groups().length > 0} fallback={<EmptyState />}>
+                      <Switch>
+                        <Match when={layout() === 'table'}>
+                          <EntryTable groups={groups()} {...listProps} />
+                        </Match>
+                        <Match when={layout() !== 'table'}>
+                          <EntryList
+                            groups={shownGroups()}
+                            focus={layout() === 'focus'}
+                            {...listProps}
+                          />
+                        </Match>
+                      </Switch>
+                    </Show>
+                    <Show when={layout() !== 'focus' && firstEntry.isSuccess}>
+                      <div class="flex justify-center">
+                        <Show
+                          when={hasEarlier()}
+                          fallback={
+                            <Show when={groups().length > 0 && allTime()}>
+                              {(text) => (
+                                <p class="page-note text-muted-foreground text-sm">{text()}</p>
+                              )}
+                            </Show>
+                          }
                         >
-                          {m.timer_show_earlier()}
-                        </Button>
+                          <Show
+                            when={days() < MAX_DAYS}
+                            fallback={
+                              <p class="page-note text-muted-foreground text-sm">
+                                {m.timer_earlier_in_reports()}
+                              </p>
+                            }
+                          >
+                            <div class="flex w-full flex-col items-center gap-3">
+                              <ErrorAlert message={earlierError()} />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={entries.isPlaceholderData}
+                                onClick={showEarlier}
+                              >
+                                {m.timer_show_earlier()}
+                              </Button>
+                            </div>
+                          </Show>
+                        </Show>
                       </div>
                     </Show>
                   </Show>
-                </div>
-              </Show>
-            </Show>
-          </section>
+                </section>
+              </>
+            }
+          >
+            <TimerCalendar
+              organizationId={props.organizationId}
+              userId={props.userId}
+              settings={props.settings}
+              projects={projects.data ?? []}
+              running={running.data ?? null}
+              recent={stopped()}
+              issueLinks={props.issueLinks}
+              controls={(controls) => (calendarControls = controls)}
+            />
+          </Show>
         </div>
-        <Show when={props.settings.showSummary && entries.data}>
+        <Show when={summaryShown() && entries.data}>
           <div
             class={cn('lg:self-start', !wide() && 'lg:col-start-2 lg:row-span-2 lg:row-start-1')}
           >

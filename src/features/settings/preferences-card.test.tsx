@@ -18,6 +18,8 @@ const SETTINGS: Settings = {
   showSummary: true,
   compactRows: false,
   wideTimer: false,
+  timerView: 'list',
+  calendarWeekend: false,
   appIcon: '02',
   sceneCollection: 'mountains',
   scenePin: null,

@@ -664,3 +664,113 @@ summary,
 [role='option']:not([aria-disabled='true']) {
   cursor: pointer;
 }
+
+/* The Timer calendar (src/features/timer/calendar/, prototypes/calendar.html). --hour is the
+   height of an hour, set from HOUR_PX. The header and the body share their columns, and both
+   reserve the scrollbar's gutter so they line up. */
+.cal-cols {
+  display: grid;
+  grid-template-columns: 3.5rem repeat(var(--days), minmax(0, 1fr));
+  scrollbar-gutter: stable;
+}
+.cal-day {
+  position: relative;
+  border-left-width: 1px;
+  height: calc(24 * var(--hour));
+  background-image:
+    linear-gradient(to bottom, var(--border) 1px, transparent 1px),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--border) 45%, transparent) 1px,
+      transparent 1px
+    );
+  background-size:
+    100% var(--hour),
+    100% var(--hour);
+  background-position:
+    0 0,
+    0 calc(var(--hour) / 2);
+}
+.cal-day[data-today] {
+  background-color: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+/* Time that hasn't happened yet: entries can't end there. */
+.cal-future {
+  @apply pointer-events-none absolute inset-x-0 bottom-0;
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--muted-foreground) 10%, transparent) 0 6px,
+    transparent 6px 12px
+  );
+}
+.cal-now {
+  @apply bg-primary pointer-events-none absolute inset-x-0 z-20 h-0.5;
+}
+.cal-now::before {
+  content: '';
+  @apply bg-primary absolute -top-[3px] -left-1 size-2 rounded-full;
+}
+/* An entry: a tint of its project's color (--p) with a bar in the full color. */
+.cal-block {
+  @apply text-foreground absolute z-10 flex flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight outline-none select-none;
+  border-color: var(--p);
+  background-color: color-mix(in oklab, var(--p) 18%, var(--card));
+  touch-action: pan-y;
+}
+.cal-block:hover {
+  background-color: color-mix(in oklab, var(--p) 26%, var(--card));
+}
+.cal-block:focus-visible,
+.cal-block[data-editing] {
+  @apply ring-ring ring-offset-background ring-2 ring-offset-1;
+}
+/* Up to 20 minutes: one tight line, centered. */
+.cal-block[data-short] {
+  @apply justify-center py-0 text-[11px] leading-none;
+}
+.cal-block[data-muted] {
+  @apply border-dashed;
+}
+.cal-block[data-dragging] {
+  @apply opacity-40;
+}
+.cal-block[data-running] {
+  background-image: linear-gradient(
+    to bottom,
+    transparent 60%,
+    color-mix(in oklab, var(--p) 22%, transparent)
+  );
+}
+/* The edges resize the entry with a mouse or pen. */
+.cal-handle {
+  @apply absolute inset-x-0 z-10 h-1.5 cursor-ns-resize;
+}
+@media (pointer: coarse) {
+  .cal-handle {
+    display: none;
+  }
+}
+.cal-ghost {
+  @apply pointer-events-none absolute z-30 overflow-hidden rounded-md border-2 border-dashed px-1.5 py-0.5 text-xs font-medium tabular-nums;
+  border-color: var(--p, var(--ring));
+  background-color: color-mix(in oklab, var(--p, var(--ring)) 14%, var(--card));
+}
+.cal-ghost[data-invalid] {
+  @apply border-destructive text-destructive;
+}
+@keyframes cal-flash {
+  from {
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+}
+.cal-flash {
+  animation: cal-flash 1.4s ease-out;
+}
+@keyframes cal-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.cal-pulse {
+  animation: cal-pulse 1.6s ease-in-out infinite;
+}

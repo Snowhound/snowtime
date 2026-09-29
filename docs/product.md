@@ -19,7 +19,7 @@ companies can use it too.
 | Auth     | Sign up / sign in via Better Auth                                                                                                |
 | Tenancy  | Organizations, teams, members, invitations; org switcher                                                                         |
 | Timer    | Start / stop a single running timer with a description                                                                           |
-| Entries  | List, edit, delete, and manually add past entries                                                                                |
+| Entries  | List, edit, delete, and manually add past entries, in a list by day or a week calendar                                           |
 | Projects | Org-level projects, optionally assigned to teams; CRUD                                                                           |
 | Reports  | Totals per day / week / project / team / member, user's zone; their entries, read-only; CSV and XLSX export of a report as shown |
 | Settings | Time zone, week start, and country, whose public holidays the taglines don't count as missing hours                              |

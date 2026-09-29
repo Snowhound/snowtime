@@ -23,6 +23,7 @@ import {
   THEMES,
   TIME_FORMATS,
   TIMER_LAYOUTS,
+  TIMER_VIEWS,
 } from '~/server/settings/settings.schemas'
 import { currentActor } from './actor'
 
@@ -330,6 +331,10 @@ export const userSettings = sqliteTable(
       .notNull(),
     // Null: the calendar picks the collection's image.
     scenePin: text('scene_pin', { enum: IMAGE_IDS }),
+    timerView: text('timer_view', { enum: TIMER_VIEWS }).default('list').notNull(),
+    calendarWeekend: integer('calendar_weekend', { mode: 'boolean' })
+      .default(sql`0`)
+      .notNull(),
   },
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),
@@ -340,6 +345,7 @@ export const userSettings = sqliteTable(
     check('user_settings_scene_intro', sql`scene_intro IN (0, 1)`),
     check('user_settings_scene_tagline', sql`scene_tagline IN (0, 1)`),
     check('user_settings_wide_timer', sql`wide_timer IN (0, 1)`),
+    check('user_settings_calendar_weekend', sql`calendar_weekend IN (0, 1)`),
   ],
 )
 

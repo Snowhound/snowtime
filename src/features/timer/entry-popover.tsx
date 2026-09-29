@@ -1,11 +1,13 @@
 // The entry popover (prototypes/timer.html): logs a past entry by hand under Add entry, or
-// edits the running entry's start under the timer's clock. Stopped entries are edited in
-// their rows (entry-fields.tsx). Times are read in the user's zone; an end at or before the
-// start means the next day, and a live line shows the resulting duration. The ticket is found
-// in the description on blur and Save, and its chip sits at the end of the field. Escape and a
-// click outside keep what was typed into a new entry for the next Add entry; Cancel and Save
-// clear it.
+// edits the running entry's start under the timer's clock. The list edits stopped entries in
+// their rows (entry-fields.tsx); the calendar opens this popover beside a new slot or an entry,
+// with Delete (prototypes/calendar.html). Times are read in the user's zone; an end at or
+// before the start means the next day, and a live line shows the resulting duration. The
+// ticket is found in the description on blur and Save, and its chip sits at the end of the
+// field. Escape and a click outside keep what was typed into a new entry for the next Add
+// entry; Cancel and Save clear it. A calendar slot keeps nothing: its times come from the grid.
 import { createForm } from '@tanstack/solid-form'
+import TrashIcon from 'lucide-solid/icons/trash'
 import { Show, createMemo, createSignal } from 'solid-js'
 import { DatePicker } from '~/components/date-time/date-picker'
 import { TimeInput } from '~/components/date-time/time-input'
@@ -20,11 +22,21 @@ import { m } from '~/paraglide/messages.js'
 import { DescriptionCombobox } from './description-combobox'
 import { type EntryFormError, lastEndToday, readEntryTimes } from './entries'
 import { ProjectSelect } from './project-select'
-import type { Entry } from './queries'
+import type { Entry, StoppedEntry } from './queries'
 import { TicketChip } from './ticket-chip'
 import { caretAfterKey } from './ticket-draft'
 
-export type EntryPopoverTarget = { kind: 'new' } | { kind: 'running'; entry: Entry }
+// A calendar slot's times, and the project of the entry before it.
+export interface EntrySlot {
+  startedAt: Date
+  stoppedAt: Date
+  projectId: string | null
+}
+
+export type EntryPopoverTarget =
+  | { kind: 'new'; slot?: EntrySlot }
+  | { kind: 'running'; entry: Entry }
+  | { kind: 'edit'; entry: StoppedEntry }
 
 export interface EntryPopoverValues {
   description: string
@@ -54,6 +66,14 @@ const ERRORS: Record<EntryFormError, () => string> = {
 const TITLES = {
   new: m.entry_dialog_new,
   running: m.entry_dialog_edit_running,
+  edit: m.entry_dialog_edit,
+} as const
+
+// Where the popover opens: under the button, or beside a calendar slot or entry where there's
+// room, else under or over it.
+const PLACEMENTS = {
+  under: { placement: 'bottom-end', flip: true },
+  beside: { placement: 'right-start', flip: 'left-start bottom-start top-start' },
 } as const
 
 export function EntryPopover(props: {
@@ -67,7 +87,11 @@ export function EntryPopover(props: {
   entries: readonly Entry[]
   // The organization's Issue links setting, for the chip.
   issueLinks: string | null
+  position?: keyof typeof PLACEMENTS
+  // Where focus goes on close, instead of the anchor, which the calendar may have redrawn.
+  returnFocus?: () => HTMLElement | null | undefined
   onSave: (values: EntryPopoverValues) => void
+  onDelete?: (entry: StoppedEntry) => void
   onClose: () => void
 }) {
   // The last target and anchor stay while the popover animates closed.
@@ -80,8 +104,15 @@ export function EntryPopover(props: {
   let interactedOutside = false
 
   function dismiss() {
-    if (shown()?.kind === 'new' && readValues) setDraft(readValues())
+    const target = shown()
+    if (target?.kind === 'new' && !target.slot && readValues) setDraft(readValues())
     props.onClose()
+  }
+
+  function placement() {
+    if (props.position) return PLACEMENTS[props.position]
+    const placement = shown()?.kind === 'running' ? 'bottom-start' : 'bottom-end'
+    return { placement, flip: true } as const
   }
 
   return (
@@ -89,7 +120,8 @@ export function EntryPopover(props: {
       open={props.target !== null}
       onOpenChange={(open) => !open && dismiss()}
       anchorRef={anchor}
-      placement={shown()?.kind === 'running' ? 'bottom-start' : 'bottom-end'}
+      placement={placement().placement}
+      flip={placement().flip}
     >
       <PopoverContent
         class="w-[28rem] max-w-[calc(100vw-1rem)]"
@@ -111,7 +143,7 @@ export function EntryPopover(props: {
         }}
         onCloseAutoFocus={(event: Event) => {
           event.preventDefault()
-          if (!interactedOutside) anchor()?.focus()
+          if (!interactedOutside) (props.returnFocus?.() ?? anchor())?.focus()
           interactedOutside = false
         }}
       >
@@ -119,7 +151,7 @@ export function EntryPopover(props: {
           {(target) => (
             <EntryForm
               target={target}
-              draft={target.kind === 'new' ? draft() : null}
+              draft={target.kind === 'new' && !target.slot ? draft() : null}
               zone={props.zone}
               weekStart={props.weekStart}
               projects={props.projects}
@@ -134,6 +166,7 @@ export function EntryPopover(props: {
                 setDraft(null)
                 props.onClose()
               }}
+              onDelete={props.onDelete}
             />
           )}
         </Show>
@@ -153,11 +186,14 @@ function EntryForm(props: {
   readValues: (read: () => FormValues) => void
   onSave: (values: EntryPopoverValues) => void
   onCancel: () => void
+  onDelete?: (entry: StoppedEntry) => void
 }) {
   const formatHours = useFormatHours()
   // oxlint-disable-next-line solid/reactivity -- the form starts from the target it opened with.
   const target = props.target
   const entry = target.kind === 'new' ? null : target.entry
+  // The times and project the form opens with.
+  const opened = entry ?? (target.kind === 'new' ? target.slot : undefined)
   const running = target.kind === 'running'
   // oxlint-disable-next-line solid/reactivity -- the latest day to pick, as of opening.
   const today = localDate(Date.now(), props.zone)
@@ -166,12 +202,12 @@ function EntryForm(props: {
     defaultValues: props.draft ?? {
       description: entry?.description ?? '',
       ticket: entry?.ticket ?? null,
-      projectId: entry?.projectId ?? '',
-      date: localDate(entry?.startedAt.getTime() ?? Date.now(), props.zone),
-      start: entry
-        ? localTime(entry.startedAt.getTime(), props.zone)
+      projectId: opened?.projectId ?? '',
+      date: localDate(opened?.startedAt.getTime() ?? Date.now(), props.zone),
+      start: opened
+        ? localTime(opened.startedAt.getTime(), props.zone)
         : lastEndToday(props.entries, props.zone),
-      end: '',
+      end: opened?.stoppedAt ? localTime(opened.stoppedAt.getTime(), props.zone) : '',
     },
     onSubmit: ({ value }) => {
       const times = readEntryTimes(value, {
@@ -359,13 +395,29 @@ function EntryForm(props: {
           {error()}
         </p>
       </Show>
-      <div class="flex justify-end gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={() => props.onCancel()}>
-          {m.entry_cancel()}
-        </Button>
-        <Button type="submit" size="sm">
-          {m.entry_save()}
-        </Button>
+      <div class="flex items-center gap-2">
+        <Show when={target.kind === 'edit' && props.onDelete && target.entry}>
+          {(stopped) => (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              class="text-destructive hover:text-destructive"
+              onClick={() => props.onDelete?.(stopped())}
+            >
+              <TrashIcon aria-hidden="true" />
+              {m.timer_delete()}
+            </Button>
+          )}
+        </Show>
+        <div class="ml-auto flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => props.onCancel()}>
+            {m.entry_cancel()}
+          </Button>
+          <Button type="submit" size="sm">
+            {m.entry_save()}
+          </Button>
+        </div>
       </div>
     </form>
   )

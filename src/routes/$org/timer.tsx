@@ -3,17 +3,20 @@ import { RECENT_DAYS, recentRange } from '~/features/timer/entries'
 import { entriesQuery, firstEntryQuery, runningTimerQuery } from '~/features/timer/queries'
 import { TimerPage } from '~/features/timer/timer-page'
 import { TimerPending } from '~/features/timer/timer-pending'
+import { localDate, weekRange } from '~/lib/calendar'
 import { projectsQuery } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
 
-// The main tracking view (prototypes/timer.html, Bar layout).
+// The main tracking view (prototypes/timer.html, Bar layout), or its week calendar
+// (prototypes/calendar.html), which loads the current week.
 export const Route = createFileRoute('/$org/timer')({
   // The view sets its own width, which the Wide page setting widens.
   staticData: { wide: true },
   loader: async ({ context }) => {
     const { queryClient, session } = context
     const organizationId = context.organization.id
-    const zone = session.settings?.timeZone
+    const settings = session.settings
+    const zone = settings?.timeZone
     await Promise.all([
       queryClient.ensureQueryData(runningTimerQuery),
       queryClient.ensureQueryData(projectsQuery(organizationId)),
@@ -21,6 +24,18 @@ export const Route = createFileRoute('/$org/timer')({
       zone &&
         queryClient.ensureQueryData(
           entriesQuery(organizationId, session.user.id, recentRange(zone, RECENT_DAYS)),
+        ),
+      settings?.timerView === 'calendar' &&
+        queryClient.ensureQueryData(
+          entriesQuery(
+            organizationId,
+            session.user.id,
+            weekRange(
+              localDate(Date.now(), settings.timeZone),
+              settings.timeZone,
+              settings.weekStart,
+            ),
+          ),
         ),
     ])
   },

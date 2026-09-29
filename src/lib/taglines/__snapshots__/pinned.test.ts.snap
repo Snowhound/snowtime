@@ -492,7 +492,7 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-09-01 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
 2028-09-01 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-09-02 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-09-02 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-09-02 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-09-03 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-09-03 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-09-04 en School is back. | The kids have homework. | So do you: fill in your timesheet.
@@ -500,7 +500,7 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-09-05 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-09-05 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-09-06 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-09-06 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-09-06 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-09-07 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-09-07 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-09-08 en It's Friday. | So is the deadline.
@@ -508,7 +508,7 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-09-09 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-09-09 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-09-10 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-09-10 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-09-10 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-09-11 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-09-11 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-09-12 en Day 256: Programmers' Day. | Your timesheet says 0 hours. | That's not an off-by-one error. Fill it in.
@@ -516,7 +516,7 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-09-13 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-09-13 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-09-14 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-09-14 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-09-14 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-09-15 en It's Friday. | So is the deadline.
 2028-09-15 et On reede. | Täna kukub ka tähtaeg.
 2028-09-16 en School is back. | The kids have homework. | So do you: fill in your timesheet.
@@ -524,7 +524,7 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-09-17 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-09-17 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-09-18 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-09-18 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-09-18 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-09-19 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-09-19 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-09-20 en School is back. | The kids have homework. | So do you: fill in your timesheet.
@@ -540,7 +540,7 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-09-25 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-09-25 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-09-26 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-09-26 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-09-26 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-09-27 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-09-27 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-09-28 en The month is almost out. | Your hours shouldn't be.
@@ -554,7 +554,7 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-10-02 en A new month. | Last month's hours aren't coming with you. | Log them before the books close.
 2028-10-02 et Uus kuu, uus leht. | Vana lehe tühjad read jäävad aga sinuga. | Täida need ära, enne kui keegi küsima tuleb.
 2028-10-03 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-10-03 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-10-03 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-10-04 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-10-04 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-10-05 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
@@ -566,37 +566,37 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-10-08 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-10-08 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-10-09 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-10-09 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-10-09 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-10-10 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-10-10 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-10-11 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-10-11 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-10-12 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-10-12 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-10-12 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-10-13 en Friday the 13th. | Something unlucky is coming. | It's the deadline. Fill in your timesheet.
 2028-10-13 et Reede ja 13. | Õnnetus on tulemas. | Selle nimi on tähtaeg. Täida oma tunnileht.
 2028-10-14 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-10-14 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-10-15 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-10-15 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-10-15 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-10-16 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-10-16 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-10-17 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-10-17 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-10-18 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-10-18 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-10-18 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-10-19 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-10-19 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-10-20 en It's Friday. | So is the deadline.
 2028-10-20 et On reede. | Täna kukub ka tähtaeg.
 2028-10-21 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-10-21 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-10-21 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-10-22 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-10-22 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-10-23 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-10-23 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-10-24 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-10-24 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-10-24 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-10-25 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-10-25 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-10-26 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
@@ -620,25 +620,25 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-11-04 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-11-04 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-11-05 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-11-05 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-11-05 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-11-06 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-11-06 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-11-07 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-11-07 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-11-08 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-11-08 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-11-08 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-11-09 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-11-09 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-11-10 en It's Friday. | So is the deadline.
 2028-11-10 et Mardipäev on käes. | Ära sunni oma tunnilehte laulma. | Täida see ruttu, sest viisi ta küll ei pea.
 2028-11-11 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-11-11 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-11-11 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-11-12 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-11-12 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-11-13 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-11-13 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-11-14 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-11-14 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-11-14 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-11-15 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-11-15 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-11-16 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
@@ -650,19 +650,19 @@ exports[`shows the same taglines on every day of 2028 1`] = `
 2028-11-19 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-11-19 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-11-20 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-11-20 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-11-20 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-11-21 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-11-21 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-11-22 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-11-22 et Sügislehed langevad. | Märkimata tunnid kuhjuvad. | Rehitse need kokku ja pane kirja.
 2028-11-23 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-11-23 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-11-23 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-11-24 en It's Friday. | So is the deadline.
 2028-11-24 et On reede. | Täna kukub ka tähtaeg.
 2028-11-25 en The leaves are falling. | So are your unlogged hours. | Before the last one lands, fill in your timesheet.
 2028-11-25 et Kadrisandid on ukse taga. | Mardid käisid ka ja su tunnileht on ikka tühi. | Täida see ära, enne kui kadrid laulma hakkavad.
 2028-11-26 en The nights are drawing in. | So is the deadline. | Before it gets dark, fill in your timesheet.
-2028-11-26 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib järjest lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
+2028-11-26 et Õhtud lähevad järjest pimedamaks. | Tähtaeg hiilib lähemale. | Täida oma tunnileht, enne kui päris pimedaks läheb.
 2028-11-27 en The birds are flying south. | Don't let your hours follow them. | Log them now.
 2028-11-27 et Linnud lendavad lõunasse. | Ära lase oma tundidel neile järgneda. | Pane need kohe kirja.
 2028-11-28 en The month is almost out. | Your hours shouldn't be.
