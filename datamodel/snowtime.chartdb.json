@@ -2803,7 +2803,7 @@
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
-          "comments": null
+          "comments": "Entries for one ticket within a report range."
         }
       ],
       "color": "#59A14F",

@@ -248,7 +248,7 @@ Table time_entry [note: 'A span of tracked time. A row with stopped_at null is t
     (organization_id, user_id, started_at) [note: 'Own entry list and per-member reports.']
     (organization_id, started_at) [note: 'Organization-wide reports by time range.']
     project_id
-    (organization_id, ticket, started_at)
+    (organization_id, ticket, started_at) [note: 'Entries for one ticket within a report range.']
   }
 }
 

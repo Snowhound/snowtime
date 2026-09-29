@@ -240,7 +240,8 @@ export const tables: Record<string, TableNotes> = {
       time_entry_one_running: 'At most one running timer per user across all organizations.',
       time_entry_organization_id_user_id_started_at_idx: 'Own entry list and per-member reports.',
       time_entry_organization_id_started_at_idx: 'Organization-wide reports by time range.',
-      time_entry_organization_id_ticket_idx: 'Reports by ticket.',
+      time_entry_organization_id_ticket_started_at_idx:
+        'Entries for one ticket within a report range.',
     },
   },
 }
