@@ -342,17 +342,22 @@ describe('getReport', () => {
     })
   })
 
-  test('filters by ticket', async () => {
+  test('filters by project, or to time without one', async () => {
     const input = { from: '2026-09-14', to: '2026-09-24', unit: 'day' } as const
     const all = await getReport(db, scopes.admin, input, NOW)
-    const mob = all.tickets.find((t) => t.ticket === 'MOB-214')
-    expect(mob?.total).toBeGreaterThan(0)
-    expect(sum(all.tickets.map((t) => t.total))).toBe(all.total)
-    const one = await getReport(db, scopes.admin, { ...input, ticket: 'MOB-214' }, NOW)
-    expect(one.total).toBe(mob!.total)
-    expect(one.tickets.map((t) => t.ticket)).toEqual(['MOB-214'])
+    const website = all.projects.find((p) => p.projectId === P.website)
+    expect(website?.total).toBeGreaterThan(0)
+    const one = await getReport(db, scopes.admin, { ...input, projectId: P.website }, NOW)
+    expect(one.total).toBe(website!.total)
+    expect(one.projects.map((p) => p.projectId)).toEqual([P.website])
+    expectConsistent(one)
+    const none = await getReport(db, scopes.admin, { ...input, projectId: 'none' }, NOW)
+    expect(none.total).toBe(all.projects.find((p) => p.projectId === null)?.total ?? 0)
     // A member sees only their own time on it.
-    expect((await getReport(db, scopes.member, { ...input, ticket: 'MOB-214' }, NOW)).total).toBe(0)
+    const member = await getReport(db, scopes.member, input, NOW)
+    expect(
+      (await getReport(db, scopes.member, { ...input, projectId: P.website }, NOW)).total,
+    ).toBe(member.projects.find((p) => p.projectId === P.website)?.total ?? 0)
   })
 
   test('week totals equal the day totals of the same range', async () => {
@@ -443,8 +448,9 @@ describe('getReportBreakdown', () => {
     expect([...new Set(lead.projects.map((r) => r.userId))].sort()).toEqual(
       [U.engLead, U.engineer, U.member].sort(),
     )
-    const one = await getReportBreakdown(db, scopes.admin, { ...input, ticket: 'MOB-214' }, NOW)
-    expect(one.tickets.map((r) => r.ticket)).toEqual(one.tickets.map(() => 'MOB-214'))
+    const one = await getReportBreakdown(db, scopes.admin, { ...input, projectId: P.website }, NOW)
+    expect(one.projects.length).toBeGreaterThan(0)
+    expect(one.projects.map((r) => r.projectId)).toEqual(one.projects.map(() => P.website))
     await expect(
       getReportBreakdown(db, scopes.engLead, { ...input, userId: U.loner }, NOW),
     ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })

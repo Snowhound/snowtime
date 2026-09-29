@@ -467,7 +467,8 @@ about gaps in the timesheet (task 061). The server and the browser share it.
 
 Reports exports the report as shown, for the current filters (task 034, `prototypes/README.md`,
 Reports): the timesheet and the entries behind it, as CSV or as one XLSX file with a sheet for
-each.
+each. Narrowed to one project (`projectId` in `ReportInput`, a project's ID or `none`), it is
+that project's report for its client (task 068).
 
 - Where: the browser builds the files (`src/features/reports/export.ts`), naming the rows from
   the cached lists as the grid does. The timesheet CSV is the report already on screen, counted
@@ -477,12 +478,20 @@ each.
   is that report, so its two sheets agree while a timer runs. Building in the browser keeps the
   files out of the Vercel functions and their response limits, and the XLSX library loads only
   when someone exports.
+- Order: the XLSX opens on the entries, the part a client or an invoice needs, with the
+  timesheet as a second sheet; the menu lists them in the same order.
+- For a client: the files are in English whatever the UI language, headers, sheet names, and
+  the "No project", "No team", and "No ticket" rows alike, and the user's own name has no
+  "(you)".
 - Entries: each entry's time on each day, clipped to the range and split at the user's
-  midnights like the totals, with its ticket, and its start and end in the user's zone; a
-  running entry counts up to now and has no end. The entries add up to the report's totals.
+  midnights like the totals, with its project, member and their email, ticket, and its start
+  and end in the user's zone; a running entry counts up to now and has no end. They're sorted
+  by project ("No project" last), then date, member, and start, and add up to the report's
+  totals.
 - Durations: decimal hours in CSV (two places), and numbers in XLSX, as fractions of a day with
-  the `[h]:mm` format, so they add up in the spreadsheet. Dates are ISO days, since they're the
-  user's days, not instants.
+  the `[h]:mm` format, so they add up in the spreadsheet; the XLSX's entries add decimal hours
+  next to them, for invoices. Dates are ISO days, since they're the user's days, not
+  instants.
 - CSV: RFC 4180 with commas and dots, UTF-8 with a byte order mark so Excel reads non-ASCII
   names, and text starting with `=`, `+`, `-`, `@`, a tab, or a carriage return gets a leading
   apostrophe against formula injection. XLSX writes text as strings, never formulas.
@@ -579,9 +588,9 @@ timer.html, "Ticket keys").
   admins and owners set it to an `https://` address with a host name that has a dot, a path,
   and `{key}`, or clear it to null. `getAppSession` returns it with each organization; with
   it set, chips link to the issue in a new tab, and without it they are plain labels.
-- Reports group by ticket, with a "No ticket" row, and filter to one ticket (`ticket` in
-  `ReportInput`). By description keeps work on different tickets apart, and both exports
-  have a Ticket column.
+- Reports group by ticket, with a "No ticket" row. By description keeps work on different
+  tickets apart, and both exports have a Ticket column. The filter bar has no ticket search:
+  a Project select took its place (task 068).
 
 ## User settings
 

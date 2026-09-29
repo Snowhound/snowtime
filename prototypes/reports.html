@@ -100,11 +100,8 @@
             <select id="scope" data-ui="select" class="h-9 w-40"></select>
           </div>
           <div class="grid gap-1.5">
-            <label data-ui="label" for="ticket">Ticket</label>
-            <div class="relative">
-              <input id="ticket" data-ui="input" type="text" autocomplete="off" spellcheck="false" placeholder="All tickets" class="h-9 w-32 pr-8 uppercase tabular-nums placeholder:normal-case" />
-              <button type="button" id="ticket-clear" class="absolute right-1.5 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Show all tickets" hidden></button>
-            </div>
+            <label data-ui="label" for="project">Project</label>
+            <select id="project" data-ui="select" class="h-9 w-32"></select>
           </div>
           <div class="grid gap-1.5" id="group-select-field">
             <label data-ui="label" for="group-select">Group by</label>
@@ -138,8 +135,8 @@
         <button type="button" id="export-button" data-ui="button" data-variant="outline" data-size="sm" popovertarget="export-menu" aria-haspopup="menu"></button>
         <div id="export-menu" popover data-ui="menu" class="w-60" role="menu" aria-label="Export">
           <button type="button" role="menuitem" data-ui="menu-item" data-export="xlsx"></button>
-          <button type="button" role="menuitem" data-ui="menu-item" data-export="csv"></button>
           <button type="button" role="menuitem" data-ui="menu-item" data-export="entries"></button>
+          <button type="button" role="menuitem" data-ui="menu-item" data-export="csv"></button>
         </div>
       </div>
       <p id="export-status" class="-mt-4 text-right text-xs text-muted-foreground empty:hidden" role="status"></p>
@@ -248,7 +245,8 @@
         // The report's view, one of the tabs: timesheet, summary, or breakdown.
         view: 'timesheet',
         group: 'project',
-        ticket: null,
+        // A project's ID, 'none' for time without one, or null for all projects.
+        project: null,
         unit: 'day',
         org: null,
         entries: [],
@@ -303,6 +301,16 @@
         return `${opt('default', teams.length > 1 ? 'My teams' : teams[0].name)}${teams.length > 1 ? `<optgroup label="Teams">${teams.map((t) => opt(`team:${t.id}`, t.name)).join('')}</optgroup>` : ''}<optgroup label="Members">${people(visibleUsers())}</optgroup>`
       }
 
+      // Every role can narrow to a project: all, time without one, the active projects by name,
+      // then the archived ones, whose entries still count.
+      function projectOptions() {
+        const opt = (value, label) => `<option value="${value}">${escapeHtml(label)}</option>`
+        const byName = (list) => [...list].sort((a, b) => a.name.localeCompare(b.name)).map((p) => opt(p.id, p.name)).join('')
+        const active = state.org.projects.filter((p) => !p.archivedAt)
+        const archived = state.org.projects.filter((p) => p.archivedAt)
+        return `${opt('', 'All projects')}${opt('none', 'No project')}<optgroup label="Projects">${byName(active)}</optgroup>${archived.length ? `<optgroup label="Archived">${byName(archived)}</optgroup>` : ''}`
+      }
+
       function scopedUsers() {
         const all = visibleUsers()
         if (state.scope.startsWith('user:')) return new Set([state.scope.slice(5)])
@@ -320,7 +328,7 @@
         let split = 0
         for (const e of state.entries) {
           if (!users.has(e.userId)) continue
-          if (state.ticket && ticketOf(e) !== state.ticket) continue
+          if (state.project && (e.projectId ?? 'none') !== state.project) continue
           let s = Math.max(e.startedAt, state.from)
           const end = Math.min(e.stoppedAt ?? now, state.to)
           if (s >= end) continue
@@ -354,7 +362,6 @@
         for (const c of entry.description) h = (h * 31 + c.charCodeAt(0)) >>> 0
         return h % 4 === 0 ? null : `SNOW-${100 + (h % 60)}`
       }
-      const TICKET_KEY = /^[A-Z][A-Z0-9_]+-\d+$/
 
       // Keys for the grouping dimension. A member in several teams counts in each (current members).
       function keysFor(entry, group) {
@@ -875,7 +882,7 @@
       // that fits the range.
       let entriesFor = ''
       function resetEntriesOnFilterChange() {
-        const key = JSON.stringify([state.view, state.from, state.to, state.scope, state.group, state.ticket, state.unit, state.fixture, role(), state.zone, state.weekStart])
+        const key = JSON.stringify([state.view, state.from, state.to, state.scope, state.group, state.project, state.unit, state.fixture, role(), state.zone, state.weekStart])
         if (key === entriesFor) return
         entriesFor = key
         state.narrow = null
@@ -968,7 +975,7 @@
         document.getElementById('range-from').value = dateValue(state.from)
         document.getElementById('range-to').value = dateValue(Z.addDays(state.to, -1, state.zone))
         document.getElementById('export-button').innerHTML = `${icon('download')}Export`
-        document.querySelector('[data-export="xlsx"]').innerHTML = `${icon('file-spreadsheet')}<span class="grid"><span>Excel (XLSX)</span><span class="text-xs text-muted-foreground">Timesheet and entries</span></span>`
+        document.querySelector('[data-export="xlsx"]').innerHTML = `${icon('file-spreadsheet')}<span class="grid"><span>Excel (XLSX)</span><span class="text-xs text-muted-foreground">Entries and timesheet</span></span>`
         document.querySelector('[data-export="csv"]').innerHTML = `${icon('file-text')}<span class="grid"><span>Timesheet (CSV)</span><span class="text-xs text-muted-foreground">As shown, in decimal hours</span></span>`
         document.querySelector('[data-export="entries"]').innerHTML = `${icon('file-text')}<span class="grid"><span>Entries (CSV)</span><span class="text-xs text-muted-foreground">Each entry behind the report</span></span>`
         document.getElementById('range-prev').innerHTML = icon('chevron-left')
@@ -981,9 +988,7 @@
         const isMember = role() === 'member'
         document.getElementById('scope-field').hidden = isMember
         document.getElementById('group-select').value = state.group
-        document.getElementById('ticket').value = state.ticket ?? ''
-        document.getElementById('ticket-clear').hidden = !state.ticket
-        document.getElementById('ticket-clear').innerHTML = icon('x', 'size-3.5')
+        document.getElementById('project').value = state.project ?? ''
         // Breakdown totals the whole range, so Totals per doesn't apply to it.
         document.querySelectorAll('[data-unit]').forEach((b) => (b.disabled = state.view === 'breakdown'))
         const note = {
@@ -1017,6 +1022,8 @@
         state.entries = state.fixture === 'empty' ? [] : appData.generateEntries(state.org)
         document.getElementById('scope').innerHTML = role() === 'member' ? '' : scopeOptions()
         state.scope = 'default'
+        document.getElementById('project').innerHTML = projectOptions()
+        state.project = null
         // Members group their own time by project or ticket only.
         const own = role() === 'member'
         for (const option of document.getElementById('group-select').options) option.hidden = own && (option.value === 'team' || option.value === 'member')
@@ -1052,22 +1059,9 @@
         state.group = event.currentTarget.value
         render()
       })
-      // A ticket key, typed in any case; it applies on Enter or when the field is left.
-      function applyTicket(input) {
-        const value = input.value.trim().toUpperCase()
-        input.toggleAttribute('data-invalid', !!value && !TICKET_KEY.test(value))
-        if (value && !TICKET_KEY.test(value)) return false
-        state.ticket = value || null
+      document.getElementById('project').addEventListener('change', (event) => {
+        state.project = event.currentTarget.value || null
         render()
-        return true
-      }
-      const ticketInput = document.getElementById('ticket')
-      ticketInput.addEventListener('change', () => applyTicket(ticketInput))
-      ticketInput.addEventListener('keydown', (event) => event.key === 'Enter' && applyTicket(ticketInput))
-      document.getElementById('ticket-clear').addEventListener('click', () => {
-        state.ticket = null
-        render()
-        ticketInput.focus()
       })
       document.querySelectorAll('[data-unit]').forEach((b) =>
         b.addEventListener('click', () => {

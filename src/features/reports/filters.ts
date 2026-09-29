@@ -1,7 +1,7 @@
 // The report's filters: the URL's search params, and what each role may choose
 // (prototypes/README.md, reports.html). Members see their own time by project or ticket; team
 // leads their led teams and those teams' members; admins and owners everyone. Anyone can narrow
-// the report to one ticket. getReport enforces
+// the report to one project. getReport enforces
 // the same rules, so options outside them are dropped here rather than sent and refused.
 import * as v from 'valibot'
 import { type IsoDate, type WeekStart, addDays, startOfWeek } from '~/lib/calendar'
@@ -44,7 +44,8 @@ export const ReportSearch = v.object({
   to: optional(IsoDateSchema),
   team: optional(Uuidv7),
   member: optional(Uuidv7),
-  ticket: optional(TicketKey),
+  // A project's ID, or 'none' for time without a project.
+  project: optional(v.union([Uuidv7, v.literal('none')])),
   group: optional(v.picklist(GROUPS)),
   unit: optional(v.picklist(REPORT_UNITS)),
   view: optional(v.picklist(VIEWS.filter((view) => view !== 'timesheet'))),
@@ -105,7 +106,7 @@ export interface ReportFilters {
   group: Group
   team?: string
   member?: string
-  ticket?: string
+  project?: string
   access: Access
   people: PeopleOptions | null
   input: ReportInput
@@ -145,7 +146,7 @@ export function requestedInput(
     to: range.to,
     unit,
     ...(search.member ? { userId: search.member } : search.team ? { teamId: search.team } : {}),
-    ...(search.ticket ? { ticket: search.ticket } : {}),
+    ...(search.project ? { projectId: search.project } : {}),
   }
 }
 
@@ -164,7 +165,7 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
     unit,
     ...(member ? { userId: member } : {}),
     ...(team ? { teamId: team } : {}),
-    ...(search.ticket ? { ticket: search.ticket } : {}),
+    ...(search.project ? { projectId: search.project } : {}),
   }
   return {
     view: search.view ?? 'timesheet',
@@ -174,7 +175,7 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
     group,
     team,
     member,
-    ticket: search.ticket,
+    project: search.project,
     access,
     people,
     input,

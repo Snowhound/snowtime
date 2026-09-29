@@ -256,7 +256,11 @@ async function reportData(db: Database, scope: Scope, input: ReportInput, now: D
             and(
               live(timeEntry, scope),
               users ? inArray(timeEntry.userId, users) : undefined,
-              input.ticket ? eq(timeEntry.ticket, input.ticket) : undefined,
+              input.projectId === 'none'
+                ? isNull(timeEntry.projectId)
+                : input.projectId
+                  ? eq(timeEntry.projectId, input.projectId)
+                  : undefined,
               gt(timeEntry.startedAt, new Date(range.from - MAX_ENTRY_MS)),
               lt(timeEntry.startedAt, new Date(range.to)),
               or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, new Date(range.from))),

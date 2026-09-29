@@ -5,6 +5,7 @@ import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import type { Team } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
+import type { Locale } from '~/paraglide/runtime.js'
 import type { Group } from './filters'
 import type { Report } from './queries'
 
@@ -20,19 +21,25 @@ export interface Row {
 }
 
 export interface RowNames {
-  userId: string
+  // The user, named with "(you)"; an export for a client names no one so.
+  userId?: string
   admin: boolean
   projects: Project[]
   teams: Team[]
   members: Member[]
+  // The "No project", "No team", and "No ticket" rows' language, the UI's by default.
+  locale?: Locale
 }
 
 // A project's row key and name; null is time without a project.
-export function projectLabel(projectId: string | null, names: Pick<RowNames, 'projects'>) {
+export function projectLabel(
+  projectId: string | null,
+  names: Pick<RowNames, 'projects' | 'locale'>,
+) {
   const project = projectId ? names.projects.find((p) => p.id === projectId) : undefined
   return {
     key: projectId ?? 'none',
-    name: project?.name ?? m.reports_no_project(),
+    name: project?.name ?? m.reports_no_project({}, { locale: names.locale }),
     color: project?.color ?? null,
     muted: !project,
   }
@@ -73,7 +80,7 @@ function teamRows(report: Report, names: RowNames): Row[] {
     ...rows,
     {
       key: 'none',
-      name: m.reports_no_team(),
+      name: m.reports_no_team({}, { locale: names.locale }),
       muted: true,
       total: alone.reduce((sum, r) => sum + r.total, 0),
       perBucket: report.buckets.map((_, i) => alone.reduce((sum, r) => sum + r.perBucket[i], 0)),
@@ -81,10 +88,10 @@ function teamRows(report: Report, names: RowNames): Row[] {
   ]
 }
 
-function ticketRows(report: Report): Row[] {
+function ticketRows(report: Report, names: RowNames): Row[] {
   return report.tickets.map(({ ticket, total, perBucket }) => ({
     key: ticket ?? 'none',
-    name: ticket ?? m.reports_no_ticket(),
+    name: ticket ?? m.reports_no_ticket({}, { locale: names.locale }),
     muted: !ticket,
     total,
     perBucket,
@@ -97,7 +104,7 @@ export function reportRows(report: Report, group: Group, names: RowNames): Row[]
     group === 'project'
       ? projectRows(report, names)
       : group === 'ticket'
-        ? ticketRows(report)
+        ? ticketRows(report, names)
         : group === 'team'
           ? teamRows(report, names)
           : report.members.map(({ userId, total, perBucket }) => ({

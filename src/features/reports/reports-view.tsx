@@ -33,7 +33,7 @@ import {
   type View,
   reportFilters,
 } from './filters'
-import { type Report, reportBreakdownQuery, reportQuery } from './queries'
+import { reportBreakdownQuery, reportQuery } from './queries'
 import {
   type Range,
   type RangePreset,
@@ -100,12 +100,8 @@ export function ReportsView(props: {
       members: members.data ?? [],
     }
   }
-  // A report's rows by the grouping, named from the cached lists: the one on screen, or the
-  // one an export reads.
-  function rowsOf(data: Report) {
-    return reportRows(data, group(), names())
-  }
-  const rows = createMemo(() => (report.data ? rowsOf(report.data) : []))
+  // The report's rows by the grouping, named from the cached lists.
+  const rows = createMemo(() => (report.data ? reportRows(report.data, group(), names()) : []))
   // Summary's chart is always by project.
   const projectRows = createMemo(() => {
     if (view() !== 'summary' || !report.data) return []
@@ -140,13 +136,13 @@ export function ReportsView(props: {
     unit?: Unit
     group?: Group
     people?: { team?: string; member?: string }
-    ticket?: string | null
+    project?: string | null
     view?: View
   }) {
     setRangeError(null)
     const f = filters()
     const people = next.people ?? { team: f.team, member: f.member }
-    const ticket = next.ticket === undefined ? f.ticket : next.ticket
+    const project = next.project === undefined ? f.project : next.project
     const group = next.group ?? f.group
     const unit = 'unit' in next ? next.unit : props.search.unit
     const view = next.view ?? f.view
@@ -154,7 +150,7 @@ export function ReportsView(props: {
       ...rangeSearch(next.range ?? f.range, today(), props.weekStart),
       ...(people.team ? { team: people.team } : {}),
       ...(people.member ? { member: people.member } : {}),
-      ...(ticket ? { ticket } : {}),
+      ...(project ? { project } : {}),
       ...(group !== 'project' ? { group } : {}),
       ...(unit === 'week' ? { unit } : {}),
       ...(view !== 'timesheet' ? { view } : {}),
@@ -185,7 +181,7 @@ export function ReportsView(props: {
     },
     onPeople: (people) => go({ people }),
     onGroup: (group) => go({ group }),
-    onTicket: (ticket) => go({ ticket }),
+    onProject: (project) => go({ project }),
     onUnit: (unit) => go({ unit }),
   }
 
@@ -283,6 +279,7 @@ export function ReportsView(props: {
         <ReportFilterBar
           {...actions}
           filters={filters()}
+          projects={projects.data ?? []}
           userId={props.userId}
           weekStart={props.weekStart}
           today={today()}
@@ -316,13 +313,11 @@ export function ReportsView(props: {
               <div class="ml-auto">
                 <ExportMenu
                   report={data()}
-                  rowsOf={rowsOf}
                   group={filters().group}
+                  names={names()}
                   input={filters().input}
                   organizationId={props.organizationId}
                   organizationSlug={props.organizationSlug}
-                  projects={projects.data ?? []}
-                  members={members.data ?? []}
                   onError={setExportError}
                 />
               </div>

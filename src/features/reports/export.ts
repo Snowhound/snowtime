@@ -1,11 +1,13 @@
 // The report's export (prototypes/reports.html): the timesheet and the entries
 // behind it, as CSV or as one XLSX file with a sheet for each. getReport and getReportExport
 // apply the role rules; the browser names the rows from the cached lists, as the timesheet
-// does, and builds the files, so the XLSX library loads only when someone exports.
+// does, and builds the files, so the XLSX library loads only when someone exports. The files
+// can go to a client, so they are in English whatever the UI language.
 import { type IsoDate, localTime } from '~/lib/calendar'
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
+import type { Locale } from '~/paraglide/runtime.js'
 import type { getReportExport } from '~/server/reports/reports.functions'
 import type { Group } from './filters'
 import type { Report } from './queries'
@@ -19,6 +21,8 @@ export type ExportKind = 'xlsx' | 'csv' | 'entries'
 
 const HOUR = 3_600_000
 const DAY = 86_400_000
+export const EXPORT_LOCALE: Locale = 'en'
+const EN = { locale: EXPORT_LOCALE } as const
 
 type Cell = string | number | null
 // A duration in milliseconds, which each format writes its own way.
@@ -35,48 +39,70 @@ const GROUP_LABELS = {
   ticket: m.reports_group_ticket,
   team: m.reports_group_team,
   member: m.reports_group_member,
-} satisfies Record<Group, () => string>
+} satisfies Record<Group, (inputs?: object, options?: typeof EN) => string>
 
 // The timesheet as shown: a row per group, a column per day or week (its first day), and the
 // row and column totals.
 export function timesheetTable(report: Report, rows: Row[], group: Group): Table {
   return {
-    header: [GROUP_LABELS[group](), ...report.buckets, m.reports_total()],
+    header: [GROUP_LABELS[group]({}, EN), ...report.buckets, m.reports_total({}, EN)],
     rows: [
       ...rows.map((row) => [row.name, ...row.perBucket.map((ms) => ({ ms })), { ms: row.total }]),
-      [m.reports_total(), ...report.perBucket.map((ms) => ({ ms })), { ms: report.total }],
+      [m.reports_total({}, EN), ...report.perBucket.map((ms) => ({ ms })), { ms: report.total }],
     ],
   }
 }
 
-// Each entry's time on each day of the report, oldest first, with its start and end in the
-// user's time zone. A running entry has no end yet and counts up to now.
+// Each entry's time on each day of the report, by project, then date, member, and start, with
+// its start and end in the user's time zone. A running entry has no end yet and counts up to
+// now. Durations are one column, which CSV writes as decimal hours; `hours` adds decimal hours
+// next to the XLSX's h:mm.
 export function entriesTable(
   data: ReportEntries,
   names: { projects: Project[]; members: Member[] },
+  options: { hours?: boolean } = {},
 ): Table {
+  const noProject = m.reports_no_project({}, EN)
+  const rows = data.entries.map((entry) => {
+    const member = names.members.find((member) => member.userId === entry.userId)
+    const project = entry.projectId
+      ? names.projects.find((p) => p.id === entry.projectId)?.name
+      : undefined
+    return { entry, member, project }
+  })
+  rows.sort(
+    (a, b) =>
+      // "No project" last.
+      Number(!a.project) - Number(!b.project) ||
+      (a.project ?? '').localeCompare(b.project ?? '') ||
+      a.entry.date.localeCompare(b.entry.date) ||
+      (a.member?.name ?? '').localeCompare(b.member?.name ?? '') ||
+      a.entry.from.getTime() - b.entry.from.getTime(),
+  )
   return {
     header: [
-      m.export_column_date(),
-      m.reports_group_member(),
-      m.reports_group_project(),
-      m.export_column_ticket(),
-      m.export_column_description(),
-      m.export_column_start(),
-      m.export_column_end(),
-      m.export_column_duration(),
+      m.reports_group_project({}, EN),
+      m.export_column_date({}, EN),
+      m.reports_group_member({}, EN),
+      m.export_column_email({}, EN),
+      m.export_column_ticket({}, EN),
+      m.export_column_description({}, EN),
+      m.export_column_start({}, EN),
+      m.export_column_end({}, EN),
+      m.export_column_duration({}, EN),
+      ...(options.hours ? [m.export_column_hours({}, EN)] : []),
     ],
-    rows: data.entries.map((entry) => [
+    rows: rows.map(({ entry, member, project }) => [
+      project ?? (entry.projectId ? '' : noProject),
       entry.date,
-      names.members.find((member) => member.userId === entry.userId)?.name ?? '',
-      entry.projectId
-        ? (names.projects.find((p) => p.id === entry.projectId)?.name ?? '')
-        : m.reports_no_project(),
+      member?.name ?? '',
+      member?.email ?? '',
       entry.ticket ?? '',
       entry.description,
       localTime(entry.from.getTime(), data.timeZone),
       entry.running ? null : endTime(entry.to.getTime(), entry.from.getTime(), data.timeZone),
       { ms: entry.ms },
+      ...(options.hours ? [hours(entry.ms)] : []),
     ]),
   }
 }

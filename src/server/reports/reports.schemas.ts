@@ -22,7 +22,8 @@ function days(from: string, to: string) {
 }
 
 // Totals for the days from `from` up to but not including `to`, per day or per week,
-// optionally of one member or of one team's current members, and of one ticket.
+// optionally of one member or of one team's current members, and of one project ('none' is
+// time without a project).
 export const ReportInput = v.pipe(
   v.object({
     from: IsoDate,
@@ -30,7 +31,7 @@ export const ReportInput = v.pipe(
     unit: v.optional(v.picklist(REPORT_UNITS), 'day'),
     userId: v.optional(Uuidv7),
     teamId: v.optional(Uuidv7),
-    ticket: v.optional(TicketKey),
+    projectId: v.optional(v.union([Uuidv7, v.literal('none')])),
   }),
   v.check(
     (i) => i.to > i.from,

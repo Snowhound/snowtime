@@ -606,13 +606,18 @@ px, light and dark, as a member, a team lead, and an admin, on the Harbor and Lu
 seeds: no horizontal page scroll and no console errors.
 
 Filters sit in one row: a range preset (today, this week, last week, this month, last month,
-custom), previous and next, from and to dates, People, Ticket, Group by, and Totals per day or
+custom), previous and next, from and to dates, People, Project, Group by, and Totals per day or
 week. Ranges over 35 days switch to weeks. The page opens on this month, as the app does. The
 fields are sized so the row fits the header's 68rem on one line with the dates showing (about
-28 px to spare as an admin): Range and People keep 9rem and 10rem, From, To, Ticket, and Group
+16 px to spare as an admin): Range and People keep 9rem and 10rem, From, To, Project, and Group
 by are 8rem, and Group by is a select rather than tabs, the one change big enough to make it
 fit. The browser's date field clips its calendar button at 8rem; the app's DatePicker doesn't.
 Ticket keys are made up from the descriptions.
+
+Project (task 068) narrows the report to one project, so it can go to that project's client:
+all projects, "No project", the active projects by name, then the archived ones. Every role has
+it. It took the place of a Ticket field, a search by ticket key that saw little use next to a
+project pick; Group by ticket stays.
 
 Aggregation follows task 007: entries are clipped to the range and split at midnight in the
 user's zone (a note counts the entries that crossed), and the running timer counts up to now.
@@ -629,11 +634,13 @@ Charts fold projects past seven into "Other". Fixtures: populated, empty, and lo
 project, member, and team names, twelve projects).
 
 **Export** (task 034), an outline button at the right of the timesheet's card header, opens a menu
-with the report as shown for the current filters: **Excel (XLSX)**, with the timesheet and the
-entries as two sheets; **Timesheet (CSV)**, in decimal hours; and **Entries (CSV)**, each entry
-behind the report. The file name is the organization's short name and the range's first and last
+with the report as shown for the current filters: **Excel (XLSX)**, with the entries and the
+timesheet as two sheets; **Entries (CSV)**, each entry behind the report; and **Timesheet
+(CSV)**, in decimal hours. Entries come first in the menu and the workbook, since they are what
+a client or an invoice needs; the timesheet is the overview (task 068). The file name is the organization's short name and the range's first and last
 days, such as `snowhound-2026-09-21-to-2026-09-27.xlsx`, with `-entries` before `.csv` for the
-entries. In the prototype an item only names the file the app would download.
+entries. The files are for clients too, so they are in English whatever the UI language
+(task 068). In the prototype an item only names the file the app would download.
 
 **Entries** (task 055), a card below the report's view, lists the entries behind the
 report, so a team lead can see what a member worked on. The card lists the same day pieces the

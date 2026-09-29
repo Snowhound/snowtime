@@ -1,8 +1,9 @@
 // The timesheet card's Export menu (prototypes/reports.html): the report for the current
-// filters, as XLSX with the timesheet and the entries, or either one as CSV. The timesheet CSV
-// is the report as shown. The entries load when chosen, together with the report they add up
-// to, which the XLSX's timesheet then shows, so a running timer counts alike in both sheets.
-// See export.ts for the files.
+// filters, as XLSX with the entries and the timesheet, or either one as CSV. Entries come
+// first, as the part a client or an invoice needs. The timesheet CSV is the report as shown.
+// The entries load when chosen, together with the report they add up to, which the XLSX's
+// timesheet then shows, so a running timer counts alike in both sheets.
+// The rows are named for a client: in English, and with no "(you)". See export.ts for the files.
 import DownloadIcon from 'lucide-solid/icons/download'
 import FileSpreadsheetIcon from 'lucide-solid/icons/file-spreadsheet'
 import FileTextIcon from 'lucide-solid/icons/file-text'
@@ -16,12 +17,11 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { type IsoDate, addDays } from '~/lib/calendar'
-import type { Member } from '~/lib/queries/members'
-import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
 import { getReportExport } from '~/server/reports/reports.functions'
 import type { ReportInput } from '~/server/reports/reports.schemas'
 import {
+  EXPORT_LOCALE,
   type ExportKind,
   downloadFile,
   entriesTable,
@@ -32,7 +32,7 @@ import {
 } from './export'
 import type { Group } from './filters'
 import type { Report } from './queries'
-import type { Row } from './rows'
+import { type RowNames, reportRows } from './rows'
 
 const ITEMS: {
   kind: ExportKind
@@ -47,28 +47,26 @@ const ITEMS: {
     icon: FileSpreadsheetIcon,
   },
   {
-    kind: 'csv',
-    label: m.export_csv,
-    hint: m.export_csv_hint,
-    icon: FileTextIcon,
-  },
-  {
     kind: 'entries',
     label: m.export_entries,
     hint: m.export_entries_hint,
+    icon: FileTextIcon,
+  },
+  {
+    kind: 'csv',
+    label: m.export_csv,
+    hint: m.export_csv_hint,
     icon: FileTextIcon,
   },
 ]
 
 export function ExportMenu(props: {
   report: Report
-  rowsOf: (report: Report) => Row[]
   group: Group
+  names: RowNames
   input: ReportInput
   organizationId: string
   organizationSlug: string
-  projects: Project[]
-  members: Member[]
   onError: (message: string | null) => void
 }) {
   const [busy, setBusy] = createSignal(false)
@@ -78,8 +76,12 @@ export function ExportMenu(props: {
     return exportFileName(props.organizationSlug, props.input.from, last, kind)
   }
 
+  function names(): RowNames {
+    return { ...props.names, userId: undefined, locale: EXPORT_LOCALE }
+  }
+
   function timesheet(report: Report) {
-    return timesheetTable(report, props.rowsOf(report), props.group)
+    return timesheetTable(report, reportRows(report, props.group, names()), props.group)
   }
 
   async function run(kind: ExportKind) {
@@ -93,13 +95,14 @@ export function ExportMenu(props: {
         const data = await getReportExport({
           data: { ...props.input, organizationId: props.organizationId },
         })
-        const entries = entriesTable(data, { projects: props.projects, members: props.members })
+        const entries = entriesTable(data, props.names, { hours: kind === 'xlsx' })
+        const locale = { locale: EXPORT_LOCALE }
         blob =
           kind === 'entries'
             ? new Blob([toCsv(entries)], { type: 'text/csv;charset=utf-8' })
             : await toXlsx([
-                { name: m.reports_timesheet(), table: timesheet(data.report) },
-                { name: m.export_sheet_entries(), table: entries },
+                { name: m.export_sheet_entries({}, locale), table: entries },
+                { name: m.reports_timesheet({}, locale), table: timesheet(data.report) },
               ])
       }
       downloadFile(blob, fileName(kind))

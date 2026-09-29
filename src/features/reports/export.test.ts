@@ -27,7 +27,7 @@ const rows: Row[] = [
   { key: 'p2', name: '=HYPERLINK("x")', total: HOUR, perBucket: [HOUR, 0] },
 ]
 
-const members = [{ userId: 'u1', name: 'Mari Tamm' }] as Member[]
+const members = [{ userId: 'u1', name: 'Mari Tamm', email: 'mari@example.com' }] as Member[]
 const projects = [{ id: 'p1', name: 'Õunaaed' }] as Project[]
 
 function entries(list: Partial<ReportEntries['entries'][number]>[]): ReportEntries {
@@ -93,9 +93,10 @@ describe('entriesTable', () => {
       { projects, members },
     )
     expect(table.header).toEqual([
+      'Project',
       'Date',
       'Member',
-      'Project',
+      'Email',
       'Ticket',
       'Description',
       'Start',
@@ -104,20 +105,70 @@ describe('entriesTable', () => {
     ])
     expect(table.rows).toEqual([
       [
+        'Õunaaed',
         '2026-09-21',
         'Mari Tamm',
-        'Õunaaed',
+        'mari@example.com',
         'NBW-412',
         'Planning',
         '09:00',
         '10:30',
         { ms: 1.5 * HOUR },
       ],
-      // A piece that ends at midnight ends at 24:00.
-      ['2026-09-21', 'Mari Tamm', 'No project', '', '', '23:00', '24:00', { ms: HOUR }],
       // A running entry has no end.
-      ['2026-09-21', 'Mari Tamm', 'Õunaaed', '', '', '12:00', null, { ms: 1.5 * HOUR }],
+      [
+        'Õunaaed',
+        '2026-09-21',
+        'Mari Tamm',
+        'mari@example.com',
+        '',
+        '',
+        '12:00',
+        null,
+        { ms: 1.5 * HOUR },
+      ],
+      // A piece that ends at midnight ends at 24:00.
+      [
+        'No project',
+        '2026-09-21',
+        'Mari Tamm',
+        'mari@example.com',
+        '',
+        '',
+        '23:00',
+        '24:00',
+        { ms: HOUR },
+      ],
     ])
+  })
+
+  test('sorts by project, then date, member, and start, with no project last', () => {
+    const table = entriesTable(
+      entries([
+        { projectId: null, date: '2026-09-20' },
+        { projectId: 'p2', date: '2026-09-22' },
+        { projectId: 'p1', date: '2026-09-22', userId: 'u2' },
+        { projectId: 'p1', date: '2026-09-22', from: new Date('2026-09-22T05:00:00Z') },
+        { projectId: 'p1', date: '2026-09-21' },
+      ]),
+      {
+        projects: [...projects, { id: 'p2', name: 'Aed' } as Project],
+        members: [...members, { userId: 'u2', name: 'Ants' } as Member],
+      },
+    )
+    expect(table.rows.map((row) => row.slice(0, 3))).toEqual([
+      ['Aed', '2026-09-22', 'Mari Tamm'],
+      ['Õunaaed', '2026-09-21', 'Mari Tamm'],
+      ['Õunaaed', '2026-09-22', 'Ants'],
+      ['Õunaaed', '2026-09-22', 'Mari Tamm'],
+      ['No project', '2026-09-20', 'Mari Tamm'],
+    ])
+  })
+
+  test('adds decimal hours next to h:mm when asked', () => {
+    const table = entriesTable(entries([{}]), { projects, members }, { hours: true })
+    expect(table.header.slice(-2)).toEqual(['Duration', 'Hours'])
+    expect(table.rows[0].slice(-2)).toEqual([{ ms: 1.5 * HOUR }, 1.5])
   })
 })
 

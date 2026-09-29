@@ -310,12 +310,12 @@ function typeDate(label: string, value: string) {
 }
 
 describe('ReportsView', () => {
-  test('groups by ticket and filters to one, typed in any case', async () => {
+  test('groups by ticket', async () => {
     server.rows.push(
       { kind: 'ticket', id: 'NBW-412', ms: [2 * HOUR] },
       { kind: 'ticket', id: null, ms: [HOUR] },
     )
-    const { search } = renderView()
+    renderView()
     await screen.findByRole('table')
 
     await userEvent.selectOptions(screen.getByLabelText('Group by'), 'Ticket')
@@ -323,17 +323,28 @@ describe('ReportsView', () => {
     const grid = screen.getByRole('table')
     expect(within(grid).getByRole('rowheader', { name: 'NBW-412' })).toBeInTheDocument()
     expect(within(grid).getByRole('rowheader', { name: 'No ticket' })).toBeInTheDocument()
+  })
 
-    const ticket = screen.getByLabelText('Ticket')
-    await userEvent.type(ticket, 'nbw 4{Enter}')
-    expect(screen.getByText('Use a ticket key such as ABC-123.')).toBeInTheDocument()
-    await userEvent.clear(ticket)
-    await userEvent.type(ticket, 'nbw-412{Enter}')
-    await waitFor(() => expect(lastInput()).toMatchObject({ ticket: 'NBW-412' }))
-    expect(search()).toMatchObject({ ticket: 'NBW-412', group: 'ticket' })
+  test('filters to one project, time without one, or archived projects', async () => {
+    const archived = { ...snowtime, id: newId(), name: 'Website 2025', archivedAt: new Date() }
+    fn.listProjects.mockResolvedValue([snowtime, archived])
+    const { search } = renderView()
+    await screen.findByRole('table')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Show all tickets' }))
-    await waitFor(() => expect(lastInput()).not.toHaveProperty('ticket'))
+    const select = screen.getByLabelText('Project')
+    expect(options(select)).toEqual(['All projects', 'No project', 'Snowtime', 'Website 2025'])
+    expect(within(select).getByRole('group', { name: 'Archived' })).toHaveTextContent(
+      'Website 2025',
+    )
+    await userEvent.selectOptions(select, 'Snowtime')
+    await waitFor(() => expect(lastInput()).toMatchObject({ projectId: snowtime.id }))
+    expect(search()).toMatchObject({ project: snowtime.id })
+
+    await userEvent.selectOptions(screen.getByLabelText('Project'), 'No project')
+    await waitFor(() => expect(lastInput()).toMatchObject({ projectId: 'none' }))
+
+    await userEvent.selectOptions(screen.getByLabelText('Project'), 'All projects')
+    await waitFor(() => expect(lastInput()).not.toHaveProperty('projectId'))
   })
 
   test('members see their own time by project, with row and column totals', async () => {
