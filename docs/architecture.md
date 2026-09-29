@@ -334,8 +334,8 @@ lists these items, and must change with them.
 | `snowtime.introSeen`, `snowtime.introSeason` | localStorage | Where the intro last played           | Until cleared                      |
 | `snowtime.taglineSeen`                       | localStorage | The page tagline last shown           | Until cleared                      |
 | `snowtime.passkeyPromptDismissed`            | localStorage | "Not now" on the passkey prompt       | Until cleared                      |
-| `snowtime.reportEntriesNarrowed`             | localStorage | Hides the Entries card's hint         | Until cleared                      |
-| `snowtime.reportEntriesOpen`                 | localStorage | The Entries card's list left open     | Until cleared                      |
+| `snowtime.reportEntriesNarrowed`             | Cookie       | Hides the Entries card's hint         | A year after the last change       |
+| `snowtime.reportEntriesOpen`                 | Cookie       | The Entries card's list left open     | A year after the last change       |
 
 On HTTPS, Better Auth prefixes its cookies with `__Secure-`.
 
@@ -355,6 +355,10 @@ On HTTPS, Better Auth prefixes its cookies with `__Secure-`.
 - `snowtime.settings` holds choices made in an Appearance menu, or the account's copy of
   them (see "User settings"), with no identifier. The intro and passkey keys hold one flag
   or season each.
+- The Entries card's two flags are cookies, not localStorage, so the server renders the
+  card as the browser left it (`src/lib/cookies.ts`). A card that grew after hydration
+  would leave the page too short when the router restores the scroll on a reload. Each
+  holds `1` or is absent.
 - Adding analytics, error reporting that stores anything in the browser, a third-party
   script or embed, or any other cookie or storage key requires revisiting task 038 first:
   it may need a consent prompt, and the privacy policy lists every item.

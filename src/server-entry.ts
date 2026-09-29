@@ -4,12 +4,14 @@ import { contentSecurityPolicy, newNonce } from '~/server/csp.server'
 
 // Scopes the locale to each request, so messages rendered on the server use the request's
 // cookie or Accept-Language even while requests run concurrently. Pages get a fresh CSP
-// nonce, which getRouter reads from the request context and puts on every script.
+// nonce, which getRouter reads from the request context and puts on every script, and the
+// request's cookies, which src/lib/cookies.ts reads while the page renders.
 export default {
   async fetch(request: Request) {
     const nonce = newNonce()
+    const cookie = request.headers.get('cookie') ?? ''
     const response = await paraglideMiddleware(request, () =>
-      handler.fetch(request, { context: { nonce } }),
+      handler.fetch(request, { context: { nonce, cookie } }),
     )
     if (!response.headers.get('content-type')?.startsWith('text/html')) return response
     // A copy, because a response's headers can be immutable.

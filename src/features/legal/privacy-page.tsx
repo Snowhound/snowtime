@@ -4,7 +4,7 @@ import { COMPANY, ContactEmail, LegalLayout } from './legal-layout'
 
 // Change the date with any change to the text below. The policy states what the app does, so
 // a change to what it stores, where, or for how long updates it too.
-const UPDATED = '2026-09-25'
+const UPDATED = '2026-09-29'
 
 export function PrivacyPage() {
   return (
@@ -152,10 +152,14 @@ function PrivacyEn() {
           language.
         </li>
         <li>
+          Two report cookies keep whether you've narrowed a report's entries from its timesheet and
+          whether you left their list open, so a report opens as you left it. They last a year after
+          you last change them.
+        </li>
+        <li>
           Browser storage on this device keeps your appearance choices (theme, app icon, and
-          scenery), which season you last saw the intro in, whether you've dismissed the offer to
-          add a passkey, and whether you've narrowed a report's entries from its timesheet or left
-          their list open. It stays until you clear your browser's site data, and it never leaves
+          scenery), which season you last saw the intro in, and whether you've dismissed the offer
+          to add a passkey. It stays until you clear your browser's site data, and it never leaves
           your device.
         </li>
       </ul>
@@ -336,10 +340,14 @@ function PrivacyEt() {
           pärast seda, kui Snowtime'i viimati avasid, nii et ka sisselogimisleht on selles keeles.
         </li>
         <li>
+          Kaks aruandeküpsist jätavad meelde, kas oled aruande ajakirjete loendit tabelist
+          kitsendanud ja kas jätsid loendi avatuks, et aruanne avaneks nii, nagu selle jätsid. Need
+          kehtivad aasta pärast seda, kui neid viimati muutsid.
+        </li>
+        <li>
           Brauseri kohalik salvestusruum (localStorage) jätab selles seadmes meelde
           kujunduseelistused (teema, rakenduse ikoon ja maastik), selle, millisel aastaajal oled
-          tutvustust viimati näinud, selle, kas oled pääsuvõtme lisamise pakkumisest loobunud, ja
-          selle, kas oled aruande ajakirjete loendit tabelist kitsendanud või loendi avatuks jätnud.
+          tutvustust viimati näinud, ja selle, kas oled pääsuvõtme lisamise pakkumisest loobunud.
           Need jäävad alles, kuni kustutad brauseri saidiandmed, ega lahku kunagi sinu seadmest.
         </li>
       </ul>

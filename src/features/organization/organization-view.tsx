@@ -123,6 +123,7 @@ export function OrganizationView(props: {
       to: '/$org/organization',
       search: tab === 'members' ? {} : { tab: tab as OrganizationTab },
       replace: true,
+      resetScroll: false,
     })
   }
 

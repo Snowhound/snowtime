@@ -26,8 +26,7 @@ export function getRouter() {
 
     // The page's CSP nonce (src/server-entry.ts), which the router and Solid put on the
     // scripts they render. The client reads it back from the page's csp-nonce meta tag.
-    // Start types the context as never without a registered start config.
-    ssr: { nonce: (getGlobalStartContext() as { nonce?: string } | undefined)?.nonce },
+    ssr: { nonce: getGlobalStartContext()?.nonce },
 
     scrollRestoration: true,
     defaultPreload: 'intent',
@@ -56,6 +55,8 @@ export function getRouter() {
 declare module '@tanstack/solid-router' {
   interface Register {
     router: ReturnType<typeof getRouter>
+    // What src/server-entry.ts passes each request.
+    server: { requestContext: { nonce: string; cookie: string } }
   }
   interface StaticDataRouteOption {
     // The page's content may be wider than the header (AppFrame).

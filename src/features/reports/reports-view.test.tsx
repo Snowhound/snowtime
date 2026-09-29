@@ -5,6 +5,7 @@ import { type JSX, createSignal } from 'solid-js'
 import * as v from 'valibot'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { addDays, datesBetween, startOfWeek } from '~/lib/calendar'
+import { writeCookie } from '~/lib/cookies'
 import { newId } from '~/lib/queries/query'
 import type { ReportEntriesInput, ReportInput } from '~/server/reports/reports.schemas'
 import { ReportSearch } from './filters'
@@ -42,6 +43,13 @@ vi.mock('@tanstack/solid-router', () => ({
   ),
   useNavigate: () => fn.navigate,
 }))
+// The cookies module reads the request context only on the server.
+vi.mock('@tanstack/solid-start', () => ({ getGlobalStartContext: () => undefined }))
+
+function clearEntryFlags() {
+  writeCookie('snowtime.reportEntriesNarrowed', null)
+  writeCookie('snowtime.reportEntriesOpen', null)
+}
 
 const HOUR = 3_600_000
 const organizationId = newId()
@@ -251,9 +259,9 @@ const NOW = new Date('2026-09-24T09:00:00Z')
 
 beforeEach(() => {
   vi.clearAllMocks()
-  localStorage.clear()
+  clearEntryFlags()
   // The Entries list starts closed until the user opens it; most tests need it open.
-  localStorage.setItem('snowtime.reportEntriesOpen', '1')
+  writeCookie('snowtime.reportEntriesOpen', '1')
   vi.useFakeTimers({ toFake: ['Date'], now: NOW })
   server.role = 'member'
   server.rows = [
@@ -602,7 +610,7 @@ describe('ReportsView', () => {
   })
 
   test('the Entries list starts closed, opens from its title, stays as left, and a timesheet cell opens it', async () => {
-    localStorage.clear()
+    clearEntryFlags()
     renderView()
     const card = await screen.findByRole('region', { name: 'Entries' })
     const title = within(card).getByRole('button', { name: 'Entries' })

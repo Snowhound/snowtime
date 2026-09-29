@@ -155,7 +155,8 @@ export function ReportsView(props: {
       ...(unit === 'week' ? { unit } : {}),
       ...(view !== 'timesheet' ? { view } : {}),
     }
-    void navigate({ from: '/$org/reports', to: '/$org/reports', search })
+    // The filters change the report in place, so the page keeps its scroll.
+    void navigate({ from: '/$org/reports', to: '/$org/reports', search, resetScroll: false })
   }
 
   const actions: FilterActions = {
@@ -171,6 +172,7 @@ export function ReportsView(props: {
         from: '/$org/reports',
         to: '/$org/reports',
         search: { ...props.search, range: 'custom', from, to: addDays(to, -1) },
+        resetScroll: false,
       })
     },
     onShift: (direction) => go({ range: shiftRange(filters().range, direction) }),
@@ -191,7 +193,7 @@ export function ReportsView(props: {
     for (const key of ['row', 'bucket', 'entries'] as const) {
       if (!search[key]) delete search[key]
     }
-    return navigate({ from: '/$org/reports', to: '/$org/reports', search })
+    return navigate({ from: '/$org/reports', to: '/$org/reports', search, resetScroll: false })
   }
 
   // Choosing the part the card shows again shows all entries. The card scrolls into view when

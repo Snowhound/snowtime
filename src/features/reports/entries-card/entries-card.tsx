@@ -7,7 +7,7 @@ import ChevronDownIcon from 'lucide-solid/icons/chevron-down'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import MoonIcon from 'lucide-solid/icons/moon'
 import XIcon from 'lucide-solid/icons/x'
-import { For, Match, Show, Switch, createEffect, createMemo, createSignal, onMount } from 'solid-js'
+import { For, Match, Show, Switch, createEffect, createMemo, createSignal } from 'solid-js'
 import { Duration } from '~/components/duration'
 import { ErrorAlert } from '~/components/error-alert'
 import { ProjectDot } from '~/components/project-dot'
@@ -15,6 +15,7 @@ import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card, CardHeader, CardTitle } from '~/components/ui/card'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
+import { readCookie, writeCookie } from '~/lib/cookies'
 import { useFormatHours, useHourCycle } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatIsoDate } from '~/lib/format'
@@ -32,26 +33,17 @@ const DESCRIPTION_ROWS = 25
 
 // Flags kept in this browser: whether the user has narrowed the list from the timesheet, after
 // which the header's hint on how to do that no longer shows, and whether they left the list
-// open. It starts closed, showing only the header, until they open it.
+// open. It starts closed, showing only the header, until they open it. They are cookies, so
+// the server renders the card as the browser shows it.
 const NARROWED_KEY = 'snowtime.reportEntriesNarrowed'
 const OPEN_KEY = 'snowtime.reportEntriesOpen'
 
 function readFlag(key: string) {
-  try {
-    return localStorage.getItem(key) === '1'
-  } catch {
-    return false
-  }
+  return readCookie(key) === '1'
 }
 
-// When storage is blocked, the choice lasts until the page reloads.
 function writeFlag(key: string, on: boolean) {
-  try {
-    if (on) localStorage.setItem(key, '1')
-    else localStorage.removeItem(key)
-  } catch {
-    // Nothing to do.
-  }
+  writeCookie(key, on ? '1' : null)
 }
 
 type DescriptionRow = Extract<ReportEntries, { view: 'description' }>['rows'][number]
@@ -73,13 +65,8 @@ export function EntriesCard(props: {
   )
   // The list whose By description rows all show, until the list changes.
   const [allOf, setAllOf] = createSignal<string>()
-  // Decided on mount, since only the browser has localStorage.
-  const [hint, setHint] = createSignal(false)
-  const [open, setOpen] = createSignal(false)
-  onMount(() => {
-    setHint(!readFlag(NARROWED_KEY))
-    setOpen(readFlag(OPEN_KEY))
-  })
+  const [hint, setHint] = createSignal(!readFlag(NARROWED_KEY))
+  const [open, setOpen] = createSignal(readFlag(OPEN_KEY))
   function toggle(next: boolean) {
     setOpen(next)
     writeFlag(OPEN_KEY, next)

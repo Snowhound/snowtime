@@ -558,7 +558,7 @@ describe('OrganizationView', () => {
     )
   })
 
-  test('changing tabs keeps the tab in the URL', async () => {
+  test('changing tabs keeps the tab in the URL and the page where it was scrolled', async () => {
     renderPage()
     await userEvent.click(await screen.findByRole('tab', { name: /Teams/ }))
     expect(fn.navigate).toHaveBeenCalledWith({
@@ -566,6 +566,7 @@ describe('OrganizationView', () => {
       to: '/$org/organization',
       search: { tab: 'teams' },
       replace: true,
+      resetScroll: false,
     })
   })
 })
