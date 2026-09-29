@@ -11,7 +11,6 @@ import {
   piecesOn,
   sideBySide,
   snap,
-  totalOn,
 } from './week-grid'
 
 const zone = 'Europe/Tallinn'
@@ -84,7 +83,8 @@ describe('piecesOn', () => {
       top: 1380,
       bottom: 1440,
     })
-    expect(totalOn([fall], ['2026-10-25', '2026-10-26'], zone, now)).toBe(60 * MIN)
+    const pieces = ['2026-10-25', '2026-10-26'].flatMap((date) => piecesOn([fall], date, zone, now))
+    expect(pieces.reduce((sum, p) => sum + p.to - p.from, 0)).toBe(60 * MIN)
   })
 })
 

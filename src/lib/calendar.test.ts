@@ -14,6 +14,7 @@ import {
   monthDates,
   nthWeekday,
   offsetAt,
+  sameTimeOn,
   splitByDay,
   startOfWeek,
   weekRange,
@@ -280,6 +281,16 @@ describe('atLocalTime', () => {
     const ms = at('2026-01-15T23:45:00Z')
     const zone = 'America/New_York'
     expect(atLocalTime(localDate(ms, zone), localTime(ms, zone), zone)).toBe(ms)
+  })
+})
+
+describe('sameTimeOn', () => {
+  test('keeps the time of day and the seconds across a clock change', () => {
+    // 09:30:15 in Tallinn on 24 October, the day before clocks fall back.
+    const ms = at('2026-10-24T06:30:15Z')
+    expect(new Date(sameTimeOn(ms, '2026-10-26', 'Europe/Tallinn')).toISOString()).toBe(
+      '2026-10-26T07:30:15.000Z',
+    )
   })
 })
 

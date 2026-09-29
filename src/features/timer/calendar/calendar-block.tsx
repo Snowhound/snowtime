@@ -7,7 +7,7 @@ import { useFormatHours } from '~/lib/display-format'
 import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { entryName } from '../entries'
+import { entryLabel, entryName } from '../entries'
 import type { Entry } from '../queries'
 import type { Placed } from './week-grid'
 
@@ -27,6 +27,16 @@ export function blockProject(projects: readonly Project[], projectId: string | n
     return { name: m.timer_unavailable_project(), color: projectColor(null), muted: true }
   }
   return { name: project.name, color: projectColor(project.color), muted: false }
+}
+
+// An entry's or a slot's times, "09:00–10:30", or up to "now" while it runs.
+export function formatRange(
+  formatTime: (ms: number) => string,
+  startedAt: number,
+  stoppedAt: number | null,
+) {
+  const end = stoppedAt === null ? m.calendar_now() : formatTime(stoppedAt)
+  return `${formatTime(startedAt)}–${end}`
 }
 
 function box(top: number, bottom: number) {
@@ -62,12 +72,11 @@ export function CalendarBlock(props: {
     return blockProject(props.projects, entry().projectId)
   }
   function description() {
-    return entryName(entry()) || m.timer_no_description()
+    return entryLabel(entry())
   }
   function times() {
     const e = entry()
-    const end = e.stoppedAt ? props.formatTime(e.stoppedAt.getTime()) : m.calendar_now()
-    return `${props.formatTime(e.startedAt.getTime())}–${end}`
+    return formatRange(props.formatTime, e.startedAt.getTime(), e.stoppedAt?.getTime() ?? null)
   }
   function duration() {
     const e = entry()

@@ -195,6 +195,12 @@ export function localTime(ms: number, zone: string): string {
   return new Date(wallClock(ms, zone)).toISOString().slice(11, 16)
 }
 
+// The instant the zone's clocks read the same time of day on the date as at `ms`, keeping its
+// seconds.
+export function sameTimeOn(ms: number, date: IsoDate, zone: string): number {
+  return atLocalTime(date, localTime(ms, zone), zone) + (ms % 60_000)
+}
+
 // The month's `n`th weekday (0 for Sunday through 6 for Saturday), counting from its end when
 // `n` is negative: nthWeekday(2026, 11, 4, 4) is the fourth Thursday of November 2026, and
 // nthWeekday(2026, 5, 1, -1) the last Monday of May.

@@ -13,6 +13,7 @@ import type { Settings } from '~/lib/queries/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { DescriptionCombobox } from './description-combobox'
+import { changedFields } from './entries'
 import { ProjectSelect } from './project-select'
 import type { Entry, RunningTimer } from './queries'
 import { TicketChip } from './ticket-chip'
@@ -129,13 +130,10 @@ export function TimerBar(props: {
 
   // Commits what was typed; the running entry saves its description and ticket.
   function saveDescription() {
-    const { description, ticket } = draft.commit()
-    const running = props.running
-    if (!running) return
-    const patch: TimerPatch = {}
-    if (description !== running.description) patch.description = description
-    if (ticket !== running.ticket) patch.ticket = ticket
-    if (Object.keys(patch).length > 0) props.onUpdate(patch)
+    const committed = draft.commit()
+    if (!props.running) return
+    const patch = changedFields(props.running, committed, ['description', 'ticket'])
+    if (patch) props.onUpdate(patch)
   }
 
   function untick() {

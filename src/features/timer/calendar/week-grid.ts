@@ -10,11 +10,12 @@ import {
   dayRange,
   daysBetween,
   localDate,
-  localTime,
   offsetAt,
   runningMs,
+  sameTimeOn,
   weekday,
 } from '~/lib/calendar'
+import { lastEnded } from '../entries'
 
 const MINUTE = 60_000
 export const DAY_MINUTES = 24 * 60
@@ -65,8 +66,7 @@ function floorTo(ms: number, step: number) {
 
 // The same wall-clock time `days` later, keeping the seconds.
 function shiftDays(ms: number, days: number, zone: string) {
-  const date = localDate(ms, zone)
-  return atLocalTime(addDays(date, days), localTime(ms, zone), zone) + (ms % MINUTE)
+  return sameTimeOn(ms, addDays(localDate(ms, zone), days), zone)
 }
 
 // An entry's time on one day: [from, to) as instants and [top, bottom) as the day's minutes.
@@ -115,20 +115,6 @@ export function piecesOn<T extends Span & { id: string }>(
     })
   }
   return pieces
-}
-
-// The time the entries have on the dates.
-export function totalOn(
-  entries: readonly (Span & { id: string })[],
-  dates: readonly IsoDate[],
-  zone: string,
-  now: number,
-) {
-  let total = 0
-  for (const date of dates) {
-    for (const piece of piecesOn(entries, date, zone, now)) total += piece.to - piece.from
-  }
-  return total
 }
 
 export type Placed<T> = Piece<T> & { column: number; columns: number }
@@ -190,21 +176,9 @@ export function clickRange(slot: Slot, zone: string, now: number): Range | null 
 // Add entry's slot: half an hour from the end of today's last entry, or from an hour ago,
 // up to now.
 export function addRange(entries: readonly Span[], zone: string, now: number): Range {
-  const today = localDate(now, zone)
-  let last: number | null = null
-  for (const { stoppedAt } of entries) {
-    const end = stoppedAt?.getTime()
-    if (
-      end !== undefined &&
-      end <= now &&
-      localDate(end, zone) === today &&
-      (last === null || end > last)
-    ) {
-      last = end
-    }
-  }
+  const last = lastEnded(entries, { before: now, day: { date: localDate(now, zone), zone } })
   const stoppedAt = floorTo(now, MINUTE)
-  let startedAt = last ?? floorTo(now - 60 * MINUTE, SNAP_MS)
+  let startedAt = last?.stoppedAt.getTime() ?? floorTo(now - 60 * MINUTE, SNAP_MS)
   if (stoppedAt - startedAt < MINUTE) startedAt = stoppedAt - CLICK_MINUTES * MINUTE
   return { startedAt, stoppedAt: Math.min(startedAt + CLICK_MINUTES * MINUTE, stoppedAt) }
 }

@@ -18,7 +18,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 import { Label } from '~/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
-import { type WeekStart, atLocalTime, localDate, localTime } from '~/lib/calendar'
+import { type WeekStart, localDate, localTime, sameTimeOn } from '~/lib/calendar'
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
@@ -26,7 +26,7 @@ import { detectTicket, keysIn, untick } from '~/lib/tickets'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
-import { readEntryTimes } from './entries'
+import { changedFields, readEntryTimes } from './entries'
 import { projectChoices } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
 import { TicketChip } from './ticket-chip'
@@ -121,9 +121,7 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
   function readDate(value: string) {
     if (!value) return { error: m.entry_error_missing_date() }
     const { startedAt, stoppedAt } = props.entry
-    const seconds = startedAt.getTime() % 60_000
-    const start =
-      atLocalTime(value, localTime(startedAt.getTime(), props.zone), props.zone) + seconds
+    const start = sameTimeOn(startedAt.getTime(), value, props.zone)
     const stop = start + stoppedAt.getTime() - startedAt.getTime()
     if (stop > Date.now()) return { error: m.entry_error_future() }
     return { startedAt: new Date(start), stoppedAt: new Date(stop) }
@@ -147,11 +145,9 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     },
     commitDescription() {
       const result = detected()
-      const patch: EntryPatch = {}
-      if (result.description !== props.entry.description) patch.description = result.description
-      if (result.ticket !== props.entry.ticket) patch.ticket = result.ticket
       setDescription(result.description)
-      if (Object.keys(patch).length > 0) save(patch)
+      const patch = changedFields(props.entry, result, ['description', 'ticket'])
+      if (patch) save(patch)
     },
     // The chip's ×: the key goes back into the text, which then has it, so it isn't found again.
     untick() {
@@ -184,15 +180,9 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
       }
       setInvalid(null)
       if (result.error) return
-      const patch: EntryPatch = {}
-      if (result.startedAt.getTime() !== props.entry.startedAt.getTime()) {
-        patch.startedAt = result.startedAt
-      }
-      if (result.stoppedAt.getTime() !== props.entry.stoppedAt.getTime()) {
-        patch.stoppedAt = result.stoppedAt
-      }
-      if (Object.keys(patch).length === 0) setTimes({})
-      else save(patch)
+      const patch = changedFields(props.entry, result, ['startedAt', 'stoppedAt'])
+      if (patch) save(patch)
+      else setTimes({})
     },
     resetTime(key: TimeKey) {
       setTimes((t) => {

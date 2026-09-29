@@ -14,6 +14,7 @@ import {
   startOfDay,
   weekRange,
 } from '~/lib/calendar'
+import { m } from '~/paraglide/messages.js'
 
 export interface EntryTimes {
   startedAt: Date
@@ -63,6 +64,48 @@ export function entryName(entry: { description: string; ticket: string | null })
   return [entry.ticket, entry.description].filter(Boolean).join(' ')
 }
 
+// The name, or a stand-in for an entry without one.
+export function entryLabel(entry: { description: string; ticket: string | null }) {
+  return entryName(entry) || m.timer_no_description()
+}
+
+// The `keys` whose values in `next` differ from the entry's, for an update that sends only
+// what changed; null when nothing did. A key `next` leaves undefined isn't compared.
+export function changedFields<P extends object, K extends keyof P>(
+  entry: { [Key in K]: unknown },
+  next: P,
+  keys: readonly K[],
+) {
+  const patch: Partial<Pick<P, K>> = {}
+  for (const key of keys) {
+    const value = next[key]
+    const saved = entry[key]
+    if (value === undefined) continue
+    const same =
+      value instanceof Date && saved instanceof Date
+        ? value.getTime() === saved.getTime()
+        : value === saved
+    if (!same) patch[key] = value
+  }
+  return Object.keys(patch).length > 0 ? patch : null
+}
+
+// The stopped entry that ended last at or before `before`, and on `day` in the zone when given.
+export function lastEnded<T extends EntryTimes>(
+  entries: readonly T[],
+  options: { before: number; day?: { date: IsoDate; zone: string } },
+) {
+  let last: (T & { stoppedAt: Date }) | undefined
+  for (const entry of entries) {
+    const end = entry.stoppedAt?.getTime()
+    if (end === undefined || end > options.before) continue
+    const { day } = options
+    if (day && localDate(end, day.zone) !== day.date) continue
+    if (!last || end > last.stoppedAt.getTime()) last = entry as T & { stoppedAt: Date }
+  }
+  return last
+}
+
 // What a piece of work is: its description, ticket, and project.
 interface Work {
   description: string
@@ -110,15 +153,8 @@ export function suggestWork<T extends EntryTimes & Work>(
 // A new entry's default start: the end of today's last stopped entry in the zone, so
 // filling the gap after it needs only an end. Empty when nothing ended today.
 export function lastEndToday(entries: readonly EntryTimes[], zone: string, now = Date.now()) {
-  const today = localDate(now, zone)
-  let last: number | null = null
-  for (const { stoppedAt } of entries) {
-    const end = stoppedAt?.getTime()
-    if (end !== undefined && localDate(end, zone) === today && (last === null || end > last)) {
-      last = end
-    }
-  }
-  return last === null ? '' : localTime(last, zone)
+  const last = lastEnded(entries, { before: now, day: { date: localDate(now, zone), zone } })
+  return last ? localTime(last.stoppedAt.getTime(), zone) : ''
 }
 
 export interface Summary {
