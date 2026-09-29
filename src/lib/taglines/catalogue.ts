@@ -61,8 +61,8 @@ export const TAGLINES: TaglineSet[] = [
       ],
       et: [
         'Head uut aastat!',
-        'Uut aastat ei alustata vanade võlgadega.',
-        'Täida oma tunnileht ära.',
+        'Vanu võlgu uude kaasa ei võeta.',
+        'Pane eelmise aasta tunnid kirja.',
       ],
     },
   },
@@ -121,7 +121,7 @@ export const TAGLINES: TaglineSet[] = [
       et: [
         'Vastlapäeval lastakse liugu.',
         'Mida pikem liug, seda pikem lina.',
-        'Pikka auku tunnilehes ei taha aga keegi. Täida see ära.',
+        'Samas pikk auk tunnilehes teeb iga projektijuhi meele mõruks.',
       ],
     },
   },
@@ -172,7 +172,7 @@ export const TAGLINES: TaglineSet[] = [
       ],
       et: [
         'Munad on peidus.',
-        'Mõned sinu tunnid samuti.',
+        'Tundub, et sinu tunnid samuti.',
         'Täida oma tunnileht ära – neid ei hakka keegi otsima.',
       ],
     },
@@ -197,11 +197,7 @@ export const TAGLINES: TaglineSet[] = [
         'Log all of it.',
         'Fill in your timesheet while the sun is still up.',
       ],
-      et: [
-        'Käes on aasta pikim päev.',
-        'Valgust jagub ka tunnilehe jaoks.',
-        'Täida see ära, enne kui päike korraks loojub.',
-      ],
+      et: ['Aasta pikim päev.', 'Pimeduse taha täna pugeda ei saa.', 'Pane tunnid kirja.'],
     },
   },
   {
@@ -221,8 +217,8 @@ export const TAGLINES: TaglineSet[] = [
     lines: {
       et: [
         'Jaanid on peetud.',
-        'Nüüd pane kirja ka tunnid.',
-        'Täida oma tunnileht, enne kui lõkkesuits hajub.',
+        'Aga tunnileht on sama tühi nagu hommikune rummipudel.',
+        'Täida see ära, enne kui pohmakas kohale jõuab.',
       ],
     },
   },
@@ -393,11 +389,7 @@ export const TAGLINES: TaglineSet[] = [
     when: { range: days('09-01', '09-30') },
     lines: {
       en: ['School is back.', 'The kids have homework.', 'So do you: fill in your timesheet.'],
-      et: [
-        'Kool algas.',
-        'Mäletad veel, kuidas sa oma päevikut täitsid?',
-        'Täida oma tunnileht korralikumalt!',
-      ],
+      et: ['Kool algas.', '„Koer sõi kodutöö ära” tööl läbi ei lähe.', 'Pane tunnid kirja.'],
     },
   },
   {
@@ -405,9 +397,9 @@ export const TAGLINES: TaglineSet[] = [
     when: { range: days('12-01', '12-19') },
     lines: {
       et: [
-        'Päkapikud piiluvad aknast sisse.',
-        'Tühja tunnilehe eest sussi sisse kommi ei saa.',
-        'Täida see ära, muidu leiad sussist toore kartuli.',
+        'Päkapikk näeb kõike.',
+        'Isegi su tühje lahtreid.',
+        'Pane tunnid kirja, enne kui sussi potsatab sibul.',
       ],
     },
   },
@@ -490,8 +482,8 @@ export const TAGLINES: TaglineSet[] = [
       ],
       et: [
         'Nädalavahetus on läbi.',
-        'Reedesed tunnid ootavad ikka veel.',
-        'Pane need kirja, enne kui uus nädal need enda alla matab.',
+        'Reedesed tunnid ootavad aga ikka veel.',
+        'Pane need kirja, enne kui uus nädal su tööde alla matab.',
       ],
     },
   },
