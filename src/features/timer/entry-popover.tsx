@@ -17,14 +17,13 @@ import { Popover, PopoverContent } from '~/components/ui/popover'
 import { type IsoDate, type WeekStart, localDate, localTime, runningMs } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
 import type { Project } from '~/lib/queries/projects'
-import { detectTicket, keysIn, untick } from '~/lib/tickets'
 import { m } from '~/paraglide/messages.js'
 import { DescriptionCombobox } from './description-combobox'
 import { type EntryFormError, lastEndToday, readEntryTimes } from './entries'
 import { ProjectSelect } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
 import { TicketChip } from './ticket-chip'
-import { caretAfterKey } from './ticket-draft'
+import { caretAfterKey, createTicketDraft } from './ticket-draft'
 
 // A calendar slot's times, and the project of the entry before it.
 interface EntrySlot {
@@ -242,26 +241,17 @@ function EntryForm(props: {
   const projectId = form.useStore((state) => state.values.projectId)
   const ticket = form.useStore((state) => state.values.ticket)
 
-  // The keys the loaded description had, and any turned back into text, stay text.
-  let known = new Set(keysIn(form.state.values.description))
+  const ticketDraft = createTicketDraft({
+    description: () => form.state.values.description,
+    setDescription: (description) => form.setFieldValue('description', description),
+    ticket: () => form.state.values.ticket,
+    setTicket: (ticket) => form.setFieldValue('ticket', ticket),
+  })
   let descriptionInput: HTMLInputElement | undefined
 
-  function commitTicket() {
-    const { values } = form.state
-    const result = detectTicket(values.description, known, values.ticket)
-    form.setFieldValue('description', result.description)
-    form.setFieldValue('ticket', result.ticket)
-    return result
-  }
-
   function untickTicket() {
-    const key = commitTicket().ticket
-    if (!key) return
-    const result = untick(key, form.state.values.description)
-    form.setFieldValue('description', result.description)
-    form.setFieldValue('ticket', null)
-    known.add(key)
-    caretAfterKey(descriptionInput, { description: result.description, key })
+    const turned = ticketDraft.untick()
+    if (turned) caretAfterKey(descriptionInput, turned)
   }
 
   function summary() {
@@ -280,7 +270,7 @@ function EntryForm(props: {
       novalidate
       onSubmit={(event) => {
         event.preventDefault()
-        commitTicket()
+        ticketDraft.commit()
         void form.handleSubmit()
       }}
     >
@@ -315,12 +305,10 @@ function EntryForm(props: {
             projects={props.projects}
             ref={(el) => (descriptionInput = el)}
             onChange={field().handleChange}
-            onBlur={commitTicket}
+            onBlur={ticketDraft.commit}
             onPick={(picked) => {
-              field().handleChange(picked.description)
-              form.setFieldValue('ticket', picked.ticket)
+              ticketDraft.reset(picked.description, picked.ticket)
               form.setFieldValue('projectId', picked.projectId ?? '')
-              known = new Set(keysIn(picked.description))
             }}
           />
         )}

@@ -22,7 +22,6 @@ import { type WeekStart, localDate, localTime, sameTimeOn } from '~/lib/calendar
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
-import { detectTicket, keysIn, untick } from '~/lib/tickets'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
@@ -30,7 +29,7 @@ import { changedFields, readEntryTimes } from './entries'
 import { projectChoices } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
 import { TicketChip } from './ticket-chip'
-import { caretAfterKey } from './ticket-draft'
+import { caretAfterKey, createTicketDraft } from './ticket-draft'
 
 export type EntryPatch = Omit<UpdateEntryInput, 'id'>
 export type SaveEntry = (entry: Entry, patch: EntryPatch) => Promise<unknown>
@@ -74,7 +73,16 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
   const savedTimes = createMemo(
     () => `${props.entry.startedAt.getTime()}-${props.entry.stoppedAt?.getTime()}`,
   )
-  createEffect(on(savedDescription, setDescription, { defer: true }))
+  const draft = createTicketDraft({
+    description,
+    setDescription,
+    // The row shows the saved ticket; a commit saves the one it finds.
+    ticket: () => props.entry.ticket,
+    setTicket: () => {},
+  })
+  createEffect(
+    on(savedDescription, (saved) => draft.reset(saved, props.entry.ticket), { defer: true }),
+  )
   createEffect(on(savedTimes, () => setTimes({}), { defer: true }))
 
   // Memos, because the row's fields read these several times and each read goes through Intl.
@@ -127,10 +135,6 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     return { startedAt: new Date(start), stoppedAt: new Date(stop) }
   }
 
-  // What committing the typed description gives. The keys the saved text has stay text.
-  function detected() {
-    return detectTicket(description(), new Set(keysIn(props.entry.description)), props.entry.ticket)
-  }
   let input: HTMLInputElement | undefined
 
   return {
@@ -144,19 +148,16 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
       input = el
     },
     commitDescription() {
-      const result = detected()
-      setDescription(result.description)
+      const result = draft.commit()
       const patch = changedFields(props.entry, result, ['description', 'ticket'])
       if (patch) save(patch)
     },
     // The chip's ×: the key goes back into the text, which then has it, so it isn't found again.
     untick() {
-      const typed = detected()
-      if (!typed.ticket) return
-      const result = untick(typed.ticket, typed.description)
-      setDescription(result.description)
-      save({ description: result.description, ticket: null })
-      caretAfterKey(input, { description: result.description, key: typed.ticket })
+      const turned = draft.untick()
+      if (!turned) return
+      save({ description: turned.description, ticket: null })
+      caretAfterKey(input, turned)
     },
     resetDescription() {
       setDescription(props.entry.description)
