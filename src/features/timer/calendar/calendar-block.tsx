@@ -112,6 +112,8 @@ export function CalendarBlock(props: {
       data-muted={project().muted ? '' : undefined}
       data-running={running() ? '' : undefined}
       data-editing={props.editing ? '' : undefined}
+      // A click on the entry that is open leaves its popover open.
+      data-entry-trigger={props.editing ? '' : undefined}
       data-dragging={props.dragging ? '' : undefined}
       aria-label={label()}
       style={style()}

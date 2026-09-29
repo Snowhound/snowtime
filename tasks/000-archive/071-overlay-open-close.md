@@ -1,6 +1,6 @@
 # 071: Dialogs and popovers fade in and out
 
-Status: todo
+Status: done
 
 Dialogs and popovers should open and close with a fade, in place, instead of moving. Two
 things move today (seen on 2026-09-29):
@@ -18,12 +18,16 @@ things move today (seen on 2026-09-29):
 pass the classes at the call sites, and record the choice in `prototypes/README.md`
 ("Components").
 
+A click on the entry whose popover is open also closed the popover and opened it again. It
+should leave the popover as it is.
+
 ## Acceptance criteria
 
-- [ ] Dialogs fade in and out where they open, with no slide
-- [ ] Popovers, menus, and selects fade in and out in place, and none jumps when its anchor
+- [x] Dialogs fade in and out where they open, with no slide
+- [x] Popovers, menus, and selects fade in and out in place, and none jumps when its anchor
       goes away as it closes
-- [ ] The calendar's entry popover stays beside its slot or entry while it closes after Save
+- [x] The calendar's entry popover stays beside its slot or entry while it closes after Save
       and Delete
-- [ ] Reduced motion still turns the animations off (`src/styles.css`)
-- [ ] Checked in Chrome at 1440 and 390 px, light and dark
+- [x] A click on the open entry's block leaves its popover open, with no close and reopen
+- [x] Reduced motion still turns the animations off (`src/styles.css`)
+- [x] Checked in Chrome at 1440 and 390 px, light and dark

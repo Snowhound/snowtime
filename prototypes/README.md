@@ -86,6 +86,9 @@ When a prototype needs another component, copy its class strings verbatim from t
 registry into `ui.js`, keeping the commit noted at the top of the file. Badge variants
 `success` / `warning` / `error` are left out because their tokens are not in `src/styles.css`.
 
+The app changes its copies in `src/components/ui/` where every use needs the change, and lists
+each change in [`src/components/ui/README.md`](../src/components/ui/README.md).
+
 ## Workflow
 
 1. Name the decision the prototype should help make. Read any existing Solid implementation and

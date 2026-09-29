@@ -58,7 +58,7 @@ const SelectContent = <T extends ValidComponent = 'div'>(
     <SelectPrimitive.Portal mount={layerRoot()}>
       <SelectPrimitive.Content
         class={cn(
-          'relative z-20 min-w-32 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-80',
+          'relative z-20 min-w-32 origin-[var(--kb-select-content-transform-origin)] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95',
           local.class,
         )}
         {...others}

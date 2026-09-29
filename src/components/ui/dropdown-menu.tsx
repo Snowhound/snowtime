@@ -136,7 +136,7 @@ const DropdownMenuSubContent = <T extends ValidComponent = 'div'>(
   return (
     <DropdownMenuPrimitive.SubContent
       class={cn(
-        'z-20 min-w-32 origin-[var(--kb-menu-content-transform-origin)] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in',
+        'z-20 min-w-32 origin-[var(--kb-menu-content-transform-origin)] animate-content-hide overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[expanded]:animate-content-show',
         props.class,
       )}
       {...rest}

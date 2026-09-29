@@ -7,8 +7,19 @@ import { cn } from '~/lib/utils'
 
 const PopoverTrigger = PopoverPrimitive.Trigger
 
+// An anchor that leaves the page measures 0, 0, so a popover that outlives it (the calendar's,
+// after Save or Delete) stays where the anchor last was instead of jumping to the corner.
+function lastAnchorRect() {
+  let last: DOMRect | undefined
+  return (anchor?: HTMLElement) => {
+    if (anchor?.isConnected) last = anchor.getBoundingClientRect()
+    return last
+  }
+}
+
 const Popover: Component<PopoverPrimitive.PopoverRootProps> = (props) => {
-  return <PopoverPrimitive.Root gutter={4} {...props} />
+  const anchorRect = lastAnchorRect()
+  return <PopoverPrimitive.Root gutter={4} getAnchorRect={anchorRect} {...props} />
 }
 
 type PopoverContentProps<T extends ValidComponent = 'div'> =

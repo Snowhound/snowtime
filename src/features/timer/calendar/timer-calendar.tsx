@@ -532,7 +532,7 @@ export function TimerCalendar(props: {
   function click(event: MouseEvent) {
     const block = (event.target as HTMLElement).closest<HTMLElement>('[data-entry]')
     const entry = block && findEntry(block.dataset.entry)
-    if (!entry || suppressClick) return
+    if (!entry || suppressClick || entry.id === editingId()) return
     openEntry(entry, block)
   }
 
