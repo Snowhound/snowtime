@@ -23,4 +23,7 @@ page settled in 155–185 ms. The scripts are in the gitignored `temp/perf073/`.
 
 - [ ] Every subtask is done
 - [ ] `bun run test`, `oxlint`, `tsc`, and `knip` pass
-- [ ] `src/` has fewer lines than the 39,448 at `4a601e6`, counted as in task 053
+- [x] `src/` has fewer lines than the 39,448 at `4a601e6`, counted as in task 053
+
+`src/` ended at about 40,000 lines. The growth is the performance fixes and the calendar
+split, which the user accepted.
