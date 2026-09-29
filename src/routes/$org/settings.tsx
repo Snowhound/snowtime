@@ -8,7 +8,8 @@ import { m } from '~/paraglide/messages.js'
 export const Route = createFileRoute('/$org/settings')({
   // `error` is set by Better Auth when linking a provider fails.
   validateSearch: v.object({ error: v.optional(v.string()) }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(signInMethodsQuery),
+  loader: ({ context }) =>
+    context.queryClient.query({ ...signInMethodsQuery, staleTime: 'static' }),
   pendingComponent: SettingsPending,
   head: () => ({ meta: [{ title: `${m.nav_settings()} · ${m.app_name()}` }] }),
   component: Settings,

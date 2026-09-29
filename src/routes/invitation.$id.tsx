@@ -9,8 +9,8 @@ export const Route = createFileRoute('/invitation/$id')({
   validateSearch: v.object({ error: v.optional(v.string()) }),
   loader: ({ context, params }) =>
     Promise.all([
-      context.queryClient.ensureQueryData(invitationQuery(params.id)),
-      context.queryClient.ensureQueryData(signInMethodsQuery),
+      context.queryClient.query({ ...invitationQuery(params.id), staleTime: 'static' }),
+      context.queryClient.query({ ...signInMethodsQuery, staleTime: 'static' }),
     ]),
   head: () => ({ meta: [{ title: m.app_name() }] }),
   component: Invitation,

@@ -18,10 +18,10 @@ export const Route = createFileRoute('/$org/organization')({
     if (organization.role !== 'owner' && organization.role !== 'admin') return
     const organizationId = organization.id
     await Promise.all([
-      queryClient.ensureQueryData(membersQuery(organizationId)),
-      queryClient.ensureQueryData(teamsQuery(organizationId)),
-      queryClient.ensureQueryData(projectsQuery(organizationId)),
-      queryClient.ensureQueryData(appUrlQuery),
+      queryClient.query({ ...membersQuery(organizationId), staleTime: 'static' }),
+      queryClient.query({ ...teamsQuery(organizationId), staleTime: 'static' }),
+      queryClient.query({ ...projectsQuery(organizationId), staleTime: 'static' }),
+      queryClient.query({ ...appUrlQuery, staleTime: 'static' }),
     ])
   },
   pendingComponent: OrganizationPending,

@@ -15,7 +15,8 @@ export const Route = createFileRoute('/sign-in')({
   beforeLoad: ({ context, search }) => {
     if (context.session) throw redirect({ href: safeRedirect(search.redirect) })
   },
-  loader: ({ context }) => context.queryClient.ensureQueryData(signInMethodsQuery),
+  loader: ({ context }) =>
+    context.queryClient.query({ ...signInMethodsQuery, staleTime: 'static' }),
   head: () => ({ meta: [{ title: `${m.sign_in_title()} · ${m.app_name()}` }] }),
   component: SignIn,
 })

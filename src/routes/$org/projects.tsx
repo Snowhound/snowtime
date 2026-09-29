@@ -15,12 +15,13 @@ export const Route = createFileRoute('/$org/projects')({
     const admin = isAdmin(organization.role)
     const zone = session.settings?.timeZone
     await Promise.all([
-      queryClient.ensureQueryData(projectsQuery(organizationId)),
-      queryClient.ensureQueryData(teamsQuery(organizationId)),
+      queryClient.query({ ...projectsQuery(organizationId), staleTime: 'static' }),
+      queryClient.query({ ...teamsQuery(organizationId), staleTime: 'static' }),
       zone &&
-        queryClient.ensureQueryData(
-          monthReportQuery(organizationId, zone, admin ? null : session.user.id),
-        ),
+        queryClient.query({
+          ...monthReportQuery(organizationId, zone, admin ? null : session.user.id),
+          staleTime: 'static',
+        }),
     ])
   },
   pendingComponent: ProjectsPending,

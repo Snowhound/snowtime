@@ -37,7 +37,7 @@ import '@fontsource-variable/plus-jakarta-sans'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   beforeLoad: async ({ context, location }) => {
-    const session = await context.queryClient.ensureQueryData(sessionQuery)
+    const session = await context.queryClient.query({ ...sessionQuery, staleTime: 'static' })
     // The account's language differs from the one this page rendered in, and
     // getAppSession has set the cookie: load the page again in the account's language.
     if (session?.localeChanged && session.settings) {

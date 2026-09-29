@@ -30,9 +30,9 @@ export const Route = createFileRoute('/$org/reports')({
         weekStart: settings.weekStart,
       })
     await Promise.all([
-      queryClient.ensureQueryData(projectsQuery(organizationId)),
-      queryClient.ensureQueryData(teamsQuery(organizationId)),
-      queryClient.ensureQueryData(membersQuery(organizationId)),
+      queryClient.query({ ...projectsQuery(organizationId), staleTime: 'static' }),
+      queryClient.query({ ...teamsQuery(organizationId), staleTime: 'static' }),
+      queryClient.query({ ...membersQuery(organizationId), staleTime: 'static' }),
       // A refused report shows in the view, so it doesn't fail the route.
       input && queryClient.prefetchQuery(reportQuery(organizationId, input)),
     ])

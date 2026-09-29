@@ -18,16 +18,20 @@ export const Route = createFileRoute('/$org/timer')({
     const settings = session.settings
     const zone = settings?.timeZone
     await Promise.all([
-      queryClient.ensureQueryData(runningTimerQuery),
-      queryClient.ensureQueryData(projectsQuery(organizationId)),
-      queryClient.ensureQueryData(firstEntryQuery(organizationId, session.user.id)),
+      queryClient.query({ ...runningTimerQuery, staleTime: 'static' }),
+      queryClient.query({ ...projectsQuery(organizationId), staleTime: 'static' }),
+      queryClient.query({
+        ...firstEntryQuery(organizationId, session.user.id),
+        staleTime: 'static',
+      }),
       zone &&
-        queryClient.ensureQueryData(
-          entriesQuery(organizationId, session.user.id, recentRange(zone, RECENT_DAYS)),
-        ),
+        queryClient.query({
+          ...entriesQuery(organizationId, session.user.id, recentRange(zone, RECENT_DAYS)),
+          staleTime: 'static',
+        }),
       settings?.timerView === 'calendar' &&
-        queryClient.ensureQueryData(
-          entriesQuery(
+        queryClient.query({
+          ...entriesQuery(
             organizationId,
             session.user.id,
             weekRange(
@@ -36,7 +40,8 @@ export const Route = createFileRoute('/$org/timer')({
               settings.weekStart,
             ),
           ),
-        ),
+          staleTime: 'static',
+        }),
     ])
   },
   pendingComponent: TimerPending,
