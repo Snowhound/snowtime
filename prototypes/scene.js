@@ -150,7 +150,6 @@
       [0.62, 0.4, 0.92, 0.75, 1.2],
       [0, 0.82, 1, 1, 0.4],
     ],
-    'coast-december': [[0, 0.6, 1, 1]],
     // Fog over the bay and the far shore, low in the reeds right of the haystack, and thinner over
     // the near grass at the haystack's foot, so it stays off the haystack itself.
     'coast-september': [
@@ -214,7 +213,8 @@
     // The waves break from the right.
     'coast-october': { light: wx('squall', { wind: -0.6, amount: 1 }), dark: wx('squall', { wind: -0.6, amount: 1 }) },
     'coast-november': { light: wx('spray', { wind: -0.5, band: [0.3, 1.05] }), dark: wx('mist', { wind: -0.03, band: [0.32, 0.58] }) },
-    'coast-december': { light: wx('frost-day', { zones: ZONES['coast-december'] }), dark: wx('frost', { zones: ZONES['coast-december'] }) },
+    // A few flakes blowing in off the sea, on the right.
+    'coast-december': { light: wx('blowing', { wind: -0.2, amount: 0.12, size: 1.1, fall: 2.5, shear: 2, colors: WET_SNOW }), dark: wx('blowing', { wind: -0.2, amount: 0.1, size: 1.1, opacity: 0.85, fall: 2.5, shear: 2 }) },
     // Sparse snow on the stream; February's open lake has the room for glitter.
     'land-january': { light: wx('flurries'), dark: wx('flurries') },
     // Strong, or it doesn't show on the bright snow; very little snow instead if it still doesn't.

@@ -96,7 +96,7 @@ Coast:
 | Sep   | Haystack, grass leaning right                   | seeds, fine     | mist, thick    | → moderate      |
 | Oct   | Whitecaps breaking from the right               | squall          | squall         | ← strong, gusty |
 | Nov   | Storm and spray; task 065 adds night fog        | spray           | mist           | ← strong        |
-| Dec   | Frosted pebbles, pink dawn, halo round the moon | frost           | frost          | calm            |
+| Dec   | Frosted pebbles, pink dawn, halo round the moon | blowing, few    | blowing, few   | ← off the sea   |
 
 Countryside:
 
@@ -255,6 +255,8 @@ the finals:
   and thinner over the near grass at the haystack's foot, clear of the haystack itself. Kait
   still has to check it in motion. By day it keeps its seeds, but smaller and fewer, since they
   stood out too much.
+- Coast December (Kait, 2026-09-29): a very slight snow blowing in off the sea, in place of
+  the frost. By day its far flakes are grey-blue, as coast March's.
 
 ## Approach
 
