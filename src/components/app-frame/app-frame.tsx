@@ -6,7 +6,7 @@ import { SceneLayer } from '~/components/scene/scene-layer'
 import { LAYERS_ID } from '~/lib/layers'
 import { sessionQuery } from '~/lib/queries/session'
 import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/scene/intro'
-import { SCENE_DEFAULTS, currentSeason, sceneAttributes } from '~/lib/scene/scene'
+import { SCENE_DEFAULTS, sceneAttributes, shownSeason } from '~/lib/scene/scene'
 import { SeasonProvider, TaglineProvider } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 import { getLocale } from '~/paraglide/runtime.js'
@@ -40,7 +40,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
   // The intro plays on the first page opened in a calendar season it hasn't played in.
   onMount(() => {
     if (introDue('app', scene().sceneIntro)) {
-      playIntro({ season: currentSeason(scene().sceneSeason) })
+      playIntro({ season: shownSeason(scene()) })
     } else releaseIntroPending()
   })
 
@@ -59,7 +59,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
       <SceneLayer settings={shown()} pace="calm" />
       <IntroPage class="flex flex-1 flex-col">
         <AppHeader organizationId={props.organizationId} />
-        <SeasonProvider value={() => currentSeason(scene().sceneSeason)}>
+        <SeasonProvider value={() => shownSeason(scene())}>
           <TaglineProvider
             value={() => ({
               show: session.data?.settings?.sceneTagline ?? true,

@@ -1,19 +1,24 @@
 # Seasonal backgrounds
 
 A landscape per season in a light and a dark version, for the seasonal scene (task 031). The
-scene and intro mock-up is `snowtime_login_intro_with_backgrounds.html`.
+scene and intro mock-up is `snowtime_login_intro_with_backgrounds.html`. These are the
+Mountain valley collection; the Baltic coast and Baltic countryside collections are recorded
+in [baltic.md](baltic.md), and their images follow the steps below with the changes listed
+there.
 
-| Files                                              | What they are                                    |
-| -------------------------------------------------- | ------------------------------------------------ |
-| `<season>-<theme>-01.png`                          | The originals, 1672 × 941 px. Kept as they are.  |
-| `masters/<season>-<theme>-01-3840.webp`            | Upscaled masters, 3840 × 2168 px, lossless WebP. |
-| `public/backgrounds/<season>-<theme>-01-1920.avif` | For the pages, 1920 px wide, 104 to 237 KB.      |
-| `public/backgrounds/<season>-<theme>-01-3840.avif` | For the pages, 3840 px wide, 187 to 431 KB.      |
+| Files                                                        | What they are                                    |
+| ------------------------------------------------------------ | ------------------------------------------------ |
+| `<season>-<theme>-01.png`                                    | The originals, 1672 × 941 px. Kept as they are.  |
+| `masters/mountains/<season>-<theme>-01-3840.webp`            | Upscaled masters, 3840 × 2168 px, lossless WebP. |
+| `public/backgrounds/mountains/<season>-<theme>-01-1920.avif` | For the pages, 1920 px wide, 104 to 237 KB.      |
+| `public/backgrounds/mountains/<season>-<theme>-01-3840.avif` | For the pages, 3840 px wide, 187 to 431 KB.      |
+| `public/backgrounds/mountains/<season>-<theme>-01-400.avif`  | For the pickers, 400 px wide, 2 to 15 KB.        |
 
 The originals and the masters stay local and out of git (`.gitignore`): new images may replace
 them, and this README records how to make them again. Only the page files are committed, once,
-in `public/backgrounds/`, where the app serves them. They're AVIF only, because every supported
-browser decodes it (`docs/architecture.md`, "Seasonal scene").
+in `public/backgrounds/<collection>/`, one folder per collection, where the app serves them.
+They're AVIF only, because every supported browser decodes it (`docs/architecture.md`,
+"Seasonal scene").
 
 `prototypes/scene.js` and, in the app, `src/lib/scene/scene.ts` pick the page size for the
 screen; `prototypes/README.md` records how the scene loads them and the load times.
@@ -61,10 +66,14 @@ Windows with an RTX 4090 (24 GB).
 
 ```sh
 magick out.png -background white -alpha remove -alpha off master.png
-cwebp -lossless -z 6 master.png -o masters/<name>-3840.webp
+cwebp -lossless -z 6 master.png -o masters/<collection>/<name>-3840.webp
 magick master.png -quality 45 -define heic:speed=2 <name>-3840.avif
 magick master.png -filter Lanczos -resize 1920x png:- | magick - -quality 58 -define heic:speed=2 <name>-1920.avif
+ffmpeg -i <name>-1920.avif -vf "scale=400:-2:flags=lanczos,format=yuv420p" -c:v libaom-av1 -still-picture 1 -crf 34 -cpu-used 2 <name>-400.avif
 ```
+
+The 400 px thumbnails for the pickers come from the 1920 file; at `-crf` 34 the busiest scene is
+15 KB and shows no artifacts at the pickers' size.
 
 The added detail makes the images harder to compress than the old soft ones. On 2026-09-27
 a sweep over the eight masters picked quality 45 for the 3840 files and 58 for the 1920 files:

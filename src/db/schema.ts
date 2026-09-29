@@ -13,11 +13,11 @@ import {
 } from 'drizzle-orm/sqlite-core'
 import { APP_ICON_IDS, DEFAULT_APP_ICON } from '~/lib/app-icon'
 import { COUNTRIES } from '~/lib/holidays/region'
+import { COLLECTION_IDS, IMAGE_IDS } from '~/lib/scene/images'
 import {
   DATE_FORMATS,
   DURATION_FORMATS,
   LOCALES,
-  SCENE_SEASONS,
   SCENE_STRENGTHS,
   SURFACES,
   THEMES,
@@ -301,7 +301,8 @@ export const userSettings = sqliteTable(
       .default(sql`0`)
       .notNull(),
     appIcon: text('app_icon', { enum: APP_ICON_IDS }).default(DEFAULT_APP_ICON).notNull(),
-    sceneSeason: text('scene_season', { enum: SCENE_SEASONS }).default('auto').notNull(),
+    // Replaced by sceneCollection and scenePin; kept, unread, until a migration drops it.
+    sceneSeason: text('scene_season').default('auto').notNull(),
     sceneBackground: integer('scene_background', { mode: 'boolean' })
       .default(sql`1`)
       .notNull(),
@@ -324,6 +325,11 @@ export const userSettings = sqliteTable(
     wideTimer: integer('wide_timer', { mode: 'boolean' })
       .default(sql`0`)
       .notNull(),
+    sceneCollection: text('scene_collection', { enum: COLLECTION_IDS })
+      .default('mountains')
+      .notNull(),
+    // Null: the calendar picks the collection's image.
+    scenePin: text('scene_pin', { enum: IMAGE_IDS }),
   },
   () => [
     check('user_settings_week_start', sql`week_start IN ('mon', 'sun')`),

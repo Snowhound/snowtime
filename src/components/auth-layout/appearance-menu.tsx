@@ -11,7 +11,7 @@ import { Button } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { Separator } from '~/components/ui/separator'
 import type { DeviceSettings } from '~/lib/device-settings'
-import { currentSeason } from '~/lib/scene/scene'
+import { shownSeason } from '~/lib/scene/scene'
 import { m } from '~/paraglide/messages.js'
 
 export function AppearanceMenu(props: {
@@ -57,9 +57,15 @@ export function AppearanceMenu(props: {
         <ThemeToggle value={props.settings.theme} onChange={(theme) => props.onChange({ theme })} />
         <Separator />
         <h3 class="text-muted-foreground -mb-1 text-xs font-medium">{m.scene_title()}</h3>
-        <SceneryFields settings={props.settings} hints="short" intro onChange={props.onChange} />
+        <SceneryFields
+          settings={props.settings}
+          hints="short"
+          collectionSelect
+          intro
+          onChange={props.onChange}
+        />
         <ReplayIntroButton
-          season={currentSeason(props.settings.sceneSeason)}
+          season={shownSeason(props.settings)}
           focus={() => trigger}
           onPlay={() => setOpen(false)}
           class="justify-self-start"

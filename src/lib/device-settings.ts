@@ -6,7 +6,8 @@ import { type Accessor, createEffect, createMemo, createSignal, on } from 'solid
 import * as v from 'valibot'
 import {
   AppIcon,
-  SceneSeason,
+  SceneCollection,
+  ScenePin,
   SceneStrength,
   Surfaces,
   Theme,
@@ -14,8 +15,9 @@ import {
 } from '~/server/settings/settings.schemas'
 import { type AppIconId, DEFAULT_APP_ICON } from './app-icon'
 import { APP_PAGES } from './app-paths'
+import { SEASONS } from './scene/images'
 import { INTRO_PENDING_TIMEOUT, INTRO_SEASON_KEY, INTRO_SEEN_KEY } from './scene/intro'
-import { SCENE_DEFAULTS, type SceneSettings, seasonByMonth } from './scene/scene'
+import { SCENE_DEFAULTS, type SceneSettings, scenePin, seasonByMonth } from './scene/scene'
 
 const DEVICE_SETTINGS_KEY = 'snowtime.settings'
 
@@ -40,7 +42,8 @@ export function sameDeviceSettings(a: DeviceSettings | null, b: DeviceSettings |
 const FIELDS: { [K in keyof DeviceSettings]: v.GenericSchema<unknown, DeviceSettings[K]> } = {
   theme: Theme,
   appIcon: AppIcon,
-  sceneSeason: SceneSeason,
+  sceneCollection: SceneCollection,
+  scenePin: ScenePin,
   sceneBackground: v.boolean(),
   sceneStrength: SceneStrength,
   surfaces: Surfaces,
@@ -48,7 +51,9 @@ const FIELDS: { [K in keyof DeviceSettings]: v.GenericSchema<unknown, DeviceSett
   sceneIntro: v.boolean(),
 }
 
-// The stored JSON, with each missing or invalid field at its default.
+// The stored JSON, with each missing or invalid field at its default, and a pin that isn't in
+// the collection dropped. Settings stored before collections have a sceneSeason instead: a
+// season reads as Mountain valley pinned to it, and 'auto' as Mountain valley unpinned.
 export function parseDeviceSettings(json: string | null): DeviceSettings {
   let stored: Record<string, unknown> = {}
   try {
@@ -62,6 +67,12 @@ export function parseDeviceSettings(json: string | null): DeviceSettings {
     const result = v.safeParse(FIELDS[key], stored[key])
     if (result.success) Object.assign(settings, { [key]: result.output })
   }
+  const season = SEASONS.find((s) => s === stored.sceneSeason)
+  if (stored.sceneCollection === undefined && season) {
+    settings.sceneCollection = 'mountains'
+    settings.scenePin = season
+  }
+  settings.scenePin = scenePin(settings)
   return settings
 }
 
@@ -112,7 +123,8 @@ export function followAccountDeviceSettings(account: Accessor<DeviceSettings | n
       return {
         theme: settings.theme,
         appIcon: settings.appIcon,
-        sceneSeason: settings.sceneSeason,
+        sceneCollection: settings.sceneCollection,
+        scenePin: settings.scenePin,
         sceneBackground: settings.sceneBackground,
         sceneStrength: settings.sceneStrength,
         surfaces: settings.surfaces,

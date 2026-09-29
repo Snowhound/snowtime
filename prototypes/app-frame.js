@@ -39,6 +39,7 @@
     'mountain-snow': '<path d="m8 3 4 8 5-5 5 15H2L8 3z" /><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19" />',
     'pencil': '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" />',
     'play': '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />',
+    'pin': '<path d="M12 17v5" /><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />',
     'plus': '<path d="M5 12h14" /><path d="M12 5v14" />',
     'rotate-ccw': '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" />',
     'search': '<path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" />',
@@ -86,9 +87,11 @@
     wideTimer: false, // user_settings.wide_timer: the Timer page up to 88rem instead of the header's width
     showSummary: true,
     surfaces: 'glass', // 'glass' | 'solid': whether cards let a background show through
-    // The seasonal scene behind the sign-in page and the app; see scene.js. The season also picks
-    // every page's tagline.
-    sceneSeason: 'auto', // 'auto' (by month) | 'winter' | 'spring' | 'summer' | 'autumn'
+    // The seasonal scene behind the sign-in page and the app; see scene.js, Collections. A pinned
+    // image's season also picks every page's tagline.
+    sceneCollection: null, // 'mountains' | 'coast' | 'countryside'; null reads `sceneSeason`
+    scenePin: null, // an image id in the collection, or null to follow the calendar
+    sceneSeason: 'auto', // before collections: 'auto' (by month) | 'winter' | 'spring' | 'summer' | 'autumn'
     sceneBackground: true,
     sceneStrength: 'dimmed', // 'full' | 'dimmed'
     sceneWeather: true,
@@ -453,7 +456,7 @@
 
   function mountScene() {
     const { density, speed } = PACES[scenePace()]
-    sceneCtl = scene.create({ season: seasons.current(), pace: { density, speed } })
+    sceneCtl = scene.create({ image: scene.imageFor(settings), pace: { density, speed } })
     const holder = document.createElement('div')
     holder.className = 'app-scene'
     holder.append(sceneCtl.el)
@@ -474,7 +477,7 @@
 
   // While the intro plays, the scene shows its weather and background, not the settings'.
   function applyScene() {
-    const wanted = { season: seasons.current(), strength: settings.sceneStrength, background: settings.sceneBackground, weather: settings.sceneWeather }
+    const wanted = { image: scene.imageFor(settings), strength: settings.sceneStrength, background: settings.sceneBackground, weather: settings.sceneWeather }
     const shown = introPlayer ? introPlayer.scene(wanted) : wanted
     sceneCtl.set(shown)
     document.body.dataset.sceneBg = shown.background ? 'on' : 'off'
@@ -502,16 +505,29 @@
     const weatherSwitch = document.getElementById('scene-weather-switch')
     ui.setSwitch(weatherSwitch, settings.sceneWeather)
     weatherSwitch.disabled = !!blocked
-    document.getElementById('scene-weather-hint').textContent = blocked ?? window.scene?.SEASONS[seasons.current()].hint ?? ''
+    document.getElementById('scene-weather-hint').textContent = blocked ?? (window.scene ? scene.weatherHint(scene.imageFor(settings)) : '')
     // With reduced motion the intro doesn't play; the weather hint says why.
     const replay = menu.querySelector('[data-replay-intro]')
     if (replay) {
       replay.disabled = !!window.intro?.reducedMotion.matches
       replay.title = replay.disabled ? 'Off while your device reduces motion.' : ''
     }
-    const seasonSelect = document.getElementById('scene-season')
-    seasonSelect.value = seasons.chosen()
-    seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
+    if (window.scene) {
+      const { collection, pin } = scene.collectionSetting(settings)
+      const img = scene.image(scene.imageFor(settings))
+      menu.querySelector('[data-appearance-scenery]').innerHTML = `${thumbPair(img.id, 'h-8 w-13 shrink-0 rounded-sm')}
+        <div class="grid min-w-0 gap-0.5">
+          <span data-ui="label" id="appearance-scenery-label" class="truncate">${escapeHtml(scene.COLLECTIONS[collection].label)}</span>
+          <span class="truncate text-xs text-muted-foreground">${escapeHtml(img.label)}${pin ? ', pinned' : ''}</span>
+        </div>`
+    }
+  }
+
+  // An image's light and dark thumbnails; the page's theme shows one.
+  function thumbPair(id, cls) {
+    return ['light', 'dark']
+      .map((theme) => `<span class="${cls} ${theme === 'light' ? 'dark:hidden' : 'hidden dark:block'} bg-cover bg-center ring-1 ring-border" style="background-image: url(&quot;${scene.thumbUrl(id, theme)}&quot;)" aria-hidden="true"></span>`)
+      .join('')
   }
 
   // The Appearance popover, opened from the header's mountain button on every page: theme, app icon,
@@ -554,14 +570,14 @@
         </div>
         <div data-ui="separator"></div>
         <h3 class="text-xs font-medium text-muted-foreground">Scenery</h3>
-        ${row(
-          '<label data-ui="label" for="scene-season">Season</label>',
-          `<div class="shrink-0"><select id="scene-season" data-ui="select" class="h-8 w-36 py-1">
-            <option value="auto">Auto</option>${Object.entries(seasons.SEASONS)
-              .map(([id, s]) => `<option value="${id}">${s.label}</option>`)
-              .join('')}
-          </select></div>`
-        )}
+        ${
+          window.scene
+            ? row(
+                '<div class="flex min-w-0 items-center gap-2.5" data-appearance-scenery></div>',
+                `<a href="${link('settings.html#scenery')}" data-frame-link="settings.html#scenery" data-ui="button" data-variant="outline" data-size="sm" class="h-8 shrink-0" aria-describedby="appearance-scenery-label">Change</a>`
+              )
+            : ''
+        }
         ${row('<span data-ui="label" id="scene-bg-label">Background</span>', switchButton('scene-bg-switch', 'scene-bg-label'))}
         ${row(
           '<span data-ui="label" id="scene-strength-label">Strength</span>',
@@ -591,11 +607,11 @@
       </div>`
     )
     const menu = document.getElementById('appearance-menu')
-    menu.querySelector('#scene-season').addEventListener('change', (event) => settingsStore.set({ sceneSeason: event.currentTarget.value }))
     menu.querySelector('#scene-bg-switch').addEventListener('change', (event) => settingsStore.set({ sceneBackground: event.currentTarget.getAttribute('aria-checked') === 'true' }))
     menu.querySelector('#scene-weather-switch').addEventListener('change', (event) => settingsStore.set({ sceneWeather: event.currentTarget.getAttribute('aria-checked') === 'true' }))
     menu.querySelectorAll('[data-scene-option]').forEach((b) => b.addEventListener('click', () => settingsStore.set({ [b.dataset.sceneOption]: b.dataset.value })))
     menu.querySelector('[data-replay-intro]')?.addEventListener('click', () => replayIntro())
+    menu.querySelector('[data-frame-link="settings.html#scenery"]')?.addEventListener('click', () => menu.hidePopover())
     // The picker returns focus to the Appearance button, since the popover closes behind it.
     menu.querySelector('[data-appearance-icon]').addEventListener('click', () => {
       menu.hidePopover()
@@ -698,6 +714,7 @@
     openIconPicker,
     replayIntro,
     appIconImg,
+    thumbPair,
     link,
     escapeHtml,
     icon,

@@ -4,6 +4,7 @@
 import { eq } from 'drizzle-orm'
 import type { Database } from '~/db'
 import { userSettings } from '~/db/schema'
+import { inCollection } from '~/lib/scene/images'
 import { AppError } from '../errors'
 import type { GetSettingsInput, UpdateSettingsInput } from './settings.schemas'
 
@@ -17,7 +18,8 @@ const columns = {
   compactRows: userSettings.compactRows,
   wideTimer: userSettings.wideTimer,
   appIcon: userSettings.appIcon,
-  sceneSeason: userSettings.sceneSeason,
+  sceneCollection: userSettings.sceneCollection,
+  scenePin: userSettings.scenePin,
   sceneBackground: userSettings.sceneBackground,
   sceneStrength: userSettings.sceneStrength,
   surfaces: userSettings.surfaces,
@@ -48,8 +50,19 @@ export async function getSettings(db: Database, userId: string, input: GetSettin
 }
 
 // Applies a partial patch; the UI saves one field at a time. Drizzle skips undefined
-// fields, and an empty patch returns the settings unchanged.
+// fields, and an empty patch returns the settings unchanged. A collection has one pin, so
+// choosing a collection clears it, and a pin must be one of the collection's images.
 export async function updateSettings(db: Database, userId: string, input: UpdateSettingsInput) {
+  if (input.sceneCollection !== undefined && input.scenePin === undefined) {
+    input = { ...input, scenePin: null }
+  }
+  if (input.scenePin) {
+    const collection =
+      input.sceneCollection ?? (await findSettings(db, userId))?.sceneCollection ?? 'mountains'
+    if (!inCollection(collection, input.scenePin)) {
+      throw new AppError('INVALID', 'scene_pin_not_in_collection')
+    }
+  }
   if (Object.values(input).every((value) => value === undefined)) {
     const current = await findSettings(db, userId)
     if (!current) throw new AppError('NOT_FOUND', 'settings_not_found')

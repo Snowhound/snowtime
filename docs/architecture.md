@@ -589,8 +589,8 @@ timer.html, "Ticket keys").
   user across devices: time zone, week start, language (`locale`), theme, timer layout,
   whether the summary shows, compact entry rows (`compact_rows`), the Wide page setting
   (`wide_timer`), the app icon
-  (`app_icon`, the header mark and favicon), the seasonal scene (`scene_season`,
-  `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`,
+  (`app_icon`, the header mark and favicon), the seasonal scene (`scene_collection`,
+  `scene_pin`, `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`,
   `scene_tagline`), and
   how durations, dates, and times show (`duration_format`, `date_format`, `time_format`),
   and the country whose working days count (`country`; see "Working days").
@@ -626,15 +626,46 @@ timer.html, "Ticket keys").
 
 ## Seasonal scene
 
-The signed-in pages and the sign-in page show a landscape for the season behind the page, as
-`prototypes/README.md` describes in "Seasonal scene in the app".
+The signed-in pages and the sign-in page show a landscape from the user's collection behind the
+page, as `prototypes/README.md` describes in "Seasonal scene in the app" and "Scenery
+collections".
 
-- Assets: each season has a light and a dark image as static files in `public/backgrounds/`,
-  1920 and 3840 px wide, as AVIF only (`design/backgrounds/README.md` records how they're made).
+- Collections (task 062; ids in `src/lib/scene/images.ts`, labels and lookups in
+  `src/lib/scene/scene.ts`): the background comes from a collection and follows the calendar
+  within it. Mountain valley (`mountains`, the default) holds the four season images, `winter`
+  to `autumn`. Baltic countryside (`countryside`) and Baltic coast (`coast`), in that order in
+  the pickers, hold one image per month, `land-january` to `land-december` and `coast-january`
+  to `coast-december`. Each
+  collection's files are in a folder of its own, and the image id names them:
+  `/backgrounds/<collection>/<id>-<theme>-<version>-<width>.avif`. One folder per collection keeps
+  each set together as the collections grow (Kait, 2026-09-28). The version is two digits,
+  `01` unless `PHOTO_VERSIONS` in `scene.ts` raises it: `public/` files are cached for a week, so
+  a replaced image needs a new name (task 065).
+- Setting: `scene_collection` and `scene_pin`, an image id in the collection or null to follow
+  the calendar. They replaced `scene_season`: the migration turned a season into Mountain
+  valley pinned to it, and `auto` into Mountain valley unpinned; the device's settings read an
+  old `sceneSeason` the same way. `scene_season` stays unread until a later migration drops
+  it, so the previous app version keeps working until the deploy is promoted. A collection has
+  one pin: the server clears it when the collection changes and refuses a pin from another
+  collection. `imageFor` picks the pin or the calendar's image; the month lookup takes an
+  optional zone, which the callers don't pass yet (task 050).
+- Pickers: Settings > Preferences > Scenery shows the three collections as radio cards, each
+  with all its images, and saves a choice at once, so the scene behind the page is the
+  preview. The pin is a second radio group behind a "Pin an image" disclosure. The Appearance
+  popover shows the collection and image with a link to that section, and the sign-in page's
+  menu has a Collection select, since there's no Settings page signed out.
+- Season copy: the tagline, `SeasonProvider`, and the intro's lines follow the season of the
+  image that shows, so their colors are the ones checked on it. The intro still plays once a
+  calendar season (`MONTH_SEASONS` in the head script), and fades in the image that shows.
+- Thumbnails: the pickers show up to 28 images at once, so `thumbUrl` returns a 400 px file
+  of each, 2 to 15 KB, instead of the 1920 one. A test checks that every id has its six files.
+- Assets: each image has a light and a dark file in `public/backgrounds/<collection>/`,
+  400, 1920, and 3840 px wide, as AVIF only (`design/backgrounds/README.md` records how they're made).
   Every supported browser decodes AVIF; one that doesn't, such as Edge before 121, fails the load
   and shows the page color behind the scene. A WebP set for those browsers doubled the committed
-  files for no supported browser, so it was dropped (task 051). The files are 104 to 431 KB each,
-  so they're files rather than bundled imports, and nothing loads until the page asks for one.
+  files for no supported browser, so it was dropped (task 051). The files are 67 to 758 KB each
+  (the leafy Baltic scenes are the largest), so they're files rather than bundled imports, and
+  nothing loads until the page asks for one.
 - Loading (`src/components/scene/scene-layer.tsx`, `photoWidth` in `src/lib/scene/scene.ts`): the 3840 file
   is for images that cover more than 2400 device pixels across (pixel ratio at most 2), and
   screens under 768 px always get the 1920 file. The shown theme loads the 1920 file first, on
@@ -650,23 +681,61 @@ The signed-in pages and the sign-in page show a landscape for the season behind 
   server renders, and `src/styles.css` styles `surface` elements, the header, and the text over
   the image from them. Popovers, menus, and dialogs render into `<body>`, outside the frame, so
   they stay solid.
-- Weather (`src/lib/scene/weather.ts`): each season's effect is a WebGL 2 program that draws
-  all its points (rain's thin quads) in one call with no buffers, on one canvas in the scene
-  layer, with point counts scaled to the screen's area. Its WebGL context starts the first time
-  it runs. App pages run it calm (half the points, 70% speed), and the sign-in page at full
-  pace. It runs only with the Weather switch on, without reduced motion, and in a visible tab.
-  Without WebGL 2, or when an effect's shaders don't compile, it stays off and the Weather hint
-  says why. Unmounting cancels the frame and loses the context.
-- Weather frame rate: each effect sets a target. Rain and leaves run at 60 fps, since they
-  move far enough per frame that 30 looks steppy on fast screens. Snow, seeds, and fireflies
-  run at 30, since every frame also redraws the blur of the glass surfaces over the canvas;
-  at 120 Hz, 60 fps doubles the weather's cost in the GPU process (task 063). The renderer
-  draws every nth display refresh, with n from the refresh rate it measures from its first
-  frame gaps, so frames are evenly spaced: rain draws 60, 45, 60, 72, and 60 fps at 60, 90,
-  120, 144, and 240 Hz. A millisecond threshold can't do this; 22 ms gives 30 fps at 60 Hz
-  and gaps alternating between two and three refreshes at 90 Hz. When frame gaps show dropped
-  frames, each frame waits one refresh more, down to about 30 fps. Speed comes from the frame
-  timestamps, so it doesn't depend on the rate.
+- Tint (`STRENGTHS` in `src/lib/scene/scene.ts`, `.scene-tint` in `src/styles.css`): a
+  vertical gradient of the page color over the image keeps the text readable, covering
+  `strength × 70%` at the top and `strength × 115%` at the bottom. Dimmed, the default, is 0.4
+  light and 0.55 dark; Full is 0.2 and 0.3. Dimmed light was 0.5 until 2026-09-28, which turned
+  bright scenes very white, so Kait chose a lighter tint over regenerating the images (task 065).
+- Weather (`src/lib/scene/weather.ts`, task 066): `IMAGE_WEATHER` gives each image a preset
+  for light and dark pages, by name, and the fields it changes; `weatherFor` merges the preset,
+  then the image's horizon and fields. Task 066 records which image gets which and why, and
+  `prototypes/weather.html` shows them. The data keeps the prototype's shape, so a tuned image
+  moves from `prototypes/scene.js` as it is.
+  - Presets tune one of eight effects: snow (and flurries, blowing snow, sea spray), rain
+    (squalls), seeds (fine seeds, motes, dust), fireflies, leaves, glitter
+    (snow and frost), insects (midges, with fireflies at night), and mist. The `none` preset has
+    no effect, for an image that should be still; no image uses it now.
+  - Wind: every effect takes a wind in screen heights per second, gusts, and shear, so snow,
+    rain, seeds, leaves, and midges in one image blow the same way, as the reeds, grass, and
+    waves lean. Shear strengthens the wind below the image's horizon, so falling snow and rain
+    arc toward the side near the ground. Rain's slant is the wind against its fall there and
+    then. The mountain images keep the drift they had before.
+  - Tuning: factors of each effect's amount, size, fall, and opacity, and fields for glitter's
+    shimmer and glints and the midges' groups, go to the shaders as uniforms.
+  - Parts of the image: each Baltic image's horizon (`HORIZONS`), the band that mist, spray,
+    and midges keep to, and zones (up to three rectangles: where glitter lies, so it misses water,
+    where midges and fireflies keep, and where mist lies) are fractions of the image. The renderer maps them to the screen the way `cover` and
+    `background-position: center 20%` crop the photo, so they stay on the ice or the water on
+    any screen. A recomposed image changes only these numbers.
+  - The Weather hints name the showing image's preset (`scene_effect_*`), or "still air". The
+    weather follows the picture on screen, so a new image switches both as it starts to fade in.
+- Weather rendering: each effect is a WebGL 2 program that draws all its points (rain's and
+  the mist's quads) in one call with no buffers, on one canvas in the scene layer, with item
+  counts scaled to the screen's area. The band, horizon, zones, count, and the uniforms that
+  follow from them are worked out on a start or a resize; a frame uploads only the time and the
+  colors. The canvas has at most 1.5 backing pixels per CSS pixel, and the mist, which is soft
+  and the costliest per pixel, 0.5. Its WebGL context starts the first time it runs. App pages
+  run it calm (half the points, 70% speed), and the sign-in page at full pace. It runs only with
+  the Weather switch on, without reduced motion, and in a visible tab. Without WebGL 2, or when
+  an effect's shaders don't compile, it stays off and the Weather hint says why. Unmounting
+  cancels the frame and loses the context.
+  - The fragment shaders are `mediump`. The mist's noise hashes its lattice cells with
+    integers and takes its coordinate in `highp`, since a `sin` hash and a `mediump` fraction
+    break down there.
+  - Glitter's glint cycle comes from the amount and the glints wanted on a 1440 × 900 screen,
+    not the point count, so a resize doesn't jump every speck to another point of its cycle.
+- Weather frame rate: each effect sets a target, and a preset can set its own. Blowing snow,
+  spray, rain (so the squalls), leaves, and the midges run at 60 fps, since they move far
+  enough per frame that 30 looks steppy on fast screens. The mist barely moves, so it runs at
+  10: its fastest bank moves about 3 px a frame on a 900 px screen, under its soft edges. The rest run at 30, since every frame also redraws the blur of the
+  glass surfaces over the canvas; at 120 Hz, 60 fps doubles the
+  weather's cost in the GPU process (task 063). The renderer draws every nth display refresh,
+  with n from the refresh rate it measures from its first frame gaps, so frames are evenly
+  spaced: rain draws 60, 45, 60, 72, and 60 fps at 60, 90, 120, 144, and 240 Hz. A millisecond
+  threshold can't do this; 22 ms gives 30 fps at 60 Hz and gaps alternating between two and
+  three refreshes at 90 Hz. When frame gaps show dropped frames, each frame waits one refresh
+  more, down to about 30 fps. Speed comes from the frame timestamps, so it doesn't depend on
+  the rate.
 - Tagline (`src/lib/taglines/`, `src/components/page-title.tsx`): the season's own sets are
   Paraglide messages in `src/lib/scene/seasons.ts`, since the intro shows them too. Every other
   set is in the catalogue, `src/lib/taglines/catalogue.ts`, where each set holds its lines per

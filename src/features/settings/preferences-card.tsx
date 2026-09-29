@@ -35,6 +35,7 @@ import { useSeason } from '~/lib/scene/seasons'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
+import { SceneryPicker } from './scenery-picker/scenery-picker'
 
 const WEEK_STARTS = [
   { value: 'mon', label: m.settings_week_monday },
@@ -452,6 +453,7 @@ export function PreferencesCard(props: { settings: Settings }) {
             <h4 class="text-sm font-medium">{m.scene_title()}</h4>
             <p class="text-muted-foreground text-sm">{m.scene_description()}</p>
           </div>
+          <SceneryPicker settings={props.settings} onChange={update} />
           <SceneryFields
             settings={props.settings}
             hints="long"

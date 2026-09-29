@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 import { APP_ICON_IDS } from '~/lib/app-icon'
 import { COUNTRIES } from '~/lib/holidays/region'
+import { COLLECTION_IDS, IMAGE_IDS } from '~/lib/scene/images'
 import { m } from '~/paraglide/messages.js'
 
 // An IANA zone name such as Europe/Tallinn or UTC. Intl accepts the names the runtime
@@ -39,10 +40,11 @@ export const TIMER_LAYOUTS = ['bar', 'focus', 'table'] as const
 const TimerLayout = v.picklist(TIMER_LAYOUTS)
 // The brand concepts in src/lib/app-icon.ts; '02' is the default.
 export const AppIcon = v.picklist(APP_ICON_IDS)
-// The seasonal scene (prototypes/README.md, "Seasonal scene in the app"). 'auto' picks the
-// season by month.
-export const SCENE_SEASONS = ['auto', 'winter', 'spring', 'summer', 'autumn'] as const
-export const SceneSeason = v.picklist(SCENE_SEASONS)
+// The seasonal scene (prototypes/README.md, "Seasonal scene in the app"): the image collection,
+// and an image of it pinned, or null to follow the calendar. The server checks that the pin is
+// in the collection.
+export const SceneCollection = v.picklist(COLLECTION_IDS)
+export const ScenePin = v.nullable(v.picklist(IMAGE_IDS))
 // How much page color covers the background image.
 export const SCENE_STRENGTHS = ['dimmed', 'full'] as const
 export const SceneStrength = v.picklist(SCENE_STRENGTHS)
@@ -84,7 +86,8 @@ export const UpdateSettingsInput = v.object({
   compactRows: v.optional(v.boolean()),
   wideTimer: v.optional(v.boolean()),
   appIcon: v.optional(AppIcon),
-  sceneSeason: v.optional(SceneSeason),
+  sceneCollection: v.optional(SceneCollection),
+  scenePin: v.optional(ScenePin),
   sceneBackground: v.optional(v.boolean()),
   sceneStrength: v.optional(SceneStrength),
   surfaces: v.optional(Surfaces),

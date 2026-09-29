@@ -31,7 +31,8 @@ const DEFAULTS = {
   compactRows: false,
   wideTimer: false,
   appIcon: '02',
-  sceneSeason: 'auto',
+  sceneCollection: 'mountains',
+  scenePin: null,
   sceneBackground: true,
   sceneStrength: 'dimmed',
   surfaces: 'glass',
@@ -104,7 +105,7 @@ describe('updateSettings', () => {
     await save({ timerLayout: 'table' })
     await save({ showSummary: false })
     await save({ appIcon: '10' })
-    await save({ sceneSeason: 'winter' })
+    await save({ sceneCollection: 'coast', scenePin: 'coast-march' })
     await save({ sceneBackground: false })
     await save({ sceneStrength: 'full' })
     await save({ surfaces: 'solid' })
@@ -117,7 +118,8 @@ describe('updateSettings', () => {
       timerLayout: 'table',
       showSummary: false,
       appIcon: '10',
-      sceneSeason: 'winter',
+      sceneCollection: 'coast',
+      scenePin: 'coast-march',
       sceneBackground: false,
       sceneStrength: 'full',
       surfaces: 'solid',
@@ -136,6 +138,36 @@ describe('updateSettings', () => {
     expect(set.country).toBe('US')
     const cleared = await as({ userId }, () => updateSettings(db, userId, { country: null }))
     expect(cleared.country).toBeNull()
+  })
+
+  test('choosing a collection clears the pin, and a pin must be in the collection', async () => {
+    const userId = await newUser()
+    await as({ userId }, () =>
+      getSettings(db, userId, { timeZone: 'Europe/Tallinn', locale: 'en' }),
+    )
+    function save(patch: UpdateSettingsInput) {
+      return as({ userId }, () => updateSettings(db, userId, patch))
+    }
+    expect(await save({ scenePin: 'autumn' })).toMatchObject({
+      sceneCollection: 'mountains',
+      scenePin: 'autumn',
+    })
+    expect(await save({ sceneCollection: 'countryside' })).toMatchObject({
+      sceneCollection: 'countryside',
+      scenePin: null,
+    })
+    expect(await save({ scenePin: 'land-june' })).toMatchObject({ scenePin: 'land-june' })
+    await expect(save({ scenePin: 'coast-june' })).rejects.toMatchObject({
+      code: 'INVALID',
+      key: 'scene_pin_not_in_collection',
+    })
+    await expect(
+      save({ sceneCollection: 'mountains', scenePin: 'land-june' }),
+    ).rejects.toMatchObject({ code: 'INVALID' })
+    expect(await save({ sceneCollection: 'coast', scenePin: 'coast-june' })).toMatchObject({
+      sceneCollection: 'coast',
+      scenePin: 'coast-june',
+    })
   })
 
   test('a user without settings is told to load them first', async () => {
@@ -192,8 +224,10 @@ describe('settings input', () => {
 
   test('scene settings are known values, and the switches booleans', () => {
     for (const patch of [
-      { sceneSeason: 'auto' },
-      { sceneSeason: 'autumn' },
+      { sceneCollection: 'coast' },
+      { scenePin: 'autumn' },
+      { scenePin: 'land-december' },
+      { scenePin: null },
       { sceneStrength: 'full' },
       { surfaces: 'solid' },
       { sceneBackground: false },
@@ -203,7 +237,9 @@ describe('settings input', () => {
       expect(v.safeParse(UpdateSettingsInput, patch).success).toBe(true)
     }
     for (const patch of [
-      { sceneSeason: 'fall' },
+      { sceneCollection: 'city' },
+      { scenePin: 'coast-smarch' },
+      { scenePin: 'auto' },
       { sceneStrength: 'half' },
       { surfaces: 'frosted' },
       { sceneBackground: 1 },

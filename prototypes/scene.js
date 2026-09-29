@@ -1,11 +1,12 @@
-// Seasonal scene behind the sign-in page and the signed-in pages: a background image per season
-// and theme, a tint that keeps text readable, and a WebGL weather effect per season. Winter's snow
+// Seasonal scene behind the sign-in page and the signed-in pages: a background image from the
+// user's collection, in the page's theme, a tint that keeps text readable, and the image's WebGL
+// weather effect. Winter's snow
 // comes from design/backgrounds/snowtime_login_intro_with_backgrounds.html; the others follow its
 // pattern.
 // `scene.create()` returns a controller; `controller.el` is the element to place.
 //
 // The user's choices are settings in the shared prototype settings key (app-frame.js):
-// `sceneSeason` ('auto' or a season, see seasons.js), `sceneBackground`, `sceneStrength` ('full',
+// `sceneCollection` and `scenePin` (see Collections below), `sceneBackground`, `sceneStrength` ('full',
 // 'dimmed'), `sceneWeather`, and `sceneIntro` (whether the intro plays on its own; see intro.js),
 // plus the app-wide `surfaces` ('glass', 'solid'): whether cards let a background show through.
 // `scene.settings` reads and writes them for auth.html, which has no frame.
@@ -13,34 +14,322 @@
   const BASE = '../public/backgrounds/'
   const SETTINGS_KEY = 'snowtime.prototypeSettings'
   const DEFAULTS = { sceneSeason: 'auto', sceneBackground: true, sceneStrength: 'dimmed', surfaces: 'glass', sceneWeather: true, sceneIntro: true }
-  // `weather` names the effect for light and dark pages. The intro's lines and the tagline are in
-  // seasons.js.
+  // The intro's lines and the tagline are in seasons.js; each image's weather is under "Weather by
+  // image".
   const SEASONS = {
-    winter: {
-      label: 'Winter',
-      weather: { light: 'snow', dark: 'snow' },
-      hint: 'Falling snow.',
-    },
-    spring: {
-      label: 'Spring',
-      weather: { light: 'rain', dark: 'rain' },
-      hint: 'A light spring shower.',
-    },
-    summer: {
-      label: 'Summer',
-      weather: { light: 'seeds', dark: 'fireflies' },
-      hint: 'Drifting seeds by day, fireflies at night.',
-    },
-    autumn: {
-      label: 'Autumn',
-      weather: { light: 'leaves', dark: 'leaves' },
-      hint: 'Falling leaves.',
-    },
+    winter: { label: 'Winter' },
+    spring: { label: 'Spring' },
+    summer: { label: 'Summer' },
+    autumn: { label: 'Autumn' },
   }
+  // --- Collections -------------------------------------------------------------------------------
+  // A collection is the set of images the background follows through the year: by season (the four
+  // mountain valleys) or by month (`images` in month order, task 062's MONTH_IMAGES). The user picks
+  // one (`sceneCollection`) and can pin one of its images (`scenePin`, an image id, or null to follow
+  // the calendar). The collection and image id name the files:
+  // /backgrounds/<collection>/<id>-<theme>-<version>-<width>.avif.
+  const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+  function monthLabel(i, format = 'long') {
+    return new Intl.DateTimeFormat('en', { month: format, timeZone: 'UTC' }).format(Date.UTC(2026, i, 15))
+  }
+  const COLLECTIONS = {
+    mountains: { label: 'Mountain valley', description: 'Changes with the season', by: 'season', images: Object.keys(SEASONS) },
+    countryside: { label: 'Baltic countryside', description: 'Changes every month', by: 'month', images: MONTHS.map((m) => `land-${m}`) },
+    coast: { label: 'Baltic coast', description: 'Changes every month', by: 'month', images: MONTHS.map((m) => `coast-${m}`) },
+  }
+  const DEFAULT_COLLECTION = 'mountains'
+  // --- Weather by image (task 066) ---------------------------------------------------------------
+  // Each image's weather on light and dark pages: a preset below, tuned for the picture. All fields
+  // but `effect` and `hint` are optional:
+  // - `wind`: the sideways speed of the nearest items, in screen heights per second, positive to the
+  //   right. Farther items move slower. Everything in the air moves with it, so seeds fly sideways in
+  //   a wind that barely slants the rain.
+  // - `gust` (0 to 1): how far the wind rises and falls around that speed.
+  // - `shear`: how much stronger the wind gets below the horizon, as it picks up near the ground: at
+  //   the screen's foot it's 1 + shear times the wind, so falling snow arcs toward the side.
+  // - `amount`, `size`, `fall`, `opacity`: factors of the effect's item count, item size, falling
+  //   speed, and opacity.
+  // - `band`: [top, bottom], the rows the effect keeps to, as fractions of the image's height, so a
+  //   mist stays on the water however the photo is cropped. Without a band the effect fills the
+  //   screen.
+  // - `share`: the share of special items: fluff among seeds, glints among midges. `glow`: how many
+  //   fireflies fly apart from the midges.
+  // - `zones`: up to three rectangles of the image, [left, top, right, bottom] as fractions of its
+  //   width and height: where glitter lies, so it misses water (without them, the ground below the
+  //   horizon), or where midges and fireflies keep. A fifth number scales glitter's opacity there.
+  // - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight.
+  // - `shimmer`, `peaks`, `peakTime`, `peakSize`: glitter's faint shimmer, and how many full glints
+  //   show at once, for how long, and how much larger.
+  // - `colors`: in place of the effect's colors, with the same arguments.
+  // Each image's horizon (HORIZONS) comes in too: glitter grows toward the viewer below it and shear
+  // starts there. `effect: null` is no weather. `fps` is the preset's frame-rate target, by default
+  // its effect's (task 063).
+  // An image's entry names its preset and the fields it changes. weatherFor() merges them in that
+  // order: the preset, then the image's horizon and fields, then weather.html's slider overrides.
+  const PRESETS = {
+    snow: { effect: 'snow', hint: 'falling snow' },
+    flurries: { effect: 'snow', hint: 'a few snowflakes', amount: 0.22, size: 1.45, fall: 0.75 },
+    // After Kait's weather prototype: fine grains, falling fast, in gusts, blown flatter near the
+    // ground.
+    blowing: { effect: 'snow', hint: 'blowing snow', fps: 60, amount: 2.2, size: 0.9, fall: 6, gust: 0.6, shear: 2.5 },
+    // Droplets torn off the waves: a pixel or two, flying nearly flat.
+    spray: { effect: 'snow', hint: 'sea spray', fps: 60, amount: 0.8, size: 0.4, fall: 2.5, gust: 0.9, shear: 1.5 },
+    rain: { effect: 'rain', hint: 'a light shower' },
+    squall: { effect: 'rain', hint: 'rain squalls', amount: 1.2, size: 1.35, fall: 1.25, gust: 0.8 },
+    seeds: { effect: 'seeds', hint: 'drifting seeds' },
+    // A few pixels across, for the open coast, where big tufts looked too near.
+    'seeds-fine': { effect: 'seeds', hint: 'drifting seeds', size: 0.4 },
+    motes: { effect: 'seeds', hint: 'motes in the sun', share: 0, size: 0.75, amount: 1.4, opacity: 0.8 },
+    // Dust of a pixel, for a sunny day with nothing else in the air.
+    'motes-fine': { effect: 'seeds', hint: 'dust in the sun', share: 0, size: 0.3, amount: 1.2, opacity: 0.85 },
+    // Near-white, since sunlit dust is brighter than the hay behind it.
+    dust: {
+      effect: 'seeds',
+      hint: 'dust in the sun',
+      share: 0,
+      size: 1.1,
+      amount: 4,
+      opacity: 1,
+      gust: 0.4,
+      colors: ({ dark, background }) => (dark || background ? [[1.0, 1.0, 0.97], [1.0, 0.99, 0.93]] : EFFECTS.seeds.colors({ dark, background })),
+    },
+    fireflies: { effect: 'fireflies', hint: 'fireflies' },
+    midges: { effect: 'insects', hint: 'midges over the water', share: 0.25 },
+    'midges-night': { effect: 'insects', hint: 'midges and fireflies', share: 0, glow: 2 },
+    leaves: { effect: 'leaves', hint: 'falling leaves' },
+    glitter: { effect: 'glitter', hint: 'glittering snow', opacity: 0.85 },
+    // By day the glints need more size to show on the bright snow.
+    'glitter-day': { effect: 'glitter', hint: 'glittering snow', size: 1.4, shimmer: 0.4, peakSize: 2.6 },
+    frost: { effect: 'glitter', hint: 'glittering frost', opacity: 0.85 },
+    'frost-day': { effect: 'glitter', hint: 'glittering frost', size: 1.4, shimmer: 0.4, peakSize: 2.6 },
+    mist: { effect: 'mist', hint: 'drifting mist' },
+    none: { effect: null, hint: 'still air' },
+  }
+  function wx(preset, tuning = {}) {
+    return { preset, ...tuning }
+  }
+  // Each Baltic image's horizon, as a fraction of its height: where the sea, the ice, or the ground
+  // meets the sky or the tree line. A recomposed image (task 065) updates these and the bands.
+  const HORIZONS = {
+    'coast-january': 0.38,
+    'coast-february': 0.43,
+    'coast-march': 0.51,
+    'coast-april': 0.55,
+    'coast-may': 0.53,
+    'coast-june': 0.47,
+    'coast-july': 0.74,
+    'coast-august': 0.45,
+    'coast-september': 0.48,
+    'coast-october': 0.58,
+    'coast-november': 0.43,
+    'coast-december': 0.36,
+    'land-january': 0.35,
+    'land-february': 0.43,
+    'land-march': 0.31,
+    'land-april': 0.75,
+    'land-may': 0.75,
+    'land-june': 0.44,
+    'land-july': 0.76,
+    'land-august': 0.39,
+    'land-september': 0.68,
+    'land-october': 0.77,
+    'land-november': 0.57,
+    'land-december': 0.74,
+  }
+  // Where snow or frost lies in the glitter images, away from open water, where insects keep, and
+  // where fog lies.
+  const ZONES = {
+    // Brighter on the ice than on the snowy shore.
+    'coast-january-day': [
+      [0, 0.4, 0.55, 0.82, 0.9],
+      [0.55, 0.4, 1, 0.82, 1.25],
+      [0, 0.82, 1, 1, 0.5],
+    ],
+    'coast-january': [
+      [0, 0.4, 0.62, 0.82, 0.8],
+      [0.62, 0.4, 0.92, 0.75, 1.2],
+      [0, 0.82, 1, 1, 0.4],
+    ],
+    'coast-december': [[0, 0.6, 1, 1]],
+    // Fog over the bay and the far shore, low in the reeds right of the haystack, and thinner over
+    // the near grass at the haystack's foot, so it stays off the haystack itself.
+    'coast-september': [
+      [0.25, 0.4, 1, 0.58, 1.2],
+      [0.33, 0.5, 1, 0.78],
+      [0, 0.72, 1, 0.97, 0.6],
+    ],
+    // The lake's snow away from the jetty, which doesn't glint. Each zone gets a third of the
+    // specks, so the small second one, around the sun's and the moon's reflection, glints most.
+    'land-february': [
+      [0, 0.46, 0.7, 0.62],
+      [0.7, 0.46, 1, 0.8, 1.25],
+      [0.36, 0.62, 1, 1],
+    ],
+    'land-november': [[0, 0.6, 1, 1]],
+    // By night, midges mostly by the cliff, the rest over the river, and the fireflies on the far
+    // bank. By day, all by the cliff, where they show.
+    'land-july': [
+      [0.05, 0.64, 0.33, 0.9],
+      [0.34, 0.82, 0.88, 0.97],
+      [0.58, 0.68, 1, 0.78],
+    ],
+    'land-july-day': [
+      [0.05, 0.64, 0.33, 0.9],
+      [0.05, 0.64, 0.33, 0.9],
+    ],
+  }
+  // The mountain images' winds reproduce the drift each effect had before winds were per image.
+  const MOUNTAIN_WIND = { snow: -0.02, rain: 0.22, seeds: 0.028, leaves: 0.026, fireflies: 0 }
+  const mountain = (preset) => wx(preset, { wind: MOUNTAIN_WIND[preset] })
+  // Early autumn's leaves, from land September's birches and rowans.
+  // Coast seeds and motes on a light page with the picture, and wet snow by day: see weather.ts.
+  const COAST_SPECKS = (s) => (s.dark || !s.background ? EFFECTS.seeds.colors(s) : [[0.7, 0.68, 0.62], [0.62, 0.52, 0.34]])
+  const WET_SNOW = (s) => (s.dark || !s.background ? EFFECTS.snow.colors(s) : [[0.96, 0.97, 1], [0.64, 0.71, 0.8]])
+  const BIRCH_LEAVES = ({ dark }) => (dark ? [[0.66, 0.54, 0.16], [0.6, 0.3, 0.12]] : [[0.84, 0.68, 0.18], [0.78, 0.36, 0.14]])
+  const IMAGE_WEATHER = {
+    winter: { light: mountain('snow'), dark: mountain('snow') },
+    spring: { light: mountain('rain'), dark: mountain('rain') },
+    summer: { light: mountain('seeds'), dark: mountain('fireflies') },
+    autumn: { light: mountain('leaves'), dark: mountain('leaves') },
+    'coast-january': {
+      light: wx('glitter-day', { zones: ZONES['coast-january-day'], amount: 4, size: 2.3, opacity: 1.05, shimmer: 0.8, tempo: 1.3, peaks: 3.3, peakTime: 2.6, peakSize: 2.3 }),
+      dark: wx('glitter', { zones: ZONES['coast-january'], size: 1.35, shimmer: 0.72, tempo: 1.15, peaks: 5.1, peakTime: 2.8 }),
+    },
+    'coast-february': {
+      light: wx('blowing', { amount: 0.55, size: 1.2, opacity: 1.3, fall: 2.35, wind: 0.2, gust: 1, shear: 5 }),
+      dark: wx('blowing', { amount: 0.2, size: 1.15, opacity: 0.85, fall: 3, wind: -0.24 }),
+    },
+    // The wind comes off the sea, on the right, even on a calm day.
+    'coast-march': { light: wx('flurries', { wind: -0.15, gust: 0.5, shear: 1, amount: 0.6, size: 1.4, fall: 1.3, colors: WET_SNOW }), dark: wx('flurries', { wind: -0.15, gust: 0.5, shear: 1, amount: 0.25, size: 1.2, fall: 1.3 }) },
+    'coast-april': { light: wx('motes-fine', { wind: -0.02, size: 0.9, opacity: 0.95, colors: COAST_SPECKS }), dark: wx('mist', { wind: -0.01, band: [0.48, 0.72], zones: [[0, 0.48, 0.68, 0.72]], opacity: 0.8 }) },
+    'coast-may': { light: wx('seeds-fine', { wind: 0.03, amount: 0.6, colors: COAST_SPECKS }), dark: wx('seeds-fine', { wind: 0.03, amount: 0.45, opacity: 0.55 }) },
+    'coast-june': { light: wx('seeds-fine', { wind: -0.08, gust: 0.4, colors: COAST_SPECKS }), dark: wx('seeds-fine', { wind: -0.08, gust: 0.4, amount: 0.75, opacity: 0.75 }) },
+    'coast-july': { light: wx('seeds-fine', { wind: 0.03, colors: COAST_SPECKS }), dark: wx('fireflies', { amount: 0.3 }) },
+    'coast-august': { light: wx('motes', { wind: 0.008, colors: COAST_SPECKS }), dark: wx('mist', { wind: 0.01, zones: [[0.34, 0.42, 1, 0.6]], amount: 1.3, size: 1.3, opacity: 1.2 }) },
+    'coast-september': {
+      light: wx('seeds-fine', { wind: 0.16, gust: 0.5, fall: 0.5, size: 0.3, amount: 0.7, colors: COAST_SPECKS }),
+      // Thick fog over the bay and the reed meadow, drifting the way the grass leans.
+      dark: wx('mist', { wind: 0.012, zones: ZONES['coast-september'], amount: 1.6, size: 1.3, opacity: 1.1 }),
+    },
+    // The waves break from the right.
+    'coast-october': { light: wx('squall', { wind: -0.6, amount: 1 }), dark: wx('squall', { wind: -0.6, amount: 1 }) },
+    'coast-november': { light: wx('spray', { wind: -0.5, band: [0.3, 1.05] }), dark: wx('mist', { wind: -0.03, band: [0.32, 0.58] }) },
+    'coast-december': { light: wx('frost-day', { zones: ZONES['coast-december'] }), dark: wx('frost', { zones: ZONES['coast-december'] }) },
+    // Sparse snow on the stream; February's open lake has the room for glitter.
+    'land-january': { light: wx('flurries'), dark: wx('flurries') },
+    // Strong, or it doesn't show on the bright snow; very little snow instead if it still doesn't.
+    'land-february': {
+      light: wx('glitter-day', { zones: ZONES['land-february'], amount: 4, size: 2.8, opacity: 1.5, shimmer: 1, tempo: 1.7, peaks: 6, peakTime: 2.6, peakSize: 3 }),
+      dark: wx('glitter', { zones: ZONES['land-february'], size: 1.35, opacity: 0.85, shimmer: 0.72, tempo: 1.15, peaks: 5.1, peakTime: 2.8 }),
+    },
+    'land-march': { light: wx('flurries', { wind: 0.06, gust: 0.4, shear: 0.5, amount: 0.5, size: 1.3, fall: 1.3, colors: WET_SNOW }), dark: wx('mist', { wind: 0.008, band: [0.3, 0.68], amount: 1.3, opacity: 1.3 }) },
+    // Clear skies, as on the coast.
+    'land-april': { light: wx('motes-fine', { wind: 0.01, size: 0.9, opacity: 0.95 }), dark: wx('mist', { wind: 0.006, zones: [[0, 0.67, 0.42, 0.79, 1.1], [0.35, 0.64, 0.78, 0.76, 0.6]], amount: 1.1, opacity: 0.75 }) },
+    'land-may': { light: wx('seeds', { wind: 0.015, share: 0.5, amount: 2.5, size: 0.5 }), dark: wx('mist', { wind: 0.008, band: [0.66, 0.86] }) },
+    'land-june': {
+      light: wx('seeds', { wind: 0.015, amount: 2.5, size: 0.6, opacity: 0.9, gust: 0 }),
+      dark: wx('fireflies', { amount: 2.2, size: 0.5, opacity: 0.75 }),
+    },
+    'land-july': {
+      light: wx('midges', { wind: 0.005, zones: ZONES['land-july-day'], amount: 1.95, tempo: 1.15 }),
+      dark: wx('midges-night', { wind: 0.005, zones: ZONES['land-july'] }),
+    },
+    'land-august': { light: wx('dust', { wind: 0.03 }), dark: wx('mist', { wind: 0.01, band: [0.32, 0.56] }) },
+    'land-september': {
+      light: wx('leaves', { wind: 0.07, gust: 0.5, amount: 0.15, colors: BIRCH_LEAVES }),
+      dark: wx('mist', { wind: 0.008, band: [0.57, 0.9], amount: 1.4, size: 1.2 }),
+    },
+    // Smaller and fainter, so they sit in the tinted picture rather than in front of it.
+    'land-october': { light: wx('leaves', { wind: 0.04, amount: 1.3, size: 0.7, opacity: 0.65 }), dark: wx('leaves', { wind: 0.04, size: 0.7, opacity: 0.6, colors: () => [[0.42, 0.3, 0.18], [0.5, 0.44, 0.26]] }) },
+    'land-november': {
+      light: wx('frost-day', { zones: ZONES['land-november'], amount: 2.9, size: 2.4, opacity: 1.05, shimmer: 1, peaks: 2.9, peakTime: 2.6, peakSize: 3.1 }),
+      dark: wx('frost', { zones: ZONES['land-november'], amount: 1.8, size: 2.2, opacity: 0.55, tempo: 0.45, peaks: 0.5, peakTime: 3.6 }),
+    },
+    'land-december': { light: wx('snow', { amount: 0.3, fall: 0.8 }), dark: wx('snow', { amount: 0.2, fall: 0.8, opacity: 0.4 }) },
+  }
+  // The weather before task 066, for comparison on weather.html: one of the five effects per image,
+  // blowing as it did on the mountains.
+  const LEGACY_WEATHER = (() => {
+    const W = (light, dark = light) => ({ light: mountain(light), dark: mountain(dark) })
+    const coast = [W('snow'), W('snow'), W('snow'), W('rain'), W('seeds'), W('seeds'), W('seeds', 'fireflies'), W('seeds', 'fireflies'), W('seeds'), W('rain'), W('rain'), W('snow')]
+    const land = [W('snow'), W('snow'), W('rain'), W('rain'), W('seeds'), W('seeds', 'fireflies'), W('seeds', 'fireflies'), W('seeds', 'fireflies'), W('leaves'), W('leaves'), W('snow'), W('snow')]
+    return {
+      ...Object.fromEntries(Object.keys(SEASONS).map((id) => [id, IMAGE_WEATHER[id]])),
+      ...Object.fromEntries(coast.map((w, i) => [`coast-${MONTHS[i]}`, w])),
+      ...Object.fromEntries(land.map((w, i) => [`land-${MONTHS[i]}`, w])),
+    }
+  })()
+  // A replaced image's version, raised by one for both themes, so the week-long cache of public/
+  // doesn't serve the old file; an id left out is version 1. Matches PHOTO_VERSIONS in scene.ts.
+  const PHOTO_VERSIONS = Object.fromEntries(
+    [
+      ...['february', 'march', 'april', 'may', 'july', 'august', 'september', 'october', 'november', 'december'].map((m) => `coast-${m}`),
+      ...['march', 'april', 'may', 'june', 'july', 'september', 'october', 'november', 'december'].map((m) => `land-${m}`),
+    ].map((id) => [id, 2])
+  )
+  function photoUrl(id, theme, width) {
+    const version = String(PHOTO_VERSIONS[id] ?? 1).padStart(2, '0')
+    return `${BASE}${image(id).collection}/${id}-${theme}-${version}-${width}.avif`
+  }
+
+  function image(id) {
+    const [prefix, month] = String(id).split('-')
+    const collection = Object.keys(COLLECTIONS).find((c) => COLLECTIONS[c].images.includes(id)) ?? DEFAULT_COLLECTION
+    const i = MONTHS.indexOf(month)
+    const season = i >= 0 ? seasons.byMonth(new Date(2026, i, 15)) : prefix in SEASONS ? prefix : 'winter'
+    return {
+      id,
+      collection,
+      label: i >= 0 ? monthLabel(i) : SEASONS[season].label,
+      short: i >= 0 ? monthLabel(i, 'short') : SEASONS[season].label,
+      month: i >= 0 ? i : null,
+      season,
+      weather: { light: weatherFor(id, 'light'), dark: weatherFor(id, 'dark') },
+    }
+  }
+  // An image's weather in a theme, resolved: its preset, then the image's fields, then `overrides`.
+  // `legacy` reads the weather from before task 066.
+  function weatherFor(id, theme, { legacy = false, overrides = null } = {}) {
+    const entry = (legacy ? LEGACY_WEATHER : IMAGE_WEATHER)[id]?.[theme] ?? IMAGE_WEATHER.winter.light
+    return { ...PRESETS[entry.preset], horizon: HORIZONS[id], ...entry, ...overrides }
+  }
+  // The stored choice. Without a collection, the old `sceneSeason` reads as a pinned mountain image.
+  function collectionSetting(s) {
+    if (s.sceneCollection in COLLECTIONS) {
+      const pin = COLLECTIONS[s.sceneCollection].images.includes(s.scenePin) ? s.scenePin : null
+      return { collection: s.sceneCollection, pin }
+    }
+    return { collection: DEFAULT_COLLECTION, pin: s.sceneSeason in SEASONS ? s.sceneSeason : null }
+  }
+  // The settings patch for a choice. `sceneSeason` stays in step for auth.html's Season select.
+  function collectionPatch(collection, pin = null) {
+    return { sceneCollection: collection, scenePin: pin, sceneSeason: pin in SEASONS ? pin : 'auto' }
+  }
+  // The image the calendar shows in a collection on `date`.
+  function calendarImage(collection, date = seasons.today()) {
+    const c = COLLECTIONS[collection] ?? COLLECTIONS[DEFAULT_COLLECTION]
+    return c.by === 'month' ? c.images[date.getMonth()] : seasons.byMonth(date)
+  }
+  function imageFor(s, date) {
+    const { collection, pin } = collectionSetting(s)
+    return pin ?? calendarImage(collection, date)
+  }
+  // "Falling snow." or "Drifting seeds by day, fireflies at night."
+  function weatherHint(id) {
+    const { light, dark } = image(id).weather
+    const cap = (t) => t[0].toUpperCase() + t.slice(1)
+    return light.hint === dark.hint ? `${cap(light.hint)}.` : `${cap(light.hint)} by day, ${dark.hint} at night.`
+  }
+
+  // A 400 px version for pickers.
+  function thumbUrl(id, theme) {
+    return photoUrl(id, theme, 400)
+  }
+
   // How much of the page color covers the image, dark / light.
   const STRENGTHS = {
     full: { label: 'Full', dark: 0.3, light: 0.2 },
-    dimmed: { label: 'Dimmed', dark: 0.55, light: 0.5 },
+    dimmed: { label: 'Dimmed', dark: 0.55, light: 0.4 },
   }
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
   const isDark = () => document.documentElement.classList.contains('dark')
@@ -51,6 +340,8 @@
         const s = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') }
         return {
           sceneSeason: s.sceneSeason in SEASONS ? s.sceneSeason : 'auto',
+          sceneCollection: collectionSetting(s).collection,
+          scenePin: collectionSetting(s).pin,
           sceneBackground: s.sceneBackground !== false,
           sceneStrength: s.sceneStrength in STRENGTHS ? s.sceneStrength : DEFAULTS.sceneStrength,
           surfaces: s.surfaces === 'solid' ? 'solid' : 'glass',
@@ -90,23 +381,74 @@
   document.head.append(style)
 
   // --- Weather: points in one draw call, positions computed in the vertex shader ----------------
-  // Every effect draws `count` points with no buffers: each point's randomness comes from
-  // gl_VertexID. Colors come from `colors({ dark, background })` as two RGB triples.
+  // Every effect draws `count` points (or, with `quads`, two triangles each) with no buffers: each
+  // item's randomness comes from gl_VertexID. Colors come from `colors({ dark, background })` as two
+  // RGB triples; the image's tuning (see "Weather by image") comes in as uniforms.
   const HEAD = `#version 300 es
   precision highp float;
   uniform vec2 u_res;
-  uniform float u_time, u_dpr;
+  // The band's top and bottom in clip space; the full screen and a margin without a band.
+  uniform vec2 u_band;
+  // The image's horizon in clip space; below the screen without one.
+  uniform float u_horizon;
+  uniform float u_time, u_dpr, u_wind, u_gust, u_shear, u_size, u_fall, u_opacity, u_share, u_glow, u_tempo;
+  // Up to three rectangles of the image in clip space (left, top, right, bottom), and how many.
+  uniform vec4 u_zones[3];
+  uniform float u_zoneCount;
+  // Each zone's factor of glitter's opacity.
+  uniform vec3 u_zoneGain;
+  vec4 zoneAt(float r){ return u_zones[int(min(floor(r * u_zoneCount), u_zoneCount - 1.0))]; }
   float hash(float n){ return fract(sin(n*127.1)*43758.5453123); }
   float hash2(float n){ return fract(sin(n*269.5+31.7)*17358.5453123); }
+  // An integer hash for a falling item's column on each pass. The pass count grows without bound,
+  // and sin() loses precision on large arguments, so hash() gave many items the same column.
+  float columnHash(float pass){
+    uint x = uint(gl_VertexID) * 1664525u + uint(pass) * 1013904223u + 12345u;
+    x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16;
+    return float(x) / 4294967295.0;
+  }
+  // The wind's strength now, around 1: gusts rise and fall with no fixed period.
+  float gustNow(){ float t = u_time; return 1.0 + u_gust*(.6*cos(t*.7) + .4*cos(t*1.9+1.3)); }
+  // The gusts' part of how far the wind has carried an item: the integral of gustNow, less its mean.
+  float gustTime(){ float t = u_time; return u_gust*(.6*sin(t*.7)/.7 + .4*(sin(t*1.9+1.3) - sin(1.3))/1.9); }
+  // The wind's speed in clip-space x per second, for an item at depth (1 for the nearest).
+  float windSpeed(float depth){ return u_wind * depth * 2.0 * u_res.y / u_res.x; }
+  // How far the wind has carried a floating item so far.
+  float windX(float depth){ return windSpeed(depth) * (u_time + gustTime()); }
+  // How much stronger the wind is at y: 1 down to the horizon, then rising to 1 + u_shear at the
+  // screen's foot, as wind picks up near the ground.
+  float shearAt(float y){
+    if (u_horizon <= -1.0) return 1.0;
+    float s = clamp((u_horizon - y) / (u_horizon + 1.0), 0.0, 1.0);
+    return 1.0 + u_shear * s * s;
+  }
+  // How far the wind has carried a falling item since it entered at the band's top, falling v clip
+  // units a second: the integral of shearAt along its path, which bends sideways below the horizon,
+  // plus the gusts.
+  float pathX(float y, float v, float depth){
+    float below = max(0.0, u_horizon - y), h = max(u_horizon + 1.0, .01);
+    return windSpeed(depth) * ((u_band.x - y + u_shear * below*below*below / (3.0*h*h)) / v + gustTime());
+  }
+  float wrapX(float x, float margin){ return -1.0 - margin + mod(x + 1.0 + margin, 2.0 + 2.0*margin); }
+  // An item that starts r (0 to 1) down the band and has fallen d, wrapping within the band: its y,
+  // and which pass it's on, so each pass can start in another column.
+  vec2 fallPass(float r, float d){ float span = u_band.x - u_band.y, p = (1.0-r)*span + d; return vec2(u_band.x - mod(p, span), floor(p/span)); }
+  // Fades items out at a band's edges, which are off-screen without a band.
+  float bandFade(float y){ return clamp(min(u_band.x - y, y - u_band.y) / .12, 0.0, 1.0); }
   `
   const FS_HEAD = `#version 300 es
   precision highp float;
   uniform vec3 u_colorA, u_colorB;
   out vec4 outColor;
   `
+  // Each effect's `density` is its item count per 1440 x 900 screen, within `min` and `max`, and
+  // `fps` its presets' frame-rate target unless a preset sets its own: 60 for what moves far per
+  // frame, 15 for the mist, which barely moves, else 30, since every frame also redraws the glass
+  // surfaces' blur (task 063).
   const EFFECTS = {
-    // Winter's snow, from the mock-up. A is the near flakes' color, B the far ones'.
+    // Snow, from the mock-up. A is the near flakes' color, B the far ones'.
     snow: {
+      fps: 30,
       density: 500,
       min: 150,
       max: 900,
@@ -114,20 +456,19 @@
       out float v_alpha, v_depth, v_rnd;
       void main() {
         float id = float(gl_VertexID) + 1.0;
-        float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0);
+        float r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0);
         float z = mix(.22, 1.0, pow(r3, 1.8));
-        float t = u_time * .15 * mix(.18, .60, z);
-        float x = r1 * 2.0 - 1.0;
-        float y = r2 * 2.0 - 1.0;
-        y = 1.18 - mod((1.18-y) + t*(1.0+r4*.55), 2.36);
-        x += -2.5 * (1.0-z*.38) * t * .18;
+        float v = .15 * mix(.18, .60, z) * u_fall * (1.0+r4*.55);
+        vec2 f = fallPass(r2, u_time * v);
+        float y = f.x;
+        float x = columnHash(f.y) * 2.0 - 1.0 + pathX(y, v, mix(.6, 1.0, z));
         x += sin((y+r4*6.28)*4.5 + u_time*(.35+r3)) * (.008 + .035*(1.0-z));
-        x = -1.15 + mod(x+1.15, 2.30);
+        x = wrapX(x, .15);
         x *= mix(.88, 1.08, z);
         // The mock-up divided x by the aspect ratio, which left the sides of wide screens bare.
         gl_Position = vec4(x, y, 0.0, 1.0);
-        gl_PointSize = 1.15 * u_dpr * mix(.8, 2.75, z);
-        v_alpha = mix(.15,.82,z) * mix(.72,1.0,r4);
+        gl_PointSize = max(1.0, 1.15 * u_dpr * mix(.8, 2.75, z) * u_size);
+        v_alpha = mix(.15,.82,z) * mix(.72,1.0,r4) * u_opacity * bandFade(y);
         v_depth = z;
         v_rnd = r4;
       }`,
@@ -148,6 +489,7 @@
     },
     // Autumn: leaves that sway as they fall and tumble, each turning on its own. A is rust, B ochre.
     leaves: {
+      fps: 60,
       density: 45,
       min: 20,
       max: 60,
@@ -158,16 +500,16 @@
         float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
         float z = mix(.35, 1.0, pow(r3, 1.5));
         float t = u_time;
-        float y = 1.25 - mod((1.25 - (r2*2.0-1.0)) + t * mix(.05, .12, z) * (.8 + r4*.5), 2.5);
+        float y = 1.25 - mod((1.25 - (r2*2.0-1.0)) + t * mix(.05, .12, z) * (.8 + r4*.5) * u_fall, 2.5);
         float swing = t * mix(1.0, 1.8, r5) + r4*6.28;
         // Drift with the wind, plus a pendulum sway that's wider for near leaves.
-        float x = r1*2.0-1.0 + t*.02*(.6+z) + sin(swing) * mix(.03, .08, z) * u_res.y / u_res.x;
-        x = -1.15 + mod(x + 1.15, 2.3);
+        float x = r1*2.0-1.0 + windX((.6+z)/1.6) + sin(swing) * mix(.03, .08, z) * u_res.y / u_res.x;
+        x = wrapX(x, .15);
         gl_Position = vec4(x, y, 0.0, 1.0);
-        gl_PointSize = u_dpr * mix(10.0, 26.0, z) * mix(.85, 1.15, r5);
+        gl_PointSize = u_dpr * mix(10.0, 26.0, z) * mix(.85, 1.15, r5) * u_size;
         v_angle = r1*6.28 + t*mix(-.7, .7, r2) + cos(swing)*.6;
         v_flip = cos(t*mix(.7, 1.8, r4) + r3*6.28);
-        v_alpha = mix(.5, .95, z);
+        v_alpha = mix(.5, .95, z) * u_opacity;
         v_rnd = r5;
       }`,
       fs: `${FS_HEAD}
@@ -194,6 +536,7 @@
     },
     // Summer nights: fireflies that wander over the meadow and glow on and off. A is the core, B the halo.
     fireflies: {
+      fps: 30,
       density: 40,
       min: 18,
       max: 60,
@@ -211,8 +554,8 @@
         // A quick glow, a slower fade, then dark for the rest of the cycle.
         float ph = fract(u_time / mix(3.0, 6.0, r5) + r1);
         float glow = smoothstep(0.0, .12, ph) * (1.0 - smoothstep(.18, .6, ph));
-        v_alpha = glow * mix(.6, 1.0, z);
-        gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * mix(9.0, 18.0, z);
+        v_alpha = glow * mix(.6, 1.0, z) * u_opacity;
+        gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * mix(9.0, 18.0, z) * u_size;
       }`,
       fs: `${FS_HEAD}
       in float v_alpha;
@@ -228,9 +571,10 @@
       }`,
       colors: () => [[1.0, 0.98, 0.72], [0.74, 0.9, 0.32]],
     },
-    // Summer days: soft dandelion fluff and pollen drifting on the breeze, the pollen catching the light.
-    // A is the seeds' color, B the pollen's.
+    // Summer days: soft dandelion fluff and pollen drifting on the breeze, the pollen catching the
+    // light. A is the seeds' color, B the pollen's. Without fluff, it's motes in the sun.
     seeds: {
+      fps: 30,
       density: 70,
       min: 30,
       max: 110,
@@ -239,17 +583,17 @@
       void main() {
         float id = float(gl_VertexID) + 1.0;
         float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
-        float seed = step(.7, r5);
+        float seed = step(1.0 - u_share, r5);
         float z = mix(.3, 1.0, r3);
         float t = u_time;
-        float x = r1*2.0-1.0 + t * mix(.012, .035, z) + sin(t*mix(.2, .5, r2) + r4*6.28) * .02;
-        float y = r2*2.0-1.0 + t * mix(.004, .014, r4) + sin(t*mix(.3, .7, r4) + r1*6.28) * .05;
-        x = -1.15 + mod(x + 1.15, 2.3);
+        float x = r1*2.0-1.0 + windX(mix(.35, 1.0, z)) + sin(t*mix(.2, .5, r2) + r4*6.28) * .02;
+        float y = r2*2.0-1.0 + t * mix(.004, .014, r4) * u_fall + sin(t*mix(.3, .7, r4) + r1*6.28) * .05;
+        x = wrapX(x, .15);
         y = -1.15 + mod(y + 1.15, 2.3);
         gl_Position = vec4(x, y, 0.0, 1.0);
-        gl_PointSize = u_dpr * (seed > .5 ? mix(8.0, 16.0, z) : mix(2.5, 5.5, z));
+        gl_PointSize = max(1.0, u_dpr * (seed > .5 ? mix(8.0, 16.0, z) : mix(2.5, 5.5, z)) * u_size);
         float glint = seed > .5 ? 1.0 : .45 + .55 * pow(.5 + .5*sin(t*mix(1.0, 2.6, r4) + r2*6.28), 3.0);
-        v_alpha = mix(.45, .95, z) * glint;
+        v_alpha = mix(.45, .95, z) * glint * u_opacity;
         v_kind = seed;
       }`,
       fs: `${FS_HEAD}
@@ -275,41 +619,46 @@
       colors: ({ dark, background }) =>
         dark || background ? [[1.0, 0.99, 0.93], [1.0, 0.93, 0.66]] : [[0.54, 0.5, 0.4], [0.72, 0.58, 0.26]],
     },
-    // Spring: a light shower of thin slanted streaks that comes in soft bursts. A is the near
-    // streaks' color, B the far ones'.
+    // Rain: thin streaks that come in soft bursts, slanted by the wind against their fall. A is the
+    // near streaks' color, B the far ones'.
     rain: {
+      fps: 60,
       density: 260,
       min: 90,
       max: 450,
       vs: `${HEAD}
-      const float SLANT = .22; // sideways pixels per pixel of fall
       out float v_alpha, v_depth, v_width;
+      out vec2 v_dir;
       void main() {
         float id = float(gl_VertexID) + 1.0;
-        float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0);
+        float r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0);
         float z = mix(.35, 1.0, pow(r3, 1.3));
-        float fall = u_time * mix(1.1, 2.0, z);
-        float y = 1.2 - mod((1.2 - (r2*2.0-1.0)) + fall, 2.4);
-        float x = r1*2.0-1.0 + fall * SLANT * u_res.y / u_res.x;
-        x = -1.15 + mod(x + 1.15, 2.3);
+        float v = mix(1.1, 2.0, z) * u_fall;
+        vec2 f = fallPass(r2, u_time * v);
+        float y = f.x;
+        float depth = mix(.55, 1.0, z);
+        float x = wrapX(columnHash(f.y)*2.0-1.0 + pathX(y, v, depth), .15);
         gl_Position = vec4(x, y, 0.0, 1.0);
+        // Sideways pixels per pixel of fall, as the wind blows here and now.
+        float slant = 2.0 * u_wind * depth * shearAt(y) * gustNow() / v;
+        v_dir = normalize(vec2(slant, 1.0));
         // Bursts: the shower's strength rises and falls, and each streak shows above its own level.
         float level = mix(.1, 1.0, smoothstep(.15, .85, .5 + .5*sin(u_time*.23 + sin(u_time*.07)*2.0)));
         float shown = smoothstep(r4 - .1, r4, level);
-        float size = u_dpr * mix(14.0, 30.0, z);
+        float size = u_dpr * mix(14.0, 30.0, z) * u_size;
         gl_PointSize = shown < .01 ? 0.0 : size;
-        v_alpha = mix(.25, .6, z) * shown;
+        v_alpha = mix(.25, .6, z) * shown * u_opacity * bandFade(y);
         v_depth = z;
         // Half a streak's width in point coordinates: about 0.6 px.
         v_width = .6 * u_dpr * 2.0 / size;
       }`,
       fs: `${FS_HEAD}
       in float v_alpha, v_depth, v_width;
+      in vec2 v_dir;
       void main() {
         vec2 q = (gl_PointCoord - .5) * 2.0;
-        vec2 dir = normalize(vec2(.22, 1.0));
-        float across = abs(dot(q, vec2(-dir.y, dir.x)));
-        float along = dot(q, dir);
+        float across = abs(dot(q, vec2(-v_dir.y, v_dir.x)));
+        float along = dot(q, v_dir);
         float a = (1.0 - smoothstep(v_width, v_width * 2.5, across)) * smoothstep(1.0, .1, abs(along)) * mix(.35, 1.0, along * .5 + .5) * v_alpha;
         vec3 col = mix(u_colorB, u_colorA, v_depth);
         outColor = vec4(col * a, a);
@@ -318,6 +667,208 @@
       colors: ({ dark, background }) =>
         dark ? [[0.8, 0.87, 0.96], [0.56, 0.66, 0.8]] : background ? [[0.4, 0.48, 0.6], [0.58, 0.65, 0.75]] : [[0.4, 0.5, 0.63], [0.6, 0.68, 0.78]],
     },
+    // Snow or frost glittering in the image's snowy zones (`zones`, so it misses water): specks that
+    // shimmer faintly and slowly (`shimmer`, `tempo`), and now and then a glint at full brightness,
+    // timed so that about `peaks` show at once, each for `peakTime` seconds and `peakSize` times as
+    // large. Specks are larger nearer the viewer. A is the glints' color at their peak, B at their
+    // edge.
+    glitter: {
+      fps: 30,
+      density: 500,
+      min: 150,
+      max: 900,
+      vs: `${HEAD}
+      uniform float u_shimmer, u_peakTime, u_peakSize;
+      // How often each speck glints, in seconds (glitterCycle).
+      uniform float u_cycle;
+      out float v_alpha;
+      void main() {
+        float id = float(gl_VertexID) + 1.0;
+        float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+        int zi = int(min(floor(r5 * u_zoneCount), u_zoneCount - 1.0));
+        vec4 zone = u_zones[zi];
+        // Denser toward the zone's top, which is farther away.
+        float y = mix(zone.y, zone.w, pow(r2, 1.5));
+        gl_Position = vec4(mix(zone.x, zone.z, r1), y, 0.0, 1.0);
+        float shimmer = pow(max(0.0, sin(u_time * u_tempo * mix(.25, .8, r3) + r4 * 6.28)), 4.0) * u_shimmer;
+        // Each speck's glint comes once a cycle, at its own time.
+        float tau = mod(u_time + hash(id*4.71+2.0) * u_cycle, u_cycle);
+        float peak = tau < u_peakTime ? pow(sin(3.14159 * tau / u_peakTime), 2.0) : 0.0;
+        v_alpha = max(shimmer, peak) * u_opacity * u_zoneGain[zi];
+        // 0 at the horizon, 1 at the screen's foot.
+        float near = clamp((u_horizon - y) / (u_horizon + 1.0), 0.0, 1.0);
+        gl_PointSize = v_alpha < .02 ? 0.0 : max(1.0, u_dpr * u_size * mix(1.0, 2.4, near)) * mix(1.0, u_peakSize, peak);
+      }`,
+      fs: `${FS_HEAD}
+      in float v_alpha;
+      void main() {
+        float d = length(gl_PointCoord - .5) * 2.0;
+        float a = exp(-d * d * 4.0) * (1.0 - smoothstep(.8, 1.0, d)) * v_alpha;
+        vec3 col = mix(u_colorB, u_colorA, exp(-d * d * 9.0));
+        outColor = vec4(col * a, a);
+        if (outColor.a < .01) discard;
+      }`,
+      colors: ({ dark, background }) => (dark || background ? [[1.0, 1.0, 1.0], [0.9, 0.95, 1.0]] : [[0.36, 0.52, 0.7], [0.55, 0.68, 0.8]]),
+    },
+    // Summer by the water: small groups of midges, a pixel or two each, idling over the water; a
+    // share (`share`) glint by day. `zones` places them: three quarters of the groups in the first,
+    // the rest in the second. At night `glow` fireflies wander on their own in the third, along the
+    // bank. A is the midges' color, B the glints' and fireflies'.
+    insects: {
+      fps: 60,
+      density: 18,
+      min: 9,
+      max: 30,
+      vs: `${HEAD}
+      out float v_alpha, v_kind;
+      void main() {
+        float id = float(gl_VertexID) + 1.0;
+        float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+        float firefly = step(float(gl_VertexID) + .5, u_glow);
+        vec2 p;
+        if (firefly > .5) {
+          // Wandering slowly along the bank.
+          vec4 zone = u_zones[2];
+          float t = u_time * u_tempo * mix(.05, .09, r4);
+          p = vec2(mix(zone.x, zone.z, r1) + sin(t*2.1 + r4*6.28)*.04, mix(zone.w, zone.y, r2) + sin(t*3.3 + r5*6.28)*.015);
+        } else {
+          // Groups of three, each idling about a point that drifts slowly with the wind.
+          float group = floor((float(gl_VertexID) - u_glow) / 3.0);
+          float s1 = hash(group*7.3+1.0), s2 = hash2(group*3.1+2.0);
+          vec4 zone = u_zones[hash(group*5.9+4.0) < .75 ? 0 : 1];
+          vec2 c = vec2(mix(zone.x, zone.z, s1) + sin(u_time*.03 + s2*6.28)*.05 + windX(1.0), mix(zone.w, zone.y, s2));
+          float t = u_time * u_tempo * mix(.4, .7, r4);
+          vec2 o = vec2(sin(t*2.3 + r2*6.28) + .5*sin(t*4.1 + r3*6.28), cos(t*1.9 + r3*6.28) + .5*sin(t*3.7 + r2*6.28));
+          p = c + o * vec2(.03 * u_res.y / u_res.x, .03) * mix(.6, 1.2, r5);
+        }
+        p.x = wrapX(p.x, .1);
+        gl_Position = vec4(p, 0.0, 1.0);
+        float z = mix(.4, 1.0, r3);
+        float special = max(firefly, step(1.0 - u_share, hash(id*1.91+5.0)));
+        // A firefly's glow: quick on, slower off, then dark for the rest of its cycle.
+        float ph = fract(u_time / mix(4.0, 7.0, r5) + r1);
+        float glow = smoothstep(0.0, .12, ph) * (1.0 - smoothstep(.18, .6, ph));
+        v_kind = special + firefly;
+        v_alpha = mix(mix(.5, .9, z) * (.8 + .2*sin(u_time*17.0 + r2*6.28)), glow, firefly) * u_opacity;
+        gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * u_size * mix(max(1.0, mix(1.0, 2.2, z)), mix(9.0, 16.0, z), firefly);
+      }`,
+      fs: `${FS_HEAD}
+      // 0 for a midge, 1 for one that glints, 2 for a firefly.
+      in float v_alpha, v_kind;
+      void main() {
+        float d = length(gl_PointCoord - .5) * 2.0;
+        float firefly = step(1.5, v_kind);
+        float a = mix(smoothstep(1.1, .2, d), exp(-d*d*38.0) + exp(-d*d*5.0)*.6, firefly) * v_alpha;
+        vec3 col = mix(u_colorA, u_colorB, min(v_kind, 1.0));
+        outColor = vec4(col * a, a * mix(1.0, .7, firefly));
+        if (a < .01) discard;
+      }`,
+      colors: ({ dark, background }) =>
+        dark ? [[0.6, 0.66, 0.76], [1.0, 0.98, 0.72]] : background ? [[0.16, 0.15, 0.12], [1.0, 0.96, 0.82]] : [[0.3, 0.3, 0.28], [0.72, 0.58, 0.26]],
+    },
+    // Night mist: wide, soft banks of uneven density that drift along a band near the horizon. Each
+    // bank is one quad. A is the thick parts' color, B the thin parts'.
+    mist: {
+      // The banks barely move: at most 0.03 screen heights a second, about 3 px a frame at 10 fps
+      // on a 900 px screen, which their soft, 100 px wide edges hide.
+      fps: 10,
+      // Soft throughout, so half a backing pixel per CSS pixel looks the same (`resolution`, as
+      // in the app).
+      resolution: 0.5,
+      density: 16,
+      min: 10,
+      max: 24,
+      quads: true,
+      vs: `${HEAD}
+      out vec2 v_uv, v_p;
+      out float v_alpha;
+      const vec2 CORNERS[6] = vec2[6](vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(-1, 1), vec2(1, -1), vec2(1, 1));
+      void main() {
+        float id = float(gl_VertexID / 6) + 1.0;
+        vec2 c = CORNERS[gl_VertexID % 6];
+        float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+        float z = mix(.4, 1.0, r3);
+        // With zones, each bank keeps to one: its rows are the band, and it fades out as it drifts
+        // past the zone's sides.
+        vec4 zone = vec4(-1e3, u_band.x, 1e3, u_band.y);
+        float gain = 1.0;
+        if (u_zoneCount > .5) {
+          int zi = int(min(floor(hash(id*7.73+1.3) * u_zoneCount), u_zoneCount - 1.0));
+          zone = u_zones[zi];
+          gain = u_zoneGain[zi];
+        }
+        // Half the bank's width and height in clip space: wide and low, up to half the band tall.
+        float band = zone.y - zone.w;
+        vec2 half_ = vec2(mix(.35, .75, r4) * u_size, band * mix(.25, .5, r5));
+        float cy = mix(zone.w + half_.y * .6, zone.y - half_.y * .6, r2);
+        float cx = wrapX(r1*2.0-1.0 + windX(z) + sin(u_time*.03 + r5*6.28) * .03, half_.x);
+        gl_Position = vec4(vec2(cx, cy) + c * half_, 0.0, 1.0);
+        v_uv = c;
+        // The texture's coordinates, in screen heights, move with the bank.
+        v_p = c * half_ * vec2(u_res.x / u_res.y, 1.0) * .5 + r1 * 17.0;
+        v_alpha = .22 * u_opacity * mix(.5, 1.0, z) * (.7 + .3 * sin(u_time * mix(.05, .12, r4) + r1 * 6.28));
+        v_alpha *= gain * smoothstep(.35, 0.0, max(zone.x - cx, cx - zone.z));
+      }`,
+      fs: `${FS_HEAD}
+      in vec2 v_uv, v_p;
+      in float v_alpha;
+      // An integer hash of a lattice cell, exact at any precision; a sin() hash breaks down in
+      // mediump.
+      float vhash(vec2 cell){
+        highp uvec2 q = uvec2(ivec2(cell) + 4096);
+        highp uint x = q.x * 1664525u ^ (q.y * 1013904223u + 12345u);
+        x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16;
+        return float(x) / 4294967295.0;
+      }
+      float vnoise(vec2 p){
+        vec2 i = floor(p), f = fract(p);
+        f = f*f*(3.0 - 2.0*f);
+        return mix(mix(vhash(i), vhash(i + vec2(1, 0)), f.x), mix(vhash(i + vec2(0, 1)), vhash(i + vec2(1, 1)), f.x), f.y);
+      }
+      void main() {
+        vec2 u = v_uv;
+        // Soft all round, reaching zero at the quad's edge.
+        float shape = exp(-(u.x*u.x*1.6 + u.y*u.y*3.0)) * (1.0 - u.x*u.x) * (1.0 - u.y*u.y);
+        // Pixels this faint are discarded below anyway; skipping the noise there saves most of the
+        // quad's corners.
+        if (shape * v_alpha < .004) discard;
+        float n = vnoise(v_p * 3.0) * .65 + vnoise(v_p * 7.0 + 4.0) * .35;
+        float a = shape * smoothstep(.15, .85, n) * v_alpha;
+        vec3 col = mix(u_colorB, u_colorA, n);
+        outColor = vec4(col * a, a);
+        if (outColor.a < .004) discard;
+      }`,
+      colors: ({ dark, background }) =>
+        dark ? [[0.66, 0.74, 0.84], [0.5, 0.58, 0.7]] : background ? [[1.0, 1.0, 1.0], [0.92, 0.95, 0.98]] : [[0.7, 0.78, 0.86], [0.8, 0.86, 0.92]],
+    },
+  }
+  // Uniform defaults for a preset's missing fields.
+  const TUNING = { wind: 0, gust: 0, shear: 0, amount: 1, size: 1, fall: 1, opacity: 1, share: 0.3, glow: 0, tempo: 1, shimmer: 0.3, peaks: 1.2, peakTime: 1.5, peakSize: 2 }
+  // The photos' aspect ratio and `background-position` y (.scene-photo), to map a band from image
+  // rows to the screen the way `cover` crops the photo.
+  const PHOTO_ASPECT = 1920 / 1084
+  const PHOTO_Y = 0.5
+  const FULL_BAND = [1.2, -1.2]
+  // A rectangle of the image, [left, top, right, bottom] as fractions of its width and height, in
+  // clip space. `cover` centers the photo across.
+  function zoneClip([left, top, right, bottom], w, h) {
+    const shown = Math.max(w, h * PHOTO_ASPECT)
+    const x = (f) => (2 * ((w - shown) / 2 + f * shown)) / w - 1
+    const [t, b] = bandClip([top, bottom], w, h)
+    return [x(left), t, x(right), b]
+  }
+  function bandClip(band, w, h) {
+    if (!band) return FULL_BAND
+    const shown = Math.max(h, w / PHOTO_ASPECT)
+    const top = (h - shown) * PHOTO_Y
+    return band.map((f) => 1 - (2 * (top + f * shown)) / h)
+  }
+
+  // How often each glitter speck glints, in seconds, so that about `peaks` glints show at once on a
+  // 1440 x 900 screen, proportionally more on a larger one. It leaves out the screen's size, so a
+  // resize doesn't move every speck to another point of its cycle.
+  function glitterCycle(t) {
+    return (EFFECTS.glitter.density * t.amount * t.peakTime) / Math.max(t.peaks, 0.01)
   }
 
   // One WebGL context for all effects; each effect's program compiles the first time it runs.
@@ -332,6 +883,7 @@
       if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh))
       return sh
     }
+    const UNIFORMS = ['u_res', 'u_band', 'u_horizon', 'u_time', 'u_dpr', 'u_wind', 'u_gust', 'u_shear', 'u_size', 'u_fall', 'u_opacity', 'u_share', 'u_glow', 'u_tempo', 'u_zones', 'u_zoneCount', 'u_zoneGain', 'u_cycle', 'u_shimmer', 'u_peakTime', 'u_peakSize', 'u_colorA', 'u_colorB']
     const programs = {}
     function program(name) {
       if (programs[name]) return programs[name]
@@ -341,79 +893,136 @@
       gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fx.fs))
       gl.linkProgram(p)
       if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p))
-      const u = Object.fromEntries(['u_res', 'u_time', 'u_dpr', 'u_colorA', 'u_colorB'].map((n) => [n, gl.getUniformLocation(p, n)]))
+      const u = Object.fromEntries(UNIFORMS.map((n) => [n, gl.getUniformLocation(p, n)]))
       return (programs[name] = { p, u })
     }
     gl.bindVertexArray(gl.createVertexArray())
     gl.enable(gl.BLEND)
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
+    // The canvas's size in CSS pixels, kept by an observer so frames don't force a layout.
+    let cssWidth = canvas.clientWidth
+    let cssHeight = canvas.clientHeight
+    new ResizeObserver(([entry]) => {
+      cssWidth = entry.contentRect.width
+      cssHeight = entry.contentRect.height
+      setup = null
+    }).observe(canvas)
+
     let raf = 0
     let last = 0
     let elapsed = 0
     let current = null
     let colors = null
+    // What a frame draws with, worked out again only on a start or a resize.
+    let setup = null
+    function prepare(w, h) {
+      const t = { ...TUNING, ...current }
+      const fx = EFFECTS[current.effect]
+      const zones = (t.zones ?? [[0, t.horizon ?? 1, 1, 1]]).slice(0, 3).map((zone) => zoneClip(zone.slice(0, 4), w, h))
+      // Item counts scale with the drawn area. A band's effect keeps the count of its full-screen
+      // version, so it's thicker in the band.
+      const area = (cssWidth * cssHeight) / (1440 * 900)
+      return {
+        w,
+        h,
+        t,
+        fx,
+        band: bandClip(t.band, w, h),
+        horizon: t.horizon == null ? FULL_BAND[1] : bandClip([t.horizon, 1], w, h)[0],
+        zones: [...zones.flat(), ...Array((3 - zones.length) * 4).fill(0)],
+        zoneCount: zones.length,
+        zoneGain: [0, 1, 2].map((i) => t.zones?.[i]?.[4] ?? 1),
+        count: Math.round(Math.min(fx.max, Math.max(fx.min, fx.density * area)) * t.amount * pace().density),
+      }
+    }
+
+    // As in the app (src/lib/scene/weather.ts), the weather draws every nth display refresh, so its
+    // frames are evenly spaced; the rate is the low quartile of the first gaps after a start. The
+    // app also steps down a refresh when frames drop; the prototype doesn't.
+    const MEASURED_GAPS = 10
+    let gaps = []
+    let hz = 0
+    let prev = 0
     function frame(now) {
       raf = requestAnimationFrame(frame)
-      // About 45 fps is plenty for slow effects and halves the GPU work on 120 Hz screens.
-      if (now - last < 22) return
+      const gap = prev ? now - prev : 0
+      prev = now
+      if (gap && !hz) {
+        gaps.push(gap)
+        if (gaps.length === MEASURED_GAPS) hz = Math.round(1000 / gaps.sort((a, b) => a - b)[MEASURED_GAPS >> 2])
+      }
+      const fps = current.fps ?? EFFECTS[current.effect].fps
+      const due = hz ? Math.round(((now - last) * hz) / 1000) >= Math.max(1, Math.round(hz / fps)) : now - last >= (1000 / fps) * 0.8
+      if (!due) return
       elapsed += (Math.min(now - (last || now), 100) / 1000) * pace().speed
       last = now
-      const dpr = Math.min(devicePixelRatio || 1, 1.5)
-      const w = Math.max(1, Math.floor(canvas.clientWidth * dpr))
-      const h = Math.max(1, Math.floor(canvas.clientHeight * dpr))
+      const dpr = Math.min(devicePixelRatio || 1, EFFECTS[current.effect].resolution ?? 1.5)
+      const w = Math.max(1, Math.floor(cssWidth * dpr))
+      const h = Math.max(1, Math.floor(cssHeight * dpr))
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w
         canvas.height = h
         gl.viewport(0, 0, w, h)
       }
-      const fx = EFFECTS[current]
-      const { p, u } = program(current)
-      gl.useProgram(p)
-      gl.clearColor(0, 0, 0, 0)
+      const { p, u } = program(current.effect)
+      // Uniforms that change only with the setup go up once; a program keeps them.
+      if (!setup || setup.w !== w || setup.h !== h || setup.dpr !== dpr) {
+        setup = prepare(w, h)
+        setup.dpr = dpr
+        const { t } = setup
+        gl.useProgram(p)
+        gl.uniform2f(u.u_res, w, h)
+        gl.uniform2f(u.u_band, ...setup.band)
+        gl.uniform1f(u.u_horizon, setup.horizon)
+        gl.uniform4fv(u.u_zones, setup.zones)
+        gl.uniform1f(u.u_zoneCount, setup.zoneCount)
+        gl.uniform3fv(u.u_zoneGain, setup.zoneGain)
+        gl.uniform1f(u.u_dpr, dpr)
+        for (const key of ['wind', 'gust', 'shear', 'size', 'fall', 'opacity', 'share', 'glow', 'tempo', 'shimmer', 'peakTime', 'peakSize']) gl.uniform1f(u[`u_${key}`], t[key])
+        gl.uniform1f(u.u_cycle, glitterCycle(t))
+      }
+      const { fx } = setup
       gl.clear(gl.COLOR_BUFFER_BIT)
-      gl.uniform2f(u.u_res, w, h)
       gl.uniform1f(u.u_time, elapsed)
-      gl.uniform1f(u.u_dpr, dpr)
-      const [a, b] = colors()
-      gl.uniform3f(u.u_colorA, ...a)
-      gl.uniform3f(u.u_colorB, ...b)
-      // Point counts scale with the drawn area, relative to a 1440 x 900 viewport.
-      const area = (canvas.clientWidth * canvas.clientHeight) / (1440 * 900)
-      gl.drawArrays(gl.POINTS, 0, Math.round(Math.min(fx.max, Math.max(fx.min, fx.density * area)) * pace().density))
+      gl.uniform3f(u.u_colorA, ...colors[0])
+      gl.uniform3f(u.u_colorB, ...colors[1])
+      if (fx.quads) gl.drawArrays(gl.TRIANGLES, 0, setup.count * 6)
+      else gl.drawArrays(gl.POINTS, 0, setup.count)
     }
     return {
-      // Throws if the effect's shaders don't compile.
-      start(name, colorsFn) {
-        program(name)
-        current = name
-        colors = colorsFn
+      // `weather` is an image's resolved weather (weatherFor), `colorsFn` its two colors for the
+      // page's theme. Throws if the effect's shaders don't compile.
+      start(weather, colorsFn) {
+        program(weather.effect)
+        current = weather
+        colors = colorsFn()
+        setup = null
         if (raf) return
         last = 0
+        prev = 0
+        hz = 0
+        gaps = []
         raf = requestAnimationFrame(frame)
       },
       stop() {
         cancelAnimationFrame(raf)
         raf = 0
-        gl.clearColor(0, 0, 0, 0)
         gl.clear(gl.COLOR_BUFFER_BIT)
       },
     }
   }
 
   // --- Photos ----------------------------------------------------------------------------------
-  // Each image comes 1920 and 3840 px wide (design/backgrounds/README.md). `cover` stretches it to
-  // the larger of the viewport's width and its height's 16:9 width, so that is what the file has to
-  // cover. Screens under 768 px get the small file whatever their pixel ratio.
+  // Each image comes 1920 and 3840 px wide, and 400 for pickers (design/backgrounds/README.md).
+  // `cover` stretches it to the larger of the viewport's width and its height's 16:9 width, so that
+  // is what the file has to cover. Screens under 768 px get the small file whatever their pixel ratio.
   const PHOTO_SMALL = 1920
   const PHOTO_LARGE = 3840
   function photoWidth() {
     if (innerWidth < 768) return PHOTO_SMALL
     const needed = Math.max(innerWidth, (innerHeight * 16) / 9) * Math.min(devicePixelRatio || 1, 2)
     return needed > PHOTO_SMALL * 1.25 ? PHOTO_LARGE : PHOTO_SMALL
-  }
-  function photoUrl(season, theme, width) {
-    return `${BASE}${season}-${theme}-01-${width}.avif`
   }
   // Files loaded and decoded, so a layer only switches to an image that's ready to paint.
   const ready = new Set()
@@ -434,18 +1043,25 @@
   }
 
   // --- Controller ------------------------------------------------------------------------------
+  // `image` is an image id; a season id is also one, so auth.html's `season` still works.
   // `pace` is `{ density, speed }`, each a factor of the sign-in page's weather.
-  function create({ season = 'winter', strength = 'full', background = true, weather = true, pace = { density: 1, speed: 1 } } = {}) {
+  function create({ season = 'winter', image: imageId = season, strength = 'full', background = true, weather = true, pace = { density: 1, speed: 1 }, legacy = false, tuning = null } = {}) {
     const el = document.createElement('div')
     el.className = 'scene'
     el.setAttribute('aria-hidden', 'true')
     el.innerHTML = `<div class="scene-photo scene-photo-light"></div><div class="scene-photo scene-photo-dark"></div>
       <div class="scene-tint"></div><div class="scene-vignette"></div><canvas></canvas>`
-    const state = { season, strength, background, weather, pace }
+    // `tuning`, for weather.html's sliders: fields by image id and theme that override the table's.
+    const state = { image: imageId, strength, background, weather, pace, legacy, tuning }
     const fx = renderer(el.querySelector('canvas'), () => state.pace)
     const failed = new Set()
-    const colors = () => EFFECTS[effect()].colors({ dark: isDark(), background: state.background })
-    const effect = () => (SEASONS[state.season] ?? SEASONS.winter).weather[isDark() ? 'dark' : 'light']
+    // `legacy` shows the weather from before task 066, for weather.html.
+    function shownWeather() {
+      const theme = isDark() ? 'dark' : 'light'
+      return weatherFor(state.image, theme, { legacy: state.legacy, overrides: state.legacy ? null : state.tuning?.[state.image]?.[theme] })
+    }
+    const effect = () => shownWeather().effect
+    const colors = () => (shownWeather().colors ?? EFFECTS[effect()].colors)({ dark: isDark(), background: state.background })
 
     // Themes whose sharp file loads even while the background is off: the intro's, which opens
     // without it and fades it in later (`preload`).
@@ -466,14 +1082,15 @@
     }
     function updatePhotos() {
       const shown = isDark() ? 'dark' : 'light'
-      const shownReady = ready.has(photoUrl(state.season, shown, photoWidth()))
+      const shownReady = ready.has(photoUrl(state.image, shown, photoWidth()))
       for (const theme of ['light', 'dark']) {
         const layer = el.querySelector(`.scene-photo-${theme}`)
         function show(url) {
           if (layer.dataset.src !== url) layer.style.backgroundImage = `url("${url}")`
           layer.dataset.src = url
+          layer.dataset.image = state.image
         }
-        const sharp = photoUrl(state.season, theme, photoWidth())
+        const sharp = photoUrl(state.image, theme, photoWidth())
         if (ready.has(sharp)) {
           show(sharp)
           continue
@@ -481,9 +1098,8 @@
         // Once per file: a file that fails stays on the small one.
         const wanted = (state.background && theme === shown) || preloaded.has(theme)
         if (wanted && !loading.has(sharp)) load(sharp).then(photos)
-        const current = layer.dataset.src ?? ''
         const due = theme === shown || shownReady
-        if (state.background && due && !current.startsWith(`${BASE}${state.season}-${theme}-`)) show(photoUrl(state.season, theme, PHOTO_SMALL))
+        if (state.background && due && layer.dataset.image !== state.image) show(photoUrl(state.image, theme, PHOTO_SMALL))
       }
     }
     addEventListener('resize', photos)
@@ -493,10 +1109,10 @@
       photos()
       el.style.setProperty('--scene-tint', STRENGTHS[state.strength][dark ? 'dark' : 'light'])
       el.dataset.background = state.background ? 'on' : 'off'
-      let on = state.weather && !!fx && !failed.has(effect()) && !reducedMotion.matches && !document.hidden
+      let on = state.weather && !!fx && !!effect() && !failed.has(effect()) && !reducedMotion.matches && !document.hidden
       if (on) {
         try {
-          fx.start(effect(), colors)
+          fx.start(shownWeather(), colors)
         } catch (error) {
           console.warn(`Weather effect ${effect()} unavailable:`, error)
           failed.add(effect())
@@ -513,8 +1129,8 @@
 
     return {
       el,
-      set(patch) {
-        Object.assign(state, patch)
+      set({ season: seasonId, ...patch }) {
+        Object.assign(state, seasonId ? { image: seasonId } : {}, patch)
         render()
       },
       get: () => ({ ...state }),
@@ -528,11 +1144,33 @@
       weatherBlocked() {
         if (reducedMotion.matches) return 'Off while your device reduces motion.'
         if (!fx) return 'Your browser has no WebGL 2.'
-        if (failed.has(effect())) return "This season's weather didn't start in your browser."
+        if (failed.has(effect())) return "This image's weather didn't start in your browser."
         return null
       },
     }
   }
 
-  window.scene = { create, settings, SEASONS, EFFECTS, STRENGTHS, DEFAULTS, reducedMotion }
+  window.scene = {
+    create,
+    settings,
+    SEASONS,
+    COLLECTIONS,
+    EFFECTS,
+    PRESETS,
+    TUNING,
+    HORIZONS,
+    IMAGE_WEATHER,
+    LEGACY_WEATHER,
+    weatherFor,
+    STRENGTHS,
+    DEFAULTS,
+    reducedMotion,
+    image,
+    collectionSetting,
+    collectionPatch,
+    calendarImage,
+    imageFor,
+    weatherHint,
+    thumbUrl,
+  }
 })()

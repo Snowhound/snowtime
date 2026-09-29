@@ -31,6 +31,7 @@ const errorText: Record<AppErrorKey, () => string> = {
   projects_forbidden: m.error_projects_forbidden,
   team_report_forbidden: m.error_team_report_forbidden,
   settings_not_found: m.error_settings_not_found,
+  scene_pin_not_in_collection: m.error_scene_pin_not_in_collection,
   rate_limited: m.error_rate_limited,
   organization_forbidden: m.error_organization_forbidden,
 }

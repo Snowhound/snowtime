@@ -1912,7 +1912,7 @@
           "precision": null,
           "scale": null,
           "default": "'auto'",
-          "comments": "auto (by month), winter, spring, summer, autumn. The scene, weather, and tagline. Validated in the app, no CHECK."
+          "comments": "Replaced by scene_collection and scene_pin (task 062) and no longer read; a later migration drops it."
         },
         {
           "id": "t10f14",
@@ -1929,7 +1929,7 @@
           "precision": null,
           "scale": null,
           "default": "1",
-          "comments": "Boolean 0/1 (CHECK). Whether the season image shows behind the pages."
+          "comments": "Boolean 0/1 (CHECK). Whether the collection image shows behind the pages."
         },
         {
           "id": "t10f15",
@@ -1980,7 +1980,7 @@
           "precision": null,
           "scale": null,
           "default": "1",
-          "comments": "Boolean 0/1 (CHECK). Whether the season weather effect runs."
+          "comments": "Boolean 0/1 (CHECK). Whether the weather effect of the image runs."
         },
         {
           "id": "t10f18",
@@ -2100,6 +2100,40 @@
           "scale": null,
           "default": "0",
           "comments": "Boolean 0/1 (CHECK), default 0. Wide page: the timer page up to 88rem, with a Ticket column in the rows."
+        },
+        {
+          "id": "t10f25",
+          "name": "scene_collection",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "'mountains'",
+          "comments": "mountains (default), coast, countryside: the images the background follows through the year (src/lib/scene/images.ts). Validated in the app, no CHECK."
+        },
+        {
+          "id": "t10f26",
+          "name": "scene_pin",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "An image id in scene_collection, or null to follow the calendar. The season of the image picks the tagline. Validated in the app, no CHECK."
         }
       ],
       "indexes": [],

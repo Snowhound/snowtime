@@ -13,7 +13,8 @@ describe('device settings', () => {
     const stored = JSON.stringify({
       theme: 'dark',
       appIcon: '13',
-      sceneSeason: 'winter',
+      sceneCollection: 'coast',
+      scenePin: 'coast-march',
       sceneBackground: 'no',
       sceneStrength: 'full',
       surfaces: 'frosted',
@@ -24,16 +25,38 @@ describe('device settings', () => {
     expect(parseDeviceSettings(stored)).toEqual({
       ...DEVICE_DEFAULTS,
       theme: 'dark',
-      sceneSeason: 'winter',
+      sceneCollection: 'coast',
+      scenePin: 'coast-march',
       sceneStrength: 'full',
       sceneWeather: false,
     })
   })
 
+  test('a pin outside the collection is dropped', () => {
+    const stored = JSON.stringify({ sceneCollection: 'countryside', scenePin: 'coast-march' })
+    expect(parseDeviceSettings(stored)).toEqual({
+      ...DEVICE_DEFAULTS,
+      sceneCollection: 'countryside',
+      scenePin: null,
+    })
+  })
+
+  test('a season stored before collections reads as a pinned mountain image', () => {
+    expect(parseDeviceSettings(JSON.stringify({ sceneSeason: 'winter' }))).toEqual({
+      ...DEVICE_DEFAULTS,
+      sceneCollection: 'mountains',
+      scenePin: 'winter',
+    })
+    expect(parseDeviceSettings(JSON.stringify({ sceneSeason: 'auto' }))).toEqual(DEVICE_DEFAULTS)
+    // Once a collection is stored, the old field no longer counts.
+    const stored = JSON.stringify({ sceneSeason: 'winter', sceneCollection: 'coast' })
+    expect(parseDeviceSettings(stored)).toEqual({ ...DEVICE_DEFAULTS, sceneCollection: 'coast' })
+  })
+
   test('compares account values across refetches without equating changed choices', () => {
-    const account = { ...DEVICE_DEFAULTS, sceneSeason: 'auto' as const }
+    const account = { ...DEVICE_DEFAULTS, scenePin: null }
     const refetched = { ...account }
-    const device = { ...account, sceneSeason: 'winter' as const, theme: 'dark' as const }
+    const device = { ...account, scenePin: 'winter' as const, theme: 'dark' as const }
 
     expect(sameDeviceSettings(account, refetched)).toBe(true)
     expect(sameDeviceSettings(account, device)).toBe(false)

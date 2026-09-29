@@ -12,6 +12,9 @@
     <script src="scene.js"></script>
     <script src="intro.js"></script>
     <script src="app-frame.js"></script>
+    <style>
+      .scenery-tile-label { text-shadow: 0 0 3px rgb(0 0 0 / 0.7), 0 1px 1px rgb(0 0 0 / 0.5); }
+    </style>
     <link rel="stylesheet" href="prototype.css" />
   </head>
   <body class="bg-muted/40">
@@ -43,7 +46,10 @@
         <option value="new">New account (resets preferences)</option>
         <option value="long">Long content</option>
         <option value="local">Local dev password</option>
+        <option value="migrated">Saved before collections (Season: Winter)</option>
       </select>
+      <label for="proto-month" class="sr-only">Month (prototype)</label>
+      <select id="proto-month" data-ui="select" class="h-9 w-44" title="Prototype only: the month the calendar pretends it is, on every page"></select>
     </div>
 
     <div class="mx-auto max-w-6xl px-4 pt-6 sm:px-8">
@@ -149,28 +155,28 @@
             <div id="scenery" class="grid scroll-mt-6 gap-5">
               <div class="grid gap-1">
                 <h3 class="text-sm font-medium">Scenery</h3>
-                <p class="text-sm text-muted-foreground">The seasonal scene behind the sign-in page and the app.</p>
+                <p class="text-sm text-muted-foreground">The scene behind the sign-in page and the app.</p>
               </div>
-              <div class="flex items-center justify-between gap-4">
+              <div class="grid gap-3">
                 <div class="grid gap-1">
-                  <label data-ui="label" for="scene-season">Season</label>
-                  <span class="text-sm text-muted-foreground">The landscape and weather, and the tagline on every page.</span>
+                  <span data-ui="label" id="scene-collection-label">Collection</span>
+                  <span class="text-sm text-muted-foreground" id="scene-collection-hint">The background follows the calendar through the one you pick.</span>
                 </div>
-                <!-- ui.js wraps the select; this keeps the wrapper from shrinking in the row. -->
-                <div class="shrink-0">
-                  <select id="scene-season" data-ui="select" class="h-9 w-36">
-                    <option value="auto">Auto</option>
-                    <option value="winter">Winter</option>
-                    <option value="spring">Spring</option>
-                    <option value="summer">Summer</option>
-                    <option value="autumn">Autumn</option>
-                  </select>
-                </div>
+                <div id="scene-collections" role="radiogroup" aria-labelledby="scene-collection-label" aria-describedby="scene-collection-hint" class="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-3"></div>
+                <!-- Pinning is rare, so its images stay behind the disclosure. -->
+                <details id="scene-pin" class="group/pin">
+                  <summary class="flex min-h-9 cursor-pointer list-none flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-md text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                    <span id="scene-pin-status" class="flex min-w-0 items-center gap-1.5 text-muted-foreground"></span>
+                    <span class="flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline">Pin an image<span id="scene-pin-chevron" class="flex transition-transform group-open/pin:rotate-180"></span></span>
+                  </summary>
+                  <div id="scene-pin-options" role="radiogroup" aria-labelledby="scene-pin-label" class="mt-2 flex flex-wrap gap-2"></div>
+                  <span id="scene-pin-label" class="sr-only"></span>
+                </details>
               </div>
               <div class="flex items-center justify-between gap-4">
                 <div class="grid gap-1">
                   <span data-ui="label" id="scene-bg-label">Background</span>
-                  <span class="text-sm text-muted-foreground">A landscape for the season.</span>
+                  <span class="text-sm text-muted-foreground">The image from your collection, behind every page.</span>
                 </div>
                 <button id="scene-bg-switch" type="button" role="switch" aria-checked="true" aria-labelledby="scene-bg-label" data-ui="switch" data-scene-setting="sceneBackground">
                   <span data-ui="switch-thumb"></span>
@@ -199,9 +205,9 @@
               <div class="flex items-center justify-between gap-4">
                 <div class="grid gap-1">
                   <span data-ui="label" id="scene-weather-label">Weather</span>
-                  <span class="text-sm text-muted-foreground">Snow in winter, showers in spring, drifting seeds or fireflies in summer, and falling leaves in autumn. Off while your device reduces motion.</span>
+                  <span class="text-sm text-muted-foreground" id="settings-weather-hint"></span>
                 </div>
-                <button id="scene-weather-switch" type="button" role="switch" aria-checked="true" aria-labelledby="scene-weather-label" data-ui="switch" data-scene-setting="sceneWeather">
+                <button id="scene-weather-switch" type="button" role="switch" aria-checked="true" aria-labelledby="scene-weather-label" aria-describedby="settings-weather-hint" data-ui="switch" data-scene-setting="sceneWeather">
                   <span data-ui="switch-thumb"></span>
                 </button>
               </div>
@@ -312,6 +318,8 @@
           },
           password: false,
         }),
+        // Scenery saved before collections: the old Season setting reads as a pinned mountain image.
+        migrated: () => fixtures.populated(),
         // Local development: seeded users also have a credential account (email and password).
         local: () => ({
           user: { name: 'Anna Kask', email: 'anna@snowhound.eu' },
@@ -480,9 +488,7 @@
         ui.setSwitch(document.getElementById('summary-switch'), settings.showSummary)
         ui.setSwitch(document.getElementById('wide-switch'), settings.wideTimer)
         document.querySelectorAll('[data-scene-setting]').forEach((sw) => ui.setSwitch(sw, settings[sw.dataset.sceneSetting]))
-        const seasonSelect = document.getElementById('scene-season')
-        seasonSelect.value = settings.sceneSeason in seasons.SEASONS ? settings.sceneSeason : 'auto'
-        seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
+        renderScenery(settings)
         document.querySelectorAll('[data-setting="sceneStrength"], [data-setting="surfaces"]').forEach((b) => (b.disabled = !settings.sceneBackground))
         document.getElementById('replay-intro').disabled = intro.reducedMotion.matches
         const browserBtn = document.getElementById('use-browser-zone')
@@ -509,7 +515,6 @@
       zoneSelect.addEventListener('change', () => save({ timeZone: zoneSelect.value }))
       document.getElementById('use-browser-zone').addEventListener('click', () => save({ timeZone: browserZone }))
       document.querySelectorAll('[data-setting]').forEach((b) => b.addEventListener('click', () => save({ [b.dataset.setting]: b.dataset.value })))
-      document.getElementById('scene-season').addEventListener('change', (event) => save({ sceneSeason: event.currentTarget.value }))
       document.getElementById('summary-switch').addEventListener('change', (event) => save({ showSummary: event.currentTarget.getAttribute('aria-checked') === 'true' }))
       document.getElementById('wide-switch').addEventListener('change', (event) => save({ wideTimer: event.currentTarget.getAttribute('aria-checked') === 'true' }))
       appFrame.on('settings', renderPreferences)
@@ -523,10 +528,131 @@
       document.getElementById('replay-intro').addEventListener('click', (event) => appFrame.replayIntro(event.currentTarget))
       intro.reducedMotion.addEventListener('change', renderPreferences)
 
+      // --- Scenery collection (scene.js, Collections) ------------------------------------------------
+      // Each collection is a radio card showing all its images, with the one showing now outlined.
+      // Choosing a card saves at once and the scene behind the page changes, which is the preview. The
+      // pin's images are a second radio group behind "Pin an image".
+      function tile(id, { shown, pinned }) {
+        const img = scene.image(id)
+        return `<span class="relative min-h-0 overflow-hidden">
+          ${appFrame.thumbPair(id, 'absolute inset-0')}
+          <span class="scenery-tile-label absolute bottom-0.5 left-1 text-[10px] font-semibold leading-none text-white">${img.short}</span>
+          ${pinned ? `<span class="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-background/90 text-foreground">${icon('pin', 'size-2.5')}</span>` : ''}
+          ${shown ? '<span class="absolute inset-0 ring-2 ring-inset ring-white"></span>' : ''}
+        </span>`
+      }
+
+      function collectionCard(id, { collection, pin }) {
+        const c = scene.COLLECTIONS[id]
+        const checked = id === collection
+        const shown = checked && pin ? pin : scene.calendarImage(id)
+        const now = scene.image(shown)
+        const status = checked && pin ? `Pinned to ${now.label}` : `Now ${c.by === 'month' ? now.label : now.label.toLowerCase()}`
+        const grid = c.by === 'month' ? 'grid-cols-4 grid-rows-3' : 'grid-cols-2 grid-rows-2'
+        return `<button type="button" role="radio" aria-checked="${checked}" tabindex="${checked ? 0 : -1}" data-collection="${id}" aria-describedby="collection-${id}-desc"
+            class="group flex items-center gap-3 rounded-xl border bg-background/60 p-2 text-left transition-colors hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-checked:border-primary aria-checked:bg-accent/70 aria-checked:ring-1 aria-checked:ring-primary sm:flex-col sm:items-stretch sm:gap-2.5">
+          <span class="grid aspect-[16/10] w-32 shrink-0 gap-px overflow-hidden rounded-lg bg-border sm:w-full ${grid}" aria-hidden="true">
+            ${c.images.map((i) => tile(i, { shown: i === shown, pinned: checked && i === pin })).join('')}
+          </span>
+          <span class="flex min-w-0 flex-1 items-start justify-between gap-2 sm:px-1 sm:pb-1">
+            <span class="grid min-w-0 gap-1">
+              <span class="text-sm font-medium leading-tight">${escapeHtml(c.label)}</span>
+              <span id="collection-${id}-desc" class="text-xs text-muted-foreground">${escapeHtml(c.description)}. ${escapeHtml(status)}.</span>
+            </span>
+            <span class="hidden size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground group-aria-checked:flex">${icon('check', 'size-3')}</span>
+          </span>
+        </button>`
+      }
+
+      function pinOption(value, checked, label, content, name = label) {
+        return `<button type="button" role="radio" aria-checked="${checked}" tabindex="${checked ? 0 : -1}" data-pin="${value}" aria-label="${escapeHtml(name)}"
+            class="group grid w-20 gap-1 rounded-md p-1 text-center text-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-checked:bg-accent aria-checked:font-medium">
+          <span class="relative aspect-video overflow-hidden rounded-sm ring-1 ring-border group-aria-checked:ring-2 group-aria-checked:ring-primary">${content}</span>
+          <span class="truncate">${escapeHtml(label)}</span>
+        </button>`
+      }
+
+      function renderScenery(settings) {
+        const choice = scene.collectionSetting(settings)
+        const { collection, pin } = choice
+        const c = scene.COLLECTIONS[collection]
+        const calendar = scene.image(scene.calendarImage(collection))
+        document.getElementById('scene-collections').innerHTML = Object.keys(scene.COLLECTIONS)
+          .map((id) => collectionCard(id, choice))
+          .join('')
+        // The status line reads as the setting's current value; the disclosure changes it.
+        document.getElementById('scene-pin-status').innerHTML = pin
+          ? `${icon('pin', 'size-3.5 shrink-0')}<span>Pinned to ${escapeHtml(scene.image(pin).label)}. Unpin to follow the calendar.</span>`
+          : `${icon('calendar', 'size-3.5 shrink-0')}<span>Follows the calendar: ${escapeHtml(calendar.label)} now.</span>`
+        document.getElementById('scene-pin-label').textContent = `Image in ${c.label}`
+        document.getElementById('scene-pin-options').innerHTML = [
+          pinOption(
+            '',
+            !pin,
+            'Calendar',
+            `<span class="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground">${icon('calendar', 'size-4')}</span>`,
+            `Follow the calendar (${calendar.label} now)`
+          ),
+          ...c.images.map((id) => pinOption(id, id === pin, scene.image(id).label, appFrame.thumbPair(id, 'absolute inset-0'))),
+        ].join('')
+        const weather = scene.weatherHint(scene.imageFor(settings)).toLowerCase()
+        document.getElementById('settings-weather-hint').textContent = `Each image has its own; now ${weather} Off while your device reduces motion.`
+        document.getElementById('scene-pin-chevron').innerHTML = icon('chevron-down', 'size-4')
+      }
+
+      // Radio groups: arrow keys move and choose, Home and End jump. Focus follows the choice across
+      // the re-render.
+      function radioKeys(group, attr, choose) {
+        group.addEventListener('keydown', (event) => {
+          const options = [...group.querySelectorAll(`[${attr}]`)]
+          const i = options.indexOf(event.target.closest(`[${attr}]`))
+          if (i < 0) return
+          const next = { ArrowLeft: i - 1, ArrowUp: i - 1, ArrowRight: i + 1, ArrowDown: i + 1, Home: 0, End: options.length - 1 }[event.key]
+          if (next === undefined) return
+          event.preventDefault()
+          choose(options[(next + options.length) % options.length])
+        })
+        group.addEventListener('click', (event) => {
+          const option = event.target.closest(`[${attr}]`)
+          if (option) choose(option)
+        })
+      }
+      const collectionsGroup = document.getElementById('scene-collections')
+      radioKeys(collectionsGroup, 'data-collection', (card) => {
+        const id = card.dataset.collection
+        if (id !== scene.collectionSetting(appFrame.settings.get()).collection) save(scene.collectionPatch(id))
+        collectionsGroup.querySelector(`[data-collection="${id}"]`).focus()
+      })
+      const pinGroup = document.getElementById('scene-pin-options')
+      radioKeys(pinGroup, 'data-pin', (option) => {
+        const value = option.dataset.pin || null
+        const { collection, pin } = scene.collectionSetting(appFrame.settings.get())
+        if (value !== pin) save(scene.collectionPatch(collection, value))
+        pinGroup.querySelector(`[data-pin="${value ?? ''}"]`).focus()
+      })
+
+      // Prototype only: the month the calendar pretends it is.
+      const monthSelect = document.getElementById('proto-month')
+      const thisMonth = new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date())
+      monthSelect.innerHTML = `<option value="">Month: now (${thisMonth})</option>${scene.COLLECTIONS.coast.images
+        .map((id, i) => `<option value="${i}">Month: ${scene.image(id).label}</option>`)
+        .join('')}`
+      try {
+        monthSelect.value = localStorage.getItem(seasons.MONTH_KEY) ?? ''
+      } catch {}
+      monthSelect.addEventListener('change', () => {
+        try {
+          if (monthSelect.value === '') localStorage.removeItem(seasons.MONTH_KEY)
+          else localStorage.setItem(seasons.MONTH_KEY, monthSelect.value)
+        } catch {}
+        appFrame.settings.set({})
+      })
+
       function loadFixture(name) {
         const f = fixtures[name]()
         Object.assign(state, { user: f.user, accounts: f.accounts, password: f.password })
         if (name === 'new') appFrame.settings.reset()
+        if (name === 'migrated') appFrame.settings.set({ sceneCollection: null, scenePin: null, sceneSeason: 'winter' })
         appFrame.setUser({ ...f.user })
         renderProfile()
         renderProviders()

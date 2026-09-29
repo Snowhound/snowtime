@@ -22,6 +22,9 @@ export function SettingsPage(props: { initialError?: string }) {
   // reload doesn't show it again.
   const [linkError] = createSignal(props.initialError ? linkErrorMessage(props.initialError) : null)
   onMount(() => {
+    // A link from another page, such as the Appearance popover's Change, opens a section. The
+    // router scrolls to the hash before this page has rendered it.
+    if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView()
     if (!props.initialError) return
     void navigate({
       from: '/$org/settings',

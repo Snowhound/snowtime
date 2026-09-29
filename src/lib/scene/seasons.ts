@@ -13,8 +13,8 @@ type Line = (inputs?: object, options?: { locale?: Locale }) => string
 type Lines = [Line, Line, Line]
 
 // `title` and `sub` are the intro's headline and second line on the dark scene. `titleLight` is
-// the headline's hue darkened for the tagline on light pages, at least 5:1 on the page, tint, and
-// muted colors.
+// the headline's hue darkened for the tagline on light pages, at least 5:1 over the tinted scene
+// images behind it as well as on the page and muted colors (task 065).
 type SeasonCopy = {
   colors: { title: string; sub: string; titleLight: string }
   lines: Lines
@@ -24,7 +24,7 @@ type SeasonCopy = {
 export const SEASON_COPY: Record<Season, SeasonCopy> = {
   // White and ice for snow.
   winter: {
-    colors: { title: '#f4f8fd', sub: '#e6eef8', titleLight: '#2265b9' },
+    colors: { title: '#f4f8fd', sub: '#e6eef8', titleLight: '#0f4e99' },
     lines: [m.season_winter_line_1, m.season_winter_line_2, m.season_winter_line_3],
     alternates: [
       [m.season_winter_alt_1_line_1, m.season_winter_alt_1_line_2, m.season_winter_alt_1_line_3],
@@ -32,7 +32,7 @@ export const SEASON_COPY: Record<Season, SeasonCopy> = {
   },
   // Fresh green and meltwater teal.
   spring: {
-    colors: { title: '#cfeccb', sub: '#eef5ee', titleLight: '#33722a' },
+    colors: { title: '#cfeccb', sub: '#eef5ee', titleLight: '#205a18' },
     lines: [m.season_spring_line_1, m.season_spring_line_2, m.season_spring_line_3],
     alternates: [
       [m.season_spring_alt_1_line_1, m.season_spring_alt_1_line_2, m.season_spring_alt_1_line_3],
@@ -42,7 +42,7 @@ export const SEASON_COPY: Record<Season, SeasonCopy> = {
   },
   // Firefly yellow and green.
   summer: {
-    colors: { title: '#f6e7a1', sub: '#f5f2e4', titleLight: '#76630b' },
+    colors: { title: '#f6e7a1', sub: '#f5f2e4', titleLight: '#5e4d00' },
     lines: [m.season_summer_line_1, m.season_summer_line_2, m.season_summer_line_3],
     alternates: [
       [m.season_summer_alt_1_line_1, m.season_summer_alt_1_line_2, m.season_summer_alt_1_line_3],
@@ -51,7 +51,7 @@ export const SEASON_COPY: Record<Season, SeasonCopy> = {
   },
   // The leaves' amber and rust, lightened to read on the dark scene.
   autumn: {
-    colors: { title: '#f6c07e', sub: '#f3e3d0', titleLight: '#94560a' },
+    colors: { title: '#f6c07e', sub: '#f3e3d0', titleLight: '#784100' },
     lines: [m.season_autumn_line_1, m.season_autumn_line_2, m.season_autumn_line_3],
     alternates: [
       [m.season_autumn_alt_1_line_1, m.season_autumn_alt_1_line_2, m.season_autumn_alt_1_line_3],

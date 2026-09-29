@@ -203,7 +203,7 @@
 
     <div class="auth-shell relative grid flex-1 grid-cols-[minmax(0,1fr)]">
       <main class="auth-main relative flex flex-col items-center justify-start gap-6 bg-muted/40 px-4 pb-10 pt-16 sm:justify-center sm:py-16">
-        <button type="button" id="scene-button" data-ui="button" data-variant="ghost" data-size="icon" class="absolute right-3 top-3 bg-background/50 backdrop-blur"
+        <button type="button" id="scene-button" data-ui="button" data-variant="ghost" data-size="icon" class="absolute right-3 top-3 z-10 bg-background/50 backdrop-blur"
           popovertarget="scene-menu" aria-haspopup="dialog" aria-expanded="false" aria-label="Scenery" title="Scenery">
           <svg class="prototype-icon" aria-hidden="true"><use href="#icon-mountain-snow" /></svg>
         </button>
@@ -214,24 +214,19 @@
           </div>
           <div class="flex items-center justify-between gap-4">
             <div class="grid gap-0.5">
-              <label data-ui="label" for="scene-season">Season</label>
-              <span class="text-xs text-muted-foreground">The landscape, weather, and taglines.</span>
+              <label data-ui="label" for="scene-collection">Collection</label>
+              <span class="text-xs text-muted-foreground" id="scene-collection-hint"></span>
             </div>
-            <!-- ui.js wraps the select; this keeps the wrapper from shrinking in the row. -->
+            <!-- ui.js wraps the select; this keeps the wrapper from shrinking in the row. Signed out
+                 there's no Settings page for the gallery, so the collections are a select. -->
             <div class="shrink-0">
-              <select id="scene-season" data-ui="select" class="h-9 w-36">
-                <option value="auto">Auto</option>
-                <option value="winter">Winter</option>
-                <option value="spring">Spring</option>
-                <option value="summer">Summer</option>
-                <option value="autumn">Autumn</option>
-              </select>
+              <select id="scene-collection" data-ui="select" class="h-9 w-40" aria-describedby="scene-collection-hint"></select>
             </div>
           </div>
           <div class="flex items-center justify-between gap-4">
             <div class="grid gap-0.5">
               <span data-ui="label" id="scene-bg-label">Background</span>
-              <span class="text-xs text-muted-foreground">A landscape for the season.</span>
+              <span class="text-xs text-muted-foreground">The image from your collection.</span>
             </div>
             <button type="button" id="scene-bg-switch" role="switch" aria-checked="true" aria-labelledby="scene-bg-label" data-ui="switch"><span data-ui="switch-thumb"></span></button>
           </div>
@@ -620,7 +615,10 @@
           return defaults
         }
       })()
-      const sceneCtl = scene.create({ season: seasons.current() })
+      const sceneCtl = scene.create({ image: scene.imageFor(scene.settings.get()) })
+      document.getElementById('scene-collection').innerHTML = Object.entries(scene.COLLECTIONS)
+        .map(([id, c]) => `<option value="${id}">${c.label}</option>`)
+        .join('')
       document.getElementById('scene-page').prepend(sceneCtl.el)
       // The intro (intro.js) always plays dark, then hands over to the chosen theme as the page
       // appears. While it plays, the scene shows the weather and the intro's background.
@@ -633,7 +631,8 @@
 
       function applyScene() {
         const user = scene.settings.get()
-        const shown = introPlayer.scene({ season: seasons.current(), strength: user.sceneStrength, background: user.sceneBackground, weather: user.sceneWeather })
+        const image = scene.image(scene.imageFor(user))
+        const shown = introPlayer.scene({ image: image.id, strength: user.sceneStrength, background: user.sceneBackground, weather: user.sceneWeather })
         sceneCtl.set(shown)
         document.body.dataset.sceneBg = shown.background ? 'on' : 'off'
         document.body.dataset.card = user.surfaces
@@ -651,10 +650,9 @@
         ui.setSwitch(weatherSwitch, user.sceneWeather)
         weatherSwitch.disabled = !!blocked
         const season = seasons.current()
-        document.getElementById('scene-weather-hint').textContent = blocked ?? scene.SEASONS[season].hint
-        const seasonSelect = document.getElementById('scene-season')
-        seasonSelect.value = user.sceneSeason
-        seasonSelect.options[0].textContent = `Auto (${seasons.SEASONS[seasons.byMonth()].label.toLowerCase()})`
+        document.getElementById('scene-weather-hint').textContent = blocked ?? scene.weatherHint(image.id)
+        document.getElementById('scene-collection').value = user.sceneCollection
+        document.getElementById('scene-collection-hint').textContent = user.scenePin ? `Pinned to ${image.label}.` : `${image.label}, from the calendar.`
         // The season's first two intro lines as the tagline.
         document.querySelectorAll('.card-tagline, .tagline-in-card, .page-tagline').forEach((el) => (el.textContent = seasons.tagline(season)))
         document.querySelector('.top-tagline').innerHTML = seasons.taglineHtml(season)
@@ -676,8 +674,8 @@
         scene.settings.set({ sceneWeather: event.currentTarget.getAttribute('aria-checked') === 'true' })
         applyScene()
       })
-      document.getElementById('scene-season').addEventListener('change', (event) => {
-        scene.settings.set({ sceneSeason: event.currentTarget.value })
+      document.getElementById('scene-collection').addEventListener('change', (event) => {
+        scene.settings.set(scene.collectionPatch(event.currentTarget.value))
         applyScene()
       })
       document.getElementById('scene-intro-switch').addEventListener('change', (event) => scene.settings.set({ sceneIntro: event.currentTarget.getAttribute('aria-checked') === 'true' }))

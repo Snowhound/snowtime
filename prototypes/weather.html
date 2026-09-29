@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Weather by image</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="seasons.js"></script>
+    <script src="scene.js"></script>
+    <style type="text/tailwindcss">
+      .glass {
+        @apply rounded-lg border bg-card/70 shadow-xl backdrop-blur-xl;
+      }
+      .seg {
+        @apply inline-flex rounded-md border bg-background/60 p-0.5 text-xs;
+      }
+      .seg button {
+        @apply rounded px-2 py-1 text-muted-foreground;
+      }
+      .seg button[aria-pressed='true'] {
+        @apply bg-primary text-primary-foreground;
+      }
+      body[data-overlay='none'] .overlay-sign-in,
+      body[data-overlay='none'] .overlay-app,
+      body[data-overlay='sign-in'] .overlay-app,
+      body[data-overlay='app'] .overlay-sign-in {
+        display: none;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <!-- Task 066: each Baltic image with its weather, to compare with Kait. The panel's choices and
+       the image are kept in the URL's hash, so a link opens the same view. -->
+  <body class="min-h-dvh overflow-hidden bg-background text-foreground" data-overlay="sign-in">
+    <div id="scene-host" class="fixed inset-0"></div>
+
+    <!-- What covers the scene: the sign-in card with the tagline above it, or the app's column. -->
+    <div class="overlay-sign-in pointer-events-none fixed inset-0 flex flex-col items-center justify-center px-4">
+      <p id="tagline" class="season-tagline mb-8 max-w-md text-center text-xl font-semibold"></p>
+      <div class="glass w-full max-w-[380px] p-8">
+        <p class="text-lg font-semibold">Sign in</p>
+        <div class="mt-6 h-9 rounded-md border bg-background/60"></div>
+        <div class="mt-3 h-9 rounded-md border bg-background/60"></div>
+        <div class="mt-6 h-9 rounded-md bg-primary"></div>
+      </div>
+    </div>
+    <div class="overlay-app pointer-events-none fixed inset-0 overflow-hidden">
+      <div class="mx-auto flex h-full max-w-6xl flex-col gap-4 px-6 pt-6">
+        <div class="glass h-14"></div>
+        <p id="app-tagline" class="season-tagline text-sm"></p>
+        <div class="glass h-40"></div>
+        <div class="grid grid-cols-3 gap-4"><div class="glass h-56"></div><div class="glass h-56"></div><div class="glass h-56"></div></div>
+      </div>
+    </div>
+
+    <div id="panel" class="glass fixed bottom-4 left-4 z-10 w-[340px] max-w-[calc(100vw-2rem)] space-y-3 p-4 text-sm">
+      <div class="flex items-center gap-2">
+        <button data-ui="button" data-variant="outline" data-size="icon" id="prev" title="Previous image (←)" aria-label="Previous image">‹</button>
+        <select data-ui="select" id="image" class="h-9 min-w-0 flex-1" aria-label="Image"></select>
+        <button data-ui="button" data-variant="outline" data-size="icon" id="next" title="Next image (→)" aria-label="Next image">›</button>
+      </div>
+      <div class="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2">
+        <span class="text-muted-foreground">Theme</span>
+        <div class="seg" data-key="theme"><button data-value="light">Light</button><button data-value="dark">Dark</button></div>
+        <span class="text-muted-foreground">Weather</span>
+        <div class="seg" data-key="weather" title="W"><button data-value="066">Task 066</button><button data-value="062">Before</button><button data-value="off">Off</button></div>
+        <span class="text-muted-foreground">Strength</span>
+        <div class="seg" data-key="strength"><button data-value="dimmed">Dimmed</button><button data-value="full">Full</button></div>
+        <span class="text-muted-foreground">Pace</span>
+        <div class="seg" data-key="pace"><button data-value="full">Sign-in</button><button data-value="calm">App</button></div>
+        <span class="text-muted-foreground">Over it</span>
+        <div class="seg" data-key="overlay"><button data-value="sign-in">Sign-in</button><button data-value="app">App</button><button data-value="none">Nothing</button></div>
+      </div>
+      <p id="hint" class="font-medium"></p>
+      <pre id="tuning" class="max-h-28 overflow-auto rounded-md bg-muted/60 p-2 text-[11px] leading-snug text-muted-foreground"></pre>
+      <p class="text-xs text-muted-foreground">← → images · T theme · W weather · H hides the panels</p>
+    </div>
+
+    <!-- Sliders for the shown image and theme's weather. Changes are kept in this browser
+         (snowtime.prototypeWeatherTuning) until reset or cleared; Copy puts every change on the
+         clipboard. -->
+    <div id="tune" class="glass fixed right-4 bottom-4 z-10 w-[300px] max-w-[calc(100vw-2rem)] space-y-2 p-4 text-sm">
+      <div class="flex items-center justify-between gap-2">
+        <p class="font-medium">Tune <span id="tune-target" class="font-normal text-muted-foreground"></span></p>
+        <div class="flex gap-1">
+          <button data-ui="button" data-variant="outline" data-size="sm" id="tune-reset" title="Back to the table's values for this image and theme">Reset</button>
+          <button data-ui="button" data-variant="outline" data-size="sm" id="tune-copy" title="Copy every change, for every image">Copy</button>
+          <button data-ui="button" data-variant="outline" data-size="sm" id="tune-clear" title="Clear every change, for every image">Clear all</button>
+        </div>
+      </div>
+      <div id="sliders" class="space-y-1.5"></div>
+      <p id="tune-note" class="text-xs text-muted-foreground"></p>
+    </div>
+
+    <script>
+      const ids = Object.values(scene.COLLECTIONS).flatMap((c) => c.images)
+      // The app's paces (PACES in src/lib/scene/weather.ts).
+      const PACES = { full: { density: 1, speed: 1 }, calm: { density: 0.5, speed: 0.7 } }
+      const [hashImage, ...rest] = location.hash.slice(1).split('/')
+      const view = { image: ids.includes(hashImage) ? hashImage : 'coast-january', theme: 'light', weather: '066', strength: 'dimmed', pace: 'full', overlay: 'sign-in' }
+      for (const part of rest) {
+        const [key, value] = part.split('=')
+        if (key in view && document.querySelector(`.seg[data-key="${key}"] [data-value="${value}"]`)) view[key] = value
+      }
+
+      // Slider changes by image id and theme, over IMAGE_WEATHER.
+      const TUNING_KEY = 'snowtime.prototypeWeatherTuning'
+      let tuning = {}
+      try {
+        tuning = JSON.parse(localStorage.getItem(TUNING_KEY) ?? '{}')
+      } catch {}
+      function saveTuning() {
+        try {
+          localStorage.setItem(TUNING_KEY, JSON.stringify(tuning))
+        } catch {}
+      }
+      // Label, min, max, step.
+      const SLIDERS = {
+        amount: ['Amount', 0, 4, 0.05],
+        size: ['Size', 0.2, 4, 0.05],
+        opacity: ['Opacity', 0, 1.5, 0.05],
+        fall: ['Fall speed', 0, 8, 0.05],
+        wind: ['Wind (→ +)', -1, 1, 0.01],
+        gust: ['Gusts', 0, 1, 0.05],
+        shear: ['Wind near ground', 0, 5, 0.1],
+        share: ['Special share', 0, 1, 0.05],
+        glow: ['Fireflies', 0, 6, 1],
+        tempo: ['Tempo', 0.2, 3, 0.05],
+        shimmer: ['Shimmer', 0, 1, 0.02],
+        peaks: ['Glints at once', 0, 6, 0.1],
+        peakTime: ['Glint length (s)', 0.3, 4, 0.1],
+        peakSize: ['Glint size', 1, 5, 0.1],
+      }
+      const EFFECT_SLIDERS = {
+        snow: ['amount', 'size', 'opacity', 'fall', 'wind', 'gust', 'shear'],
+        rain: ['amount', 'size', 'opacity', 'fall', 'wind', 'gust', 'shear'],
+        seeds: ['amount', 'size', 'opacity', 'share', 'fall', 'wind', 'gust'],
+        leaves: ['amount', 'size', 'opacity', 'fall', 'wind', 'gust'],
+        fireflies: ['amount', 'size', 'opacity'],
+        insects: ['amount', 'size', 'opacity', 'tempo', 'share', 'glow', 'wind'],
+        mist: ['amount', 'size', 'opacity', 'wind'],
+        glitter: ['amount', 'size', 'opacity', 'shimmer', 'tempo', 'peaks', 'peakTime', 'peakSize'],
+      }
+      const sliders = document.getElementById('sliders')
+      function renderSliders() {
+        const base = { ...scene.TUNING, ...scene.weatherFor(view.image, view.theme) }
+        const changed = tuning[view.image]?.[view.theme] ?? {}
+        const keys = view.weather === '066' ? (EFFECT_SLIDERS[base.effect] ?? []) : []
+        document.getElementById('tune-target').textContent = `${select.selectedOptions[0]?.textContent ?? ''}, ${view.theme}`
+        sliders.innerHTML = keys
+          .map((key) => {
+            const [label, min, max, step] = SLIDERS[key]
+            const value = changed[key] ?? base[key]
+            return `<label class="grid grid-cols-[7rem_minmax(0,1fr)_2.25rem] items-center gap-2 text-xs"><span class="${key in changed ? 'font-semibold text-foreground' : 'text-muted-foreground'}">${label}</span><input type="range" data-key="${key}" min="${min}" max="${max}" step="${step}" value="${value}" class="w-full min-w-0 accent-primary" /><output class="text-right tabular-nums">${+(+value).toFixed(2)}</output></label>`
+          })
+          .join('')
+        const count = Object.values(tuning).reduce((n, themes) => n + Object.values(themes).reduce((m, t) => m + Object.keys(t).length, 0), 0)
+        document.getElementById('tune-note').textContent =
+          view.weather !== '066' ? 'Sliders tune the task 066 weather.' : !keys.length ? 'No weather on this image.' : `${count} change${count === 1 ? '' : 's'} kept in this browser; bold ones are this image's.`
+      }
+      sliders.addEventListener('input', (event) => {
+        const input = event.target.closest('input')
+        if (!input) return
+        const image = (tuning[view.image] ??= {})
+        const theme = (image[view.theme] ??= {})
+        theme[input.dataset.key] = +input.value
+        input.nextElementSibling.textContent = +(+input.value).toFixed(2)
+        input.previousElementSibling.className = 'font-semibold text-foreground'
+        saveTuning()
+        ctl.set({ tuning })
+        renderReadout()
+      })
+      sliders.addEventListener('change', renderSliders)
+      document.getElementById('tune-reset').addEventListener('click', () => {
+        delete tuning[view.image]?.[view.theme]
+        if (tuning[view.image] && !Object.keys(tuning[view.image]).length) delete tuning[view.image]
+        saveTuning()
+        render()
+      })
+      document.getElementById('tune-clear').addEventListener('click', () => {
+        if (!confirm('Clear the slider changes for every image?')) return
+        for (const key of Object.keys(tuning)) delete tuning[key]
+        saveTuning()
+        render()
+      })
+      document.getElementById('tune-copy').addEventListener('click', async (event) => {
+        const text = JSON.stringify(tuning, null, 2)
+        try {
+          await navigator.clipboard.writeText(text)
+          event.currentTarget.textContent = 'Copied'
+        } catch {
+          prompt('Copy the changes:', text)
+        }
+        setTimeout(() => (document.getElementById('tune-copy').textContent = 'Copy'), 1500)
+      })
+
+      const ctl = scene.create({ image: view.image, tuning })
+      document.getElementById('scene-host').append(ctl.el)
+      const select = document.getElementById('image')
+      select.innerHTML = Object.values(scene.COLLECTIONS)
+        .map((c) => `<optgroup label="${c.label}">${c.images.map((id) => `<option value="${id}">${c.label === 'Mountain valley' ? scene.image(id).label : `${c.label === 'Baltic coast' ? 'Coast' : 'Countryside'} ${scene.image(id).label}`}</option>`).join('')}</optgroup>`)
+        .join('')
+
+      // A theme's preset and the fields the image and the sliders change, as the table holds them.
+      function describe(theme) {
+        const legacy = view.weather === '062'
+        const { preset, ...fields } = (legacy ? scene.LEGACY_WEATHER : scene.IMAGE_WEATHER)[view.image][theme]
+        return `${preset}  ${JSON.stringify({ ...fields, ...(legacy ? null : tuning[view.image]?.[theme]) })}`
+      }
+      // The hint, and both themes' presets with any slider changes.
+      function renderReadout() {
+        const { hint } = scene.weatherFor(view.image, view.theme, { legacy: view.weather === '062' })
+        document.getElementById('hint').textContent = view.weather === 'off' ? 'Weather off' : `${hint[0].toUpperCase()}${hint.slice(1)}`
+        document.getElementById('tuning').textContent = `light  ${describe('light')}\ndark   ${describe('dark')}`
+      }
+      function render() {
+        document.documentElement.classList.toggle('dark', view.theme === 'dark')
+        document.body.dataset.overlay = view.overlay
+        ctl.set({ image: view.image, strength: view.strength, weather: view.weather !== 'off', legacy: view.weather === '062', pace: PACES[view.pace], tuning })
+        select.value = view.image
+        renderSliders()
+        for (const seg of document.querySelectorAll('.seg')) {
+          for (const b of seg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.value === view[seg.dataset.key]))
+        }
+        const season = scene.image(view.image).season
+        for (const id of ['tagline', 'app-tagline']) document.getElementById(id).innerHTML = seasons.taglineHtml(season)
+        renderReadout()
+        const extras = Object.entries(view)
+          .filter(([key]) => key !== 'image')
+          .map(([key, value]) => `${key}=${value}`)
+        history.replaceState(null, '', `#${[view.image, ...extras].join('/')}`)
+      }
+      function step(by) {
+        view.image = ids[(ids.indexOf(view.image) + by + ids.length) % ids.length]
+        render()
+      }
+      function toggle(key, values) {
+        view[key] = values[(values.indexOf(view[key]) + 1) % values.length]
+        render()
+      }
+      select.addEventListener('change', () => {
+        view.image = select.value
+        render()
+      })
+      document.getElementById('prev').addEventListener('click', () => step(-1))
+      document.getElementById('next').addEventListener('click', () => step(1))
+      for (const seg of document.querySelectorAll('.seg')) {
+        seg.addEventListener('click', (event) => {
+          const b = event.target.closest('button')
+          if (!b) return
+          view[seg.dataset.key] = b.dataset.value
+          render()
+        })
+      }
+      addEventListener('keydown', (event) => {
+        if (event.target.closest('select, input') || event.metaKey || event.ctrlKey || event.altKey) return
+        if (event.key === 'ArrowLeft') step(-1)
+        else if (event.key === 'ArrowRight') step(1)
+        else if (event.key === 't') toggle('theme', ['light', 'dark'])
+        else if (event.key === 'w') toggle('weather', ['066', '062'])
+        else if (event.key === 'h') for (const id of ['panel', 'tune']) document.getElementById(id).classList.toggle('hidden')
+      })
+      render()
+    </script>
+  </body>
+</html>

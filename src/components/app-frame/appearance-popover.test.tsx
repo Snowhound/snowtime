@@ -18,7 +18,8 @@ vi.mock('@tanstack/solid-router', () => ({
 const settings = {
   theme: 'system',
   appIcon: '02',
-  sceneSeason: 'auto',
+  sceneCollection: 'mountains',
+  scenePin: null,
   sceneBackground: true,
   sceneStrength: 'dimmed',
   surfaces: 'glass',
@@ -38,6 +39,27 @@ function Header() {
 }
 
 describe('AppearancePopover', () => {
+  test('the scenery row names the collection and the pinned image, and links to Settings', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const pinned = { ...settings, sceneCollection: 'coast', scenePin: 'coast-march' } as Settings
+    queryClient.setQueryData(sessionQuery.queryKey, { settings: pinned } as never)
+    render(() => (
+      <QueryClientProvider client={queryClient}>
+        <Header />
+      </QueryClientProvider>
+    ))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Appearance' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Appearance' })
+    expect(within(dialog).getByText('March, pinned')).toBeVisible()
+    expect(within(dialog).getByText('Baltic coast')).toBeVisible()
+    expect(within(dialog).getByRole('link', { name: 'Change' })).toHaveAttribute(
+      'href',
+      '/$org/settings',
+    )
+    expect(within(dialog).getByText('A few snowflakes.')).toBeVisible()
+  })
+
   test('a refused change goes back and says why', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     queryClient.setQueryData(sessionQuery.queryKey, { settings } as never)

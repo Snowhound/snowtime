@@ -18,7 +18,7 @@ import { errorMessage } from '~/lib/errors'
 import { sessionQuery } from '~/lib/queries/session'
 import { useUpdateSettings } from '~/lib/queries/settings'
 import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/scene/intro'
-import { currentSeason, sceneAttributes } from '~/lib/scene/scene'
+import { sceneAttributes, shownSeason } from '~/lib/scene/scene'
 import { m } from '~/paraglide/messages.js'
 import { AppearanceMenu } from './appearance-menu'
 
@@ -47,7 +47,7 @@ export function AuthLayout(props: { children: JSX.Element; firstVisitIntro?: boo
   onMount(() => {
     loadDeviceSettings()
     if (props.firstVisitIntro && introDue('sign-in', settings().sceneIntro)) {
-      playIntro({ season: currentSeason(settings().sceneSeason) })
+      playIntro({ season: shownSeason(settings()) })
     } else releaseIntroPending()
   })
 
@@ -66,7 +66,7 @@ export function AuthLayout(props: { children: JSX.Element; firstVisitIntro?: boo
               on phones the page's top padding makes room for it. */}
           <div class="relative w-full max-w-sm">
             <SeasonTagline
-              season={currentSeason(settings().sceneSeason)}
+              season={shownSeason(settings())}
               class="absolute bottom-[calc(100%+2rem)] left-1/2 w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 text-center text-base font-medium text-balance"
             />
             <div class="surface auth-card bg-card text-card-foreground flex w-full flex-col gap-6 rounded-lg border p-6 shadow-sm sm:p-8">

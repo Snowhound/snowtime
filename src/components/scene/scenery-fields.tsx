@@ -1,9 +1,11 @@
-// The scenery settings (prototypes/app-frame.js, settings.html, and auth.html): Season, the
-// Background switch with Strength and Surfaces under it, Weather, and optionally Intro. The
-// Appearance popover, Settings > Preferences, and the sign-in page's Scenery menu lay them out
-// the same way, and the signed-in ones add the Tagline switch after Weather; `hints` picks how much each row explains, and Settings adds "Replay it" to the
-// Intro hint. Weather always has a hint: the season's effect, or why it's off (reduced motion,
-// no WebGL 2, or an effect that didn't start).
+// The scenery settings (prototypes/app-frame.js, settings.html, and auth.html): the Background
+// switch with Strength and Surfaces under it, Weather, and optionally Intro. The Appearance
+// popover, Settings > Preferences, and the sign-in page's Scenery menu lay them out the same way.
+// Each puts the collection above them in its own way; the sign-in menu's is the Collection
+// select here. The signed-in ones add the Tagline switch after Weather; `hints` picks how much
+// each row explains, and Settings adds "Replay it" to the Intro hint. Weather always has a hint:
+// the showing image's weather, or why it's off (reduced motion, no WebGL 2, or an effect that
+// didn't start).
 import type { JSX } from 'solid-js'
 import { For, Show, createUniqueId } from 'solid-js'
 import { Label } from '~/components/ui/label'
@@ -17,14 +19,16 @@ import {
 } from '~/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import {
-  SEASONS,
+  COLLECTIONS,
+  type ImageId,
   type SceneSettings,
   createReducedMotion,
-  currentSeason,
-  season,
-  seasonByMonth,
+  imageFor,
+  imageLabel,
+  imageName,
+  scenePin,
 } from '~/lib/scene/scene'
-import { weatherProblem } from '~/lib/scene/weather'
+import { type Hint, weatherFor, weatherProblem } from '~/lib/scene/weather'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 
@@ -40,10 +44,45 @@ const SURFACES = [
   { value: 'solid', label: m.scene_surfaces_solid },
 ] as const
 
+const HINTS: Record<Hint, () => string> = {
+  snow: m.scene_effect_snow,
+  flurries: m.scene_effect_flurries,
+  blowing: m.scene_effect_blowing,
+  spray: m.scene_effect_spray,
+  rain: m.scene_effect_rain,
+  squall: m.scene_effect_squall,
+  seeds: m.scene_effect_seeds,
+  motes: m.scene_effect_motes,
+  dust: m.scene_effect_dust,
+  fireflies: m.scene_effect_fireflies,
+  midges: m.scene_effect_midges,
+  midges_night: m.scene_effect_midges_night,
+  leaves: m.scene_effect_leaves,
+  glitter: m.scene_effect_glitter,
+  frost: m.scene_effect_frost,
+  mist: m.scene_effect_mist,
+  none: m.scene_effect_none,
+}
+
+// "falling snow", "drifting seeds by day, fireflies at night", or "still air" for an image
+// without weather.
+function weatherName(id: ImageId) {
+  const light = weatherFor(id, 'light').hint
+  const dark = weatherFor(id, 'dark').hint
+  if (light === dark) return HINTS[light]()
+  return m.scene_effect_day_night({ day: HINTS[light](), night: HINTS[dark]() })
+}
+
+function sentence(text: string) {
+  return `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}.`
+}
+
 export function SceneryFields(props: {
   settings: SceneSettings
   onChange: (patch: Partial<SceneSettings>) => void
   hints: Hints
+  // The sign-in menu's Collection select; signed in, Settings has the gallery.
+  collectionSelect?: boolean
   intro?: boolean
   // The page tagline's switch, an account setting shown only where signed in.
   tagline?: { checked: boolean; onChange: (checked: boolean) => void }
@@ -70,45 +109,55 @@ export function SceneryFields(props: {
   function weatherHint() {
     const blocked = weatherBlocked()
     if (blocked) return blocked
-    return props.hints === 'long'
-      ? m.scene_weather_hint()
-      : season(currentSeason(props.settings.sceneSeason)).weather()
+    const weather = weatherName(imageFor(props.settings))
+    return props.hints === 'long' ? m.scene_weather_hint({ weather }) : sentence(weather)
+  }
+  function collectionHint() {
+    const image = imageFor(props.settings)
+    return scenePin(props.settings)
+      ? m.scene_collection_select_pinned({ image: imageName(image) })
+      : m.scene_collection_select_calendar({ image: imageLabel(image) })
   }
 
   return (
     <>
-      <Row hints={props.hints}>
-        <RowText hints={props.hints} hint={hint(m.scene_season_hint_short, m.scene_season_hint)}>
-          <Label for={`${id}-season`}>{m.scene_season()}</Label>
-        </RowText>
-        <div class="shrink-0">
-          <NativeSelect
-            id={`${id}-season`}
-            class={cn('w-44', compact() ? 'h-8 py-1' : 'h-9')}
-            value={props.settings.sceneSeason}
-            onChange={(event) =>
-              props.onChange({
-                sceneSeason: event.currentTarget.value as SceneSettings['sceneSeason'],
-              })
-            }
+      <Show when={props.collectionSelect}>
+        <Row hints={props.hints}>
+          <RowText
+            hints={props.hints}
+            hint={props.hints === 'none' ? undefined : collectionHint()}
+            hintId={`${id}-collection-hint`}
           >
-            <option value="auto" selected={props.settings.sceneSeason === 'auto'}>
-              {m.scene_season_auto({ season: season(seasonByMonth()).label().toLowerCase() })}
-            </option>
-            <For each={SEASONS}>
-              {(s) => (
-                <option value={s.id} selected={s.id === props.settings.sceneSeason}>
-                  {s.label()}
-                </option>
-              )}
-            </For>
-          </NativeSelect>
-        </div>
-      </Row>
+            <Label for={`${id}-collection`}>{m.scene_collection()}</Label>
+          </RowText>
+          <div class="shrink-0">
+            <NativeSelect
+              id={`${id}-collection`}
+              class={cn('w-44', compact() ? 'h-8 py-1' : 'h-9')}
+              value={props.settings.sceneCollection}
+              aria-describedby={props.hints === 'none' ? undefined : `${id}-collection-hint`}
+              onChange={(event) =>
+                props.onChange({
+                  sceneCollection: event.currentTarget.value as SceneSettings['sceneCollection'],
+                  scenePin: null,
+                })
+              }
+            >
+              <For each={COLLECTIONS}>
+                {(c) => (
+                  <option value={c.id} selected={c.id === props.settings.sceneCollection}>
+                    {c.label()}
+                  </option>
+                )}
+              </For>
+            </NativeSelect>
+          </div>
+        </Row>
+      </Show>
       <SwitchRow
         hints={props.hints}
         label={m.scene_background()}
-        hint={hint(m.scene_background_hint, m.scene_background_hint)}
+        hint={hint(m.scene_background_hint_short, m.scene_background_hint)}
         checked={props.settings.sceneBackground}
         onChange={(sceneBackground) => props.onChange({ sceneBackground })}
       />
@@ -199,7 +248,7 @@ function Row(props: { hints: Hints; indent?: boolean; children: JSX.Element }) {
   )
 }
 
-function RowText(props: { hints: Hints; hint?: string; children: JSX.Element }) {
+function RowText(props: { hints: Hints; hint?: string; hintId?: string; children: JSX.Element }) {
   return (
     // A hint keeps at least 10rem, so it doesn't narrow to a word per line.
     <div
@@ -211,7 +260,10 @@ function RowText(props: { hints: Hints; hint?: string; children: JSX.Element }) 
     >
       {props.children}
       <Show when={props.hint}>
-        <span class={cn('text-muted-foreground', props.hints === 'long' ? 'text-sm' : 'text-xs')}>
+        <span
+          id={props.hintId}
+          class={cn('text-muted-foreground', props.hints === 'long' ? 'text-sm' : 'text-xs')}
+        >
           {props.hint}
         </span>
       </Show>

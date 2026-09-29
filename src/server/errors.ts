@@ -45,6 +45,7 @@ export const errorMessages = {
   projects_forbidden: 'Only admins can manage projects.',
   team_report_forbidden: 'You can report only on teams you lead.',
   settings_not_found: 'Load the settings first.',
+  scene_pin_not_in_collection: "That image isn't in your collection.",
   rate_limited: 'Too many changes in a short time. Wait a minute and try again.',
   organization_forbidden: 'Only admins and owners manage the organization.',
 } as const

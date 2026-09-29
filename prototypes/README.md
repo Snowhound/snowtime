@@ -224,8 +224,9 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
 - The **Appearance** popover, from the mountain button left of the avatar, on every page. The
   button uses the sign-in page's Scenery icon (Lucide `mountain-snow`, which replaced a palette),
   so one icon opens the scenery everywhere. It holds Theme (light, dark, system), the app icon with **Change** (opens the [app icon picker](#app-icon)),
-  and the scenery settings: Season, Background with Strength and Surfaces under it, and Weather,
-  whose hint names the season's effect or why it's off. Then "All settings". Hints are left out
+  and the scenery settings: the collection with its current image and **Change** (opens the
+  [collection picker](#scenery-collections) in Settings), Background with Strength and Surfaces
+  under it, and Weather, whose hint names the image's effect or why it's off. Then "All settings". Hints are left out
   where the label says enough, so it fits a 390 × 844 screen. Theme used to be in the user menu
   and the timer's View popover too; it's only here and in Settings now. The last row has **Replay
   intro** beside All settings (see [Seasonal scene in the app](#seasonal-scene-in-the-app)); the
@@ -235,8 +236,8 @@ color remain, as before: `aria-prohibited-attr` on the Reports summary chart's b
   come within 24 px of the title or the row's actions, it drops under the title too; it's
   re-placed on resize and when the season changes. It's two-toned like the intro: the
   first line in the season's headline color, the second in its second line's color (see
-  [Seasonal copy](#seasonal-copy)). The season is the user's Season setting (see the Appearance
-  popover above). Pages load [seasons.js](seasons.js) before `app-frame.js`. It replaced a tagline at
+  [Seasonal copy](#seasonal-copy)). The season is the calendar's, or the pinned image's season
+  (see [Scenery collections](#scenery-collections)). Pages load [seasons.js](seasons.js) before `app-frame.js`. It replaced a tagline at
   the foot of the page over a fade, which covered the end of long lists and read as a footer.
   Pages with nothing right of the title (Reports, Projects, Organization, Settings) read as
   balanced with it centered, so they got nothing extra there.
@@ -246,7 +247,7 @@ It also provides:
 
 | API                                  | Use                                                            |
 | ------------------------------------ | -------------------------------------------------------------- |
-| `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`, `wideTimer`, `appIcon`, and the scene's (`sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`, `sceneWeather`, `sceneIntro`). The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
+| `appFrame.settings.get()` / `.set(patch)` / `.reset()` | The user's settings: `locale`, `timeZone`, `weekStart`, `theme`, `design` (timer layout), `showSummary`, `wideTimer`, `appIcon`, and the scene's (`sceneCollection`, `scenePin`, `sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`, `sceneWeather`, `sceneIntro`). The app stores them in `user_settings`; the prototypes keep them in `localStorage` under `snowtime.prototypeSettings`. `set` saves, applies the theme, and notifies. |
 | `appFrame.on('settings' \| 'role' \| 'org', fn)` | Re-render when settings, the prototype role, or the organization change |
 | `appFrame.role`, `appFrame.isAdmin()`, `appFrame.org`, `appFrame.user` | Prototype session |
 | `appFrame.openIconPicker()`, `appFrame.appIconImg(size, cls)` | Open the app icon dialog; an `<img>` of the chosen bare mark that follows changes |
@@ -285,7 +286,7 @@ the season's image in light and dark, the tint, and the weather.
   menus, and dialogs stay solid, so their text never sits on the picture. With the background
   off, the page looks as before, with the weather over the page tint.
 - **Over the image**: the header is the page color at 82% with a blur (solid for solid surfaces),
-  the prototype bar is solid, page titles get a glow in the page color, and outline buttons
+  the prototype bar is solid, page titles get a tight glow in the page color (fainter in light mode, where a wide one read as fog), and outline buttons
   outside popovers and dialogs a page-colored fill. The tagline gets the same glow as the title.
   Page-level notes get the glow too and a color between `muted-foreground` and `foreground`, since
   muted text was hard to read on the light images: subtitles and Reports' midnight note
@@ -334,6 +335,60 @@ The intro switch, the smaller leaves, and the Appearance icon checked on 2026-09
 Chrome on the sign-in, timer, and Reports pages at 1440, 850, and 390 px, light and dark: no
 intro on opening, no horizontal scroll, and no browser errors. The full intro pass (replay, skip,
 focus, and reduced motion on every page and size) was waived.
+
+### Scenery collections
+
+Decision: how the user picks the images behind the scene, now that there is more than one set
+(task 062). The background comes from a **collection**, and within it follows the calendar:
+
+| Collection         | Images                          | Changes      | Image ids                     |
+| ------------------ | ------------------------------- | ------------ | ----------------------------- |
+| Mountain valley    | The four mountain valleys       | By season    | `winter` to `autumn`          |
+| Baltic countryside | 12 bogs, fields, and forests    | By month     | `land-january` to `land-december` |
+| Baltic coast       | 12 coastal scenes               | By month     | `coast-january` to `coast-december` |
+
+Mountain valley is the default. Each collection's files are in a folder of their own,
+`public/backgrounds/<collection>/<id>-<theme>-<version>-<width>.avif`, the version `01` unless
+`PHOTO_VERSIONS` raises it. The pickers show the 400 px files. Weather comes
+from `IMAGE_WEATHER`, keyed by image id, tuned to each picture (task 066; see
+[weather.html](#weatherhtml--weather-by-image)).
+
+- **Picker: a gallery in Settings > Preferences > Scenery.** Three radio cards, each showing
+  all of its images (2 × 2 for the seasons, 4 × 3 for the months) with the one showing now
+  outlined, its name, and "Changes every month. Now September." Choosing a card saves at once,
+  and the scene behind the page changes, which is the preview, so there's no Apply step. A
+  modal dialog was rejected because its backdrop covers the scene, and a page of its own
+  because the other scenery settings belong beside it. The cards are three columns from
+  640 px and rows below that. They're one radio group: arrow keys move and choose, Home and
+  End jump, and only the chosen card is in the tab order.
+- **Pin: behind a "Pin an image" disclosure.** A line under the gallery says what shows,
+  "Follows the calendar: September now." or "Pinned to March." Opening it shows a second radio
+  group: Calendar, then the chosen collection's images. A collection has one pin, and choosing
+  another collection clears it. The pin replaces the Season setting; task 062 rejected a
+  12-option month select, and this adds no row until it's opened.
+- **Tagline and intro.** The tagline follows the pinned image's season, so its colors are the
+  ones checked on that image; unpinned, it follows the calendar. The intro still plays once a
+  calendar season and fades in whichever image shows.
+- **Settings.** `sceneCollection` (`mountains`, `countryside`, `coast`) and `scenePin` (an
+  image id in the collection, or null). Settings saved before collections have neither, so an
+  old `sceneSeason` reads as Mountain valley pinned to that season, and `auto` as Mountain
+  valley following the calendar. Writes keep `sceneSeason` in step for pinned seasons.
+- **Appearance popover.** A row with the current image's thumbnail, the collection's name,
+  the image ("March, pinned"), and **Change**, which opens the Settings section.
+- **Sign-in page.** Signed out there's no Settings page, so its Scenery menu has a Collection
+  select with the image as its hint. Choosing a collection there clears the pin.
+
+The prototype bar's **Month** select, on Settings, pretends it's another month on every page
+(`snowtime.prototypeMonth`), to watch the outline, the Auto line, and the tagline change. The
+Settings fixture "Saved before collections (Season: Winter)" checks the old setting.
+
+Checked on 2026-09-27 in headless Chrome at 1440, 850, and 390 px, light and dark, with the
+coast collection and with Mountain valley pinned to winter, on Settings and in the Appearance
+popover: no horizontal page overflow and no browser errors. Keyboard use of both radio groups,
+pinning and unpinning, the Month select, and the old-setting fixture work; the timer, Reports,
+Projects, Organization, and sign-in pages load without errors. The sign-in page's Scenery
+button now sits above the tagline (`z-10`); at 390 px the tagline covered it and took its taps.
+agent-browser wasn't installed, so the checks used Playwright with local Chrome; axe wasn't run.
 
 ### App icon
 
@@ -652,8 +707,8 @@ and this page write through `appFrame.settings`, so they never disagree; other o
 through the `storage` event.
 
 Fixtures: populated (Google and GitHub), new account (one provider; resets preferences to the
-defaults with the browser's zone), long content (long name and email), and local dev password
-(only the seeded credential account).
+defaults with the browser's zone), long content (long name and email), local dev password
+(only the seeded credential account), and scenery saved before collections (Season: Winter).
 
 Omitted: avatar upload, email change, account deletion (users are anonymized, not deleted), and
 active sessions.
@@ -851,8 +906,8 @@ weather is off, and scales its point count to the area it covers. Unlike the moc
 the full width.
 
 The images are upscaled to 3840 px and come as AVIF files 1920 and 3840 px wide, in
-`public/backgrounds/` (see `design/backgrounds/README.md`). `scene.js` picks the 3840 file when the image covers more than
-2400 device pixels across: `cover` stretches it to the larger of the viewport's width and its
+`public/backgrounds/<collection>/` (see `design/backgrounds/README.md`), 67 to 758 KB each.
+`scene.js` picks the 3840 file when the image covers more than 2400 device pixels across: `cover` stretches it to the larger of the viewport's width and its
 height's 16:9 width, times the pixel ratio (at most 2). Screens under 768 px wide always get the
 1920 file. The shown theme's layer gets the 1920 file first and swaps to the 3840 one once it has
 loaded and decoded, so the picture sharpens without moving. The other theme's layer gets its 1920
@@ -898,19 +953,20 @@ from navigation:
   button; the rest of the page is `inert` while it plays. With reduced motion it doesn't play,
   the snow stays off, and the Intro switch and Replay are disabled, the switch's hint saying why.
 - **Scenery menu** (the mountain button, top right): in the app, titled Appearance and led by
-  Theme (light, dark, system), since signed out there is no other way to change it; then Season (Auto, which follows the month and
-  names the current season, or winter, spring, summer, or autumn), then the Background switch, with two options
+  Theme (light, dark, system), since signed out there is no other way to change it; then
+  Collection (see [Scenery collections](#scenery-collections)), then the Background switch, with two options
   under it that apply only while it's on: Strength (dimmed, the default, or full: how much page
   color covers the image, 55 or 30% dark, 50 or 20% light, stronger toward the bottom) and Surfaces (glass,
   `bg-card/70` with a backdrop blur, or solid cards). Then the Weather switch, the Intro switch,
-  and Replay intro. These are the user settings `sceneSeason`, `sceneBackground`, `sceneStrength`, `surfaces`,
+  and Replay intro. These are the user settings `sceneCollection`, `scenePin`, `sceneBackground`, `sceneStrength`, `surfaces`,
   `sceneWeather`, and `sceneIntro`, shared with Settings > Preferences > Scenery, which lays
   them out the same way. Signed out, the app keeps them, the theme, and the app icon on the
   device, and signed in it copies the account's values there; the account's settings apply at
   sign-in. Surfaces applies to
   every card, on the signed-in pages too (see [Seasonal scene in the app](#seasonal-scene-in-the-app)).
-- **Weather**: each season's effect, colored for its image in light and dark and for the plain
-  page. The canvas blends with premultiplied alpha, so edges don't darken.
+- **Weather**: each image's effect and tuning (`IMAGE_WEATHER`, see
+  [weather.html](#weatherhtml--weather-by-image)), colored for its image in light and dark
+  and for the plain page. The four mountain images keep the effects below. The canvas blends with premultiplied alpha, so edges don't darken.
 
   | Season | Effect                                                                                  | Points per 1440 × 900 |
   | ------ | --------------------------------------------------------------------------------------- | --------------------- |
@@ -919,7 +975,7 @@ from navigation:
   | Summer | Light: soft tufts of dandelion fluff and pollen that glints; dark: small fireflies that wander low over the meadow and glow on and off | 70; 40 |
   | Autumn | Leaves in rust and ochre, 10 to 26 px across, that sway, tumble edge-on, and turn as they fall | 45                    |
 
-  The Scenery menu's Weather hint names the season's effect; Settings names all four.
+  The Weather hints, in the Scenery menu and in Settings, name the showing image's effect.
 
 The prototype bar's second row holds variants to compare, kept in `snowtime.prototypeAuthScene`:
 
@@ -940,14 +996,15 @@ first two of the intro's three lines are the tagline.
 
 The tagline uses the intro's colors: the first line in the headline color, the second in the
 second line's. On light pages the headline colors are too pale, so `titleLight` darkens each hue
-to at least 5:1 on the page, tint, and `muted` colors, and the second line is `foreground`.
+to at least 5:1 over the tinted scene images behind the tagline, which leaves about 7.8:1 on the
+page and `muted` colors, and the second line is `foreground`.
 
 | Season | Headline, dark (intro) | Headline, light | Second line, dark |
 | ------ | ---------------------- | --------------- | ----------------- |
-| Winter | `#f4f8fd` (12.7:1)     | `#2265b9`       | `#e6eef8`         |
-| Spring | `#cfeccb` (10.7:1)     | `#33722a`       | `#eef5ee`         |
-| Summer | `#f6e7a1` (10.9:1)     | `#76630b`       | `#f5f2e4`         |
-| Autumn | `#f6c07e` (8.2:1)      | `#94560a`       | `#f3e3d0`         |
+| Winter | `#f4f8fd` (12.7:1)     | `#0f4e99`       | `#e6eef8`         |
+| Spring | `#cfeccb` (10.7:1)     | `#205a18`       | `#eef5ee`         |
+| Summer | `#f6e7a1` (10.9:1)     | `#5e4d00`       | `#f5f2e4`         |
+| Autumn | `#f6c07e` (8.2:1)      | `#784100`       | `#f3e3d0`         |
 
 Winter's headline is near-white, so in dark mode its tagline barely shows two tones, as in the
 intro.
@@ -977,3 +1034,85 @@ and every screen: no horizontal page overflow, validation messages and focus on 
 field, and no browser errors. The scene was checked on 2026-09-24 at 1440 and 390 px, light and
 dark: the intro's sequence, skip, replay, and first-visit memory, every variant, the
 Settings switches reaching an open sign-in tab, reduced motion, and no browser errors.
+
+### [weather.html](weather.html) — Weather by image
+
+Task 066: each image's weather, tuned to the picture, compared with Kait before the app got it. The page shows one image full screen with the sign-in card, the app column, or nothing over
+it. A panel picks the image (or ← and →), the theme, the strength, the pace (the sign-in page's,
+or the app pages' calm one), and the weather: task 066's, the weather from before it
+(`LEGACY_WEATHER`), or off. The URL's hash keeps the view, so a link opens the same image and
+choices. The panel prints both themes' presets and tuning.
+
+A second panel, **Tune**, has sliders for the shown image and theme: the fields that apply to
+its effect, such as amount, size, opacity, wind, and glitter's shimmer and glints. A change
+applies at once and stays in this browser (`snowtime.prototypeWeatherTuning`) until **Reset**;
+**Copy** puts every change, for every image, on the clipboard as JSON, to send back for the
+table, and **Clear all** drops them.
+
+`IMAGE_WEATHER` in [scene.js](scene.js) gives each image a preset per theme, by name, and the
+fields it changes, from the list in its comment. `weatherFor()` merges them in order: the preset,
+then the image's horizon and fields, then the sliders' overrides. Task 066 records which image
+gets which and why.
+
+The app (`src/lib/scene/weather.ts`) has the same presets, `HORIZONS`, `ZONES`, and
+`IMAGE_WEATHER`, so a change here moves over as it is. It differs where the notes below say so:
+it draws rain as quads rather than points, its fragment shaders are `mediump`, its photo sits
+at `center 20%`, it steps a frame down a refresh when frames drop, and it leaves out
+`LEGACY_WEATHER`, the sliders, and the Tune panel.
+
+| Preset       | Effect  | Look                                                                                  |
+| ------------ | ------- | ------------------------------------------------------------------------------------- |
+| snow         | snow    | The mountain snow; `wind` 0 falls straight down                                       |
+| flurries     | snow    | A few large, slow flakes                                                              |
+| blowing      | snow    | Fine grains falling fast over the whole screen, in gusts, blown flatter near the ground |
+| spray        | snow    | Droplets of a pixel or two torn off the waves, below the horizon                      |
+| rain         | rain    | The mountain shower, slanted by the wind against its fall                             |
+| squall       | rain    | Long streaks, slanted hard, in gusts                                                  |
+| seeds        | seeds   | The summer fluff and pollen; `seeds-fine`, a few pixels across, on the open coast, in warm mid-tones by day |
+| motes, dust | seeds | Pollen only: specks glinting in low sun; dust is more of them, near-white over the hay; `motes-fine` is one pixel, for coast April's sun |
+| fireflies    | fireflies | The mountain summer night's                                                         |
+| midges | insects | Specks of a pixel or two idling in groups of three over the water, mostly by the cliff, some glinting by day; at night two fireflies wander on the far bank |
+| leaves       | leaves  | The autumn leaves; land September's take the birches' and rowans' colors, and land October's are smaller and fainter, so they sit in the tinted picture |
+| glitter, frost | glitter | Specks in the image's snowy `zones` that shimmer faintly and slowly, and now and then a full, larger glint, timed so about 1.2 show at once for 1.5 s each |
+| mist         | mist    | Wide, soft banks of uneven density drifting along a band near the horizon, or in zones |
+| none         | none    | No weather ("still air"), for a still image; no image uses it now                       |
+
+- **Wind** is the sideways speed of the nearest items, in screen heights per second, and
+  everything in the air moves with it. Rain's slant comes from the wind against its fall, so
+  one wind slants rain a little and blows seeds far. A gust raises and lowers the wind for all
+  items at once. `shear` strengthens the wind below the image's horizon, up to 1 + `shear`
+  times at the screen's foot, so falling snow and rain arc toward the side near the ground.
+  Each falling item's sideways offset is the integral of that wind along its fall, and it
+  starts each pass in a new column, from an integer hash: the pass count grows without
+  bound, and a `sin` hash of it put many drops in one column after a few minutes. The mountain images keep the drift they had: snow -0.02,
+  rain 0.22, seeds 0.028, leaves 0.026.
+- **Horizons, bands, and zones** are parts of the image, as fractions of its size
+  (`HORIZONS`, a preset's `band`, and glitter's `ZONES`, up to three rectangles), so glitter
+  stays on the snow and mist on the water however `cover` crops the photo. `bandClip` and
+  `zoneClip` map them to the screen with the photo's aspect ratio and `background-position`
+  (`PHOTO_Y`: 0.5 here, 0.2 in the app). A recomposed image (task 065) changes only these.
+- **Glitter** is 500 points per 1440 × 900, up to 3,600 at amount 4 on a large screen. Each
+  speck's full glint comes once a cycle of 500 × amount × `peakTime` / `peaks` seconds, at its
+  own time, so about `peaks` show at once on a 1440 × 900 screen and proportionally more on a
+  larger one. The cycle leaves out the screen's size, so a resize doesn't jump every speck to
+  another point of its cycle. A point that neither shimmers nor glints has size 0 and costs no
+  pixels.
+- **Mist** is 16 quads per 1440 × 900 (10 to 24), two triangles each, with two octaves of
+  value noise in the fragment shader. Its hash is an integer hash of the lattice cell, which
+  stays exact in the app's `mediump`, and a pixel too faint to show is discarded before the
+  noise. Each bank is at most 0.22 opaque, though overlapping banks add up.
+- **Frame rate.** Each effect has an `fps` target, and a preset can set its own: blowing snow,
+  spray, rain (so the squall), leaves, and the midges run at 60, the mist at 10, since it
+  barely moves, and the rest at 30. As in the
+  app, the weather draws every nth display refresh, from the rate measured after each start.
+  The band, horizon, zones, point count, and the uniforms that follow from them are worked out
+  on a start or a resize, not every frame. The mist draws at half a backing pixel per CSS pixel
+  (`resolution`), the rest at up to 1.5.
+- The blowing snow follows Kait's weather prototype (fine grains, a fast fall, a slant that
+  grows with the wind), with the shear added for wind that picks up near the ground.
+
+Checked on 2026-09-28 in headless Chrome at 1440 × 900, light and dark, on the images whose
+presets changed, with each overlay: every effect compiles and draws, glitter stays below the
+horizon, the bands sit where set, the mist leaves the tagline and cards readable, and there are
+no browser errors. Screenshots show single frames, so the motion, the gusts, the snow's arc,
+and how visible the day glitter, spray, and dust are need a look on a real screen.

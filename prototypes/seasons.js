@@ -5,7 +5,7 @@
 // page, tint, and muted colors). The prototypes show each season's `lines` only. Load before
 // scene.js, intro.js, and app-frame.js.
 //
-// The season is the `sceneSeason` user setting: 'auto' (by month) or one of the four.
+// The season follows the calendar, or the pinned scenery image's season (scene.js, Collections).
 //
 // The lines follow one pattern: the season does something, then the timesheet does the same
 // ("Winter is coming. So is the end of the month.").
@@ -15,28 +15,28 @@
     winter: {
       label: 'Winter',
       // The intro's headline and second line: white and ice for snow.
-      colors: { title: '#f4f8fd', sub: '#e6eef8', titleLight: '#2265b9' },
+      colors: { title: '#f4f8fd', sub: '#e6eef8', titleLight: '#0f4e99' },
       lines: ['Winter is coming.', 'So is the end of the month.', 'Before the snow gets deeper, fill in your timesheet.'],
       alternates: [],
     },
     spring: {
       label: 'Spring',
       // Fresh green and meltwater teal.
-      colors: { title: '#cfeccb', sub: '#eef5ee', titleLight: '#33722a' },
+      colors: { title: '#cfeccb', sub: '#eef5ee', titleLight: '#205a18' },
       lines: ['The snow is melting.', 'So is your memory of last week.', "Before it's gone, fill in your timesheet."],
       alternates: [["Everything's growing.", 'So are your unlogged hours.', 'Before they grow any further, fill in your timesheet.']],
     },
     summer: {
       label: 'Summer',
       // Firefly yellow and green.
-      colors: { title: '#f6e7a1', sub: '#f5f2e4', titleLight: '#76630b' },
+      colors: { title: '#f6e7a1', sub: '#f5f2e4', titleLight: '#5e4d00' },
       lines: ['The days are long.', "Your timesheet doesn't have to be.", "While the sun's still up, fill it in."],
       alternates: [['Summer is here.', "Your hours didn't go on holiday.", 'Before you do, fill in your timesheet.']],
     },
     autumn: {
       label: 'Autumn',
       // The leaves' amber and rust, lightened to read on the dark scene.
-      colors: { title: '#f6c07e', sub: '#f3e3d0', titleLight: '#94560a' },
+      colors: { title: '#f6c07e', sub: '#f3e3d0', titleLight: '#784100' },
       lines: ['The leaves are falling.', 'So are your unlogged hours.', 'Before the last one lands, fill in your timesheet.'],
       alternates: [
         ['The nights are drawing in.', 'So is the deadline.', 'Before it gets dark, fill in your timesheet.'],
@@ -49,15 +49,31 @@
     monthEnd: ['The month is almost out.', "Your hours shouldn't be."],
   }
 
+  // Today, or a day in the month the prototype bar's Month select pretends it is
+  // (`snowtime.prototypeMonth`, 0 to 11).
+  const MONTH_KEY = 'snowtime.prototypeMonth'
+  function today() {
+    try {
+      const month = localStorage.getItem(MONTH_KEY)
+      if (month !== null && +month >= 0 && +month < 12) return new Date(new Date().getFullYear(), +month, 15)
+    } catch {}
+    return new Date()
+  }
   // The season by month, northern hemisphere.
-  function byMonth(date = new Date()) {
+  function byMonth(date = today()) {
     return ['winter', 'winter', 'spring', 'spring', 'spring', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'][date.getMonth()]
   }
-  // The user's choice: 'auto' or a season.
+  // 'auto', or the season of the pinned image, so the tagline's colors are the ones checked on
+  // it. Without a collection (settings saved before collections), the old `sceneSeason`.
   function chosen() {
     try {
-      const season = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}').sceneSeason
-      return season in SEASONS ? season : 'auto'
+      const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}')
+      if (!s.sceneCollection) return s.sceneSeason in SEASONS ? s.sceneSeason : 'auto'
+      if (!s.scenePin) return 'auto'
+      const [prefix, month] = s.scenePin.split('-')
+      if (prefix in SEASONS) return prefix
+      const i = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'].indexOf(month)
+      return i < 0 ? 'auto' : byMonth(new Date(2026, i, 15))
     } catch {
       return 'auto'
     }
@@ -74,5 +90,5 @@
     return `<span class="tagline-1" style="--tagline-title: ${colors.title}; --tagline-title-light: ${colors.titleLight}">${esc(lines[0])}</span> <span class="tagline-2" style="--tagline-sub: ${colors.sub}">${esc(lines[1])}</span>`
   }
 
-  window.seasons = { SEASONS, PERIODS, SETTINGS_KEY, byMonth, chosen, current, introLines, tagline, taglineHtml }
+  window.seasons = { SEASONS, PERIODS, SETTINGS_KEY, MONTH_KEY, today, byMonth, chosen, current, introLines, tagline, taglineHtml }
 })()
