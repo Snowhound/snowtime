@@ -95,11 +95,11 @@ export function lastEnded<T extends EntryTimes>(
   entries: readonly T[],
   options: { before: number; day?: { date: IsoDate; zone: string } },
 ) {
+  const { before, day } = options
   let last: (T & { stoppedAt: Date }) | undefined
   for (const entry of entries) {
     const end = entry.stoppedAt?.getTime()
-    if (end === undefined || end > options.before) continue
-    const { day } = options
+    if (end === undefined || end > before) continue
     if (day && localDate(end, day.zone) !== day.date) continue
     if (!last || end > last.stoppedAt.getTime()) last = entry as T & { stoppedAt: Date }
   }

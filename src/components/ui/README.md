@@ -20,7 +20,10 @@ Copies not listed are unchanged apart from formatting and import order: `alert`,
 - **Open and close animation.** Dialogs, popovers, menus, and selects fade and zoom in place.
   `DialogContent` drops the registry's `slide-in-from-*` and `slide-out-to-*` classes, which
   moved it in from the top left. `SelectContent` and `DropdownMenuSubContent` gain the closing
-  animation the registry leaves out.
+  animation the registry leaves out: `SelectContent` zooms from
+  `--kb-select-content-transform-origin` like `PopoverContent`, instead of the registry's
+  `animate-in fade-in-80`, and `DropdownMenuSubContent` uses `DropdownMenuContent`'s
+  `animate-content-show` and `animate-content-hide`.
 
 ## Per component
 
@@ -31,13 +34,9 @@ Copies not listed are unchanged apart from formatting and import order: `alert`,
 - `dialog.tsx`: on close, returns focus to the element that had it when the dialog opened, or
   to a menu's button when a menu item opened it. Kobalte returns focus only to a
   `DialogTrigger`, and the app opens dialogs from state.
-- `dropdown-menu.tsx`: `DropdownMenuSubContent` uses `animate-content-show` and
-  `animate-content-hide`, like `DropdownMenuContent`.
 - `popover.tsx`: Tab wraps at the popover's ends, because a non-modal popover otherwise lets
   focus fall to the body. `Popover` remembers where its anchor last was, so it doesn't jump to
   0, 0 when the anchor leaves the page as it closes.
-- `select.tsx`: `SelectContent` fades and zooms from `--kb-select-content-transform-origin` on
-  open and close, like `PopoverContent`, instead of the registry's `animate-in fade-in-80`.
 - `text-field.tsx`: the description and error message use `leading-snug`, so text that wraps
   keeps a line height.
 - `toggle-group.tsx`: imports `toggleVariants` from `~/components/ui/toggle` instead of the
