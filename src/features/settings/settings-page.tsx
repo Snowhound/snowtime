@@ -7,7 +7,7 @@ import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { PreferencesCard } from './preferences-card'
+import { PreferencesCard } from './preferences-card/preferences-card'
 import { ProfileCard } from './profile-card'
 import { linkErrorMessage } from './sign-in-methods-list'
 
