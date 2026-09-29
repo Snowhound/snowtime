@@ -11,7 +11,7 @@ import { Button } from '~/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover'
 import { Separator } from '~/components/ui/separator'
 import type { DeviceSettings } from '~/lib/device-settings'
-import { shownSeason } from '~/lib/scene/scene'
+import { expectThemeSwitch, shownSeason } from '~/lib/scene/scene'
 import { m } from '~/paraglide/messages.js'
 
 export function AppearanceMenu(props: {
@@ -31,6 +31,8 @@ export function AppearanceMenu(props: {
         variant="ghost"
         size="icon"
         class="bg-background/50 absolute top-3 right-3 size-9 backdrop-blur"
+        onPointerEnter={expectThemeSwitch}
+        onFocus={expectThemeSwitch}
         aria-label={m.settings_appearance()}
         title={m.settings_appearance()}
       >

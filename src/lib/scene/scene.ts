@@ -195,6 +195,16 @@ export const PHOTO_SMALL = 1920
 const PHOTO_LARGE = 3840
 export const PHOTO_THUMB = 400
 
+// Whether a theme switch may come soon, from the theme controls being opened or about to be: the
+// scene then loads the other theme's picture, so a switch crossfades. Until then only the shown
+// theme's loads, and a switch fades the new picture in once it has decoded.
+const [themeSwitchLikely, setThemeSwitchLikely] = createSignal(false)
+export { themeSwitchLikely }
+
+export function expectThemeSwitch() {
+  setThemeSwitchLikely(true)
+}
+
 export function photoWidth(viewport: { width: number; height: number; dpr: number }) {
   if (viewport.width < 768) return PHOTO_SMALL
   const needed =

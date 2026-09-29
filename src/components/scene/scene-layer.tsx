@@ -20,6 +20,7 @@ import {
   photoReady,
   photoUrl,
   photoWidth,
+  themeSwitchLikely,
 } from '~/lib/scene/scene'
 import {
   type Effect,
@@ -109,7 +110,7 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     // On the first picture, the shown theme loads its small file first, on its own, so a picture
     // shows as soon as possible, then the file for this screen, so it sharpens without moving.
     // Once a picture shows, a new image loads the file for this screen straight away. The other
-    // theme gets its small file after that, for the crossfade. A layer shows a file only once it
+    // theme gets its small file after that, for the crossfade, once a switch is likely. A layer shows a file only once it
     // has decoded, and fades it in. Nothing loads while the background is off. It starts once
     // the theme and the screen are known.
     createEffect(() => {
@@ -125,7 +126,7 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
           continue
         }
         const small = photoUrl(image, theme, PHOTO_SMALL)
-        const due = on && (theme === shown || shownReady)
+        const due = on && (theme === shown || (shownReady && themeSwitchLikely()))
         // The theme not on screen drops an earlier image, so switching themes never shows it, and
         // loads the new one's small file for the crossfade.
         if (theme !== shown && untrack(() => photos[theme].at(-1)?.image) !== image) {

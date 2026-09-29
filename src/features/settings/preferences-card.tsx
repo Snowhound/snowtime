@@ -31,6 +31,7 @@ import { type Country, countryFromZone } from '~/lib/holidays/region'
 import { LANGUAGES } from '~/lib/languages'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { playIntro } from '~/lib/scene/intro'
+import { expectThemeSwitch } from '~/lib/scene/scene'
 import { useSeason } from '~/lib/scene/seasons'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
@@ -119,6 +120,7 @@ export function PreferencesCard(props: { settings: Settings }) {
   const [device, setDevice] = createSignal<{ zone: string; zones: string[] } | null>(null)
   const [now, setNow] = createSignal(Date.now())
   onMount(() => {
+    expectThemeSwitch()
     setDevice({
       zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       zones: Intl.supportedValuesOf('timeZone'),

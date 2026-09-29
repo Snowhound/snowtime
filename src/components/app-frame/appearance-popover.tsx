@@ -16,7 +16,14 @@ import { Separator } from '~/components/ui/separator'
 import { appIcon } from '~/lib/app-icon'
 import { errorMessage } from '~/lib/errors'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
-import { collection, imageFor, imageLabel, scenePin, shownSeason } from '~/lib/scene/scene'
+import {
+  collection,
+  expectThemeSwitch,
+  imageFor,
+  imageLabel,
+  scenePin,
+  shownSeason,
+} from '~/lib/scene/scene'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 
@@ -50,6 +57,8 @@ export function AppearancePopover(props: { settings: Settings; organizationSlug:
           variant="ghost"
           size="icon"
           class="ml-auto size-9 shrink-0"
+          onPointerEnter={expectThemeSwitch}
+          onFocus={expectThemeSwitch}
           aria-label={m.settings_appearance()}
           title={m.settings_appearance()}
         >

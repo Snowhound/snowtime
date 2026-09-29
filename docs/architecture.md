@@ -713,8 +713,11 @@ collections".
   is for images that cover more than 2400 device pixels across (pixel ratio at most 2), and
   screens under 768 px always get the 1920 file. The shown theme loads the 1920 file first, on
   its own so it arrives sooner, fades it in once it has decoded, then loads the larger one and
-  swaps to it; the other theme's 1920 file loads after that, for the theme crossfade. Nothing
-  loads while Background is off. The browser loads the images after hydration, since only it
+  swaps to it. The other theme's 1920 file loads after that, for the theme crossfade, but only
+  once a switch is likely (`expectThemeSwitch`): the Appearance button is hovered or focused, or
+  Settings opens. That saves about 200 KB on a visit that doesn't switch; a switch without it,
+  such as a `system` theme turning dark, fades the new picture in once it has decoded (task
+  073). Nothing loads while Background is off. The browser loads the images after hydration, since only it
   knows the screen and a `system` theme, so they don't compete with the scripts. The files in
   `public/` are cached for a week (`routeRules` in `vite.config.ts`), so a changed image
   needs a new name.
