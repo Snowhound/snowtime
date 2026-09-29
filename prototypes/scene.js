@@ -61,6 +61,7 @@
   // - `shimmer`, `peaks`, `peakTime`, `peakSize`: glitter's faint shimmer, and how many full glints
   //   show at once, for how long, and how much larger.
   // - `colors`: in place of the effect's colors, with the same arguments.
+  // - `fps`: the frame-rate target, in place of the preset's or the effect's.
   // Each image's horizon (HORIZONS) comes in too: glitter grows toward the viewer below it and shear
   // starts there. `effect: null` is no weather. `fps` is the preset's frame-rate target, by default
   // its effect's (task 063).
@@ -222,8 +223,8 @@
     // The waves break from the right.
     'coast-october': { light: wx('squall', { wind: -0.6, amount: 1 }), dark: wx('squall', { wind: -0.6, amount: 1 }) },
     'coast-november': { light: wx('spray', { wind: -0.5, band: [0.3, 1.05] }), dark: wx('mist', { wind: -0.03, band: [0.32, 0.58] }) },
-    // A few flakes blowing in off the sea, on the right.
-    'coast-december': { light: wx('blowing', { wind: -0.2, amount: 0.12, size: 1.1, fall: 2.5, shear: 2, colors: WET_SNOW }), dark: wx('blowing', { wind: -0.2, amount: 0.1, size: 1.1, opacity: 0.85, fall: 2.5, shear: 2 }) },
+    // A few flakes blowing in off the sea, on the right, slow enough for 30 fps.
+    'coast-december': { light: wx('blowing', { fps: 30, wind: -0.2, amount: 0.12, size: 1.1, fall: 2.5, shear: 2, colors: WET_SNOW }), dark: wx('blowing', { fps: 30, wind: -0.2, amount: 0.1, size: 1.1, opacity: 0.85, fall: 2.5, shear: 2 }) },
     // Sparse snow on the stream by day; by night the moonlit snow glitters, as February's.
     'land-january': { light: wx('flurries'), dark: wx('glitter', { zones: ZONES['land-january'], amount: 1.33, size: 1.35, opacity: 0.85, shimmer: 0.72, tempo: 1.15, peaks: 5.1, peakTime: 2.8 }) },
     // Strong, or it doesn't show on the bright snow; very little snow instead if it still doesn't.
