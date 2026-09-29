@@ -1,7 +1,8 @@
 // The Summary view (prototypes/reports.html, Summary): a line with the total, the average per
 // tracked day, and the top project; time per day or week by project, as a chart or a table;
 // and each row's share by the chosen grouping. It reads on a phone, where the timesheet
-// scrolls sideways. A column narrows the Entries card to its day or week, and a name to its row.
+// scrolls sideways. A column narrows the Entries card to its day or week, and a row's total to
+// its row.
 import { For, Show } from 'solid-js'
 import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
@@ -16,17 +17,16 @@ import {
 } from '~/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { type IsoDate, type WeekStart, startOfWeek } from '~/lib/calendar'
-import { projectColor } from '~/lib/colors'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { type ReportPart, bucketLabel } from '../buckets'
 import { EmptyState } from '../empty-state'
 import { type Group, SHARE_TITLES } from '../filters'
-import { PickButton, PickHint } from '../pick-button'
+import { PickHint } from '../pick-button'
 import type { Report } from '../queries'
 import type { Range } from '../range'
 import type { Row } from '../rows'
-import { ShareBar, sharePercent } from '../share-bar'
+import { ShareRow, sharePercent } from '../share-bar'
 import { type Series, chartSeries } from './chart-series'
 import { summaryStats } from './stats'
 import { SeriesDot, TimeChart } from './time-chart'
@@ -140,40 +140,17 @@ export function Summary(props: {
             <ul class="grid gap-3">
               <For each={props.rows}>
                 {(row) => (
-                  <li class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 text-sm">
-                    <span class="flex min-w-0">
-                      <PickButton
-                        pressed={props.picked.row === row.key && !props.picked.bucket}
-                        hint="summary-pick-hint"
-                        class="flex max-w-full min-w-0 items-center gap-2 text-left"
-                        onClick={() => props.onPick({ row: row.key })}
-                      >
-                        <Show when={props.group === 'project'}>
-                          <ProjectDot color={row.color ?? null} />
-                        </Show>
-                        <span
-                          class={cn('truncate', row.muted && 'text-muted-foreground')}
-                          title={row.name}
-                        >
-                          {row.name}
-                        </span>
-                      </PickButton>
-                    </span>
-                    <span class="flex items-baseline gap-3">
-                      <span class="text-muted-foreground w-10 text-right text-xs">
-                        {sharePercent(row.total, props.report.total)}%
-                      </span>
-                      <span class="min-w-14 text-right tabular-nums">
-                        <Duration ms={row.total} />
-                      </span>
-                    </span>
-                    <div class="col-span-2">
-                      <ShareBar
-                        ms={row.total}
-                        of={props.report.total}
-                        color={props.group === 'project' ? projectColor(row.color) : undefined}
-                      />
-                    </div>
+                  <li>
+                    <ShareRow
+                      row={row}
+                      of={props.report.total}
+                      dot={props.group === 'project'}
+                      pick={{
+                        pressed: props.picked.row === row.key && !props.picked.bucket,
+                        hint: 'summary-pick-hint',
+                        onClick: () => props.onPick({ row: row.key }),
+                      }}
+                    />
                   </li>
                 )}
               </For>

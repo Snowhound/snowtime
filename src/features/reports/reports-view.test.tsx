@@ -784,7 +784,7 @@ describe('ReportsView', () => {
     expect(screen.getByRole('button', { name: 'Week' })).toBeEnabled()
   })
 
-  test('Summary totals the range, and a column or a name narrows the Entries card', async () => {
+  test('Summary totals the range, and a column or a row’s total narrows the Entries card', async () => {
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(600)
     const { search } = renderView({ range: 'this-week', view: 'summary' })
     expect(await screen.findByText('Time per day')).toBeInTheDocument()
@@ -804,7 +804,8 @@ describe('ReportsView', () => {
     })
     expect(fn.getReportEntries.mock.lastCall![0].data).not.toHaveProperty('row')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Snowtime' }))
+    const snowtimeRow = screen.getByTitle('Snowtime').closest('li')!
+    await userEvent.click(within(snowtimeRow).getByRole('button', { name: '6:30' }))
     await waitFor(() =>
       expect(search()).toEqual({ range: 'this-week', view: 'summary', row: snowtime.id }),
     )

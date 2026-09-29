@@ -6,17 +6,14 @@ import ChevronRightIcon from 'lucide-solid/icons/chevron-right'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import { For, Show } from 'solid-js'
 import { Duration } from '~/components/duration'
-import { ProjectDot } from '~/components/project-dot'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { projectColor } from '~/lib/colors'
-import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { ReportPart } from '../buckets'
 import { EmptyState } from '../empty-state'
 import { type Group, SHARE_TITLES } from '../filters'
-import { PickButton, PickHint } from '../pick-button'
-import { ShareBar, sharePercent } from '../share-bar'
-import type { OutlineGroup, OutlineRow } from './outline'
+import { PickHint } from '../pick-button'
+import { ShareRow, ShareTotal } from '../share-bar'
+import type { OutlineGroup } from './outline'
 
 const TITLES = {
   project: m.reports_breakdown_project,
@@ -27,53 +24,6 @@ const TITLES = {
 
 // Groups open when the outline first shows.
 const OPEN_GROUPS = 3
-
-// Wide enough for a total in either duration format, so the totals line up.
-const TOTAL = 'w-20 shrink-0 text-right whitespace-nowrap tabular-nums sm:w-24'
-
-// One row of the outline: its name, share of `of`, total, and bar.
-function Line(line: { row: OutlineRow; of: number; level: 0 | 1; dot: boolean }) {
-  return (
-    <div
-      class={cn(
-        'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 sm:gap-x-4',
-        line.level && 'text-sm',
-      )}
-    >
-      <span class="flex min-w-0 items-center gap-2">
-        <Show when={line.dot}>
-          <ProjectDot color={line.row.color ?? null} />
-        </Show>
-        <span
-          class={cn(
-            'truncate',
-            line.level ? 'text-muted-foreground' : 'font-medium',
-            line.row.muted && 'text-muted-foreground',
-          )}
-          title={line.row.name}
-        >
-          {line.row.name}
-        </span>
-      </span>
-      {/* On a phone the bar alone shows the share, so the name keeps its room. */}
-      <span class="flex items-baseline gap-3">
-        <span class="text-muted-foreground hidden w-10 text-right text-xs sm:block">
-          {sharePercent(line.row.total, line.of)}%
-        </span>
-        {/* A top-level total is a button over the row, outside its <summary>; its place
-            here stays empty. */}
-        <span class={TOTAL}>{line.level ? <Duration ms={line.row.total} /> : null}</span>
-      </span>
-      <div class="col-span-2">
-        <ShareBar
-          ms={line.row.total}
-          of={line.of}
-          color={line.dot ? projectColor(line.row.color) : undefined}
-        />
-      </div>
-    </div>
-  )
-}
 
 export function Breakdown(props: {
   total: number
@@ -90,18 +40,12 @@ export function Breakdown(props: {
     return props.group === 'member'
   }
 
-  function Total(total: { row: OutlineGroup }) {
-    return (
-      <span class={cn('absolute top-3 right-4', TOTAL)}>
-        <PickButton
-          pressed={props.picked.row === total.row.key && !props.picked.bucket}
-          hint="breakdown-pick-hint"
-          onClick={() => props.onPick({ row: total.row.key })}
-        >
-          <Duration ms={total.row.total} />
-        </PickButton>
-      </span>
-    )
+  function pick(row: OutlineGroup) {
+    return {
+      pressed: props.picked.row === row.key && !props.picked.bucket,
+      hint: 'breakdown-pick-hint',
+      onClick: () => props.onPick({ row: row.key }),
+    }
   }
 
   return (
@@ -144,11 +88,11 @@ export function Breakdown(props: {
                           when={row.children.length}
                           fallback={
                             <div class="px-4 py-3">
-                              <Line
+                              <ShareRow
                                 row={row}
                                 of={props.total}
-                                level={0}
                                 dot={props.group === 'project'}
+                                pick={pick(row)}
                               />
                             </div>
                           }
@@ -160,11 +104,11 @@ export function Breakdown(props: {
                                 aria-hidden="true"
                               />
                               <div class="min-w-0 flex-1">
-                                <Line
+                                <ShareRow
                                   row={row}
                                   of={props.total}
-                                  level={0}
                                   dot={props.group === 'project'}
+                                  totalOutside
                                 />
                               </div>
                             </summary>
@@ -172,14 +116,18 @@ export function Breakdown(props: {
                               <For each={row.children}>
                                 {(child) => (
                                   <li>
-                                    <Line row={child} of={row.total} level={1} dot={childDots()} />
+                                    <ShareRow row={child} of={row.total} dot={childDots()} nested />
                                   </li>
                                 )}
                               </For>
                             </ul>
                           </details>
+                          <ShareTotal
+                            ms={row.total}
+                            pick={pick(row)}
+                            class="absolute top-3 right-4"
+                          />
                         </Show>
-                        <Total row={row} />
                       </li>
                     )}
                   </For>
