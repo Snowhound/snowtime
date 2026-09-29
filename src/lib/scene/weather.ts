@@ -1024,12 +1024,13 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
       shear: 2,
       colors: wetSnow,
     }),
+    // Under the cloudless night sky, fewer and fainter.
     dark: wx('blowing', {
       fps: 30,
       wind: -0.2,
-      amount: 0.1,
+      amount: 0.06,
       size: 1.1,
-      opacity: 0.85,
+      opacity: 0.7,
       fall: 2.5,
       shear: 2,
     }),

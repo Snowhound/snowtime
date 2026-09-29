@@ -258,7 +258,8 @@ the finals:
   still has to check it in motion. By day it keeps its seeds, but smaller and fewer, since they
   stood out too much.
 - Coast December (Kait, 2026-09-29): a very slight snow blowing in off the sea, in place of
-  the frost. By day its far flakes are grey-blue, as coast March's.
+  the frost. By day its far flakes are grey-blue, as coast March's; under the cloudless night
+  sky there are fewer and fainter.
 - Land January by night (Kait, 2026-09-29): glitter in place of the flurries, most on the
   moonlit snow under the moon, less over the far field, the bank right of the stream, and the
   moon's reflection in the stream. The weather takes up to four zones for it, up from three.
