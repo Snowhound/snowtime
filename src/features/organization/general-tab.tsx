@@ -4,7 +4,6 @@
 import { createForm } from '@tanstack/solid-form'
 import InfoIcon from 'lucide-solid/icons/info'
 import { For, createSignal } from 'solid-js'
-import * as v from 'valibot'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '~/components/ui/card'
@@ -37,11 +36,6 @@ function IssueLinksHint() {
       )}
     </For>
   )
-}
-
-function firstIssue(schema: v.GenericSchema, value: unknown) {
-  const result = v.safeParse(schema, value)
-  return result.success ? undefined : result.issues[0].message
 }
 
 export function GeneralTab(props: {
@@ -95,7 +89,7 @@ export function GeneralTab(props: {
           <CardDescription>{m.organization_general_description()}</CardDescription>
         </CardHeader>
         <CardContent class="grid grid-cols-[minmax(0,1fr)] gap-4">
-          <form.Field name="name" validators={{ onSubmit: ({ value }) => firstIssue(Name, value) }}>
+          <form.Field name="name" validators={{ onSubmit: Name }}>
             {(field) => (
               <TextField
                 class="grid gap-2"
@@ -126,10 +120,7 @@ export function GeneralTab(props: {
               {m.organization_slug_hint()}
             </TextFieldDescription>
           </TextField>
-          <form.Field
-            name="issueLinks"
-            validators={{ onSubmit: ({ value }) => firstIssue(IssueLinks, value) }}
-          >
+          <form.Field name="issueLinks" validators={{ onSubmit: IssueLinks }}>
             {(field) => (
               <TextField
                 class="grid gap-2"
