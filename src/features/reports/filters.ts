@@ -7,6 +7,7 @@ import * as v from 'valibot'
 import { type IsoDate, type WeekStart, addDays, startOfWeek } from '~/lib/calendar'
 import type { Member } from '~/lib/queries/members'
 import type { Team } from '~/lib/queries/teams'
+import { m } from '~/paraglide/messages.js'
 import {
   ENTRY_VIEWS,
   IsoDate as IsoDateSchema,
@@ -31,6 +32,22 @@ const VIEWS = ['timesheet', 'summary', 'breakdown'] as const
 export type View = (typeof VIEWS)[number]
 export type Unit = (typeof REPORT_UNITS)[number]
 export type EntryView = (typeof ENTRY_VIEWS)[number]
+
+// Each grouping's name: the filter bar's choice, the timesheet's first column, the export's.
+export const GROUP_LABELS = {
+  project: m.reports_group_project,
+  ticket: m.reports_group_ticket,
+  team: m.reports_group_team,
+  member: m.reports_group_member,
+} satisfies Record<Group, () => string>
+
+// The title of each grouping's shares of the total, in Summary and a one-level Breakdown.
+export const SHARE_TITLES = {
+  project: m.reports_share_project,
+  ticket: m.reports_share_ticket,
+  team: m.reports_share_team,
+  member: m.reports_share_member,
+} satisfies Record<Group, () => string>
 
 // A value that doesn't parse is dropped, so a bad link still opens a report.
 function optional<T extends v.GenericSchema>(schema: T) {

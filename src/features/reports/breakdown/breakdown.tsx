@@ -13,7 +13,7 @@ import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { ReportPart } from '../buckets'
 import { EmptyState } from '../empty-state'
-import type { Group } from '../filters'
+import { type Group, SHARE_TITLES } from '../filters'
 import { PickButton, PickHint } from '../pick-button'
 import { ShareBar, sharePercent } from '../share-bar'
 import type { OutlineGroup, OutlineRow } from './outline'
@@ -23,13 +23,6 @@ const TITLES = {
   ticket: m.reports_breakdown_ticket,
   team: m.reports_breakdown_team,
   member: m.reports_breakdown_member,
-} satisfies Record<Group, () => string>
-
-const ONE_LEVEL_TITLES = {
-  project: m.reports_share_project,
-  ticket: m.reports_share_ticket,
-  team: m.reports_share_team,
-  member: m.reports_share_member,
 } satisfies Record<Group, () => string>
 
 // Groups open when the outline first shows.
@@ -116,7 +109,7 @@ export function Breakdown(props: {
       <CardHeader class="flex-row flex-wrap items-baseline justify-between gap-2 space-y-0">
         <div class="grid min-w-0 gap-1.5">
           <CardTitle class="text-base">
-            {(props.nested ? TITLES : ONE_LEVEL_TITLES)[props.group]()}
+            {(props.nested ? TITLES : SHARE_TITLES)[props.group]()}
           </CardTitle>
           <Show when={props.group === 'team'}>
             <CardDescription>{m.reports_team_note()}</CardDescription>

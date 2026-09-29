@@ -119,8 +119,6 @@ export function ReportsView(props: {
   const outlined = createMemo<{ total: number; groups?: ReturnType<typeof outline> }>((shown) => {
     const data = report.data
     if (view() !== 'breakdown' || !data) return { total: 0 }
-    // Reading the data of a query still loading suspends, which holds back the tab change
-    // navigating here, so the status comes first.
     if (pairsNeeded() && !breakdown.isSuccess) return { total: data.total }
     const pairs = pairsNeeded() ? breakdown.data : undefined
     if (shown?.groups && (report.isPlaceholderData || breakdown.isPlaceholderData)) return shown

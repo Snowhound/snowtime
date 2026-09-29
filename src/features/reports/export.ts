@@ -9,7 +9,7 @@ import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
 import type { Locale } from '~/paraglide/runtime.js'
 import type { getReportExport } from '~/server/reports/reports.functions'
-import type { Group } from './filters'
+import { GROUP_LABELS, type Group } from './filters'
 import type { Report } from './queries'
 import type { Row } from './rows'
 
@@ -33,13 +33,6 @@ export interface Table {
   header: string[]
   rows: TableCell[][]
 }
-
-const GROUP_LABELS = {
-  project: m.reports_group_project,
-  ticket: m.reports_group_ticket,
-  team: m.reports_group_team,
-  member: m.reports_group_member,
-} satisfies Record<Group, (inputs?: object, options?: typeof EN) => string>
 
 // The timesheet as shown: a row per group, a column per day or week (its first day), and the
 // row and column totals.

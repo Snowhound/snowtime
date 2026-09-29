@@ -14,7 +14,7 @@ import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { type IsoDate, type WeekStart, addDays } from '~/lib/calendar'
 import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
-import { type Group, type ReportFilters, type Unit, groupOptions } from './filters'
+import { GROUP_LABELS, type Group, type ReportFilters, type Unit, groupOptions } from './filters'
 import { MAX_DAY_COLUMNS, type RangePreset, rangeDays } from './range'
 
 const PRESET_LABELS = {
@@ -25,13 +25,6 @@ const PRESET_LABELS = {
   'last-month': m.reports_preset_last_month,
   custom: m.reports_preset_custom,
 } satisfies Record<RangePreset, () => string>
-
-const GROUP_LABELS = {
-  project: m.reports_group_project,
-  ticket: m.reports_group_ticket,
-  team: m.reports_group_team,
-  member: m.reports_group_member,
-} satisfies Record<Group, () => string>
 
 export interface FilterActions {
   onPreset: (preset: RangePreset) => void

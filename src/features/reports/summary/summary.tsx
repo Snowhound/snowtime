@@ -21,7 +21,7 @@ import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { type ReportPart, bucketLabel } from '../buckets'
 import { EmptyState } from '../empty-state'
-import type { Group } from '../filters'
+import { type Group, SHARE_TITLES } from '../filters'
 import { PickButton, PickHint } from '../pick-button'
 import type { Report } from '../queries'
 import type { Range } from '../range'
@@ -30,13 +30,6 @@ import { ShareBar, sharePercent } from '../share-bar'
 import { type Series, chartSeries } from './chart-series'
 import { summaryStats } from './stats'
 import { SeriesDot, TimeChart } from './time-chart'
-
-const SHARE_TITLES = {
-  project: m.reports_share_project,
-  ticket: m.reports_share_ticket,
-  team: m.reports_share_team,
-  member: m.reports_share_member,
-} satisfies Record<Group, () => string>
 
 export function Summary(props: {
   report: Report

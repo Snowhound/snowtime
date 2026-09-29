@@ -21,17 +21,10 @@ import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { type ReportPart, bucketLabel, longRange, shortBucketLabel } from './buckets'
 import { EmptyState } from './empty-state'
-import type { Group, Unit } from './filters'
+import { GROUP_LABELS, type Group, type Unit } from './filters'
 import { PICK_CLASS, PickHint } from './pick-button'
 import type { Report } from './queries'
 import type { Row } from './rows'
-
-const GROUP_LABELS = {
-  project: m.reports_group_project,
-  ticket: m.reports_group_ticket,
-  team: m.reports_group_team,
-  member: m.reports_group_member,
-} satisfies Record<Group, () => string>
 
 // The body's rows and cells are plain elements with ui/table's classes. Its components split
 // and spread their props, which a month by 40 projects does for 1,300 cells.
