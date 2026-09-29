@@ -391,13 +391,7 @@ export function TimerView(props: {
                     when={hasEarlier()}
                     fallback={
                       <Show when={groups().length > 0 && allTime()}>
-                        {(text) => (
-                          <p class="page-note text-muted-foreground flex w-full items-center gap-3 text-sm">
-                            <span class="bg-border h-px flex-1" aria-hidden="true" />
-                            {text()}
-                            <span class="bg-border h-px flex-1" aria-hidden="true" />
-                          </p>
-                        )}
+                        {(text) => <p class="page-note text-muted-foreground text-sm">{text()}</p>}
                       </Show>
                     }
                   >
