@@ -392,7 +392,7 @@
   "timer_view_calendar": "Kalender",
   "calendar_previous_week": "Eelmine nädal",
   "calendar_next_week": "Järgmine nädal",
-  "calendar_week_total": "Sel nädalal {total}",
+  "calendar_week_total": "Sel nädalal:",
   "calendar_weekend": "Nädalavahetus",
   "calendar_weekend_forced": "Nädalavahetusel on aega märgitud, seega on see näha.",
   "calendar_day": "Päev",

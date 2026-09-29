@@ -21,6 +21,7 @@ export function SeasonTagline(props: {
   roll?: boolean
   class?: string
   ref?: (el: HTMLParagraphElement) => void
+  onClick?: () => void
 }) {
   function copy() {
     return SEASON_COPY[props.season]
@@ -47,6 +48,7 @@ export function SeasonTagline(props: {
     <p
       ref={props.ref}
       class={cn('season-tagline', props.class)}
+      onClick={() => props.onClick?.()}
       data-cue={props.cue ? '' : undefined}
       data-roll={rolling() ? '' : undefined}
       style={{

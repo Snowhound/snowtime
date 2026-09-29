@@ -696,9 +696,12 @@ export function TimerCalendar(props: {
           {weekLabel()}
         </h2>
         <div class="ml-auto flex items-center gap-3">
-          <span class="text-muted-foreground text-sm tabular-nums">
-            {weekTotal() ? m.calendar_week_total({ total: formatHours(weekTotal()) }) : ''}
-          </span>
+          <Show when={weekTotal()}>
+            <span class="text-muted-foreground flex items-baseline gap-1.5 text-sm">
+              {m.calendar_week_total()}
+              <span class="tabular-nums">{formatHours(weekTotal())}</span>
+            </span>
+          </Show>
           <Toggle
             variant="outline"
             size="sm"

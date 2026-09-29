@@ -399,7 +399,7 @@
         document.getElementById('prev').setAttribute('aria-label', 'Previous week')
         document.getElementById('next').setAttribute('aria-label', 'Next week')
         const total = allEntries().reduce((sum, e) => sum + pieces(e, days).reduce((s, p) => s + p.to - p.from, 0), 0)
-        document.getElementById('week-total').textContent = total ? `${hm(total)} this week` : ''
+        document.getElementById('week-total').textContent = total ? `This week: ${hm(total)}` : ''
         const weekend = document.getElementById('weekend')
         const forced = weekendHasTime()
         const on = weekendShown()

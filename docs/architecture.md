@@ -866,7 +866,8 @@ collections".
     tagline's box keeps its size, so nothing around it moves; if the third line is too wide
     for the title row, only the light plays. The browser decides after hydration, since only
     it knows what it showed last; hiding the server's text to fade it in would flicker on
-    every load. There's no cue while the intro shows the lines or with reduced motion.
+    every load. There's no cue while the intro shows the lines or with reduced motion. A click on
+    the tagline plays the cue again, since the third line shows only during the roll.
   - The Tagline switch (`scene_tagline`) hides the tagline on signed-in pages. The sign-in
     page keeps it, and the intro has its own switch.
 - Intro (`src/lib/scene/intro.ts`, `src/components/scene/intro.tsx`): module-level signals hold its state,

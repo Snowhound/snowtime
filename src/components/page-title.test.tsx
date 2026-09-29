@@ -61,3 +61,12 @@ test('switches to a praise set, with its cue, when a save fills today', async ()
   expect(screen.queryByText("Yesterday's hours are all in.")).not.toBeInTheDocument()
   expect(tagline().textContent).toMatch(/All caught up|A perfect timesheet/)
 })
+
+test('plays its cue again when clicked', async () => {
+  localStorage.setItem('snowtime.taglineSeen', "Yesterday's hours are all in. Lovely. And today's?")
+  renderTitle(OPEN)
+  await waitFor(() => expect(tagline().dataset.placed).toBe(''))
+  expect(tagline().dataset.cue).toBeUndefined()
+  tagline().click()
+  await waitFor(() => expect(tagline().dataset.cue).toBe(''))
+})

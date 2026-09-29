@@ -392,7 +392,7 @@
   "timer_view_calendar": "Calendar",
   "calendar_previous_week": "Previous week",
   "calendar_next_week": "Next week",
-  "calendar_week_total": "{total} this week",
+  "calendar_week_total": "This week:",
   "calendar_weekend": "Weekend",
   "calendar_weekend_forced": "This week has weekend time, so the weekend shows.",
   "calendar_day": "Day",

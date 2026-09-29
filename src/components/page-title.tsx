@@ -10,7 +10,8 @@
 // CSS can't follow, it is hidden until then.
 //
 // Once placed, a tagline this browser hasn't shown before gets a cue (`SeasonTagline`), unless
-// the intro is showing the lines or the device reduces motion. The Tagline setting hides it.
+// the intro is showing the lines or the device reduces motion. A click plays the cue again, so
+// the third line, which only the roll shows, can be seen again. The Tagline setting hides it.
 //
 // The tagline keeps the fill summary it picked with while the page is open, so a refetched
 // session doesn't change its set, except that a save that brings on the praise sets switches
@@ -39,6 +40,15 @@ function firstShowing(text: string) {
     // Storage is blocked: without a record, no cue.
     return false
   }
+}
+
+// No cue while the intro shows the lines or the device reduces motion.
+function quiet() {
+  return (
+    intro.open() ||
+    document.documentElement.dataset.intro !== undefined ||
+    matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
 }
 
 export function PageTitle(props: { title: string; centerOn?: () => HTMLElement | undefined }) {
@@ -120,11 +130,12 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
   function cueIfNew(el: HTMLParagraphElement) {
     if (checked) return
     checked = true
-    const quiet =
-      intro.open() ||
-      document.documentElement.dataset.intro !== undefined ||
-      matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (!firstShowing(el.textContent ?? '') || quiet) return
+    if (!firstShowing(el.textContent ?? '') || quiet()) return
+    playCue(el)
+  }
+
+  function playCue(el: HTMLParagraphElement) {
+    clearTimeout(cueTimer)
     setCue(true)
     // The roll only fits where the tagline is centered on one line, and the third line can be
     // wider than the first two: without room for it, only the light sweeps.
@@ -137,6 +148,15 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
       setCue(false)
       setRoll(false)
     }, CUE_MS)
+  }
+
+  // Removing the cue for a frame first restarts its animations if it's still playing.
+  function replay() {
+    if (tagline?.dataset.placed === undefined || quiet()) return
+    const el = tagline
+    setCue(false)
+    setRoll(false)
+    requestAnimationFrame(() => playCue(el))
   }
 
   onMount(() => {
@@ -165,8 +185,9 @@ export function PageTitle(props: { title: string; centerOn?: () => HTMLElement |
           fill={fill()}
           cue={cue()}
           roll={roll()}
+          onClick={replay}
           class={cn(
-            'page-tagline min-w-0 basis-full text-sm font-medium',
+            'page-tagline min-w-0 basis-full cursor-pointer text-sm font-medium',
             props.centerOn && 'page-tagline-deferred',
           )}
         />
