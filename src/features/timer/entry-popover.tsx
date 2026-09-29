@@ -27,7 +27,7 @@ import { TicketChip } from './ticket-chip'
 import { caretAfterKey } from './ticket-draft'
 
 // A calendar slot's times, and the project of the entry before it.
-export interface EntrySlot {
+interface EntrySlot {
   startedAt: Date
   stoppedAt: Date
   projectId: string | null

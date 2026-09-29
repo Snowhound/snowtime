@@ -69,8 +69,9 @@ Edit their source files at the paths above so both agents use the same instructi
   prototype or doc only where it helps. If most of a block needs explaining, simplify the
   code before writing the comment.
 - A lefthook pre-commit hook (`lefthook.yml`, installed by `bun install`) runs
-  `oxlint --fix` and `oxfmt` on the staged files; CI checks the whole repository. Disable a
-  lint rule inline only with a reason: `// oxlint-disable-next-line rule -- why`.
+  `oxlint --fix` and `oxfmt` on the staged files, then `knip` on the project; CI checks the
+  whole repository. Disable a lint rule inline only with a reason:
+  `// oxlint-disable-next-line rule -- why`.
 
 ## Commits
 

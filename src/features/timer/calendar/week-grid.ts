@@ -21,7 +21,7 @@ export const DAY_MINUTES = 24 * 60
 // The grid snaps to this, and Alt+Up and Alt+Down move by it.
 export const SNAP_MINUTES = 15
 // A click on empty time adds this much: the half-hour cell clicked.
-export const CLICK_MINUTES = 30
+const CLICK_MINUTES = 30
 // A click this close above a half-hour line counts as below it: 4 px at 48 px an hour.
 const CLICK_SLACK_MINUTES = 5
 // The week opens at this minute, or earlier when its first entry starts before.

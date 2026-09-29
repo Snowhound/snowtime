@@ -1,5 +1,6 @@
-# Lints and formats the staged files before each commit, and stages the fixes. CI runs the
-# same checks over the whole repository.
+# Lints and formats the staged files before each commit, and stages the fixes, then runs knip
+# over the project, which it can't limit to the staged files. CI runs the same checks over the
+# whole repository.
 pre-commit:
   jobs:
     - name: lint
@@ -11,3 +12,8 @@ pre-commit:
       glob: '*.{js,mjs,ts,tsx,json,css,md,yml}'
       run: ./node_modules/.bin/oxfmt --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
+
+    # Unused files, exports, and dependencies; needs the whole project, about 1.5 s.
+    - name: knip
+      glob: '*.{js,mjs,ts,tsx,json}'
+      run: bun run knip
