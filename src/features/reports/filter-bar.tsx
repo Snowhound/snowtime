@@ -1,11 +1,12 @@
 // The filter row above the report's views (prototypes/reports.html): range preset, previous and
 // next, from and to, People, Project, Group by, and totals per day or week. Members get no
 // People: they see their own time. The fields are sized so the row fits the header's 68rem on
-// one line, which is why Group by is a select rather than tabs. The selects mark their option
+// one line, which is why Group by is a select rather than tabs. Narrower windows show From and
+// To only for a custom range, so the row still fits from lg up. The selects mark their option
 // `selected` too, because a select's value does nothing in server-rendered HTML.
 import ChevronLeftIcon from 'lucide-solid/icons/chevron-left'
 import ChevronRightIcon from 'lucide-solid/icons/chevron-right'
-import { For, Show } from 'solid-js'
+import { For, Show, createSignal } from 'solid-js'
 import { DatePicker } from '~/components/date-time/date-picker'
 import { Button } from '~/components/ui/button'
 import { Label } from '~/components/ui/label'
@@ -13,6 +14,7 @@ import { NativeSelect } from '~/components/ui/native-select'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { type IsoDate, type WeekStart, addDays } from '~/lib/calendar'
 import type { Project } from '~/lib/queries/projects'
+import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { GROUP_LABELS, type Group, type ReportFilters, type Unit, groupOptions } from './filters'
 import { MAX_DAY_COLUMNS, type RangePreset, rangeDays } from './range'
@@ -74,6 +76,18 @@ export function ReportFilterBar(
     return access.teams.length > 1 ? m.reports_my_teams() : access.teams[0].name
   }
 
+  // Once Custom is picked, From and To stay until another preset is, even when the dates or
+  // previous and next land on a preset, so the fields don't vanish while in use.
+  const [customPicked, setCustomPicked] = createSignal(false)
+  function showDates() {
+    return customPicked() || props.filters.preset === 'custom'
+  }
+
+  function pickPreset(preset: RangePreset) {
+    setCustomPicked(preset === 'custom')
+    props.onPreset(preset)
+  }
+
   function pickDate(field: 'from' | 'to', value: string) {
     if (!value) return
     props.onDates(
@@ -94,7 +108,7 @@ export function ReportFilterBar(
             id="range-preset"
             class="h-9 w-36"
             value={props.filters.preset}
-            onChange={(event) => props.onPreset(event.currentTarget.value as RangePreset)}
+            onChange={(event) => pickPreset(event.currentTarget.value as RangePreset)}
           >
             <For each={Object.entries(PRESET_LABELS)}>
               {([value, label]) => (
@@ -125,7 +139,7 @@ export function ReportFilterBar(
             <ChevronRightIcon aria-hidden="true" />
           </Button>
         </div>
-        <div class="flex items-end gap-2">
+        <div class={cn('items-end gap-2', showDates() ? 'flex' : 'hidden xl:flex')}>
           <div class="grid gap-1.5">
             <Label for="report-from">{m.reports_from()}</Label>
             <DatePicker

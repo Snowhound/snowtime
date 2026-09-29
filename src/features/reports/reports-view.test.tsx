@@ -518,6 +518,39 @@ describe('ReportsView', () => {
     expect(screen.getByLabelText('To')).toHaveValue('23.09.2026')
   })
 
+  test('narrow windows show From and To for a custom range', async () => {
+    const { search } = renderView()
+    await screen.findByRole('table')
+    const preset = screen.getByLabelText('Range')
+    function dates() {
+      return screen.getByText('From', { selector: 'label' }).parentElement!.parentElement!
+    }
+    expect(dates()).toHaveClass('hidden', 'xl:flex')
+
+    await userEvent.selectOptions(preset, 'Custom')
+    await waitFor(() => expect(search()).toMatchObject({ range: 'custom' }))
+    expect(dates()).not.toHaveClass('hidden')
+
+    // Dates that land on a preset keep the fields.
+    typeDate('From', '2026-09-14')
+    await waitFor(() => expect(search()).toMatchObject({ from: '2026-09-14' }))
+    typeDate('To', '2026-09-20')
+    await waitFor(() => expect(search()).toEqual({ range: 'last-week' }))
+    expect(dates()).not.toHaveClass('hidden')
+
+    await userEvent.selectOptions(preset, 'Today')
+    await waitFor(() => expect(search()).toEqual({ range: 'today' }))
+    expect(dates()).toHaveClass('hidden')
+  })
+
+  test('a custom range in the URL shows From and To', async () => {
+    renderView({ range: 'custom', from: '2026-09-02', to: '2026-09-09' })
+    await screen.findByRole('table')
+    expect(
+      screen.getByText('From', { selector: 'label' }).parentElement!.parentElement,
+    ).not.toHaveClass('hidden')
+  })
+
   test('ranges over 35 days total per week', async () => {
     renderView()
     await screen.findByRole('table')
