@@ -438,7 +438,11 @@ works; one that lacks it gets a notice at the top of each page.
     totals, until its filters change.
   - Team totals count each team's current members, so a member in two teams counts in
     both. Team leads report on the teams they lead; admins and owners on all.
-  - A report returns ids, ISO dates, and milliseconds; the client formats them.
+  - A report returns ids, ISO dates, and milliseconds; the client formats them. The one
+    exception is `formerMembers`: the name and email of each member it counts who has left the
+    organization, since the member list the client names rows from has current members only.
+  - Totals per ticket come only when the input asks for them (`tickets`), which the page does
+    when it groups by ticket. A year of 1,800 tickets by week was 286 KB of the 309 KB report.
 
 ## Working days
 
@@ -480,8 +484,11 @@ that project's report for its client (task 068).
   what `getReport` reads under the same role rules, so the server enforces them. It returns the
   report and its entries from one read, counted up to the same moment, and the XLSX's timesheet
   is that report, so its two sheets agree while a timer runs. Building in the browser keeps the
-  files out of the Vercel functions and their response limits, and the XLSX library loads only
-  when someone exports.
+  files out of the Vercel functions, and the XLSX library loads only when someone exports.
+- Size: each entry row carries only what the files show, a piece's start and duration rather
+  than its end, and no entry id or whole-entry times, which only the Entries card needs. A
+  year of the 19 people in the Lumen Works seed is still about 8 MB, over Vercel's 4.5 MB response limit
+  (`hosting.md`).
 - Order: the XLSX opens on the entries, the part a client or an invoice needs, with the
   timesheet as a second sheet; the menu lists them in the same order.
 - For a client: the files are in English whatever the UI language, headers, sheet names, and
@@ -513,20 +520,29 @@ The Reports page's Entries card lists the entries behind the report (task 055,
   current members), or member. Choosing a day or week narrows the report's range to that
   bucket instead. Every view narrows the card ("Report views"), through the same `row` and
   `bucket` search params.
-- Loading: the card has its own query under `reportsKey`, which the route loader doesn't
-  wait for, so the timesheet opens as fast as without the card. Timer writes mark it stale
-  with the reports.
+- Loading: the list has its own query under `reportsKey`, which loads only in the browser
+  and only while the card is open, so the timesheet opens as fast as without the card and a
+  closed card costs nothing. The server never renders the list: a cold year view by week sent
+  5 MB of HTML while it did. The header's count and total come with the report (`entries`
+  and `total`); for a chosen part, `getReportEntryTotals` counts them without the list. Timer
+  writes mark both stale with the reports.
 - Grouping: the server groups the list, because an admin's "Everyone" for a month in a
   50-person organization is about 4,000 entries, several hundred KB of JSON. By description
-  returns only the merged rows, one per project and description. By day returns a page of at
-  most 100 pieces (`ENTRY_PAGE_SIZE`), newest day first, and each person's pieces together.
+  sends its 25 rows with the most time (`DESCRIPTION_PAGE_SIZE`) and the number of rows; "Show
+  all" loads the rest, which for a year of the Lumen Works seed is about 7,900 rows. By
+  day returns a page of at most 100 pieces (`ENTRY_PAGE_SIZE`), newest day first, and each
+  person's pieces together.
   A page ends with a whole day unless one day alone fills it, and each page carries its days'
   whole totals, so a heading is right when its day continues on the next page. Pages count
   entries rather than days, because one day of a large organization can hold hundreds.
 - Cursor: a page asks for the pieces after the last one it has, by date, user, start, and
   entry id, so an entry added between two pages doesn't repeat or skip a piece. Each call
-  reads the report's entries again and sorts them in TypeScript: the read is the one
-  `getReport` makes, and the response stays bounded.
+  reads the entries up to the cursor's day again and sorts them in TypeScript, so the
+  response stays bounded.
+- Narrowing: a row narrows the read in SQL: a project or ticket to its column, a member to
+  their user, a team to its current members, and "No team" to users in none of the report's
+  teams. One ticket reads through the `(organization_id, ticket, started_at)` index, so a
+  year of it touches that ticket's entries only.
 
 ## Report views
 
@@ -562,8 +578,8 @@ worked on what.
 An entry has at most one ticket key, such as `NBW-412` (task 060, `prototypes/README.md`,
 timer.html, "Ticket keys").
 
-- Storage: the nullable `time_entry.ticket` column, indexed on `(organization_id, ticket)`
-  for reports. One ticket per entry keeps reports by ticket adding up to the total and
+- Storage: the nullable `time_entry.ticket` column, indexed on
+  `(organization_id, ticket, started_at)` for a report's entries of one ticket. One ticket per entry keeps reports by ticket adding up to the total and
   matches tracker worklogs, which belong to one issue each. Work on two tickets is two
   entries, or one with the second key in its text. A `time_entry_ticket` table would be
   needed only for several tickets per entry.
