@@ -798,7 +798,8 @@ export const HORIZONS: Partial<Record<ImageId, number>> = {
 // where fog lies.
 const ZONES = {
   // Brighter on the ice than on the snowy shore, and brightest on the sunny side by day and
-  // around the moon's path by night: each zone gets a third of the specks.
+  // around the moon's path by night, most along the path itself. Each zone gets an equal share
+  // of the specks.
   'coast-january-day': [
     [0, 0.4, 0.55, 0.82, 0.9],
     [0.55, 0.4, 1, 0.82, 1.25],
@@ -808,6 +809,7 @@ const ZONES = {
     [0, 0.4, 0.62, 0.82, 0.8],
     [0.62, 0.4, 0.92, 0.75, 1.2],
     [0, 0.82, 1, 1, 0.4],
+    [0.74, 0.39, 0.8, 0.7, 1.6],
   ],
   // Fog over the bay and the far shore, low in the reeds right of the haystack, and thinner over
   // the near grass at the haystack's foot, so it stays off the haystack itself.
@@ -905,14 +907,17 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
       peakTime: 2.6,
       peakSize: 2.3,
     }),
-    // As land February's night.
+    // Land February's night, a little fainter and slower, gathered along the moon's path.
     dark: wx('glitter', {
       zones: ZONES['coast-january'],
+      // A quarter of the specks per zone, so each of the first three keeps a third's worth.
+      amount: 1.33,
       size: 1.35,
+      opacity: 0.75,
       shimmer: 0.72,
-      tempo: 1.15,
+      tempo: 1,
       peaks: 5.1,
-      peakTime: 2.8,
+      peakTime: 3.2,
     }),
   },
   'coast-february': {

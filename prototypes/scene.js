@@ -149,6 +149,7 @@
       [0, 0.4, 0.62, 0.82, 0.8],
       [0.62, 0.4, 0.92, 0.75, 1.2],
       [0, 0.82, 1, 1, 0.4],
+      [0.74, 0.39, 0.8, 0.7, 1.6],
     ],
     // Fog over the bay and the far shore, low in the reeds right of the haystack, and thinner over
     // the near grass at the haystack's foot, so it stays off the haystack itself.
@@ -200,7 +201,7 @@
     autumn: { light: mountain('leaves'), dark: mountain('leaves') },
     'coast-january': {
       light: wx('glitter-day', { zones: ZONES['coast-january-day'], amount: 4, size: 2.3, opacity: 1.05, shimmer: 0.8, tempo: 1.3, peaks: 3.3, peakTime: 2.6, peakSize: 2.3 }),
-      dark: wx('glitter', { zones: ZONES['coast-january'], size: 1.35, shimmer: 0.72, tempo: 1.15, peaks: 5.1, peakTime: 2.8 }),
+      dark: wx('glitter', { zones: ZONES['coast-january'], amount: 1.33, size: 1.35, opacity: 0.75, shimmer: 0.72, tempo: 1, peaks: 5.1, peakTime: 3.2 }),
     },
     'coast-february': {
       light: wx('blowing', { amount: 0.55, size: 1.2, opacity: 1.3, fall: 2.35, wind: 0.2, gust: 1, shear: 5 }),

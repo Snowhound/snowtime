@@ -262,6 +262,8 @@ the finals:
 - Land January by night (Kait, 2026-09-29): glitter in place of the flurries, most on the
   moonlit snow under the moon, less over the far field, the bank right of the stream, and the
   moon's reflection in the stream. The weather takes up to four zones for it, up from three.
+- Coast January by night (Kait, 2026-09-29): the glitter gathers along the moon's path on the
+  ice, and is a little fainter and slower overall.
 
 ## Approach
 
