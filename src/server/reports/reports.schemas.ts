@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import { m } from '~/paraglide/messages.js'
-import { TicketKey, Uuidv7 } from '../schemas'
+import { TicketKey, Timestamp, Uuidv7 } from '../schemas'
 
 // A calendar day such as 2026-09-24, read in the user's time zone.
 export const IsoDate = v.pipe(
@@ -49,6 +49,28 @@ export const ReportInput = v.pipe(
   ),
 )
 export type ReportInput = v.InferOutput<typeof ReportInput>
+
+// Longest piece of an export: a calendar month, so one response stays well under Vercel's
+// 4.5 MB limit (docs/hosting.md).
+const MAX_EXPORT_PIECE_DAYS = 31
+
+// One piece of the report's export: its entries from `from` up to but not including `to`,
+// inside the report's range. The first piece leaves out `now` and gets the report as well,
+// counted up to the server's now, which the later pieces pass back as `now` so every piece
+// and the report count a running entry up to the same moment.
+export const ReportExportInput = v.pipe(
+  v.object({ report: ReportInput, from: IsoDate, to: IsoDate, now: v.optional(Timestamp) }),
+  v.check(
+    (i) => i.to > i.from,
+    () => m.validation_range_end_before_start(),
+  ),
+  v.check((i) => i.from >= i.report.from && i.to <= i.report.to),
+  v.check(
+    (i) => days(i.from, i.to) <= MAX_EXPORT_PIECE_DAYS,
+    () => m.validation_range_too_long({ days: MAX_EXPORT_PIECE_DAYS }),
+  ),
+)
+export type ReportExportInput = v.InferOutput<typeof ReportExportInput>
 
 export const ENTRY_VIEWS = ['day', 'description'] as const
 

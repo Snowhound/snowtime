@@ -40,6 +40,7 @@ import {
   type EntryRow,
   type ReportEntriesInput,
   type ReportEntryTotalsInput,
+  type ReportExportInput,
   type ReportInput,
 } from './reports.schemas'
 
@@ -527,20 +528,25 @@ export type ExportEntry = Pick<
   'userId' | 'projectId' | 'description' | 'ticket' | 'date' | 'from' | 'running' | 'ms'
 >
 
-// The report and the entries behind it, for its export, under getReport's rules. Both come
-// from one read and count a running entry up to the same moment, so the entries add up to
-// the report's totals.
+// One piece of the report's export, under getReport's rules: the entries of the piece's days,
+// and for the first piece the report. Every piece counts a running entry up to the first
+// one's moment, so the pieces' entries add up to the report's totals.
 export async function getReportExport(
   db: Database,
   scope: Scope,
-  input: ReportInput,
+  input: ReportExportInput,
   now = new Date(),
-): Promise<{ report: Report; entries: ExportEntry[] }> {
-  const c = await reportContext(db, scope, input, now)
-  const entries = await listedEntries(db, scope, c)
+): Promise<{ report?: Report; entries: ExportEntry[] }> {
+  // Never later than the server's now, so a piece can't count a running entry further ahead.
+  const at = new Date(Math.min(input.now?.getTime() ?? Infinity, now.getTime()))
+  const c = await reportContext(db, scope, { ...input.report, from: input.from, to: input.to }, at)
+  const [report, entries] = await Promise.all([
+    input.now ? undefined : getReport(db, scope, input.report, at),
+    listedEntries(db, scope, c),
+  ])
   return {
-    report: await reportOf(db, scope, c, entries, now),
-    entries: piecesOf(c, entries, now).map((p) => ({
+    report,
+    entries: piecesOf(c, entries, at).map((p) => ({
       userId: p.userId,
       projectId: p.projectId,
       description: p.description,

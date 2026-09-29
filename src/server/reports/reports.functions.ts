@@ -2,7 +2,12 @@
 import { createServerFn } from '@tanstack/solid-start'
 import { db } from '~/db'
 import { scopeMiddleware } from '../middleware'
-import { ReportEntriesInput, ReportEntryTotalsInput, ReportInput } from './reports.schemas'
+import {
+  ReportEntriesInput,
+  ReportEntryTotalsInput,
+  ReportExportInput,
+  ReportInput,
+} from './reports.schemas'
 import * as reports from './reports.server'
 
 export const getReport = createServerFn({ method: 'GET' })
@@ -10,10 +15,10 @@ export const getReport = createServerFn({ method: 'GET' })
   .validator(ReportInput)
   .handler(({ data, context }) => reports.getReport(db, context.scope, data))
 
-// The report and the entries behind it, from one read, for its export.
+// One month or less of the export's entries; the first piece brings the report as well.
 export const getReportExport = createServerFn({ method: 'GET' })
   .middleware([scopeMiddleware])
-  .validator(ReportInput)
+  .validator(ReportExportInput)
   .handler(({ data, context }) => reports.getReportExport(db, context.scope, data))
 
 // The Entries card's list: By description's merged rows, or one page of By day.

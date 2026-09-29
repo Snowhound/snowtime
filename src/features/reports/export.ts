@@ -3,7 +3,7 @@
 // apply the role rules; the browser names the rows from the cached lists, as the timesheet
 // does, and builds the files, so the XLSX library loads only when someone exports. The files
 // can go to a client, so they are in English whatever the UI language.
-import { type IsoDate, localTime } from '~/lib/calendar'
+import { type IsoDate, localTime, monthDates } from '~/lib/calendar'
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
@@ -134,6 +134,20 @@ function csvCell(cell: TableCell) {
 export function toCsv(table: Table) {
   const lines = [table.header, ...table.rows].map((row) => row.map(csvCell).join(','))
   return `﻿${lines.join('\r\n')}\r\n`
+}
+
+// The range [from, to) cut at the first of each month: the pieces the export fetches, so each
+// response stays small whatever the organization's size.
+export function exportPieces(from: IsoDate, to: IsoDate) {
+  const pieces: { from: IsoDate; to: IsoDate }[] = []
+  let start = from
+  while (start < to) {
+    const next = monthDates(start).to
+    const end = next < to ? next : to
+    pieces.push({ from: start, to: end })
+    start = end
+  }
+  return pieces
 }
 
 // Such as snowhound-2026-09-01-to-2026-09-30.csv; `last` is the range's last day.

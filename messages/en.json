@@ -644,6 +644,7 @@
   "export_column_email": "Email",
   "export_column_hours": "Hours",
   "export_failed": "The export didn't download. Try again.",
+  "export_progress": "Exporting… {done}/{total}",
   "confirm_cancel": "Cancel",
   "confirm_ok": "OK",
   "error_already_invited": "This address already has an open invitation.",

@@ -3,6 +3,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { and, eq, inArray } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
+import * as v from 'valibot'
 import type { Database } from '~/db'
 import { member, teamMember, timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
@@ -10,7 +11,13 @@ import { addDays } from '~/lib/calendar'
 import { listEntries } from '../entries/entries.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
-import { DESCRIPTION_PAGE_SIZE, ENTRY_PAGE_SIZE, type ReportEntriesInput } from './reports.schemas'
+import {
+  DESCRIPTION_PAGE_SIZE,
+  ENTRY_PAGE_SIZE,
+  type ReportEntriesInput,
+  ReportExportInput,
+  type ReportInput,
+} from './reports.schemas'
 import {
   aggregate,
   breakdownOf,
@@ -50,6 +57,12 @@ function sum(xs: number[]) {
 }
 function ids<K extends string>(rows: Record<K, unknown>[], key: K) {
   return rows.map((r) => r[key]).sort()
+}
+
+// The export of a report within a month, as its one piece.
+async function exportOf(scope: Scope, report: ReportInput) {
+  const data = await getReportExport(db, scope, { report, from: report.from, to: report.to }, NOW)
+  return { report: data.report!, entries: data.entries }
 }
 
 // Every breakdown of a report adds up to its total.
@@ -445,7 +458,7 @@ describe('getReport', () => {
       expect(report.formerMembers).toEqual([
         { userId: U.loner, name: 'Noah Solo', email: 'noah@example.com' },
       ])
-      const { report: exported } = await getReportExport(db, scopes.admin, input, NOW)
+      const { report: exported } = await exportOf(scopes.admin, input)
       expect(exported.formerMembers).toEqual(report.formerMembers)
     } finally {
       await db.insert(member).values(row)
@@ -512,7 +525,7 @@ describe('getReportExport', () => {
 
   test("adds up to the report's totals per member, day, and project, running timer included", async () => {
     for (const scope of [scopes.member, scopes.lead, scopes.admin]) {
-      const { report, entries } = await getReportExport(db, scope, input, NOW)
+      const { report, entries } = await exportOf(scope, input)
       expect(report).toEqual(await getReport(db, scope, input, NOW))
       expect(sum(entries.map((e) => e.ms))).toBe(report.total)
       for (const m of report.members) {
@@ -528,7 +541,7 @@ describe('getReportExport', () => {
         expect(sum(ms)).toBe(p.total)
       }
     }
-    const { entries } = await getReportExport(db, scopes.admin, input, NOW)
+    const { entries } = await exportOf(scopes.admin, input)
     const running = entries.filter((e) => e.running)
     expect(running).toHaveLength(1)
     expect(running[0].from.getTime() + running[0].ms).toBe(NOW.getTime())
@@ -542,30 +555,75 @@ describe('getReportExport', () => {
   })
 
   test('follows the report’s role rules', async () => {
-    const member = await getReportExport(db, scopes.member, input, NOW)
+    const member = await exportOf(scopes.member, input)
     expect([...new Set(member.entries.map((e) => e.userId))]).toEqual([U.member])
-    await expect(
-      getReportExport(db, scopes.lead, { ...input, userId: U.engineer }, NOW),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
-    await expect(
-      getReportExport(db, scopes.member, { ...input, teamId: T.design }, NOW),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'team_report_forbidden' })
+    await expect(exportOf(scopes.lead, { ...input, userId: U.engineer })).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      key: 'entries_forbidden',
+    })
+    await expect(exportOf(scopes.member, { ...input, teamId: T.design })).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      key: 'team_report_forbidden',
+    })
   })
 
   test("splits an entry at the user's midnight into a piece per day", async () => {
     // 23:00 to 02:00 in London.
     await logFor(scopes.loner, '2026-10-02T22:00:00Z', '2026-10-03T01:00:00Z')
-    const { report, entries } = await getReportExport(
-      db,
-      scopes.loner,
-      { from: '2026-10-02', to: '2026-10-04', unit: 'day' },
-      NOW,
-    )
+    const { report, entries } = await exportOf(scopes.loner, {
+      from: '2026-10-02',
+      to: '2026-10-04',
+      unit: 'day',
+    })
     expect(report.timeZone).toBe('Europe/London')
     expect(entries.map((e) => [e.date, e.from.toISOString(), e.ms])).toEqual([
       ['2026-10-02', '2026-10-02T22:00:00.000Z', HOUR],
       ['2026-10-03', '2026-10-02T23:00:00.000Z', 2 * HOUR],
     ])
+  })
+
+  test('comes in pieces that count a running entry up to the first piece’s moment', async () => {
+    const report = { from: '2026-09-14', to: '2026-10-04', unit: 'day' } as const
+    const first = await getReportExport(
+      db,
+      scopes.admin,
+      { report, from: '2026-10-01', to: '2026-10-04' },
+      NOW,
+    )
+    expect(first.report?.now).toEqual(NOW)
+    // An hour later, the timer still running.
+    const later = new Date(NOW.getTime() + HOUR)
+    const rest = await getReportExport(
+      db,
+      scopes.admin,
+      { report, from: '2026-09-14', to: '2026-10-01', now: NOW },
+      later,
+    )
+    expect(rest.report).toBeUndefined()
+    const entries = [...first.entries, ...rest.entries]
+    expect(sum(entries.map((e) => e.ms))).toBe(first.report!.total)
+    const running = entries.find((e) => e.running)!
+    expect(running.from.getTime() + running.ms).toBe(NOW.getTime())
+
+    // A moment ahead of the server's counts only up to the server's now.
+    const ahead = await getReportExport(
+      db,
+      scopes.admin,
+      { report, from: '2026-09-14', to: '2026-10-01', now: later },
+      NOW,
+    )
+    expect(sum(ahead.entries.map((e) => e.ms))).toBe(sum(rest.entries.map((e) => e.ms)))
+  })
+
+  test('takes a piece of at most 31 days inside the report', () => {
+    const report = { from: '2026-01-01', to: '2026-12-01' }
+    function ok(from: string, to: string) {
+      return v.safeParse(ReportExportInput, { report, from, to }).success
+    }
+    expect(ok('2026-03-01', '2026-04-01')).toBe(true)
+    expect(ok('2025-12-01', '2026-01-01')).toBe(false)
+    expect(ok('2026-11-15', '2026-12-15')).toBe(false)
+    expect(ok('2026-03-01', '2026-04-02')).toBe(false)
   })
 })
 
@@ -717,7 +775,7 @@ describe('getReportEntries', () => {
 
   test('lists the pieces the export reads, in both views', async () => {
     for (const scope of [scopes.member, scopes.lead, scopes.admin]) {
-      const exported = await getReportExport(db, scope, report, NOW)
+      const exported = await exportOf(scope, report)
       const day = await allDays(scope)
       expect(day.pieces.map((p) => `${p.date} ${p.from.getTime()} ${p.ms}`).sort()).toEqual(
         exported.entries.map((e) => `${e.date} ${e.from.getTime()} ${e.ms}`).sort(),

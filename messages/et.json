@@ -644,6 +644,7 @@
   "export_column_email": "E-post",
   "export_column_hours": "Tunnid",
   "export_failed": "Eksport ebaõnnestus. Proovi uuesti.",
+  "export_progress": "Ekspordin… {done}/{total}",
   "confirm_cancel": "Tühista",
   "confirm_ok": "Selge",
   "error_already_invited": "Sellel aadressil on juba avatud kutse.",

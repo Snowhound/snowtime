@@ -6,6 +6,7 @@ import {
   type ReportEntries,
   entriesTable,
   exportFileName,
+  exportPieces,
   hours,
   timesheetTable,
   toCsv,
@@ -180,6 +181,21 @@ describe('entriesTable', () => {
 test('hours rounds to two decimals', () => {
   expect(hours(20 * 60_000)).toBe(0.33)
   expect(hours(HOUR * 7.5)).toBe(7.5)
+})
+
+test('the export comes in a piece per calendar month of the range', () => {
+  expect(exportPieces('2026-09-07', '2026-09-14')).toEqual([
+    { from: '2026-09-07', to: '2026-09-14' },
+  ])
+  expect(exportPieces('2026-01-01', '2026-02-01')).toEqual([
+    { from: '2026-01-01', to: '2026-02-01' },
+  ])
+  expect(exportPieces('2025-12-29', '2026-03-02')).toEqual([
+    { from: '2025-12-29', to: '2026-01-01' },
+    { from: '2026-01-01', to: '2026-02-01' },
+    { from: '2026-02-01', to: '2026-03-01' },
+    { from: '2026-03-01', to: '2026-03-02' },
+  ])
 })
 
 test('file names name the organization and the range', () => {

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { getLocale, overwriteGetLocale } from '~/paraglide/runtime.js'
+import type { ReportInput } from '~/server/reports/reports.schemas'
 import type { ReportEntries, Table } from './export'
 import { ExportMenu } from './export-menu'
 import type { Report } from './queries'
@@ -84,22 +85,29 @@ afterEach(() => overwriteGetLocale(uiLocale))
 
 const input = { from: '2026-09-24', to: '2026-09-25', unit: 'day' } as const
 
-async function exportXlsx(group: 'project' | 'member') {
+async function choose(
+  item: RegExp,
+  options: { group?: 'project' | 'member'; input?: ReportInput; onError?: () => void } = {},
+) {
   render(() => (
     <ExportMenu
       report={report(HOUR)}
-      group={group}
+      group={options.group ?? 'project'}
       names={names}
-      input={input}
+      input={options.input ?? input}
       organizationId="org"
       organizationSlug="snowhound"
-      onError={() => {}}
+      onError={options.onError ?? (() => {})}
     />
   ))
   await userEvent.click(
     screen.getByRole('button', { name: /^(Export the report|Ekspordi aruanne)$/ }),
   )
-  await userEvent.click(await screen.findByRole('menuitem', { name: /Excel \(XLSX\)/ }))
+  await userEvent.click(await screen.findByRole('menuitem', { name: item }))
+}
+
+async function exportXlsx(group: 'project' | 'member') {
+  await choose(/Excel \(XLSX\)/, { group })
   await waitFor(() => expect(fn.toXlsx).toHaveBeenCalledOnce())
   return fn.toXlsx.mock.calls[0][0] as [
     { name: string; table: Table },
@@ -144,5 +152,52 @@ describe('ExportMenu', () => {
       'mari@example.com',
     ])
     expect(list.table.rows[0].at(-1)).toBe(1)
+  })
+
+  test('loads a month at a time, counted up to the first piece’s moment, and shows how far', async () => {
+    const first = report(HOUR)
+    let answer: (value: unknown) => void = () => {}
+    fn.getReportExport
+      .mockResolvedValueOnce({ report: first, entries: [] })
+      .mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+      .mockResolvedValueOnce(entries(HOUR))
+    await choose(/Entries \(CSV\)/, {
+      input: { from: '2026-07-15', to: '2026-09-25', unit: 'week' },
+    })
+    expect(await screen.findByRole('button', { name: 'Exporting… 1/3' })).toBeDisabled()
+    answer({ entries: [] })
+    expect(await screen.findByRole('button', { name: 'Export the report' })).toBeEnabled()
+    expect(fn.getReportExport.mock.calls.map(([{ data }]) => data)).toEqual([
+      { organizationId: 'org', report: expect.anything(), from: '2026-07-15', to: '2026-08-01' },
+      {
+        organizationId: 'org',
+        report: expect.anything(),
+        from: '2026-08-01',
+        to: '2026-09-01',
+        now: first.now,
+      },
+      {
+        organizationId: 'org',
+        report: expect.anything(),
+        from: '2026-09-01',
+        to: '2026-09-25',
+        now: first.now,
+      },
+    ])
+  })
+
+  test('a failed piece fails the export', async () => {
+    const onError = vi.fn()
+    fn.getReportExport
+      .mockResolvedValueOnce({ report: report(HOUR), entries: [] })
+      .mockRejectedValueOnce(new Error('offline'))
+    await choose(/Excel \(XLSX\)/, {
+      input: { from: '2026-08-01', to: '2026-10-01', unit: 'week' },
+      onError,
+    })
+    await waitFor(() =>
+      expect(onError).toHaveBeenLastCalledWith("The export didn't download. Try again."),
+    )
+    expect(fn.toXlsx).not.toHaveBeenCalled()
   })
 })

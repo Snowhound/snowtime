@@ -1,8 +1,8 @@
 // The timesheet card's Export menu (prototypes/reports.html): the report for the current
 // filters, as XLSX with the entries and the timesheet, or either one as CSV. Entries come
 // first, as the part a client or an invoice needs. The timesheet CSV is the report as shown.
-// The entries load when chosen, together with the report they add up to, which the XLSX's
-// timesheet then shows, so a running timer counts alike in both sheets.
+// The entries load when chosen, a month at a time, together with the report they add up to,
+// which the XLSX's timesheet then shows, so a running timer counts alike in both sheets.
 // The rows are named for a client: in English, and with no "(you)". See export.ts for the files.
 import DownloadIcon from 'lucide-solid/icons/download'
 import FileSpreadsheetIcon from 'lucide-solid/icons/file-spreadsheet'
@@ -26,6 +26,8 @@ import {
   downloadFile,
   entriesTable,
   exportFileName,
+  exportPieces,
+  type ReportEntries,
   timesheetTable,
   toCsv,
   toXlsx,
@@ -70,6 +72,13 @@ export function ExportMenu(props: {
   onError: (message: string | null) => void
 }) {
   const [busy, setBusy] = createSignal(false)
+  const [progress, setProgress] = createSignal<{ done: number; total: number }>()
+
+  // Shown only for an export of more than one piece.
+  function progressLabel() {
+    const p = progress()
+    return p && p.total > 1 ? m.export_progress(p) : undefined
+  }
 
   function fileName(kind: ExportKind) {
     const last: IsoDate = addDays(props.input.to, -1)
@@ -84,6 +93,30 @@ export function ExportMenu(props: {
     return timesheetTable(report, reportRows(report, props.group, names()), props.group)
   }
 
+  // The entries a month at a time, so each response stays small. The first piece brings the
+  // report and the moment it counts up to, which the rest count up to as well.
+  async function exportData() {
+    const pieces = exportPieces(props.input.from, props.input.to)
+    let report: Report | undefined
+    const entries: ReportEntries['entries'] = []
+    for (const [i, piece] of pieces.entries()) {
+      setProgress({ done: i, total: pieces.length })
+      const data = await getReportExport({
+        data: {
+          organizationId: props.organizationId,
+          report: props.input,
+          ...piece,
+          now: report?.now,
+        },
+      })
+      report ??= data.report
+      entries.push(...data.entries)
+    }
+    setProgress({ done: pieces.length, total: pieces.length })
+    if (!report) throw new Error('The export has no report')
+    return { report, entries }
+  }
+
   async function run(kind: ExportKind) {
     props.onError(null)
     setBusy(true)
@@ -92,9 +125,7 @@ export function ExportMenu(props: {
       if (kind === 'csv') {
         blob = new Blob([toCsv(timesheet(props.report))], { type: 'text/csv;charset=utf-8' })
       } else {
-        const data = await getReportExport({
-          data: { ...props.input, organizationId: props.organizationId },
-        })
+        const data = await exportData()
         const entries = entriesTable(data, props.names, { hours: kind === 'xlsx' })
         const locale = { locale: EXPORT_LOCALE }
         blob =
@@ -110,6 +141,7 @@ export function ExportMenu(props: {
       props.onError(m.export_failed())
     } finally {
       setBusy(false)
+      setProgress(undefined)
     }
   }
 
@@ -121,14 +153,14 @@ export function ExportMenu(props: {
         size="sm"
         class="shrink-0"
         disabled={busy()}
-        aria-label={m.export_menu()}
+        aria-label={progressLabel() ?? m.export_menu()}
       >
         {busy() ? (
           <LoaderCircleIcon class="animate-spin" aria-hidden="true" />
         ) : (
           <DownloadIcon aria-hidden="true" />
         )}
-        {m.export_button()}
+        {progressLabel() ?? m.export_button()}
       </DropdownMenuTrigger>
       <DropdownMenuContent class="w-60">
         <For each={ITEMS}>
