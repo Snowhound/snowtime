@@ -4,7 +4,7 @@
 // `season-tagline`). With `cue`, a light sweeps across it; with `roll` too, and a set with a
 // third line, the first two roll up out of view for the third, then roll back. The sweep and
 // the third line are hidden from screen readers, which read the first two.
-import { Show } from 'solid-js'
+import { Show, createMemo } from 'solid-js'
 import { intro } from '~/lib/scene/intro'
 import type { Season } from '~/lib/scene/scene'
 import { SEASON_COPY } from '~/lib/scene/seasons'
@@ -28,12 +28,12 @@ export function SeasonTagline(props: {
   }
   // The intro decides in the browser whether it plays, after the server has rendered the
   // tagline; the page is hidden under it then, so the switch to its set isn't seen.
-  function lines() {
+  const lines = createMemo(() => {
     const played = intro.lines()
     return played.length > 0
       ? played
       : taglineLines(props.season, { timeZone: props.timeZone, fill: props.fill })
-  }
+  })
   function rolling() {
     return !!(props.cue && props.roll && lines()[2])
   }
