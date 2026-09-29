@@ -2,7 +2,7 @@
 // "Sign-in methods"). It shows above the page while the session can still add a passkey,
 // to a user without one, in a browser with WebAuthn, until they add one or dismiss it on
 // this device.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query'
+import { useMutation, useQueryClient } from '@tanstack/solid-query'
 import KeyRoundIcon from 'lucide-solid/icons/key-round'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import { Show, createSignal, onMount } from 'solid-js'
@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { authClient } from '~/lib/auth-client'
 import { FRESH_SESSION_MS, passkeysQuery } from '~/lib/queries/passkeys'
+import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
 
 export const PASSKEY_PROMPT_KEY = 'snowtime.passkeyPromptDismissed'

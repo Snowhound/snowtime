@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/solid-query'
 import { Show } from 'solid-js'
 import { isAdmin, organizationIn, sessionQuery } from '~/lib/queries/session'
+import { useQuery } from '~/lib/queries/use-query'
 import { ProjectsView } from './projects-view'
 
 // The view reads the month in the user's zone, from the settings the app frame creates on

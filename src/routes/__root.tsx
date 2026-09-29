@@ -1,6 +1,5 @@
 import fontLatin from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url'
 import type { QueryClient } from '@tanstack/solid-query'
-import { useQuery } from '@tanstack/solid-query'
 import {
   HeadContent,
   Scripts,
@@ -30,6 +29,7 @@ import {
   themeScript,
 } from '~/lib/device-settings'
 import { sessionQuery } from '~/lib/queries/session'
+import { useQuery } from '~/lib/queries/use-query'
 import { getLocale, setLocale } from '~/paraglide/runtime.js'
 import styleCss from '~/styles.css?url'
 import '~/lib/locale-cookie'

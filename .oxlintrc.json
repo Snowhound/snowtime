@@ -20,6 +20,18 @@
       }
     ],
     "eslint/eqeqeq": ["error", "smart"],
+    "eslint/no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@tanstack/solid-query",
+            "importNames": ["useQuery", "createQuery"],
+            "message": "Use useQuery from ~/lib/queries/use-query, which never suspends the page."
+          }
+        ]
+      }
+    ],
     "regexp/no-contradiction-with-assertion": "error",
     "regexp/no-dupe-disjunctions": "error",
     "regexp/no-empty-alternative": "warn",
@@ -89,6 +101,13 @@
         "eslint/no-restricted-imports": [
           "error",
           {
+            "paths": [
+              {
+                "name": "@tanstack/solid-query",
+                "importNames": ["useQuery", "createQuery"],
+                "message": "Use useQuery from ~/lib/queries/use-query, which never suspends the page."
+              }
+            ],
             "patterns": [
               {
                 "regex": "^~/features/",
@@ -105,6 +124,13 @@
         "eslint/no-restricted-imports": [
           "error",
           {
+            "paths": [
+              {
+                "name": "@tanstack/solid-query",
+                "importNames": ["useQuery", "createQuery"],
+                "message": "Use useQuery from ~/lib/queries/use-query, which never suspends the page."
+              }
+            ],
             "patterns": [
               {
                 "regex": "^~/features/",

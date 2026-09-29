@@ -3,7 +3,7 @@
 // time adds an entry in the entry popover; dragging an entry or its edges, or Alt+arrow keys on
 // it, move it or change its times; a click or Enter edits it. Each change is one optimistic
 // mutation (../queries.ts), and the status line under the grid names it with an Undo.
-import { keepPreviousData, useQuery } from '@tanstack/solid-query'
+import { keepPreviousData } from '@tanstack/solid-query'
 import ChevronLeftIcon from 'lucide-solid/icons/chevron-left'
 import ChevronRightIcon from 'lucide-solid/icons/chevron-right'
 import Undo2Icon from 'lucide-solid/icons/undo-2'
@@ -25,6 +25,7 @@ import { formatDateTime, formatIsoDate, formatIsoDateRange } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
+import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
@@ -66,7 +67,7 @@ const TICK_MS = 30_000
 // A pointer that moves less than this is a click, not a drag.
 const DRAG_PX = 4
 const FLASH_MS = 1400
-// How long an entry a key moved keeps focus through the page's redraws.
+// How long an entry a key moved waits for its block, on the day it moved to, to take focus.
 const KEEP_FOCUS_MS = 1500
 const HOURS = Array.from({ length: 23 }, (_, i) => i + 1)
 
@@ -535,24 +536,6 @@ export function TimerCalendar(props: {
     openEntry(entry, block)
   }
 
-  // After each write the page may briefly re-insert its nodes, which drops focus (task 070), so
-  // an entry a key just moved gets it back.
-  let keptFocus: { id: string; until: number } | null = null
-  function focusOut(event: FocusEvent) {
-    const id = (event.target as HTMLElement).dataset.entry
-    if (!keptFocus || id !== keptFocus.id || event.relatedTarget) return
-    queueMicrotask(refocus)
-  }
-  // Until the block is back in the page, on the next frames.
-  function refocus() {
-    if (!keptFocus || Date.now() > keptFocus.until) return
-    const active = document.activeElement
-    if (active && active !== document.body && active.isConnected) return
-    const block = body?.querySelector<HTMLElement>(`[data-entry="${keptFocus.id}"]`)
-    if (block?.isConnected) block.focus()
-    else requestAnimationFrame(refocus)
-  }
-
   // Alt+Up and Alt+Down move a focused entry by 15 minutes and Alt+Left and Alt+Right by a
   // day; with Shift, Alt+Up and Alt+Down change its end. Alt+Left is the browser's Back on
   // Windows and Linux, so the page keeps it on an entry.
@@ -583,7 +566,6 @@ export function TimerCalendar(props: {
     if (Object.keys(patch).length === 0) return
     follow(result.startedAt ?? times.startedAt)
     focusEntry(entry.id)
-    keptFocus = { id: entry.id, until: Date.now() + KEEP_FOCUS_MS }
     change(entry, patch, event.shiftKey ? 'changed' : 'moved')
   }
 
@@ -630,8 +612,8 @@ export function TimerCalendar(props: {
   }
 
   // The week opens at 07:00, or earlier when its first entry starts before; once per week. The
-  // position is kept until the user scrolls: in development the grid can scroll only once the
-  // styles load, and Solid may move the page's nodes after hydration, which resets it.
+  // position is kept until the user scrolls, since in development the grid can scroll only once
+  // the styles load.
   let scrolledWeek: IsoDate | null = null
   let opening: number | null = null
   function applyOpening() {
@@ -659,12 +641,7 @@ export function TimerCalendar(props: {
     if (typeof ResizeObserver === 'undefined' || !body) return
     const resized = new ResizeObserver(applyOpening)
     resized.observe(body)
-    const moved = new MutationObserver(applyOpening)
-    moved.observe(document.body, { childList: true })
-    onCleanup(() => {
-      resized.disconnect()
-      moved.disconnect()
-    })
+    onCleanup(() => resized.disconnect())
   })
 
   function weekLabel() {
@@ -803,7 +780,6 @@ export function TimerCalendar(props: {
           onPointerCancel={() => setDragState(null)}
           onClick={click}
           onKeyDown={keyDown}
-          onFocusOut={focusOut}
         >
           <div class="relative" aria-hidden="true">
             <For each={HOURS}>

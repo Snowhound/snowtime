@@ -3,7 +3,7 @@
 // Calendar switch on Calendar, the timer over the week calendar (calendar/timer-calendar.tsx).
 // Every write is optimistic (queries.ts); its error shows under the edited row or above the
 // timer.
-import { keepPreviousData, useQuery } from '@tanstack/solid-query'
+import { keepPreviousData } from '@tanstack/solid-query'
 import CalendarDaysIcon from 'lucide-solid/icons/calendar-days'
 import ListIcon from 'lucide-solid/icons/list'
 import PlusIcon from 'lucide-solid/icons/plus'
@@ -28,6 +28,7 @@ import { formatClock, formatIsoDate } from '~/lib/format'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
+import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { type CalendarControls, TimerCalendar } from './calendar/timer-calendar'

@@ -2,7 +2,6 @@
 // sorted by name. Admins and owners see every project with the organization's time this
 // month and manage them; members and team leads see the projects open to them, with their
 // own time, and no actions. Writes are optimistic (queries.ts); errors show above the list.
-import { useQuery } from '@tanstack/solid-query'
 import PlusIcon from 'lucide-solid/icons/plus'
 import SearchIcon from 'lucide-solid/icons/search'
 import { For, Show, createMemo, createSignal } from 'solid-js'
@@ -15,6 +14,7 @@ import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-
 import { errorMessage } from '~/lib/errors'
 import { type Project, projectsQuery } from '~/lib/queries/projects'
 import { teamsQuery } from '~/lib/queries/teams'
+import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
 import { ProjectDialog, type ProjectDialogTarget } from './project-dialog'
 import { type ProjectActions, ProjectList } from './project-list'

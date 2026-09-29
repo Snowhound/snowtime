@@ -1,7 +1,6 @@
 // The sign-in methods shared by the sign-in and invitation screens. Each shows only when
 // getSignInMethods returns it (docs/architecture.md, "Sign-in methods").
 import { createForm } from '@tanstack/solid-form'
-import { useQuery } from '@tanstack/solid-query'
 import EyeIcon from 'lucide-solid/icons/eye'
 import EyeOffIcon from 'lucide-solid/icons/eye-off'
 import KeyRoundIcon from 'lucide-solid/icons/key-round'
@@ -20,6 +19,7 @@ import {
 } from '~/components/ui/text-field'
 import { authClient } from '~/lib/auth-client'
 import { fieldError } from '~/lib/form'
+import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
 import { getDevUsers } from '~/server/auth/auth.functions'
 import type { SignInMethod } from '~/server/auth/auth.functions'

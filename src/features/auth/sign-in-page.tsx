@@ -1,10 +1,11 @@
-import { useQuery, useQueryClient } from '@tanstack/solid-query'
+import { useQueryClient } from '@tanstack/solid-query'
 import { useNavigate } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
 import { AuthHeading, AuthLayout } from '~/components/auth-layout/auth-layout'
 import { ErrorAlert } from '~/components/error-alert'
 import { sessionQuery } from '~/lib/queries/session'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
+import { useQuery } from '~/lib/queries/use-query'
 import { safeRedirect } from '~/lib/redirect'
 import { m } from '~/paraglide/messages.js'
 import {

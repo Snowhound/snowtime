@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/solid-query'
 import type { JSX } from 'solid-js'
 import { Show, onMount } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
@@ -17,6 +16,7 @@ import {
 import { errorMessage } from '~/lib/errors'
 import { sessionQuery } from '~/lib/queries/session'
 import { useUpdateSettings } from '~/lib/queries/settings'
+import { useQuery } from '~/lib/queries/use-query'
 import { introDue, introScene, playIntro, releaseIntroPending } from '~/lib/scene/intro'
 import { sceneAttributes, shownSeason } from '~/lib/scene/scene'
 import { m } from '~/paraglide/messages.js'

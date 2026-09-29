@@ -2,7 +2,6 @@
 // ticket, team or member, in three views as tabs: Timesheet, Summary, and Breakdown. The
 // filters and the view live in the URL, so a report reloads and shares; each change
 // navigates, and the page reads them back from the search params.
-import { useQuery } from '@tanstack/solid-query'
 import { Link, useNavigate } from '@tanstack/solid-router'
 import { Show, createMemo, createSignal } from 'solid-js'
 import { ErrorAlert } from '~/components/error-alert'
@@ -15,6 +14,7 @@ import { formatIsoDate, formatIsoDateRange } from '~/lib/format'
 import { membersQuery } from '~/lib/queries/members'
 import { projectsQuery } from '~/lib/queries/projects'
 import { teamsQuery } from '~/lib/queries/teams'
+import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'

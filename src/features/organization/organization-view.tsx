@@ -1,7 +1,7 @@
 // The Organization view (prototypes/organization.html) for admins and owners: Members,
 // Invitations, Teams, and General tabs, the tab kept in the URL. Writes are optimistic
 // (queries.ts); errors show above the tabs, or in the invite dialog while it is open.
-import { useMutationState, useQuery } from '@tanstack/solid-query'
+import { useMutationState } from '@tanstack/solid-query'
 import { useNavigate } from '@tanstack/solid-router'
 import { For, Show, createMemo, createSignal } from 'solid-js'
 import { type Confirmation, ConfirmDialog } from '~/components/confirm-dialog'
@@ -13,6 +13,7 @@ import { type Member, membersQuery } from '~/lib/queries/members'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
 import { type Team, teamsQuery } from '~/lib/queries/teams'
+import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
 import { GeneralTab } from './general-tab'

@@ -1,11 +1,12 @@
 import { render, screen, within } from '@solidjs/testing-library'
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/solid-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { Show } from 'solid-js'
 import { describe, expect, test, vi } from 'vitest'
 import { sessionQuery } from '~/lib/queries/session'
 import type { Settings } from '~/lib/queries/settings'
+import { useQuery } from '~/lib/queries/use-query'
 import { AppearancePopover } from './appearance-popover'
 
 const fn = vi.hoisted(() => ({ updateSettings: vi.fn(), getAppSession: vi.fn() }))

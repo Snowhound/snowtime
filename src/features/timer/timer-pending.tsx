@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/solid-query'
 import { Show } from 'solid-js'
 import { PagePending, Skeleton, SkeletonList } from '~/components/page-pending'
 import { Card } from '~/components/ui/card'
 import { sessionQuery } from '~/lib/queries/session'
+import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 

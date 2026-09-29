@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/solid-query'
 import { Link } from '@tanstack/solid-router'
 import type { JSX } from 'solid-js'
 import { Match, Switch, useContext } from 'solid-js'
@@ -7,6 +6,7 @@ import { AuthHeading, AuthIcon, AuthLayout } from '~/components/auth-layout/auth
 import { buttonVariants } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import { defaultOrganization, organizationIn, sessionQuery } from '~/lib/queries/session'
+import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
 
 // The not-found and error pages' frame. A route under the signed-in layout shows them inside

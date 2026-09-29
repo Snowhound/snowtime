@@ -2,7 +2,7 @@
 // the local password account, and passkeys. Better Auth refuses to unlink the last
 // account, so Disconnect is disabled on it; passkeys don't count, since Better Auth stores
 // them apart from accounts.
-import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/solid-query'
+import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import KeyRoundIcon from 'lucide-solid/icons/key-round'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
@@ -25,6 +25,7 @@ import { authClient, unwrap } from '~/lib/auth-client'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime } from '~/lib/format'
 import { passkeysQuery } from '~/lib/queries/passkeys'
+import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
 import type { SignInMethod } from '~/server/auth/auth.functions'
 

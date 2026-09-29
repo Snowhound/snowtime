@@ -988,6 +988,15 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
     `optimistic`'s `invalidate`. Every timer write, and every change to who is in a team,
     marks the reports stale (`reportsKey`), so Reports and the Projects view's totals
     load again when they open, even within their 30-second stale time.
+- Components read queries through `useQuery` in `src/lib/queries/use-query.ts`, not Solid
+  Query's, and oxlint enforces it. Solid Query's hook passes every cache update through a
+  Solid resource, which puts the nearest `Suspense` boundary back in its fallback for a
+  moment. The page's nodes leave the document and come back, so a field loses focus and a
+  scrolled list jumps after each write (task 070, TanStack/query#9955, open on 2026-09-29).
+  Our hook writes the observer's results into a store and never suspends. The route loaders
+  fetch what a page shows, on the server and in the browser, and a query without a loader
+  reads as pending until it loads. The project doesn't patch Solid Query. Once a fix such as
+  TanStack/query#11230 is released, the hook can go.
 - The query cache holds one user's data (`src/lib/queries/session.ts`), each organization's
   under its own keys ("Tenancy"). Signing out opens the sign-in page as a new page load, with
   an empty cache. When the session query returns another user, because of a sign-out

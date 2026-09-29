@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/solid-query'
 import { Show } from 'solid-js'
 import { sessionQuery } from '~/lib/queries/session'
+import { useQuery } from '~/lib/queries/use-query'
 import { TimerView } from './timer-view'
 
 // The view needs the user's settings, which the app frame creates on first sign-in, and

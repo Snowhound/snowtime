@@ -3,7 +3,7 @@
 // language. Below 768 px the navigation moves to a second row of equal-width links. It sticks to
 // the top (z-30), so the popovers and menus the page opens (z-20) scroll under it with their
 // buttons; its own menus stay above it (z-50), over the second row.
-import { useQuery, useQueryClient } from '@tanstack/solid-query'
+import { useQueryClient } from '@tanstack/solid-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/solid-router'
 import BuildingComplexIcon from 'lucide-solid/icons/building-complex'
 import ChartColumnIcon from 'lucide-solid/icons/chart-column'
@@ -38,6 +38,7 @@ import { authClient, signOut } from '~/lib/auth-client'
 import { LANGUAGES } from '~/lib/languages'
 import { organizationIn, sessionQuery } from '~/lib/queries/session'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
+import { useQuery } from '~/lib/queries/use-query'
 import { cn, initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { AppSession } from '~/server/auth/auth.functions'

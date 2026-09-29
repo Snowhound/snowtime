@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/solid-query'
 import { Link } from '@tanstack/solid-router'
 import type { JSX } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
@@ -6,6 +5,7 @@ import { LegalLinks } from '~/components/legal-links'
 import { appIcon } from '~/lib/app-icon'
 import { deviceSettings } from '~/lib/device-settings'
 import { sessionQuery } from '~/lib/queries/session'
+import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
 
