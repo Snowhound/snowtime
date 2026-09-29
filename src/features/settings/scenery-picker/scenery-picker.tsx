@@ -8,6 +8,7 @@ import CheckIcon from 'lucide-solid/icons/check'
 import ChevronDownIcon from 'lucide-solid/icons/chevron-down'
 import PinIcon from 'lucide-solid/icons/pin'
 import { For, type JSX, Show, createUniqueId } from 'solid-js'
+import { RadioGroup } from '~/components/radio-group'
 import { SceneThumb } from '~/components/scene/scene-thumb'
 import {
   COLLECTIONS,
@@ -226,45 +227,5 @@ function PinOption(props: {
       </span>
       <span class="truncate">{props.label}</span>
     </button>
-  )
-}
-
-// A radio group of buttons with role="radio": the checked one is the group's tab stop, arrow
-// keys move and choose, and Home and End jump.
-function RadioGroup(props: {
-  class: string
-  'aria-labelledby': string
-  'aria-describedby'?: string
-  children: JSX.Element
-}) {
-  let group!: HTMLDivElement
-  function onKeyDown(event: KeyboardEvent) {
-    const options = [...group.querySelectorAll<HTMLButtonElement>(':scope > [role="radio"]')]
-    const i = options.indexOf(event.target as HTMLButtonElement)
-    if (i < 0) return
-    const moves: Record<string, number> = {
-      ArrowLeft: i - 1,
-      ArrowUp: i - 1,
-      ArrowRight: i + 1,
-      ArrowDown: i + 1,
-      Home: 0,
-      End: options.length - 1,
-    }
-    const next = moves[event.key]
-    if (next === undefined) return
-    event.preventDefault()
-    options[(next + options.length) % options.length].click()
-  }
-  return (
-    <div
-      ref={group}
-      role="radiogroup"
-      class={props.class}
-      aria-labelledby={props['aria-labelledby']}
-      aria-describedby={props['aria-describedby']}
-      onKeyDown={onKeyDown}
-    >
-      {props.children}
-    </div>
   )
 }

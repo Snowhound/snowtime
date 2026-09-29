@@ -5,6 +5,7 @@
 import CheckIcon from 'lucide-solid/icons/check'
 import { For, Show } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
+import { RadioGroup } from '~/components/radio-group'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import {
@@ -83,7 +84,6 @@ export function AppIconDialog(props: {
 }
 
 // One radio group, with one option in the tab order: the chosen one, or the group's first.
-// Arrow keys move through the grid and choose; Home and End jump.
 function IconGroup(props: {
   id: string
   label: string
@@ -91,37 +91,10 @@ function IconGroup(props: {
   value: AppIconId
   onChange: (id: AppIconId) => void
 }) {
-  let grid: HTMLDivElement | undefined
-
   function tabbable(id: AppIconId) {
     return props.icons.some((icon) => icon.id === props.value)
       ? id === props.value
       : id === props.icons[0].id
-  }
-
-  function choose(option: HTMLButtonElement) {
-    option.focus()
-    const id = option.dataset.appIcon as AppIconId
-    if (id !== props.value) props.onChange(id)
-  }
-
-  function onKeyDown(event: KeyboardEvent) {
-    const options = [...grid!.querySelectorAll<HTMLButtonElement>('[role="radio"]')]
-    const i = options.indexOf(event.target as HTMLButtonElement)
-    if (i < 0) return
-    const columns = options.filter((o) => o.offsetTop === options[0].offsetTop).length
-    const moves: Record<string, number> = {
-      ArrowLeft: i - 1,
-      ArrowRight: i + 1,
-      ArrowUp: i - columns,
-      ArrowDown: i + columns,
-      Home: 0,
-      End: options.length - 1,
-    }
-    const next = moves[event.key]
-    if (next === undefined) return
-    event.preventDefault()
-    choose(options[(next + options.length) % options.length])
   }
 
   return (
@@ -129,23 +102,23 @@ function IconGroup(props: {
       <h3 id={`app-icon-group-${props.id}`} class="text-sm font-medium">
         {props.label}
       </h3>
-      <div
-        ref={grid}
-        role="radiogroup"
+      <RadioGroup
+        grid
         aria-labelledby={`app-icon-group-${props.id}`}
         class="grid grid-cols-3 gap-1 sm:grid-cols-6 sm:gap-2"
-        onKeyDown={onKeyDown}
       >
         <For each={props.icons}>
           {(icon) => (
             <button
               type="button"
               role="radio"
-              data-app-icon={icon.id}
               aria-checked={icon.id === props.value}
               tabIndex={tabbable(icon.id) ? 0 : -1}
               class="group hover:bg-accent focus-visible:ring-ring aria-checked:border-primary aria-checked:bg-accent relative flex flex-col items-center gap-1.5 rounded-lg border border-transparent px-1 py-2 text-center text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none sm:gap-2 sm:p-3 sm:text-sm"
-              onClick={(event) => choose(event.currentTarget)}
+              onClick={(event) => {
+                event.currentTarget.focus()
+                if (icon.id !== props.value) props.onChange(icon.id)
+              }}
             >
               <span class="bg-primary text-primary-foreground absolute top-1 right-1 hidden size-5 items-center justify-center rounded-full group-aria-checked:flex">
                 <CheckIcon class="size-3" aria-hidden="true" />
@@ -171,7 +144,7 @@ function IconGroup(props: {
             </button>
           )}
         </For>
-      </div>
+      </RadioGroup>
     </div>
   )
 }
