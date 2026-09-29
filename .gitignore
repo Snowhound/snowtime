@@ -24,3 +24,5 @@ design/backgrounds/masters/
 .vercel
 
 .playwright-mcp
+# Claude Code agent worktrees
+.claude/worktrees/
