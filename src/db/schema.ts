@@ -435,6 +435,10 @@ export const timeEntry = sqliteTable(
     ),
     index('time_entry_organization_id_started_at_idx').on(t.organizationId, t.startedAt),
     index('time_entry_project_id_idx').on(t.projectId),
-    index('time_entry_organization_id_ticket_idx').on(t.organizationId, t.ticket),
+    index('time_entry_organization_id_ticket_started_at_idx').on(
+      t.organizationId,
+      t.ticket,
+      t.startedAt,
+    ),
   ],
 )

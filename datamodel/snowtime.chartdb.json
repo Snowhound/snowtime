@@ -2794,15 +2794,16 @@
         },
         {
           "id": "t13i4",
-          "name": "time_entry_organization_id_ticket_idx",
+          "name": "time_entry_organization_id_ticket_started_at_idx",
           "unique": false,
           "fieldIds": [
             "t13f1",
-            "t13f12"
+            "t13f12",
+            "t13f5"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
-          "comments": "Reports by ticket."
+          "comments": null
         }
       ],
       "color": "#59A14F",
