@@ -126,6 +126,11 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         }
         const small = photoUrl(image, theme, PHOTO_SMALL)
         const due = on && (theme === shown || shownReady)
+        // The theme not on screen drops an earlier image, so switching themes never shows it, and
+        // loads the new one's small file for the crossfade.
+        if (theme !== shown && untrack(() => photos[theme].at(-1)?.image) !== image) {
+          setPhotos(theme, [])
+        }
         const showing = untrack(() => photos[theme].length > 0)
         // The intro opens without the background and fades the dark image in later, so its
         // sharp file loads meanwhile.
