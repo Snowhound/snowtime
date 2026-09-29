@@ -7,7 +7,11 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { addDays, datesBetween, startOfWeek } from '~/lib/calendar'
 import { writeCookie } from '~/lib/cookies'
 import { newId } from '~/lib/queries/query'
-import type { ReportEntriesInput, ReportInput } from '~/server/reports/reports.schemas'
+import type {
+  ReportEntriesInput,
+  ReportEntryTotalsInput,
+  ReportInput,
+} from '~/server/reports/reports.schemas'
 import { ReportSearch } from './filters'
 import { ReportsPage } from './reports-page'
 
@@ -17,6 +21,7 @@ const fn = vi.hoisted(() => ({
   getReport: vi.fn(),
   getReportBreakdown: vi.fn(),
   getReportEntries: vi.fn(),
+  getReportEntryTotals: vi.fn(),
   listTeams: vi.fn(),
   listMembers: vi.fn(),
   listProjects: vi.fn(),
@@ -27,6 +32,7 @@ vi.mock('~/server/reports/reports.functions', () => ({
   getReport: fn.getReport,
   getReportBreakdown: fn.getReportBreakdown,
   getReportEntries: fn.getReportEntries,
+  getReportEntryTotals: fn.getReportEntryTotals,
 }))
 vi.mock('~/server/teams/teams.functions', () => ({
   listTeams: fn.listTeams,
@@ -111,11 +117,13 @@ const server: {
   lead: boolean
   rows: Row[]
   entries: Entry[]
+  former: { userId: string; name: string; email: string }[]
 } = {
   role: 'member',
   lead: false,
   rows: [],
   entries: [],
+  former: [],
 }
 
 function bucketsOf(input: ReportInput) {
@@ -145,19 +153,20 @@ function report({ data }: { data: ReportInput }) {
     unit: data.unit,
     buckets,
     trackedDays: all.perBucket.filter((ms) => ms > 0).length,
+    entries: server.entries.filter((e) => e.date >= data.from && e.date < data.to).length,
     projects,
     tickets: rows('ticket').map((r) => ({ ticket: r.id, ...totals(buckets, r.ms) })),
     members: rows('member').map((r) => ({ userId: r.id!, ...totals(buckets, r.ms) })),
     teams: rows('team').map((r) => ({ teamId: r.id!, ...totals(buckets, r.ms) })),
+    formerMembers: server.former,
   }
 }
 
-// getReportEntries over `server.entries`: the range and row it is asked for, By day in one
-// page or merged By description.
-function entries(input: Omit<ReportEntriesInput, 'after'>) {
+// The entries of `server.entries` in the range and row asked for.
+function piecesOf(input: ReportEntryTotalsInput) {
   const { from, to } = input.report
   const row = input.row
-  const pieces = server.entries
+  return server.entries
     .filter((e) => e.date >= from && e.date < to)
     .filter(
       (e) =>
@@ -180,7 +189,16 @@ function entries(input: Omit<ReportEntriesInput, 'after'>) {
         ms: HOUR,
       }
     })
-  const summary = { count: pieces.length, total: pieces.length * HOUR }
+}
+
+function entryTotals(input: ReportEntryTotalsInput) {
+  const pieces = piecesOf(input)
+  return { count: pieces.length, total: pieces.length * HOUR }
+}
+
+// getReportEntries over `server.entries`: By day in one page, or merged By description.
+function entries(input: Omit<ReportEntriesInput, 'after'>) {
+  const pieces = piecesOf(input)
   if (input.view === 'description') {
     const rows = new Map<string, { projectId: string | null; description: string; n: number }>()
     for (const p of pieces) {
@@ -189,10 +207,12 @@ function entries(input: Omit<ReportEntriesInput, 'after'>) {
       r.n++
       rows.set(key, r)
     }
+    const all = [...rows.values()]
     return {
-      ...summary,
       view: 'description',
-      rows: [...rows.values()].map((r) => ({
+      rowCount: all.length,
+      next: null,
+      rows: all.map((r) => ({
         projectId: r.projectId,
         ticket: null,
         description: r.description,
@@ -205,7 +225,6 @@ function entries(input: Omit<ReportEntriesInput, 'after'>) {
   }
   const dates = [...new Set(pieces.map((p) => p.date))].toSorted((a, b) => b.localeCompare(a))
   return {
-    ...summary,
     view: 'day',
     days: dates.map((date) => ({
       date,
@@ -287,9 +306,11 @@ beforeEach(() => {
     { userId: me, projectId: null, description: '', date: '2026-09-23', hour: 12 },
   ]
   server.lead = false
+  server.former = []
   fn.getAppSession.mockImplementation(async () => session())
   fn.getReport.mockImplementation(async (input) => report(input))
   fn.getReportEntries.mockImplementation(async ({ data }) => entries(data))
+  fn.getReportEntryTotals.mockImplementation(async ({ data }) => entryTotals(data))
   fn.listTeams.mockImplementation(async () => teams())
   fn.listMembers.mockImplementation(async () => [
     person(kadri, 'Kadri Tamm'),
@@ -451,6 +472,16 @@ describe('ReportsView', () => {
     expect(lastInput()).not.toHaveProperty('userId')
   })
 
+  test('a member who has left the organization keeps their name, from the report', async () => {
+    server.role = 'admin'
+    const gone = newId()
+    server.rows.push({ kind: 'member', id: gone, ms: [HOUR] })
+    server.former = [{ userId: gone, name: 'Endel Endine', email: 'endel@example.com' }]
+    renderView({ range: 'this-week', group: 'member' })
+    const grid = await screen.findByRole('table')
+    expect(within(grid).getByRole('rowheader', { name: 'Endel Endine' })).toBeInTheDocument()
+  })
+
   test('presets and previous and next set the range', async () => {
     const { search } = renderView()
     await screen.findByRole('table')
@@ -536,8 +567,8 @@ describe('ReportsView', () => {
   test('the Entries card lists a week by day, newest first, without a member column', async () => {
     renderView()
     const card = await screen.findByRole('region', { name: 'Entries' })
-    expect(await within(card).findByText(summary('3 entries · 3:00'))).toBeInTheDocument()
-    const headings = within(card).getAllByRole('heading', { level: 4 })
+    expect(await within(card).findByText(summary('3 entries · 7:15'))).toBeInTheDocument()
+    const headings = await within(card).findAllByRole('heading', { level: 4 })
     expect(headings.map((h) => h.textContent)).toEqual([
       'Wednesday, September 232:00',
       'Monday, September 211:00',
@@ -553,14 +584,16 @@ describe('ReportsView', () => {
     )
   })
 
-  test('the Entries card waits for its own query, not the timesheet', async () => {
+  test("the Entries card's list waits for its own query, and its count comes with the report", async () => {
     let answer: (value: unknown) => void = () => {}
     fn.getReportEntries.mockImplementation(() => new Promise((resolve) => (answer = resolve)))
     renderView()
     await screen.findByRole('table')
     expect(screen.getByRole('status')).toHaveTextContent('Loading entries…')
+    expect(screen.getByText(summary('3 entries · 7:15'))).toBeInTheDocument()
     answer(entries(fn.getReportEntries.mock.lastCall![0].data))
-    expect(await screen.findByText(summary('3 entries · 3:00'))).toBeInTheDocument()
+    expect(await screen.findAllByRole('heading', { level: 4 })).toHaveLength(2)
+    expect(fn.getReportEntryTotals).not.toHaveBeenCalled()
   })
 
   test('a month opens By description, and the choice goes in the URL', async () => {
@@ -576,6 +609,32 @@ describe('ReportsView', () => {
     await userEvent.click(within(card).getByRole('button', { name: 'By day' }))
     await waitFor(() => expect(search()).toEqual({ entries: 'day' }))
     expect(await within(card).findAllByRole('heading', { level: 4 })).toHaveLength(2)
+  })
+
+  test('By description shows its top rows, and Show all loads the rest', async () => {
+    server.entries = ['Alpha', 'Beta', 'Gamma'].map((description, i) => ({
+      userId: me,
+      projectId: snowtime.id,
+      description,
+      date: `2026-09-0${i + 1}`,
+      hour: 9,
+    }))
+    // The server's first page has the top two rows here.
+    fn.getReportEntries.mockImplementation(async ({ data }) => {
+      const all = entries(data) as { rows: unknown[] }
+      const offset = data.offset ?? 0
+      const end = offset === 0 ? 2 : all.rows.length
+      return { ...all, rows: all.rows.slice(offset, end), next: end < all.rows.length ? end : null }
+    })
+    renderView({})
+    const card = await screen.findByRole('region', { name: 'Entries' })
+    expect(await within(card).findByText('Beta')).toBeInTheDocument()
+    expect(within(card).queryByText('Gamma')).not.toBeInTheDocument()
+    await userEvent.click(within(card).getByRole('button', { name: 'Show all 3' }))
+    expect(await within(card).findByText('Gamma')).toBeInTheDocument()
+    expect(within(card).getByText('Alpha')).toBeInTheDocument()
+    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({ offset: 2 })
+    expect(within(card).queryByRole('button', { name: 'Show all 3' })).not.toBeInTheDocument()
   })
 
   test('a timesheet cell narrows the card to its row and day, and a chip clears it', async () => {
@@ -615,8 +674,10 @@ describe('ReportsView', () => {
     const card = await screen.findByRole('region', { name: 'Entries' })
     const title = within(card).getByRole('button', { name: 'Entries' })
     expect(title).toHaveAttribute('aria-expanded', 'false')
-    expect(await within(card).findByText(summary('3 entries · 3:00'))).toBeInTheDocument()
+    expect(await within(card).findByText(summary('3 entries · 7:15'))).toBeInTheDocument()
     expect(within(card).queryByRole('button', { name: 'By day' })).not.toBeInTheDocument()
+    // A closed list isn't loaded.
+    expect(fn.getReportEntries).not.toHaveBeenCalled()
 
     await userEvent.click(title)
     expect(title).toHaveAttribute('aria-expanded', 'true')

@@ -98,6 +98,7 @@ export function ReportsView(props: {
       projects: projects.data ?? [],
       teams: teams.data ?? [],
       members: members.data ?? [],
+      former: report.data?.formerMembers ?? [],
     }
   }
   // The report's rows by the grouping, named from the cached lists.
@@ -394,10 +395,10 @@ export function ReportsView(props: {
                 organizationId={props.organizationId}
                 filters={filters().entries}
                 narrowLabel={narrowLabel()}
-                userId={props.userId}
+                whole={{ count: report.data?.entries ?? 0, total: report.data?.total ?? 0 }}
                 zone={props.zone}
                 projects={projects.data ?? []}
-                members={members.data ?? []}
+                names={names()}
                 onView={(entries: EntryView) => void entrySearch({ entries })}
                 onClear={() => void entrySearch({ row: undefined, bucket: undefined })}
               />

@@ -2,7 +2,7 @@
 import { createServerFn } from '@tanstack/solid-start'
 import { db } from '~/db'
 import { scopeMiddleware } from '../middleware'
-import { ReportEntriesInput, ReportInput } from './reports.schemas'
+import { ReportEntriesInput, ReportEntryTotalsInput, ReportInput } from './reports.schemas'
 import * as reports from './reports.server'
 
 export const getReport = createServerFn({ method: 'GET' })
@@ -21,6 +21,12 @@ export const getReportEntries = createServerFn({ method: 'GET' })
   .middleware([scopeMiddleware])
   .validator(ReportEntriesInput)
   .handler(({ data, context }) => reports.getReportEntries(db, context.scope, data))
+
+// The Entries card's count and total for one part of the timesheet.
+export const getReportEntryTotals = createServerFn({ method: 'GET' })
+  .middleware([scopeMiddleware])
+  .validator(ReportEntryTotalsInput)
+  .handler(({ data, context }) => reports.getReportEntryTotals(db, context.scope, data))
 
 // Breakdown's second level: time per project and member and per ticket and member.
 export const getReportBreakdown = createServerFn({ method: 'GET' })

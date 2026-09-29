@@ -13,6 +13,7 @@ import {
   IsoDate as IsoDateSchema,
   REPORT_UNITS,
   type ReportEntriesInput,
+  type ReportEntryTotalsInput,
   type ReportInput,
 } from '~/server/reports/reports.schemas'
 import { TicketKey, Uuidv7 } from '~/server/schemas'
@@ -138,7 +139,10 @@ export interface EntryFilters {
   // The timesheet part chosen, when it is one of the report's rows and buckets.
   row?: string
   bucket?: IsoDate
-  input: Omit<ReportEntriesInput, 'after'>
+  input: Omit<ReportEntriesInput, 'after' | 'offset'>
+  // The count and total of a narrowed list, which the report doesn't have; null for the
+  // whole report's.
+  totals: ReportEntryTotalsInput | null
   // The list can hold more than one person's entries, so it names them.
   many: boolean
 }
@@ -164,6 +168,7 @@ export function requestedInput(
     unit,
     ...(search.member ? { userId: search.member } : search.team ? { teamId: search.team } : {}),
     ...(search.project ? { projectId: search.project } : {}),
+    ...(search.group === 'ticket' ? { tickets: true } : {}),
   }
 }
 
@@ -183,6 +188,7 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
     ...(member ? { userId: member } : {}),
     ...(team ? { teamId: team } : {}),
     ...(search.project ? { projectId: search.project } : {}),
+    ...(group === 'ticket' ? { tickets: true } : {}),
   }
   return {
     view: search.view ?? 'timesheet',
@@ -201,11 +207,14 @@ export function reportFilters(search: ReportSearch, c: ReportContext): ReportFil
 }
 
 // Whether the report has this row: any project or ticket, a team it counts (for admins also
-// "No team"), or a member it may name.
+// "No team"), or a member it may name, which for admins includes those who have left.
 function hasRow(id: string, group: Group, access: Access, c: ReportContext) {
   if (group === 'ticket') return id === 'none' || v.is(TicketKey, id)
   if (group === 'project') return id === 'none' || v.is(Uuidv7, id)
-  if (group === 'member') return access.kind !== 'member' && c.members.some((m) => m.userId === id)
+  if (group === 'member') {
+    if (access.kind === 'admin') return v.is(Uuidv7, id)
+    return access.kind === 'lead' && c.members.some((m) => m.userId === id)
+  }
   if (access.kind === 'admin') return id === 'none' || c.teams.some((t) => t.id === id)
   return access.kind === 'lead' && access.teams.some((t) => t.id === id)
 }
@@ -238,16 +247,18 @@ function entryFilters(
       }
     : f.range
   const view = search.entries ?? (rangeDays(range) > DAY_VIEW_DAYS ? 'description' : 'day')
+  const { tickets: _, ...report } = f.input
+  const narrowed = {
+    report: { ...report, from: range.from, to: range.to },
+    // hasRow keeps 'none' out of the member group.
+    ...(row ? { row: { group: f.group, id: row } } : {}),
+  } as ReportEntryTotalsInput
   return {
     view,
     row,
     bucket,
-    input: {
-      report: { ...f.input, from: range.from, to: range.to },
-      view,
-      // hasRow keeps 'none' out of the member group.
-      ...(row ? { row: { group: f.group, id: row } } : {}),
-    },
+    input: { ...narrowed, view },
+    totals: row || bucket ? narrowed : null,
     many: f.access.kind !== 'member' && !f.member && !(row && f.group === 'member'),
   }
 }

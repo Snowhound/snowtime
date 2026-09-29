@@ -11,12 +11,13 @@ import type { Locale } from '~/paraglide/runtime.js'
 import type { getReportExport } from '~/server/reports/reports.functions'
 import { GROUP_LABELS, type Group } from './filters'
 import type { Report } from './queries'
-import type { Row } from './rows'
+import { type Row, person } from './rows'
 
-export type ReportEntries = Pick<
-  Awaited<ReturnType<typeof getReportExport>>,
-  'timeZone' | 'entries'
->
+// The entries and what the entry list needs of their report.
+export interface ReportEntries {
+  report: Pick<Report, 'timeZone' | 'formerMembers'>
+  entries: Awaited<ReturnType<typeof getReportExport>>['entries']
+}
 export type ExportKind = 'xlsx' | 'csv' | 'entries'
 
 const HOUR = 3_600_000
@@ -57,7 +58,10 @@ export function entriesTable(
 ): Table {
   const noProject = m.reports_no_project({}, EN)
   const rows = data.entries.map((entry) => {
-    const member = names.members.find((member) => member.userId === entry.userId)
+    const member = person(entry.userId, {
+      members: names.members,
+      former: data.report.formerMembers,
+    })
     const project = entry.projectId
       ? names.projects.find((p) => p.id === entry.projectId)?.name
       : undefined
@@ -92,8 +96,8 @@ export function entriesTable(
       member?.email ?? '',
       entry.ticket ?? '',
       entry.description,
-      localTime(entry.from.getTime(), data.timeZone),
-      entry.running ? null : endTime(entry.to.getTime(), entry.from.getTime(), data.timeZone),
+      localTime(entry.from.getTime(), data.report.timeZone),
+      entry.running ? null : endTime(entry.from.getTime(), entry.ms, data.report.timeZone),
       { ms: entry.ms },
       ...(options.hours ? [hours(entry.ms)] : []),
     ]),
@@ -101,9 +105,9 @@ export function entriesTable(
 }
 
 // A piece that ends at the next day's midnight ends at 24:00, not 00:00.
-function endTime(to: number, from: number, zone: string) {
-  const time = localTime(to, zone)
-  return time === '00:00' && to > from ? '24:00' : time
+function endTime(from: number, ms: number, zone: string) {
+  const time = localTime(from + ms, zone)
+  return time === '00:00' && ms > 0 ? '24:00' : time
 }
 
 // Decimal hours, to two places.

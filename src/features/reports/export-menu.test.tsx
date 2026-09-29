@@ -40,6 +40,8 @@ function report(ms: number): Report {
     now: new Date(Date.parse('2026-09-24T06:00:00Z') + ms),
     buckets: ['2026-09-24'],
     trackedDays: 1,
+    entries: 1,
+    formerMembers: [],
     ...totals,
     projects: [{ projectId: null, ...totals }],
     tickets: [{ ticket: null, ...totals }],
@@ -48,22 +50,16 @@ function report(ms: number): Report {
   }
 }
 
-function entries(ms: number): ReportEntries {
-  const from = new Date('2026-09-24T06:00:00Z')
+function entries(ms: number): Pick<ReportEntries, 'entries'> {
   return {
-    timeZone: 'Europe/Tallinn',
     entries: [
       {
-        entryId: '01900000-0000-7000-8000-000000000501',
         userId,
         projectId: null,
         description: 'Timer layouts',
         ticket: null,
         date: '2026-09-24',
-        from,
-        to: new Date(from.getTime() + ms),
-        startedAt: from,
-        stoppedAt: null,
+        from: new Date('2026-09-24T06:00:00Z'),
         running: true,
         ms,
       },

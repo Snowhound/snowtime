@@ -29,8 +29,6 @@ function piece(entryId: string, userId: string, date: string, hour: number): Ent
 function page(pieces: EntryPiece[], days: [string, number][]): DayPage {
   return {
     view: 'day',
-    count: 0,
-    total: 0,
     days: days.map(([date, total]) => ({ date, total })),
     pieces,
     next: null,

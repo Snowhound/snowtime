@@ -3,10 +3,22 @@
 // queried as one UTC range; entries are split at the zone's midnights and summed here.
 // Everyone reports on the entries they may read (readableUserIds); team totals count each
 // team's current members. Results are ids, dates and milliseconds, never display text; the
-// export's entry list adds each entry's own description.
-import { and, eq, gt, inArray, isNull, lt, or } from 'drizzle-orm'
+// entry lists add each entry's own description, and the report names former members.
+import {
+  and,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  lt,
+  notExists,
+  notInArray,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm'
 import type { Database } from '~/db'
-import { team, teamMember, timeEntry, userSettings } from '~/db/schema'
+import { member, team, teamMember, timeEntry, user, userSettings } from '~/db/schema'
 import {
   addDays,
   countedSpan,
@@ -22,7 +34,14 @@ import { MAX_ENTRY_MS } from '../entries/entries.schemas'
 import { AppError } from '../errors'
 import { live } from '../queries.server'
 import { isAdmin, readableUserIds, type Scope } from '../scope.server'
-import { ENTRY_PAGE_SIZE, type ReportEntriesInput, type ReportInput } from './reports.schemas'
+import {
+  DESCRIPTION_PAGE_SIZE,
+  ENTRY_PAGE_SIZE,
+  type EntryRow,
+  type ReportEntriesInput,
+  type ReportEntryTotalsInput,
+  type ReportInput,
+} from './reports.schemas'
 
 export interface Totals {
   total: number
@@ -45,13 +64,18 @@ export interface Report extends Totals {
   // Days of the range with time, for the average per tracked day, which the buckets can't
   // give when they are weeks.
   trackedDays: number
+  // Entries with time in the range; one that crosses midnight counts once.
+  entries: number
   // Only rows with time, most time first. projectId null is time without a project, and
-  // ticket null time without a ticket.
+  // ticket null time without a ticket. Tickets only when the input asks for them.
   projects: (Totals & { projectId: string | null })[]
   tickets: (Totals & { ticket: string | null })[]
   members: (Totals & { userId: string })[]
   // A member in two teams counts in both, so team totals can add up to more than total.
   teams: (Totals & { teamId: string })[]
+  // The members' names that the organization's member list lacks: people who have left it,
+  // whose time still counts.
+  formerMembers: { userId: string; name: string; email: string }[]
 }
 
 interface ReportEntry {
@@ -71,6 +95,7 @@ export interface Aggregation {
   now: number
   // Current members of each team to total.
   teams: { teamId: string; userIds: string[] }[]
+  tickets: boolean
 }
 
 function bucketsOf(a: Pick<Aggregation, 'unit' | 'weekStart' | 'from' | 'to'>): IsoDate[] {
@@ -99,9 +124,15 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
   function empty() {
     return { total: 0, perBucket: buckets.map(() => 0) }
   }
-  function add(t: Totals, bucket: number, ms: number) {
+  function add(t: Totals | undefined, bucket: number, ms: number) {
+    if (!t) return
     t.total += ms
     t.perBucket[bucket] += ms
+  }
+  function rowOf<K>(map: Map<K, Totals>, key: K) {
+    const row = map.get(key) ?? empty()
+    map.set(key, row)
+    return row
   }
 
   const all = empty()
@@ -109,15 +140,14 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
   const tickets = new Map<string | null, Totals>()
   const members = new Map<string, Totals>()
   const days = new Set<IsoDate>()
+  let counted = 0
   for (const entry of entries) {
     const span = countedSpan(entry, range, a.now)
     if (!span) continue
-    const project = projects.get(entry.projectId) ?? empty()
-    projects.set(entry.projectId, project)
-    const ticket = tickets.get(entry.ticket ?? null) ?? empty()
-    tickets.set(entry.ticket ?? null, ticket)
-    const member = members.get(entry.userId) ?? empty()
-    members.set(entry.userId, member)
+    counted++
+    const project = rowOf(projects, entry.projectId)
+    const ticket = a.tickets ? rowOf(tickets, entry.ticket ?? null) : undefined
+    const member = rowOf(members, entry.userId)
     for (const piece of splitByDay(span.from, span.to, a.timeZone)) {
       const bucket = Math.floor(daysBetween(buckets[0], piece.date) / step)
       add(all, bucket, piece.ms)
@@ -151,6 +181,7 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
     ...all,
     buckets,
     trackedDays: days.size,
+    entries: counted,
     projects: rows('projectId', projects),
     tickets: rows('ticket', tickets),
     members: rows('userId', members),
@@ -218,10 +249,22 @@ async function reportUsers(
   return readable
 }
 
-// What a report counts, from the user's settings and the scope: its days, teams, and the
-// entries it may read that touch the range. The reads that don't depend on each other run
-// together, since each is a round trip to the database.
-async function reportData(db: Database, scope: Scope, input: ReportInput, now: Date) {
+// What a report counts, from the user's settings and the scope: its days, teams, and users.
+// The reads that don't depend on each other run together, since each is a round trip to the
+// database.
+interface ReportContext {
+  input: ReportInput
+  a: Aggregation
+  range: Range
+  users: string[] | null
+}
+
+async function reportContext(
+  db: Database,
+  scope: Scope,
+  input: ReportInput,
+  now: Date,
+): Promise<ReportContext> {
   const [settings, teams, readable] = await Promise.all([
     settingsOf(db, scope.userId),
     reportTeams(db, scope),
@@ -235,51 +278,131 @@ async function reportData(db: Database, scope: Scope, input: ReportInput, now: D
     to: input.to,
     now: now.getTime(),
     teams,
+    tickets: input.tickets ?? false,
   }
-  const range = rangeOf(a)
-
-  const entries =
-    users?.length === 0
-      ? []
-      : await db
-          .select({
-            id: timeEntry.id,
-            userId: timeEntry.userId,
-            projectId: timeEntry.projectId,
-            description: timeEntry.description,
-            ticket: timeEntry.ticket,
-            startedAt: timeEntry.startedAt,
-            stoppedAt: timeEntry.stoppedAt,
-          })
-          .from(timeEntry)
-          .where(
-            and(
-              live(timeEntry, scope),
-              users ? inArray(timeEntry.userId, users) : undefined,
-              input.projectId === 'none'
-                ? isNull(timeEntry.projectId)
-                : input.projectId
-                  ? eq(timeEntry.projectId, input.projectId)
-                  : undefined,
-              gt(timeEntry.startedAt, new Date(range.from - MAX_ENTRY_MS)),
-              lt(timeEntry.startedAt, new Date(range.to)),
-              or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, new Date(range.from))),
-            ),
-          )
-  return { settings, a, range, entries }
+  return { input, a, range: rangeOf(a), users }
 }
 
-type ReportData = Awaited<ReturnType<typeof reportData>>
+// A timesheet row as a condition on its entries: its project, ticket, or member, a team's
+// current members, or for "No team" those in none of the report's teams, as the timesheet's
+// rows count them. Null when the report may read none of the row's entries.
+function rowWhere(row: EntryRow | undefined, teams: Aggregation['teams']): SQL | null | undefined {
+  if (!row) return undefined
+  const id = row.id === 'none' ? null : row.id
+  if (row.group === 'project') return id ? eq(timeEntry.projectId, id) : isNull(timeEntry.projectId)
+  if (row.group === 'ticket') return id ? eq(timeEntry.ticket, id) : isNull(timeEntry.ticket)
+  if (row.group === 'member') return eq(timeEntry.userId, row.id)
+  if (!id) {
+    const inTeams = [...new Set(teams.flatMap((t) => t.userIds))]
+    return inTeams.length > 0 ? notInArray(timeEntry.userId, inTeams) : undefined
+  }
+  const members = teams.find((t) => t.teamId === id)?.userIds ?? []
+  return members.length > 0 ? inArray(timeEntry.userId, members) : null
+}
 
-function reportOf({ settings, a, range, entries }: ReportData, now: Date): Report {
+// The report's entries that touch its range, optionally of one row. Null when there are none
+// to read.
+function entriesWhere(scope: Scope, c: ReportContext, row?: SQL | null): SQL | null {
+  if (c.users?.length === 0 || row === null) return null
+  const { projectId } = c.input
+  return and(
+    live(timeEntry, scope),
+    c.users ? inArray(timeEntry.userId, c.users) : undefined,
+    projectId === 'none'
+      ? isNull(timeEntry.projectId)
+      : projectId
+        ? eq(timeEntry.projectId, projectId)
+        : undefined,
+    gt(timeEntry.startedAt, new Date(c.range.from - MAX_ENTRY_MS)),
+    lt(timeEntry.startedAt, new Date(c.range.to)),
+    or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, new Date(c.range.from))),
+    row,
+  )!
+}
+
+async function reportEntries(db: Database, scope: Scope, c: ReportContext) {
+  const where = entriesWhere(scope, c)
+  if (!where) return []
+  return db
+    .select({
+      userId: timeEntry.userId,
+      projectId: timeEntry.projectId,
+      ticket: timeEntry.ticket,
+      startedAt: timeEntry.startedAt,
+      stoppedAt: timeEntry.stoppedAt,
+    })
+    .from(timeEntry)
+    .where(where)
+}
+
+type ListedEntry = ReportEntry & { id: string; description: string; ticket: string | null }
+
+async function listedEntries(
+  db: Database,
+  scope: Scope,
+  c: ReportContext,
+  row?: EntryRow,
+): Promise<ListedEntry[]> {
+  const where = entriesWhere(scope, c, rowWhere(row, c.a.teams))
+  if (!where) return []
+  return db
+    .select({
+      id: timeEntry.id,
+      userId: timeEntry.userId,
+      projectId: timeEntry.projectId,
+      description: timeEntry.description,
+      ticket: timeEntry.ticket,
+      startedAt: timeEntry.startedAt,
+      stoppedAt: timeEntry.stoppedAt,
+    })
+    .from(timeEntry)
+    .where(where)
+}
+
+// The report's members that aren't in the organization any more, with their names, which
+// the member list the client names rows from leaves out.
+async function formerMembers(db: Database, scope: Scope, userIds: string[]) {
+  const others = userIds.filter((id) => id !== scope.userId)
+  if (others.length === 0) return []
+  return db
+    .select({ userId: user.id, name: user.name, email: user.email })
+    .from(user)
+    .where(
+      and(
+        inArray(user.id, others),
+        notExists(
+          db
+            .select({ one: sql`1` })
+            .from(member)
+            .where(
+              and(eq(member.userId, user.id), eq(member.organizationId, scope.organizationId)),
+            ),
+        ),
+      ),
+    )
+}
+
+async function reportOf(
+  db: Database,
+  scope: Scope,
+  c: ReportContext,
+  entries: ReportEntry[],
+  now: Date,
+): Promise<Report> {
+  const totals = aggregate(entries, c.a)
   return {
-    ...aggregate(entries, a),
-    timeZone: settings.timeZone,
-    weekStart: settings.weekStart,
-    unit: a.unit,
-    from: new Date(range.from),
-    to: new Date(range.to),
+    ...totals,
+    timeZone: c.a.timeZone,
+    weekStart: c.a.weekStart,
+    unit: c.a.unit,
+    from: new Date(c.range.from),
+    to: new Date(c.range.to),
     now,
+    formerMembers: await formerMembers(
+      db,
+      scope,
+      totals.members.map((m) => m.userId),
+    ),
   }
 }
 
@@ -289,12 +412,13 @@ export async function getReport(
   input: ReportInput,
   now = new Date(),
 ): Promise<Report> {
-  return reportOf(await reportData(db, scope, input, now), now)
+  const c = await reportContext(db, scope, input, now)
+  return reportOf(db, scope, c, await reportEntries(db, scope, c), now)
 }
 
 // Breakdown's second level: the range's time per project and member, and per ticket and member.
 // Null is time without a project or ticket. Team, then member needs none: it comes from team
-// membership and the report's member totals.
+// membership and the report's member totals. Tickets only when the input asks for them.
 export interface ReportBreakdown {
   projects: { projectId: string | null; userId: string; total: number }[]
   tickets: { ticket: string | null; userId: string; total: number }[]
@@ -309,7 +433,7 @@ function byMemberTotal<T extends { userId: string; total: number }>(map: Map<str
 // like aggregate.
 export function breakdownOf(
   entries: ReportEntry[],
-  a: Pick<Aggregation, 'timeZone' | 'from' | 'to' | 'now'>,
+  a: Pick<Aggregation, 'timeZone' | 'from' | 'to' | 'now' | 'tickets'>,
 ): ReportBreakdown {
   const range = rangeOf(a)
   const projects = new Map<string, ReportBreakdown['projects'][number]>()
@@ -318,7 +442,6 @@ export function breakdownOf(
     const span = countedSpan(entry, range, a.now)
     if (!span) continue
     const ms = span.to - span.from
-    const ticket = entry.ticket ?? null
     const p = `${entry.projectId ?? ''}\u0000${entry.userId}`
     const project = projects.get(p) ?? {
       projectId: entry.projectId,
@@ -327,8 +450,9 @@ export function breakdownOf(
     }
     project.total += ms
     projects.set(p, project)
-    const t = `${ticket ?? ''}\u0000${entry.userId}`
-    const row = tickets.get(t) ?? { ticket, userId: entry.userId, total: 0 }
+    if (!a.tickets) continue
+    const t = `${entry.ticket ?? ''}\u0000${entry.userId}`
+    const row = tickets.get(t) ?? { ticket: entry.ticket ?? null, userId: entry.userId, total: 0 }
     row.total += ms
     tickets.set(t, row)
   }
@@ -343,13 +467,12 @@ export async function getReportBreakdown(
   input: ReportInput,
   now = new Date(),
 ): Promise<ReportBreakdown> {
-  const { a, entries } = await reportData(db, scope, input, now)
-  return breakdownOf(entries, a)
+  const c = await reportContext(db, scope, input, now)
+  return breakdownOf(await reportEntries(db, scope, c), c.a)
 }
 
-// One entry's time on one day of the range, for the export's entry list and the Entries card:
-// clipped to the range, split at the zone's midnights like the report's totals, and a running
-// entry up to now.
+// One entry's time on one day of the range, for the Entries card: clipped to the range, split
+// at the zone's midnights like the report's totals, and a running entry up to now.
 export interface ReportEntryPiece {
   entryId: string
   userId: string
@@ -367,14 +490,14 @@ export interface ReportEntryPiece {
   ms: number
 }
 
-// The entries behind a report, oldest first.
-function piecesOf({ settings, range, entries }: ReportData, now: Date): ReportEntryPiece[] {
+// The pieces of the entries, oldest first.
+function piecesOf(c: ReportContext, entries: ListedEntry[], now: Date): ReportEntryPiece[] {
   const pieces: ReportEntryPiece[] = []
   for (const entry of entries) {
-    const span = countedSpan(entry, range, now.getTime())
+    const span = countedSpan(entry, c.range, now.getTime())
     if (!span) continue
     let from = span.from
-    for (const piece of splitByDay(span.from, span.to, settings.timeZone)) {
+    for (const piece of splitByDay(span.from, span.to, c.a.timeZone)) {
       const to = from + piece.ms
       pieces.push({
         entryId: entry.id,
@@ -397,6 +520,13 @@ function piecesOf({ settings, range, entries }: ReportData, now: Date): ReportEn
   return pieces
 }
 
+// A piece as the export lists it: it ends `ms` after `from`, and needs neither the whole
+// entry nor its id.
+export type ExportEntry = Pick<
+  ReportEntryPiece,
+  'userId' | 'projectId' | 'description' | 'ticket' | 'date' | 'from' | 'running' | 'ms'
+>
+
 // The report and the entries behind it, for its export, under getReport's rules. Both come
 // from one read and count a running entry up to the same moment, so the entries add up to
 // the report's totals.
@@ -405,33 +535,25 @@ export async function getReportExport(
   scope: Scope,
   input: ReportInput,
   now = new Date(),
-): Promise<{ report: Report; timeZone: string; entries: ReportEntryPiece[] }> {
-  const data = await reportData(db, scope, input, now)
+): Promise<{ report: Report; entries: ExportEntry[] }> {
+  const c = await reportContext(db, scope, input, now)
+  const entries = await listedEntries(db, scope, c)
   return {
-    report: reportOf(data, now),
-    timeZone: data.settings.timeZone,
-    entries: piecesOf(data, now),
+    report: await reportOf(db, scope, c, entries, now),
+    entries: piecesOf(c, entries, now).map((p) => ({
+      userId: p.userId,
+      projectId: p.projectId,
+      description: p.description,
+      ticket: p.ticket,
+      date: p.date,
+      from: p.from,
+      running: p.running,
+      ms: p.ms,
+    })),
   }
 }
 
-type EntryRow = NonNullable<ReportEntriesInput['row']>
 type DayCursor = NonNullable<ReportEntriesInput['after']>
-
-// The pieces in one timesheet row. A team's row counts its current members, and "No team"
-// those in none of the report's teams, as the timesheet's rows do.
-function inRow(row: EntryRow, teams: Aggregation['teams']): (p: ReportEntryPiece) => boolean {
-  if (row.group === 'project' || row.group === 'ticket') {
-    const id = row.id === 'none' ? null : row.id
-    return row.group === 'project' ? (p) => p.projectId === id : (p) => p.ticket === id
-  }
-  if (row.group === 'member') return (p) => p.userId === row.id
-  if (row.id === 'none') {
-    const inTeams = new Set(teams.flatMap((t) => t.userIds))
-    return (p) => !inTeams.has(p.userId)
-  }
-  const members = new Set(teams.find((t) => t.teamId === row.id)?.userIds)
-  return (p) => members.has(p.userId)
-}
 
 // A piece's place in By day: newest day first, then each person's pieces together, newest
 // first. A page's cursor is its last piece's place.
@@ -536,38 +658,69 @@ export function mergeByDescription(pieces: ReportEntryPiece[]): DescriptionRow[]
     )
 }
 
-// The whole list's size, whichever view and page is asked for.
-interface EntriesSummary {
-  // Entries, not pieces: an entry that crosses midnight counts once.
-  count: number
-  total: number
-}
-
-export type ReportEntries = EntriesSummary &
-  (
-    | { view: 'day'; days: EntryDay[]; pieces: ReportEntryPiece[]; next: DayCursor | null }
-    | { view: 'description'; rows: DescriptionRow[] }
-  )
+export type ReportEntries =
+  | { view: 'day'; days: EntryDay[]; pieces: ReportEntryPiece[]; next: DayCursor | null }
+  | {
+      view: 'description'
+      rows: DescriptionRow[]
+      // All the list's rows, of which the first page has the top DESCRIPTION_PAGE_SIZE.
+      rowCount: number
+      // The offset of the rows not yet sent: the next page sends them all.
+      next: number | null
+    }
 
 // The Entries card's list, from the pieces the export reads under getReport's rules, so both
-// show the same entries and count a running timer alike. The server groups and pages it, so
-// a large organization's month stays a bounded response (docs/architecture.md, "Report
-// entries").
+// show the same entries and count a running timer alike. The server narrows, groups, and
+// pages it, so a large organization's month stays a bounded response (docs/architecture.md,
+// "Report entries").
 export async function getReportEntries(
   db: Database,
   scope: Scope,
   input: ReportEntriesInput,
   now = new Date(),
 ): Promise<ReportEntries> {
-  const data = await reportData(db, scope, input.report, now)
-  let pieces = piecesOf(data, now)
-  if (input.row) pieces = pieces.filter(inRow(input.row, data.a.teams))
-  const summary = {
-    count: new Set(pieces.map((p) => p.entryId)).size,
-    total: pieces.reduce((sum, p) => sum + p.ms, 0),
+  let report = input.report
+  // The pieces after a By day cursor are on its day or before.
+  if (input.view === 'day' && input.after) {
+    report = { ...report, to: [report.to, addDays(input.after.date, 1)].sort()[0] }
   }
-  if (input.view === 'description') {
-    return { ...summary, view: 'description', rows: mergeByDescription(pieces) }
+  const c = await reportContext(db, scope, report, now)
+  const pieces = piecesOf(c, await listedEntries(db, scope, c, input.row), now)
+  if (input.view === 'day') return { view: 'day', ...dayPage(pieces, input.after) }
+  const rows = mergeByDescription(pieces)
+  const offset = input.offset ?? 0
+  const end = offset === 0 ? DESCRIPTION_PAGE_SIZE : rows.length
+  return {
+    view: 'description',
+    rows: rows.slice(offset, end),
+    rowCount: rows.length,
+    next: end < rows.length ? end : null,
   }
-  return { ...summary, view: 'day', ...dayPage(pieces, input.after) }
+}
+
+// The Entries card's count and total for one timesheet part, without its list. The whole
+// report's come with the report.
+export async function getReportEntryTotals(
+  db: Database,
+  scope: Scope,
+  input: ReportEntryTotalsInput,
+  now = new Date(),
+): Promise<{ count: number; total: number }> {
+  const c = await reportContext(db, scope, input.report, now)
+  const where = entriesWhere(scope, c, rowWhere(input.row, c.a.teams))
+  const entries = where
+    ? await db
+        .select({ startedAt: timeEntry.startedAt, stoppedAt: timeEntry.stoppedAt })
+        .from(timeEntry)
+        .where(where)
+    : []
+  let count = 0
+  let total = 0
+  for (const entry of entries) {
+    const span = countedSpan(entry, c.range, now.getTime())
+    if (!span) continue
+    count++
+    total += span.to - span.from
+  }
+  return { count, total }
 }

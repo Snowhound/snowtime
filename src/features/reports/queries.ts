@@ -2,8 +2,17 @@
 // src/lib/.
 import { infiniteQueryOptions, keepPreviousData, queryOptions } from '@tanstack/solid-query'
 import { reportsKey } from '~/lib/queries/query'
-import { getReport, getReportBreakdown, getReportEntries } from '~/server/reports/reports.functions'
-import type { ReportEntriesInput, ReportInput } from '~/server/reports/reports.schemas'
+import {
+  getReport,
+  getReportBreakdown,
+  getReportEntries,
+  getReportEntryTotals,
+} from '~/server/reports/reports.functions'
+import type {
+  ReportEntriesInput,
+  ReportEntryTotalsInput,
+  ReportInput,
+} from '~/server/reports/reports.schemas'
 
 export type Report = Awaited<ReturnType<typeof getReport>>
 export type ReportEntries = Awaited<ReturnType<typeof getReportEntries>>
@@ -19,18 +28,35 @@ export function reportQuery(organizationId: string, input: ReportInput) {
   })
 }
 
-// The Entries card's list, apart from the report so the timesheet never waits for it. By
-// description is one page; By day loads a page at a time after the last piece shown.
+type EntriesPage = Pick<ReportEntriesInput, 'after' | 'offset'>
+const FIRST_PAGE: EntriesPage = {}
+
+// The Entries card's list, apart from the report so the timesheet never waits for it. By day
+// loads a page at a time after the last piece shown; By description its top rows, then the
+// rest.
 export function reportEntriesQuery(
   organizationId: string,
-  input: Omit<ReportEntriesInput, 'after'>,
+  input: Omit<ReportEntriesInput, 'after' | 'offset'>,
 ) {
   return infiniteQueryOptions({
     queryKey: [...reportsKey, organizationId, 'entries', input],
     queryFn: ({ pageParam }) =>
-      getReportEntries({ data: { ...input, organizationId, after: pageParam } }),
-    initialPageParam: undefined as ReportEntriesInput['after'],
-    getNextPageParam: (page) => (page.view === 'day' ? (page.next ?? undefined) : undefined),
+      getReportEntries({ data: { ...input, ...pageParam, organizationId } }),
+    initialPageParam: FIRST_PAGE,
+    getNextPageParam: (page): EntriesPage | undefined => {
+      if (page.next === null) return undefined
+      return page.view === 'day' ? { after: page.next } : { offset: page.next }
+    },
+    placeholderData: keepPreviousData,
+  })
+}
+
+// The Entries card's count and total for a part of the timesheet. The whole report's come
+// with the report.
+export function reportEntryTotalsQuery(organizationId: string, input: ReportEntryTotalsInput) {
+  return queryOptions({
+    queryKey: [...reportsKey, organizationId, 'entry-totals', input],
+    queryFn: () => getReportEntryTotals({ data: { ...input, organizationId } }),
     placeholderData: keepPreviousData,
   })
 }

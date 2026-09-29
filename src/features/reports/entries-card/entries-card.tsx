@@ -1,8 +1,8 @@
 // The Entries card (prototypes/reports.html): the entries behind the report, or behind the
 // part chosen in one of its views, by day or merged by description. Read-only: only an
-// entry's owner edits it, on the Timer page. It loads apart from the report, so the timesheet
-// never waits for it.
-import { useInfiniteQuery } from '@tanstack/solid-query'
+// entry's owner edits it, on the Timer page. The list loads apart from the report, so the
+// timesheet never waits for it, and only in the browser while the card is open. The header's
+// count and total come from the report, or for a part of it from a query of their own.
 import ChevronDownIcon from 'lucide-solid/icons/chevron-down'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import MoonIcon from 'lucide-solid/icons/moon'
@@ -19,17 +19,14 @@ import { readCookie, writeCookie } from '~/lib/cookies'
 import { useFormatHours, useHourCycle } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatIsoDate } from '~/lib/format'
-import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
+import { useInfiniteQuery, useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { EntryFilters, EntryView } from '../filters'
-import { type ReportEntries, reportEntriesQuery } from '../queries'
-import { memberName } from '../rows'
+import { type ReportEntries, reportEntriesQuery, reportEntryTotalsQuery } from '../queries'
+import { type RowNames, memberName } from '../rows'
 import { type DayPage, type EntryPiece, entryDays, peopleLabel } from './entry-groups'
-
-// By description rows shown before "Show all".
-const DESCRIPTION_ROWS = 25
 
 // Flags kept in this browser: whether the user has narrowed the list from the timesheet, after
 // which the header's hint on how to do that no longer shows, and whether they left the list
@@ -53,20 +50,27 @@ export function EntriesCard(props: {
   filters: EntryFilters
   // The timesheet part the list narrows to, named; null when it lists the whole report.
   narrowLabel: string | null
-  userId: string
+  // The whole report's entries and time.
+  whole: { count: number; total: number }
   zone: string
   projects: Project[]
-  members: Member[]
+  names: Pick<RowNames, 'userId' | 'members' | 'former'>
   onView: (view: EntryView) => void
   onClear: () => void
 }) {
-  const entries = useInfiniteQuery(() =>
-    reportEntriesQuery(props.organizationId, props.filters.input),
-  )
-  // The list whose By description rows all show, until the list changes.
-  const [allOf, setAllOf] = createSignal<string>()
   const [hint, setHint] = createSignal(!readFlag(NARROWED_KEY))
   const [open, setOpen] = createSignal(readFlag(OPEN_KEY))
+  const entries = useInfiniteQuery(() => ({
+    ...reportEntriesQuery(props.organizationId, props.filters.input),
+    enabled: open(),
+  }))
+  const narrowed = useQuery(() => ({
+    ...reportEntryTotalsQuery(
+      props.organizationId,
+      props.filters.totals ?? { report: props.filters.input.report },
+    ),
+    enabled: props.filters.totals !== null,
+  }))
   function toggle(next: boolean) {
     setOpen(next)
     writeFlag(OPEN_KEY, next)
@@ -78,26 +82,26 @@ export function EntriesCard(props: {
     setHint(false)
     toggle(true)
   })
-  function listKey() {
-    return JSON.stringify(props.filters.input)
-  }
 
+  function summary() {
+    return props.filters.totals ? narrowed.data : props.whole
+  }
   function first() {
     return entries.data?.pages[0]
   }
   function nameOf(userId: string) {
-    return memberName(userId, { userId: props.userId, members: props.members })
+    return memberName(userId, props.names)
   }
   const days = createMemo(() => {
     const pages = entries.data?.pages.filter((p): p is DayPage => p.view === 'day') ?? []
     return entryDays(pages, props.filters.many ? nameOf : null)
   })
-  function allRows(): DescriptionRow[] {
-    const page = first()
-    return page?.view === 'description' ? page.rows : []
+  function rows(): DescriptionRow[] {
+    return entries.data?.pages.flatMap((p) => (p.view === 'description' ? p.rows : [])) ?? []
   }
-  function rows() {
-    return allOf() === listKey() ? allRows() : allRows().slice(0, DESCRIPTION_ROWS)
+  function rowCount() {
+    const page = first()
+    return page?.view === 'description' ? page.rowCount : 0
   }
 
   function project(id: string | null) {
@@ -129,11 +133,10 @@ export function EntriesCard(props: {
             </button>
           </CardTitle>
           <div class="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-            <Show when={first()}>
-              {(page) => (
+            <Show when={summary()}>
+              {(s) => (
                 <span class="tabular-nums">
-                  {m.reports_entries_count({ count: page().count })} ·{' '}
-                  <Duration ms={page().total} />
+                  {m.reports_entries_count({ count: s().count })} · <Duration ms={s().total} />
                 </span>
               )}
             </Show>
@@ -177,7 +180,7 @@ export function EntriesCard(props: {
           </ToggleGroup>
         </Show>
       </CardHeader>
-      <Show when={entries.error}>
+      <Show when={entries.error ?? narrowed.error}>
         {(error) => (
           <div class="px-6 pb-4">
             <ErrorAlert message={errorMessage(error())} />
@@ -258,9 +261,12 @@ export function EntriesCard(props: {
                       )}
                     </For>
                   </ul>
-                  <Show when={allRows().length > rows().length}>
-                    <More busy={false} onClick={() => setAllOf(listKey())}>
-                      {m.reports_entries_all({ count: allRows().length })}
+                  <Show when={entries.hasNextPage}>
+                    <More
+                      busy={entries.isFetchingNextPage}
+                      onClick={() => void entries.fetchNextPage()}
+                    >
+                      {m.reports_entries_all({ count: rowCount() })}
                     </More>
                   </Show>
                 </Match>

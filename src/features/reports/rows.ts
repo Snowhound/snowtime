@@ -27,6 +27,8 @@ export interface RowNames {
   projects: Project[]
   teams: Team[]
   members: Member[]
+  // The report's members who have left the organization, whom `members` lacks.
+  former?: FormerMember[]
   // The "No project", "No team", and "No ticket" rows' language, the UI's by default.
   locale?: Locale
 }
@@ -53,9 +55,21 @@ function projectRows(report: Report, names: RowNames): Row[] {
   }))
 }
 
+type FormerMember = Report['formerMembers'][number]
+
+// A member's name and email, also of someone who has left the organization.
+export function person(
+  userId: string,
+  names: Pick<RowNames, 'members' | 'former'>,
+): { name: string; email: string } | undefined {
+  return (
+    names.members.find((m) => m.userId === userId) ?? names.former?.find((m) => m.userId === userId)
+  )
+}
+
 // A member's name, with "(you)" for the user.
-export function memberName(userId: string, names: Pick<RowNames, 'userId' | 'members'>) {
-  const name = names.members.find((m) => m.userId === userId)?.name ?? ''
+export function memberName(userId: string, names: Pick<RowNames, 'userId' | 'members' | 'former'>) {
+  const name = person(userId, names)?.name ?? ''
   return userId === names.userId ? m.reports_you({ name }) : name
 }
 

@@ -30,20 +30,19 @@ const rows: Row[] = [
 const members = [{ userId: 'u1', name: 'Mari Tamm', email: 'mari@example.com' }] as Member[]
 const projects = [{ id: 'p1', name: 'Õunaaed' }] as Project[]
 
-function entries(list: Partial<ReportEntries['entries'][number]>[]): ReportEntries {
+function entries(
+  list: Partial<ReportEntries['entries'][number]>[],
+  formerMembers: ReportEntries['report']['formerMembers'] = [],
+): ReportEntries {
   return {
-    timeZone: 'Europe/Tallinn',
+    report: { timeZone: 'Europe/Tallinn', formerMembers },
     entries: list.map((e) => ({
-      entryId: 'e1',
       userId: 'u1',
       projectId: 'p1',
       description: '',
       ticket: null,
       date: '2026-09-21',
       from: new Date('2026-09-21T06:00:00Z'),
-      to: new Date('2026-09-21T07:30:00Z'),
-      startedAt: new Date('2026-09-21T06:00:00Z'),
-      stoppedAt: new Date('2026-09-21T07:30:00Z'),
       running: false,
       ms: 1.5 * HOUR,
       ...e,
@@ -81,12 +80,10 @@ describe('entriesTable', () => {
         {
           projectId: null,
           from: new Date('2026-09-21T20:00:00Z'),
-          to: new Date('2026-09-21T21:00:00Z'),
           ms: HOUR,
         },
         {
           from: new Date('2026-09-21T09:00:00Z'),
-          to: new Date('2026-09-21T10:00:00Z'),
           running: true,
         },
       ]),
@@ -140,6 +137,14 @@ describe('entriesTable', () => {
         { ms: HOUR },
       ],
     ])
+  })
+
+  test('names a member who has left the organization from the report', () => {
+    const table = entriesTable(
+      entries([{ userId: 'u9' }], [{ userId: 'u9', name: 'Endine Liige', email: 'e@example.com' }]),
+      { projects, members },
+    )
+    expect(table.rows[0].slice(2, 4)).toEqual(['Endine Liige', 'e@example.com'])
   })
 
   test('sorts by project, then date, member, and start, with no project last', () => {

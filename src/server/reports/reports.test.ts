@@ -4,13 +4,13 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { and, eq, inArray } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
 import type { Database } from '~/db'
-import { teamMember, timeEntry } from '~/db/schema'
+import { member, teamMember, timeEntry } from '~/db/schema'
 import { seedIds } from '~/db/seed'
 import { addDays } from '~/lib/calendar'
 import { listEntries } from '../entries/entries.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
-import { ENTRY_PAGE_SIZE, type ReportEntriesInput } from './reports.schemas'
+import { DESCRIPTION_PAGE_SIZE, ENTRY_PAGE_SIZE, type ReportEntriesInput } from './reports.schemas'
 import {
   aggregate,
   breakdownOf,
@@ -18,6 +18,7 @@ import {
   getReport,
   getReportBreakdown,
   getReportEntries,
+  getReportEntryTotals,
   getReportExport,
   mergeByDescription,
   type Aggregation,
@@ -92,6 +93,7 @@ describe('aggregate', () => {
       { teamId: 't1', userIds: ['a', 'b'] },
       { teamId: 't2', userIds: ['b', 'c'] },
     ],
+    tickets: true,
   }
   function entry(
     userId: string,
@@ -175,6 +177,7 @@ describe('aggregate', () => {
       perBucket: [0, 0, 0],
       buckets: ['2026-03-28', '2026-03-29', '2026-03-30'],
       trackedDays: 0,
+      entries: 0,
       projects: [],
       tickets: [],
       members: [],
@@ -196,6 +199,20 @@ describe('aggregate', () => {
       [null, HOUR / 2],
     ])
     expect(sum(tickets.map((t) => t.total))).toBe(total)
+    const entries = [entry('a', null, '2026-03-28T08:00:00Z', '2026-03-28T10:00:00Z')]
+    expect(aggregate(entries, { ...base, tickets: false }).tickets).toEqual([])
+  })
+
+  test('counts each entry with time in the range once', () => {
+    const report = aggregate(
+      [
+        entry('a', 'p1', '2026-03-28T20:00:00Z', '2026-03-29T02:00:00Z'),
+        entry('a', 'p1', '2026-03-29T08:00:00Z', '2026-03-29T09:00:00Z'),
+        entry('a', 'p1', '2026-03-20T08:00:00Z', '2026-03-20T09:00:00Z'),
+      ],
+      base,
+    )
+    expect(report.entries).toBe(2)
   })
 })
 
@@ -206,6 +223,7 @@ describe('breakdownOf', () => {
       from: '2026-03-28',
       to: '2026-03-31',
       now: Date.parse('2026-03-30T09:00:00Z'),
+      tickets: true,
     }
     function entry(userId: string, projectId: string | null, ticket: string | null, h: number) {
       const startedAt = new Date(`2026-03-${28 + h}T08:00:00Z`)
@@ -404,6 +422,35 @@ describe('getReport', () => {
     expect(designOf(after)).toBe(totalOf(after, U.lead))
     expect(after.total).toBe(before.total)
   })
+
+  test('totals per ticket only when asked', async () => {
+    const input = { from: '2026-09-14', to: '2026-09-24', unit: 'day' } as const
+    const plain = await getReport(db, scopes.admin, input, NOW)
+    const byTicket = await getReport(db, scopes.admin, { ...input, tickets: true }, NOW)
+    expect(plain.tickets).toEqual([])
+    expect(byTicket.tickets.length).toBeGreaterThan(0)
+    expect(sum(byTicket.tickets.map((t) => t.total))).toBe(plain.total)
+    expect({ ...byTicket, tickets: [] } as Report).toEqual(plain)
+  })
+
+  test('names the members who have left the organization, whose time still counts', async () => {
+    const input = { from: '2026-09-14', to: '2026-09-24', unit: 'day' } as const
+    expect((await getReport(db, scopes.admin, input, NOW)).formerMembers).toEqual([])
+    const left = and(eq(member.userId, U.loner), eq(member.organizationId, O.northwind))
+    const [row] = await db.select().from(member).where(left)
+    await db.delete(member).where(left)
+    try {
+      const report = await getReport(db, scopes.admin, input, NOW)
+      expect(ids(report.members, 'userId')).toContain(U.loner)
+      expect(report.formerMembers).toEqual([
+        { userId: U.loner, name: 'Noah Solo', email: 'noah@example.com' },
+      ])
+      const { report: exported } = await getReportExport(db, scopes.admin, input, NOW)
+      expect(exported.formerMembers).toEqual(report.formerMembers)
+    } finally {
+      await db.insert(member).values(row)
+    }
+  })
 })
 
 describe('getReportBreakdown', () => {
@@ -418,8 +465,8 @@ describe('getReportBreakdown', () => {
 
   test("adds up to the report's project, ticket, and member totals", async () => {
     for (const scope of [scopes.member, scopes.lead, scopes.admin]) {
-      const report = await getReport(db, scope, input, NOW)
-      const breakdown = await getReportBreakdown(db, scope, input, NOW)
+      const report = await getReport(db, scope, { ...input, tickets: true }, NOW)
+      const breakdown = await getReportBreakdown(db, scope, { ...input, tickets: true }, NOW)
       const byProject = totalsBy(breakdown.projects, (r) => r.projectId)
       expect(report.projects.map((p) => byProject.get(p.projectId))).toEqual(
         report.projects.map((p) => p.total),
@@ -480,12 +527,15 @@ describe('getReportExport', () => {
         const ms = entries.filter((e) => e.projectId === p.projectId).map((e) => e.ms)
         expect(sum(ms)).toBe(p.total)
       }
-      for (const e of entries) expect(e.to.getTime() - e.from.getTime()).toBe(e.ms)
     }
     const { entries } = await getReportExport(db, scopes.admin, input, NOW)
     const running = entries.filter((e) => e.running)
     expect(running).toHaveLength(1)
-    expect(running[0].to).toEqual(NOW)
+    expect(running[0].from.getTime() + running[0].ms).toBe(NOW.getTime())
+    // The export's rows leave out what only the Entries card shows.
+    expect(Object.keys(entries[0]).sort()).toEqual(
+      ['date', 'description', 'from', 'ms', 'projectId', 'running', 'ticket', 'userId'].sort(),
+    )
     expect(entries.map((e) => e.from.getTime())).toEqual(
       entries.map((e) => e.from.getTime()).sort((a, b) => a - b),
     )
@@ -505,18 +555,17 @@ describe('getReportExport', () => {
   test("splits an entry at the user's midnight into a piece per day", async () => {
     // 23:00 to 02:00 in London.
     await logFor(scopes.loner, '2026-10-02T22:00:00Z', '2026-10-03T01:00:00Z')
-    const { timeZone, entries } = await getReportExport(
+    const { report, entries } = await getReportExport(
       db,
       scopes.loner,
       { from: '2026-10-02', to: '2026-10-04', unit: 'day' },
       NOW,
     )
-    expect(timeZone).toBe('Europe/London')
-    expect(entries.map((e) => [e.date, e.from.toISOString(), e.to.toISOString()])).toEqual([
-      ['2026-10-02', '2026-10-02T22:00:00.000Z', '2026-10-02T23:00:00.000Z'],
-      ['2026-10-03', '2026-10-02T23:00:00.000Z', '2026-10-03T01:00:00.000Z'],
+    expect(report.timeZone).toBe('Europe/London')
+    expect(entries.map((e) => [e.date, e.from.toISOString(), e.ms])).toEqual([
+      ['2026-10-02', '2026-10-02T22:00:00.000Z', HOUR],
+      ['2026-10-03', '2026-10-02T23:00:00.000Z', 2 * HOUR],
     ])
-    expect(entries[0].entryId).toBe(entries[1].entryId)
   })
 })
 
@@ -651,37 +700,65 @@ describe('getReportEntries', () => {
     return { ...pages[0], pieces: pages.flatMap((p) => p.pieces), pages }
   }
 
+  // Every row of By description, as the card loads them.
+  async function allRows(scope: Scope, input: Partial<ReportEntriesInput> = {}) {
+    const first = await entriesOf(scope, { ...input, view: 'description' })
+    if (first.view !== 'description') throw new Error('By description')
+    if (first.next === null) return { first, rows: first.rows }
+    const rest = await entriesOf(scope, { ...input, view: 'description', offset: first.next })
+    if (rest.view !== 'description') throw new Error('By description')
+    expect(rest.next).toBeNull()
+    return { first, rows: [...first.rows, ...rest.rows] }
+  }
+
+  function totalsOf(scope: Scope, input: Partial<ReportEntriesInput> = {}) {
+    return getReportEntryTotals(db, scope, { report, ...input }, NOW)
+  }
+
   test('lists the pieces the export reads, in both views', async () => {
     for (const scope of [scopes.member, scopes.lead, scopes.admin]) {
       const exported = await getReportExport(db, scope, report, NOW)
       const day = await allDays(scope)
-      expect(day.pieces.map((p) => `${p.entryId} ${p.date}`).sort()).toEqual(
-        exported.entries.map((e) => `${e.entryId} ${e.date}`).sort(),
+      expect(day.pieces.map((p) => `${p.date} ${p.from.getTime()} ${p.ms}`).sort()).toEqual(
+        exported.entries.map((e) => `${e.date} ${e.from.getTime()} ${e.ms}`).sort(),
       )
-      expect(day.total).toBe(exported.report.total)
-      expect(day.count).toBe(new Set(exported.entries.map((e) => e.entryId)).size)
+      expect(sum(day.pieces.map((p) => p.ms))).toBe(exported.report.total)
+      expect(new Set(day.pieces.map((p) => p.entryId)).size).toBe(exported.report.entries)
       for (const page of day.pages) expect(page.pieces.length).toBeLessThanOrEqual(ENTRY_PAGE_SIZE)
 
-      const merged = await entriesOf(scope, { view: 'description' })
-      if (merged.view !== 'description') throw new Error('By description')
-      expect(sum(merged.rows.map((r) => r.total))).toBe(exported.report.total)
-      expect(merged).toMatchObject({ count: day.count, total: day.total })
+      const { rows } = await allRows(scope)
+      expect(sum(rows.map((r) => r.total))).toBe(exported.report.total)
+      expect(await totalsOf(scope)).toEqual({
+        count: exported.report.entries,
+        total: exported.report.total,
+      })
     }
     // The admin's list is longer than a page.
     expect((await allDays(scopes.admin)).pages.length).toBeGreaterThan(1)
   })
 
+  test('By description sends its top rows first, then the rest', async () => {
+    const { first, rows } = await allRows(scopes.admin)
+    expect(rows.length).toBeGreaterThan(DESCRIPTION_PAGE_SIZE)
+    expect(first.rows).toHaveLength(DESCRIPTION_PAGE_SIZE)
+    expect(first.rowCount).toBe(rows.length)
+    expect(rows.map((r) => r.total)).toEqual(rows.map((r) => r.total).sort((a, b) => b - a))
+  })
+
   test("narrows to a timesheet row with the row's total", async () => {
     const all = await getReport(db, scopes.admin, report, NOW)
+    const byTicket = await getReport(db, scopes.admin, { ...report, tickets: true }, NOW)
     for (const [group, rows] of [
       ['project', all.projects.map((r) => ({ id: r.projectId ?? 'none', total: r.total }))],
       ['member', all.members.map((r) => ({ id: r.userId, total: r.total }))],
       ['team', all.teams.map((r) => ({ id: r.teamId, total: r.total }))],
-      ['ticket', all.tickets.map((r) => ({ id: r.ticket ?? 'none', total: r.total }))],
+      ['ticket', byTicket.tickets.map((r) => ({ id: r.ticket ?? 'none', total: r.total }))],
     ] as const) {
       for (const { id, total } of rows) {
         const row = { group, id } as ReportEntriesInput['row']
-        expect((await entriesOf(scopes.admin, { row })).total).toBe(total)
+        expect((await totalsOf(scopes.admin, { row })).total).toBe(total)
+        const day = await allDays(scopes.admin, { row })
+        expect(sum(day.pieces.map((p) => p.ms))).toBe(total)
       }
     }
     // Noah, the admin, and the owner are in no team.
@@ -691,7 +768,7 @@ describe('getReportEntries', () => {
       .where(inArray(teamMember.teamId, [T.design, T.engineering]))
     const alone = all.members.filter((m) => !inTeams.some((t) => t.userId === m.userId))
     expect(alone.map((m) => m.userId)).toContain(U.loner)
-    const none = await entriesOf(scopes.admin, { row: { group: 'team', id: 'none' } })
+    const none = await totalsOf(scopes.admin, { row: { group: 'team', id: 'none' } })
     expect(none.total).toBe(sum(alone.map((m) => m.total)))
   })
 
@@ -699,10 +776,9 @@ describe('getReportEntries', () => {
     const all = await getReport(db, scopes.admin, report, NOW)
     const i = all.perBucket.findIndex((ms) => ms > 0)
     const date = all.buckets[i]
-    const day = await entriesOf(scopes.admin, {
-      report: { ...report, from: date, to: addDays(date, 1) },
-    })
-    expect(day.total).toBe(all.perBucket[i])
+    const narrowed = { report: { ...report, from: date, to: addDays(date, 1) } }
+    expect((await totalsOf(scopes.admin, narrowed)).total).toBe(all.perBucket[i])
+    const day = await entriesOf(scopes.admin, narrowed)
     if (day.view === 'day') expect(day.days.map((d) => d.date)).toEqual([date])
   })
 
@@ -713,10 +789,12 @@ describe('getReportEntries', () => {
       [U.engLead, U.engineer, U.member].sort(),
     )
     // Noah is in no team, and Lena leads Design.
-    const other = await entriesOf(scopes.engLead, { row: { group: 'member', id: U.loner } })
-    expect(other).toMatchObject({ count: 0, total: 0 })
-    const design = await entriesOf(scopes.engLead, { row: { group: 'team', id: T.design } })
-    expect(design).toMatchObject({ count: 0, total: 0 })
+    const other = { row: { group: 'member', id: U.loner } } as const
+    expect(await totalsOf(scopes.engLead, other)).toEqual({ count: 0, total: 0 })
+    expect(await entriesOf(scopes.engLead, other)).toMatchObject({ pieces: [] })
+    const design = { row: { group: 'team', id: T.design } } as const
+    expect(await totalsOf(scopes.engLead, design)).toEqual({ count: 0, total: 0 })
+    expect(await entriesOf(scopes.engLead, design)).toMatchObject({ pieces: [] })
     await expect(
       entriesOf(scopes.engLead, { report: { ...report, userId: U.loner } }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
