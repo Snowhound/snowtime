@@ -26,6 +26,7 @@ import {
   imageFor,
   imageLabel,
   imageName,
+  imageSeason,
   scenePin,
 } from '~/lib/scene/scene'
 import { type Hint, weatherFor, weatherProblem } from '~/lib/scene/weather'
@@ -109,7 +110,9 @@ export function SceneryFields(props: {
   function weatherHint() {
     const blocked = weatherBlocked()
     if (blocked) return blocked
-    const weather = weatherName(imageFor(props.settings))
+    // Without the background the weather is the season's, as SceneLayer shows it.
+    const image = imageFor(props.settings)
+    const weather = weatherName(props.settings.sceneBackground ? image : imageSeason(image))
     return props.hints === 'long' ? m.scene_weather_hint({ weather }) : sentence(weather)
   }
   function collectionHint() {

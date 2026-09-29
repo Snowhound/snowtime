@@ -632,7 +632,7 @@
       function applyScene() {
         const user = scene.settings.get()
         const image = scene.image(scene.imageFor(user))
-        const shown = introPlayer.scene({ image: image.id, strength: user.sceneStrength, background: user.sceneBackground, weather: user.sceneWeather })
+        const shown = introPlayer.scene({ image: image.id, strength: user.sceneStrength, background: user.sceneBackground, weather: user.sceneWeather, seasonWeather: !user.sceneBackground })
         sceneCtl.set(shown)
         document.body.dataset.sceneBg = shown.background ? 'on' : 'off'
         document.body.dataset.card = user.surfaces
@@ -650,7 +650,7 @@
         ui.setSwitch(weatherSwitch, user.sceneWeather)
         weatherSwitch.disabled = !!blocked
         const season = seasons.current()
-        document.getElementById('scene-weather-hint').textContent = blocked ?? scene.weatherHint(image.id)
+        document.getElementById('scene-weather-hint').textContent = blocked ?? scene.weatherHint(image.id, user.sceneBackground)
         document.getElementById('scene-collection').value = user.sceneCollection
         document.getElementById('scene-collection-hint').textContent = user.scenePin ? `Pinned to ${image.label}.` : `${image.label}, from the calendar.`
         // The season's first two intro lines as the tagline.

@@ -284,7 +284,8 @@ the season's image in light and dark, the tint, and the weather.
   (the timer bar, the timesheet's wrapper, the empty state) from them. Glass is `bg-card/70` with
   a 24 px backdrop blur; solid keeps `bg-card`. Both get a soft shadow over the image. Popovers,
   menus, and dialogs stay solid, so their text never sits on the picture. With the background
-  off, the page looks as before, with the weather over the page tint.
+  off, the page looks as before, with the weather over the page tint. That weather is the
+  season's, from the mountain images, since a Baltic image's is tuned to its picture.
 - **Over the image**: the header is the page color at 82% with a blur (solid for solid surfaces),
   the prototype bar is solid, page titles get a tight glow in the page color (fainter in light mode, where a wide one read as fog), and outline buttons
   outside popovers and dialogs a page-colored fill. The tagline gets the same glow as the title.
@@ -975,7 +976,8 @@ from navigation:
   | Summer | Light: soft tufts of dandelion fluff and pollen that glints; dark: small fireflies that wander low over the meadow and glow on and off | 70; 40 |
   | Autumn | Leaves in rust and ochre, 10 to 26 px across, that sway, tumble edge-on, and turn as they fall | 45                    |
 
-  The Weather hints, in the Scenery menu and in Settings, name the showing image's effect.
+  The Weather hints, in the Scenery menu and in Settings, name the showing image's effect, or
+  with the background off, its season's.
 
 The prototype bar's second row holds variants to compare, kept in `snowtime.prototypeAuthScene`:
 

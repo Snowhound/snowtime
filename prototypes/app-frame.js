@@ -477,7 +477,7 @@
 
   // While the intro plays, the scene shows its weather and background, not the settings'.
   function applyScene() {
-    const wanted = { image: scene.imageFor(settings), strength: settings.sceneStrength, background: settings.sceneBackground, weather: settings.sceneWeather }
+    const wanted = { image: scene.imageFor(settings), strength: settings.sceneStrength, background: settings.sceneBackground, weather: settings.sceneWeather, seasonWeather: !settings.sceneBackground }
     const shown = introPlayer ? introPlayer.scene(wanted) : wanted
     sceneCtl.set(shown)
     document.body.dataset.sceneBg = shown.background ? 'on' : 'off'
@@ -505,7 +505,7 @@
     const weatherSwitch = document.getElementById('scene-weather-switch')
     ui.setSwitch(weatherSwitch, settings.sceneWeather)
     weatherSwitch.disabled = !!blocked
-    document.getElementById('scene-weather-hint').textContent = blocked ?? (window.scene ? scene.weatherHint(scene.imageFor(settings)) : '')
+    document.getElementById('scene-weather-hint').textContent = blocked ?? (window.scene ? scene.weatherHint(scene.imageFor(settings), settings.sceneBackground) : '')
     // With reduced motion the intro doesn't play; the weather hint says why.
     const replay = menu.querySelector('[data-replay-intro]')
     if (replay) {

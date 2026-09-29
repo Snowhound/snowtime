@@ -15,6 +15,7 @@ import {
   type SceneSettings,
   createReducedMotion,
   imageFor,
+  imageSeason,
   loadPhoto,
   photoReady,
   photoUrl,
@@ -80,9 +81,13 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
   // The image the settings ask for. The browser picks it, since only it knows the date.
   const wantedImage = createMemo(() => imageFor(props.settings))
   // The weather follows the picture that shows, so an image change switches both as its
-  // picture starts to fade in.
-  const shownImage = createMemo(() => {
-    if (!props.settings.sceneBackground) return wantedImage()
+  // picture starts to fade in. An image's weather fits only its picture, so without the
+  // background it's the season's, as the mountain images have it; the intro, which fades the
+  // picture in, keeps the image's.
+  const weatherImage = createMemo(() => {
+    if (!props.settings.sceneBackground) {
+      return intro.playing() ? wantedImage() : imageSeason(wantedImage())
+    }
     return photos[dark() ? 'dark' : 'light'].at(-1)?.image ?? wantedImage()
   })
 
@@ -148,7 +153,7 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     createEffect(() => {
       const isDark = dark()
       const background = props.settings.sceneBackground
-      const weather = weatherFor(shownImage(), isDark ? 'dark' : 'light')
+      const weather = weatherFor(weatherImage(), isDark ? 'dark' : 'light')
       const { effect } = weather
       let on =
         effect !== null &&

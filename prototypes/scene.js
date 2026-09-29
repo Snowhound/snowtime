@@ -323,9 +323,10 @@
     const { collection, pin } = collectionSetting(s)
     return pin ?? calendarImage(collection, date)
   }
-  // "Falling snow." or "Drifting seeds by day, fireflies at night."
-  function weatherHint(id) {
-    const { light, dark } = image(id).weather
+  // "Falling snow." or "Drifting seeds by day, fireflies at night." Without the background, the
+  // season's.
+  function weatherHint(id, background = true) {
+    const { light, dark } = image(background ? id : image(id).season).weather
     const cap = (t) => t[0].toUpperCase() + t.slice(1)
     return light.hint === dark.hint ? `${cap(light.hint)}.` : `${cap(light.hint)} by day, ${dark.hint} at night.`
   }
@@ -1065,20 +1066,23 @@
   // --- Controller ------------------------------------------------------------------------------
   // `image` is an image id; a season id is also one, so auth.html's `season` still works.
   // `pace` is `{ density, speed }`, each a factor of the sign-in page's weather.
-  function create({ season = 'winter', image: imageId = season, strength = 'full', background = true, weather = true, pace = { density: 1, speed: 1 }, legacy = false, tuning = null } = {}) {
+  function create({ season = 'winter', image: imageId = season, strength = 'full', background = true, weather = true, seasonWeather = false, pace = { density: 1, speed: 1 }, legacy = false, tuning = null } = {}) {
     const el = document.createElement('div')
     el.className = 'scene'
     el.setAttribute('aria-hidden', 'true')
     el.innerHTML = `<div class="scene-photo scene-photo-light"></div><div class="scene-photo scene-photo-dark"></div>
       <div class="scene-tint"></div><div class="scene-vignette"></div><canvas></canvas>`
     // `tuning`, for weather.html's sliders: fields by image id and theme that override the table's.
-    const state = { image: imageId, strength, background, weather, pace, legacy, tuning }
+    // `seasonWeather` shows the image's season's weather in place of its own, as a page without the
+    // background does: an image's weather fits only its picture.
+    const state = { image: imageId, strength, background, weather, seasonWeather, pace, legacy, tuning }
     const fx = renderer(el.querySelector('canvas'), () => state.pace)
     const failed = new Set()
     // `legacy` shows the weather from before task 066, for weather.html.
     function shownWeather() {
       const theme = isDark() ? 'dark' : 'light'
-      return weatherFor(state.image, theme, { legacy: state.legacy, overrides: state.legacy ? null : state.tuning?.[state.image]?.[theme] })
+      const id = state.seasonWeather ? image(state.image).season : state.image
+      return weatherFor(id, theme, { legacy: state.legacy, overrides: state.legacy ? null : state.tuning?.[id]?.[theme] })
     }
     const effect = () => shownWeather().effect
     const colors = () => (shownWeather().colors ?? EFFECTS[effect()].colors)({ dark: isDark(), background: state.background })

@@ -595,7 +595,7 @@
           ),
           ...c.images.map((id) => pinOption(id, id === pin, scene.image(id).label, appFrame.thumbPair(id, 'absolute inset-0'))),
         ].join('')
-        const weather = scene.weatherHint(scene.imageFor(settings)).toLowerCase()
+        const weather = scene.weatherHint(scene.imageFor(settings), settings.sceneBackground).toLowerCase()
         document.getElementById('settings-weather-hint').textContent = `Each image has its own; now ${weather} Off while your device reduces motion.`
         document.getElementById('scene-pin-chevron').innerHTML = icon('chevron-down', 'size-4')
       }

@@ -217,9 +217,9 @@
       playing: () => playing,
       // Whether the intro keeps the page dark; a page re-applying its theme keeps it dark meanwhile.
       holdsDark: () => darkHeld,
-      // The scene as the page should show it: while the intro plays, always the weather, and the
-      // background only once it has faded in.
-      scene: (patch) => (playing ? { ...patch, background, weather: true } : patch),
+      // The scene as the page should show it: while the intro plays, always the image's weather,
+      // and the background only once it has faded in.
+      scene: (patch) => (playing ? { ...patch, background, weather: true, seasonWeather: false } : patch),
     }
   }
 
