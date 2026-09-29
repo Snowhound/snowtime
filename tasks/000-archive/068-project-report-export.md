@@ -1,6 +1,6 @@
 # 068: Report on one project for a client
 
-Status: in-progress
+Status: done
 
 Snowhound wants to send a client the report of that client's project straight from Snowtime,
 as it does now from Clockify's detailed report. Reports can't narrow to a project, so the
