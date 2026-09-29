@@ -632,7 +632,6 @@ type Zone = [number, number, number, number] | [number, number, number, number, 
 // - `shimmer`, `peaks`, `peakTime`, `peakSize`: glitter's faint shimmer, and how many full glints
 //   show at once on a 1440 × 900 screen, for how many seconds, and how much larger.
 // - `colors`: in place of the effect's colors.
-// - `fps`: the frame-rate target, in place of the preset's or the effect's.
 type Tuning = {
   wind?: number
   gust?: number
@@ -652,7 +651,6 @@ type Tuning = {
   peakTime?: number
   peakSize?: number
   colors?: Colors
-  fps?: number
 }
 
 // The Weather hint's name for a preset: `scene_effect_<hint>` in messages/.
@@ -676,7 +674,7 @@ export type Hint =
   | 'none'
 
 // `effect: null` is no weather. `fps` is the preset's frame-rate target, by default its effect's.
-type Preset = Tuning & { effect: Effect | null; hint: Hint }
+type Preset = Tuning & { effect: Effect | null; hint: Hint; fps?: number }
 
 // Uniform values for the fields a preset and its image leave out.
 const TUNING = {
@@ -1013,10 +1011,9 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
     light: wx('spray', { wind: -0.5, band: [0.3, 1.05] }),
     dark: wx('mist', { wind: -0.03, band: [0.32, 0.58] }),
   },
-  // A few flakes blowing in off the sea, on the right, slow enough for 30 fps.
+  // A few flakes blowing in off the sea, on the right.
   'coast-december': {
     light: wx('blowing', {
-      fps: 30,
       wind: -0.2,
       amount: 0.12,
       size: 1.1,
@@ -1026,7 +1023,6 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
     }),
     // Under the cloudless night sky, fewer and fainter.
     dark: wx('blowing', {
-      fps: 30,
       wind: -0.2,
       amount: 0.06,
       size: 1.1,
