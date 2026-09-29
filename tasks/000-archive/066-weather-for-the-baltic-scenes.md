@@ -248,7 +248,9 @@ the finals:
   vanish against the coast's pale skies (224 to 254 under the light tint, against 201 to 237
   on land). They're warm mid-tones now, and the fine seeds a little larger, still a few pixels.
 - Coast August by night: the mist lies on the open water, fading out at the rocks on the left,
-  in wider banks. Across the rocks it lay as a flat smear, so it stays off them.
+  in wider banks. Across the rocks it lay as a flat smear, so it stays off them. Half the banks
+  lie low along the island's foot, below the trunks, thickest from the start and clearing
+  now and then, over about 90 seconds (Kait, 2026-09-29).
 - The horizons all match the pictures.
 - Coast September by night (Kait, 2026-09-29): thick fog in place of the fine seeds. It
   lies in three zones: over the bay and the far shore, low in the reeds right of the haystack,

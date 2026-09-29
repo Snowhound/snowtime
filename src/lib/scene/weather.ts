@@ -57,7 +57,7 @@ uniform vec2 u_res;
 uniform vec2 u_band;
 // The image's horizon in clip space; below the screen without one.
 uniform float u_horizon;
-uniform float u_time, u_dpr, u_wind, u_gust, u_shear, u_size, u_fall, u_opacity, u_share, u_glow, u_tempo;
+uniform float u_time, u_dpr, u_wind, u_gust, u_shear, u_size, u_fall, u_opacity, u_share, u_glow, u_tempo, u_gather;
 // Up to three rectangles of the image in clip space (left, top, right, bottom), and how many.
 uniform vec4 u_zones[3];
 uniform float u_zoneCount;
@@ -534,13 +534,24 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       float band = zone.y - zone.w;
       vec2 half_ = vec2(mix(.35, .75, r4) * u_size, band * mix(.25, .5, r5));
       float cy = mix(zone.w + half_.y * .6, zone.y - half_.y * .6, r2);
-      float cx = wrapX(r1*2.0-1.0 + windX(z) + sin(u_time*.03 + r5*6.28) * .03, half_.x);
+      float x = r1*2.0-1.0 + windX(z) + sin(u_time*.03 + r5*6.28) * .03;
+      float cx = wrapX(x, half_.x);
+      // A gathered bank is no wider than its zone and wraps within it, passing its sides once
+      // faded out. Gathered banks thin out together over about 90 seconds, thickest at the
+      // start, so the zone clears now and then.
+      float breathe = 1.0;
+      if (u_zoneCount > .5 && hash(id*13.37+5.1) < u_gather) {
+        half_.x = min(half_.x, (zone.z - zone.x) * .5);
+        float lo = zone.x - half_.x;
+        cx = lo + mod(x - lo, zone.z - zone.x + 2.0*half_.x);
+        breathe = smoothstep(.15, .6, .5 + .5 * cos(u_time * .07 + r3 * .6));
+      }
       gl_Position = vec4(vec2(cx, cy) + c * half_, 0.0, 1.0);
       v_uv = c;
       // The texture's coordinates, in screen heights, move with the bank.
       v_p = c * half_ * vec2(u_res.x / u_res.y, 1.0) * .5 + r1 * 17.0;
       v_alpha = .22 * u_opacity * mix(.5, 1.0, z) * (.7 + .3 * sin(u_time * mix(.05, .12, r4) + r1 * 6.28));
-      v_alpha *= gain * smoothstep(.35, 0.0, max(zone.x - cx, cx - zone.z));
+      v_alpha *= gain * breathe * smoothstep(.35, 0.0, max(zone.x - cx, cx - zone.z));
     }`,
     // v_p and the noise need highp: in mediump the texture coordinate's fraction is too coarse at
     // 7 times its scale.
@@ -615,6 +626,9 @@ type Zone = [number, number, number, number] | [number, number, number, number, 
 //   them, the ground below the horizon), where midges and fireflies keep, or where mist lies: each
 //   bank keeps to one zone, in place of the band.
 // - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight.
+// - `gather` (0 to 1): the share of mist banks that stay in their zone, drifting through it and
+//   coming back in at its far side. They're thickest at the start and clear now and then. The
+//   rest drift across the whole screen and fade in and out at the zone's sides.
 // - `shimmer`, `peaks`, `peakTime`, `peakSize`: glitter's faint shimmer, and how many full glints
 //   show at once on a 1440 × 900 screen, for how many seconds, and how much larger.
 // - `colors`: in place of the effect's colors.
@@ -631,6 +645,7 @@ type Tuning = {
   glow?: number
   zones?: Zone[]
   tempo?: number
+  gather?: number
   shimmer?: number
   peaks?: number
   peakTime?: number
@@ -673,6 +688,7 @@ const TUNING = {
   share: 0.3,
   glow: 0,
   tempo: 1,
+  gather: 0,
   shimmer: 0.3,
   peaks: 1.2,
   peakTime: 1.5,
@@ -941,11 +957,16 @@ export const IMAGE_WEATHER: Record<ImageId, { light: Entry; dark: Entry }> = {
   'coast-august': {
     light: wx('motes', { wind: 0.008, colors: coastSpecks }),
     // On the open water, fading out at the rocks on the left: across the rocks it lay as a flat
-    // smear.
+    // smear. Half the banks lie low and heavier along the island's foot, below the trunks. Half
+    // stay in their zones, so the island has mist from the start, clearing now and then.
     dark: wx('mist', {
       wind: 0.01,
-      zones: [[0.34, 0.42, 1, 0.6]],
-      amount: 1.3,
+      gather: 0.5,
+      zones: [
+        [0.34, 0.42, 1, 0.6, 0.8],
+        [0.64, 0.41, 1, 0.47, 3],
+      ],
+      amount: 2,
       size: 1.3,
       opacity: 1.2,
     }),
@@ -1178,6 +1199,7 @@ const UNIFORMS = [
   'u_share',
   'u_glow',
   'u_tempo',
+  'u_gather',
   'u_zones',
   'u_zoneCount',
   'u_zoneGain',
@@ -1200,6 +1222,7 @@ const TUNED = [
   'share',
   'glow',
   'tempo',
+  'gather',
   'shimmer',
   'peakTime',
   'peakSize',

@@ -204,7 +204,7 @@
     'coast-may': { light: wx('seeds-fine', { wind: 0.03, amount: 0.6, colors: COAST_SPECKS }), dark: wx('seeds-fine', { wind: 0.03, amount: 0.45, opacity: 0.55 }) },
     'coast-june': { light: wx('seeds-fine', { wind: -0.08, gust: 0.4, colors: COAST_SPECKS }), dark: wx('seeds-fine', { wind: -0.08, gust: 0.4, amount: 0.75, opacity: 0.75 }) },
     'coast-july': { light: wx('seeds-fine', { wind: 0.03, colors: COAST_SPECKS }), dark: wx('fireflies', { amount: 0.3 }) },
-    'coast-august': { light: wx('motes', { wind: 0.008, colors: COAST_SPECKS }), dark: wx('mist', { wind: 0.01, zones: [[0.34, 0.42, 1, 0.6]], amount: 1.3, size: 1.3, opacity: 1.2 }) },
+    'coast-august': { light: wx('motes', { wind: 0.008, colors: COAST_SPECKS }), dark: wx('mist', { wind: 0.01, gather: 0.5, zones: [[0.34, 0.42, 1, 0.6, 0.8], [0.64, 0.41, 1, 0.47, 3]], amount: 2, size: 1.3, opacity: 1.2 }) },
     'coast-september': {
       light: wx('seeds-fine', { wind: 0.16, gust: 0.5, fall: 0.5, size: 0.3, amount: 0.7, colors: COAST_SPECKS }),
       // Thick fog over the bay and the reed meadow, drifting the way the grass leans.
@@ -391,7 +391,7 @@
   uniform vec2 u_band;
   // The image's horizon in clip space; below the screen without one.
   uniform float u_horizon;
-  uniform float u_time, u_dpr, u_wind, u_gust, u_shear, u_size, u_fall, u_opacity, u_share, u_glow, u_tempo;
+  uniform float u_time, u_dpr, u_wind, u_gust, u_shear, u_size, u_fall, u_opacity, u_share, u_glow, u_tempo, u_gather;
   // Up to three rectangles of the image in clip space (left, top, right, bottom), and how many.
   uniform vec4 u_zones[3];
   uniform float u_zoneCount;
@@ -801,13 +801,24 @@
         float band = zone.y - zone.w;
         vec2 half_ = vec2(mix(.35, .75, r4) * u_size, band * mix(.25, .5, r5));
         float cy = mix(zone.w + half_.y * .6, zone.y - half_.y * .6, r2);
-        float cx = wrapX(r1*2.0-1.0 + windX(z) + sin(u_time*.03 + r5*6.28) * .03, half_.x);
+        float x = r1*2.0-1.0 + windX(z) + sin(u_time*.03 + r5*6.28) * .03;
+        float cx = wrapX(x, half_.x);
+        // A gathered bank is no wider than its zone and wraps within it, passing its sides once
+        // faded out. Gathered banks thin out together over about 90 seconds, thickest at the
+        // start, so the zone clears now and then.
+        float breathe = 1.0;
+        if (u_zoneCount > .5 && hash(id*13.37+5.1) < u_gather) {
+          half_.x = min(half_.x, (zone.z - zone.x) * .5);
+          float lo = zone.x - half_.x;
+          cx = lo + mod(x - lo, zone.z - zone.x + 2.0*half_.x);
+          breathe = smoothstep(.15, .6, .5 + .5 * cos(u_time * .07 + r3 * .6));
+        }
         gl_Position = vec4(vec2(cx, cy) + c * half_, 0.0, 1.0);
         v_uv = c;
         // The texture's coordinates, in screen heights, move with the bank.
         v_p = c * half_ * vec2(u_res.x / u_res.y, 1.0) * .5 + r1 * 17.0;
         v_alpha = .22 * u_opacity * mix(.5, 1.0, z) * (.7 + .3 * sin(u_time * mix(.05, .12, r4) + r1 * 6.28));
-        v_alpha *= gain * smoothstep(.35, 0.0, max(zone.x - cx, cx - zone.z));
+        v_alpha *= gain * breathe * smoothstep(.35, 0.0, max(zone.x - cx, cx - zone.z));
       }`,
       fs: `${FS_HEAD}
       in vec2 v_uv, v_p;
@@ -843,7 +854,7 @@
     },
   }
   // Uniform defaults for a preset's missing fields.
-  const TUNING = { wind: 0, gust: 0, shear: 0, amount: 1, size: 1, fall: 1, opacity: 1, share: 0.3, glow: 0, tempo: 1, shimmer: 0.3, peaks: 1.2, peakTime: 1.5, peakSize: 2 }
+  const TUNING = { wind: 0, gust: 0, shear: 0, amount: 1, size: 1, fall: 1, opacity: 1, share: 0.3, glow: 0, tempo: 1, gather: 0, shimmer: 0.3, peaks: 1.2, peakTime: 1.5, peakSize: 2 }
   // The photos' aspect ratio and `background-position` y (.scene-photo), to map a band from image
   // rows to the screen the way `cover` crops the photo.
   const PHOTO_ASPECT = 1920 / 1084
@@ -883,7 +894,7 @@
       if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh))
       return sh
     }
-    const UNIFORMS = ['u_res', 'u_band', 'u_horizon', 'u_time', 'u_dpr', 'u_wind', 'u_gust', 'u_shear', 'u_size', 'u_fall', 'u_opacity', 'u_share', 'u_glow', 'u_tempo', 'u_zones', 'u_zoneCount', 'u_zoneGain', 'u_cycle', 'u_shimmer', 'u_peakTime', 'u_peakSize', 'u_colorA', 'u_colorB']
+    const UNIFORMS = ['u_res', 'u_band', 'u_horizon', 'u_time', 'u_dpr', 'u_wind', 'u_gust', 'u_shear', 'u_size', 'u_fall', 'u_opacity', 'u_share', 'u_glow', 'u_tempo', 'u_gather', 'u_zones', 'u_zoneCount', 'u_zoneGain', 'u_cycle', 'u_shimmer', 'u_peakTime', 'u_peakSize', 'u_colorA', 'u_colorB']
     const programs = {}
     function program(name) {
       if (programs[name]) return programs[name]
@@ -979,7 +990,7 @@
         gl.uniform1f(u.u_zoneCount, setup.zoneCount)
         gl.uniform3fv(u.u_zoneGain, setup.zoneGain)
         gl.uniform1f(u.u_dpr, dpr)
-        for (const key of ['wind', 'gust', 'shear', 'size', 'fall', 'opacity', 'share', 'glow', 'tempo', 'shimmer', 'peakTime', 'peakSize']) gl.uniform1f(u[`u_${key}`], t[key])
+        for (const key of ['wind', 'gust', 'shear', 'size', 'fall', 'opacity', 'share', 'glow', 'tempo', 'gather', 'shimmer', 'peakTime', 'peakSize']) gl.uniform1f(u[`u_${key}`], t[key])
         gl.uniform1f(u.u_cycle, glitterCycle(t))
       }
       const { fx } = setup
