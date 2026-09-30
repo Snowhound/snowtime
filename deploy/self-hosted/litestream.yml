@@ -1,0 +1,22 @@
+# Litestream 0.5: streams the database's changes to S3-compatible storage, such as Hetzner
+# Object Storage or Cloudflare R2 (docs/deployment/self-hosted.md). Install as
+# /etc/litestream.yml. The LITESTREAM_* values come from /etc/snowtime/litestream.env,
+# which the unit reads.
+dbs:
+  - path: /var/lib/snowtime/snowtime.db
+    replica:
+      type: s3
+      endpoint: ${LITESTREAM_ENDPOINT}
+      region: ${LITESTREAM_REGION}
+      bucket: ${LITESTREAM_BUCKET}
+      path: snowtime
+      access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+      secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+      # Hetzner, R2, and MinIO all take bucket names in the path.
+      force-path-style: true
+      sync-interval: 1s
+
+# A full snapshot a day, kept for a week: a restore can go back to any point in that week.
+snapshot:
+  interval: 24h
+  retention: 168h

@@ -1,0 +1,42 @@
+# Litestream, replicating the Snowtime database (docs/deployment/self-hosted.md). Runs as the
+# app's user, since it writes the database's WAL and shared-memory files. Install as
+# /etc/systemd/system/litestream.service, in place of the one the .deb package brings.
+[Unit]
+Description=Litestream replication of the Snowtime database
+After=network-online.target snowtime.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=snowtime
+Group=snowtime
+EnvironmentFile=/etc/snowtime/litestream.env
+ExecStart=/usr/bin/litestream replicate -config /etc/litestream.yml
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/snowtime
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+CapabilityBoundingSet=
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
