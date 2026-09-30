@@ -7,7 +7,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Database } from '.'
-import { BUSY_TIMEOUT_MS } from './connection'
+import { openClient } from './connection'
 import { relations } from './relations'
 
 export async function createTestDatabase(): Promise<{
@@ -17,7 +17,7 @@ export async function createTestDatabase(): Promise<{
 }> {
   const dir = mkdtempSync(join(tmpdir(), 'snowtime-test-'))
   const url = `file:${join(dir, 'test.db')}`
-  const db = drizzle({ connection: { url, timeout: BUSY_TIMEOUT_MS }, relations })
+  const db = drizzle({ client: openClient({ url }), relations })
   await migrate(db, { migrationsFolder: 'drizzle' })
   return { db, url, cleanup: () => removeDatabase(db, dir) }
 }

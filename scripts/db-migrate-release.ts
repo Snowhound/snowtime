@@ -5,22 +5,17 @@
 //
 // Usage: TURSO_DATABASE_URL=file:/var/lib/snowtime/snowtime.db ./snowtime-migrate
 
-import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 import { dirname, join } from 'node:path'
-import { BUSY_TIMEOUT_MS } from '~/db/connection'
+import { openClient } from '~/db/connection'
 import { verifyMigrations } from './db-verify'
 
 const url = process.env.TURSO_DATABASE_URL
 if (!url) throw new Error('TURSO_DATABASE_URL is not set.')
 
 const folder = join(dirname(process.execPath), 'drizzle')
-const client = createClient({
-  url,
-  authToken: process.env.TURSO_AUTH_TOKEN,
-  timeout: BUSY_TIMEOUT_MS,
-})
+const client = openClient({ url, authToken: process.env.TURSO_AUTH_TOKEN })
 if (!(await verifyMigrations(client, folder))) process.exit(1)
 await migrate(drizzle({ client }), { migrationsFolder: folder })
 client.close()

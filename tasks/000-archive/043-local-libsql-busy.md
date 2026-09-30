@@ -61,3 +61,20 @@ the error. The file closes once garbage collection frees the statements, which h
 only after the event loop has turned. `cleanup()` in `src/db/testing.ts` is now async: it
 closes the client, then retries the removal, forcing a collection between tries. A
 binding that finalizes statements would make those retries unnecessary.
+
+## Requests in one process (2026-09-30)
+
+The note above that the dev server's transactions hold the lock only briefly didn't hold
+under load. A transaction awaits between its statements, so another request's write runs
+on a second connection in between, and its busy wait freezes the process until it fails.
+On the benchmark database, 18 concurrent users each starting, reading, and stopping a
+timer and loading a month report 10 times (720 calls) took 152 s: 180 calls failed with
+`database is locked` or "cannot commit transaction - SQL statements in progress", and one
+call waited 101 s.
+
+`openClient` in `src/db/connection.ts` now queues every statement of a `file:` client
+while a transaction is open, so requests in one process never meet each other's lock. The
+same run took 2.9 s with no errors and a slowest call of 143 ms. `src/db/connection.test.ts`
+checks a write issued during an open transaction. Code inside a transaction must use its
+handle: a call on `db` there would wait for the transaction to end. Another process holding
+the lock for more than `BUSY_TIMEOUT_MS` can still trigger the binding bug.

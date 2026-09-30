@@ -2,15 +2,11 @@
 // Turso token must never reach the browser.
 import { drizzle } from 'drizzle-orm/libsql'
 import { env } from '~/env'
-import { BUSY_TIMEOUT_MS } from './connection'
+import { openClient } from './connection'
 import { relations } from './relations'
 
 export const db = drizzle({
-  connection: {
-    url: env.TURSO_DATABASE_URL,
-    authToken: env.TURSO_AUTH_TOKEN,
-    timeout: BUSY_TIMEOUT_MS,
-  },
+  client: openClient({ url: env.TURSO_DATABASE_URL, authToken: env.TURSO_AUTH_TOKEN }),
   relations,
 })
 
