@@ -50,13 +50,20 @@ type EffectDef = {
 // shader. A point's are `flat` varyings; a quad's stay smooth, since all its corners hold the
 // same value and `flat` on triangles made ANGLE on Metal draw rain about 10% slower.
 
+// lowbias32 (Chris Wellons), an integer hash that is exact at any precision and for any input,
+// where a sin() hash breaks down in mediump and at large arguments.
+const HASH = `
+highp uint lowbias32(highp uint x){ x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16; return x; }
+`
 // Every vertex shader: the frame, the tuning every effect takes, and each item's randomness.
 const VS_HEAD = `
 precision highp float;
 uniform vec2 u_res;
 uniform float u_time, u_dpr, u_size, u_fall, u_opacity;
-float hash(float n){ return fract(sin(n*127.1)*43758.5453123); }
-float hash2(float n){ return fract(sin(n*269.5+31.7)*17358.5453123); }
+${HASH}
+// An item's k-th random value, 0 to 1. A group of items takes streams from 10 up, so it doesn't
+// share values with the item of the same number.
+float rnd(uint item, uint k){ return float(lowbias32(lowbias32(item) + k) >> 8) / 16777216.0; }
 `
 // The wind, for everything that floats or falls.
 const WIND = `
@@ -76,13 +83,6 @@ float wrapX(float x, float margin){ return -1.0 - margin + mod(x + 1.0 + margin,
 const FALL = `
 // The band's top and bottom in clip space; the full screen and a margin without a band.
 uniform vec2 u_band;
-// An integer hash for a falling item's column on each pass. The pass count grows without bound,
-// and sin() loses precision on large arguments, so hash() gave many items the same column.
-float columnHash(int item, float pass){
-  uint x = uint(item) * 1664525u + uint(pass) * 1013904223u + 12345u;
-  x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16;
-  return float(x) / 4294967295.0;
-}
 #ifdef SHEAR
 // The image's horizon in clip space.
 uniform float u_horizon, u_shear;
@@ -160,13 +160,13 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     // Premultiplied, as the canvas composites; straight alpha would darken the flakes' edges.
     flat out vec4 v_color;
     void main() {
-      float id = float(gl_VertexID) + 1.0;
-      float r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0);
+      uint item = uint(gl_VertexID);
+      float r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u);
       float z = mix(.22, 1.0, pow(r3, 1.8));
       float v = .15 * mix(.18, .60, z) * u_fall * (1.0+r4*.55);
       vec2 f = fallPass(r2, u_time * v);
       float y = f.x;
-      float x = columnHash(gl_VertexID, f.y) * 2.0 - 1.0 + pathX(y, v, mix(.6, 1.0, z));
+      float x = rnd(item, 8u + uint(f.y)) * 2.0 - 1.0 + pathX(y, v, mix(.6, 1.0, z));
       x += sin((y+r4*6.28)*4.5 + u_time*(.35+r3)) * (.008 + .035*(1.0-z));
       x = wrapX(x, .15);
       x *= mix(.88, 1.08, z);
@@ -209,8 +209,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     flat out vec2 v_turn;
     flat out float v_narrow;
     void main() {
-      float id = float(gl_VertexID) + 1.0;
-      float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+      uint item = uint(gl_VertexID);
+      float r1 = rnd(item, 1u), r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u), r5 = rnd(item, 5u);
       float z = mix(.35, 1.0, pow(r3, 1.5));
       float t = u_time;
       float y = 1.25 - mod((1.25 - (r2*2.0-1.0)) + t * mix(.05, .12, z) * (.8 + r4*.5) * u_fall, 2.5);
@@ -272,8 +272,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     vs: `${VS_HEAD}
     flat out float v_alpha;
     void main() {
-      float id = float(gl_VertexID) + 1.0;
-      float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+      uint item = uint(gl_VertexID);
+      float r1 = rnd(item, 1u), r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u), r5 = rnd(item, 5u);
       float z = mix(.4, 1.0, r3);
       // Mostly low, over the meadow, a few up to the tree line.
       vec2 p = vec2(r1*2.0-1.0, mix(-.95, .3, pow(r2, 1.3)));
@@ -314,8 +314,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     // 1 for fluff, 0 for pollen.
     flat out float v_fluff;
     void main() {
-      float id = float(gl_VertexID) + 1.0;
-      float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+      uint item = uint(gl_VertexID);
+      float r1 = rnd(item, 1u), r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u), r5 = rnd(item, 5u);
     #ifdef FLUFF
       float fluff = step(1.0 - u_share, r5);
     #else
@@ -376,15 +376,14 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     out vec4 v_color;
     out vec2 v_q;
     void main() {
-      int item = gl_VertexID / 6;
-      float id = float(item) + 1.0;
-      float r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0);
+      uint item = uint(gl_VertexID / 6);
+      float r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u);
       float z = mix(.35, 1.0, pow(r3, 1.3));
       float v = mix(1.1, 2.0, z) * u_fall;
       vec2 f = fallPass(r2, u_time * v);
       float y = f.x;
       float depth = mix(.55, 1.0, z);
-      float x = wrapX(columnHash(item, f.y)*2.0-1.0 + pathX(y, v, depth), .15);
+      float x = wrapX(rnd(item, 8u + uint(f.y))*2.0-1.0 + pathX(y, v, depth), .15);
       // Sideways pixels per pixel of fall, as the wind blows here and now.
       float slant = 2.0 * u_wind * depth * shearAt(y) * gustNow() / v;
       // Bursts: the shower's strength rises and falls, and each streak shows above its own level.
@@ -446,8 +445,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     uniform float u_cycle;
     flat out float v_alpha;
     void main() {
-      float id = float(gl_VertexID) + 1.0;
-      float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+      uint item = uint(gl_VertexID);
+      float r1 = rnd(item, 1u), r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u), r5 = rnd(item, 5u);
       int zi = min(int(r5 * float(ZONES)), ZONES - 1);
       vec4 zone = u_zones[zi];
       // Denser toward the zone's top, which is farther away.
@@ -455,7 +454,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       gl_Position = vec4(mix(zone.x, zone.z, r1), y, 0.0, 1.0);
       float shimmer = pow(max(0.0, sin(u_time * u_tempo * mix(.25, .8, r3) + r4 * 6.28)), 4.0) * u_shimmer;
       // Each speck's glint comes once a cycle, at its own time.
-      float tau = mod(u_time + hash(id*4.71+2.0) * u_cycle, u_cycle);
+      float tau = mod(u_time + rnd(item, 6u) * u_cycle, u_cycle);
       float peak = tau < u_peakTime ? pow(sin(3.14159 * tau / u_peakTime), 2.0) : 0.0;
       v_alpha = max(shimmer, peak) * u_opacity * u_zoneGain[zi];
       // 0 at the horizon, 1 at the screen's foot.
@@ -507,17 +506,17 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     }
     // Groups of three, each idling about a point that drifts slowly with the wind.
     vec2 midgeAt(float r2, float r3, float r4, float r5){
-      float group = floor((float(gl_VertexID) - u_glow) / 3.0);
-      float s1 = hash(group*7.3+1.0), s2 = hash2(group*3.1+2.0);
-      vec4 zone = u_zones[hash(group*5.9+4.0) < .75 ? 0 : 1];
+      uint group = uint(max(float(gl_VertexID) - u_glow, 0.0)) / 3u;
+      float s1 = rnd(group, 10u), s2 = rnd(group, 11u);
+      vec4 zone = u_zones[rnd(group, 12u) < .75 ? 0 : 1];
       vec2 c = vec2(mix(zone.x, zone.z, s1) + sin(u_time*.03 + s2*6.28)*.05 + windX(1.0), mix(zone.w, zone.y, s2));
       float t = u_time * u_tempo * mix(.4, .7, r4);
       vec2 o = vec2(sin(t*2.3 + r2*6.28) + .5*sin(t*4.1 + r3*6.28), cos(t*1.9 + r3*6.28) + .5*sin(t*3.7 + r2*6.28));
       return c + o * vec2(.03 * u_res.y / u_res.x, .03) * mix(.6, 1.2, r5);
     }
     void main() {
-      float id = float(gl_VertexID) + 1.0;
-      float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+      uint item = uint(gl_VertexID);
+      float r1 = rnd(item, 1u), r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u), r5 = rnd(item, 5u);
     #ifdef FIREFLIES
       float firefly = step(float(gl_VertexID) + .5, u_glow);
       vec2 p = firefly > .5 ? fireflyAt(r1, r2, r4, r5) : midgeAt(r2, r3, r4, r5);
@@ -528,7 +527,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       p.x = wrapX(p.x, .1);
       gl_Position = vec4(p, 0.0, 1.0);
       float z = mix(.4, 1.0, r3);
-      float special = max(firefly, step(1.0 - u_share, hash(id*1.91+5.0)));
+      float special = max(firefly, step(1.0 - u_share, rnd(item, 6u)));
       // A firefly's glow: quick on, slower off, then dark for the rest of its cycle.
       float ph = fract(u_time / mix(4.0, 7.0, r5) + r1);
       float glow = smoothstep(0.0, .12, ph) * (1.0 - smoothstep(.18, .6, ph));
@@ -585,12 +584,12 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     out float v_alpha;
     const vec2 CORNERS[6] = vec2[6](vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(-1, 1), vec2(1, -1), vec2(1, 1));
     void main() {
-      float id = float(gl_VertexID / 6) + 1.0;
+      uint item = uint(gl_VertexID / 6);
       vec2 c = CORNERS[gl_VertexID % 6];
-      float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+      float r1 = rnd(item, 1u), r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u), r5 = rnd(item, 5u);
       float z = mix(.4, 1.0, r3);
       // Each bank keeps to one zone's rows, and fades out as it drifts past the zone's sides.
-      int zi = min(int(hash(id*7.73+1.3) * float(ZONES)), ZONES - 1);
+      int zi = min(int(rnd(item, 6u) * float(ZONES)), ZONES - 1);
       vec4 zone = u_zones[zi];
       float gain = u_zoneGain[zi];
       // Half the bank's width and height in clip space: wide and low, up to half the band tall.
@@ -604,7 +603,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       // start, so the zone clears now and then.
       float breathe = 1.0;
     #ifdef GATHER
-      if (hash(id*13.37+5.1) < u_gather) {
+      if (rnd(item, 7u) < u_gather) {
         half_.x = min(half_.x, (zone.z - zone.x) * .5);
         float lo = zone.x - half_.x;
         cx = lo + mod(x - lo, zone.z - zone.x + 2.0*half_.x);
@@ -624,13 +623,11 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     in vec2 v_uv;
     in highp vec2 v_p;
     in float v_alpha;
-    // An integer hash of a lattice cell, exact at any precision; a sin() hash breaks down in
-    // mediump.
+    ${HASH}
+    // A lattice cell's value, 0 to 1.
     float vhash(highp vec2 cell){
       highp uvec2 q = uvec2(ivec2(cell) + 4096);
-      highp uint x = q.x * 1664525u ^ (q.y * 1013904223u + 12345u);
-      x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16;
-      return float(x) / 4294967295.0;
+      return float(lowbias32(q.x * 1664525u ^ (q.y * 1013904223u + 12345u))) / 4294967295.0;
     }
     float vnoise(highp vec2 p){
       highp vec2 i = floor(p);

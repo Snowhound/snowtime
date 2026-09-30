@@ -50,9 +50,9 @@ sizes matter most.
 
 - [x] Each effect's shader reviewed against the list, with GPU time per frame before and
       after (weather bench), per effect
-- [ ] Golden frames unchanged within tolerance, or updated after Kait signed off the
-      variant in the bench (the look-preserving rewrite matches all 75; the integer hash
-      waits for Kait)
+- [x] Golden frames unchanged within tolerance, or updated after Kait signed off the
+      variant in the bench (the look-preserving rewrite matches all 75; the integer hash's
+      frames updated after Kait's sign-off on 2026-09-30)
 - [x] No per-pixel branch that depends on the item; uniform branches only where a `#define`
       would make the code harder to read
 - [x] The shaders read as plainly as before or better, with comments where the math isn't
@@ -101,18 +101,14 @@ May, August, and September at night) lie between the horizon and the screen's fo
 that's the look Kait approved. The rewrite keeps it, and the comments now say so. Kait to
 decide: keep it and drop the mist bands, or honor the bands (a visible change).
 
-## Waiting for Kait
+## Integer hash (signed off 2026-09-30)
 
-An integer hash (lowbias32, from `uint(gl_VertexID)`) in place of the `fract(sin())` hashes,
-also used by the mist's noise and in place of `columnHash`. It gives every item new random
-values, so all 75 golden frames change, though the density and spread look the same on a
-contact sheet. It's no faster (0.99 to 1.03 on the M1). The gain is one exact hash instead of
-three, and no `sin` hash breaking down at large arguments or in `mediump`.
-
-To compare: the working copy's bench has a `compare=1` switch that runs the old shaders on a
-second canvas in step with the new; the button or V shows one or the other. For example
-`weather.html?image=land-july&theme=dark&photo=1&compare=1`. After sign-off, commit the hash
-with `bun run perf:weather --golden --update` and drop the switch and the old copy.
+An integer hash (lowbias32, from `uint(gl_VertexID)`) replaces the `fract(sin())` hashes and
+`columnHash`, and the mist's noise uses it too. It gives every item new random values, so all
+75 golden frames changed, though density and spread look the same on a contact sheet. It's no
+faster (0.99 to 1.03 on the M1); the gain is one exact hash instead of three, with no `sin`
+hash breaking down at large arguments or in `mediump`. Kait compared it in the bench beside
+the old shaders and signed it off, and the golden frames were updated.
 
 ## Checked and left as is
 
