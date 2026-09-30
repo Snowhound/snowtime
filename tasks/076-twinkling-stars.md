@@ -11,8 +11,8 @@ glitter's specks do, without moving.
 The number is a first guess; Kait and the agent tune the count, size, and strength together
 in the weather bench against the photo. Start small and sparse (the weather's usual taste).
 
-Open: the image's dark theme shows frost today. The renderer draws one effect per image, so
-the stars either replace the frost or the renderer learns to draw two effects. Ask Kait which.
+The stars replace the frost that the image's dark theme shows today (Kait, 2026-09-30), so
+the renderer keeps drawing one effect per image.
 
 ## Acceptance criteria
 
