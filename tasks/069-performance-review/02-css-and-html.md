@@ -76,6 +76,8 @@ Transitions:
 - Transitions on layout properties: none in `src/`. `TabsIndicator`'s `width` and `height`
   are the only ones, and it is unused. The CSS transitions in `src/styles.css` are
   opacity, transform, and filter (the intro lines and page).
+- Kait checked the tabs on Organization, Projects, and Reports after these changes
+  (2026-09-30): no visible change.
 
 ## Acceptance criteria
 
