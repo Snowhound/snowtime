@@ -1,6 +1,6 @@
 # 04: Server queries
 
-Status: in-progress
+Status: done
 
 The report reads every entry in its range and sums it in JavaScript (`aggregate` in
 `src/server/reports/reports.server.ts`). For a year of the company seed that is about 20,000
@@ -40,7 +40,7 @@ a covering index is fine when it removes table reads from a hot query.
 
 ## Acceptance criteria
 
-- [ ] Rows read, rows and bytes returned, and time per call, before and after, for a week, a
+- [x] Rows read, rows and bytes returned, and time per call, before and after, for a week, a
       month, and a year, as admin and as a member (harness)
 - [x] Each candidate done or left, with its numbers
 - [x] Query plan snapshots updated, with no scan of `time_entry` on a hot path
@@ -96,7 +96,16 @@ a covering index is fine when it removes table reads from a hot query.
 
   Timings are noisy; the stable gain is eliminating the table lookup for each matching
   report entry. `bun run perf` passes before and after; reports and timer tests are
-  unchanged. Rows visited inside SQLite remain unavailable through libsql.
+  unchanged.
+
+  In review, the report's entries read timed on two copies of the same database, one with
+  the covering indexes and one with the plain ones, alternating 35 runs each, twice (ms):
+  admin year 24.4 against 30.0 and 24.7 against 30.3 (about 19% faster), admin month 2.1
+  against 2.4, member month and year flat. The two indexes grow from 4.3 MB to 7.8 MB on
+  the company seed. A single-entry insert takes about 0.03 ms longer (0.60 against 0.56 ms,
+  0.64 against 0.62 ms, medians of 280), and stopping a timer, which now updates both
+  indexes, is unchanged (0.45 and 0.50 ms on both). Turso's billed rows don't change: see
+  "Rows read on sqld" below.
 
 - **By-day paging in SQL.** A `started_at DESC LIMIT` probe selects the oldest day needed
   for a page. The read then fetches those whole days, including entries starting up to
@@ -122,6 +131,40 @@ a covering index is fine when it removes table reads from a hot query.
   The SQL probe adds local work for short member ranges; it saves no returned rows there.
   Large admin reports save about 99% of returned rows. The plan harness now checks the
   first and second day pages as well as an admin's member-filtered report.
+
+  **Fixed in review.** The day page returned 130 rows but still read every entry in the
+  range: the window's start was a subquery, so SQLite bounded the index by the range's
+  start and filtered each row against the window, and for a member it chose the
+  organization index over the member's. The window is now a CTE, an aggregate over the
+  day starts so that SQLite computes it once, and the entries read joins it with
+  `CROSS JOIN` as the outer loop, so its start bounds the index range. The statements per
+  page, the rows and bytes returned, and the paging test are unchanged.
+
+- **Rows read on sqld.** libsql doesn't report rows read for a local file, but `sqld`
+  (0.24.31, the libSQL server Turso runs) returns `rows_read` for each statement, which is
+  what Turso bills. A one-off script recorded each call's statements on the benchmark
+  database and replayed them on `sqld`, with main's indexes and with the branch's:
+
+  | Call and range        |   Main | Codex's paging | After the review fix |
+  | --------------------- | -----: | -------------: | -------------------: |
+  | By day, week, admin   |    478 |            805 |                  335 |
+  | By day, month, admin  |  1,758 |          2,154 |                  358 |
+  | By day, year, admin   | 20,471 |         21,869 |                  692 |
+  | By day, week, member  |     31 |            562 |                   68 |
+  | By day, month, member |     66 |          2,016 |                  161 |
+  | By day, year, member  |  1,202 |          3,694 |                  575 |
+
+  `getReport` (614, 1,894, and 20,611 rows for admin; 31, 66, and 1,202 for the member) and
+  By description read the same on both, so the covering indexes save time, not billed
+  rows. A short member range reads a few dozen rows more than before, for the probe and the
+  day starts, in the same one statement.
+
+  `bun run perf` medians of 5 for the first By day page, main, Codex's paging, and the fix,
+  in that order, twice (ms): admin week 1.5, 1.3, 1.0 and 1.3, 1.1, 0.9; admin month 5.4,
+  1.7, 1.3 and 5.4, 1.5, 1.4; admin year 108.7, 13.1, 4.9 and 62.4, 8.3, 4.8; member week
+  0.3, 0.7, 0.6 and 0.3, 0.7, 0.6; member year 6.6, 5.1, 5.1 and 7.7, 5.4, 4.9. The member's
+  week and month stay about 0.3 to 0.5 ms slower than main, which is the price of one
+  statement for every range. `perf:pages` gates stay within tolerance.
 
 ## Checked and left as is
 
@@ -190,6 +233,10 @@ a covering index is fine when it removes table reads from a hot query.
   that CPU cost, but cannot remove the required day/key result groups. It was dropped
   on the rows/bytes condition before implementing SQL totals or changing tests.
 
+- **Busy days.** A page reads its boundary day whole, because the day's total needs every
+  entry in it, and applies the member/time/ID cursor in JavaScript. On the company seed a
+  day has at most 106 entries (18 members), so paging inside a day in SQL, with a separate total
+  query, would save little for the code it needs.
 - **Timer lookups, left unchanged.** The own-week list uses the organization/user/time
   index with both time bounds. Running-entry reads use the partial unique
   `time_entry_one_running` index and indexed organization, membership, and project
@@ -199,17 +246,3 @@ a covering index is fine when it removes table reads from a hot query.
   admin 0.37 ms, member 0.26 ms. Existing timer tests cover active running entries.
   Covering the list would include descriptions and audit columns; this small read does
   not justify that index. No timer query or test changed.
-
-## Open for review
-
-- Kait: review the larger covering indexes against the saved table probes. Local timings
-  do not establish a reliable whole-report speedup or Turso billed-row savings.
-- Kait: weigh the extra sub-millisecond to millisecond SQL work on short member ranges
-  against the year-page row reduction. The member year timings overlap across runs.
-- A busy day still reads all its entries to preserve the whole-day total. Paging within
-  that day still applies the member/time/ID cursor in JavaScript, and may repeat probes.
-  Fully paging that ordering in SQL with a separate day-total query remains unimplemented.
-- SQLite rows visited and Turso billed rows are unavailable here. The first acceptance
-  criterion remains open for that part; harness rows count returned rows.
-- No Turso latency or write-cost measurement, and no `perf:pages` run: this subtask does
-  not require a browser harness. No SQL aggregate remains to compare with the reference.
