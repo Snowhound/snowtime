@@ -11,14 +11,13 @@ collections".
   the pickers, hold one image per month, `land-january` to `land-december` and `coast-january`
   to `coast-december`. Each collection's files are in a folder of its own, and the image id
   names them: `/backgrounds/<collection>/<id>-<theme>-<version>-<width>.avif`. One folder per
-  collection keeps each set together as the collections grow (Kait, 2026-09-28). The version
+  collection keeps each set together as the collections grow. The version
   is two digits, `02` unless `PHOTO_VERSIONS` in `scene.ts` lists the image at `01`: `public/`
   files are cached for a week, so a replaced image needs a new name (task 065).
 - Setting: `scene_collection` and `scene_pin`, an image id in the collection or null to follow
-  the calendar. They replaced `scene_season`: the migration turned a season into Mountain
-  valley pinned to it, and `auto` into Mountain valley unpinned; the device's settings read an
-  old `sceneSeason` the same way. `scene_season` stays unread until a later migration drops
-  it, so the previous app version keeps working until the deploy is promoted. A collection has
+  the calendar. The older `scene_season` column is unread and stays until a later migration
+  drops it; the device's settings still read an old `sceneSeason` as Mountain valley, pinned
+  to that season or, for `auto`, unpinned. A collection has
   one pin: the server clears it when the collection changes and refuses a pin from another
   collection. `imageFor` picks the pin or the calendar's image; the month lookup takes an
   optional zone, which the callers don't pass yet (task 050).
@@ -35,8 +34,8 @@ collections".
 - Assets: each image has a light and a dark file in `public/backgrounds/<collection>/`, 400,
   1920, and 3840 px wide, as AVIF only (`design/backgrounds/README.md` records how they're
   made). Every supported browser decodes AVIF; one that doesn't, such as Edge before 121,
-  fails the load and shows the page color behind the scene. A WebP set for those browsers
-  doubled the committed files for no supported browser, so it was dropped (task 051). The
+  fails the load and shows the page color behind the scene. There's no WebP set: it would
+  double the committed files for no supported browser (task 051). The
   files are 67 to 758 KB each (the leafy Baltic scenes are the largest), so they're files
   rather than bundled imports, and nothing loads until the page asks for one.
 - Loading (`src/components/scene/scene-layer.tsx`, `photoWidth` in `src/lib/scene/scene.ts`):
@@ -84,24 +83,21 @@ collections".
     after the picture's fade, so the weather and mist under the surfaces don't pop in or out.
     `data-glass` goes `under`, `over`, `on`.
   - What differs from a live blur: the weather under a surface and the page scrolling under
-    the header don't show through. Kait agreed to both on 2026-09-30, the header's after
-    seeing that it cost about a third of the glass.
+    the header don't show through. Kait agreed to both; the header alone is about a third
+    of the glass's cost.
   - A surface without the `Glass` element, or any surface before the copy is ready, blurs
-    live as before.
-  - Numbers (weather bench, M1 Pro, 1440 × 900 at pixel ratio 1.5, calm pace): the GPU
-    process's CPU time per second falls by 35 to 55% on the timer, reports, and sign-in
-    layouts, for the squall from 154 to 81 ms on the timer page, near the 66 ms with no
-    glass at all. The GPU's utilization falls by about two thirds. Under SwiftShader, the
-    weak-GPU proxy, 60 fps effects drew 12 to 16 fps with the live blur and 50 to 57 with
-    the copy. Culling the weather under the surfaces, the canvas above the page with the
-    surfaces cut out, and 16 or 8 px blurs each saved little; task 069, subtask 05 records
-    them. At 120 Hz (headed, pixel ratio 2), the squall falls from 241 to 144 ms and snow from
-    122 to 60.
+    live.
+  - Gain: the copy takes 35 to 55% off the GPU process's time on the timer, reports, and
+    sign-in pages at 60 Hz; the squall on the timer page drops from 154 to 81 ms a second,
+    near the 66 ms with no glass at all. At 120 Hz the squall drops by 40% and snow by half.
+    On a weak GPU (SwiftShader), 60 fps effects draw 50 to 57 fps instead of 12 to 16.
+    Culling the weather under the surfaces, the canvas above the page, and a smaller blur each
+    saved little. Task 069, subtask 05 has the measurements.
 - Tint (`STRENGTHS` in `src/lib/scene/scene.ts`, `.scene-tint` in `src/styles.css`): a
   vertical gradient of the page color over the image keeps the text readable, covering
   `strength × 70%` at the top and `strength × 115%` at the bottom. Dimmed, the default, is 0.4
-  light and 0.55 dark; Full is 0.2 and 0.3. Dimmed light was 0.5 until 2026-09-28, which turned
-  bright scenes very white, so Kait chose a lighter tint over regenerating the images (task 065).
+  light and 0.55 dark; Full is 0.2 and 0.3. A stronger light tint turned bright scenes very
+  white, and Kait chose a lighter tint over regenerating the images (task 065).
 - Weather (`src/lib/scene/weather.ts`, task 066): `IMAGE_WEATHER` gives each image its horizon
   and zones, and a preset for light and dark pages (or one for both), by name, with the fields it
   changes; `weatherFor` merges the preset, then the image's horizon, zones, and fields. Task 066
@@ -118,7 +114,7 @@ collections".
     rain, seeds, leaves, and midges in one image blow the same way, as the reeds, grass, and
     waves lean. Shear strengthens the wind below the image's horizon, so falling snow and rain
     arc toward the side near the ground. Rain's slant is the wind against its fall there and
-    then. The mountain images keep the drift they had before.
+    then. The mountain images take a steady wind, with no gusts or shear.
   - Tuning: factors of each effect's amount, size, fall, and opacity, and fields for glitter's
     shimmer and glints and the midges' groups, go to the shaders as uniforms.
   - Parts of the image: each Baltic image's horizon, the band that mist, spray, and midges
@@ -152,8 +148,8 @@ collections".
   spray, rain (so the squalls), leaves, and the midges run at 60 fps, since they move far
   enough per frame that 30 looks steppy on fast screens. The mist barely moves, so it runs at
   10: its fastest bank moves about 3 px a frame on a 900 px screen, under its soft edges. The
-  rest run at 30, since each frame's cost in the display compositor scales with the rate (task
-  063; with the glass's copy, task 069, that cost is about half what it was). The renderer
+  rest run at 30, since each frame's cost in the display compositor scales with the rate
+  (task 063). The renderer
   draws every nth display refresh, with n from the refresh rate it measures from its first
   frame gaps, so frames are evenly spaced: rain draws 60, 45, 60, 72, and 60 fps at 60, 90,
   120, 144, and 240 Hz. A millisecond threshold can't do this; 22 ms gives 30 fps at 60 Hz and

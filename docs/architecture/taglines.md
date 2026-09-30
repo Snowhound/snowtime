@@ -1,13 +1,13 @@
 # Taglines
 
-Tagline (`src/lib/taglines/`, `src/components/page-title.tsx`): the season's own sets are
-Paraglide messages in `src/lib/scene/seasons.ts`, since the intro shows them too. Every other
-set is in the catalogue, `src/lib/taglines/catalogue.ts`, where each set holds its lines per
-language and a `when`: a date rule, a date range, a timesheet period, or a behaviour in the
-user's timesheet. The sets had stopped being translations of each other, and a message must
-exist in every language; a catalogue set shows only in the languages it has. Each signed-in
-page's title row places the tagline in the browser, from its measured size, so it moves under
-the title when it doesn't fit.
+The tagline's code is in `src/lib/taglines/` and `src/components/page-title.tsx`. The season's
+own sets are Paraglide messages in `src/lib/scene/seasons.ts`, since the intro shows them too.
+Every other set is in the catalogue, `src/lib/taglines/catalogue.ts`, where each set holds its
+lines per language and a `when`: a date rule, a date range, a timesheet period, or a behaviour
+in the user's timesheet. The sets had stopped being translations of each other, and a message
+must exist in every language; a catalogue set shows only in the languages it has. Each
+signed-in page's title row places the tagline in the browser, from its measured size, so it
+moves under the title when it doesn't fit.
 
 - A season's sets take turns, one per UTC day, so the tagline doesn't wear out. The day is
   UTC's so the server and the browser pick the same set without knowing the user's zone; the

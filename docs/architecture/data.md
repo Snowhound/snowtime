@@ -156,8 +156,8 @@ the source of truth. Workflow and rules: `docs/migrations.md`.
 - Applied migrations are immutable. `db:migrate` first runs `db:verify`, which
   fails if an applied file was edited or deleted (drizzle-kit does not check).
 - `src/db/schema.ts` is a hand-maintained mapping for typed queries and the
-  Better Auth adapter. It is never used to generate migrations; `drizzle-kit
-generate` (non-custom) and `push` are not run against real databases.
+  Better Auth adapter. It is never used to generate migrations; non-custom
+  `drizzle-kit generate` and `push` are not run against real databases.
 - `bun run db:drift` applies all migrations to an empty database and diffs it
   against `schema.ts` (`drizzle-kit push --explain`). Drift is a warning, not
   a failure.
