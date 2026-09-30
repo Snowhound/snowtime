@@ -32,6 +32,26 @@ Pick Vercel and Turso to start at no cost for non-commercial use with nothing to
 Pick self-hosted for commercial use without paying for Vercel Pro, to keep data with a
 provider of your choice, or for faster pages, if someone will keep the server updated.
 
+## Other targets
+
+The app builds with Nitro, which has presets for many other hosts. None of them is
+supported or tested yet. Adding one means a runbook here, plus whatever the host needs
+from this list:
+
+- **A database next to the app.** A page makes several database queries, so the app must
+  run in the same region as a remote database (Turso), or in the same process as a local
+  one. A host far from the database makes every page slower.
+- **The libSQL client.** Serverless and edge runtimes such as Cloudflare Workers can't
+  load libSQL's native addon, so they need `@libsql/client/web` and a remote Turso
+  database. A container platform can use either.
+- **Shared rate-limit counts.** A host that runs several instances needs Upstash Redis,
+  as Vercel does, or the limits apply per instance.
+- **The client IP.** Set `CLIENT_IP_HEADER` to the header the host sets to the user's
+  address.
+
+Cloudflare as a proxy in front of the self-hosted server is already supported; running
+the app on Cloudflare Workers isn't.
+
 ## Set the environment variables
 
 Both targets read the same variables. `.env.example` lists them, and `src/env.ts` checks

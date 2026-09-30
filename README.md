@@ -36,8 +36,8 @@ The scope and what is left out on purpose are in [docs/product.md](docs/product.
 [Turso](https://turso.tech) (libSQL) through [Drizzle](https://orm.drizzle.team),
 [Better Auth](https://www.better-auth.com), [Solid-UI](https://www.solid-ui.com) with
 Tailwind CSS, and [Paraglide JS](https://inlang.com/m/gerre34r/library-inlang-paraglideJs).
-It is deployed to [Vercel](https://vercel.com). Each choice and its reason is recorded in
-[docs/architecture.md](docs/architecture.md).
+It runs on [Vercel](https://vercel.com) or self-hosted on a Linux server. Each choice and
+its reason is recorded in [docs/architecture.md](docs/architecture.md).
 
 ## Getting started
 
@@ -119,18 +119,27 @@ changing the schema. The data model, its diagram, and how to view it are in
 
 ## Deployment
 
-Snowtime runs on Vercel with a Turso database per environment: `prod` for `main`, and a
-planned `staging` for `develop`. After the checks pass on a push to `main`, CI migrates
-`prod` with `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from the GitHub environment
-`production`, and skips with a notice while they are unset. The Vercel build and app start
-never apply migrations.
+Snowtime supports two deployment targets, from the same code and configured only through
+environment variables:
 
-It can also run self-hosted on one Linux server, with SQLite in the app's process, Caddy
-in front, and Litestream backups. [docs/deployment/](docs/deployment/README.md) compares
-the two and has a step-by-step runbook for each.
+- **Vercel and Turso:** Vercel Functions with a Turso database.
+- **Self-hosted:** one Linux server with SQLite in the app's process, Caddy in front,
+  optionally behind Cloudflare's proxy, and Litestream backups.
 
-The same codebase can also run as a dedicated stack per client, configured only through
-environment variables. Platform limits are in [docs/hosting.md](docs/hosting.md).
+[docs/deployment/](docs/deployment/README.md) compares the two and has a step-by-step
+runbook for each. The app builds with Nitro, so other hosts Nitro supports, such as
+Cloudflare Workers, Netlify, or a container platform, could be added. They aren't
+supported or tested yet; what each would need is listed in
+[docs/deployment/](docs/deployment/README.md#other-targets).
+
+Snowhound's own deployment runs on Vercel with a Turso database per environment: `prod`
+for `main`, and a planned `staging` for `develop`. After the checks pass on a push to
+`main`, CI migrates `prod` with `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` from the GitHub
+environment `production`, and skips with a notice while they are unset. The Vercel build
+and app start never apply migrations.
+
+Either target can also host a dedicated stack per client. Platform limits are in
+[docs/hosting.md](docs/hosting.md).
 
 ## Documentation
 
