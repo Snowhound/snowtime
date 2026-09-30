@@ -28,7 +28,7 @@ new dependency); the budgets in subtask 01 keep the result.
 - [x] The entry chunk and each route's chunks listed with their largest modules
 - [x] Changes made where a page loads code it doesn't need, with gzipped sizes before and
       after per route
-- [ ] The server bundle's size and largest packages recorded, and trimmed if something
+- [x] The server bundle's size and largest packages recorded, and trimmed if something
       doesn't belong there
 
 ## Outcome
@@ -187,7 +187,11 @@ runner, browser driver, router devtools panel, or query devtools panel appears i
 server module inventory. Solid, Kobalte, icons, and message functions render SSR output;
 their presence alone does not make them removable client-only code. The XLSX library is
 an exception: the export happens in the browser, but Nitro traces its dynamic import.
-That is the next measured change.
+A server-only guard in `toXlsx` removes that import from Nitro's trace. Its browser
+implementation and downloaded spreadsheet stay unchanged. The server size falls
+6,629,149 → 6,486,287 bytes (142,862 bytes, 2.2%). Two old/new pairs of `bun run perf`
+repeat these counts; every client route and CSS count stays identical. The final server
+has no `write-excel-file` or `fflate` modules. The existing XLSX export tests pass.
 
 ## Checked and left as is
 
@@ -225,6 +229,10 @@ That is the next measured change.
   three DOM elements on sign-in (156 → 159), failing the page budget. Moving renderer-only
   defaults with the renderer gives the retained numbers above and restores all DOM counts.
 
+Validation so far: `bun run test` (396 Bun tests, 175 component tests), lint,
+`format:check`, knip, `bun run perf`, two alternating pairs of `perf:pages`, and all
+75 weather golden frames pass. The subtask stays in-progress.
+
 ## Open for review
 
 - Kait: check cold sign-in weather onset and toggling weather while the chunk loads.
@@ -232,4 +240,5 @@ That is the next measured change.
 - Consider an upstream TanStack Form production guard for its event client.
 - Active-locale-only messages and narrower auth plugin loading remain unimplemented;
   assess whether their complexity is worth the bytes before changing the runtime model.
-- Server XLSX trimming and the final validation record follow in the next commit.
+- The server still traces the lazy weather renderer, even though it is called only inside
+  `onMount`. Check whether an explicit server guard can remove it in another small step.

@@ -160,6 +160,8 @@ export function exportFileName(slug: string, from: IsoDate, last: IsoDate, kind:
 // One sheet per table. Durations are fractions of a day shown as [h]:mm, so they add up in the
 // spreadsheet and read as the timesheet does; dates are text, as they are the user's days.
 export async function toXlsx(sheets: { name: string; table: Table }[]) {
+  // Exports run in the browser; keep the spreadsheet library out of Nitro's server trace.
+  if (import.meta.env.SSR) throw new Error('XLSX export requires a browser')
   const { default: writeXlsxFile } = await import('write-excel-file/universal')
   const bold = { fontWeight: 'bold' } as const
   return writeXlsxFile(
