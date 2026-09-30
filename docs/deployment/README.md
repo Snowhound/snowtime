@@ -43,7 +43,9 @@ from this list:
   one. A host far from the database makes every page slower.
 - **The libSQL client.** Serverless and edge runtimes such as Cloudflare Workers can't
   load libSQL's native addon, so they need `@libsql/client/web` and a remote Turso
-  database. A container platform can use either.
+  database. A container platform can use either. Nitro bundles the package's Node and web
+  entries into one chunk, so the build must resolve `@libsql/client` to the web entry, for
+  example with an alias; a dynamic import of the Node client still loads the addon.
 - **Shared rate-limit counts.** A host that runs several instances needs Upstash Redis,
   as Vercel does, or the limits apply per instance.
 - **The client IP.** Set `CLIENT_IP_HEADER` to the header the host sets to the user's

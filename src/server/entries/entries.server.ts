@@ -7,7 +7,7 @@ import { member, timeEntry } from '~/db/schema'
 import { AppError } from '../errors'
 import { limits } from '../limits.server'
 import { assertUsableProject } from '../projects/projects.server'
-import { failedConstraint, live } from '../queries.server'
+import { allInOrder, failedConstraint, live } from '../queries.server'
 import { isAdmin, readableUserIds, type Scope } from '../scope.server'
 import { MAX_ENTRY_MS } from './entries.schemas'
 import type {
@@ -22,6 +22,15 @@ function assertCanWrite(scope: Scope, userId: string) {
   if (userId !== scope.userId && !isAdmin(scope)) {
     throw new AppError('FORBIDDEN', 'entry_forbidden')
   }
+}
+
+// An admin writing another user's entry: that user must be in the organization.
+async function assertMember(db: Database, scope: Scope, userId: string) {
+  const [membership] = await db
+    .select({ id: member.id })
+    .from(member)
+    .where(and(eq(member.organizationId, scope.organizationId), eq(member.userId, userId)))
+  if (!membership) throw new AppError('NOT_FOUND', 'member_not_found')
 }
 
 async function findEntry(db: Database, scope: Scope, id: string) {
@@ -66,15 +75,11 @@ export async function assertEntryRoom(
 export async function createEntry(db: Database, scope: Scope, input: CreateEntryInput) {
   const userId = input.userId ?? scope.userId
   assertCanWrite(scope, userId)
-  if (userId !== scope.userId) {
-    const [membership] = await db
-      .select({ id: member.id })
-      .from(member)
-      .where(and(eq(member.organizationId, scope.organizationId), eq(member.userId, userId)))
-    if (!membership) throw new AppError('NOT_FOUND', 'member_not_found')
-  }
-  if (input.projectId) await assertUsableProject(db, scope, input.projectId)
-  await assertEntryRoom(db, scope.organizationId, userId, input.startedAt)
+  await allInOrder([
+    userId !== scope.userId && assertMember(db, scope, userId),
+    input.projectId && assertUsableProject(db, scope, input.projectId),
+    assertEntryRoom(db, scope.organizationId, userId, input.startedAt),
+  ])
 
   try {
     const [entry] = await db
@@ -120,13 +125,15 @@ export async function updateEntry(db: Database, scope: Scope, input: UpdateEntry
   if (stoppedAt && stoppedAt.getTime() - startedAt.getTime() > MAX_ENTRY_MS) {
     throw new AppError('INVALID', 'entry_too_long')
   }
-  // Keeping an archived project is fine; moving time onto one is not.
-  if (input.projectId && input.projectId !== entry.projectId) {
-    await assertUsableProject(db, scope, input.projectId)
-  }
-  if (input.startedAt && input.startedAt.getTime() !== entry.startedAt.getTime()) {
-    await assertEntryRoom(db, scope.organizationId, entry.userId, input.startedAt, entry.id)
-  }
+  await allInOrder([
+    // Keeping an archived project is fine; moving time onto one is not.
+    input.projectId &&
+      input.projectId !== entry.projectId &&
+      assertUsableProject(db, scope, input.projectId),
+    input.startedAt &&
+      input.startedAt.getTime() !== entry.startedAt.getTime() &&
+      assertEntryRoom(db, scope.organizationId, entry.userId, input.startedAt, entry.id),
+  ])
 
   // The checks above read the entry before the update, so a concurrent edit of the other
   // end can still make it too long or end before it starts, and the new project can be

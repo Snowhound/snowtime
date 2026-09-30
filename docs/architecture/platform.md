@@ -77,6 +77,25 @@ test their migrations on throwaway local databases only (`db:drift`).
   migrate the file with `db:migrate` or the release's `snowtime-migrate`, then restart.
   Litestream streams the file to S3-compatible storage. Turso Sync was evaluated as the
   backup instead and not adopted, because it swaps libSQL for Turso's pre-1.0 engine.
+- Both deployments use `@libsql/client` (task 077, decided 2026-09-30). Turso's own
+  drivers were measured and not adopted:
+  - `@tursodatabase/serverless` through Drizzle (`drizzle-orm/tursodatabase-serverless`)
+    sends a `describe` request before most queries, queues every query of an instance
+    behind one connection, lets other requests' statements run inside an open
+    transaction, and fails the first query after about 10 idle seconds with "The stream
+    has expired due to inactivity". Against `sqld` with 20 ms of added latency, a month
+    report took 204 ms against libSQL's 66 ms, and 10 parallel requests 444 ms against
+    37 ms.
+  - `@tursodatabase/database` 0.8.1 ran year reports about 40% faster than libSQL on the
+    benchmark database and keeps a connection's writes after `SQLITE_BUSY`. It doesn't
+    share a file with SQLite in another process, even with its experimental
+    `multiprocess_wal` on Linux: a libSQL write while it was open erased its committed
+    rows, and SQLite reads failed with `SQLITE_BUSY`, then "file is not a database" once
+    it closed. `db:migrate`, `db:seed`, the `sqlite3` shell, and Litestream all open
+    the file from another process. Look again once the engine interoperates.
+  - `@libsql/client/web` for remote URLs, which skips the native addon, saved about 11 ms
+    of import time in Node. Nitro puts both of the package's entries in one chunk, so the
+    addon loaded anyway; the gain isn't worth a build-time alias.
 - Planned: CI also applies `main`'s migrations to a throwaway database, seeds it, and
   then applies the PR's migrations, to catch a migration that fails on existing rows
   (for example a `NOT NULL` column without a default).

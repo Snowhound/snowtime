@@ -1,4 +1,4 @@
-// Shared filters for soft-deleted tables. Server functions build their queries from these
+// Shared query helpers. Server functions build their queries on the soft-delete filters
 // instead of repeating sys_deleted = 0 (docs/architecture/README.md, "Application rules").
 import { and, eq, type SQL, sql } from 'drizzle-orm'
 import { project, timeEntry } from '~/db/schema'
@@ -26,4 +26,16 @@ export function failedConstraint(error: unknown): string | null {
     if (match) return match[1]
   }
   return null
+}
+
+// Awaits independent statements together, so they cost one round trip to Turso, and throws
+// the error of the first to fail in list order, so the error doesn't depend on timing.
+export async function allInOrder<T extends readonly unknown[]>(
+  statements: T,
+): Promise<{ -readonly [K in keyof T]: Awaited<T[K]> }> {
+  const results = await Promise.allSettled(statements)
+  return results.map((result) => {
+    if (result.status === 'rejected') throw result.reason
+    return result.value
+  }) as { -readonly [K in keyof T]: Awaited<T[K]> }
 }

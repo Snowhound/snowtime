@@ -19,18 +19,22 @@ export async function appSession(
   activeOrganizationId: string | null,
   now = new Date(),
 ) {
-  const memberships = await db
-    .select({
-      id: organization.id,
-      name: organization.name,
-      slug: organization.slug,
-      issueLinks: organization.issueLinks,
-      role: member.role,
-    })
-    .from(member)
-    .innerJoin(organization, eq(organization.id, member.organizationId))
-    .where(eq(member.userId, user.id))
-    .orderBy(asc(organization.name), asc(organization.id))
+  // Every signed-in page waits for this, so independent reads share a round trip.
+  const [memberships, settings] = await Promise.all([
+    db
+      .select({
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug,
+        issueLinks: organization.issueLinks,
+        role: member.role,
+      })
+      .from(member)
+      .innerJoin(organization, eq(organization.id, member.organizationId))
+      .where(eq(member.userId, user.id))
+      .orderBy(asc(organization.name), asc(organization.id)),
+    findSettings(db, user.id),
+  ])
   const organizations = memberships.map((o) => ({ ...o, role: strongestRole(o.role) }))
 
   // The session may have no active organization yet, or one the user has since left; the
@@ -38,27 +42,10 @@ export async function appSession(
   const active =
     organizations.find((o) => o.id === activeOrganizationId) ?? organizations.at(0) ?? null
 
-  const settings = await findSettings(db, user.id)
-  const fill = settings ? await fillOf(db, user, organizations, settings, now.getTime()) : null
-
-  // Only asked when there is no organization: such a user goes to their invitation, or to
-  // create an organization. Better Auth compares invited addresses case-insensitively.
-  let invitationId: string | null = null
-  if (!active) {
-    const [open] = await db
-      .select({ id: invitation.id })
-      .from(invitation)
-      .where(
-        and(
-          sql`lower(${invitation.email}) = ${user.email.toLowerCase()}`,
-          eq(invitation.status, 'pending'),
-          gt(invitation.expiresAt, now),
-        ),
-      )
-      .orderBy(asc(invitation.expiresAt))
-      .limit(1)
-    invitationId = open?.id ?? null
-  }
+  const [fill, invitationId] = await Promise.all([
+    settings ? fillOf(db, user, organizations, settings, now.getTime()) : null,
+    active ? null : openInvitation(db, user.email, now),
+  ])
 
   return {
     organizations,
@@ -67,6 +54,24 @@ export async function appSession(
     fill,
     invitationId,
   }
+}
+
+// Only asked when there is no organization: such a user goes to their invitation, or to
+// create an organization. Better Auth compares invited addresses case-insensitively.
+async function openInvitation(db: Database, email: string, now: Date) {
+  const [open] = await db
+    .select({ id: invitation.id })
+    .from(invitation)
+    .where(
+      and(
+        sql`lower(${invitation.email}) = ${email.toLowerCase()}`,
+        eq(invitation.status, 'pending'),
+        gt(invitation.expiresAt, now),
+      ),
+    )
+    .orderBy(asc(invitation.expiresAt))
+    .limit(1)
+  return open?.id ?? null
 }
 
 // The user's entries since the start of last month in their organizations, and a running

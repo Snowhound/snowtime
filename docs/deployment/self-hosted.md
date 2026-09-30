@@ -383,6 +383,9 @@ it replaces the libSQL engine with Turso's rewrite, which hasn't reached 1.0. A 
 - It has no automatic push: the app would call `push()` after each write, for example
   from `sessionMiddleware`, or on a timer, and once more at shutdown. Push needs a Turso
   Cloud database, which the spike didn't reach.
+- The same engine can't share the file with SQLite in another process (task 077): a
+  migration or Litestream running beside it loses or can't read data. See the database
+  drivers in `../architecture/platform.md`, "Environments and deployment".
 
 ## Measure the server
 

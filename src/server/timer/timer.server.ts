@@ -9,7 +9,7 @@ import { MAX_ENTRY_MS } from '../entries/entries.schemas'
 import { assertEntryRoom } from '../entries/entries.server'
 import { AppError } from '../errors'
 import { assertUsableProject } from '../projects/projects.server'
-import { failedConstraint, notDeleted } from '../queries.server'
+import { allInOrder, failedConstraint, notDeleted } from '../queries.server'
 import type { Scope } from '../scope.server'
 import type { StartTimerInput, StopTimerInput } from './timer.schemas'
 
@@ -42,24 +42,29 @@ async function stopRunning(db: Executor, userId: string, now: Date, id?: string)
   return stopped ?? null
 }
 
+// The scope was resolved before startTimer's transaction. A member removed since would get a
+// timer the removal hook has already missed, running on in an organization they left.
+async function assertStillMember(tx: Executor, scope: Scope) {
+  const [membership] = await tx
+    .select({ id: member.id })
+    .from(member)
+    .where(and(eq(member.organizationId, scope.organizationId), eq(member.userId, scope.userId)))
+  if (!membership) throw new AppError('FORBIDDEN', 'not_organization_member')
+}
+
 // Starts a timer in the scope's organization. A running timer, in any organization, is
 // stopped first in the same transaction.
 export async function startTimer(db: Database, scope: Scope, input: StartTimerInput) {
   const now = new Date()
   try {
     return await db.transaction(async (tx) => {
-      // The scope was resolved before this transaction. A member removed since would get a
-      // timer the removal hook has already missed, running on in an organization they left.
-      const [membership] = await tx
-        .select({ id: member.id })
-        .from(member)
-        .where(
-          and(eq(member.organizationId, scope.organizationId), eq(member.userId, scope.userId)),
-        )
-      if (!membership) throw new AppError('FORBIDDEN', 'not_organization_member')
-      if (input.projectId) await assertUsableProject(tx, scope, input.projectId)
-      await assertEntryRoom(tx, scope.organizationId, scope.userId, now)
-      const stopped = await stopRunning(tx, scope.userId, now)
+      // The stop goes with the checks; a failed check rolls it back.
+      const [, , , stopped] = await allInOrder([
+        assertStillMember(tx, scope),
+        input.projectId && assertUsableProject(tx, scope, input.projectId),
+        assertEntryRoom(tx, scope.organizationId, scope.userId, now),
+        stopRunning(tx, scope.userId, now),
+      ])
       const [started] = await tx
         .insert(timeEntry)
         .values({

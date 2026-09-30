@@ -8,7 +8,6 @@ import {
   eq,
   exists,
   getTableColumns,
-  inArray,
   isNull,
   notExists,
   or,
@@ -19,7 +18,7 @@ import type { Database, Executor } from '~/db'
 import { project, projectTeam, team, teamMember, timeEntry } from '~/db/schema'
 import { AppError } from '../errors'
 import { limits } from '../limits.server'
-import { failedConstraint, live } from '../queries.server'
+import { allInOrder, failedConstraint, live } from '../queries.server'
 import { isAdmin, type Scope } from '../scope.server'
 import type {
   CreateProjectInput,
@@ -80,31 +79,25 @@ export async function listProjects(db: Database, scope: Scope, input: ListProjec
     .select({ one: timeEntry.id })
     .from(timeEntry)
     .where(and(eq(timeEntry.projectId, project.id), live(timeEntry, scope)))
-  const rows = await db
-    .select({ ...getTableColumns(project), hasEntries: sql`${exists(entries)}`.mapWith(Boolean) })
-    .from(project)
-    .where(
-      and(
-        live(project, scope),
-        visibleProjects(db, scope),
-        input.includeArchived ? undefined : isNull(project.archivedAt),
-      ),
-    )
-    .orderBy(asc(project.name))
-  if (rows.length === 0) return []
-
-  const assignments = await db
-    .select({ projectId: projectTeam.projectId, teamId: projectTeam.teamId })
-    .from(projectTeam)
-    .where(
-      and(
-        eq(projectTeam.organizationId, scope.organizationId),
-        inArray(
-          projectTeam.projectId,
-          rows.map((p) => p.id),
+  // The organization's assignments are read beside the projects rather than after them,
+  // which saves a round trip; the few of unlisted projects are dropped below.
+  const [rows, assignments] = await Promise.all([
+    db
+      .select({ ...getTableColumns(project), hasEntries: sql`${exists(entries)}`.mapWith(Boolean) })
+      .from(project)
+      .where(
+        and(
+          live(project, scope),
+          visibleProjects(db, scope),
+          input.includeArchived ? undefined : isNull(project.archivedAt),
         ),
-      ),
-    )
+      )
+      .orderBy(asc(project.name)),
+    db
+      .select({ projectId: projectTeam.projectId, teamId: projectTeam.teamId })
+      .from(projectTeam)
+      .where(eq(projectTeam.organizationId, scope.organizationId)),
+  ])
   return rows.map((p) => ({
     ...p,
     teamIds: assignments.filter((a) => a.projectId === p.id).map((a) => a.teamId),
@@ -238,8 +231,10 @@ async function assertTeamInScope(db: Executor, scope: Scope, teamId: string) {
 // Assigning it twice changes nothing.
 export async function assignProjectToTeam(db: Database, scope: Scope, input: ProjectTeamInput) {
   assertAdmin(scope)
-  await findProject(db, scope, input.projectId)
-  await assertTeamInScope(db, scope, input.teamId)
+  await allInOrder([
+    findProject(db, scope, input.projectId),
+    assertTeamInScope(db, scope, input.teamId),
+  ])
   await db
     .insert(projectTeam)
     .values({
@@ -254,8 +249,10 @@ export async function assignProjectToTeam(db: Database, scope: Scope, input: Pro
 // Removing the last team makes the project visible to everyone again.
 export async function unassignProjectFromTeam(db: Database, scope: Scope, input: ProjectTeamInput) {
   assertAdmin(scope)
-  await findProject(db, scope, input.projectId)
-  await assertTeamInScope(db, scope, input.teamId)
+  await allInOrder([
+    findProject(db, scope, input.projectId),
+    assertTeamInScope(db, scope, input.teamId),
+  ])
   await db
     .delete(projectTeam)
     .where(

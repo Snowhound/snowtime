@@ -80,6 +80,13 @@ of the code keeps; the rest is by area:
   same error.
 - Queries on soft-deleted tables filter `sys_deleted = 0` through shared
   helpers, not ad hoc in each server function.
+- On Vercel each statement is an HTTP round trip to Turso, so a server function runs
+  statements that don't depend on each other together. Outside a transaction,
+  `Promise.all` sends them as parallel requests. Inside one, libSQL sends statements
+  issued in the same tick as one pipeline request. Checks that throw go through
+  `allInOrder` (`queries.server.ts`), which reports the first failure in list order, so
+  the error doesn't depend on which request answers first. In `startTimer`, the stop of
+  the running timer goes with the checks, because a failed check rolls it back.
 - Server code is grouped by domain: `auth`, `entries`, `timer`, `projects`, `reports`,
   `teams`, and `settings`, each in `src/server/<domain>/`. A domain folder holds:
   - `<domain>.functions.ts`: the server functions the UI calls. Each is a thin wrapper
@@ -99,7 +106,7 @@ of the code keeps; the rest is by area:
     requires `organizationId` in the call's input and adds the tenancy scope of that
     organization ("Tenancy" in [data.md](data.md)). Both run the call inside `withActor()`.
   - `scope.server.ts`, `queries.server.ts`, and `testing.ts`: the tenancy scope, the
-    soft-delete query helpers, and the seeded test databases.
+    shared query helpers, and the seeded test databases.
   - `schemas.ts`: Valibot building blocks (`Uuidv7`, `Description`, `Timestamp`) for
     the domain schemas, and `OrganizationInput`, which `scopeMiddleware` checks.
   - `errors.ts`: `AppError`, thrown with a code (`FORBIDDEN`, `NOT_FOUND`, and so on).
