@@ -172,7 +172,8 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         visible() &&
         !failed.has(effect)
       const module = weatherModule()
-      if (on && renderer === undefined && !module && !loading) {
+      // Nitro traces imports inside onMount unless the server branch removes them.
+      if (on && renderer === undefined && !module && !loading && !import.meta.env.SSR) {
         loading = import('~/lib/scene/weather-renderer').then(
           (module) => {
             if (!disposed) setWeatherModule(module)

@@ -788,7 +788,11 @@ collections".
     any screen. A recomposed image changes only these numbers.
   - The Weather hints name the showing image's preset (`scene_effect_*`), or "still air". The
     weather follows the picture on screen, so a new image switches both as it starts to fade in.
-- Weather rendering: each effect is a WebGL 2 program that draws all its points (rain's and
+- Weather rendering (`src/lib/scene/weather-renderer.ts`): `SceneLayer` loads the renderer
+  when enabled weather first needs it, after mount. Presets and settings hints stay in
+  `weather.ts`, so pages with weather off send no shaders (task 069). Explicit SSR guards
+  keep the renderer and the browser's XLSX export library out of the server build.
+  Each effect is a WebGL 2 program that draws all its points (rain's and
   the mist's quads) in one call with no buffers, on one canvas in the scene layer, with item
   counts scaled to the screen's area. The band, horizon, zones, count, and the uniforms that
   follow from them, and the colors, are worked out on a start or a resize; a frame uploads only

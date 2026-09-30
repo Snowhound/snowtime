@@ -193,6 +193,13 @@ implementation and downloaded spreadsheet stay unchanged. The server size falls
 repeat these counts; every client route and CSS count stays identical. The final server
 has no `write-excel-file` or `fflate` modules. The existing XLSX export tests pass.
 
+An explicit SSR guard also removes the weather renderer's dynamic import from Nitro's
+trace. `onMount` alone did not remove it. Two alternating old/new pairs repeat
+6,486,287 → 6,456,719 bytes (29,568 saved), with identical client budgets. The final
+server has no weather renderer/shaders, XLSX, or compression-library modules. Both guards
+are local build-time conditions; neither introduces a loader or package alias. Total
+server saving from the original build is 171,471 bytes (2.6%).
+
 ## Checked and left as is
 
 - **Duplication:** 0 module IDs with nonzero rendered length in multiple client chunks.
@@ -229,7 +236,7 @@ has no `write-excel-file` or `fflate` modules. The existing XLSX export tests pa
   three DOM elements on sign-in (156 → 159), failing the page budget. Moving renderer-only
   defaults with the renderer gives the retained numbers above and restores all DOM counts.
 
-Validation so far: `bun run test` (396 Bun tests, 175 component tests), lint,
+Validation: `bun run test` (396 Bun tests, 175 component tests), lint,
 `format:check`, knip, `bun run perf`, two alternating pairs of `perf:pages`, and all
 75 weather golden frames pass. The subtask stays in-progress.
 
@@ -240,5 +247,4 @@ Validation so far: `bun run test` (396 Bun tests, 175 component tests), lint,
 - Consider an upstream TanStack Form production guard for its event client.
 - Active-locale-only messages and narrower auth plugin loading remain unimplemented;
   assess whether their complexity is worth the bytes before changing the runtime model.
-- The server still traces the lazy weather renderer, even though it is called only inside
-  `onMount`. Check whether an explicit server guard can remove it in another small step.
+- Cold-start latency was not measured; server byte savings do not establish a latency gain.

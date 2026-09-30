@@ -145,7 +145,7 @@ bun run perf:load --url=http://127.0.0.1:3100 --pid=<server pid>
 
 ## Weather bench: `bun run perf:weather`
 
-Runs the app's renderer (`src/lib/scene/weather.ts`) in Chrome on a page of its own,
+Runs the app's renderer (`src/lib/scene/weather-renderer.ts`) in Chrome on a page of its own,
 `perf/weather.html`, served by Vite with `perf/weather/vite.config.ts`. It needs no
 database or app server. Glass surfaces sit over the canvas: plain divs with the app's
 `.surface` and `.scene-header` CSS, placed as on the real pages at 1440 × 900
