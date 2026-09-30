@@ -41,6 +41,10 @@ requirements in full.
 - Exactly one app process per database. Two processes writing one SQLite file bring back
   the lost writes of task 043, so there is no second instance, cluster mode, or
   zero-downtime handover. A restart pauses requests for about a second; Caddy holds them.
+- Task 043 is still open. Within one process too, a `SQLITE_BUSY` between two connections
+  can lose the later connection's writes, which the busy timeout doesn't prevent.
+  Snowhound's production stays on Vercel and Turso; a self-hosted deployment carries this
+  risk until task 043 is fixed.
 - Scaling is vertical only. One process renders on one core: in `perf:load` on 2026-09-30,
   ordinary pages took 15–50 ms of CPU and the 9-month report 85–92 ms, so a shared vCPU
   serves roughly 20–40 ordinary pages a second.

@@ -210,11 +210,11 @@ the last two columns from 8 seconds at 10 concurrent.
 - Building on a 4 GB server: memory during `vite build`.
 - Ubuntu 24.04 and x64: the tests ran on Debian 13 Arm64 only.
 
-## Open questions
+## Decisions (2026-09-30)
 
-- Task 043 now applies to production. The self-hosted app uses a `file:` URL, where a
-  `SQLITE_BUSY` between two connections in one process can lose the later writes, and the
-  busy timeout doesn't help within one process. Litestream also takes the write lock
-  briefly for checkpoints. Should the upstream fix, or a workaround in the app, land
-  before production moves?
-- Litestream keeps a week of point-in-time restore (`litestream.yml`). Is that enough?
+- Snowhound's production stays on Vercel and Turso. Self-hosting is an option this open
+  source project offers, not a planned move, so task 043 doesn't block this task. The
+  self-hosted runbook and `docs/hosting.md` name task 043 as a known risk until it's fixed.
+- A week of point-in-time restore (`retention: 168h` in `litestream.yml`) is enough.
+- 4 GB is expected to be enough for building on the server; Kait will confirm it on a real
+  server later, with the other checks above.
