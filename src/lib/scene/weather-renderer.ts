@@ -1,4 +1,8 @@
-// Loaded when the scene first needs weather, so disabled weather sends no shaders.
+// The seasonal scene's weather renderer: one WebGL 2 canvas that draws an image's effect as
+// points, or rain and mist as quads, in one call with no buffers; each item's randomness comes
+// from gl_VertexID and its position from the vertex shader. SceneLayer
+// (src/components/scene/scene-layer.tsx) imports it the first time weather runs, so pages with
+// the weather off send no shaders.
 import type { Colors, Effect, Rgb, Weather, Zone } from './weather'
 
 const TUNING = {

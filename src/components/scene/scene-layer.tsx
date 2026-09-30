@@ -149,14 +149,11 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     setWeatherProblem(renderer === null ? 'webgl' : null)
     const [weatherModule, setWeatherModule] =
       createSignal<typeof import('~/lib/scene/weather-renderer')>()
-    let loading: Promise<void> | undefined
-    let disposed = false
-    let loadFailed = false
+    let requested = false
     const failed = new Set<Effect>()
     visibility()
     document.addEventListener('visibilitychange', visibility)
     onCleanup(() => {
-      disposed = true
       document.removeEventListener('visibilitychange', visibility)
       renderer?.destroy()
     })
@@ -173,20 +170,13 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         !failed.has(effect)
       const module = weatherModule()
       // Nitro traces imports inside onMount unless the server branch removes them.
-      if (on && renderer === undefined && !module && !loading && !import.meta.env.SSR) {
-        loading = import('~/lib/scene/weather-renderer').then(
-          (module) => {
-            if (!disposed) setWeatherModule(module)
-            return undefined
-          },
-          (error) => {
-            if (disposed) return undefined
-            console.warn('Weather renderer unavailable:', error)
-            loadFailed = true
-            setWeatherProblem('failed')
-            return undefined
-          },
-        )
+      if (on && renderer === undefined && !requested && !import.meta.env.SSR) {
+        requested = true
+        import('~/lib/scene/weather-renderer').then(setWeatherModule, (error) => {
+          console.warn('Weather renderer unavailable:', error)
+          renderer = null
+          setWeatherProblem('failed')
+        })
       }
       if (on && renderer === undefined && module) {
         renderer = module.createWeatherRenderer(canvas, () => PACES[props.pace])
@@ -203,8 +193,7 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         }
       }
       if (!on) renderer?.stop()
-      if (renderer !== null && !loadFailed)
-        setWeatherProblem(effect && failed.has(effect) ? 'failed' : null)
+      if (renderer !== null) setWeatherProblem(effect && failed.has(effect) ? 'failed' : null)
       setWeatherOn(on && !!renderer)
     })
   })

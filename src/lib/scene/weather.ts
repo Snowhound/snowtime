@@ -1,4 +1,6 @@
-// The seasonal scene's weather presets and hints, available before the renderer loads.
+// The seasonal scene's weather (prototypes/scene.js, prototypes/README.md, "Weather by image"):
+// each image's preset, tuned for the picture (IMAGE_WEATHER), and the Weather hints. The
+// renderer that draws it is in weather-renderer.ts, which loads only when the weather runs.
 import { createSignal } from 'solid-js'
 import type { ImageId } from './images'
 
@@ -560,7 +562,7 @@ const [weatherProblem, setWeatherProblem] = createSignal<'webgl' | 'failed' | nu
 export { setWeatherProblem, weatherProblem }
 
 // Whether the browser has WebGL 2 at all. A context can still fail to start, for example on a
-// blocked GPU; the renderer returns null then.
+// blocked GPU; createWeatherRenderer returns null then.
 export function weatherSupported() {
   return typeof WebGL2RenderingContext !== 'undefined'
 }
