@@ -2,8 +2,8 @@
 
 Status: todo
 
-Add a second way to deploy beside Vercel and Turso: one Hetzner VM running the app as a
-compiled Bun binary with SQLite in the same process, Caddy in front of it, and Cloudflare
+Add a second way to deploy beside Vercel and Turso: one Hetzner VM running the app, built
+on the box or as a compiled Bun binary, with SQLite in the same process, Caddy in front of it, and Cloudflare
 proxying in front of Caddy. The goals are a fixed monthly cost, no Vercel Hobby
 non-commercial limit, data with an EU provider, and faster pages. The Vercel path stays
 documented and working.
@@ -55,6 +55,24 @@ the machine, so read the numbers as ratios, not capacity.
   lost-write problem in task 043. The in-memory rate-limit store is then correct, so
   Upstash isn't needed.
 
+## Two ways to run the app
+
+Both are tied to one platform, because the build includes only its own machine's libSQL
+addon. A Mac build of `.output` has only `@libsql/darwin-arm64` in
+`.output/server/node_modules`, so it won't run on Linux either. The two ways differ in
+where the build happens:
+
+- **Build on the server.** `bun install && bun run build`, then run
+  `bun .output/server/index.mjs` (or `node` with Nitro's default `node-server` preset). It
+  works on any architecture the box has and needs no change to the app, but the box needs
+  Bun or Node.
+- **Compiled binary.** CI builds one binary per architecture and copies it with
+  `.output/public`. The box needs no runtime. It adds the build plugin and one build per
+  target.
+
+Everything else is shared: Caddy, systemd, backups, and migrations. Only the unit's
+`ExecStart` and the place of the build differ.
+
 ## Backups: two options
 
 Both keep the SQLite file on the box as the primary, with all reads and writes local.
@@ -91,7 +109,9 @@ Pick one in this task after trying both on the seeded database. Document both ei
   - proxies everything else to the app
   - holds requests during an app restart (`lb_try_duration`) instead of returning 502
   - sets security headers
-- [ ] A hardened systemd unit runs the binary as an unprivileged user, restarts it on
+- [ ] Both ways to run the app work on the box from the same Caddyfile and unit, with only
+      `ExecStart` changed.
+- [ ] A hardened systemd unit runs the app as an unprivileged user, restarts it on
       failure, and reads secrets from an environment file. No Docker.
 - [ ] Backups work with the chosen option, and a restore onto a fresh box is tested and
       written down.
@@ -101,7 +121,8 @@ Pick one in this task after trying both on the seeded database. Document both ei
       numbers replace the rough sizing above.
 - [ ] Docs:
   - `docs/deployment.md` splits into one runbook per target, `docs/deployment/vercel.md`
-    and `docs/deployment/hetzner.md`, with an index that compares them.
+    and `docs/deployment/hetzner.md`, with an index that compares them. The Hetzner
+    runbook covers building on the server and the compiled binary.
   - `README.md` links the index.
   - `docs/hosting.md` gains the self-hosted constraints (single process, backups, box
     size).
