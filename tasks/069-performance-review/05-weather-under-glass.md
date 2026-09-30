@@ -32,7 +32,10 @@ pick one.
    with the surfaces cut out of it, so the glass blurs only the still photo and re-blurs only
    on scroll. The cutouts must follow scrolling within the same frame, or items bleed over a
    card's edge while it moves; a soft fade at the edges may hide that. Weather would also fall
-   over text outside cards, such as page titles, which Kait decides on.
+   over text outside cards, such as page titles. Kait is open to it only if it helps a lot:
+   some effects would hide small details outside cards, for example fog over the markers at
+   the end of a list. If the numbers make it the clear winner, build it so Kait can check the
+   worst cases (thickest fog, busiest rain) and look for workarounds there.
 4. **A smaller blur.** Measure 24 against 16 and 8 px. The cost grows with the radius. This
    is a design change, so Kait decides.
 

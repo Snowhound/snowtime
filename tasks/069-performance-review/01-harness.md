@@ -76,5 +76,6 @@ real glass CSS.
 - [ ] `bun run perf:pages` and `bun run perf:weather` each run in under a minute by default
 - [ ] Budgets, query plan snapshots, and golden frames committed, taken from `main` before any
       optimization, so subtasks 02 to 08 start from them
-- [ ] CI runs `bun run perf`, or the task records why not (for example, the build time)
+- [ ] CI runs `bun run perf`. If it makes CI too slow on GitHub's runners, it runs on a
+      self-hosted runner instead (Kait agreed to set one up), not less often
 - [ ] `docs/architecture.md` points to `perf/README.md`
