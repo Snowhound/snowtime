@@ -464,6 +464,20 @@ describe('getReport', () => {
       await db.insert(member).values(row)
     }
   })
+
+  test('names a member who has left only when they have time in the range', async () => {
+    const empty = { from: '2026-01-05', to: '2026-01-12', unit: 'day' } as const
+    const left = and(eq(member.userId, U.loner), eq(member.organizationId, O.northwind))
+    const [row] = await db.select().from(member).where(left)
+    await db.delete(member).where(left)
+    try {
+      const report = await getReport(db, scopes.admin, empty, NOW)
+      expect(ids(report.members, 'userId')).not.toContain(U.loner)
+      expect(report.formerMembers).toEqual([])
+    } finally {
+      await db.insert(member).values(row)
+    }
+  })
 })
 
 describe('getReportBreakdown', () => {

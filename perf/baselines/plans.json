@@ -102,13 +102,24 @@
       ]
     },
     {
-      "sql": "select \"id\", \"name\", \"email\" from \"user\" where ((\"user\".\"id\" in (?, ?, ?, ?, ?, ",
+      "sql": "select \"id\", \"name\", \"email\" from \"user\" where ((\"user\".\"id\" in ( with recursive",
       "scans": 0,
       "sorts": 0,
       "plan": [
         "SEARCH user USING INDEX sqlite_autoindex_user_1 (id=?)",
-        "CORRELATED SCALAR SUBQUERY 1",
-        "SEARCH member USING COVERING INDEX member_organization_id_user_id_unique (organization_id=? AND user_id=?)"
+        "LIST SUBQUERY 4",
+        "MATERIALIZE ids",
+        "SETUP",
+        "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_user_id_started_at_idx (organization_id=?)",
+        "RECURSIVE STEP",
+        "SCAN ids",
+        "CORRELATED SCALAR SUBQUERY 2",
+        "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_user_id_started_at_idx (organization_id=? AND user_id>?)",
+        "SCAN ids",
+        "CORRELATED SCALAR SUBQUERY 5",
+        "SEARCH member USING COVERING INDEX member_organization_id_user_id_unique (organization_id=? AND user_id=?)",
+        "CORRELATED SCALAR SUBQUERY 6",
+        "SEARCH time_entry USING INDEX time_entry_organization_id_user_id_started_at_idx (organization_id=? AND user_id=? AND started_at>? AND started_at<?)"
       ]
     }
   ],
@@ -139,13 +150,24 @@
       ]
     },
     {
-      "sql": "select \"id\", \"name\", \"email\" from \"user\" where ((\"user\".\"id\" in (?, ?, ?, ?, ?, ",
+      "sql": "select \"id\", \"name\", \"email\" from \"user\" where ((\"user\".\"id\" in ( with recursive",
       "scans": 0,
       "sorts": 0,
       "plan": [
         "SEARCH user USING INDEX sqlite_autoindex_user_1 (id=?)",
-        "CORRELATED SCALAR SUBQUERY 1",
-        "SEARCH member USING COVERING INDEX member_organization_id_user_id_unique (organization_id=? AND user_id=?)"
+        "LIST SUBQUERY 4",
+        "MATERIALIZE ids",
+        "SETUP",
+        "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_user_id_started_at_idx (organization_id=?)",
+        "RECURSIVE STEP",
+        "SCAN ids",
+        "CORRELATED SCALAR SUBQUERY 2",
+        "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_user_id_started_at_idx (organization_id=? AND user_id>?)",
+        "SCAN ids",
+        "CORRELATED SCALAR SUBQUERY 5",
+        "SEARCH member USING COVERING INDEX member_organization_id_user_id_unique (organization_id=? AND user_id=?)",
+        "CORRELATED SCALAR SUBQUERY 6",
+        "SEARCH time_entry USING INDEX time_entry_organization_id_user_id_started_at_idx (organization_id=? AND user_id=? AND started_at>? AND started_at<?)"
       ]
     }
   ],

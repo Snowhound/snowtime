@@ -7,10 +7,12 @@
 import {
   and,
   eq,
+  exists,
   gt,
   inArray,
   isNull,
   lt,
+  ne,
   notExists,
   notInArray,
   or,
@@ -365,37 +367,58 @@ async function listedEntries(
     .where(where)
 }
 
-// The report's members that aren't in the organization any more, with their names, which
-// the member list the client names rows from leaves out.
-async function formerMembers(db: Database, scope: Scope, userIds: string[]) {
-  const others = userIds.filter((id) => id !== scope.userId)
-  if (others.length === 0) return []
+// The people with entries in the organization who aren't members of it any more, with their
+// names, which the member list the client names rows from leaves out. It runs beside the
+// entries: the candidates come from the organization's entries, then each one is probed for
+// an entry in the report's range; reportOf keeps those whose entries have time in it.
+//
+// The recursive CTE walks the organization's users by their index, one probe each, where
+// SELECT DISTINCT would read every entry.
+async function formerMembers(db: Database, scope: Scope, c: ReportContext) {
+  const others = c.users?.filter((id) => id !== scope.userId)
+  const inRange = entriesWhere(scope, c)
+  if (!inRange || others?.length === 0) return []
+  const org = scope.organizationId
   return db
     .select({ userId: user.id, name: user.name, email: user.email })
     .from(user)
     .where(
       and(
-        inArray(user.id, others),
+        sql`${user.id} in (
+          with recursive ids(id) as (
+            select min(user_id) from time_entry where organization_id = ${org}
+            union all
+            select (select min(user_id) from time_entry where organization_id = ${org} and user_id > ids.id)
+            from ids where id is not null
+          )
+          select id from ids
+        )`,
+        ne(user.id, scope.userId),
+        others ? inArray(user.id, others) : undefined,
         notExists(
           db
             .select({ one: sql`1` })
             .from(member)
-            .where(
-              and(eq(member.userId, user.id), eq(member.organizationId, scope.organizationId)),
-            ),
+            .where(and(eq(member.userId, user.id), eq(member.organizationId, org))),
+        ),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(timeEntry)
+            .where(and(eq(timeEntry.userId, user.id), inRange)),
         ),
       ),
     )
 }
 
-async function reportOf(
-  db: Database,
-  scope: Scope,
+function reportOf(
   c: ReportContext,
   entries: ReportEntry[],
+  former: Awaited<ReturnType<typeof formerMembers>>,
   now: Date,
-): Promise<Report> {
+): Report {
   const totals = aggregate(entries, c.a)
+  const counted = new Set(totals.members.map((m) => m.userId))
   return {
     ...totals,
     timeZone: c.a.timeZone,
@@ -404,11 +427,7 @@ async function reportOf(
     from: new Date(c.range.from),
     to: new Date(c.range.to),
     now,
-    formerMembers: await formerMembers(
-      db,
-      scope,
-      totals.members.map((m) => m.userId),
-    ),
+    formerMembers: former.filter((u) => counted.has(u.userId)),
   }
 }
 
@@ -419,7 +438,11 @@ export async function getReport(
   now = new Date(),
 ): Promise<Report> {
   const c = await reportContext(db, scope, input, now)
-  return reportOf(db, scope, c, await reportEntries(db, scope, c), now)
+  const [entries, former] = await Promise.all([
+    reportEntries(db, scope, c),
+    formerMembers(db, scope, c),
+  ])
+  return reportOf(c, entries, former, now)
 }
 
 // Breakdown's second level: the range's time per project and member, and per ticket and member.

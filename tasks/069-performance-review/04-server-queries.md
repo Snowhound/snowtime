@@ -1,6 +1,6 @@
 # 04: Server queries
 
-Status: todo
+Status: in progress
 
 The report reads every entry in its range and sums it in JavaScript (`aggregate` in
 `src/server/reports/reports.server.ts`). For a year of the company seed that is about 20,000
@@ -47,3 +47,46 @@ a covering index is fine when it removes table reads from a hot query.
 - [ ] Any schema change follows `docs/migrations.md`, and `datamodel/` is regenerated
 - [ ] `reports.test.ts` and the timer tests pass unchanged; new tests compare SQL and
       JavaScript totals where both exist
+
+## Done
+
+- **`formerMembers` in parallel.** `getReport` reads the former members beside the entries, so
+  a report is two sequential round trips after the context reads instead of three. The
+  statements per call stay the same: admin 4 (settings, teams, entries, former members),
+  member 2, because a member's only user is themselves and the read is skipped. The query
+  finds the organization's users with entries and no membership, through a recursive CTE
+  that steps over `time_entry_organization_id_user_id_started_at_idx` (one covering probe
+  per user, no `SELECT DISTINCT` over the entries), then probes each candidate for an
+  entry in the report's range on the same index. `reportOf` keeps the candidates who have
+  counted time, which covers the cases the range probe can't (a project filter, a running
+  entry before `now`), so the result is the same as before. Plan: no `SCAN time_entry`, no
+  temp B-tree; rows, bytes, and `reports.test.ts` unchanged. A test covers a former member
+  with entries only outside the range. The local file database barely shows the gain (year,
+  admin: 77 ms before, 43 to 47 ms after, but that is noise-level on one machine); the
+  saving is one Turso round trip per report.
+  - Tried and dropped: `user.id in (select user_id from time_entry where <range>)` scans
+    and looks up every entry in the range (15 ms against 0.1 ms for a year of the company
+    seed, and Turso bills the rows it reads). Leaving the range out entirely returned one
+    extra row in the week and month reports, which the rows gate rejects.
+
+## Checked and left as is
+
+- **`ANALYZE` and `PRAGMA optimize`.** On a copy of the seeded database, `ANALYZE` changed
+  12 of 52 hot plans. None touched the entries reads, which keep their index: the
+  `team` left join went from `SEARCH team USING INDEX team_organization_id_name_unique` to
+  `SCAN team USING COVERING INDEX team_id_organization_id_unique` (a handful of rows), and
+  the new former-members query went from `SEARCH user` to `SCAN user` (27 users, each a
+  probe). `PRAGMA optimize` on a connection that had run a few queries analyzed only the
+  tables those queries used and changed the 9 team plans the same way. On a fresh
+  connection it did nothing, and `PRAGMA optimize(0x10002)` did nothing either until a
+  query had used the table, so a `db:migrate` run would analyze nothing.
+- **Turso.** Its docs describe `ANALYZE` writing `sqlite_stat1` but say nothing about
+  running it automatically
+  (<https://docs.turso.tech/sql-reference/statements/analyze>). A third-party probe
+  dated 2026-08-27 reports that the libSQL server, on both self-hosted `sqld` 0.24.33 and
+  a Turso Cloud database, refuses `ANALYZE` and `PRAGMA optimize` through its statement
+  allowlist (<https://libredb.org/blog/libsql-read-only-token-boundary/>). We haven't
+  tried it against our database.
+- **Recommendation.** Don't add `PRAGMA optimize` to `db:migrate`: it would analyze nothing
+  after a migration, may be refused on Turso Cloud, and the plans that matter already use
+  the right indexes without statistics.
