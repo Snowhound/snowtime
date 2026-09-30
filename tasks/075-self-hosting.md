@@ -1,12 +1,13 @@
-# 075: Self-hosting on one Hetzner box
+# 075: Self-hosting on one Linux server
 
-Status: todo
+Status: in-progress
 
-Add a second way to deploy beside Vercel and Turso: one Hetzner VM running the app, built
-on the box or as a compiled Bun binary, with SQLite in the same process, Caddy in front of it, and Cloudflare
-proxying in front of Caddy. The goals are a fixed monthly cost, no Vercel Hobby
-non-commercial limit, data with an EU provider, and faster pages. The Vercel path stays
-documented and working.
+Add a second way to deploy beside Vercel and Turso: one Linux server running the app,
+built on the server or as a compiled Bun binary, with SQLite in the same process, Caddy in
+front of it, and optionally Cloudflare proxying in front of Caddy. Any VM, dedicated
+server, or machine on premises with systemd works; Hetzner Cloud is the worked example.
+The goals are a fixed monthly cost, no Vercel Hobby non-commercial limit, data with a
+provider of your choice, and faster pages. The Vercel path stays documented and working.
 
 ## Findings (2026-09-30)
 
@@ -26,19 +27,20 @@ the machine, so read the numbers as ratios, not capacity.
 - The database must run in the app's process. Going through `sqld` over HTTP makes pages
   2–3 times slower and uses 3–4 times the CPU, because every query is serialized to JSON
   and sent to a second process.
-- Splitting the app (Vercel or Cloudflare) from the database (Hetzner) is ruled out. A page
-  makes several database round trips, and each costs 10–30 ms across providers
-  (`docs/deployment.md`, "Before you start").
-- `bun build --compile` bundles `.output/server/index.mjs` into one binary of about
-  70 MB. It includes the Bun runtime and the bundled JS, which JavaScriptCore still runs
-  and JIT-compiles. The binary ran as fast as `bun .output/server/index.mjs`.
+- Splitting the app (Vercel or Cloudflare) from the database (a server elsewhere) is ruled
+  out. A page makes several database round trips, and each costs 10–30 ms across
+  providers (`docs/deployment/vercel.md`, "Before you start").
+- `bun build --compile` bundles `.output/server/index.mjs` into one binary: about 70 MB
+  without bytecode, 101 MB with it. It includes the Bun runtime and the bundled JS, which
+  JavaScriptCore still runs and JIT-compiles. The binary ran as fast as
+  `bun .output/server/index.mjs`.
 - Compiling needs two build steps:
   - `NITRO_PRESET=bun` for the build.
   - A `Bun.build` plugin for libSQL's native addon. `libsql/index.js` loads it with
     ``require(`@libsql/${target}`)``, which the bundler can't follow, and the binary then
     fails with `Cannot find module '@libsql/<target>'`. The plugin rewrites that line to a
     static `require('@libsql/linux-x64-gnu')` (or the build's target), and Bun then embeds
-    the `.node` file. Tested on `darwin-arm64` only.
+    the `.node` file. Tested on `darwin-arm64` and, cross-compiled from it, Linux Arm64.
 - The binary doesn't include `.output/public` (36 MB, of which `backgrounds/` is 32 MB).
   Caddy serves it from disk instead. Nitro would serve these files through its JS handler,
   on the thread that renders pages; Bun's fast static routes (`Bun.serve` `static`) aren't
@@ -47,10 +49,8 @@ the machine, so read the numbers as ratios, not capacity.
   [Bun docs](https://bun.com/docs/bundler/executables#profile-guided-bytecode-layout))
   speed up startup, not requests. For a long-running server, that shortens the gap during
   a restart.
-- Sizing, rough: an ordinary page costs 15–30 ms of CPU and a year report about 55 ms. One
-  process is single-threaded and reached 66–89 page renders/s on the M1 Pro. A shared
-  Hetzner vCPU is probably 1.5–2 times slower. The smallest 2 vCPU / 4 GB plan (CX or CAX
-  class) should fit: one core for the app, one for Caddy, the backup process, and the OS.
+- Sizing: see "Measured" below and `docs/deployment/self-hosted.md` ("Server
+  requirements"). The numbers from a real server are still to come.
 - Run exactly one app process. Two processes writing one SQLite file bring back the
   lost-write problem in task 043. The in-memory rate-limit store is then correct, so
   Upstash isn't needed.
@@ -62,50 +62,99 @@ addon. A Mac build of `.output` has only `@libsql/darwin-arm64` in
 `.output/server/node_modules`, so it won't run on Linux either. The two ways differ in
 where the build happens:
 
-- **Build on the server.** `bun install && bun run build`, then run
-  `bun .output/server/index.mjs` (or `node` with Nitro's default `node-server` preset). It
-  works on any architecture the box has and needs no change to the app, but the box needs
-  Bun or Node.
-- **Compiled binary.** CI builds one binary per architecture and copies it with
-  `.output/public`. The box needs no runtime. It adds the build plugin and one build per
-  target.
+- **Build on the server.** `bun install && bun run build:self-hosted`, then run
+  `bun .output/server/index.mjs`. It works on any architecture the server has and needs
+  no change to the app, but the server needs Bun.
+- **Compiled binary.** `bun run build:binary` builds one release per architecture: the
+  server and a migrator as executables, `drizzle/`, and `public/`. The server needs no
+  runtime.
 
 Everything else is shared: Caddy, systemd, backups, and migrations. Only the unit's
-`ExecStart` and the place of the build differ.
+`ExecStart` and the place of the build differ. `docs/deployment/self-hosted.md` covers
+both.
 
-## Backups: two options
+## Backups
 
-Both keep the SQLite file on the box as the primary, with all reads and writes local.
+Both options keep the SQLite file on the server as the primary, with all reads and writes
+local. Litestream is implemented and documented; Turso Sync is documented as the
+alternative after a spike. Switching the app's driver to Turso Sync is Kait's decision.
 
-- **Litestream.** Streams the WAL to Hetzner Object Storage or Cloudflare R2, with
-  point-in-time restore. It needs no code change and keeps libSQL.
-- **Turso Sync.** `@tursodatabase/sync` with Drizzle's `drizzle-orm/tursodatabase-sync`
-  driver: a local file, with `push()` sending local changes to a Turso Cloud database and
-  `pull()` fetching remote ones ([docs](https://docs.turso.tech/sync/usage)). The Turso
-  Cloud copy then serves as the backup and can be queried there. The costs:
-  - It swaps the database engine from libSQL to Turso's Rust rewrite, which hasn't reached
-    1.0; the Turso project advises keeping independent backups until then.
-  - The app must call `push()` itself, after writes or on a timer.
-  - Bun support and the rewrite's SQLite compatibility with our schema and migrations are
-    unverified.
+- **Litestream** 0.5 streams each change to S3-compatible storage (Hetzner Object
+  Storage, Cloudflare R2, and others), with point-in-time restore. It needs no code change
+  and keeps libSQL.
+- **Turso Sync** (`@tursodatabase/sync` 0.8.1 with `drizzle-orm/tursodatabase-sync`),
+  spike on 2026-09-30 under Bun 1.4.2 on darwin-arm64, local only:
+  - It runs under Bun. All 19 migrations and the demo plus company seed apply through the
+    Drizzle driver, with equal row counts in all 14 tables, and the 12-month report's
+    totals and bytes match libSQL's.
+  - The engine stores table SQL reformatted (whitespace only), which nothing in the app
+    reads.
+  - It doesn't enforce foreign keys unless each connection runs
+    `PRAGMA foreign_keys = ON`; libSQL enforces them by default. A switch must set it.
+  - `push()` without a Turso Cloud URL fails with "sync is disabled as database was
+    opened without sync support". There is no automatic push: the app would call it
+    after each write (for example from `sessionMiddleware` after a POST, debounced), on a
+    timer, and at shutdown. Push to Turso Cloud wasn't tested, since it needs an account.
+  - It swaps libSQL for Turso's pre-1.0 engine, whose project advises independent
+    backups until 1.0.
 
-Pick one in this task after trying both on the seeded database. Document both either way.
+## Measured (2026-09-30)
+
+`perf:load` (`perf/load.ts`) on an M1 Pro with the Lumen Works seed. "Docker" is a Linux
+Arm64 VM limited to 2 CPUs. p50 and CPU per request are from the 30 sequential requests;
+the last two columns from 8 seconds at 10 concurrent.
+
+| Server                           | Page     | p50   | CPU/req | req/s at 10 | CPU/req at 10 |
+| -------------------------------- | -------- | ----- | ------- | ----------- | ------------- |
+| Bun on macOS                     | timer    | 20 ms | 32 ms   | 60          | 20 ms         |
+|                                  | settings | 14 ms | 15 ms   | 79          | 14 ms         |
+|                                  | week     | 16 ms | 17 ms   | 79          | 15 ms         |
+|                                  | 9 months | 94 ms | 73 ms   | 20          | 52 ms         |
+| Compiled, Docker (Debian)        | timer    | 30 ms | 43 ms   | 42          | 27 ms         |
+|                                  | settings | 31 ms | 31 ms   | 61          | 17 ms         |
+|                                  | week     | 21 ms | 23 ms   | 49          | 21 ms         |
+|                                  | 9 months | 76 ms | 85 ms   | 12          | 92 ms         |
+| `bun index.mjs`, Docker (Debian) | timer    | 31 ms | 48 ms   | 44          | 26 ms         |
+|                                  | settings | 25 ms | 26 ms   | 59          | 18 ms         |
+|                                  | week     | 25 ms | 27 ms   | 46          | 22 ms         |
+|                                  | 9 months | 75 ms | 85 ms   | 12          | 86 ms         |
+| `bun index.mjs`, Docker (Alpine) | timer    | 30 ms | 44 ms   | 41          | 29 ms         |
+|                                  | 9 months | 71 ms | 82 ms   | 15          | 71 ms         |
+
+- Peak RSS: 454 MB on macOS; 383 MB compiled and 394 MB with Bun in Docker; 406 MB on
+  Alpine. The compiled server uses 82 MB once it listens and 91 MB after the first page.
+- Sizes: the server executable is 101 MB (Arm64) and 102 MB (x64) with bytecode, the
+  migrator 90 MB, and `public/` 36 MB. Precompression turns 2.9 MB of text files into
+  1.4 MB of brotli.
+- Profile-guided bytecode layout needs Bun 1.4.3 (a canary on 2026-09-30); 1.4.2 accepts
+  `--bytecode-order` but writes no profile. In Docker, over 15 and 25 alternating starts:
+  ready in 102 vs 110 ms and 117 vs 128 ms, first page at 126 vs 128 ms and 138 vs 149 ms,
+  and 82 MB ready and 91 MB after the first page either way. It saves about 10 ms and no
+  memory, so it isn't kept.
+- Database size: 640 bytes per time entry with indexes (13.5 MB for 20,942 entries).
+- Caddy in front, locally: the 9-month report page is 719 KB of HTML, sent as 36 KB with
+  zstd and 40 KB with gzip. The largest script, 175 KB, goes out as its 50 KB `.br` file.
+  During an app restart, a request waited 2.2 s and got a 200.
 
 ## Acceptance criteria
 
-- [ ] A build script (for example `bun run build:binary`) produces one Linux binary for
+- [x] A build script (for example `bun run build:binary`) produces one Linux binary for
       x64 and Arm64, with `--bytecode`, from the Nitro `bun` preset and the libSQL plugin.
       It fails with a clear message when the target's `@libsql/<target>` package is
-      missing.
-- [ ] Profile-guided bytecode layout is tried. Keep it only if startup time or startup
-      memory drops measurably, with the numbers recorded here.
-- [ ] Behind Cloudflare, Better Auth and the rate limits see the user's IP address:
+      missing. `bun install --os=linux --cpu=<arch>` adds that package beside the host's.
+- [x] Profile-guided bytecode layout is tried. Keep it only if startup time or startup
+      memory drops measurably, with the numbers recorded here. Not kept (see "Measured").
+- [x] Behind Cloudflare, Better Auth and the rate limits see the user's IP address:
       `advanced.ipAddress.ipAddressHeaders` reads `cf-connecting-ip`, and Caddy accepts
-      that header only from Cloudflare's IP ranges (`trusted_proxies`).
-- [ ] A Caddyfile in the repository:
+      that header only from Cloudflare's IP ranges (`trusted_proxies`). Set through
+      `CLIENT_IP_HEADER`, which stays unset on Vercel. Tested with loopback standing in for
+      Cloudflare, not yet behind the real proxy.
+- [x] A Caddyfile in the repository (`deploy/self-hosted/Caddyfile`, Caddy 2.11 or later,
+      tested with 2.11.4):
   - serves `.output/public` from disk, `/assets/*` as `immutable` and `/backgrounds/*`
     and `/brand/*` for a week, matching `vite.config.ts`
-  - serves files precompressed at build time (`file_server { precompressed zstd br gzip }`)
+  - serves files precompressed at build time (`file_server { precompressed br zstd gzip }`;
+    brotli first, because it came out about 6% smaller than zstd)
   - proxies everything else to the app, compressing its HTML and JSON with
     `encode zstd gzip` above about 1 KB; the report export sends up to 755 KB per piece.
     Stock Caddy can't compress to brotli on the fly, only serve precompressed `.br` files
@@ -115,88 +164,57 @@ Pick one in this task after trying both on the seeded database. Document both ei
   - holds requests during an app restart (`lb_try_duration`) instead of returning 502
   - sets security headers as minupatsient's Caddyfile does (HSTS, `nosniff`, frame and
     referrer policy, no `Server` header), with a Content Security Policy checked against
-    the inline scripts that server rendering adds
+    the inline scripts that server rendering adds. Pages keep the app's nonce policy, and
+    Caddy adds a strict one only to responses without one. Every script tag on the timer,
+    settings, and reports pages carries the nonce, and Chrome logged no violations
   - redirects HTTP to HTTPS and logs as JSON
-- [ ] Both ways to run the app work on the box from the same Caddyfile and unit, with only
-      `ExecStart` changed.
-- [ ] A hardened systemd unit runs the app as an unprivileged user, restarts it on
+- [x] Both ways to run the app work from the same Caddyfile and unit, with only
+      `ExecStart` changed. Tested on Debian 13 under systemd in Docker, not yet on a real
+      server.
+- [x] A hardened systemd unit runs the app as an unprivileged user, restarts it on
       failure, and reads secrets from an environment file. No Docker.
-- [ ] Backups work with the chosen option, and a restore onto a fresh box is tested and
-      written down.
-- [ ] Migrations run against the local file on deploy (`bun run db:migrate` with a `file:`
-      URL), before the app restarts.
-- [ ] The perf load script is committed under `perf/` and run on the real box. The measured
-      numbers replace the rough sizing above.
-- [ ] Docs:
+      `systemd-analyze security` rates it 1.5 ("OK").
+- [x] Backups work with Litestream, and a restore onto a fresh server is tested and
+      written down. Tested in Docker with adobe/s3mock as the bucket, including a
+      point-in-time restore; not yet with Hetzner Object Storage or R2.
+- [x] Migrations run against the local file on deploy (`bun run db:migrate` with a `file:`
+      URL, or the release's `snowtime-migrate`), before the app restarts.
+- [ ] The perf load script is committed under `perf/` and run on the real server. The
+      measured numbers replace the rough sizing above. Committed as `bun run perf:load`;
+      not yet run on a real server.
+- [x] `docs/deployment/self-hosted.md` has a "Server requirements" section: OS, CPU and
+      memory, disk with the database's growth, network, software, and region, with
+      Hetzner as the example that meets them.
+- [x] Docs:
   - `docs/deployment.md` splits into one runbook per target, `docs/deployment/vercel.md`
-    and `docs/deployment/hetzner.md`, with an index that compares them. The Hetzner
-    runbook covers building on the server and the compiled binary.
+    and `docs/deployment/self-hosted.md`, with an index (`docs/deployment/README.md`)
+    that compares them. The self-hosted runbook covers building on the server and the
+    compiled binary.
   - `README.md` links the index.
-  - `docs/hosting.md` gains the self-hosted constraints (single process, backups, box
+  - `docs/hosting.md` gains the self-hosted constraints (single process, backups, server
     size).
   - `docs/architecture.md` no longer names Vercel as the only adapter.
-- [ ] A CI deploy job for the Hetzner target, or a documented manual deploy.
-- [ ] If Snowhound's production moves, the privacy page names Hetzner (and Cloudflare, and
-      the backup storage) instead of Vercel, Turso, and Upstash.
+- [x] A CI deploy job for the self-hosted target, or a documented manual deploy. Manual,
+      in the runbook.
+- [ ] If Snowhound's production moves, the privacy page names the server's provider (and
+      Cloudflare, and the backup storage) instead of Vercel, Turso, and Upstash. Waits on
+      Kait's decision to move.
 
-## Progress (2026-09-30, handover notes)
+## Still to test on a real server
 
-Done:
+- `perf:load` on the server, to replace the sizing in `docs/hosting.md` and the runbook.
+- Let's Encrypt behind Cloudflare: the first certificate with the record set to DNS only,
+  then renewal with the proxy on and SSL mode Full (strict).
+- Client IPs through Cloudflare's real proxy, and HTTP/3 with the proxy off.
+- Litestream against Hetzner Object Storage or R2, and a restore from it.
+- Building on a 4 GB server: memory during `vite build`.
+- Ubuntu 24.04 and x64: the tests ran on Debian 13 Arm64 only.
 
-- `4c47ab3`: `CLIENT_IP_HEADER` in `src/env.ts` and `.env.example`; Better Auth reads the
-  client IP from that header (`advanced.ipAddress.ipAddressHeaders`). Unset keeps
-  `x-forwarded-for`, which Vercel sets. Better Auth is the only code that derives an IP
-  (rate limits and `session.ip_address`); without a single trustworthy value it counts
-  every request under one `no-trusted-ip` key.
-- `4e8bbf9`, `d69772f`: `scripts/build-self-hosted.ts` (`build:self-hosted`,
-  `build:binary`), `scripts/db-migrate-release.ts` (the compiled migrator), and
-  `db-verify.ts` exporting `verifyMigrations`. Linux libSQL addons come from
-  `bun install --os=linux --cpu=<arch>`, which adds them beside the host's.
-- `ff33378`: `perf/load.ts` (`perf:load`), documented in `perf/README.md`.
+## Open questions
 
-- `d05ec2a`: `deploy/self-hosted/Caddyfile`, tested locally with Caddy 2.11.4 in front of
-  the app (see "Tested locally" below).
-- `bd0e6fd`: `db:migrate` runs drizzle-kit on the running Bun; `bunx --bun` failed with
-  "env: node: No such file" for a user that doesn't own the checkout on a box without Node.
-- `accebda`: `deploy/self-hosted/snowtime.service`, `litestream.yml`, `litestream.service`.
-
-Tested locally: Debian trixie arm64 under systemd in Docker, with Caddy 2.11.4,
-Litestream 0.5.17, and adobe/s3mock as S3. The compiled release ran from the unit, the
-migrator ran through `systemd-run` as `snowtime`, Litestream replicated, and a second fresh
-box restored the latest state and a point in time before the last write. The
-build-on-server path (Bun 1.4.2 installed to `/usr/local`, `bun run build:self-hosted`,
-`bun run db:migrate` as `snowtime`) ran from the same unit with a drop-in `ExecStart`.
-`systemd-analyze security snowtime.service`: exposure 1.5 ("OK").
-
-Turso Sync spike (`@tursodatabase/sync` 0.8.1, Bun 1.4.2, darwin-arm64, local only):
-it runs under Bun; all 19 migrations and the demo plus company seed apply through
-`drizzle-orm/tursodatabase-sync` with equal row counts in all 14 tables; the year report's
-totals and bytes match libSQL. The engine stores table SQL reformatted, and it doesn't
-enforce foreign keys unless each connection runs `PRAGMA foreign_keys = ON` (libSQL
-enforces them by default). `push()` without a Turso Cloud URL fails ("sync is disabled");
-the package has no automatic push, so the app would call it after writes or on a timer.
-
-Next: docs split (`docs/deployment/self-hosted.md`, provider-neutral with Hetzner as the
-example), hosting and architecture docs, criteria.
-
-Measured so far (M1 Pro; Docker = Linux arm64 VM limited to 2 CPUs and 4 GB):
-
-- Binary sizes: server 101 MB (arm64) and 102 MB (x64) with bytecode; migrator 90 MB.
-- `perf:load`, Docker, Linux binary vs `bun .output/server/index.mjs`: equal within noise.
-  Binary p50 timer 30 ms, settings 31 ms, week 21 ms, year 76 ms; CPU per request 17–27 ms
-  for ordinary pages and 85–92 ms for the year; peak RSS 383 MB (Bun: 394 MB).
-- Bytecode order (Bun 1.4.3 canary; 1.4.2 lacks it), 15 and 25 alternating starts:
-  ready 102 vs 110 ms and 117 vs 128 ms, first page 126 vs 128 ms and 138 vs 149 ms,
-  RSS 82 MB ready and 91 MB after the first page either way. Not kept.
-
-Decisions:
-
-- A compiled `snowtime-migrate` ships with the binary, so a server without Bun still runs
-  `db:verify` and the migrations. drizzle-orm's migrator writes the same
-  `__drizzle_migrations` rows and schema as `drizzle-kit migrate` (checked by hash).
-
-Open questions for Kait:
-
-- Task 043 now applies to production: the self-hosted app uses a `file:` URL, where a
-  `SQLITE_BUSY` inside one process can lose later writes. Litestream's checkpoints take the
-  write lock briefly too.
+- Task 043 now applies to production. The self-hosted app uses a `file:` URL, where a
+  `SQLITE_BUSY` between two connections in one process can lose the later writes, and the
+  busy timeout doesn't help within one process. Litestream also takes the write lock
+  briefly for checkpoints. Should the upstream fix, or a workaround in the app, land
+  before production moves?
+- Litestream keeps a week of point-in-time restore (`litestream.yml`). Is that enough?
