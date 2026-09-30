@@ -30,6 +30,10 @@ export const env = createEnv({
     // them in memory (docs/architecture.md, "Abuse limits").
     UPSTASH_REDIS_REST_URL: v.optional(v.pipe(v.string(), v.url())),
     UPSTASH_REDIS_REST_TOKEN: v.optional(secret),
+    // The request header that holds the user's IP address, for Better Auth's rate limits and
+    // sessions. Unset reads x-forwarded-for, which Vercel sets; behind Caddy the self-hosted
+    // setup sets cf-connecting-ip (docs/deployment/self-hosted.md).
+    CLIENT_IP_HEADER: v.optional(v.pipe(v.string(), v.regex(/^[a-z0-9-]+$/, 'lowercase'))),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

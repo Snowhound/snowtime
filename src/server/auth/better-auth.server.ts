@@ -28,6 +28,8 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'sqlite', schema }),
   advanced: {
     database: { generateId: () => uuidv7() },
+    // Without a trustworthy address, every request shares one rate-limit count.
+    ...(env.CLIENT_IP_HEADER && { ipAddress: { ipAddressHeaders: [env.CLIENT_IP_HEADER] } }),
   },
   // The session and user ride in a signed cookie for 5 minutes, so a server function call
   // doesn't read them from the database. A session revoked elsewhere, or a deleted account,
