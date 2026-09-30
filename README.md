@@ -77,12 +77,10 @@ for `main`, and a planned `staging` for `develop`. After the checks pass on a pu
 ## Tested data size
 
 The performance checks run on the Lumen Works seed (`bun run db:seed --company`): 19
-people in four teams with about 20,000 entries over a year. On it, the database is about
-13.5 MB (about 640 bytes per entry), and one self-hosted server process, limited to 2
-CPUs, had median page times of 21–76 ms; the slowest was the report on nine months of
-the whole company. Larger organizations haven't been measured. The harnesses and their
-numbers are in [perf/README.md](perf/README.md), and the self-hosted measurements in
-[docs/deployment/self-hosted.md](docs/deployment/self-hosted.md#server-requirements).
+people in four teams with about 20,000 entries over a year. On it, a self-hosted server
+limited to 2 CPUs renders ordinary pages in under 40 ms and a report on nine months of the
+whole company in under 100 ms, and the database stays under 20 MB. Larger organizations
+haven't been measured. The harnesses are in [perf/README.md](perf/README.md).
 
 ## Local development
 
