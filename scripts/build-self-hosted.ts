@@ -6,7 +6,7 @@
 //
 // Usage:
 //   bun run build:self-hosted
-//   bun run build:binary [--target=x64|arm64 ...] [--no-build] [--bytecode-order=<file>]
+//   bun run build:binary [--target=x64|arm64 ...] [--no-build]
 
 import { spawnSync } from 'node:child_process'
 import {
@@ -34,7 +34,6 @@ const { values } = parseArgs({
     binary: { type: 'boolean', default: false },
     target: { type: 'string', multiple: true },
     build: { type: 'boolean', default: true },
-    'bytecode-order': { type: 'string' },
   },
   allowNegative: true,
 })
@@ -136,20 +135,15 @@ function libsqlPlugin(addon: string): Bun.BunPlugin {
 
 // Bytecode saves the server parsing its 15 MB of JavaScript at each start, so a restart
 // holds requests for less time. The migrator runs once per deploy and skips it.
-async function compile(
-  entry: string,
-  outfile: string,
-  arch: Arch,
-  { bytecode = false, bytecodeOrder }: { bytecode?: boolean; bytecodeOrder?: string } = {},
-) {
+// Profile-guided bytecode layout (--bytecode-order) saved 10 ms of a 120 ms start and no
+// memory (task 075), which isn't worth a profiling run per build.
+async function compile(entry: string, outfile: string, arch: Arch, bytecode = false) {
   const result = await Bun.build({
     entrypoints: [entry],
     target: 'bun',
     format: 'esm',
     minify: true,
     bytecode,
-    // oxlint-disable-next-line typescript/no-explicit-any -- bytecodeOrder is newer than @types/bun 1.4.2.
-    ...(bytecodeOrder && ({ bytecodeOrder } as any)),
     compile: {
       target: `bun-linux-${arch}`,
       outfile,
@@ -170,10 +164,7 @@ for (const arch of targets) {
   const release = join(DIST, `snowtime-linux-${arch}`)
   rmSync(release, { recursive: true, force: true })
   mkdirSync(release, { recursive: true })
-  await compile(join(OUTPUT, 'server/index.mjs'), join(release, 'snowtime'), arch, {
-    bytecode: true,
-    bytecodeOrder: values['bytecode-order'],
-  })
+  await compile(join(OUTPUT, 'server/index.mjs'), join(release, 'snowtime'), arch, true)
   await compile(
     join(ROOT, 'scripts/db-migrate-release.ts'),
     join(release, 'snowtime-migrate'),
