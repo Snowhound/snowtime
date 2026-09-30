@@ -4,15 +4,8 @@
 
 import type { ImageId } from '~/lib/scene/images'
 import { STRENGTHS, photoUrl, photoWidth } from '~/lib/scene/scene'
-import {
-  PACES,
-  PRESETS,
-  type Pace,
-  type Weather,
-  createWeatherRenderer,
-  weatherColors,
-  weatherFor,
-} from '~/lib/scene/weather'
+import { PACES, PRESETS, type Pace, type Weather, weatherFor } from '~/lib/scene/weather'
+import { createWeatherRenderer, weatherColors } from '~/lib/scene/weather-renderer'
 import { LAYOUTS, type Layout } from './layouts'
 import '~/styles.css'
 

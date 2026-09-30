@@ -12,7 +12,8 @@ import {
   shownSeason,
   thumbUrl,
 } from './scene'
-import { EFFECTS, IMAGE_WEATHER, PRESETS, weatherFor } from './weather'
+import { IMAGE_WEATHER, PRESETS, weatherFor } from './weather'
+import { EFFECTS } from './weather-renderer'
 
 describe('seasons', () => {
   test('the month picks the season, with December in winter', () => {

@@ -26,13 +26,11 @@ import {
   type Effect,
   PACES,
   type Pace,
-  type WeatherRenderer,
-  createWeatherRenderer,
   setWeatherProblem,
-  weatherColors,
   weatherFor,
   weatherSupported,
 } from '~/lib/scene/weather'
+import type { WeatherRenderer } from '~/lib/scene/weather-renderer'
 
 type LayerSettings = Pick<
   SceneSettings,
@@ -149,10 +147,16 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     // stays off, and the Weather hint says why.
     let renderer: WeatherRenderer | null | undefined = weatherSupported() ? undefined : null
     setWeatherProblem(renderer === null ? 'webgl' : null)
+    const [weatherModule, setWeatherModule] =
+      createSignal<typeof import('~/lib/scene/weather-renderer')>()
+    let loading: Promise<void> | undefined
+    let disposed = false
+    let loadFailed = false
     const failed = new Set<Effect>()
     visibility()
     document.addEventListener('visibilitychange', visibility)
     onCleanup(() => {
+      disposed = true
       document.removeEventListener('visibilitychange', visibility)
       renderer?.destroy()
     })
@@ -167,14 +171,30 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         !reducedMotion() &&
         visible() &&
         !failed.has(effect)
-      if (on && renderer === undefined) {
-        renderer = createWeatherRenderer(canvas, () => PACES[props.pace])
+      const module = weatherModule()
+      if (on && renderer === undefined && !module && !loading) {
+        loading = import('~/lib/scene/weather-renderer').then(
+          (module) => {
+            if (!disposed) setWeatherModule(module)
+            return undefined
+          },
+          (error) => {
+            if (disposed) return undefined
+            console.warn('Weather renderer unavailable:', error)
+            loadFailed = true
+            setWeatherProblem('failed')
+            return undefined
+          },
+        )
+      }
+      if (on && renderer === undefined && module) {
+        renderer = module.createWeatherRenderer(canvas, () => PACES[props.pace])
         if (!renderer) setWeatherProblem('webgl')
       }
-      if (renderer && on && effect) {
+      if (renderer && on && effect && module) {
         const shown = { ...weather, effect }
         try {
-          renderer.start(shown, weatherColors(shown, { dark: isDark, background }))
+          renderer.start(shown, module.weatherColors(shown, { dark: isDark, background }))
         } catch (error) {
           console.warn(`Weather effect ${effect} unavailable:`, error)
           failed.add(effect)
@@ -182,7 +202,8 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         }
       }
       if (!on) renderer?.stop()
-      if (renderer !== null) setWeatherProblem(effect && failed.has(effect) ? 'failed' : null)
+      if (renderer !== null && !loadFailed)
+        setWeatherProblem(effect && failed.has(effect) ? 'failed' : null)
       setWeatherOn(on && !!renderer)
     })
   })
