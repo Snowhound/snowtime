@@ -30,3 +30,6 @@ fc414e064bdcce20e642df675967fbd927f5807f
 
 # Move the head theme script into device-settings.ts (task 053).
 e907445204813de8e79197f75973b745c23f1fc5
+
+# Move the OAuth and host-change sections to docs/deployment/README.md (task 075).
+f32a8baae487565ae76714737040066a1d2d8b70
