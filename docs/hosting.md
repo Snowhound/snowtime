@@ -1,7 +1,7 @@
 # Hosting
 
-Goal: run initially on the Vercel and Turso free tiers. Setup steps are in
-`deployment.md`.
+Goal: run initially on the Vercel and Turso free tiers. The alternative is one self-hosted
+Linux server. Setup steps for both are in `deployment/README.md`.
 
 ## Vercel (Hobby)
 
@@ -32,10 +32,35 @@ Goal: run initially on the Vercel and Turso free tiers. Setup steps are in
   it the app runs, but the limits apply per function instance.
 - Use one database per environment, so staging traffic doesn't count against `prod`.
 
+## Self-hosted (one Linux server)
+
+Any Linux server with systemd works: a VPS, a dedicated server, or a machine on premises.
+Hetzner Cloud is the example in `deployment/self-hosted.md`, which also lists the
+requirements in full.
+
+- Exactly one app process per database. Two processes writing one SQLite file bring back
+  the lost writes of task 043, so there is no second instance, cluster mode, or
+  zero-downtime handover. A restart pauses requests for about a second; Caddy holds them.
+- Scaling is vertical only. One process renders on one core: in `perf:load` on 2026-09-30,
+  ordinary pages took 15–50 ms of CPU and the 9-month report 85–92 ms, so a shared vCPU
+  serves roughly 20–40 ordinary pages a second.
+- Memory peaked near 400 MB under load. The minimum is 1 vCPU and 2 GB; 2 vCPU and 4 GB
+  (Hetzner CX23 or CAX11) leave a core for Caddy, Litestream, and the OS.
+- The database grows by about 640 bytes per time entry, indexes included; 1,000 people
+  add about 1 GB a year.
+- Rate-limit counts live in the process's memory, which is correct with one process;
+  Upstash isn't needed. A restart resets them.
+- Backups are Litestream's: each change reaches the bucket within a second, with a daily
+  snapshot kept for a week. The bucket belongs in another location or with another
+  provider than the server.
+- The operator patches the OS and keeps Caddy, Litestream, and Cloudflare's address list
+  in the Caddyfile current.
+- The server is in one location, so users far from it wait longer on every page.
+
 ## Implications for design
 
 - No background workers or cron beyond what the free tiers allow; compute on
-  request.
+  request. Self-hosting could run them, but the app must keep working on Vercel.
 - One database per environment shared by all tenants (row-level isolation),
   keeping the database count small.
 - Check current quotas on the vendors' pricing pages rather than hardcoding

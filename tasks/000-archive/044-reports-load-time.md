@@ -29,7 +29,7 @@ Causes:
 
 The queries themselves use indexes (`time_entry_organization_id_started_at_idx` and the
 `user_id` one); the cost is the number of round trips, not slow SQL. A Vercel function
-region that differs from the Turso primary region (`docs/deployment.md`) multiplies
+region that differs from the Turso primary region (`docs/deployment/vercel.md`) multiplies
 every round trip.
 
 ## Acceptance criteria

@@ -10,7 +10,7 @@ import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
 
 // The operator the privacy policy and terms name. A dedicated stack run by someone else
-// replaces these and the documents' text (docs/deployment.md).
+// replaces these and the documents' text (docs/deployment/README.md).
 export const COMPANY = {
   name: 'Snowhound OÜ',
   registryCode: '12745389',

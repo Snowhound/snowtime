@@ -7,7 +7,7 @@
 - Data model: `datamodel/` (DBML diagram, `bun run datamodel` to view)
 - Migrations: `docs/migrations.md` — read before touching the schema
 - Hosting constraints: `docs/hosting.md`
-- Setting up a deployment: `docs/deployment.md`
+- Setting up a deployment: `docs/deployment/README.md`
 - Task tracking: `tasks/` (see `tasks/README.md`)
 - Writing docs: `.claude/skills/google-style/SKILL.md`
 - UI prototypes: `prototypes/` (see `prototypes/README.md`); browser checks via

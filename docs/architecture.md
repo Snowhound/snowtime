@@ -2,24 +2,24 @@
 
 ## Stack
 
-| Concern       | Choice                                                                                                                                                                                                       |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Framework     | TanStack Start with Solid; Vercel deployment adapter                                                                                                                                                         |
-| Runtime / PM  | Bun for installs, scripts, and tests; Vercel functions run on Node. `packageManager` in `package.json` pins the Bun version, which CI (`setup-bun`) and the `vercel.json` install command both read          |
-| Database      | Turso (libSQL/SQLite) via `@libsql/client`                                                                                                                                                                   |
-| ORM           | Drizzle v1 (pinned rc), `"turso"` dialect; query layer only                                                                                                                                                  |
-| Migrations    | Hand-written SQL, applied by `drizzle-kit migrate`                                                                                                                                                           |
-| Auth          | Better Auth with the Drizzle adapter; organization plugin with teams (no default team, organization deletion disabled)                                                                                       |
-| Data fetching | TanStack Query with optimistic updates                                                                                                                                                                       |
-| Forms         | TanStack Form                                                                                                                                                                                                |
-| Validation    | Valibot, shared by forms and server functions                                                                                                                                                                |
-| UI            | Solid-UI + Tailwind; components in `src/components/ui/`, copied from the Solid-UI registry at the commit the prototypes use (`21ba4fa`)                                                                      |
-| i18n          | English and Estonian; Paraglide JS                                                                                                                                                                           |
-| Testing       | `bun test` for server and database code (`*.test.ts`); Vitest with Solid Testing Library in jsdom for components (`*.test.tsx`); `bunfig.toml` and `vitest.config.ts` keep each runner off the other's files |
-| Lint          | oxlint with type-aware rules (`oxlint-tsgolint`) and `eslint-plugin-solid` as a JS plugin; config in `.oxlintrc.json`, warnings fail                                                                         |
-| Format        | oxfmt (Prettier-compatible; the project uses no Prettier); config in `.oxfmtrc.json`; prototypes and generated files are skipped                                                                             |
-| Spreadsheets  | `write-excel-file` (MIT, write-only, one dependency: fflate) for the report's XLSX export, loaded in the browser only when someone exports; CSV is built without a library (see "Report export")             |
-| Client state  | No library; Solid signals/stores and URL search params; user settings on the server (see "User settings")                                                                                                    |
+| Concern       | Choice                                                                                                                                                                                                                           |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework     | TanStack Start with Solid on Nitro: its Vercel preset on Vercel, its `bun` preset self-hosted (`docs/deployment/README.md`)                                                                                                      |
+| Runtime / PM  | Bun for installs, scripts, and tests; Vercel functions run on Node, a self-hosted server on Bun. `packageManager` in `package.json` pins the Bun version, which CI (`setup-bun`) and the `vercel.json` install command both read |
+| Database      | Turso (libSQL/SQLite) via `@libsql/client`; self-hosted, a local file in the app's process                                                                                                                                       |
+| ORM           | Drizzle v1 (pinned rc), `"turso"` dialect; query layer only                                                                                                                                                                      |
+| Migrations    | Hand-written SQL, applied by `drizzle-kit migrate`                                                                                                                                                                               |
+| Auth          | Better Auth with the Drizzle adapter; organization plugin with teams (no default team, organization deletion disabled)                                                                                                           |
+| Data fetching | TanStack Query with optimistic updates                                                                                                                                                                                           |
+| Forms         | TanStack Form                                                                                                                                                                                                                    |
+| Validation    | Valibot, shared by forms and server functions                                                                                                                                                                                    |
+| UI            | Solid-UI + Tailwind; components in `src/components/ui/`, copied from the Solid-UI registry at the commit the prototypes use (`21ba4fa`)                                                                                          |
+| i18n          | English and Estonian; Paraglide JS                                                                                                                                                                                               |
+| Testing       | `bun test` for server and database code (`*.test.ts`); Vitest with Solid Testing Library in jsdom for components (`*.test.tsx`); `bunfig.toml` and `vitest.config.ts` keep each runner off the other's files                     |
+| Lint          | oxlint with type-aware rules (`oxlint-tsgolint`) and `eslint-plugin-solid` as a JS plugin; config in `.oxlintrc.json`, warnings fail                                                                                             |
+| Format        | oxfmt (Prettier-compatible; the project uses no Prettier); config in `.oxfmtrc.json`; prototypes and generated files are skipped                                                                                                 |
+| Spreadsheets  | `write-excel-file` (MIT, write-only, one dependency: fflate) for the report's XLSX export, loaded in the browser only when someone exports; CSV is built without a library (see "Report export")                                 |
+| Client state  | No library; Solid signals/stores and URL search params; user settings on the server (see "User settings")                                                                                                                        |
 
 ## Data conventions
 
@@ -144,7 +144,7 @@
     `microsoftEmailVerified` also trusts a personal account (the consumer tenant, whose
     addresses Microsoft verified) and `xms_edov`, the claim that the tenant owns the
     address's domain. The app registration must add `xms_edov` to the ID token
-    (`docs/deployment.md`); without it, work and school accounts can't sign up.
+    (`docs/deployment/README.md`); without it, work and school accounts can't sign up.
   - Checked against Better Auth 1.7's source and with sample claims, not yet with a real
     Microsoft or GitHub sign-in.
 - Passkeys are added to an existing account: a signed-in user registers one, then signs
@@ -307,6 +307,11 @@ are `rateLimits` in `src/server/limits.server.ts`.
   and `UPSTASH_REDIS_REST_TOKEN` set, the store is Upstash Redis, one Lua script per
   counted request. Unset, the counts live in the process's memory. That is enough on one
   long-running server but not on Vercel, where each function instance counts on its own.
+- Better Auth counts per address, which it reads from `x-forwarded-for` (set by Vercel),
+  or from the header `CLIENT_IP_HEADER` names. Self-hosted, that is `cf-connecting-ip`,
+  which Caddy sets to the address it trusts: Cloudflare's header from Cloudflare's ranges,
+  otherwise the connection's. Without one trustworthy address, Better Auth counts every
+  request under one key.
 - Upstash was chosen over Better Auth's `storage: 'database'`, which would cost a Turso
   write per counted request, and over Vercel Firewall rules, which limit only per IP.
   Upstash is Redis over HTTP, so it doesn't tie the app to Vercel.
@@ -414,7 +419,7 @@ works; one that lacks it gets a notice at the top of each page.
 
 - Default: one shared multi-tenant deployment.
 - Must remain possible: a dedicated stack per client (own Vercel project and
-  Turso database) from the same codebase, with no code changes.
+  Turso database, or own server) from the same codebase, with no code changes.
 - Therefore: nothing tenant-specific in code (no hardcoded org names,
   domains, or branding); everything instance-specific comes from env vars;
   migrations apply cleanly to an empty database.
@@ -1122,6 +1127,13 @@ test their migrations on throwaway local databases only (`db:drift`).
   project's dashboard, not the repository, so every client stack would need it by hand.
   The previous deployment serves until the new one is ready, so migrations stay backward
   compatible.
+- Self-hosted (task 075), one server runs one app process with the database as a local
+  file, because going through `sqld` over HTTP made pages 2–3 times slower and used 3–4
+  times the CPU. The app can't be split from the database across providers either: each
+  of a page's round trips would cost 10–30 ms. A deploy is manual: copy a release,
+  migrate the file with `db:migrate` or the release's `snowtime-migrate`, then restart.
+  Litestream streams the file to S3-compatible storage. Turso Sync was evaluated as the
+  backup instead and not adopted, because it swaps libSQL for Turso's pre-1.0 engine.
 - Planned: CI also applies `main`'s migrations to a throwaway database, seeds it, and
   then applies the PR's migrations, to catch a migration that fails on existing rows
   (for example a `NOT NULL` column without a default).

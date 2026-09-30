@@ -125,17 +125,19 @@ planned `staging` for `develop`. After the checks pass on a push to `main`, CI m
 `production`, and skips with a notice while they are unset. The Vercel build and app start
 never apply migrations.
 
-[docs/deployment.md](docs/deployment.md) sets up a production stack step by step.
+It can also run self-hosted on one Linux server, with SQLite in the app's process, Caddy
+in front, and Litestream backups. [docs/deployment/](docs/deployment/README.md) compares
+the two and has a step-by-step runbook for each.
 
 The same codebase can also run as a dedicated stack per client, configured only through
-environment variables. Free-tier limits are in [docs/hosting.md](docs/hosting.md).
+environment variables. Platform limits are in [docs/hosting.md](docs/hosting.md).
 
 ## Documentation
 
 - [Product](docs/product.md): purpose, MVP scope, and tenancy
 - [Architecture](docs/architecture.md): recorded decisions and their reasons
-- [Hosting](docs/hosting.md): Vercel and Turso constraints
-- [Deployment](docs/deployment.md): setting up a production stack
+- [Hosting](docs/hosting.md): Vercel, Turso, and self-hosted constraints
+- [Deployment](docs/deployment/README.md): runbooks for Vercel and for self-hosting
 - [Migrations](docs/migrations.md): how to change the schema
 - [Data model](datamodel/README.md): the DBML diagram and its conventions
 - [Prototypes](prototypes/README.md): HTML prototypes of each view and the brand

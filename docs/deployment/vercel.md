@@ -1,17 +1,18 @@
-# Deployment
+# Deploy on Vercel and Turso
 
 This runbook sets up one production stack from scratch: a Turso database, optional
 Upstash Redis, a Vercel project, one or more OAuth apps, and the GitHub environment CI
-migrates and deploys from. Follow it for your own deployment or for a dedicated stack per client. The
-reasons behind the choices are in `architecture.md` ("Environments and deployment"), and
-the free-tier limits are in `hosting.md`.
+migrates and deploys from. Follow it for your own deployment or for a dedicated stack per
+client. [The deployment index](README.md) compares it with self-hosting and holds the steps
+both share. The reasons behind the choices are in `../architecture.md` ("Environments and
+deployment"), and the free-tier limits are in `../hosting.md`.
 
 Staging (the `develop` branch) is planned and not covered here.
 
 ## Before you start
 
 - Accounts: Vercel, Turso, GitHub (the repository or your fork), and optionally Upstash.
-  Vercel's Hobby plan is for non-commercial use only (`hosting.md`).
+  Vercel's Hobby plan is for non-commercial use only (`../hosting.md`).
 - Pick one region for everything. The functions must run beside the database, because a
   page makes several database round trips. For users in Europe, use Turso
   `aws-eu-west-1` (Ireland) with Vercel `dub1` (Dublin). Run `turso db locations` to see
@@ -36,7 +37,7 @@ database, so store it only as a secret.
 
 Upstash holds the rate-limit counts, so every Vercel function instance sees the same
 counts. Without it the app runs, but each instance limits on its own
-(`architecture.md`, "Abuse limits").
+(`../architecture.md`, "Abuse limits").
 
 1. In the [Upstash console](https://console.upstash.com), create a Redis database with
    its primary region in the functions' AWS region (`eu-west-1` for Dublin) and no read
@@ -66,7 +67,12 @@ doesn't read.
 
 The next steps write this host as `<host>`. OAuth callbacks and passkeys are bound to it
 through `BETTER_AUTH_URL`; to change it later, see
-[Changing the host later](#changing-the-host-later).
+[Changing the host later](README.md#changing-the-host-later).
+
+## 4. Register the OAuth apps
+
+Register at least one provider for `<host>`, as
+[Register the OAuth apps](README.md#register-the-oauth-apps) describes.
 
 ## 5. Let CI migrate and deploy
 
@@ -108,17 +114,12 @@ vercel deploy --prod
 
 The previous deployment serves until the new one is ready, so it runs against the
 migrated database for a few minutes. Keep migrations backward compatible
-(`migrations.md`).
+(`../migrations.md`).
 
 ## 6. Set the environment variables and redeploy
 
-1. Generate the auth secret. Better Auth signs sessions with it, so changing it later
-   signs everyone out.
-
-   ```bash
-   bunx --bun @better-auth/cli secret     # BETTER_AUTH_SECRET, at least 32 characters
-   ```
-
+1. Generate the auth secret, as
+   [Set the environment variables](README.md#set-the-environment-variables) shows.
 2. In the Vercel project, under **Settings > Environment Variables**, add these for the
    Production environment and mark the secrets sensitive:
 
@@ -131,22 +132,19 @@ migrated database for a few minutes. Keep migrations backward compatible
    | `MICROSOFT_TENANT_ID`                                | Optional, restricts Microsoft sign-in |
    | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Step 2, both or neither               |
 
-   `.env.example` lists the same variables. `src/env.ts` checks them when the app starts
-   and names the variable that is missing or set without its pair. Don't prefix a secret
-   with `VITE_`: those variables reach the browser bundle.
+   Leave `CLIENT_IP_HEADER` unset: Vercel puts the user's address in `x-forwarded-for`,
+   which Better Auth reads by default.
 
 3. Leave Preview environment variables unset. Preview deployments have generated hosts,
-   where OAuth and passkeys can't work (`architecture.md`, "Sign-in methods").
+   where OAuth and passkeys can't work (`../architecture.md`, "Sign-in methods").
 4. Redeploy the latest production deployment in Vercel, or re-run the latest workflow on
    `main`, so it runs with the region and variables. Vercel applies both only to
    deployments made after the change.
 
 ## 7. Check the deployment
 
-- Sign in with each configured provider, and create an organization.
-- Add a passkey in Settings, sign out, and sign in with it.
-- In the browser's developer tools, the console shows no Content-Security-Policy
-  violations.
+Everything in [Check the deployment](README.md#check-the-deployment) applies, plus:
+
 - With Upstash configured, keys starting with `rate-limit:` appear in its data browser
   after a few writes.
 - If a page fails, the function logs under the deployment in Vercel show the error,

@@ -73,7 +73,7 @@ export interface MicrosoftClaims {
   verified_primary_email?: string[]
   verified_secondary_email?: string[]
   // The tenant has verified the address's domain. An optional claim, which the Entra app
-  // registration must add to the ID token (docs/deployment.md).
+  // registration must add to the ID token (docs/deployment/README.md).
   xms_edov?: boolean
 }
 

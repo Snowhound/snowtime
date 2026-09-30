@@ -33,7 +33,7 @@ reproduced, because no Microsoft or GitHub sign-in is configured locally.
 - [x] An unverified provider email can't block a later verified sign-in with the same
       address. For example, a `databaseHooks.user.create.before` hook refuses social
       sign-ups whose email isn't verified, with a message on the sign-in screen
-- [x] `docs/architecture.md` ("Sign-in methods") and `docs/deployment.md` (the Microsoft
+- [x] `docs/architecture.md` ("Sign-in methods") and `docs/deployment/README.md` (the Microsoft
       app setup) say which providers give verified addresses and what the app does with
       the others
 
