@@ -3,6 +3,7 @@
 ## Project context
 
 - Product scope: `docs/product.md`
+- Local setup, seeded users, and scripts: `docs/development.md`
 - Architecture decisions: `docs/architecture.md`
 - Data model: `datamodel/` (DBML diagram, `bun run datamodel` to view)
 - Migrations: `docs/migrations.md` — read before touching the schema
