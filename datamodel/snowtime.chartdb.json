@@ -2758,12 +2758,16 @@
         },
         {
           "id": "t13i1",
-          "name": "time_entry_organization_id_user_id_started_at_idx",
+          "name": "time_entry_organization_id_user_id_started_at_sys_deleted_stopped_at_project_id_ticket_idx",
           "unique": false,
           "fieldIds": [
             "t13f1",
             "t13f2",
-            "t13f5"
+            "t13f5",
+            "t13f11",
+            "t13f6",
+            "t13f3",
+            "t13f12"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
@@ -2771,11 +2775,16 @@
         },
         {
           "id": "t13i2",
-          "name": "time_entry_organization_id_started_at_idx",
+          "name": "time_entry_organization_id_started_at_sys_deleted_stopped_at_user_id_project_id_ticket_idx",
           "unique": false,
           "fieldIds": [
             "t13f1",
-            "t13f5"
+            "t13f5",
+            "t13f11",
+            "t13f6",
+            "t13f2",
+            "t13f3",
+            "t13f12"
           ],
           "createdAt": 1700000000000,
           "isPrimaryKey": false,

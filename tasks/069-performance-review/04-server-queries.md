@@ -69,6 +69,35 @@ a covering index is fine when it removes table reads from a hot query.
     seed, and Turso bills the rows it reads). Leaving the range out entirely returned one
     extra row in the week and month reports, which the rows gate rejects.
 
+- **Covering report indexes.** Replace both organization/time and organization/user/time
+  indexes with the same prefixes plus `sys_deleted`, `stopped_at`, `project_id`, and
+  `ticket` (and `user_id` on the organization/time index). Both report entry reads now
+  say `USING COVERING INDEX`; the member read keeps its user/time bounds. The prefixes
+  still serve older app versions. Migration, drift check, and regenerated diagrams agree.
+  SQL rows and wire bytes stay unchanged:
+
+  | Range | Admin rows / SQL JSON bytes | Member rows / SQL JSON bytes |
+  | ----- | --------------------------- | ---------------------------- |
+  | Week  | 362 / 62,330                | 23 / 3,924                   |
+  | Month | 1,655 / 285,283             | 64 / 11,013                  |
+  | Year  | 20,163 / 3,473,394          | 1,187 / 204,448              |
+
+  Raw statement medians (10 measured calls after 2 warm-ups), old/new/old/new in one
+  session, in ms:
+
+  | Range / user | Old   | Covering | Old   | Covering |
+  | ------------ | ----- | -------- | ----- | -------- |
+  | Week admin   | 0.58  | 0.42     | 1.05  | 0.73     |
+  | Month admin  | 2.23  | 1.99     | 3.30  | 2.85     |
+  | Year admin   | 31.90 | 29.43    | 34.82 | 36.90    |
+  | Week member  | 0.070 | 0.123    | 0.086 | 0.063    |
+  | Month member | 0.119 | 0.112    | 0.110 | 0.103    |
+  | Year member  | 1.41  | 1.91     | 1.62  | 1.50     |
+
+  Timings are noisy; the stable gain is eliminating the table lookup for each matching
+  report entry. `bun run perf` passes before and after; reports and timer tests are
+  unchanged. Rows visited inside SQLite remain unavailable through libsql.
+
 ## Checked and left as is
 
 - **`ANALYZE` and `PRAGMA optimize`.** On a copy of the seeded database, `ANALYZE` changed
@@ -90,3 +119,9 @@ a covering index is fine when it removes table reads from a hot query.
 - **Recommendation.** Don't add `PRAGMA optimize` to `db:migrate`: it would analyze nothing
   after a migration, may be refused on Turso Cloud, and the plans that matter already use
   the right indexes without statistics.
+
+## Open for review
+
+- Kait: review the larger covering indexes against the saved table probes. Local timings
+  do not establish a reliable whole-report speedup or Turso billed-row savings.
+- Keyset paging, member-filtered plans, SQL day aggregation, and timer lookups are next.
