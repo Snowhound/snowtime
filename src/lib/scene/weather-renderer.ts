@@ -30,6 +30,8 @@ type EffectDef = {
   max: number
   vs: string
   fs: string
+  // The #defines for the features this weather turns on (see below).
+  defines?: (t: typeof TUNING & Weather) => string[]
   // Draw each item as a quad of two triangles (six vertices) instead of a point.
   quads?: boolean
   // Target frames per second, unless a preset sets its own: 60 for what moves far enough per
@@ -42,29 +44,23 @@ type EffectDef = {
   colors: Colors
 }
 
-// Every effect takes the image's tuning as uniforms.
-const HEAD = `#version 300 es
+// Each program is compiled for what its weather uses: `defines` names the features a preset turns
+// on, as #defines, so a program has no branches or uniforms for the ones it leaves out. Values
+// that stay the same for an item, such as its premultiplied color, are worked out in the vertex
+// shader. A point's are `flat` varyings; a quad's stay smooth, since all its corners hold the
+// same value and `flat` on triangles made ANGLE on Metal draw rain about 10% slower.
+
+// Every vertex shader: the frame, the tuning every effect takes, and each item's randomness.
+const VS_HEAD = `
 precision highp float;
 uniform vec2 u_res;
-// The band's top and bottom in clip space; the full screen and a margin without a band.
-uniform vec2 u_band;
-// The image's horizon in clip space; below the screen without one.
-uniform float u_horizon;
-uniform float u_time, u_dpr, u_wind, u_gust, u_shear, u_size, u_fall, u_opacity, u_share, u_glow, u_tempo, u_gather;
-// Up to four rectangles of the image in clip space (left, top, right, bottom), and how many.
-uniform vec4 u_zones[4];
-uniform float u_zoneCount;
-// Each zone's factor of glitter's opacity.
-uniform vec4 u_zoneGain;
+uniform float u_time, u_dpr, u_size, u_fall, u_opacity;
 float hash(float n){ return fract(sin(n*127.1)*43758.5453123); }
 float hash2(float n){ return fract(sin(n*269.5+31.7)*17358.5453123); }
-// An integer hash for a falling item's column on each pass. The pass count grows without bound,
-// and sin() loses precision on large arguments, so hash() gave many items the same column.
-float columnHash(int item, float pass){
-  uint x = uint(item) * 1664525u + uint(pass) * 1013904223u + 12345u;
-  x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16;
-  return float(x) / 4294967295.0;
-}
+`
+// The wind, for everything that floats or falls.
+const WIND = `
+uniform float u_wind, u_gust;
 // The wind's strength now, around 1: gusts rise and fall with no fixed period.
 float gustNow(){ float t = u_time; return 1.0 + u_gust*(.6*cos(t*.7) + .4*cos(t*1.9+1.3)); }
 // The gusts' part of how far the wind has carried an item: the integral of gustNow, less its mean.
@@ -73,10 +69,26 @@ float gustTime(){ float t = u_time; return u_gust*(.6*sin(t*.7)/.7 + .4*(sin(t*1
 float windSpeed(float depth){ return u_wind * depth * 2.0 * u_res.y / u_res.x; }
 // How far the wind has carried a floating item so far.
 float windX(float depth){ return windSpeed(depth) * (u_time + gustTime()); }
+float wrapX(float x, float margin){ return -1.0 - margin + mod(x + 1.0 + margin, 2.0 + 2.0*margin); }
+`
+// Snow and rain: items that fall through the band (BAND), or the whole screen, and wrap to its
+// top, blown sideways more below the horizon (SHEAR).
+const FALL = `
+// The band's top and bottom in clip space; the full screen and a margin without a band.
+uniform vec2 u_band;
+// An integer hash for a falling item's column on each pass. The pass count grows without bound,
+// and sin() loses precision on large arguments, so hash() gave many items the same column.
+float columnHash(int item, float pass){
+  uint x = uint(item) * 1664525u + uint(pass) * 1013904223u + 12345u;
+  x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16;
+  return float(x) / 4294967295.0;
+}
+#ifdef SHEAR
+// The image's horizon in clip space.
+uniform float u_horizon, u_shear;
 // How much stronger the wind is at y: 1 down to the horizon, then rising to 1 + u_shear at the
 // screen's foot, as wind picks up near the ground.
 float shearAt(float y){
-  if (u_horizon <= -1.0) return 1.0;
   float s = clamp((u_horizon - y) / (u_horizon + 1.0), 0.0, 1.0);
   return 1.0 + u_shear * s * s;
 }
@@ -87,26 +99,54 @@ float pathX(float y, float v, float depth){
   float below = max(0.0, u_horizon - y), h = max(u_horizon + 1.0, .01);
   return windSpeed(depth) * ((u_band.x - y + u_shear * below*below*below / (3.0*h*h)) / v + gustTime());
 }
-float wrapX(float x, float margin){ return -1.0 - margin + mod(x + 1.0 + margin, 2.0 + 2.0*margin); }
+#else
+float shearAt(float y){ return 1.0; }
+float pathX(float y, float v, float depth){ return windSpeed(depth) * ((u_band.x - y) / v + gustTime()); }
+#endif
 // An item that starts r (0 to 1) down the band and has fallen d, wrapping within the band: its y,
 // and which pass it's on, so each pass can start in another column.
 vec2 fallPass(float r, float d){ float span = u_band.x - u_band.y, p = (1.0-r)*span + d; return vec2(u_band.x - mod(p, span), floor(p/span)); }
-// Fades items out at a band's edges, which are off-screen without a band.
+// Fades items out at the band's edges.
+#ifdef BAND
 float bandFade(float y){ return clamp(min(u_band.x - y, y - u_band.y) / .12, 0.0, 1.0); }
+#else
+float bandFade(float y){ return 1.0; }
+#endif
+`
+// Glitter, the midges, and the mist keep to rectangles of the image, in clip space (left, top,
+// right, bottom), each with a factor of the effect's opacity there. ZONES is how many.
+const ZONES = `
+uniform vec4 u_zones[4];
+uniform vec4 u_zoneGain;
 `
 // mediump: the fragment shaders only shape an item's pixels, and it's cheaper on mobile GPUs. A
-// uniform both stages use would have to match in precision, so values the fragment shader needs
-// come in as varyings.
-const FS_HEAD = `#version 300 es
+// uniform both stages use would have to match in precision, so each uniform is declared in one
+// stage only.
+const FS_HEAD = `
 precision mediump float;
-uniform vec3 u_colorA, u_colorB;
 out vec4 outColor;
+`
+const COLORS = `
+uniform vec3 u_colorA, u_colorB;
 `
 // A firefly's core and halo, the same on every page.
 const FIREFLY: [Rgb, Rgb] = [
   [1.0, 0.98, 0.72],
   [0.74, 0.9, 0.32],
 ]
+
+// Snow and rain's features.
+function fallDefines(t: typeof TUNING & Weather) {
+  const defines = []
+  if (t.band) defines.push('BAND')
+  if (t.shear && t.horizon !== undefined) defines.push('SHEAR')
+  return defines
+}
+
+// Without an image's zones, glitter and the mist keep to the ground below the horizon (prepare).
+function zoneCount(t: typeof TUNING & Weather) {
+  return Math.min(t.zones?.length ?? 1, 4)
+}
 
 export const EFFECTS: Record<Effect, EffectDef> = {
   // Snow. A is the near flakes' color, B the far ones'.
@@ -115,8 +155,10 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     min: 150,
     max: 900,
     fps: 30,
-    vs: `${HEAD}
-    out float v_alpha, v_depth, v_rnd;
+    defines: fallDefines,
+    vs: `${VS_HEAD}${WIND}${FALL}${COLORS}
+    // Premultiplied, as the canvas composites; straight alpha would darken the flakes' edges.
+    flat out vec4 v_color;
     void main() {
       float id = float(gl_VertexID) + 1.0;
       float r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0);
@@ -130,18 +172,13 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       x *= mix(.88, 1.08, z);
       gl_Position = vec4(x, y, 0.0, 1.0);
       gl_PointSize = max(1.0, 1.15 * u_dpr * mix(.8, 2.75, z) * u_size);
-      v_alpha = mix(.15,.82,z) * mix(.72,1.0,r4) * u_opacity * bandFade(y);
-      v_depth = z;
-      v_rnd = r4;
+      float alpha = mix(.15,.82,z) * mix(.72,1.0,r4) * u_opacity * bandFade(y);
+      v_color = vec4(mix(u_colorB, u_colorA, z) + r4 * .02, 1.0) * alpha;
     }`,
     fs: `${FS_HEAD}
-    in float v_alpha, v_depth, v_rnd;
+    flat in vec4 v_color;
     void main() {
-      float d = length(gl_PointCoord - .5);
-      float a = smoothstep(.54,.22,d) * v_alpha;
-      vec3 c = mix(u_colorB, u_colorA, v_depth) + v_rnd * 0.02;
-      // Premultiplied, as the canvas composites; straight alpha would darken the flakes' edges.
-      outColor = vec4(c * a, a);
+      outColor = v_color * smoothstep(.54, .22, length(gl_PointCoord - .5));
     }`,
     // White on the dark scene and on the light image; on the plain light page white flakes would
     // vanish, so they turn blue-grey there.
@@ -166,8 +203,11 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     min: 20,
     max: 60,
     fps: 60,
-    vs: `${HEAD}
-    out float v_alpha, v_rnd, v_angle, v_flip;
+    vs: `${VS_HEAD}${WIND}${COLORS}
+    flat out vec4 v_color;
+    // The leaf's turn as cos and sin, and 1 over its width as it tumbles edge-on.
+    flat out vec2 v_turn;
+    flat out float v_narrow;
     void main() {
       float id = float(gl_VertexID) + 1.0;
       float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
@@ -179,30 +219,33 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       float x = r1*2.0-1.0 + windX((.6+z)/1.6) + sin(swing) * mix(.03, .08, z) * u_res.y / u_res.x;
       x = wrapX(x, .15);
       gl_Position = vec4(x, y, 0.0, 1.0);
-      gl_PointSize = u_dpr * mix(10.0, 26.0, z) * mix(.85, 1.15, r5) * u_size;
-      v_angle = r1*6.28 + t*mix(-.7, .7, r2) + cos(swing)*.6;
-      v_flip = cos(t*mix(.7, 1.8, r4) + r3*6.28);
-      v_alpha = mix(.5, .95, z) * u_opacity;
-      v_rnd = r5;
+      // The leaf's tips reach 0.87 from its center, and the point spans 0.945 either side, which
+      // leaves a pixel's edge on the smallest leaves at any turn.
+      gl_PointSize = .9 * u_dpr * mix(10.0, 26.0, z) * mix(.85, 1.15, r5) * u_size;
+      float angle = r1*6.28 + t*mix(-.7, .7, r2) + cos(swing)*.6;
+      v_turn = vec2(cos(angle), sin(angle));
+      // Tumbling: -1 to 1, the leaf edge-on at 0 and showing its back below it.
+      float flip = cos(t*mix(.7, 1.8, r4) + r3*6.28);
+      v_narrow = 1.0 / mix(.3, 1.0, abs(flip));
+      // Darker as it turns edge-on, and a lighter back.
+      vec3 col = mix(u_colorA, u_colorB, r5) * mix(.7, 1.0, abs(flip));
+      col = mix(col, col * 1.15 + .04, step(flip, 0.0) * .6);
+      v_color = vec4(col, 1.0) * mix(.5, .95, z) * u_opacity;
     }`,
     fs: `${FS_HEAD}
-    in float v_alpha, v_rnd, v_angle, v_flip;
+    flat in vec4 v_color;
+    flat in vec2 v_turn;
+    flat in float v_narrow;
     void main() {
-      vec2 q = (gl_PointCoord - .5) * 2.1;
-      float c = cos(v_angle), s = sin(v_angle);
-      q = mat2(c, -s, s, c) * q;
-      float xr = q.x;
-      // Tumbling: the leaf narrows as it turns edge-on.
-      q.x /= mix(.3, 1.0, abs(v_flip));
+      vec2 q = mat2(v_turn.x, -v_turn.y, v_turn.y, v_turn.x) * (gl_PointCoord - .5) * 1.89;
+      float across = q.x;
+      q.x *= v_narrow;
       // A pointed leaf: where two offset circles overlap.
       float d = max(length(q - vec2(.5, 0.0)), length(q + vec2(.5, 0.0))) - 1.0;
       float fw = fwidth(d);
-      float a = (1.0 - smoothstep(-fw, fw, d)) * v_alpha;
-      vec3 col = mix(u_colorA, u_colorB, v_rnd);
-      col *= mix(.7, 1.0, abs(v_flip));
-      col = mix(col, col * 1.15 + .04, step(v_flip, 0.0) * .6);
-      col *= 1.0 - .25 * (1.0 - smoothstep(.0, .05, abs(xr))) * step(abs(q.y), .8);
-      outColor = vec4(col * a, a);
+      // A darker vein down the middle.
+      float vein = 1.0 - .25 * (1.0 - smoothstep(.0, .05, abs(across))) * step(abs(q.y), .8);
+      outColor = vec4(v_color.rgb * vein, v_color.a) * (1.0 - smoothstep(-fw, fw, d));
     }`,
     colors: {
       dark: [
@@ -226,8 +269,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     min: 18,
     max: 60,
     fps: 30,
-    vs: `${HEAD}
-    out float v_alpha;
+    vs: `${VS_HEAD}
+    flat out float v_alpha;
     void main() {
       float id = float(gl_VertexID) + 1.0;
       float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
@@ -243,8 +286,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       v_alpha = glow * mix(.6, 1.0, z) * u_opacity;
       gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * mix(9.0, 18.0, z) * u_size;
     }`,
-    fs: `${FS_HEAD}
-    in float v_alpha;
+    fs: `${FS_HEAD}${COLORS}
+    flat in float v_alpha;
     void main() {
       float d = length(gl_PointCoord - .5) * 2.0;
       float core = exp(-d*d*38.0);
@@ -257,18 +300,27 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     colors: { dark: FIREFLY, image: FIREFLY, plain: FIREFLY },
   },
   // Summer days: soft dandelion fluff and pollen drifting on the breeze, the pollen catching the
-  // light. A is the seeds' color, B the pollen's. Without fluff (`share` 0), it's motes in the sun.
+  // light. A is the seeds' color, B the pollen's. Without fluff (`share` 0, no FLUFF), it's motes in
+  // the sun.
   seeds: {
     density: 70,
     min: 30,
     max: 110,
     fps: 30,
-    vs: `${HEAD}
-    out float v_alpha, v_kind;
+    defines: (t) => (t.share > 0 ? ['FLUFF'] : []),
+    vs: `${VS_HEAD}${WIND}${COLORS}
+    uniform float u_share;
+    flat out vec4 v_color;
+    // 1 for fluff, 0 for pollen.
+    flat out float v_fluff;
     void main() {
       float id = float(gl_VertexID) + 1.0;
       float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
-      float seed = step(1.0 - u_share, r5);
+    #ifdef FLUFF
+      float fluff = step(1.0 - u_share, r5);
+    #else
+      float fluff = 0.0;
+    #endif
       float z = mix(.3, 1.0, r3);
       float t = u_time;
       float x = r1*2.0-1.0 + windX(mix(.35, 1.0, z)) + sin(t*mix(.2, .5, r2) + r4*6.28) * .02;
@@ -276,29 +328,22 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       x = wrapX(x, .15);
       y = -1.15 + mod(y + 1.15, 2.3);
       gl_Position = vec4(x, y, 0.0, 1.0);
-      gl_PointSize = max(1.0, u_dpr * (seed > .5 ? mix(8.0, 16.0, z) : mix(2.5, 5.5, z)) * u_size);
-      float glint = seed > .5 ? 1.0 : .45 + .55 * pow(.5 + .5*sin(t*mix(1.0, 2.6, r4) + r2*6.28), 3.0);
-      v_alpha = mix(.45, .95, z) * glint * u_opacity;
-      v_kind = seed;
+      gl_PointSize = max(1.0, u_dpr * mix(mix(2.5, 5.5, z), mix(8.0, 16.0, z), fluff) * u_size);
+      float glint = mix(.45 + .55 * pow(.5 + .5*sin(t*mix(1.0, 2.6, r4) + r2*6.28), 3.0), 1.0, fluff);
+      v_color = vec4(mix(u_colorB, u_colorA, fluff), 1.0) * mix(.45, .95, z) * glint * u_opacity;
+      v_fluff = fluff;
     }`,
     fs: `${FS_HEAD}
-    in float v_alpha, v_kind;
+    flat in vec4 v_color;
+    flat in float v_fluff;
     void main() {
-      vec2 q = (gl_PointCoord - .5) * 2.0;
-      float r = length(q);
-      float a;
-      vec3 col;
-      if (v_kind > .5) {
-        // A soft tuft of fluff around a small, brighter core.
-        float fluff = smoothstep(1.0, .2, r) * .7;
-        float core = smoothstep(.32, .08, r) * .8;
-        a = clamp(fluff + core, 0.0, 1.0) * v_alpha;
-        col = u_colorA;
-      } else {
-        a = smoothstep(1.0, .2, r) * v_alpha;
-        col = u_colorB;
-      }
-      outColor = vec4(col * a, a);
+      float r = length(gl_PointCoord - .5) * 2.0;
+      float a = smoothstep(1.0, .2, r);
+    #ifdef FLUFF
+      // Fluff: a fainter tuft around a small, brighter core.
+      a = min(a * mix(1.0, .7, v_fluff) + smoothstep(.32, .08, r) * .8 * v_fluff, 1.0);
+    #endif
+      outColor = v_color * a;
     }`,
     colors: {
       dark: [
@@ -325,9 +370,10 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     // Each streak is a thin quad along its slant, since a point covering it would shade about
     // 15 times as many pixels, nearly all of them transparent.
     quads: true,
-    vs: `${HEAD}
+    defines: fallDefines,
+    vs: `${VS_HEAD}${WIND}${FALL}${COLORS}
     const vec2 CORNERS[6] = vec2[6](vec2(-1,-1), vec2(1,-1), vec2(1,1), vec2(-1,-1), vec2(1,1), vec2(-1,1));
-    out float v_alpha, v_depth, v_width;
+    out vec4 v_color;
     out vec2 v_q;
     void main() {
       int item = gl_VertexID / 6;
@@ -347,25 +393,24 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       // The streak's length in pixels; it spans -1 to 1 along its slant.
       float size = u_dpr * mix(14.0, 30.0, z) * u_size;
       // Half a streak's width in the same units: about 0.6 px, fading out by 2.5 times that.
-      v_width = .6 * u_dpr * 2.0 / size;
-      // x: along the streak, toward its falling end; y: across it.
+      float width = .6 * u_dpr * 2.0 / size;
+      // x: along the streak, toward its falling end; y: across it, in half-widths.
       vec2 corner = CORNERS[gl_VertexID % 6];
-      v_q = vec2(corner.x, corner.y * v_width * 2.5);
+      v_q = vec2(corner.x, corner.y * 2.5);
       vec2 dir = normalize(vec2(slant, -1.0));
-      vec2 offset = v_q.x * dir + v_q.y * vec2(-dir.y, dir.x);
+      vec2 offset = v_q.x * dir + v_q.y * width * vec2(-dir.y, dir.x);
       // A hidden streak collapses to its center, so it covers no pixels.
       gl_Position = vec4(vec2(x, y) + (shown < .01 ? vec2(0) : offset * size / u_res), 0.0, 1.0);
-      v_alpha = mix(.25, .6, z) * shown * u_opacity * bandFade(y);
-      v_depth = z;
+      v_color = vec4(mix(u_colorB, u_colorA, z), 1.0) * mix(.25, .6, z) * shown * u_opacity * bandFade(y);
     }`,
     fs: `${FS_HEAD}
-    in float v_alpha, v_depth, v_width;
+    in vec4 v_color;
     in vec2 v_q;
     void main() {
-      float along = v_q.x, across = abs(v_q.y);
-      float a = (1.0 - smoothstep(v_width, v_width * 2.5, across)) * smoothstep(1.0, .1, abs(along)) * mix(.35, 1.0, along * .5 + .5) * v_alpha;
-      vec3 col = mix(u_colorB, u_colorA, v_depth);
-      outColor = vec4(col * a, a);
+      float along = v_q.x;
+      // Sharp across, tapering toward the streak's ends, and fainter at its trailing end.
+      float a = smoothstep(2.5, 1.0, abs(v_q.y)) * smoothstep(1.0, .1, abs(along)) * mix(.35, 1.0, along * .5 + .5);
+      outColor = v_color * a;
     }`,
     colors: {
       dark: [
@@ -392,15 +437,18 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     min: 150,
     max: 900,
     fps: 30,
-    vs: `${HEAD}
-    uniform float u_shimmer, u_peakTime, u_peakSize;
+    defines: (t) => [`ZONES ${zoneCount(t)}`],
+    vs: `${VS_HEAD}${ZONES}
+    // The image's horizon in clip space; below the screen without one.
+    uniform float u_horizon;
+    uniform float u_tempo, u_shimmer, u_peakTime, u_peakSize;
     // How often each speck glints, in seconds (glitterCycle).
     uniform float u_cycle;
-    out float v_alpha;
+    flat out float v_alpha;
     void main() {
       float id = float(gl_VertexID) + 1.0;
       float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
-      int zi = int(min(floor(r5 * u_zoneCount), u_zoneCount - 1.0));
+      int zi = min(int(r5 * float(ZONES)), ZONES - 1);
       vec4 zone = u_zones[zi];
       // Denser toward the zone's top, which is farther away.
       float y = mix(zone.y, zone.w, pow(r2, 1.5));
@@ -414,8 +462,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       float near = clamp((u_horizon - y) / (u_horizon + 1.0), 0.0, 1.0);
       gl_PointSize = v_alpha < .02 ? 0.0 : max(1.0, u_dpr * u_size * mix(1.0, 2.4, near)) * mix(1.0, u_peakSize, peak);
     }`,
-    fs: `${FS_HEAD}
-    in float v_alpha;
+    fs: `${FS_HEAD}${COLORS}
+    flat in float v_alpha;
     void main() {
       float d = length(gl_PointCoord - .5) * 2.0;
       float a = exp(-d * d * 4.0) * (1.0 - smoothstep(.8, 1.0, d)) * v_alpha;
@@ -439,35 +487,44 @@ export const EFFECTS: Record<Effect, EffectDef> = {
   },
   // Summer by the water: small groups of midges, a pixel or two each, idling over the water; a
   // share (`share`) glint by day. `zones` places them: three quarters of the groups in the first,
-  // the rest in the second. At night `glow` fireflies wander on their own in the third, along the
-  // bank. A is the midges' color, B the glints' and fireflies'.
+  // the rest in the second. At night `glow` fireflies (FIREFLIES) wander on their own in the third,
+  // along the bank. A is the midges' color, B the glints' and fireflies'.
   insects: {
     density: 18,
     min: 9,
     max: 30,
     fps: 60,
-    vs: `${HEAD}
-    out float v_alpha, v_kind;
+    defines: (t) => (t.glow > 0 ? ['FIREFLIES'] : []),
+    vs: `${VS_HEAD}${WIND}${ZONES}${COLORS}
+    uniform float u_share, u_glow, u_tempo;
+    flat out vec4 v_color;
+    flat out float v_firefly;
+    // Wandering slowly along the bank.
+    vec2 fireflyAt(float r1, float r2, float r4, float r5){
+      vec4 zone = u_zones[2];
+      float t = u_time * u_tempo * mix(.05, .09, r4);
+      return vec2(mix(zone.x, zone.z, r1) + sin(t*2.1 + r4*6.28)*.04, mix(zone.w, zone.y, r2) + sin(t*3.3 + r5*6.28)*.015);
+    }
+    // Groups of three, each idling about a point that drifts slowly with the wind.
+    vec2 midgeAt(float r2, float r3, float r4, float r5){
+      float group = floor((float(gl_VertexID) - u_glow) / 3.0);
+      float s1 = hash(group*7.3+1.0), s2 = hash2(group*3.1+2.0);
+      vec4 zone = u_zones[hash(group*5.9+4.0) < .75 ? 0 : 1];
+      vec2 c = vec2(mix(zone.x, zone.z, s1) + sin(u_time*.03 + s2*6.28)*.05 + windX(1.0), mix(zone.w, zone.y, s2));
+      float t = u_time * u_tempo * mix(.4, .7, r4);
+      vec2 o = vec2(sin(t*2.3 + r2*6.28) + .5*sin(t*4.1 + r3*6.28), cos(t*1.9 + r3*6.28) + .5*sin(t*3.7 + r2*6.28));
+      return c + o * vec2(.03 * u_res.y / u_res.x, .03) * mix(.6, 1.2, r5);
+    }
     void main() {
       float id = float(gl_VertexID) + 1.0;
       float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
+    #ifdef FIREFLIES
       float firefly = step(float(gl_VertexID) + .5, u_glow);
-      vec2 p;
-      if (firefly > .5) {
-        // Wandering slowly along the bank.
-        vec4 zone = u_zones[2];
-        float t = u_time * u_tempo * mix(.05, .09, r4);
-        p = vec2(mix(zone.x, zone.z, r1) + sin(t*2.1 + r4*6.28)*.04, mix(zone.w, zone.y, r2) + sin(t*3.3 + r5*6.28)*.015);
-      } else {
-        // Groups of three, each idling about a point that drifts slowly with the wind.
-        float group = floor((float(gl_VertexID) - u_glow) / 3.0);
-        float s1 = hash(group*7.3+1.0), s2 = hash2(group*3.1+2.0);
-        vec4 zone = u_zones[hash(group*5.9+4.0) < .75 ? 0 : 1];
-        vec2 c = vec2(mix(zone.x, zone.z, s1) + sin(u_time*.03 + s2*6.28)*.05 + windX(1.0), mix(zone.w, zone.y, s2));
-        float t = u_time * u_tempo * mix(.4, .7, r4);
-        vec2 o = vec2(sin(t*2.3 + r2*6.28) + .5*sin(t*4.1 + r3*6.28), cos(t*1.9 + r3*6.28) + .5*sin(t*3.7 + r2*6.28));
-        p = c + o * vec2(.03 * u_res.y / u_res.x, .03) * mix(.6, 1.2, r5);
-      }
+      vec2 p = firefly > .5 ? fireflyAt(r1, r2, r4, r5) : midgeAt(r2, r3, r4, r5);
+    #else
+      float firefly = 0.0;
+      vec2 p = midgeAt(r2, r3, r4, r5);
+    #endif
       p.x = wrapX(p.x, .1);
       gl_Position = vec4(p, 0.0, 1.0);
       float z = mix(.4, 1.0, r3);
@@ -475,19 +532,22 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       // A firefly's glow: quick on, slower off, then dark for the rest of its cycle.
       float ph = fract(u_time / mix(4.0, 7.0, r5) + r1);
       float glow = smoothstep(0.0, .12, ph) * (1.0 - smoothstep(.18, .6, ph));
-      v_kind = special + firefly;
-      v_alpha = mix(mix(.5, .9, z) * (.8 + .2*sin(u_time*17.0 + r2*6.28)), glow, firefly) * u_opacity;
-      gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * u_size * mix(max(1.0, mix(1.0, 2.2, z)), mix(9.0, 16.0, z), firefly);
+      float alpha = mix(mix(.5, .9, z) * (.8 + .2*sin(u_time*17.0 + r2*6.28)), glow, firefly) * u_opacity;
+      gl_PointSize = alpha < .01 ? 0.0 : u_dpr * u_size * mix(max(1.0, mix(1.0, 2.2, z)), mix(9.0, 16.0, z), firefly);
+      // A firefly has less alpha than color, so its glow adds light like it would at night.
+      v_color = vec4(mix(u_colorA, u_colorB, special), mix(1.0, .7, firefly)) * alpha;
+      v_firefly = firefly;
     }`,
     fs: `${FS_HEAD}
-    // 0 for a midge, 1 for one that glints, 2 for a firefly.
-    in float v_alpha, v_kind;
+    flat in vec4 v_color;
+    flat in float v_firefly;
     void main() {
       float d = length(gl_PointCoord - .5) * 2.0;
-      float firefly = step(1.5, v_kind);
-      float a = mix(smoothstep(1.1, .2, d), exp(-d*d*38.0) + exp(-d*d*5.0)*.6, firefly) * v_alpha;
-      vec3 col = mix(u_colorA, u_colorB, min(v_kind, 1.0));
-      outColor = vec4(col * a, a * mix(1.0, .7, firefly));
+      float a = smoothstep(1.1, .2, d);
+    #ifdef FIREFLIES
+      a = mix(a, exp(-d*d*38.0) + exp(-d*d*5.0)*.6, v_firefly);
+    #endif
+      outColor = v_color * a;
     }`,
     colors: {
       dark: [
@@ -504,8 +564,8 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       ],
     },
   },
-  // Night mist: wide, soft banks of uneven density that drift along a band near the horizon. Each
-  // bank is one quad. A is the thick parts' color, B the thin parts'.
+  // Night mist: wide, soft banks of uneven density that drift through the image's zones. Each bank
+  // is one quad. A is the thick parts' color, B the thin parts'.
   mist: {
     density: 16,
     min: 10,
@@ -517,7 +577,10 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     // so half a backing pixel per CSS pixel looks the same.
     resolution: 0.5,
     quads: true,
-    vs: `${HEAD}
+    defines: (t) =>
+      t.gather > 0 ? [`ZONES ${zoneCount(t)}`, 'GATHER'] : [`ZONES ${zoneCount(t)}`],
+    vs: `${VS_HEAD}${WIND}${ZONES}
+    uniform float u_gather;
     out vec2 v_uv, v_p;
     out float v_alpha;
     const vec2 CORNERS[6] = vec2[6](vec2(-1, -1), vec2(1, -1), vec2(-1, 1), vec2(-1, 1), vec2(1, -1), vec2(1, 1));
@@ -526,15 +589,10 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       vec2 c = CORNERS[gl_VertexID % 6];
       float r1 = hash(id), r2 = hash2(id), r3 = hash(id*3.17+7.0), r4 = hash2(id*5.73+11.0), r5 = hash(id*9.31+3.0);
       float z = mix(.4, 1.0, r3);
-      // With zones, each bank keeps to one: its rows are the band, and it fades out as it drifts
-      // past the zone's sides.
-      vec4 zone = vec4(-1e3, u_band.x, 1e3, u_band.y);
-      float gain = 1.0;
-      if (u_zoneCount > .5) {
-        int zi = int(min(floor(hash(id*7.73+1.3) * u_zoneCount), u_zoneCount - 1.0));
-        zone = u_zones[zi];
-        gain = u_zoneGain[zi];
-      }
+      // Each bank keeps to one zone's rows, and fades out as it drifts past the zone's sides.
+      int zi = min(int(hash(id*7.73+1.3) * float(ZONES)), ZONES - 1);
+      vec4 zone = u_zones[zi];
+      float gain = u_zoneGain[zi];
       // Half the bank's width and height in clip space: wide and low, up to half the band tall.
       float band = zone.y - zone.w;
       vec2 half_ = vec2(mix(.35, .75, r4) * u_size, band * mix(.25, .5, r5));
@@ -545,12 +603,14 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       // faded out. Gathered banks thin out together over about 90 seconds, thickest at the
       // start, so the zone clears now and then.
       float breathe = 1.0;
-      if (u_zoneCount > .5 && hash(id*13.37+5.1) < u_gather) {
+    #ifdef GATHER
+      if (hash(id*13.37+5.1) < u_gather) {
         half_.x = min(half_.x, (zone.z - zone.x) * .5);
         float lo = zone.x - half_.x;
         cx = lo + mod(x - lo, zone.z - zone.x + 2.0*half_.x);
         breathe = smoothstep(.15, .6, .5 + .5 * cos(u_time * .07 + r3 * .6));
       }
+    #endif
       gl_Position = vec4(vec2(cx, cy) + c * half_, 0.0, 1.0);
       v_uv = c;
       // The texture's coordinates, in screen heights, move with the bank.
@@ -560,7 +620,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     }`,
     // v_p and the noise need highp: in mediump the texture coordinate's fraction is too coarse at
     // 7 times its scale.
-    fs: `${FS_HEAD}
+    fs: `${FS_HEAD}${COLORS}
     in vec2 v_uv;
     in highp vec2 v_p;
     in float v_alpha;
@@ -582,14 +642,13 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       vec2 u = v_uv;
       // Soft all round, reaching zero at the quad's edge.
       float shape = exp(-(u.x*u.x*1.6 + u.y*u.y*3.0)) * (1.0 - u.x*u.x) * (1.0 - u.y*u.y);
-      // Pixels this faint are discarded below anyway; skipping the noise there saves most of the
-      // quad's corners.
-      if (shape * v_alpha < .004) discard;
+      // Skipping the noise where the bank is too faint to show saves most of the quad's corners.
+      // Zero rather than discard, which cost the Apple M1 up to a quarter more.
+      if (shape * v_alpha < .004) { outColor = vec4(0); return; }
       float n = vnoise(v_p * 3.0) * .65 + vnoise(v_p * 7.0 + 4.0) * .35;
       float a = shape * smoothstep(.15, .85, n) * v_alpha;
       vec3 col = mix(u_colorB, u_colorA, n);
       outColor = vec4(col * a, a);
-      if (outColor.a < .004) discard;
     }`,
     colors: {
       dark: [
@@ -678,7 +737,6 @@ const UNIFORMS = [
   'u_tempo',
   'u_gather',
   'u_zones',
-  'u_zoneCount',
   'u_zoneGain',
   'u_cycle',
   'u_shimmer',
@@ -707,6 +765,11 @@ const TUNED = [
 
 // The most backing pixels per CSS pixel the canvas has, whatever the screen's.
 const MAX_DPR = 1.5
+
+// A weather's tuning, with the defaults for what it leaves out.
+function tuned(weather: Weather & { effect: Effect }) {
+  return { ...TUNING, ...weather }
+}
 
 function fps(weather: Weather & { effect: Effect }) {
   return weather.fps ?? EFFECTS[weather.effect].fps
@@ -743,14 +806,17 @@ export function createWeatherRenderer(
     p: WebGLProgram
     u: Record<(typeof UNIFORMS)[number], WebGLUniformLocation | null>
   }
-  const programs: Partial<Record<Effect, Program>> = {}
-  function program(name: Effect): Program {
-    const cached = programs[name]
+  // Compiled programs by effect and #defines.
+  const programs = new Map<string, Program>()
+  function program(effect: Effect, defines: string[]): Program {
+    const key = [effect, ...defines].join(' ')
+    const cached = programs.get(key)
     if (cached) return cached
-    const fx = EFFECTS[name]
+    const fx = EFFECTS[effect]
+    const head = `#version 300 es\n${defines.map((d) => `#define ${d}\n`).join('')}`
     const p = gl.createProgram()
-    gl.attachShader(p, compile(gl.VERTEX_SHADER, fx.vs))
-    gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fx.fs))
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, head + fx.vs))
+    gl.attachShader(p, compile(gl.FRAGMENT_SHADER, head + fx.fs))
     gl.linkProgram(p)
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
       throw new Error(gl.getProgramInfoLog(p) ?? 'Program failed to link')
@@ -758,7 +824,11 @@ export function createWeatherRenderer(
     const u = Object.fromEntries(
       UNIFORMS.map((n) => [n, gl.getUniformLocation(p, n)]),
     ) as Program['u']
-    return (programs[name] = { p, u })
+    programs.set(key, { p, u })
+    return { p, u }
+  }
+  function programFor(weather: Weather & { effect: Effect }) {
+    return program(weather.effect, EFFECTS[weather.effect].defines?.(tuned(weather)) ?? [])
   }
   gl.bindVertexArray(gl.createVertexArray())
   gl.enable(gl.BLEND)
@@ -786,7 +856,7 @@ export function createWeatherRenderer(
   type Setup = ReturnType<typeof prepare>
   let setup: Setup | null = null
   function prepare(weather: Weather & { effect: Effect }, w: number, h: number, dpr: number) {
-    const t = { ...TUNING, ...weather }
+    const t = tuned(weather)
     const fx = EFFECTS[weather.effect]
     const zones = (t.zones ?? [[0, t.horizon ?? 1, 1, 1] as Zone])
       .slice(0, 4)
@@ -800,11 +870,10 @@ export function createWeatherRenderer(
       dpr,
       t,
       fx,
-      program: program(weather.effect),
+      program: programFor(weather),
       band: bandClip(t.band, w, h),
       horizon: t.horizon === undefined ? FULL_BAND[1] : bandClip([t.horizon], w, h)[0],
       zones: [...zones.flat(), ...Array<number>((4 - zones.length) * 4).fill(0)],
-      zoneCount: zones.length,
       zoneGain: [0, 1, 2, 3].map((i) => t.zones?.[i]?.[4] ?? 1),
       cycle: glitterCycle(t),
       count: Math.min(fx.max, Math.max(fx.min, fx.density * area)) * t.amount,
@@ -922,7 +991,6 @@ export function createWeatherRenderer(
     gl.uniform2f(u.u_band, setup.band[0], setup.band[1])
     gl.uniform1f(u.u_horizon, setup.horizon)
     gl.uniform4fv(u.u_zones, setup.zones)
-    gl.uniform1f(u.u_zoneCount, setup.zoneCount)
     gl.uniform4fv(u.u_zoneGain, setup.zoneGain)
     gl.uniform1f(u.u_cycle, setup.cycle)
     gl.uniform1f(u.u_dpr, setup.dpr)
@@ -935,7 +1003,7 @@ export function createWeatherRenderer(
   }
   return {
     start(weather, pair) {
-      program(weather.effect)
+      programFor(weather)
       if (!current || fps(weather) !== fps(current)) slower = 0
       current = weather
       colors = pair
@@ -956,7 +1024,7 @@ export function createWeatherRenderer(
     destroy() {
       stop()
       resize.disconnect()
-      for (const { p } of Object.values(programs)) gl.deleteProgram(p)
+      for (const { p } of programs.values()) gl.deleteProgram(p)
       gl.getExtension('WEBGL_lose_context')?.loseContext()
     },
   }

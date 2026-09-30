@@ -139,9 +139,18 @@ collections".
   the Weather switch on, without reduced motion, and in a visible tab. Without WebGL 2, or when
   an effect's shaders don't compile, it stays off and the Weather hint says why. Unmounting
   cancels the frame and loses the context.
+  - A program compiles for the features its weather uses, as `#define`s (`BAND`, `SHEAR`,
+    `ZONES`, `GATHER`, `FLUFF`, `FIREFLIES`), so it has no branches or uniforms for the rest.
+    Each variant compiles lazily, the first time a picture needs it (task 069, subtask 06).
+  - An item's color and other values that stay the same across its pixels come from the
+    vertex shader. Points take them as `flat` varyings. Quads (rain, mist) keep them smooth,
+    because `flat` on triangles made ANGLE on Metal draw rain about 10% slower.
   - The fragment shaders are `mediump`. The mist's noise hashes its lattice cells with
-    integers and takes its coordinate in `highp`, since a `sin` hash and a `mediump` fraction
-    break down there.
+    integers and takes its coordinate in `highp`, because a `sin` hash and a `mediump`
+    fraction break down there. The mist writes zero where it's too faint to show instead of
+    discarding, which was up to a quarter faster on the Apple M1.
+  - Mist without zones keeps to the ground below the horizon, as glitter does; a mist preset's
+    `band` has no effect. The prototype does the same, so this is the look Kait approved.
   - Glitter's glint cycle comes from the amount and the glints wanted on a 1440 × 900 screen,
     not the point count, so a resize doesn't jump every speck to another point of its cycle.
 - Weather frame rate: each effect sets a target, and a preset can set its own. Blowing snow,

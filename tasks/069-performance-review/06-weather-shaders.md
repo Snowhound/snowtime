@@ -1,6 +1,6 @@
 # 06: Weather shaders
 
-Status: todo
+Status: in-progress
 
 The effects in `src/lib/scene/weather.ts` work and look right, but they were written fast.
 Rework them so a graphics programmer would read them without wincing: each shader short and
@@ -48,11 +48,89 @@ sizes matter most.
 
 ## Acceptance criteria
 
-- [ ] Each effect's shader reviewed against the list, with GPU time per frame before and
+- [x] Each effect's shader reviewed against the list, with GPU time per frame before and
       after (weather bench), per effect
 - [ ] Golden frames unchanged within tolerance, or updated after Kait signed off the
-      variant in the bench
-- [ ] No per-pixel branch that depends on the item; uniform branches only where a `#define`
+      variant in the bench (the look-preserving rewrite matches all 75; the integer hash
+      waits for Kait)
+- [x] No per-pixel branch that depends on the item; uniform branches only where a `#define`
       would make the code harder to read
-- [ ] The shaders read as plainly as before or better, with comments where the math isn't
+- [x] The shaders read as plainly as before or better, with comments where the math isn't
       obvious
+
+## Findings (2026-09-30)
+
+The effects' own draws are too small to matter on either renderer. Measured with a scratch
+script that times 30 `drawAt` frames inside one GPU timer query (no photo, no glass, 1440 ×
+900, pixel ratio 1.5), old and new shaders interleaved over 10 batches:
+
+| Case                           | M1 Pro, ms per frame | SwiftShader, ms per frame |
+| ------------------------------ | -------------------: | ------------------------: |
+| Every point effect and rain    |          0.033–0.047 |                   1.0–1.6 |
+| Mist (four presets)            |            0.10–0.15 |                   1.0–1.9 |
+| Change, point effects and rain |         0.99 to 1.03 |      0.86 to 1.17 (noise) |
+
+On the M1 a point effect costs about what clearing the canvas does, so the rewrite can't
+move it. The paced bench under SwiftShader, with the photo and the glass, saturates the GPU
+process (4,000 to 5,000 ms of CPU a second) and gives uncapped rates from 2 to 119 fps, so
+it can't separate the effects at all.
+
+What changed, all keeping the golden frames (75 of 75):
+
+- Each program compiles with `#define`s for what its weather uses (`BAND`, `SHEAR`, `ZONES`
+  with the zone count, `GATHER`, `FLUFF`, `FIREFLIES`). The shared head is split into the
+  snippets an effect includes (wind, falling, zones), so each shader holds only its own code.
+  `u_zoneCount` is gone.
+- Every item's color, premultiplied, comes from the vertex shader, and so do the leaves'
+  turn (`cos`, `sin`) and tumble, which the fragment shader worked out per pixel.
+- No fragment shader branches on the item. Seeds blend fluff and pollen with a flat weight
+  and only with `FLUFF`; the insects compute a firefly's shape only with `FIREFLIES`.
+- Points use `flat` varyings. Rain and mist keep smooth ones: with `flat`, rain drew about
+  10% slower on the M1 (0.042 to 0.047 ms, 15 rounds of 50), since ANGLE on Metal emulates
+  WebGL's provoking vertex for triangles. Smooth, it matched the old cost exactly. Rain's
+  width varying is gone too: the quad's across coordinate is in half-widths.
+- The mist writes zero where it's too faint to show instead of discarding: on the M1, 0.89,
+  0.92, 0.73, and 1.00 times the time for the four mists; within noise on SwiftShader.
+- Leaf points are 10% smaller, since a leaf's tips reach only 0.87 of the 1.05 the point
+  spanned: 19% fewer pixels, with the leaves the same size.
+
+Found on the way: mist without zones never kept to its `band`. `prepare` always passes at
+least one zone (glitter's default, the ground below the horizon), so the old `u_zoneCount >
+.5` test was always true, in the prototype too. The band mists (coast November, land March,
+May, August, and September at night) lie between the horizon and the screen's foot, and
+that's the look Kait approved. The rewrite keeps it, and the comments now say so. Kait to
+decide: keep it and drop the mist bands, or honor the bands (a visible change).
+
+## Waiting for Kait
+
+An integer hash (lowbias32, from `uint(gl_VertexID)`) in place of the `fract(sin())` hashes,
+also used by the mist's noise and in place of `columnHash`. It gives every item new random
+values, so all 75 golden frames change, though the density and spread look the same on a
+contact sheet. It's no faster (0.99 to 1.03 on the M1). The gain is one exact hash instead of
+three, and no `sin` hash breaking down at large arguments or in `mediump`.
+
+To compare: the working copy's bench has a `compare=1` switch that runs the old shaders on a
+second canvas in step with the new; the button or V shows one or the other. For example
+`weather.html?image=land-july&theme=dark&photo=1&compare=1`. After sign-off, commit the hash
+with `bun run perf:weather --golden --update` and drop the switch and the old copy.
+
+## Checked and left as is
+
+- Polynomial falloffs in place of `exp`: the closest fits, such as `(1 - 0.6d²)^8` for the
+  firefly's halo, are off by 2 to 5% of full alpha, past the goldens' 3%, and cost three or
+  four multiplies against `exp`'s one special-function instruction.
+- Tighter points for the other effects: snow, glitter, seeds, fireflies, and midges already
+  fill the circle their point holds; only the square's corners are left, which a point
+  can't avoid.
+- Precision: the vertex shaders stay `highp` (positions, time), the fragment shaders
+  `mediump`, with `highp` only for the mist's noise coordinate and the integer hash, whose
+  `uint` would otherwise be `mediump` in a fragment shader.
+- A uniform block for the tuning: every uniform already uploads once per start or resize,
+  and a frame sends only `u_time`. A block would add a buffer and layout code for nothing.
+
+## Follow-up
+
+- Kait (2026-09-30): a new effect for the Baltic countryside's November night, twinkling
+  stars ("vilkuvad tähed"). The photo already has many stars; the effect adds a dozen or so
+  fixed points on top, whose brightness flickers a little and now and then flashes, as
+  glitter does, without moving. Count and strength to be tuned together.

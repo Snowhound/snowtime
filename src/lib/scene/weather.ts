@@ -42,14 +42,14 @@ export type Zone = [number, number, number, number] | [number, number, number, n
 //   the screen's foot it's 1 + shear times the wind, so falling snow arcs toward the side.
 // - `amount`, `size`, `fall`, `opacity`: factors of the effect's item count, item size, falling
 //   speed, and opacity.
-// - `band`: [top, bottom], the rows the effect keeps to, as fractions of the image's height, so a
-//   mist stays on the water however the photo is cropped. Without a band the effect fills the
-//   screen.
+// - `band`: [top, bottom], the rows falling snow and rain keep to, as fractions of the image's
+//   height, so spray stays over the sea however the photo is cropped. Without a band they fill
+//   the screen. The mist ignores it (docs/architecture/scene.md).
 // - `share`: the share of special items: fluff among seeds, glints among midges. `glow`: how many
 //   fireflies fly apart from the midges.
 // - `zones`: up to four rectangles of the image: where glitter lies, so it misses water (without
-//   them, the ground below the horizon), where midges and fireflies keep, or where mist lies: each
-//   bank keeps to one zone, in place of the band.
+//   them, the ground below the horizon), where midges and fireflies keep, or where mist lies (the
+//   same default): each bank keeps to one zone.
 // - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight.
 // - `gather` (0 to 1): the share of mist banks that stay in their zone, drifting through it and
 //   coming back in at its far side. They're thickest at the start and clear now and then. The
