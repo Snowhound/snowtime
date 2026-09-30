@@ -172,7 +172,7 @@ function OrganizationSwitcher(props: { session: AppSession; organization: Organi
         as={Button<'button'>}
         variant="ghost"
         size="sm"
-        class="max-w-[13rem] min-w-0 justify-start gap-2 px-2 lg:max-w-[16rem]"
+        class="max-w-52 min-w-0 justify-start gap-2 px-2 lg:max-w-64"
         aria-label={m.org_switcher_label({ name: props.organization.name })}
       >
         <OrgMark name={props.organization.name} />
