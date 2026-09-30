@@ -18,6 +18,9 @@ weather's shaders, its fog, and the glass surfaces over it.
   cache layer, or a build step for a gain under about 5% of the thing it speeds up.
 - Easy wins count, especially when they remove code, classes, or bytes.
 - Fix real bottlenecks even when the fix is larger. The subtask records why it was worth it.
+- Make the general case fast, on every machine. A low-end mode (fewer or simpler effects
+  on weak hardware) is a last resort: consider it only for a few outliers that nothing else
+  makes cheap enough, with their numbers, and ask Kait first.
 
 ## No reference machine
 
