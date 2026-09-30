@@ -8,7 +8,7 @@
     "bytes": 10286
   },
   "getReportEntries (by day) week admin": {
-    "rows": 383,
+    "rows": 130,
     "bytes": 1817
   },
   "getReportEntries (by description) week admin": {
@@ -24,7 +24,7 @@
     "bytes": 18209
   },
   "getReportEntries (by day) month admin": {
-    "rows": 1676,
+    "rows": 130,
     "bytes": 1817
   },
   "getReportEntries (by description) month admin": {
@@ -40,7 +40,7 @@
     "bytes": 26519
   },
   "getReportEntries (by day) year admin": {
-    "rows": 20184,
+    "rows": 130,
     "bytes": 1817
   },
   "getReportEntries (by description) year admin": {
@@ -88,7 +88,7 @@
     "bytes": 1420
   },
   "getReportEntries (by day) year member": {
-    "rows": 1188,
+    "rows": 104,
     "bytes": 41074
   },
   "getReportEntries (by description) year member": {

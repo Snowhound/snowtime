@@ -6,6 +6,7 @@
 // entry lists add each entry's own description, and the report names former members.
 import {
   and,
+  desc,
   eq,
   exists,
   gt,
@@ -29,6 +30,7 @@ import {
   daysBetween,
   type IsoDate,
   type Range,
+  localDate,
   startOfDay,
   startOfWeek,
   type WeekStart,
@@ -635,6 +637,70 @@ export function dayPage(pieces: ReportEntryPiece[], after?: DayCursor) {
   return { days, pieces: page, next: end < sorted.length ? places.get(sorted[end - 1])! : null }
 }
 
+// Probe the newest starts with LIMIT, then read their whole days. The day/member ordering
+// and whole-day totals need all entries on a boundary day, including overnight entries.
+async function pagedDays(
+  db: Database,
+  scope: Scope,
+  c: ReportContext,
+  input: ReportEntriesInput,
+  now: Date,
+) {
+  const where = entriesWhere(scope, c, rowWhere(input.row, c.a.teams))
+  if (!where) return dayPage([], input.after)
+  const counted = sql`min(
+    coalesce(${timeEntry.stoppedAt}, min(${now.getTime()}, ${timeEntry.startedAt} + ${MAX_ENTRY_MS})),
+    ${c.range.to}
+  ) > max(${timeEntry.startedAt}, ${c.range.from})`
+  const boundaries = JSON.stringify(
+    datesBetween(c.a.from, c.a.to).map((d) => startOfDay(d, c.a.timeZone)),
+  )
+  for (let limit = ENTRY_PAGE_SIZE + 1; ; limit *= 2) {
+    const probe = db
+      .select({ startedAt: timeEntry.startedAt })
+      .from(timeEntry)
+      .where(and(where, counted))
+      .orderBy(desc(timeEntry.startedAt))
+      .limit(limit)
+    const windowFrom = sql<number>`coalesce((
+      select max(cast(value as integer)) from json_each(${boundaries})
+      where cast(value as integer) <= (
+        select case when count(*) < ${limit} then ${c.range.from}
+          else min(started_at) end from (${probe})
+      )
+    ), ${c.range.from})`
+    const entries = await db
+      .select({
+        id: timeEntry.id,
+        userId: timeEntry.userId,
+        projectId: timeEntry.projectId,
+        description: timeEntry.description,
+        ticket: timeEntry.ticket,
+        startedAt: timeEntry.startedAt,
+        stoppedAt: timeEntry.stoppedAt,
+        windowFrom,
+      })
+      .from(timeEntry)
+      .where(
+        and(
+          where,
+          gt(timeEntry.startedAt, sql`${windowFrom} - ${MAX_ENTRY_MS}`),
+          counted,
+          or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, windowFrom)),
+        ),
+      )
+    if (entries.length === 0) return dayPage([], input.after)
+    const from = entries[0].windowFrom
+    const narrowed = {
+      ...c,
+      a: { ...c.a, from: localDate(from, c.a.timeZone) },
+      range: { ...c.range, from },
+    }
+    const page = dayPage(piecesOf(narrowed, entries, now), input.after)
+    if (page.next || from === c.range.from) return page
+  }
+}
+
 export interface DescriptionRow {
   projectId: string | null
   ticket: string | null
@@ -720,8 +786,8 @@ export async function getReportEntries(
     report = { ...report, to: [report.to, addDays(input.after.date, 1)].sort()[0] }
   }
   const c = await reportContext(db, scope, report, now)
+  if (input.view === 'day') return { view: 'day', ...(await pagedDays(db, scope, c, input, now)) }
   const pieces = piecesOf(c, await listedEntries(db, scope, c, input.row), now)
-  if (input.view === 'day') return { view: 'day', ...dayPage(pieces, input.after) }
   const rows = mergeByDescription(pieces)
   const offset = input.offset ?? 0
   const end = offset === 0 ? DESCRIPTION_PAGE_SIZE : rows.length

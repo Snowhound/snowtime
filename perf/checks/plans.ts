@@ -60,6 +60,20 @@ async function collect(recorder: Recorder): Promise<Plans> {
     'report, week (admin)': () => getReport(db, scopes.admin, week, now),
     'report, year (admin)': () => getReport(db, scopes.admin, year, now),
     'report, year (member)': () => getReport(db, scopes.member, year, now),
+    'report, member filter (admin)': () =>
+      getReport(db, scopes.admin, { ...year, userId: userIds.member }, now),
+    'report entries, by day (admin)': () =>
+      getReportEntries(db, scopes.admin, { report: year, view: 'day' }, now),
+    'report entries, next day page (admin)': async () => {
+      const first = await getReportEntries(db, scopes.admin, { report: year, view: 'day' }, now)
+      if (first.view !== 'day' || !first.next) throw new Error('Expected a second day page')
+      return getReportEntries(
+        db,
+        scopes.admin,
+        { report: year, view: 'day', after: first.next },
+        now,
+      )
+    },
     'report entries, year (admin)': () =>
       getReportEntries(db, scopes.admin, { report: year, view: 'description' }, now),
   }
