@@ -154,7 +154,7 @@ describe('ExportMenu', () => {
     expect(list.table.rows[0].at(-1)).toBe(1)
   })
 
-  test('loads a month at a time, counted up to the first piece’s moment, and shows how far', async () => {
+  test('loads a month at a time, the rest together after the first and counted up to its moment, and shows how far', async () => {
     const first = report(HOUR)
     let answer: (value: unknown) => void = () => {}
     fn.getReportExport
@@ -164,7 +164,8 @@ describe('ExportMenu', () => {
     await choose(/Entries \(CSV\)/, {
       input: { from: '2026-07-15', to: '2026-09-25', unit: 'week' },
     })
-    expect(await screen.findByRole('button', { name: 'Exporting… 1/3' })).toBeDisabled()
+    // The third month answers while the second still loads.
+    expect(await screen.findByRole('button', { name: 'Exporting… 2/3' })).toBeDisabled()
     answer({ entries: [] })
     expect(await screen.findByRole('button', { name: 'Export the report' })).toBeEnabled()
     expect(fn.getReportExport.mock.calls.map(([{ data }]) => data)).toEqual([

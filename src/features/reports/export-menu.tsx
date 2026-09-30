@@ -36,6 +36,9 @@ import type { Group } from './filters'
 import type { Report } from './queries'
 import { type RowNames, reportRows } from './rows'
 
+// How many of an export's months load at once after the first.
+const EXPORT_PARALLEL = 3
+
 const ITEMS: {
   kind: ExportKind
   label: () => string
@@ -94,26 +97,31 @@ export function ExportMenu(props: {
   }
 
   // The entries a month at a time, so each response stays small. The first piece brings the
-  // report and the moment it counts up to, which the rest count up to as well.
+  // report and the moment it counts up to, which the rest count up to as well, so they
+  // follow it EXPORT_PARALLEL at a time.
   async function exportData() {
     const pieces = exportPieces(props.input.from, props.input.to)
-    let report: Report | undefined
-    const entries: ReportEntries['entries'] = []
-    for (const [i, piece] of pieces.entries()) {
-      setProgress({ done: i, total: pieces.length })
-      const data = await getReportExport({
-        data: {
-          organizationId: props.organizationId,
-          report: props.input,
-          ...piece,
-          now: report?.now,
-        },
+    const total = pieces.length
+    let done = 0
+    setProgress({ done, total })
+    function fetchPiece(piece: (typeof pieces)[number], now?: Report['now']) {
+      return getReportExport({
+        data: { organizationId: props.organizationId, report: props.input, ...piece, now },
+      }).then((data) => {
+        setProgress({ done: ++done, total })
+        return data
       })
-      report ??= data.report
-      entries.push(...data.entries)
     }
-    setProgress({ done: pieces.length, total: pieces.length })
+
+    const first = await fetchPiece(pieces[0])
+    const { report } = first
     if (!report) throw new Error('The export has no report')
+    const entries: ReportEntries['entries'] = [...first.entries]
+    for (let i = 1; i < total; i += EXPORT_PARALLEL) {
+      const batch = pieces.slice(i, i + EXPORT_PARALLEL)
+      const results = await Promise.all(batch.map((piece) => fetchPiece(piece, report.now)))
+      for (const data of results) entries.push(...data.entries)
+    }
     return { report, entries }
   }
 
