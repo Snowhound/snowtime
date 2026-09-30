@@ -19,7 +19,6 @@ const fn = vi.hoisted(() => ({
   setTeamRole: vi.fn(),
   listProjects: vi.fn(),
   getAppSession: vi.fn(),
-  getAppUrl: vi.fn(),
   updateIssueLinks: vi.fn(),
   navigate: vi.fn(),
 }))
@@ -44,7 +43,6 @@ vi.mock('~/server/teams/teams.functions', () => ({
 vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
 vi.mock('~/server/auth/auth.functions', () => ({
   getAppSession: fn.getAppSession,
-  getAppUrl: fn.getAppUrl,
   updateIssueLinks: fn.updateIssueLinks,
 }))
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
@@ -173,6 +171,7 @@ function session() {
       },
     ],
     settings: { timeZone: 'Europe/Tallinn' },
+    appUrl: APP_URL,
   }
 }
 
@@ -199,7 +198,6 @@ beforeEach(() => {
   clipboard.writeText.mockResolvedValue(undefined)
   server = fixtures()
   fn.getAppSession.mockImplementation(async () => session())
-  fn.getAppUrl.mockResolvedValue(APP_URL)
   fn.listMembers.mockImplementation(async () => server.members)
   fn.listTeams.mockImplementation(async () => server.teams)
   fn.listProjects.mockImplementation(async () => server.projects)

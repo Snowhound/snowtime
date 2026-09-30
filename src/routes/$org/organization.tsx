@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { OrganizationPage } from '~/features/organization/organization-page'
 import { OrganizationPending } from '~/features/organization/organization-pending'
-import { appUrlQuery } from '~/features/organization/queries'
 import { OrganizationSearch } from '~/features/organization/search'
 import { membersQuery } from '~/lib/queries/members'
 import { projectsQuery } from '~/lib/queries/projects'
@@ -21,7 +20,6 @@ export const Route = createFileRoute('/$org/organization')({
       queryClient.query({ ...membersQuery(organizationId), staleTime: 'static' }),
       queryClient.query({ ...teamsQuery(organizationId), staleTime: 'static' }),
       queryClient.query({ ...projectsQuery(organizationId), staleTime: 'static' }),
-      queryClient.query({ ...appUrlQuery, staleTime: 'static' }),
     ])
   },
   pendingComponent: OrganizationPending,

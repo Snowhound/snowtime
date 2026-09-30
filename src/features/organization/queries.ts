@@ -12,7 +12,7 @@ import type { Project } from '~/lib/queries/projects'
 import { cacheUpdate, newId, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
 import { type Team, teamsQuery } from '~/lib/queries/teams'
-import { type AppSession, getAppUrl, updateIssueLinks } from '~/server/auth/auth.functions'
+import { type AppSession, updateIssueLinks } from '~/server/auth/auth.functions'
 import { setTeamRole } from '~/server/teams/teams.functions'
 import type { SetTeamRoleInput } from '~/server/teams/teams.schemas'
 import type { OrgRole } from './roles'
@@ -33,13 +33,6 @@ export interface Invitation {
 export function isExpired(invitation: Invitation, now = Date.now()) {
   return invitation.expiresAt.getTime() <= now
 }
-
-// The app's origin for invitation links; it never changes while the app runs.
-export const appUrlQuery = queryOptions({
-  queryKey: ['app-url'],
-  queryFn: () => getAppUrl(),
-  staleTime: Infinity,
-})
 
 export function invitationLink(appUrl: string, id: string) {
   return `${appUrl}/invitation/${id}`

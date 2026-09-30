@@ -37,7 +37,10 @@ export const getDevUsers = createServerFn({ method: 'GET' }).handler(async () =>
 })
 
 // The app frame's view of the session, or null when signed out, so it runs without
-// middleware. It also keeps two things in step with the account:
+// middleware. `appUrl` is the app's public origin, from BETTER_AUTH_URL, for the links
+// admins copy: an invitation link is <appUrl>/invitation/<id>. The Better Auth client only
+// knows the page's origin, which a proxy or a second domain can change. It also keeps two
+// things in step with the account:
 // - the active organization, when the session has none or one the user has left;
 // - the locale cookie, from user_settings.locale. `localeChanged` tells the caller that
 //   this request rendered in another language, so the page should load again.
@@ -66,6 +69,7 @@ export const getAppSession = createServerFn({ method: 'GET' }).handler(async () 
     user: { id: user.id, name: user.name, email: user.email, image: user.image ?? null },
     signedInAt: session.session.createdAt,
     ...state,
+    appUrl: new URL(env.BETTER_AUTH_URL).origin,
     localeChanged,
   }
 })
@@ -74,13 +78,6 @@ export type AppSession = NonNullable<Awaited<ReturnType<typeof getAppSession>>>
 
 // Named here so client code imports the type from this file, not from sign-in.server.ts.
 export type { SignInMethod } from './sign-in.server'
-
-// The app's public origin, from BETTER_AUTH_URL, for the links admins copy: an invitation
-// link is <BETTER_AUTH_URL>/invitation/<id>. The Better Auth client only knows the page's
-// origin, which a proxy or a second domain can change.
-export const getAppUrl = createServerFn({ method: 'GET' }).handler(
-  () => new URL(env.BETTER_AUTH_URL).origin,
-)
 
 // An invitation link's details, shown before sign-in; null when the id is unknown.
 export const getInvitation = createServerFn({ method: 'GET' })

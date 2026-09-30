@@ -33,6 +33,7 @@ export function OrganizationPage(props: { organizationId: string; tab: Organizat
                     issueLinks={org().issueLinks}
                     viewer={{ userId: data().user.id, role: org().role }}
                     zone={data().settings?.timeZone ?? 'UTC'}
+                    appUrl={data().appUrl}
                     tab={props.tab}
                   />
                 )}

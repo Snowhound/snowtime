@@ -24,7 +24,6 @@ import { MembersTab } from './members-tab'
 import {
   type Invitation,
   type InviteInput,
-  appUrlQuery,
   invitationLink,
   invitationsQuery,
   useAddTeamMember,
@@ -63,6 +62,7 @@ export function OrganizationView(props: {
   issueLinks: string | null
   viewer: Viewer
   zone: string
+  appUrl: string
   tab: OrganizationTab
 }) {
   const navigate = useNavigate()
@@ -70,7 +70,6 @@ export function OrganizationView(props: {
   const teams = useQuery(() => teamsQuery(props.organizationId))
   const projects = useQuery(() => projectsQuery(props.organizationId))
   const invitations = useQuery(() => invitationsQuery(props.organizationId))
-  const appUrl = useQuery(() => appUrlQuery)
 
   // oxlint-disable-next-line solid/reactivity -- the page renders a new view per organization.
   const keys = { organizationId: props.organizationId, userId: props.viewer.userId }
@@ -185,7 +184,7 @@ export function OrganizationView(props: {
 
   async function copy(invitation: Invitation) {
     try {
-      await navigator.clipboard.writeText(invitationLink(appUrl.data ?? '', invitation.id))
+      await navigator.clipboard.writeText(invitationLink(props.appUrl, invitation.id))
     } catch {
       // Clipboard access can be refused; "New link" and the dialog show the link to select.
     }
@@ -349,7 +348,7 @@ export function OrganizationView(props: {
         invitations={invitationList()}
         teams={teamList()}
         roles={grantableRoles(props.viewer)}
-        appUrl={appUrl.data ?? ''}
+        appUrl={props.appUrl}
         zone={props.zone}
         onSubmit={submitInvite}
         onClose={() => setInvite(null)}

@@ -93,7 +93,7 @@
 - Links last 48 hours (`invitationExpiresIn`). Better Auth ignores expired invitations
   when it checks for an open one, so a new link for an expired invitation is a new
   invitation; the Organization view then cancels the expired one. The view builds the
-  link from `getAppUrl`, which returns the origin of `BETTER_AUTH_URL`: the Better Auth
+  link from the session's `appUrl` (`getAppSession`), the origin of `BETTER_AUTH_URL`: the Better Auth
   client only knows the page's origin, which a proxy or a second domain can change.
 
 ## Cookies and consent
