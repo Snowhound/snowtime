@@ -1,6 +1,6 @@
 # 03: JS bundles
 
-Status: in-progress
+Status: done
 
 The client code is mostly what it must be, so this is about its shape: what loads first,
 what loads twice, and what loads on a page that doesn't need it. Task 037 already moved
@@ -250,13 +250,5 @@ server saving from the original build is 171,471 bytes (2.6%).
 
 Validation: `bun run test` (396 Bun tests, 175 component tests), lint, `format:check`,
 `tsc --noEmit`, knip, `bun run perf`, two alternating pairs of `perf:pages`, and all 75
-weather golden frames pass. The subtask stays in-progress until Kait has checked the
-weather's onset below.
-
-## Open for review
-
-- Kait: the weather now starts when its chunk arrives, a moment after the page. Check:
-  - `/sign-in`, cold (hard reload with the cache off): the weather starts soon after the
-    page, with no flash or jump.
-  - `/<org>/settings` with the weather off: turn it on, and off again before it shows. It
-    should end up off, and on again when switched back.
+weather golden frames pass. On 2026-09-30 Kait checked the weather's onset on a cold
+`/sign-in` and toggling it in Settings while the renderer loads; both behave.
