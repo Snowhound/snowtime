@@ -6,6 +6,7 @@
 import { gzipSync } from 'node:zlib'
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright-core'
 import { change, readBaseline, table, withinTolerance, writeBaseline } from './checks/baseline'
+import { htmlParts, surfaceCounts } from './checks/html'
 import { buildApp, signedInContext, startApp, type RunningApp } from './lib/app'
 import { seededDatabase } from './lib/database'
 
@@ -115,7 +116,7 @@ function withoutVariation(html: string): string {
     .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/g, '2000-01-01T00:00:00.000Z')
 }
 
-function collectSizes(page: Page, origin: string) {
+function collectSizes(page: Page, origin: string, audit: boolean) {
   const bodies: Promise<{ kind: 'html' | 'js' | 'css'; body: Buffer } | null>[] = []
   const seen = new Set<string>()
   page.on('response', (response) => {
@@ -139,6 +140,8 @@ function collectSizes(page: Page, origin: string) {
       if (!result) continue
       if (result.kind === 'html') {
         const html = Buffer.from(withoutVariation(result.body.toString()))
+        if (audit)
+          console.log('[html parts]', page.url(), JSON.stringify(htmlParts(html.toString())))
         sizes.htmlBytes += html.length
         sizes.htmlGzip += gzipSync(html, { level: 9 }).length
       } else {
@@ -173,7 +176,7 @@ async function loadPage(
   await context.addInitScript(installProbe)
   const page = await context.newPage()
   await throttle(context, page)
-  const sizesOf = collectSizes(page, app.url)
+  const sizesOf = collectSizes(page, app.url, process.argv.includes('--audit'))
   await page.goto(app.url + path)
   await page.waitForFunction(() => window.perfProbe.hydrated > 0, null, { timeout: 30_000 })
   await page.waitForLoadState('networkidle')
@@ -296,7 +299,27 @@ async function run() {
   const interactions: Partial<Interactions> = {}
   try {
     for (const spec of PAGES) {
+      // The gated "year" range ends at the seed's September. Audit a full twelve months
+      // before Timer's interactions write entries, without changing the committed budget.
+      if (args.has('--audit') && spec.name === 'timer') {
+        const year = await loadPage(browser, app, {
+          path: '/lumen/reports?range=custom&from=2025-10-01&to=2026-09-30',
+        })
+        console.log('[12 months]', JSON.stringify(year.sizes))
+        console.log(
+          '[surfaces]',
+          'reports (12 months)',
+          JSON.stringify(await year.page.evaluate(surfaceCounts)),
+        )
+        await year.context.close()
+      }
       const loaded = await loadPage(browser, app, spec)
+      if (args.has('--audit'))
+        console.log(
+          '[surfaces]',
+          spec.name,
+          JSON.stringify(await loaded.page.evaluate(surfaceCounts)),
+        )
       sizes[spec.name] = loaded.sizes
       timings[spec.name] = loaded.timings
       if (spec.name === 'timer') {
