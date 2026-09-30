@@ -7,6 +7,7 @@ import { For, Show, createMemo, createSignal } from 'solid-js'
 import { type Confirmation, ConfirmDialog } from '~/components/confirm-dialog'
 import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
+import { TabCount } from '~/components/tab-count'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { errorMessage } from '~/lib/errors'
 import { type Member, membersQuery } from '~/lib/queries/members'
@@ -285,9 +286,7 @@ export function OrganizationView(props: {
               {(t) => (
                 <TabsTrigger value={t.value}>
                   {t.label()}
-                  <Show when={count(t.value)}>
-                    {(n) => <span class="text-muted-foreground ml-1.5 text-xs">{n()}</span>}
-                  </Show>
+                  <Show when={count(t.value)}>{(n) => <TabCount count={n()} />}</Show>
                 </TabsTrigger>
               )}
             </For>

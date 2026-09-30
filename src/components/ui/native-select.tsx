@@ -12,6 +12,9 @@ const NativeSelect: Component<ComponentProps<'select'>> = (props) => {
       <select
         class={cn(
           'flex h-10 w-full appearance-none items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 pr-8 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+          // Chrome on Windows draws the open list white under a transparent select, whatever
+          // the color-scheme, and the options inherit the theme's text color.
+          '[&_option]:bg-popover [&_option]:text-popover-foreground',
           local.class,
         )}
         {...others}

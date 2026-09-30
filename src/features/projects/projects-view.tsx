@@ -8,6 +8,7 @@ import { For, Show, createMemo, createSignal } from 'solid-js'
 import { type Confirmation, ConfirmDialog } from '~/components/confirm-dialog'
 import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
+import { TabCount } from '~/components/tab-count'
 import { Button } from '~/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
@@ -169,9 +170,7 @@ export function ProjectsView(props: {
                   <TabsTrigger value={t.value}>
                     {t.label()}
                     <Show when={inTab(t.value).length}>
-                      {(count) => (
-                        <span class="text-muted-foreground ml-1.5 text-xs">{count()}</span>
-                      )}
+                      {(count) => <TabCount count={count()} />}
                     </Show>
                   </TabsTrigger>
                 )}
