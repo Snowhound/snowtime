@@ -1,6 +1,6 @@
 # 10: Report timesheet HTML and hydration
 
-Status: in-progress
+Status: done
 
 The report timesheet (`src/features/reports/timesheet.tsx`) is most of the Reports page's
 HTML. On main 2e1f669 (2026-09-30), the 2025-10-01 to 2026-09-30 custom range is 925 KB
@@ -119,5 +119,5 @@ wait longest for the grid (12 months: 282 → 896 ms). Dropped for every range.
       week, year, and 12-month pages
 - [x] Change 1 kept and change 2 dropped, each with its numbers
 - [x] Page and bundle baselines updated with the change
-- [ ] Kait has checked the timesheet visually: week and 12 months, both themes, narrow and
-      desktop, selecting cells and rows
+- [x] Kait has checked the timesheet visually: week and 12 months, both themes, narrow and
+      desktop, selecting cells and rows (2026-09-30)
