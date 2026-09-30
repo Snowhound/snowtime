@@ -106,9 +106,17 @@ Pick one in this task after trying both on the seeded database. Document both ei
   - serves `.output/public` from disk, `/assets/*` as `immutable` and `/backgrounds/*`
     and `/brand/*` for a week, matching `vite.config.ts`
   - serves files precompressed at build time (`file_server { precompressed zstd br gzip }`)
-  - proxies everything else to the app
+  - proxies everything else to the app, compressing its HTML and JSON with
+    `encode zstd gzip` above about 1 KB; the report export sends up to 755 KB per piece.
+    Stock Caddy can't compress to brotli on the fly, only serve precompressed `.br` files
+  - serves HTTP/1.1, HTTP/2, and HTTP/3 (`protocols h1 h2 h3`, UDP 443 open). Behind
+    Cloudflare, HTTP/3 reaches only Cloudflare, which connects to the origin over HTTP/1.1
+    or HTTP/2, so origin HTTP/3 matters only when the domain isn't proxied
   - holds requests during an app restart (`lb_try_duration`) instead of returning 502
-  - sets security headers
+  - sets security headers as minupatsient's Caddyfile does (HSTS, `nosniff`, frame and
+    referrer policy, no `Server` header), with a Content Security Policy checked against
+    the inline scripts that server rendering adds
+  - redirects HTTP to HTTPS and logs as JSON
 - [ ] Both ways to run the app work on the box from the same Caddyfile and unit, with only
       `ExecStart` changed.
 - [ ] A hardened systemd unit runs the app as an unprivileged user, restarts it on
