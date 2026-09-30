@@ -311,8 +311,8 @@ function rowWhere(row: EntryRow | undefined, teams: Aggregation['teams']): SQL |
 }
 
 // The report's entries that touch its range, optionally of one row. Null when there are none
-// to read.
-function entriesWhere(scope: Scope, c: ReportContext, row?: SQL | null): SQL | null {
+// to read. `from` replaces the range's start, for a read of its later days.
+function entriesWhere(scope: Scope, c: ReportContext, row?: SQL | null, from?: SQL): SQL | null {
   if (c.users?.length === 0 || row === null) return null
   const { projectId } = c.input
   return and(
@@ -323,9 +323,12 @@ function entriesWhere(scope: Scope, c: ReportContext, row?: SQL | null): SQL | n
       : projectId
         ? eq(timeEntry.projectId, projectId)
         : undefined,
-    gt(timeEntry.startedAt, new Date(c.range.from - MAX_ENTRY_MS)),
+    gt(
+      timeEntry.startedAt,
+      from ? sql`${from} - ${MAX_ENTRY_MS}` : new Date(c.range.from - MAX_ENTRY_MS),
+    ),
     lt(timeEntry.startedAt, new Date(c.range.to)),
-    or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, new Date(c.range.from))),
+    or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, from ?? new Date(c.range.from))),
     row,
   )!
 }
@@ -639,6 +642,10 @@ export function dayPage(pieces: ReportEntryPiece[], after?: DayCursor) {
 
 // Probe the newest starts with LIMIT, then read their whole days. The day/member ordering
 // and whole-day totals need all entries on a boundary day, including overnight entries.
+// One statement does both: CTEs find the window's first day, and the entries read joins it
+// as its outer loop (CROSS JOIN keeps that order), so the window's start bounds the index
+// range. With the start in a subquery instead, SQLite bounds the index by the range and
+// reads, and Turso bills, every entry in it.
 async function pagedDays(
   db: Database,
   scope: Scope,
@@ -646,30 +653,46 @@ async function pagedDays(
   input: ReportEntriesInput,
   now: Date,
 ) {
-  const where = entriesWhere(scope, c, rowWhere(input.row, c.a.teams))
+  const row = rowWhere(input.row, c.a.teams)
+  const where = entriesWhere(scope, c, row)
   if (!where) return dayPage([], input.after)
   const counted = sql`min(
     coalesce(${timeEntry.stoppedAt}, min(${now.getTime()}, ${timeEntry.startedAt} + ${MAX_ENTRY_MS})),
     ${c.range.to}
   ) > max(${timeEntry.startedAt}, ${c.range.from})`
-  const boundaries = JSON.stringify(
+  const dayStarts = JSON.stringify(
     datesBetween(c.a.from, c.a.to).map((d) => startOfDay(d, c.a.timeZone)),
   )
   for (let limit = ENTRY_PAGE_SIZE + 1; ; limit *= 2) {
     const probe = db
-      .select({ startedAt: timeEntry.startedAt })
-      .from(timeEntry)
-      .where(and(where, counted))
-      .orderBy(desc(timeEntry.startedAt))
-      .limit(limit)
-    const windowFrom = sql<number>`coalesce((
-      select max(cast(value as integer)) from json_each(${boundaries})
-      where cast(value as integer) <= (
-        select case when count(*) < ${limit} then ${c.range.from}
-          else min(started_at) end from (${probe})
+      .$with('probe')
+      .as(
+        db
+          .select({ startedAt: timeEntry.startedAt })
+          .from(timeEntry)
+          .where(and(where, counted))
+          .orderBy(desc(timeEntry.startedAt))
+          .limit(limit),
       )
-    ), ${c.range.from})`
+    // The start of the day of the oldest start the probe reached, or the range's start when
+    // the probe ran out. An aggregate, so SQLite computes it once rather than per entry.
+    const window = db.$with('day_window').as(
+      db
+        .select({
+          from: sql<number>`coalesce(max(cast(value as integer)), ${c.range.from})`.as(
+            'window_from',
+          ),
+        })
+        .from(sql`json_each(${dayStarts})`)
+        .where(
+          sql`cast(value as integer) <= (
+            select case when count(*) < ${limit} then ${c.range.from}
+              else min(${probe.startedAt}) end from ${probe}
+          )`,
+        ),
+    )
     const entries = await db
+      .with(probe, window)
       .select({
         id: timeEntry.id,
         userId: timeEntry.userId,
@@ -678,17 +701,11 @@ async function pagedDays(
         ticket: timeEntry.ticket,
         startedAt: timeEntry.startedAt,
         stoppedAt: timeEntry.stoppedAt,
-        windowFrom,
+        windowFrom: window.from,
       })
-      .from(timeEntry)
-      .where(
-        and(
-          where,
-          gt(timeEntry.startedAt, sql`${windowFrom} - ${MAX_ENTRY_MS}`),
-          counted,
-          or(isNull(timeEntry.stoppedAt), gt(timeEntry.stoppedAt, windowFrom)),
-        ),
-      )
+      .from(window)
+      .crossJoin(timeEntry)
+      .where(and(entriesWhere(scope, c, row, sql`${window.from}`)!, counted))
     if (entries.length === 0) return dayPage([], input.after)
     const from = entries[0].windowFrom
     const narrowed = {

@@ -256,29 +256,18 @@
       ]
     },
     {
-      "sql": "select \"id\", \"user_id\", \"project_id\", \"description\", \"ticket\", \"started_at\", \"st",
+      "sql": "with \"probe\" as (select \"started_at\" from \"time_entry\" where ((((((\"time_entry\".",
       "scans": 0,
       "sorts": 0,
       "plan": [
-        "SEARCH time_entry USING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)",
-        "SCALAR SUBQUERY 6",
-        "SEARCH json_each VIRTUAL TABLE INDEX 1:",
-        "SCALAR SUBQUERY 5",
-        "CO-ROUTINE (subquery-4)",
-        "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)",
-        "SCAN (subquery-4)",
-        "SCALAR SUBQUERY 9",
-        "SEARCH json_each VIRTUAL TABLE INDEX 1:",
-        "SCALAR SUBQUERY 8",
-        "CO-ROUTINE (subquery-7)",
-        "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)",
-        "SCAN (subquery-7)",
-        "SCALAR SUBQUERY 3",
+        "CO-ROUTINE day_window",
         "SEARCH json_each VIRTUAL TABLE INDEX 1:",
         "SCALAR SUBQUERY 2",
-        "CO-ROUTINE (subquery-1)",
+        "CO-ROUTINE probe",
         "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)",
-        "SCAN (subquery-1)"
+        "SCAN probe",
+        "SCAN day_window",
+        "SEARCH time_entry USING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)"
       ]
     }
   ],
@@ -301,29 +290,18 @@
       ]
     },
     {
-      "sql": "select \"id\", \"user_id\", \"project_id\", \"description\", \"ticket\", \"started_at\", \"st",
+      "sql": "with \"probe\" as (select \"started_at\" from \"time_entry\" where ((((((\"time_entry\".",
       "scans": 0,
       "sorts": 0,
       "plan": [
-        "SEARCH time_entry USING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)",
-        "SCALAR SUBQUERY 6",
-        "SEARCH json_each VIRTUAL TABLE INDEX 1:",
-        "SCALAR SUBQUERY 5",
-        "CO-ROUTINE (subquery-4)",
-        "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)",
-        "SCAN (subquery-4)",
-        "SCALAR SUBQUERY 9",
-        "SEARCH json_each VIRTUAL TABLE INDEX 1:",
-        "SCALAR SUBQUERY 8",
-        "CO-ROUTINE (subquery-7)",
-        "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)",
-        "SCAN (subquery-7)",
-        "SCALAR SUBQUERY 3",
+        "CO-ROUTINE day_window",
         "SEARCH json_each VIRTUAL TABLE INDEX 1:",
         "SCALAR SUBQUERY 2",
-        "CO-ROUTINE (subquery-1)",
+        "CO-ROUTINE probe",
         "SEARCH time_entry USING COVERING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)",
-        "SCAN (subquery-1)"
+        "SCAN probe",
+        "SCAN day_window",
+        "SEARCH time_entry USING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)"
       ]
     }
   ],
