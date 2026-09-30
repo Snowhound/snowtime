@@ -178,7 +178,14 @@ saved to `perf/.cache/weather/` for comparison.
   otherwise accept thousands a second and stall later.
 - Paced, as the app runs: frame rate, and busy milliseconds per second on the page's main
   and compositor threads, the display compositor (viz), and the GPU process, from a trace.
-  The glass's backdrop blur shows up in viz and the GPU process.
+  Then the GPU process's CPU time per second over all its threads (`proc`, from CDP's
+  `SystemInfo.getProcessInfo`), and on macOS the GPU's utilization (`use %`, the
+  IOAccelerator's "Device Utilization %"). Utilization counts every process on the machine,
+  so only large gaps between variants mean anything; `--window=<ms>` lengthens each
+  measured window (500 by default) to steady it.
+- Timing draws each image's photo, since the glass shows a blurred copy of it
+  (`docs/architecture.md`, "Glass"). `--variant=live` blurs the surfaces live instead, as
+  the app does before the copy is ready.
 
 A case is a preset from `IMAGE_WEATHER` with the tuning fields that take other paths
 through the shaders (`band`, `zones`, `shear`, `gather`, `share`, `glow`), drawn with its
@@ -190,9 +197,10 @@ bun run perf:weather                           # golden frames, then timing
 bun run perf:weather --golden                  # golden frames only
 bun run perf:weather --timing --layout=reports --dpr=1
 bun run perf:weather --timing --all            # every layout at pixel ratios 1, 1.5, 2 (about 9 minutes)
-bun run perf:weather --only=mist               # cases whose name or preset contains "mist"
+bun run perf:weather --only=mist,squall        # cases whose name or preset contains "mist" or "squall"
 bun run perf:weather --timing --swiftshader    # timing on the weak-GPU proxy
 bun run perf:weather --timing --headed         # paced, in a window at the screen's refresh rate
+bun run perf:weather --timing --only=squall,mist --window=3000 --variant=live --variant=copy
 ```
 
 ### Compare two variants
@@ -227,7 +235,7 @@ Then open `http://localhost:5199/weather.html` with these parameters:
 | `dpr`      | Canvas pixel ratio                                          | the screen's |
 | `uncapped` | `1` draws on every frame                                    | off          |
 | `t`        | Seconds: draws only the frame at that time                  | runs         |
-| `variant`  | Passed to the code under test                               |              |
+| `variant`  | Passed to the code under test; `live` blurs the glass live  |              |
 
 For example, `weather.html?image=coast-november&theme=dark&layout=timer&photo=1` shows
 November's coast mist by night under the timer page's cards.

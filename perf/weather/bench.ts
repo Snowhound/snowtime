@@ -2,6 +2,7 @@
 // the image's photo, under the glass surfaces of a page layout. URL parameters set the first view
 // (perf/README.md, "Weather bench"); perf/weather.ts drives it through window.bench.
 
+import { glassPhoto } from '~/lib/scene/glass'
 import type { ImageId } from '~/lib/scene/images'
 import { STRENGTHS, photoUrl, photoWidth } from '~/lib/scene/scene'
 import { PACES, PRESETS, type Pace, type Weather, weatherFor } from '~/lib/scene/weather'
@@ -50,11 +51,11 @@ if (dpr && dpr !== devicePixelRatio) {
 }
 
 const frame = document.getElementById('frame')!
+frame.style.setProperty('--scene-tint-light', String(STRENGTHS.full.light))
+frame.style.setProperty('--scene-tint-dark', String(STRENGTHS.full.dark))
 const scene = frame.appendChild(document.createElement('div'))
 scene.className = 'scene'
 scene.dataset.background = photo ? 'on' : 'off'
-scene.style.setProperty('--scene-tint-light', String(STRENGTHS.full.light))
-scene.style.setProperty('--scene-tint-dark', String(STRENGTHS.full.dark))
 const photoLayer = scene.appendChild(document.createElement('div'))
 photoLayer.dataset.ready = ''
 const photoImage = photoLayer.appendChild(document.createElement('div'))
@@ -75,6 +76,17 @@ for (const rect of LAYOUTS[layout]) {
     height: `${rect.h}px`,
     borderRadius: `${rect.radius}px`,
   })
+  surface.appendChild(document.createElement('div')).className = 'glass'
+}
+// As in the app, the surfaces show a blurred copy of the photo (src/lib/scene/glass.ts) once it's
+// made; the `live` variant keeps the backdrop blur.
+async function showGlass(url: string) {
+  frame.removeAttribute('data-glass')
+  const copy =
+    url && variant !== 'live' && (await glassPhoto(url, { width: innerWidth, height: innerHeight }))
+  if (!copy) return
+  frame.style.setProperty('--glass-photo', `url("${copy}")`)
+  frame.setAttribute('data-glass', 'on')
 }
 
 // Every animation frame callback is timed, and a GPU timer query wraps it, so each frame the
@@ -188,7 +200,9 @@ function show({ image, preset, theme, t }: View) {
   const weather: Weather = image ? weatherFor(image, theme) : PRESETS[preset!]
   photoLayer.className = `scene-photo scene-photo-${theme}`
   const width = photoWidth({ width: innerWidth, height: innerHeight, dpr: devicePixelRatio })
-  photoImage.style.backgroundImage = photo && image ? `url("${photoUrl(image, theme, width)}")` : ''
+  const url = photo && image ? photoUrl(image, theme, width) : ''
+  photoImage.style.backgroundImage = url && `url("${url}")`
+  void showGlass(url)
   const { effect } = weather
   if (!effect) return renderer!.stop()
   const shown = { ...weather, effect }

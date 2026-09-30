@@ -18,6 +18,7 @@ import TimerIcon from 'lucide-solid/icons/timer'
 import UserIcon from 'lucide-solid/icons/user'
 import { For, Show } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
+import { Glass } from '~/components/scene/glass'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { Button, buttonVariants } from '~/components/ui/button'
 import {
@@ -86,6 +87,7 @@ export function AppHeader(props: { organizationId: string }) {
         }
         return (
           <header class="scene-header bg-background sticky top-0 z-30 border-b">
+            <Glass />
             <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
               <Link
                 to="/$org/timer"

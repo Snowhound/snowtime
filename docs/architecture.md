@@ -755,8 +755,48 @@ collections".
   settings"), so a change shows without a reload.
 - Surfaces: the frame around the page carries `data-scene-bg` and `data-surfaces`, which the
   server renders, and `src/styles.css` styles `surface` elements, the header, and the text over
-  the image from them. Popovers, menus, and dialogs render into `<body>`, outside the frame, so
-  they stay solid.
+  the image from them. It also carries the tint's strength, which the scene and the glass
+  share. Popovers, menus, and dialogs render into `<body>`, outside the frame, so they stay
+  solid.
+- Glass (task 069): a glass surface shows a copy of the photo that the browser blurred once,
+  not a live `backdrop-filter` blur. Every weather frame changes the whole canvas, so the
+  browser redrew each live blur on every frame, which cost more than the weather itself.
+  - The scene layer blurs the photo that shows with `glassPhoto` (`src/lib/scene/glass.ts`),
+    loaded when a picture first shows: a 240 px wide copy, a Gaussian blur in JavaScript with
+    the standard deviation `blur(24px)` has on this screen, as a JPEG data URL. The content
+    security policy allows `data:` images but not `blob:`. The canvas `filter` property could
+    do the blur, but its Safari support wasn't confirmed, and the JavaScript blur (a few
+    milliseconds, once per image and theme) gives the same result in every browser.
+  - Each `surface` and the header holds a `Glass` element (`src/components/scene/glass.tsx`).
+    Once the copy is ready, the frame gets `data-glass` and `--glass-photo`, and the `.glass`
+    layer shows the page color, vignette, tint, and copy under the surface's border. The layer
+    is `position: fixed`, as the scene is, inside an element clipped to the surface, so the
+    copy stays aligned while the page scrolls, and the compositor moves it with the scroll.
+    The surface keeps its border, radius, and shadow.
+  - Paint containment, a transform, or a filter on an ancestor makes the layer fixed to that
+    ancestor instead of the screen, which shows as the photo repeating in each card. The
+    timer's day cards keep `content-visibility: auto` on a wrapper inside the card for this
+    reason.
+  - A backdrop filter on the surface itself does the same, so while the copy fades, the live
+    blur sits in the surface's `::before`, under the copy, and the surface has none.
+  - The copy fades in over the live blur, which stops once the copy covers it. Before a new
+    picture or theme fades in, the copy fades out over the live blur again, then back in
+    after the picture's fade, so the weather and mist under the surfaces don't pop in or out.
+    `data-glass` goes `under`, `over`, `on`.
+  - What differs from a live blur: the weather under a surface and the page scrolling under
+    the header don't show through. Kait agreed to both on 2026-09-30, the header's after
+    seeing that it cost about a third of the glass.
+  - A surface without the `Glass` element, or any surface before the copy is ready, blurs
+    live as before.
+  - Numbers (weather bench, M1 Pro, 1440 × 900 at pixel ratio 1.5, calm pace): the GPU
+    process's CPU time per second falls by 35 to 55% on the timer, reports, and sign-in
+    layouts, for the squall from 154 to 81 ms on the timer page, near the 66 ms with no
+    glass at all. The GPU's utilization falls by about two thirds. Under SwiftShader, the
+    weak-GPU proxy, 60 fps effects drew 12 to 16 fps with the live blur and 50 to 57 with
+    the copy. Culling the weather under the surfaces, the canvas above the page with the
+    surfaces cut out, and 16 or 8 px blurs each saved little; task 069, subtask 05 records
+    them. At 120 Hz (headed, pixel ratio 2), the squall falls from 241 to 144 ms and snow from
+    122 to 60.
 - Tint (`STRENGTHS` in `src/lib/scene/scene.ts`, `.scene-tint` in `src/styles.css`): a
   vertical gradient of the page color over the image keeps the text readable, covering
   `strength × 70%` at the top and `strength × 115%` at the bottom. Dimmed, the default, is 0.4
@@ -810,9 +850,9 @@ collections".
 - Weather frame rate: each effect sets a target, and a preset can set its own. Blowing snow,
   spray, rain (so the squalls), leaves, and the midges run at 60 fps, since they move far
   enough per frame that 30 looks steppy on fast screens. The mist barely moves, so it runs at
-  10: its fastest bank moves about 3 px a frame on a 900 px screen, under its soft edges. The rest run at 30, since every frame also redraws the blur of the
-  glass surfaces over the canvas; at 120 Hz, 60 fps doubles the
-  weather's cost in the GPU process (task 063). The renderer draws every nth display refresh,
+  10: its fastest bank moves about 3 px a frame on a 900 px screen, under its soft edges. The
+  rest run at 30, since each frame's cost in the display compositor scales with the rate
+  (task 063; with the glass's copy, task 069, that cost is about half what it was). The renderer draws every nth display refresh,
   with n from the refresh rate it measures from its first frame gaps, so frames are evenly
   spaced: rain draws 60, 45, 60, 72, and 60 fps at 60, 90, 120, 144, and 240 Hz. A millisecond
   threshold can't do this; 22 ms gives 30 fps at 60 Hz and gaps alternating between two and

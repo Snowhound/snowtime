@@ -199,10 +199,37 @@ code {
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background: color-mix(in srgb, var(--muted) 40%, var(--background));
-  --scene-tint: var(--scene-tint-light);
+  background: var(--scene-color);
 }
-.dark .scene {
+/* The scene's color, tint, and vignette, which the glass's copy of the scene repeats. The frame
+   sets --scene-tint-light and --scene-tint-dark to the Strength setting. */
+.scene,
+.glass::before {
+  --scene-color: color-mix(in srgb, var(--muted) 40%, var(--background));
+  --scene-tint: var(--scene-tint-light);
+  /* The page color over the image, stronger toward the bottom, where the text sits. */
+  --scene-tint-layer: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--background) calc(var(--scene-tint) * 70%), transparent),
+    color-mix(in srgb, var(--background) min(100%, calc(var(--scene-tint) * 115%)), transparent)
+  );
+  --scene-vignette-layer: radial-gradient(
+    circle at 50% 50%,
+    transparent 0 35%,
+    rgb(0 0 0 / 0.14) 75%,
+    rgb(0 0 0 / 0.32) 100%
+  );
+}
+:root:not(.dark) .scene,
+:root:not(.dark) .glass::before {
+  --scene-vignette-layer: radial-gradient(
+    circle at 50% 50%,
+    transparent 0 35%,
+    rgb(216 227 239 / 0.28) 100%
+  );
+}
+.dark .scene,
+.dark .glass::before {
   --scene-tint: var(--scene-tint-dark);
 }
 .scene > * {
@@ -239,24 +266,11 @@ code {
 .dark .scene[data-background='on'] .scene-photo-dark[data-ready] {
   opacity: 1;
 }
-/* The page color over the image, stronger toward the bottom, where the text sits. */
 .scene-tint {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--background) calc(var(--scene-tint) * 70%), transparent),
-    color-mix(in srgb, var(--background) min(100%, calc(var(--scene-tint) * 115%)), transparent)
-  );
+  background: var(--scene-tint-layer);
 }
 .scene-vignette {
-  background: radial-gradient(
-    circle at 50% 50%,
-    transparent 0 35%,
-    rgb(0 0 0 / 0.14) 75%,
-    rgb(0 0 0 / 0.32) 100%
-  );
-}
-:root:not(.dark) .scene-vignette {
-  background: radial-gradient(circle at 50% 50%, transparent 0 35%, rgb(216 227 239 / 0.28) 100%);
+  background: var(--scene-vignette-layer);
 }
 .scene-tint,
 .scene-vignette {
@@ -397,8 +411,10 @@ html[data-intro='pending'] body {
    it with a shadow. `surface` marks cards and card-like elements, such as the timer bar. Popovers,
    menus, and dialogs render outside the frame, so they stay solid. */
 [data-scene-bg='on'][data-surfaces='glass'] .surface {
-  background-color: color-mix(in srgb, var(--card) 70%, transparent);
-  backdrop-filter: blur(24px);
+  --glass-color: color-mix(in srgb, var(--card) 70%, transparent);
+  --glass-blur: blur(24px);
+  background-color: var(--glass-color);
+  backdrop-filter: var(--glass-blur);
 }
 [data-scene-bg='on'] .surface {
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
@@ -426,11 +442,81 @@ html:has(.scene-header) {
 
 /* Over the image, the header keeps a page-colored surface. */
 [data-scene-bg='on'] .scene-header {
-  background-color: color-mix(in srgb, var(--background) 82%, transparent);
-  backdrop-filter: blur(16px);
+  --glass-color: color-mix(in srgb, var(--background) 82%, transparent);
+  --glass-blur: blur(16px);
+  background-color: var(--glass-color);
+  backdrop-filter: var(--glass-blur);
 }
 [data-scene-bg='on'][data-surfaces='solid'] .scene-header {
   background-color: var(--background);
+}
+
+/* Glass without a live blur (task 069). A backdrop blur over the weather is drawn again on every
+   weather frame, which cost more than the weather itself. So once the scene layer has blurred the
+   photo that shows (src/lib/scene/glass.ts), it sets data-glass and --glass-photo on the frame,
+   and each surface shows that copy in its .glass layer (src/components/scene/glass.tsx) under its
+   own color. The layer is fixed to the screen, as the scene is, and clipped to the surface, so the
+   copy stays aligned while the page scrolls. The weather and the page don't show through. The
+   copy fades in over the live blur and out again around a change of picture (data-glass is
+   `under`, `over`, or `on`; src/components/scene/scene-layer.tsx). Meanwhile the live blur sits in
+   the surface's ::before, under the copy: a backdrop filter on the surface itself would hold the
+   copy's fixed layer to the surface instead of the screen. A surface without the layer, or any
+   surface before the copy is ready, blurs the scene live. */
+.glass {
+  display: none;
+}
+[data-glass][data-scene-bg='on'][data-surfaces='glass'] :is(.surface, .scene-header):has(> .glass) {
+  isolation: isolate;
+  background-color: transparent;
+  backdrop-filter: none;
+}
+:is([data-glass='under'], [data-glass='over'])[data-scene-bg='on'][data-surfaces='glass']
+  :is(.surface, .scene-header):has(> .glass)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--glass-color);
+  backdrop-filter: var(--glass-blur);
+}
+[data-glass][data-scene-bg='on'][data-surfaces='glass'] .surface:has(> .glass) {
+  position: relative;
+}
+[data-glass][data-scene-bg='on'][data-surfaces='glass'] :is(.surface, .scene-header) > .glass {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  clip-path: border-box;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+:is([data-glass='over'], [data-glass='on'])[data-scene-bg='on'][data-surfaces='glass']
+  :is(.surface, .scene-header)
+  > .glass {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass {
+    transition: none;
+  }
+}
+[data-glass][data-scene-bg='on'][data-surfaces='glass']
+  :is(.surface, .scene-header)
+  > .glass::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(var(--glass-color), var(--glass-color)),
+    var(--scene-vignette-layer),
+    var(--scene-tint-layer),
+    var(--glass-photo) center 20% / cover,
+    var(--scene-color);
 }
 
 /* Reports' timesheet (src/features/reports/timesheet.tsx): on glass, its sticky first and last

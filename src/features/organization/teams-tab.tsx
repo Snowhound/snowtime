@@ -7,6 +7,7 @@ import TrashIcon from 'lucide-solid/icons/trash'
 import UsersIcon from 'lucide-solid/icons/users'
 import XIcon from 'lucide-solid/icons/x'
 import { For, Show, createSignal } from 'solid-js'
+import { Glass } from '~/components/scene/glass'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
 import {
@@ -62,6 +63,7 @@ export function TeamsTab(
           each={props.teams}
           fallback={
             <div class="surface bg-background col-span-full flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-12 text-center">
+              <Glass />
               <UsersIcon class="text-muted-foreground size-6" aria-hidden="true" />
               <p class="font-medium">{m.organization_teams_empty_title()}</p>
               <p class="text-muted-foreground max-w-md text-sm">
@@ -138,6 +140,7 @@ function TeamCard(
       class="surface bg-card text-card-foreground min-w-0 rounded-lg border shadow-sm"
       aria-labelledby={titleId()}
     >
+      <Glass />
       <header class="flex items-start justify-between gap-3 p-4 pb-3 sm:p-6 sm:pb-3">
         <div class="min-w-0">
           <h2 id={titleId()} class="leading-tight font-semibold break-words">

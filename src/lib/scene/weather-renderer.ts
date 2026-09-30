@@ -33,8 +33,8 @@ type EffectDef = {
   // Draw each item as a quad of two triangles (six vertices) instead of a point.
   quads?: boolean
   // Target frames per second, unless a preset sets its own: 60 for what moves far enough per
-  // frame that 30 looks steppy on fast screens, else 30 or less, since each frame also redraws
-  // the blur of the glass surfaces over the canvas (task 063).
+  // frame that 30 looks steppy on fast screens, else 30 or less, since each frame also costs the
+  // display compositor a redraw of the page (task 063).
   fps: number
   // Backing pixels per CSS pixel, when less than the usual MAX_DPR: a soft effect draws fewer
   // pixels, and the browser scales the canvas up.

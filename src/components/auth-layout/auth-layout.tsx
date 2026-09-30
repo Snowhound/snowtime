@@ -2,6 +2,7 @@ import type { JSX } from 'solid-js'
 import { Show, onMount } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
 import { LegalLinks } from '~/components/legal-links'
+import { Glass } from '~/components/scene/glass'
 import { Intro, IntroPage } from '~/components/scene/intro'
 import { SceneLayer } from '~/components/scene/scene-layer'
 import { SeasonTagline } from '~/components/scene/season-tagline'
@@ -70,6 +71,7 @@ export function AuthLayout(props: { children: JSX.Element; firstVisitIntro?: boo
               class="absolute bottom-[calc(100%+2rem)] left-1/2 w-[min(36rem,calc(100vw-2rem))] -translate-x-1/2 text-center text-base font-medium text-balance"
             />
             <div class="surface auth-card bg-card text-card-foreground flex w-full flex-col gap-6 rounded-lg border p-6 shadow-sm sm:p-8">
+              <Glass />
               <div class="flex items-center gap-2 text-base font-bold tracking-[-0.02em]">
                 <AppMark id={appIcon(settings().appIcon).id} small class="size-7" />
                 {m.app_name()}

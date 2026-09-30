@@ -1,15 +1,19 @@
 import type { Component, ComponentProps } from 'solid-js'
 import { splitProps } from 'solid-js'
+import { Glass } from '~/components/scene/glass'
 import { cn } from '~/lib/utils'
 
-// `surface` lets the seasonal scene style cards as glass or solid (src/styles.css).
+// `surface` and its Glass let the seasonal scene style cards as glass or solid (src/styles.css).
 const Card: Component<ComponentProps<'div'>> = (props) => {
-  const [local, others] = splitProps(props, ['class'])
+  const [local, others] = splitProps(props, ['class', 'children'])
   return (
     <div
       class={cn('surface rounded-lg border bg-card text-card-foreground shadow-sm', local.class)}
       {...others}
-    />
+    >
+      <Glass />
+      {local.children}
+    </div>
   )
 }
 

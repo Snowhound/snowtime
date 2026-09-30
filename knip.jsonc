@@ -16,6 +16,8 @@
   "drizzle": false,
   // Static prototypes and design files load their scripts from HTML.
   "ignore": ["prototypes/**", "design/**"],
+  // macOS's GPU counters, which the weather bench reads (perf/weather/gpu-usage.ts).
+  "ignoreBinaries": ["ioreg"],
   "ignoreIssues": {
     // The Solid-UI copies keep the registry's exports.
     "src/components/ui/**": ["exports", "types"],

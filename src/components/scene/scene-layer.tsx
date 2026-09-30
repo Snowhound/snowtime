@@ -3,14 +3,14 @@
 // which crossfade with the theme, the tint at the Strength setting, and the image's weather
 // (src/lib/scene/weather.ts) at the page's pace. The frame that renders it is
 // `isolate` and carries sceneAttributes(), so the layer sits behind the frame's content and the
-// surfaces follow the settings (src/styles.css).
+// surfaces follow the settings (src/styles.css). On glass, the layer also gives the frame the
+// surfaces' blurred copy of the photo (src/lib/scene/glass.ts).
 import { For, createEffect, createMemo, createSignal, onCleanup, onMount, untrack } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { intro } from '~/lib/scene/intro'
 import {
   PHOTO_SMALL,
   type PhotoTheme,
-  STRENGTHS,
   type ImageId,
   type SceneSettings,
   createReducedMotion,
@@ -34,8 +34,13 @@ import type { WeatherRenderer } from '~/lib/scene/weather-renderer'
 
 type LayerSettings = Pick<
   SceneSettings,
-  'sceneCollection' | 'scenePin' | 'sceneBackground' | 'sceneStrength' | 'sceneWeather'
+  'sceneCollection' | 'scenePin' | 'sceneBackground' | 'sceneWeather' | 'surfaces'
 >
+
+// How long a picture takes to fade in (.scene-photo and scene-photo-in in src/styles.css).
+const PHOTO_FADE = 900
+// How long the glass's copy takes to fade over the live blur or back (.glass in src/styles.css).
+const GLASS_FADE = 800
 
 // A theme's pictures, oldest first. A new image fades in over the one before, which goes once
 // the fade ends; a sharper file of the same image replaces the top one in place.
@@ -47,6 +52,7 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
   const [visible, setVisible] = createSignal(true)
   const [weatherOn, setWeatherOn] = createSignal(false)
   let canvas!: HTMLCanvasElement
+  let layer!: HTMLDivElement
   function visibility() {
     setVisible(!document.hidden)
   }
@@ -89,6 +95,12 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     }
     return photos[dark() ? 'dark' : 'light'].at(-1)?.image ?? wantedImage()
   })
+
+  // The glass's copy of the picture on top, keyed by image and theme, and the one the surfaces
+  // show. A new picture's copy shows once the picture has faded in; until then the surfaces blur
+  // the scene live, so they follow the fade.
+  const copies = new Map<string, Promise<string | null>>()
+  const [glass, setGlass] = createSignal<{ key: string; url: string } | null>(null)
 
   onMount(() => {
     const root = document.documentElement
@@ -138,6 +150,70 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         if (!due) continue
         if (photoReady(small)) show(theme, image, small)
         else if (!showing) void load(small)
+      }
+    })
+
+    let wanted: string | null = null
+    createEffect(() => {
+      const theme: PhotoTheme = dark() ? 'dark' : 'light'
+      const top = photos[theme].at(-1)
+      if (!top || !props.settings.sceneBackground || props.settings.surfaces !== 'glass') {
+        wanted = null
+        setGlass(null)
+        return
+      }
+      const key = `${top.image}-${theme}`
+      if (key === wanted) return
+      wanted = key
+      setGlass(null)
+      let copy = copies.get(key)
+      if (!copy) {
+        // Loaded when a picture first shows, like the weather renderer, so it's not in the entry.
+        copy = import('~/lib/scene/glass').then(({ glassPhoto }) =>
+          glassPhoto(top.src, { width: innerWidth, height: innerHeight }),
+        )
+        copies.set(key, copy)
+      }
+      const faded = new Promise((done) => setTimeout(done, untrack(reducedMotion) ? 0 : PHOTO_FADE))
+      void (async () => {
+        const [url] = await Promise.all([copy, faded])
+        if (wanted === key && url) setGlass({ key, url })
+      })()
+    })
+    // The copy fades in over the live blur, which stops once the copy covers it, and fades out
+    // over it again when the picture changes, so the weather and fog under the surfaces don't
+    // pop in or out. data-glass on the frame is `under` (live blur, copy clear), `over` (live
+    // blur, copy opaque), or `on` (copy only).
+    let step = 0
+    createEffect(() => {
+      const frame = layer.parentElement!
+      const shown = glass()
+      const run = ++step
+      const instant = untrack(reducedMotion)
+      function set(state: string) {
+        if (run === step) frame.dataset.glass = state
+      }
+      function clear() {
+        if (run !== step) return
+        delete frame.dataset.glass
+        frame.style.removeProperty('--glass-photo')
+      }
+      if (shown) {
+        frame.style.setProperty('--glass-photo', `url("${shown.url}")`)
+        if (instant) return set('on')
+        set('under')
+        // Styled clear first, so the copy's opacity has a start to fade from.
+        void frame.offsetWidth
+        set('over')
+        setTimeout(() => set('on'), GLASS_FADE)
+      } else if (frame.dataset.glass) {
+        if (instant) return clear()
+        if (frame.dataset.glass === 'on') {
+          set('over')
+          void frame.offsetWidth
+        }
+        set('under')
+        setTimeout(clear, GLASS_FADE)
       }
     })
 
@@ -200,14 +276,11 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
 
   return (
     <div
+      ref={layer}
       class="scene"
       aria-hidden="true"
       data-background={props.settings.sceneBackground ? 'on' : 'off'}
       data-intro={intro.playing() ? '' : undefined}
-      style={{
-        '--scene-tint-light': STRENGTHS[props.settings.sceneStrength].light,
-        '--scene-tint-dark': STRENGTHS[props.settings.sceneStrength].dark,
-      }}
     >
       <For each={['light', 'dark'] as const}>
         {(theme) => (

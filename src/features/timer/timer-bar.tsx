@@ -5,6 +5,7 @@
 import PlayIcon from 'lucide-solid/icons/play'
 import SquareIcon from 'lucide-solid/icons/square'
 import { Show, createEffect, createSignal, on } from 'solid-js'
+import { Glass } from '~/components/scene/glass'
 import { Button } from '~/components/ui/button'
 import { runningMs } from '~/lib/calendar'
 import { formatClock } from '~/lib/format'
@@ -167,6 +168,7 @@ export function TimerBar(props: {
     // whose backdrop filter stacks them over earlier elements.
     <div class="z-10 grid gap-2">
       <section class={classes().timer} aria-label={m.timer_label()}>
+        <Glass />
         <div
           class={cn(
             'flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center',

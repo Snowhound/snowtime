@@ -262,11 +262,17 @@ export function loadPhoto(url: string): Promise<void> {
   return promise
 }
 
-// The data attributes a frame with the scene carries; src/styles.css styles its surfaces, header,
-// and page text from them.
-export function sceneAttributes(settings: Pick<SceneSettings, 'sceneBackground' | 'surfaces'>) {
+// The data attributes a frame with the scene carries, from which src/styles.css styles its
+// surfaces, header, and page text, and the tint's strength, which the scene and the glass share.
+export function sceneAttributes(
+  settings: Pick<SceneSettings, 'sceneBackground' | 'surfaces' | 'sceneStrength'>,
+) {
   return {
     'data-scene-bg': settings.sceneBackground ? 'on' : 'off',
     'data-surfaces': settings.surfaces,
+    style: {
+      '--scene-tint-light': String(STRENGTHS[settings.sceneStrength].light),
+      '--scene-tint-dark': String(STRENGTHS[settings.sceneStrength].dark),
+    },
   } as const
 }

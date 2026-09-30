@@ -11,6 +11,7 @@ import { type Browser, type Page, chromium } from 'playwright-core'
 import { createServer } from 'vite'
 import { IMAGE_IDS, type ImageId } from '~/lib/scene/images'
 import { IMAGE_WEATHER, weatherFor } from '~/lib/scene/weather'
+import { gpuUsage } from './weather/gpu-usage'
 import { LAYOUTS, type Layout } from './weather/layouts'
 import { comparePng } from './weather/png'
 import { TRACE_CATEGORIES, busyPerWindow } from './weather/trace'
@@ -27,6 +28,7 @@ const { values: flags } = parseArgs({
     variant: { type: 'string', multiple: true },
     headed: { type: 'boolean' },
     swiftshader: { type: 'boolean' },
+    window: { type: 'string' },
   },
 })
 
@@ -52,7 +54,7 @@ const PIXELS = 20
 
 // Timing: each case warms up (compiles, first frames), then is measured for WINDOW.
 const WARM = 200
-const WINDOW = 500
+const WINDOW = Number(flags.window ?? 500)
 const PIXEL_RATIOS = [1, 1.5, 2]
 
 // Fields of an image's tuning that take other paths through the shaders. Images whose weather
@@ -95,8 +97,9 @@ function cases(): Case[] {
       }
     }
   }
+  const only = flags.only?.split(',')
   return [...groups.values()].filter(
-    (c) => !flags.only || c.name.includes(flags.only) || c.label.includes(flags.only),
+    (c) => !only || only.some((text) => c.name.includes(text) || c.label.includes(text)),
   )
 }
 
@@ -197,7 +200,15 @@ function median(values: number[]) {
   return sorted[sorted.length >> 1]
 }
 
-type Row = { fps: number; gpu: number; cpu: number; paced: number; busy: Record<string, number> }
+type Row = {
+  fps: number
+  gpu: number
+  cpu: number
+  paced: number
+  busy: Record<string, number>
+  process: number
+  usage: number
+}
 
 // Frame cost with every animation frame drawing, uncapped, then each thread's busy time with the
 // app's own pacing. Variants alternate within each case, so a comparison shares the machine's
@@ -205,7 +216,8 @@ type Row = { fps: number; gpu: number; cpu: number; paced: number; busy: Record<
 async function timing(base: string, list: Case[], layout: Layout, dpr: number, variants: string[]) {
   const rows = new Map<string, Row>()
   // t=0: the first view is a still frame, so a page runs only while it's measured.
-  const query = { layout, dpr: String(dpr), pace: 'calm', t: '0' }
+  // With the photo, which the glass's copy needs.
+  const query = { layout, dpr: String(dpr), pace: 'calm', t: '0', photo: '1' }
   const screen = { width: 1440, height: 900 }
   let renderer = ''
 
@@ -234,6 +246,8 @@ async function timing(base: string, list: Case[], layout: Layout, dpr: number, v
           cpu: median(sample.cpu),
           paced: 0,
           busy: {},
+          process: NaN,
+          usage: NaN,
         })
       }
     }
@@ -251,14 +265,34 @@ async function timing(base: string, list: Case[], layout: Layout, dpr: number, v
       variants.map((variant) => openBench(paced, base, { ...query, variant }, screen, dpr)),
     )
     await paced.startTracing(pages[0], { categories: TRACE_CATEGORIES })
+    const cdp = await paced.newBrowserCDPSession()
+    // The GPU process's CPU time, all threads: the display compositor and, under SwiftShader, the
+    // drawing itself.
+    async function gpuProcessSeconds() {
+      const { processInfo } = (await cdp.send('SystemInfo.getProcessInfo')) as {
+        processInfo: { type: string; cpuTime: number }[]
+      }
+      return processInfo.filter((p) => p.type === 'GPU').reduce((sum, p) => sum + p.cpuTime, 0)
+    }
+    const usage = gpuUsage()
     // A page's first window runs slow, so it's thrown away.
     for (const page of pages) await measure(page, list[0], 'warm-up')
-    for (const c of list) {
-      for (const [i, page] of pages.entries()) {
-        const key = `${c.name}/${variants[i]}`
-        const sample = await measure(page, c, key)
-        rows.get(key)!.paced = sample.cpu.length / sample.seconds
+    try {
+      for (const c of list) {
+        for (const [i, page] of pages.entries()) {
+          const key = `${c.name}/${variants[i]}`
+          const cpuBefore = await gpuProcessSeconds()
+          const from = performance.now()
+          const sample = await measure(page, c, key)
+          const to = performance.now()
+          const row = rows.get(key)!
+          row.paced = sample.cpu.length / sample.seconds
+          row.process = (((await gpuProcessSeconds()) - cpuBefore) / ((to - from) / 1000)) * 1000
+          row.usage = usage.mean(from + WARM, to)
+        }
       }
+    } finally {
+      usage.stop()
     }
     const busy = busyPerWindow(await paced.stopTracing())
     for (const [key, row] of rows) row.busy = busy.get(key) ?? {}
@@ -269,7 +303,8 @@ async function timing(base: string, list: Case[], layout: Layout, dpr: number, v
   console.log(
     `\n[perf] Weather timing: ${layout} layout, pixel ratio ${dpr}, calm pace, ${renderer}\n` +
       '  Uncapped: frames per second and median ms per frame. Paced: the app’s frame rate, and\n' +
-      '  busy ms per second on the page’s main and compositor threads, viz, and the GPU process.\n',
+      '  busy ms per second on the page’s main and compositor threads, viz, and the GPU process,\n' +
+      '  the GPU process’s CPU ms per second (proc), and the GPU’s utilization (macOS only).\n',
   )
   const header = [
     'case'.padEnd(26),
@@ -282,6 +317,8 @@ async function timing(base: string, list: Case[], layout: Layout, dpr: number, v
     'comp'.padStart(6),
     'viz'.padStart(6),
     'gpu'.padStart(6),
+    'proc'.padStart(6),
+    'use %'.padStart(6),
   ]
   console.log(`  ${header.join(' ')}`)
   for (const c of list) {
@@ -298,6 +335,8 @@ async function timing(base: string, list: Case[], layout: Layout, dpr: number, v
         ...['main', 'compositor', 'viz', 'gpu'].map((k) =>
           (row.busy[k] ?? NaN).toFixed(0).padStart(6),
         ),
+        row.process.toFixed(0).padStart(6),
+        row.usage.toFixed(1).padStart(6),
       ]
       console.log(`  ${cells.join(' ')}`)
     }

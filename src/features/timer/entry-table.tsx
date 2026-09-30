@@ -4,6 +4,7 @@
 // horizontally inside its border on narrow screens. Compact rows pad their cells less.
 import { For, Show } from 'solid-js'
 import { Duration } from '~/components/duration'
+import { Glass } from '~/components/scene/glass'
 import {
   Table,
   TableBody,
@@ -57,6 +58,7 @@ export function EntryTable(
   }
   return (
     <div class="surface bg-card overflow-hidden rounded-lg border">
+      <Glass />
       <Table class={cn('table-fixed', props.wide ? 'min-w-[56rem]' : 'min-w-[48rem]')}>
         <colgroup>
           <col />
