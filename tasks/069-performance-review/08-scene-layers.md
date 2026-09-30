@@ -18,18 +18,21 @@ the weather and the glass.
   full-screen blend. Merge into one where the result is the same.
 - Decoding off the main thread (`decode()` or `decoding="async"`), so a new image doesn't
   cause a long task.
-- The weather when the page is idle: Kait agreed it may draw less after some time without
-  input. Battery is still open.
-- Slowing the weather while the page scrolls, at least the fog: Kait's idea, to use with
-  care, since a change of rate mid-scroll may show as a stutter or a jump. Try it in the
-  weather bench and show Kait before it goes in the app.
+
+## Ideas to try
+
+Worth a try, not required. Each goes in only if it works well, with no visible stutter or
+jump, and stays simple; otherwise record what was tried and drop it.
+
+- Drawing less when the page has been idle for a while, picking up again on input. Kait
+  thinks this is probably fine. Battery is still an open question.
+- Slowing the weather while the page scrolls, at least the fog (Kait's idea). A change of
+  rate mid-scroll may show as a stutter or a jump, so try it in the weather bench and show
+  Kait first.
 
 ## Acceptance criteria
 
 - [ ] GPU memory and layer count, from Chrome's Layers panel or a trace, on the timer page
       before and after a theme switch
 - [ ] Changes made where layers or images stay around without being seen
-- [ ] The weather draws less after a time without input, and picks up again smoothly on
-      input
-- [ ] Slowing down while scrolling tried in the bench, and kept only if Kait finds no
-      artifacts
+- [ ] The ideas above tried or set aside, each with a line on the outcome
