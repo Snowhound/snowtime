@@ -138,3 +138,43 @@ Pick one in this task after trying both on the seeded database. Document both ei
 - [ ] A CI deploy job for the Hetzner target, or a documented manual deploy.
 - [ ] If Snowhound's production moves, the privacy page names Hetzner (and Cloudflare, and
       the backup storage) instead of Vercel, Turso, and Upstash.
+
+## Progress (2026-09-30, handover notes)
+
+Done:
+
+- `4c47ab3`: `CLIENT_IP_HEADER` in `src/env.ts` and `.env.example`; Better Auth reads the
+  client IP from that header (`advanced.ipAddress.ipAddressHeaders`). Unset keeps
+  `x-forwarded-for`, which Vercel sets. Better Auth is the only code that derives an IP
+  (rate limits and `session.ip_address`); without a single trustworthy value it counts
+  every request under one `no-trusted-ip` key.
+- `4e8bbf9`, `d69772f`: `scripts/build-self-hosted.ts` (`build:self-hosted`,
+  `build:binary`), `scripts/db-migrate-release.ts` (the compiled migrator), and
+  `db-verify.ts` exporting `verifyMigrations`. Linux libSQL addons come from
+  `bun install --os=linux --cpu=<arch>`, which adds them beside the host's.
+- `ff33378`: `perf/load.ts` (`perf:load`), documented in `perf/README.md`.
+
+Next: Caddyfile, systemd unit, Litestream, Turso Sync spike, docs split
+(`docs/deployment/self-hosted.md`, provider-neutral with Hetzner as the example).
+
+Measured so far (M1 Pro; Docker = Linux arm64 VM limited to 2 CPUs and 4 GB):
+
+- Binary sizes: server 101 MB (arm64) and 102 MB (x64) with bytecode; migrator 90 MB.
+- `perf:load`, Docker, Linux binary vs `bun .output/server/index.mjs`: equal within noise.
+  Binary p50 timer 30 ms, settings 31 ms, week 21 ms, year 76 ms; CPU per request 17–27 ms
+  for ordinary pages and 85–92 ms for the year; peak RSS 383 MB (Bun: 394 MB).
+- Bytecode order (Bun 1.4.3 canary; 1.4.2 lacks it), 15 and 25 alternating starts:
+  ready 102 vs 110 ms and 117 vs 128 ms, first page 126 vs 128 ms and 138 vs 149 ms,
+  RSS 82 MB ready and 91 MB after the first page either way. Not kept.
+
+Decisions:
+
+- A compiled `snowtime-migrate` ships with the binary, so a server without Bun still runs
+  `db:verify` and the migrations. drizzle-orm's migrator writes the same
+  `__drizzle_migrations` rows and schema as `drizzle-kit migrate` (checked by hash).
+
+Open questions for Kait:
+
+- Task 043 now applies to production: the self-hosted app uses a `file:` URL, where a
+  `SQLITE_BUSY` inside one process can lose later writes. Litestream's checkpoints take the
+  write lock briefly too.
