@@ -1,0 +1,197 @@
+{
+  "scope (admin)": [
+    {
+      "sql": "select \"role\" from \"member\" where ((\"member\".\"organization_id\" = ?) and (\"member",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH member USING INDEX member_organization_id_user_id_unique (organization_id=? AND user_id=?)"
+      ]
+    },
+    {
+      "sql": "select \"team_member\".\"team_id\" from \"team_member\" inner join \"team\" on \"team\".\"i",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH team_member USING INDEX team_member_user_id_idx (user_id=?)",
+        "SEARCH team USING COVERING INDEX team_id_organization_id_unique (id=? AND organization_id=?)"
+      ]
+    }
+  ],
+  "scope (member)": [
+    {
+      "sql": "select \"role\" from \"member\" where ((\"member\".\"organization_id\" = ?) and (\"member",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH member USING INDEX member_organization_id_user_id_unique (organization_id=? AND user_id=?)"
+      ]
+    },
+    {
+      "sql": "select \"team_member\".\"team_id\" from \"team_member\" inner join \"team\" on \"team\".\"i",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH team_member USING INDEX team_member_user_id_idx (user_id=?)",
+        "SEARCH team USING COVERING INDEX team_id_organization_id_unique (id=? AND organization_id=?)"
+      ]
+    }
+  ],
+  "running timer": [
+    {
+      "sql": "select \"d0\".\"id\" as \"id\", \"d0\".\"organization_id\" as \"organizationId\", \"d0\".\"user",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH d0 USING INDEX time_entry_one_running (user_id=?)",
+        "CORRELATED SCALAR SUBQUERY 4",
+        "SEARCH f0 USING INDEX sqlite_autoindex_organization_1 (id=?)",
+        "CORRELATED SCALAR SUBQUERY 3",
+        "SEARCH f1 USING INDEX member_organization_id_user_id_unique (organization_id=? AND user_id=?)",
+        "CORRELATED SCALAR SUBQUERY 2",
+        "CO-ROUTINE t",
+        "SEARCH d1 USING INDEX sqlite_autoindex_project_1 (id=?)",
+        "SCAN t"
+      ]
+    }
+  ],
+  "timer entries, own week (member)": [
+    {
+      "sql": "select \"id\", \"organization_id\", \"user_id\", \"project_id\", \"description\", \"started",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH time_entry USING INDEX time_entry_organization_id_user_id_started_at_idx (organization_id=? AND user_id=? AND started_at>? AND started_at<?)"
+      ]
+    }
+  ],
+  "timer entries, own week (admin)": [
+    {
+      "sql": "select \"id\", \"organization_id\", \"user_id\", \"project_id\", \"description\", \"started",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH time_entry USING INDEX time_entry_organization_id_user_id_started_at_idx (organization_id=? AND user_id=? AND started_at>? AND started_at<?)"
+      ]
+    }
+  ],
+  "report, week (admin)": [
+    {
+      "sql": "select \"time_zone\", \"week_start\" from \"user_settings\" where \"user_settings\".\"use",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH user_settings USING INDEX sqlite_autoindex_user_settings_1 (user_id=?)"
+      ]
+    },
+    {
+      "sql": "select \"team\".\"id\", \"team_member\".\"user_id\" from \"team\" left join \"team_member\" ",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH team USING INDEX team_organization_id_name_unique (organization_id=?)",
+        "SEARCH team_member USING COVERING INDEX team_member_team_id_user_id_unique (team_id=?) LEFT-JOIN"
+      ]
+    },
+    {
+      "sql": "select \"user_id\", \"project_id\", \"ticket\", \"started_at\", \"stopped_at\" from \"time_",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH time_entry USING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)"
+      ]
+    },
+    {
+      "sql": "select \"id\", \"name\", \"email\" from \"user\" where ((\"user\".\"id\" in (?, ?, ?, ?, ?, ",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH user USING INDEX sqlite_autoindex_user_1 (id=?)",
+        "CORRELATED SCALAR SUBQUERY 1",
+        "SEARCH member USING COVERING INDEX member_organization_id_user_id_unique (organization_id=? AND user_id=?)"
+      ]
+    }
+  ],
+  "report, year (admin)": [
+    {
+      "sql": "select \"time_zone\", \"week_start\" from \"user_settings\" where \"user_settings\".\"use",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH user_settings USING INDEX sqlite_autoindex_user_settings_1 (user_id=?)"
+      ]
+    },
+    {
+      "sql": "select \"team\".\"id\", \"team_member\".\"user_id\" from \"team\" left join \"team_member\" ",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH team USING INDEX team_organization_id_name_unique (organization_id=?)",
+        "SEARCH team_member USING COVERING INDEX team_member_team_id_user_id_unique (team_id=?) LEFT-JOIN"
+      ]
+    },
+    {
+      "sql": "select \"user_id\", \"project_id\", \"ticket\", \"started_at\", \"stopped_at\" from \"time_",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH time_entry USING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)"
+      ]
+    },
+    {
+      "sql": "select \"id\", \"name\", \"email\" from \"user\" where ((\"user\".\"id\" in (?, ?, ?, ?, ?, ",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH user USING INDEX sqlite_autoindex_user_1 (id=?)",
+        "CORRELATED SCALAR SUBQUERY 1",
+        "SEARCH member USING COVERING INDEX member_organization_id_user_id_unique (organization_id=? AND user_id=?)"
+      ]
+    }
+  ],
+  "report, year (member)": [
+    {
+      "sql": "select \"time_zone\", \"week_start\" from \"user_settings\" where \"user_settings\".\"use",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH user_settings USING INDEX sqlite_autoindex_user_settings_1 (user_id=?)"
+      ]
+    },
+    {
+      "sql": "select \"user_id\", \"project_id\", \"ticket\", \"started_at\", \"stopped_at\" from \"time_",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH time_entry USING INDEX time_entry_organization_id_user_id_started_at_idx (organization_id=? AND user_id=? AND started_at>? AND started_at<?)"
+      ]
+    }
+  ],
+  "report entries, year (admin)": [
+    {
+      "sql": "select \"time_zone\", \"week_start\" from \"user_settings\" where \"user_settings\".\"use",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH user_settings USING INDEX sqlite_autoindex_user_settings_1 (user_id=?)"
+      ]
+    },
+    {
+      "sql": "select \"team\".\"id\", \"team_member\".\"user_id\" from \"team\" left join \"team_member\" ",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH team USING INDEX team_organization_id_name_unique (organization_id=?)",
+        "SEARCH team_member USING COVERING INDEX team_member_team_id_user_id_unique (team_id=?) LEFT-JOIN"
+      ]
+    },
+    {
+      "sql": "select \"id\", \"user_id\", \"project_id\", \"description\", \"ticket\", \"started_at\", \"st",
+      "scans": 0,
+      "sorts": 0,
+      "plan": [
+        "SEARCH time_entry USING INDEX time_entry_organization_id_started_at_idx (organization_id=? AND started_at>? AND started_at<?)"
+      ]
+    }
+  ]
+}

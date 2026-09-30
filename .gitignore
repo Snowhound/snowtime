@@ -26,3 +26,6 @@ design/backgrounds/masters/
 .playwright-mcp
 # Claude Code agent worktrees
 .claude/worktrees/
+
+# Benchmark database, build copy, and server logs (perf/README.md)
+perf/.cache

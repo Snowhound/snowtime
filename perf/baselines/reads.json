@@ -1,0 +1,98 @@
+{
+  "getReport week admin": {
+    "rows": 383,
+    "bytes": 5057
+  },
+  "getReportBreakdown week admin": {
+    "rows": 383,
+    "bytes": 10286
+  },
+  "getReportEntries (by day) week admin": {
+    "rows": 383,
+    "bytes": 1817
+  },
+  "getReportEntries (by description) week admin": {
+    "rows": 383,
+    "bytes": 7118
+  },
+  "getReport month admin": {
+    "rows": 1676,
+    "bytes": 11161
+  },
+  "getReportBreakdown month admin": {
+    "rows": 1676,
+    "bytes": 18209
+  },
+  "getReportEntries (by day) month admin": {
+    "rows": 1676,
+    "bytes": 1817
+  },
+  "getReportEntries (by description) month admin": {
+    "rows": 1676,
+    "bytes": 12303
+  },
+  "getReport year admin": {
+    "rows": 20185,
+    "bytes": 24799
+  },
+  "getReportBreakdown year admin": {
+    "rows": 20184,
+    "bytes": 26519
+  },
+  "getReportEntries (by day) year admin": {
+    "rows": 20184,
+    "bytes": 1817
+  },
+  "getReportEntries (by description) year admin": {
+    "rows": 20184,
+    "bytes": 20004
+  },
+  "getReport week member": {
+    "rows": 24,
+    "bytes": 1179
+  },
+  "getReportBreakdown week member": {
+    "rows": 24,
+    "bytes": 696
+  },
+  "getReportEntries (by day) week member": {
+    "rows": 24,
+    "bytes": 9665
+  },
+  "getReportEntries (by description) week member": {
+    "rows": 24,
+    "bytes": 3793
+  },
+  "getReport month member": {
+    "rows": 65,
+    "bytes": 2369
+  },
+  "getReportBreakdown month member": {
+    "rows": 65,
+    "bytes": 936
+  },
+  "getReportEntries (by day) month member": {
+    "rows": 65,
+    "bytes": 26918
+  },
+  "getReportEntries (by description) month member": {
+    "rows": 65,
+    "bytes": 5455
+  },
+  "getReport year member": {
+    "rows": 1188,
+    "bytes": 6060
+  },
+  "getReportBreakdown year member": {
+    "rows": 1188,
+    "bytes": 1420
+  },
+  "getReportEntries (by day) year member": {
+    "rows": 1188,
+    "bytes": 41074
+  },
+  "getReportEntries (by description) year member": {
+    "rows": 1188,
+    "bytes": 4818
+  }
+}

@@ -1162,6 +1162,21 @@ generate` (non-custom) and `push` are not run against real databases.
 when `NODE_ENV` is `development`, which Vite sets for `dev`; an unset `NODE_ENV` counts as
 production.
 
+## Performance harnesses
+
+`perf/` holds three harnesses (task 069); `perf/README.md` says what each measures and how
+to update a baseline on purpose:
+
+- `bun run perf`: bundle budgets, query plans, and report rows and bytes, with no browser.
+  CI runs it.
+- `bun run perf:pages`: page bytes, DOM nodes, hydration, and interaction delay in Chrome.
+- `bun run perf:weather`: the weather's GPU and compositor cost under the glass, and golden
+  frames of every preset.
+
+They gate only counts that don't depend on the machine (bytes, rows, plans, nodes, pixels)
+and print timings, since no machine here gives stable ones. Data comes from the company
+seed at a fixed date, with the server's and browser's clocks moved to it.
+
 ## Deferred / out of scope
 
 - Local-first sync. If ever needed: Turso's own embedded replicas/sync.

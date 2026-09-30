@@ -1218,6 +1218,9 @@ export type WeatherRenderer = {
   // Throws if the effect's shaders don't compile.
   start(weather: Weather & { effect: Effect }, colors: [Rgb, Rgb]): void
   stop(): void
+  // Stops and draws the frame at `seconds` of the weather's time, for the weather bench's golden
+  // frames (perf/weather.ts).
+  drawAt(seconds: number): void
   // Stops and frees the context.
   destroy(): void
 }
@@ -1271,10 +1274,12 @@ const MAX_DPR = 1.5
 
 // One WebGL context for all effects; each effect's program compiles the first time it runs.
 // `pace()` gives the factors for the point count and the speed. Null without WebGL 2, which
-// weatherSupported() predicts without creating a context.
+// weatherSupported() predicts without creating a context. `uncapped` draws on every animation
+// frame, without the pacing below, so the weather bench can measure a frame's cost.
 export function createWeatherRenderer(
   canvas: HTMLCanvasElement,
   pace: () => { density: number; speed: number },
+  { uncapped = false } = {},
 ): WeatherRenderer | null {
   const context = canvas.getContext('webgl2', {
     alpha: true,
@@ -1442,9 +1447,13 @@ export function createWeatherRenderer(
     const due = hz
       ? Math.round(((now - last) * hz) / 1000) >= refreshesPerFrame(target)
       : now - last >= (1000 / target) * 0.8
-    if (!due) return
+    if (!due && !uncapped) return
     elapsed += (Math.min(now - (last || now), 100) / 1000) * pace().speed
     last = now
+    draw()
+  }
+  function draw() {
+    if (!current || !colors) return
     const dpr = Math.min(devicePixelRatio || 1, EFFECTS[current.effect].resolution ?? MAX_DPR)
     const w = Math.max(1, Math.floor(cssWidth * dpr))
     const h = Math.max(1, Math.floor(cssHeight * dpr))
@@ -1501,6 +1510,11 @@ export function createWeatherRenderer(
       raf = requestAnimationFrame(frame)
     },
     stop,
+    drawAt(seconds) {
+      stop()
+      elapsed = seconds
+      draw()
+    },
     destroy() {
       stop()
       resize.disconnect()

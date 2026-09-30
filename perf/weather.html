@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Weather bench</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body {
+        overflow: hidden;
+      }
+      .surface,
+      .scene-header {
+        position: fixed;
+        box-sizing: border-box;
+        border: 1px solid var(--border);
+      }
+      .scene-header {
+        border-width: 0 0 1px;
+      }
+      /* Without the photo, a fixed tone that both themes' weather colors show against. */
+      .scene[data-background='off'] {
+        background: #5f7488;
+      }
+      .dark .scene[data-background='off'] {
+        background: #0b1622;
+      }
+    </style>
+    <script type="module" src="./weather/bench.ts"></script>
+  </head>
+  <body>
+    <div id="frame" style="isolation: isolate" data-scene-bg="on" data-surfaces="glass"></div>
+  </body>
+</html>

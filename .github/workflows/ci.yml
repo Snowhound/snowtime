@@ -49,6 +49,10 @@ jobs:
       - name: Component tests
         run: bunx vitest run
 
+      # Bundle budgets, query plans, and report reads against perf/baselines/ (perf/README.md).
+      - name: Performance budgets
+        run: bun run perf
+
       # Drift is a warning by decision (docs/architecture.md, "Schema and migrations"): the
       # script exits 0 on drift and fails only when the migrations fail on an empty database.
       - name: Schema drift

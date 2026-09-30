@@ -24,6 +24,7 @@
     "datamodel/*.chartdb.json",
     "bun.lock",
     "prototypes/**",
-    "design/**"
+    "design/**",
+    "perf/baselines/**"
   ]
 }

@@ -1,6 +1,6 @@
 # 01: Performance harnesses
 
-Status: todo
+Status: in progress (CI run on GitHub pending)
 
 Three small harnesses that later work (and later agents) reuse instead of writing their own:
 a size and query check with no browser, a page run in Chrome on the year of data, and a
@@ -69,13 +69,42 @@ real glass CSS.
 
 ## Acceptance criteria
 
-- [ ] `perf/README.md` says what each harness measures, how to run it, and how to update a
+- [x] `perf/README.md` says what each harness measures, how to run it, and how to update a
       budget or a golden frame on purpose
-- [ ] `bun run perf` runs in under 30 seconds with a seeded database, and under two minutes
+- [x] `bun run perf` runs in under 30 seconds with a seeded database, and under two minutes
       from scratch
-- [ ] `bun run perf:pages` and `bun run perf:weather` each run in under a minute by default
-- [ ] Budgets, query plan snapshots, and golden frames committed, taken from `main` before any
+- [x] `bun run perf:pages` and `bun run perf:weather` each run in under a minute by default
+- [x] Budgets, query plan snapshots, and golden frames committed, taken from `main` before any
       optimization, so subtasks 02 to 08 start from them
 - [ ] CI runs `bun run perf`. If it makes CI too slow on GitHub's runners, it runs on a
       self-hosted runner instead (Kait agreed to set one up), not less often
-- [ ] `docs/architecture.md` points to `perf/README.md`
+- [x] `docs/architecture.md` points to `perf/README.md`
+
+## Notes
+
+- Data: the company seed at a fixed `SEED_NOW` (2026-09-30 07:30 UTC), with the seed's
+  running timers stopped there. `perf/lib/clock.ts` moves `Date` on the server and in the
+  browser to that moment, so the gated counts don't change from day to day. A clock seam
+  in the app was considered and rejected: it would put test plumbing in `src/`.
+- Run times on Kait's M1 Pro: `bun run perf` 7 s (8 s from scratch), `perf:pages` 22 s,
+  `perf:weather` 53 s.
+- The one app change is a bench hook in `weather.ts`: an `uncapped` option and `drawAt()`,
+  neither used by the app.
+- Headless Chrome uses the real GPU on macOS (ANGLE Metal), and the timer query works
+  there and under SwiftShader. With vsync off, Chrome accepts thousands of frames a second
+  and then stalls for seconds, so the bench keeps at most 64 frames queued with fences.
+
+### Open for later subtasks
+
+- On the M1 Pro, GPU time per frame reads about 0.2 ms for every effect, mist included,
+  and uncapped fps stays at about 750 whatever the load. That looks like a floor, not
+  the effects' cost; SwiftShader separates them (1.1 to 2.0 ms). Check the query's span
+  before subtask 05 or 06 relies on it.
+- The glass shows in the paced trace: for the squall, viz and GPU-process busy ms per
+  second go from 12 and 29 with no layout to 38 and 103 under the timer page's cards.
+- Every year report call reads all ~20,000 entries, and each call reads them again
+  (subtask 04).
+- Reports for a year: 719 KB of HTML (37 KB gzipped) and 2,154 DOM nodes, against 175 KB
+  and 596 for a week (subtask 02).
+- Gzipped HTML varies by a few bytes between runs at the same raw size: some value of
+  the same length still changes. It's within the tolerance.

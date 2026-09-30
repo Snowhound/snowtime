@@ -2,7 +2,15 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   // Start's server entry (vite.config.ts) and drizzle-kit's config, which knip can't load
   // without TURSO_DATABASE_URL.
-  "entry": ["src/server-entry.ts", "drizzle.config.ts"],
+  // The harnesses (perf/README.md); the weather bench's page script loads from its HTML and
+  // its config from createServer.
+  "entry": [
+    "src/server-entry.ts",
+    "drizzle.config.ts",
+    "perf/*.ts",
+    "perf/weather/bench.ts",
+    "perf/weather/vite.config.ts",
+  ],
   "drizzle": false,
   // Static prototypes and design files load their scripts from HTML.
   "ignore": ["prototypes/**", "design/**"],

@@ -1,0 +1,37 @@
+{
+  "reports (week)": {
+    "htmlBytes": 175174,
+    "htmlGzip": 18221,
+    "jsGzip": 236257,
+    "cssGzip": 18931,
+    "domNodes": 596
+  },
+  "reports (year)": {
+    "htmlBytes": 718576,
+    "htmlGzip": 36881,
+    "jsGzip": 236257,
+    "cssGzip": 18931,
+    "domNodes": 2154
+  },
+  "settings": {
+    "htmlBytes": 141382,
+    "htmlGzip": 16230,
+    "jsGzip": 237779,
+    "cssGzip": 18931,
+    "domNodes": 562
+  },
+  "sign-in": {
+    "htmlBytes": 25639,
+    "htmlGzip": 6573,
+    "jsGzip": 226261,
+    "cssGzip": 18931,
+    "domNodes": 156
+  },
+  "timer": {
+    "htmlBytes": 265057,
+    "htmlGzip": 18218,
+    "jsGzip": 265239,
+    "cssGzip": 18931,
+    "domNodes": 1195
+  }
+}
