@@ -441,6 +441,18 @@ html:has(.scene-header) {
   background-color: transparent;
 }
 
+/* The reports' pick buttons (src/features/reports/pick-button.tsx) and the timesheet's day and
+   week cells: one class each rather than the utilities, which a year's grid repeats in 1,400
+   cells. In the components layer, so utilities passed beside them still win. */
+@layer components {
+  .pick {
+    @apply hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary/90 -mx-1.5 -my-0.5 rounded-sm px-1.5 py-0.5 focus-visible:ring-2 focus-visible:outline-none;
+  }
+  .timesheet-cell {
+    @apply p-2 text-right align-middle whitespace-nowrap tabular-nums;
+  }
+}
+
 /* The season's tagline (src/components/scene/season-tagline.tsx) in the intro's colors: the headline
    color, darkened on light pages, then the second line's. From 1024 px PageTitle centers it on
    the title row (`page-tagline-centered`). Until it has, it starts where it usually goes, on

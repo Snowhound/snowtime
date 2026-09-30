@@ -715,6 +715,13 @@ describe('ReportsView', () => {
     await userEvent.click(within(totals).getByRole('button', { name: '1:45' }))
     await waitFor(() => expect(search()).toEqual({ range: 'this-week' }))
 
+    // The row's total, in the last column, narrows to the row alone.
+    const rowTotal = within(row).getAllByRole('button').at(-1)!
+    await userEvent.click(rowTotal)
+    await waitFor(() => expect(search()).toEqual({ range: 'this-week', row: snowtime.id }))
+    await userEvent.click(rowTotal)
+    await waitFor(() => expect(search()).toEqual({ range: 'this-week' }))
+
     await userEvent.click(within(row).getByRole('button', { name: 'Snowtime' }))
     await waitFor(() => expect(search()).toEqual({ range: 'this-week', row: snowtime.id }))
     await userEvent.click(await within(card).findByRole('button', { name: 'Show all entries' }))

@@ -96,6 +96,7 @@ out, each in a fresh context with an empty cache. The viewport is 1440 × 900 at
 | JS and CSS, gzipped         | Gated    | Every script and stylesheet loaded until a second after hydration, gzipped at level 9 (the preview doesn't compress) |
 | DOM nodes                   | Gated    | Elements after hydration                                                                                             |
 | Time to hydrate             | Reported | When Solid hydrated the last server-rendered element (`_$HY.completed`)                                              |
+| Grid                        | Reported | The first animation frame with a timesheet cell button in the DOM, on the reports pages                              |
 | Long tasks                  | Reported | Count and total from a `longtask` observer                                                                           |
 | Interactions                | Reported | Start the timer, open an entry's project field, step the report range back: input to the next paint, median of 3     |
 
@@ -104,12 +105,15 @@ page shows the scene whatever the settings say, so its numbers include the scene
 timer page runs last, because starting the timer writes entries the reports would show.
 
 - `--no-build` reuses `perf/.cache/build`.
+- `--build=<dir>` serves a saved copy of a build instead. To compare two builds, copy
+  `perf/.cache/build` aside after each `vite build`, then alternate runs with `--build`.
 - `--audit` prints exclusive raw HTML bytes for markup, query dehydration, hydration
   markers, and other scripts. SVG and class attributes are subsets of markup. It also
   counts mounted, laid-out backdrop filters (including offscreen elements), nested
   filters, shadow values, row shadows, and `will-change`. Pair it with `--scene` to count
   glass. The audit also opens 2025-10-01 through 2026-09-30 before Timer interactions,
-  for a full twelve-month report; this extra page has no committed budget.
+  for a full twelve-month report; this extra page has no committed budget, and its row in
+  the table isn't compared.
   Query bytes cover the serialized `dehydratedData` value; shared references defined in
   router state stay in the script count. Script tags and their attributes also stay there.
 - `--scene` turns the background and weather on, to see what they add. It prints the

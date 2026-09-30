@@ -1,8 +1,9 @@
 // Page checks in Chrome: the production build with the seeded database, signed in as the
 // company admin, at 1440 x 900 and pixel ratio 1.5 with a 4x CPU slowdown. Gated: bytes and DOM nodes. Reported: hydration, long tasks, interaction delay.
 //
-//   bun run perf:pages [--scene] [--update] [--no-build]
+//   bun run perf:pages [--scene] [--update] [--no-build | --build=<dir>] [--audit]
 
+import { resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright-core'
 import { change, readBaseline, table, withinTolerance, writeBaseline } from './checks/baseline'
@@ -36,12 +37,15 @@ interface Sizes {
 
 interface Timings {
   hydrateMs: number
+  // The first frame with a timesheet cell button in the DOM; 0 on pages without one.
+  gridMs: number
   longTasks: number
   longTaskMs: number
 }
 
 interface Probe {
   hydrated: number
+  grid: number
   longTasks: number[]
   inputs: { type: string; at: number; delay: number }[]
   lastInput: number
@@ -63,8 +67,19 @@ declare global {
 // Input delay: from the event's timestamp (its creation by the browser, at input) to the
 // second animation frame after it, so the frame that shows the handler's changes has painted.
 function installProbe() {
-  const probe: Probe = { hydrated: 0, longTasks: [], inputs: [], lastInput: 0 }
+  const probe: Probe = { hydrated: 0, grid: 0, longTasks: [], inputs: [], lastInput: 0 }
   window.perfProbe = probe
+
+  // The timesheet's grid, from server HTML while the parser inserts it or from the client
+  // after hydration: the frame after its first cell button is in the DOM.
+  const grid = new MutationObserver(() => {
+    if (!document.querySelector('.timesheet tbody button')) return
+    grid.disconnect()
+    requestAnimationFrame(() => {
+      probe.grid = performance.now()
+    })
+  })
+  grid.observe(document, { childList: true, subtree: true })
 
   let hy: { completed: WeakSet<object> } | undefined
   Object.defineProperty(window, '_$HY', {
@@ -187,6 +202,7 @@ async function loadPage(
       domNodes: document.getElementsByTagName('*').length,
       timings: {
         hydrateMs: window.perfProbe.hydrated,
+        gridMs: window.perfProbe.grid,
         longTasks: longTasks.length,
         longTaskMs: longTasks.reduce((sum, ms) => sum + ms, 0),
       },
@@ -283,6 +299,14 @@ function fixed(value: number): string {
   return value.toFixed(0)
 }
 
+function timingCells(timings: Timings): string[] {
+  return [
+    fixed(timings.hydrateMs),
+    timings.gridMs ? fixed(timings.gridMs) : '',
+    `${timings.longTasks} / ${fixed(timings.longTaskMs)}`,
+  ]
+}
+
 async function run() {
   const args = new Set(process.argv.slice(2))
   const started = performance.now()
@@ -290,13 +314,17 @@ async function run() {
   if (scene && args.has('--update')) {
     throw new Error('[perf] The baseline is taken with the scene off; drop --scene or --update')
   }
-  if (!args.has('--no-build')) await buildApp()
-  const app = await startApp({ database: await seededDatabase(), scene })
+  // --build serves a saved copy of a build, to alternate two builds without rebuilding.
+  const buildArg = process.argv.find((arg) => arg.startsWith('--build='))
+  const build = buildArg && resolve(buildArg.slice('--build='.length))
+  if (!build && !args.has('--no-build')) await buildApp()
+  const app = await startApp({ database: await seededDatabase(), build, scene })
   const browser = await chromium.launch({ channel: 'chrome' })
 
   const sizes: Record<string, Sizes> = {}
   const timings: Record<string, Timings> = {}
   const interactions: Partial<Interactions> = {}
+  const audited: { sizes?: Sizes; timings?: Timings } = {}
   try {
     for (const spec of PAGES) {
       // The gated "year" range ends at the seed's September. Audit a full twelve months
@@ -306,6 +334,8 @@ async function run() {
           path: '/lumen/reports?range=custom&from=2025-10-01&to=2026-09-30',
         })
         console.log('[12 months]', JSON.stringify(year.sizes))
+        audited.sizes = year.sizes
+        audited.timings = year.timings
         console.log(
           '[surfaces]',
           'reports (12 months)',
@@ -354,15 +384,24 @@ async function run() {
     rows.push([
       name,
       ...gated.map((key) => `${now[key]} ${scene ? '' : change(before?.[key], now[key])}`.trim()),
-      fixed(timings[name].hydrateMs),
-      `${timings[name].longTasks} / ${fixed(timings[name].longTaskMs)}`,
+      ...timingCells(timings[name]),
+    ])
+  }
+  if (audited.sizes && audited.timings) {
+    rows.push([
+      'reports (12 months, not gated)',
+      ...gated.map((key) => String(audited.sizes![key])),
+      ...timingCells(audited.timings),
     ])
   }
 
   const scale = `${CPU_SLOWDOWN}x CPU slowdown, scene ${scene ? 'on' : 'off'}`
   console.log(`\nGated (bytes as gzipped level 9; ${scale})`)
   console.log(
-    table(['page', 'html', 'html gz', 'js gz', 'css gz', 'dom', 'hydrate ms', 'long n / ms'], rows),
+    table(
+      ['page', 'html', 'html gz', 'js gz', 'css gz', 'dom', 'hydrate ms', 'grid ms', 'long n / ms'],
+      rows,
+    ),
   )
   console.log('\nInteractions, input to next paint, median of 3 (ms)')
   console.log(

@@ -1,37 +1,37 @@
 {
   "reports (week)": {
-    "htmlBytes": 175242,
-    "htmlGzip": 18243,
-    "jsGzip": 227883,
-    "cssGzip": 17548,
+    "htmlBytes": 146608,
+    "htmlGzip": 17689,
+    "jsGzip": 227832,
+    "cssGzip": 17673,
     "domNodes": 596
   },
   "reports (year)": {
-    "htmlBytes": 718644,
-    "htmlGzip": 36896,
-    "jsGzip": 227883,
-    "cssGzip": 17548,
+    "htmlBytes": 384489,
+    "htmlGzip": 30553,
+    "jsGzip": 227832,
+    "cssGzip": 17673,
     "domNodes": 2154
   },
   "settings": {
     "htmlBytes": 141354,
-    "htmlGzip": 16222,
-    "jsGzip": 229406,
-    "cssGzip": 17548,
+    "htmlGzip": 16219,
+    "jsGzip": 229391,
+    "cssGzip": 17673,
     "domNodes": 562
   },
   "sign-in": {
     "htmlBytes": 25621,
-    "htmlGzip": 6573,
-    "jsGzip": 226312,
-    "cssGzip": 17548,
+    "htmlGzip": 6570,
+    "jsGzip": 226297,
+    "cssGzip": 17673,
     "domNodes": 156
   },
   "timer": {
     "htmlBytes": 265029,
     "htmlGzip": 18220,
-    "jsGzip": 256828,
-    "cssGzip": 17548,
+    "jsGzip": 256811,
+    "cssGzip": 17673,
     "domNodes": 1195
   }
 }

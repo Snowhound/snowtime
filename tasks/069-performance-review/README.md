@@ -53,9 +53,10 @@ which are what a weak integrated GPU runs out of first.
 7. `07-fog.md`: a cheaper way to draw the mist.
 8. `08-scene-layers.md`: image decode, GPU memory, and full-screen layers under the weather.
 9. `09-webgpu-probe.md`: whether WebGPU would help enough to keep a second renderer.
+10. `10-report-table.md`: the report timesheet's HTML and hydration cost.
 
 01 comes first. After it, 04, 02, and 03 are the cheap, independent ones; 05 to 07 build on
-each other; 08 can go at any point; 09 goes last.
+each other; 08 and 10 can go at any point; 09 goes last.
 
 The effects and the fog don't have to look exactly as they do now. A faster variant that
 looks somewhat different, or a new idea, goes to Kait in the weather bench beside the
@@ -64,7 +65,7 @@ current one, and Kait signs it off.
 ## Acceptance criteria
 
 - [x] Subtask 01 done, and `docs/architecture.md` says how to run the harnesses
-- [ ] Subtasks 02 to 09 done, each with before and after numbers and a "Checked and left as
+- [ ] Subtasks 02 to 10 done, each with before and after numbers and a "Checked and left as
       is" list
 - [ ] The weather at calm pace, with the glass on, fits in 8 ms a frame (120 fps) on an
       integrated GPU at 1440 × 900, pixel ratio 1.5, on the timer and reports pages. This is a

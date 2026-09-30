@@ -22,7 +22,7 @@ import { m } from '~/paraglide/messages.js'
 import { type ReportPart, bucketLabel, longRange, shortBucketLabel } from './buckets'
 import { EmptyState } from './empty-state'
 import { GROUP_LABELS, type Group, type Unit } from './filters'
-import { PICK_CLASS, PickHint } from './pick-button'
+import { PickHint } from './pick-button'
 import type { Report } from './queries'
 import type { Row } from './rows'
 
@@ -31,7 +31,6 @@ import type { Row } from './rows'
 const ROW = 'border-b transition-colors hover:bg-muted/50'
 const ROW_HEAD =
   'timesheet-start bg-card text-foreground sticky left-0 z-10 p-2 pl-6 text-left align-middle'
-const CELL = 'p-2 align-middle text-right whitespace-nowrap tabular-nums'
 const ROW_TOTAL =
   'timesheet-end bg-card sticky right-0 z-10 p-2 pr-6 text-right align-middle tabular-nums'
 
@@ -52,12 +51,13 @@ export function Timesheet(props: {
   // One comparison per change rather than one per button.
   const pressed = createSelector(() => partKey(props.picked))
 
-  // One handler for every button, which carries its part in data attributes.
+  // One handler for every button. Its row is its <tr>'s `data-row`, none in the totals row, and
+  // its day or week is its column's; the first and last columns are names and totals.
   function pick(event: MouseEvent) {
-    const button = (event.target as HTMLElement).closest<HTMLElement>('[data-pick]')
-    if (!button) return
-    const { row, bucket } = button.dataset
-    props.onPick({ row: row || undefined, bucket: bucket || undefined })
+    const cell = (event.target as HTMLElement).closest('button')?.parentElement
+    if (!(cell instanceof HTMLTableCellElement)) return
+    const row = (cell.parentElement as HTMLTableRowElement).dataset.row
+    props.onPick({ row, bucket: buckets()[cell.cellIndex - 1] })
   }
 
   function buckets() {
@@ -80,36 +80,34 @@ export function Timesheet(props: {
     return (
       <button
         type="button"
-        data-pick=""
-        data-row={part.row}
-        data-bucket={part.bucket}
         aria-pressed={pressed(partKey(part))}
         aria-describedby="timesheet-pick-hint"
-        class={cn(PICK_CLASS, part.class)}
+        class={cn('pick', part.class)}
       >
         {part.children}
       </button>
     )
   }
 
+  // The button is written out rather than a Pick, so that the cell and its button are one
+  // template, which hydrates by one key rather than two.
   function Cell(cell: { ms: number; bucket: IsoDate; row?: string; class?: string }) {
+    function shade() {
+      return cn('timesheet-cell', current(cell.bucket) && 'bg-muted/50', cell.class)
+    }
     return (
-      <td
-        class={cn(
-          CELL,
-          current(cell.bucket) && 'bg-muted/50',
-          !cell.ms && 'text-muted-foreground/50',
-          cell.class,
-        )}
-      >
-        {cell.ms ? (
-          <Pick row={cell.row} bucket={cell.bucket}>
+      <Show when={cell.ms} fallback={<td class={cn(shade(), 'text-muted-foreground/50')}>·</td>}>
+        <td class={shade()}>
+          <button
+            type="button"
+            aria-pressed={pressed(partKey(cell))}
+            aria-describedby="timesheet-pick-hint"
+            class="pick"
+          >
             <Duration ms={cell.ms} />
-          </Pick>
-        ) : (
-          '·'
-        )}
-      </td>
+          </button>
+        </td>
+      </Show>
     )
   }
 
@@ -187,7 +185,7 @@ export function Timesheet(props: {
           <TableBody>
             <For each={props.rows}>
               {(row) => (
-                <tr class={ROW}>
+                <tr class={ROW} data-row={row.key}>
                   <th scope="row" class={`${ROW_HEAD} max-w-40 font-normal sm:max-w-64`}>
                     <Pick
                       row={row.key}
