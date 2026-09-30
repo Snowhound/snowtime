@@ -1,6 +1,6 @@
 # 04: Server queries
 
-Status: in progress
+Status: in-progress
 
 The report reads every entry in its range and sums it in JavaScript (`aggregate` in
 `src/server/reports/reports.server.ts`). For a year of the company seed that is about 20,000

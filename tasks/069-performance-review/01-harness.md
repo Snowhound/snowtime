@@ -1,6 +1,6 @@
 # 01: Performance harnesses
 
-Status: in progress (CI run on GitHub pending)
+Status: in-progress (CI run on GitHub pending)
 
 Three small harnesses that later work (and later agents) reuse instead of writing their own:
 a size and query check with no browser, a page run in Chrome on the year of data, and a

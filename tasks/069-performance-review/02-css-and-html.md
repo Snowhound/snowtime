@@ -1,6 +1,6 @@
 # 02: CSS and HTML
 
-Status: todo
+Status: in-progress
 
 Less CSS and HTML sent, and less work to style and paint it, without making the markup
 harder to read.

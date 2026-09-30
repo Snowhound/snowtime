@@ -1,6 +1,6 @@
 # 069: Performance review
 
-Status: todo
+Status: in-progress
 
 A measured pass over what the app sends, what the server reads, and what the scene draws.
 Tasks 037, 044, 045, 057, 059, and 063 fixed the known slow spots one at a time. This task
