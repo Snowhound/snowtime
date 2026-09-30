@@ -44,7 +44,7 @@ export type Zone = [number, number, number, number] | [number, number, number, n
 //   speed, and opacity.
 // - `band`: [top, bottom], the rows falling snow and rain keep to, as fractions of the image's
 //   height, so spray stays over the sea however the photo is cropped. Without a band they fill
-//   the screen. The mist ignores it (docs/architecture/scene.md).
+//   the screen.
 // - `share`: the share of special items: fluff among seeds, glints among midges. `glow`: how many
 //   fireflies fly apart from the midges.
 // - `zones`: up to four rectangles of the image: where glitter lies, so it misses water (without
@@ -284,7 +284,6 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
     // Sea fog below the moon, clear of the cliff.
     dark: wx('mist', {
       wind: -0.01,
-      band: [0.48, 0.72],
       zones: [[0, 0.48, 0.68, 0.72]],
       opacity: 0.8,
     }),
@@ -352,7 +351,7 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
   'coast-november': {
     horizon: 0.43,
     light: wx('spray', { wind: -0.5, band: [0.3, 1.05] }),
-    dark: wx('mist', { wind: -0.03, band: [0.32, 0.58] }),
+    dark: wx('mist', { wind: -0.03 }),
   },
   // A few flakes blowing in off the sea, on the right.
   'coast-december': {
@@ -426,7 +425,8 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
       fall: 1.3,
       colors: WET_SNOW,
     }),
-    dark: wx('mist', { wind: 0.008, band: [0.3, 0.68], amount: 1.3, opacity: 1.3 }),
+    // On the bog's water.
+    dark: wx('mist', { wind: 0.008, zones: [[0, 0.3, 1, 0.68]], amount: 1.3, opacity: 1.3 }),
   },
   // By day, clear skies, as on the coast.
   'land-april': {
@@ -447,7 +447,7 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
   'land-may': {
     horizon: 0.75,
     light: wx('seeds', { wind: 0.015, share: 0.5, amount: 2.5, size: 0.5 }),
-    dark: wx('mist', { wind: 0.008, band: [0.66, 0.86] }),
+    dark: wx('mist', { wind: 0.008 }),
   },
   'land-june': {
     horizon: 0.44,
@@ -479,7 +479,7 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
   'land-august': {
     horizon: 0.39,
     light: wx('dust', { wind: 0.03 }),
-    dark: wx('mist', { wind: 0.01, band: [0.32, 0.56] }),
+    dark: wx('mist', { wind: 0.01 }),
   },
   'land-september': {
     horizon: 0.68,
@@ -499,7 +499,7 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
         ],
       },
     }),
-    dark: wx('mist', { wind: 0.008, band: [0.57, 0.9], amount: 1.4, size: 1.2 }),
+    dark: wx('mist', { wind: 0.008, amount: 1.4, size: 1.2 }),
   },
   // Smaller and fainter, so they sit in the tinted picture rather than in front of it.
   'land-october': {

@@ -117,8 +117,8 @@ collections".
     then. The mountain images take a steady wind, with no gusts or shear.
   - Tuning: factors of each effect's amount, size, fall, and opacity, and fields for glitter's
     shimmer and glints and the midges' groups, go to the shaders as uniforms.
-  - Parts of the image: each Baltic image's horizon, the band that mist, spray, and midges
-    keep to, and zones (up to three rectangles: where glitter lies, so it misses water, where
+  - Parts of the image: each Baltic image's horizon, the band that falling snow and rain
+    (spray) keep to, and zones (up to three rectangles: where glitter lies, so it misses water, where
     midges and fireflies keep, and where mist lies) are fractions of the image. The renderer
     maps them to the screen the way `cover` and `background-position: center 20%` crop the
     photo, so they stay on the ice or the water on any screen. A recomposed image changes only
@@ -149,8 +149,9 @@ collections".
     integers and takes its coordinate in `highp`, because a `sin` hash and a `mediump`
     fraction break down there. The mist writes zero where it's too faint to show instead of
     discarding, which was up to a quarter faster on the Apple M1.
-  - Mist without zones keeps to the ground below the horizon, as glitter does; a mist preset's
-    `band` has no effect. The prototype does the same, so this is the look Kait approved.
+  - Mist without zones keeps to the ground below the horizon, as glitter does. Mists had
+    bands that were never applied; Kait kept that look for four pictures and chose land
+    March's band, now its zone (task 069, subtask 06).
   - Glitter's glint cycle comes from the amount and the glints wanted on a 1440 × 900 screen,
     not the point count, so a resize doesn't jump every speck to another point of its cycle.
 - Weather frame rate: each effect sets a target, and a preset can set its own. Blowing snow,

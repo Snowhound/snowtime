@@ -98,8 +98,10 @@ Found on the way: mist without zones never kept to its `band`. `prepare` always 
 least one zone (glitter's default, the ground below the horizon), so the old `u_zoneCount >
 .5` test was always true, in the prototype too. The band mists (coast November, land March,
 May, August, and September at night) lie between the horizon and the screen's foot, and
-that's the look Kait approved. The rewrite keeps it, and the comments now say so. Kait to
-decide: keep it and drop the mist bands, or honor the bands (a visible change).
+that's the look Kait approved. Compared in the bench on 2026-09-30, Kait kept it for four
+of them and chose the band for land March, whose mist now lies on the bog's water. Its band
+became its zone, which draws the same frames as the band did, and the mists' bands are gone.
+The "mist band" golden case went with them, and coast April's merged into "mist zones".
 
 ## Integer hash (signed off 2026-09-30)
 

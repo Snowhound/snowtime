@@ -1129,7 +1129,8 @@ The app (`src/lib/scene/weather.ts`) resolves every image to the same weather, b
 horizons and zones in `IMAGE_WEATHER`, colors as data, and presets that hold only values two or
 more images share, so a change here moves over by hand (task 073). It also differs where the
 notes below say so:
-it draws rain as quads rather than points, its fragment shaders are `mediump`, its photo sits
+it draws rain as quads rather than points, land March's night mist keeps to the bog's water
+(a zone in place of the band this page ignores), its fragment shaders are `mediump`, its photo sits
 at `center 20%`, it steps a frame down a refresh when frames drop, and it leaves out
 `LEGACY_WEATHER`, the sliders, and the Tune panel.
 
