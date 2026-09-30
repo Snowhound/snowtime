@@ -63,7 +63,7 @@ current one, and Kait signs it off.
 
 ## Acceptance criteria
 
-- [ ] Subtask 01 done, and `docs/architecture.md` says how to run the harnesses
+- [x] Subtask 01 done, and `docs/architecture.md` says how to run the harnesses
 - [ ] Subtasks 02 to 09 done, each with before and after numbers and a "Checked and left as
       is" list
 - [ ] The weather at calm pace, with the glass on, fits in 8 ms a frame (120 fps) on an
