@@ -1,4 +1,4 @@
-// Offers a passkey after sign-in, since nobody signs up with one (docs/architecture.md,
+// Offers a passkey after sign-in, since nobody signs up with one (docs/architecture/auth.md,
 // "Sign-in methods"). It shows above the page while the session can still add a passkey,
 // to a user without one, in a browser with WebAuthn, until they add one or dismiss it on
 // this device.

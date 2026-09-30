@@ -4,7 +4,7 @@ Status: done
 
 Deleting a project the server refuses, because it has time entries, waits up to 500 ms before
 the row goes: `optimistic`'s `delay`, the `deleteProjectKey` mutation state, and the rows'
-pending look exist only for this ("Application rules" in `docs/architecture.md`). If the
+pending look exist only for this ("Application rules" in `docs/architecture/README.md`). If the
 Projects view knew which projects have entries, it could say so before asking the server,
 and delete would be a plain optimistic update. Task 053 found this.
 
@@ -21,5 +21,5 @@ logged after the list loaded still makes the server refuse; the view shows that 
       refusal still shows as an error
 - [x] The `delay` option in `src/lib/queries/query.ts`, `deleteProjectKey`, and the
       Projects rows' pending state are gone
-- [x] `docs/architecture.md` ("Application rules") no longer describes the wait
+- [x] `docs/architecture/README.md` ("Application rules") no longer describes the wait
 - [x] `src/` has fewer lines than before

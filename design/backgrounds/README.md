@@ -17,8 +17,7 @@ there.
 The originals and the masters stay local and out of git (`.gitignore`): new images may replace
 them, and this README records how to make them again. Only the page files are committed, once,
 in `public/backgrounds/<collection>/`, one folder per collection, where the app serves them.
-They're AVIF only, because every supported browser decodes it (`docs/architecture.md`,
-"Seasonal scene").
+They're AVIF only, because every supported browser decodes it (`docs/architecture/scene.md`).
 
 `prototypes/scene.js` and, in the app, `src/lib/scene/scene.ts` pick the page size for the
 screen; `prototypes/README.md` records how the scene loads them and the load times.

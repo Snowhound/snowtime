@@ -1,6 +1,6 @@
 // The Organization view's queries and its optimistic mutations. Members, teams and
 // invitations are written through Better Auth's organization client; team roles through
-// setTeamRole (docs/architecture.md, "Tenancy"). Each Better Auth call names the organization
+// setTeamRole (docs/architecture/data.md, "Tenancy"). Each Better Auth call names the organization
 // the view shows, since the session's active one can change in another tab. Canceling an
 // invitation takes the invitation's organization. Members, teams and projects live in the
 // caches Reports, Projects and the timer read too, so each change shows there as well.

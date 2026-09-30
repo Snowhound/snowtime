@@ -2,7 +2,7 @@
 
 Status: done
 
-`src/env.ts` validates with Zod while `docs/architecture.md` names Valibot.
+`src/env.ts` validates with Zod while `docs/architecture/README.md` names Valibot.
 
 ## Acceptance criteria
 

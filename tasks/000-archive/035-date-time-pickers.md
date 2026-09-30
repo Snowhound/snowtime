@@ -18,7 +18,8 @@ scene.
 - [x] The date and time fields match the other inputs (height, border, radius, font, focus ring,
       icon) in light and dark, on glass and solid surfaces
 - [x] They look and behave the same in Chrome, Firefox, and Safari, desktop and mobile, or
-      `docs/architecture.md` records what stays native and why (for example the mobile pickers)
+      `docs/architecture/timer.md` records what stays native and why (for example the mobile
+      pickers)
 - [x] Typing, the keyboard, and screen readers work as well as with the native inputs, and the
       values follow the user's locale, time zone, and week start
 - [x] Checked with `docs/skills/ui-review/SKILL.md` at 1440, 850, and 390 px, light and dark, in

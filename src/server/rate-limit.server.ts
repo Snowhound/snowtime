@@ -1,4 +1,4 @@
-// Request counts for rate limits (docs/architecture.md, "Abuse limits"). With Upstash Redis
+// Request counts for rate limits (docs/architecture/auth.md, "Abuse limits"). With Upstash Redis
 // configured, every function instance shares the counts; without it they live in this
 // process's memory, which holds on one long-running server but not across Vercel's
 // instances. Better Auth takes the same store for /api/auth/*. Pure: better-auth.server.ts

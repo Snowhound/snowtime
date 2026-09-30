@@ -37,7 +37,7 @@ function checkSlug(slug: unknown) {
   )
 }
 
-// The slug names the organization in the app's URLs (docs/architecture.md, "Tenancy"), so it
+// The slug names the organization in the app's URLs (docs/architecture/data.md, "Tenancy"), so it
 // can't take one of the app's own paths, and never changes.
 export const organizationHooks = {
   beforeCreateOrganization: async ({ organization }) => {

@@ -2,7 +2,7 @@
 
 Status: done
 
-Environments from `docs/architecture.md` and the pipeline that migrates them.
+Environments from `docs/architecture/platform.md` and the pipeline that migrates them.
 Needs account access (GitHub, Turso, Vercel).
 
 ## Acceptance criteria

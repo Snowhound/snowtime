@@ -35,7 +35,7 @@ per effect.
 - [ ] Checked by eye in Chrome at 60 and 120 Hz and in Safari. Safari limits
       `requestAnimationFrame` to 60 Hz on ProMotion screens by default, so it draws at most
       60 fps there. Moved to task 067.
-- [x] `docs/architecture.md` ("Weather") records the per-effect rates and why they count
+- [x] `docs/architecture/scene.md` ("Weather") records the per-effect rates and why they count
       refreshes instead of milliseconds.
 
 ## Findings (2026-09-27)

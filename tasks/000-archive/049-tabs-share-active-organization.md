@@ -18,7 +18,7 @@ Two fixes fit the recorded decisions:
 - The client sends the organization it shows with each scoped call, and `scopeMiddleware`
   refuses a call whose organization differs from the session's, with a code the client
   answers by reading the session again. The session stays the source of the active
-  organization ("Tenancy" in `docs/architecture.md`).
+  organization ("Tenancy" in `docs/architecture/data.md`).
 - Each tab keeps its own organization, and the server uses the one the call names after
   checking membership. Tabs then work side by side, but the active organization stops
   being the session's alone, which changes "Tenancy".
@@ -37,7 +37,7 @@ it, since a call can be in flight during the switch.
 
 ## Outcome
 
-Done on 2026-09-25 with the first option ("Tenancy" in `docs/architecture.md`).
+Done on 2026-09-25 with the first option ("Tenancy" in `docs/architecture/data.md`).
 `scopeMiddleware` sends the organization the tab shows and refuses a call for another
 with `ORGANIZATION_CHANGED`. The tab then reads the session again, drops the old
 organization's queries, and shows a notice. The Organization view's Better Auth calls name

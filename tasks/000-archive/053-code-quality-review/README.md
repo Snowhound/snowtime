@@ -10,7 +10,7 @@ a class of code. Task 045's timer rows show the target for the performance revie
 
 The review must leave the code no larger or more complex than it found it. Changes that
 remove or simplify code need no approval, however large, as long as every requirement in
-`docs/product.md` and `docs/architecture.md` still holds and the tests pass. Ask before
+`docs/product.md` and `docs/architecture/` still holds and the tests pass. Ask before
 any fix that adds a meaningful amount of code, such as a new abstraction, helper module,
 or dependency. Record areas checked and found sound in the subtask, so a later review can
 skip them.

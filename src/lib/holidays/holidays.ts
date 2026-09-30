@@ -1,4 +1,4 @@
-// Working days by region, for the taglines about gaps in the timesheet (docs/architecture.md,
+// Working days by region, for the taglines about gaps in the timesheet (docs/architecture/data.md,
 // "Working days"). Saturday and Sunday are never working days, whatever the Week start
 // setting. Estonia's days off and shortened days come from riigipühad.ee, saved in ee.json by
 // `bun run holidays:update`; the US's follow rules; other regions have weekends only.

@@ -4,7 +4,7 @@ import { SLUG_PATTERN } from '~/lib/app-paths'
 import { organizationOfPath } from '~/lib/queries/session'
 
 // The signed-in layout, under the organization's slug: each tab shows the organization in its
-// URL (docs/architecture.md, "Tenancy"). Signed-out users go to sign-in and come back to the
+// URL (docs/architecture/data.md, "Tenancy"). Signed-out users go to sign-in and come back to the
 // page they asked for; users without an organization go to their invitation or create one.
 // A first segment that can't be a slug, such as favicon.ico, is not found.
 export const Route = createFileRoute('/$org')({

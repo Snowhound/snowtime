@@ -16,5 +16,5 @@ and each user's language lives in their settings.
 - [x] The view settings move from `localStorage` into the same migration: `theme`,
       `timer_layout`, `show_summary`; `updateSettings` takes a partial patch
 - [x] `getSettings` takes the browser's locale for a new row; `updateSettings` changes it
-- [x] `docs/architecture.md` records the split: the server returns keys, dates and
+- [x] `docs/architecture/platform.md` records the split: the server returns keys, dates and
       numbers; the client formats and translates them

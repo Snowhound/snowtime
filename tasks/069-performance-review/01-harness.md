@@ -78,7 +78,7 @@ real glass CSS.
       optimization, so subtasks 02 to 08 start from them
 - [x] CI runs `bun run perf`. If it makes CI too slow on GitHub's runners, it runs on a
       self-hosted runner instead (Kait agreed to set one up), not less often
-- [x] `docs/architecture.md` points to `perf/README.md`
+- [x] `docs/architecture/platform.md` points to `perf/README.md`
 
 ## Notes
 

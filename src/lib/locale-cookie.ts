@@ -1,4 +1,4 @@
-// The language cookie holds only a chosen language: the account's (docs/architecture.md,
+// The language cookie holds only a chosen language: the account's (docs/architecture/auth.md,
 // "Cookies and consent"). Paraglide's getLocale writes the cookie on its first call in the
 // browser, even when the language only came from the browser's own preference, so a first
 // visit would store one without anyone choosing it. This skips that write; the browser's

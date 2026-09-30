@@ -1,5 +1,5 @@
 // Shared filters for soft-deleted tables. Server functions build their queries from these
-// instead of repeating sys_deleted = 0 (docs/architecture.md, "Application rules").
+// instead of repeating sys_deleted = 0 (docs/architecture/README.md, "Application rules").
 import { and, eq, type SQL, sql } from 'drizzle-orm'
 import { project, timeEntry } from '~/db/schema'
 import type { Scope } from './scope.server'

@@ -27,12 +27,12 @@ const TimeZone = v.pipe(
 export const WeekStart = v.picklist(['mon', 'sun'])
 export type WeekStart = v.InferOutput<typeof WeekStart>
 
-// UI languages; the first is the default (docs/architecture.md, "Internationalization").
+// UI languages; the first is the default (docs/architecture/platform.md, "Internationalization").
 export const LOCALES = ['en', 'et'] as const
 const Locale = v.picklist(LOCALES)
 type Locale = v.InferOutput<typeof Locale>
 
-// View settings, kept on the server so the first paint uses them (docs/architecture.md,
+// View settings, kept on the server so the first paint uses them (docs/architecture/timer.md,
 // "User settings"). The first value of each list is the default.
 export const THEMES = ['system', 'light', 'dark'] as const
 export const Theme = v.picklist(THEMES)

@@ -1,4 +1,4 @@
-// Caps that keep one account from growing the database without bound (docs/architecture.md,
+// Caps that keep one account from growing the database without bound (docs/architecture/auth.md,
 // "Abuse limits"). Each sits far above honest use: reaching one means a script, not a team.
 export const limits = {
   // The organization plugin counts every organization the user belongs to, invited ones

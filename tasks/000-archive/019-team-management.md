@@ -3,7 +3,7 @@
 Status: done
 
 The organization plugin creates teams and adds members to them, but it has no team
-roles. `team_member.role` is an app column (`docs/architecture.md`, "Tenancy"), so only
+roles. `team_member.role` is an app column (`docs/architecture/data.md`, "Tenancy"), so only
 the app can make someone a team lead. The UI also needs to list members and teams for
 pickers and filters.
 

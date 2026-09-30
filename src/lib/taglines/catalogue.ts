@@ -1,4 +1,4 @@
-// The tagline's sets beyond the season's own (docs/architecture.md, "Tagline"). Each set holds
+// The tagline's sets beyond the season's own (docs/architecture/taglines.md). Each set holds
 // its lines per language, written for that language rather than translated, and shows only in
 // the languages it has. Date, range, and behaviour sets have three lines, the third for the
 // tagline's cue; period sets have two. A line can hold a placeholder, the same in every

@@ -1,6 +1,6 @@
 // Which sign-in methods an environment offers. Pure, so better-auth.server.ts and getSignInMethods
 // build from the same rule and cannot disagree about what is configured. Also which provider
-// addresses count as verified (docs/architecture.md, "Sign-in methods").
+// addresses count as verified (docs/architecture/auth.md, "Sign-in methods").
 import { APIError } from 'better-auth/api'
 
 export type SignInMethod = 'google' | 'github' | 'microsoft' | 'password' | 'passkey'
@@ -43,7 +43,7 @@ export function socialProviders(config: SignInConfig) {
   }
 }
 
-// Password sign-in is for local development with seeded users only (docs/architecture.md,
+// Password sign-in is for local development with seeded users only (docs/architecture/auth.md,
 // "Sign-in methods").
 export function passwordEnabled(config: SignInConfig) {
   return config.NODE_ENV === 'development'

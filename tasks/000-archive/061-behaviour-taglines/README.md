@@ -3,7 +3,7 @@
 Status: done
 
 The tagline picks its set from the date and season only (`src/lib/scene/seasons.ts`,
-`docs/architecture.md`, "Tagline"). Add sets that react to the user's own timesheet: a timer
+`docs/architecture/taglines.md`). Add sets that react to the user's own timesheet: a timer
 left running too long, gaps in recent days, and grudging praise when everything is in. The
 tone stays never satisfied: praise always ends in a demand. Add sets for dates the calendar
 doesn't cover yet. With this many sets, move them out of the Paraglide messages into a
@@ -44,6 +44,6 @@ Subtasks, in order:
 ## Acceptance criteria
 
 - [x] The subtasks are done
-- [x] `docs/architecture.md`, "Tagline", records the catalogue, the order sets are picked
+- [x] `docs/architecture/taglines.md`, records the catalogue, the order sets are picked
       in, and the fill rules
 - [x] `docs/product.md` mentions the Country setting and what it affects

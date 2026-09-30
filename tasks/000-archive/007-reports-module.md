@@ -2,7 +2,7 @@
 
 Status: done
 
-The one tested `reports` module from `docs/architecture.md`: day and week boundaries
+The one tested `reports` module from `docs/architecture/data.md`: day and week boundaries
 in the user's zone, queried as UTC ranges, aggregated in TypeScript.
 
 ## Acceptance criteria

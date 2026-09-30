@@ -1,4 +1,4 @@
-// The fill summary the timesheet taglines pick from (docs/architecture.md, "Tagline"): how the
+// The fill summary the timesheet taglines pick from (docs/architecture/taglines.md): how the
 // user's recent working days are filled, in their zone and region, across all their
 // organizations. The server computes it with the session, so the server and the browser pick
 // the same set.

@@ -1,4 +1,4 @@
-// Calendar math in a user's IANA time zone, for reports (docs/architecture.md, "Time
+// Calendar math in a user's IANA time zone, for reports (docs/architecture/data.md, "Time
 // zones"). Calendar days are ISO dates such as '2026-03-29'; instants are epoch
 // milliseconds. Pure: Intl supplies the zone offsets, so tests need no database.
 

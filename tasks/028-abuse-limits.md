@@ -42,4 +42,4 @@ open.
       or count only the reads that cover long ranges.
 - [ ] Vercel Firewall: bot protection and a rate-limit rule on the app, if the plan
       in use allows them (check against the plan decided in `docs/hosting.md`).
-- [x] The limits (done) and the storage choice are recorded in `docs/architecture.md`.
+- [x] The limits (done) and the storage choice are recorded in `docs/architecture/auth.md`.

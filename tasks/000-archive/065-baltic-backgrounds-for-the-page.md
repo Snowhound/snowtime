@@ -94,7 +94,7 @@ Kait's decision (2026-09-28): lessen the dimmed tint slightly in light mode, rat
 generate other pictures for it. Prototype it first, in `STRENGTHS` in `prototypes/scene.js`,
 for example 0.4 instead of 0.5 for `dimmed.light`, and compare it with the current tint on
 the washed-out scenes. Then apply the chosen value in `STRENGTHS` in `src/lib/scene/scene.ts`
-and record it in `docs/architecture.md`, "Seasonal scene". The tint is what keeps the text
+and record it in `docs/architecture/scene.md`. The tint is what keeps the text
 readable, so the new value must keep the taglines readable and each season's `titleLight` at
 5:1 or better on every image (task 062). This can go ahead of the new images, and the
 sheets then use the new value.

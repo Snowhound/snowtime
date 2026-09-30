@@ -39,7 +39,7 @@ the timer at 79–82 ms with 417 inputs and buttons; the card must not take Repo
 - [x] The server groups and pages the list: "By description" returns only the merged rows,
       and "By day" returns one page at a time, capped by entry count (about 100) rather
       than by days, so "Everyone" in a large organization stays bounded. The paging is
-      recorded in `docs/architecture.md`.
+      recorded in `docs/architecture/reports.md`.
 - [x] Opening Reports with cached data stays under 80 ms of main-thread work at 1×, measured
       as in task 053 for a month by project with many projects, with the 4× figure recorded
       here. The limit was 50 ms; task 059 relaxed it to 80 ms for this data on 2026-09-27.

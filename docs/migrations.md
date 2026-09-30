@@ -1,6 +1,6 @@
 # Database migrations
 
-Read this before changing the schema. The why is in `architecture.md` ("Schema and
+Read this before changing the schema. The why is in `architecture/data.md` ("Schema and
 migrations"); this is the how.
 
 ## Workflow
@@ -40,7 +40,7 @@ gitignored `.env.local`. Never put tokens in tracked env files.
 ## SQL conventions
 
 These keep the drift check accurate; the spike behind them is summarized in
-`architecture.md`.
+`architecture/data.md`.
 
 - Tables: singular `snake_case`. Primary keys `text` (UUIDv7).
 - Timestamps: `integer` epoch milliseconds, UTC. In `schema.ts`:
@@ -59,7 +59,7 @@ These keep the drift check accurate; the spike behind them is summarized in
 
 ### Audit columns
 
-Every app-owned table ends with the audit columns (`docs/architecture.md`, "Data
+Every app-owned table ends with the audit columns (`docs/architecture/data.md`, "Data
 conventions" has the reasons):
 
 ```sql

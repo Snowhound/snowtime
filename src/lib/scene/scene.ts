@@ -227,8 +227,8 @@ const PHOTO_VERSIONS: Partial<Record<ImageId, number>> = {
 }
 
 // Each collection's files are in a folder of its own, public/backgrounds/<collection>/. They're
-// AVIF only: every supported browser decodes it (docs/architecture.md, "Supported browsers"). One
-// that doesn't fails the load, which leaves the page color behind the scene.
+// AVIF only: every supported browser decodes it (docs/architecture/platform.md, "Supported
+// browsers"). One that doesn't fails the load, which leaves the page color behind the scene.
 export function photoUrl(id: ImageId, theme: PhotoTheme, width: number) {
   const version = String(PHOTO_VERSIONS[id] ?? 2).padStart(2, '0')
   return `/backgrounds/${imageCollection(id)}/${id}-${theme}-${version}-${width}.avif`

@@ -35,7 +35,7 @@ on a phone, where the timesheet scrolls sideways. Breakdown shows who worked on 
       Breakdown top-level total. A second-level row doesn't narrow.
 - [x] Tests cover `trackedDays`, the second-level totals and their role rules, the chart's
       series and "Other", the view param, and narrowing from Summary and Breakdown.
-- [x] `docs/architecture.md` records the views and the Breakdown function; the prototype
+- [x] `docs/architecture/reports.md` records the views and the Breakdown function; the prototype
       README entry says the views are in the app.
 - [x] Checked in the dev app at 1440, 1280, and 390 px, light and dark, as member, team lead,
       and admin: no horizontal page scroll and no console errors.

@@ -1,4 +1,4 @@
-// The Country setting (docs/architecture.md, "Working days"): the countries with holiday data,
+// The Country setting (docs/architecture/data.md, "Working days"): the countries with holiday data,
 // and 'other' for weekends only. Without a saved country, the time zone gives a guess. The
 // server and the browser both use it, so they count the same working days.
 import type { Region } from './holidays'

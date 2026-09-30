@@ -38,7 +38,7 @@ const errorText: Record<AppErrorKey, () => string> = {
 
 // Refusals from Better Auth's client calls, by the code its error carries (unwrap in
 // src/lib/auth-client.ts throws it). The organization plugin checks roles, owners and
-// invitations itself (docs/architecture.md, "Tenancy"); these are the refusals the
+// invitations itself (docs/architecture/data.md, "Tenancy"); these are the refusals the
 // Organization view, creating an organization, and accepting an invitation can meet.
 const authErrorText: Record<string, () => string> = {
   YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER: m.error_last_owner,

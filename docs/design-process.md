@@ -4,7 +4,7 @@ As of 2026-09-24.
 
 Snowtime is a Toggl-style time tracker for Snowhound that can also host other
 organizations. This document traces how its design took shape across 54 commits on
-`main`. For the current decisions, see [architecture.md](architecture.md).
+`main`. For the current decisions, see [architecture](architecture/README.md).
 
 The account draws on the commit history, changes to the product, architecture, hosting,
 and migration docs, and the task files, including the archive. Surviving Claude Code
@@ -24,7 +24,7 @@ included Vercel, Better Auth, TanStack Query, TanStack Form, Solid-UI, and T3 En
 The first prompt asked Claude to record those choices without adding speculative ones.
 It produced three kinds of working documents:
 
-- `docs/architecture.md` records technical decisions and their reasons.
+- `docs/architecture/` records technical decisions and their reasons.
   `docs/product.md` sets MVP scope; `docs/hosting.md` records Vercel and Turso limits;
   `docs/migrations.md` governs schema changes.
 - `tasks/` holds one file per task, with a status and acceptance criteria. Larger tasks

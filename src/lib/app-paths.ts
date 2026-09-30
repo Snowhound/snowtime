@@ -1,5 +1,5 @@
 // The signed-in pages live under the organization's slug: /<slug>/timer, /<slug>/reports,
-// and so on (docs/architecture.md, "Tenancy"). The server shares this file.
+// and so on (docs/architecture/data.md, "Tenancy"). The server shares this file.
 
 // The pages under /<slug>/. An old link to one of them, such as /timer, goes to the same page
 // in the default organization.

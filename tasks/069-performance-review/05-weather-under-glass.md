@@ -48,7 +48,7 @@ screen.
       against today's (weather bench, trace summary). At 120 Hz, only today's glass against
       the chosen copy, on the timer layout
 - [x] The chosen option in the app, with the numbers and the reason in
-      `docs/architecture.md` ("Seasonal scene", "Glass")
+      `docs/architecture/scene.md` ("Glass")
 - [x] Nothing looks different except where Kait agreed to it, checked by Kait while
       scrolling on the timer and reports pages, in both themes, in Chrome and Safari
 - [x] Popovers, menus, and dialogs unaffected (they're solid and render outside the frame;

@@ -1,5 +1,5 @@
 # Checks every PR and push to main; tests and db:drift use throwaway local databases. A push
-# to main then migrates prod and deploys it (docs/architecture.md, "Environments and
+# to main then migrates prod and deploys it (docs/architecture/platform.md, "Environments and
 # deployment").
 name: CI
 
@@ -53,7 +53,7 @@ jobs:
       - name: Performance budgets
         run: bun run perf
 
-      # Drift is a warning by decision (docs/architecture.md, "Schema and migrations"): the
+      # Drift is a warning by decision (docs/architecture/data.md, "Schema and migrations"): the
       # script exits 0 on drift and fails only when the migrations fail on an empty database.
       - name: Schema drift
         run: |

@@ -43,7 +43,7 @@ two organizations can stay open side by side.
   `OrganizationNotice` and its messages. `followSession` keeps resetting the cache when
   the session turns out to be another user's.
 - The head script's intro check matches the new app paths.
-- Docs: rewrite the Tenancy section of `docs/architecture.md`. The "Rejected: each tab
+- Docs: rewrite the Tenancy section of `docs/architecture/data.md`. The "Rejected: each tab
   keeping its own organization" entry becomes the decision.
 
 ## Acceptance criteria
@@ -56,4 +56,4 @@ two organizations can stay open side by side.
 - [x] The code listed under "Delete" is gone; tests cover the new middleware input and
       the redirects.
 - [x] Reserved slugs are refused when creating an organization.
-- [x] `docs/architecture.md` records the decision.
+- [x] `docs/architecture/data.md` records the decision.

@@ -132,7 +132,7 @@ final image) moved to task 066.
 ## Acceptance criteria
 
 - [x] The collections, the weather rule, and the setting's behavior are recorded in
-      `docs/architecture.md`, "Seasonal scene"
+      `docs/architecture/scene.md`
 - [x] Settings picks the collection and pin as in `prototypes/settings.html`, the
       Appearance popover and the sign-in menu show the collection, and a stored
       `sceneSeason` carries over as a pinned mountain image

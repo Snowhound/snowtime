@@ -184,7 +184,7 @@ saved to `perf/.cache/weather/` for comparison.
   so only large gaps between variants mean anything; `--window=<ms>` lengthens each
   measured window (500 by default) to steady it.
 - Timing draws each image's photo, since the glass shows a blurred copy of it
-  (`docs/architecture.md`, "Glass"). `--variant=live` blurs the surfaces live instead, as
+  (`docs/architecture/scene.md`, "Glass"). `--variant=live` blurs the surfaces live instead, as
   the app does before the copy is ready.
 
 A case is a preset from `IMAGE_WEATHER` with the tuning fields that take other paths

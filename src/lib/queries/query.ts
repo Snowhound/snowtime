@@ -7,7 +7,7 @@ import { v7 as uuidv7 } from 'uuid'
 export const ORGANIZATION_STALE_TIME = 5 * 60_000
 
 // Ids for app-owned rows, generated on the client so an optimistic row keeps its key once
-// the server confirms it (docs/architecture.md, "Data conventions").
+// the server confirms it (docs/architecture/data.md, "Data conventions").
 export function newId() {
   return uuidv7()
 }

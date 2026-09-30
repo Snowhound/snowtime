@@ -4,7 +4,7 @@ Status: done
 
 Server checks that read and then write can race, as the 24-hour entry bug showed. Rules
 that must always hold belong in the database; caps can stay approximate
-(`docs/architecture.md`, "Limits").
+(`docs/architecture/auth.md`, "Abuse limits").
 
 ## Acceptance criteria
 
@@ -42,7 +42,7 @@ connections to one file don't reproduce them reliably, because of task 043.
   `startTimer` inserts a new running entry there. That entry blocks every later timer
   (`timer_running_in_left_organization`), and the user can't stop it. `startTimer` now
   checks membership again inside its transaction (`timer.test.ts`).
-- `docs/architecture.md` said the `updated_at` trigger was the only trigger allowed,
+- `docs/architecture/README.md` said the `updated_at` trigger was the only trigger allowed,
   which stopped being true with `time_entry_max_length`. "Application rules" now allows
   guard triggers for rules a race can break, and "Data conventions" and "Tenancy" record
   the new rules.

@@ -1,7 +1,7 @@
 // Teams and members of the scope's organization. Better Auth's organization plugin owns
 // teams, team membership and invitations, and the UI calls it for those; these rules cover
 // what the plugin cannot: team roles (team_member.role is an app column) and lists that
-// include them (docs/architecture.md, "Tenancy").
+// include them (docs/architecture/data.md, "Tenancy").
 import { and, asc, eq } from 'drizzle-orm'
 import type { Database } from '~/db'
 import { member, team, teamMember, user } from '~/db/schema'

@@ -11,7 +11,7 @@ that read `data` before the resource's first load finished keeps a computation t
 counts each restart as pending, so the route's `Suspense` boundary shows its fallback and the
 page again (TanStack/query#9955). Components now read queries through our own `useQuery`
 (`src/lib/queries/use-query.ts`), which never suspends ("Application rules" in
-`docs/architecture.md`).
+`docs/architecture/README.md`).
 
 Checked in the dev app on 2026-09-29: Alt+arrow moves and a list save keep focus and the
 calendar's scroll, and no page node leaves the document. The app frame still leaves and

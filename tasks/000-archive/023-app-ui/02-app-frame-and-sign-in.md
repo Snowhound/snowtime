@@ -14,7 +14,7 @@ Prototypes: `prototypes/app-frame.js` and `prototypes/auth.html` (01 · Card).
       user menu (Profile, Settings, theme, Sign out); navigation moves to a second row
       below 768 px
 - [x] The server renders the theme class from `user_settings`, so the first paint has
-      no flash; signed-out pages follow the system theme (`docs/architecture.md`, "User
+      no flash; signed-out pages follow the system theme (`docs/architecture/timer.md`, "User
       settings")
 - [x] Sign in shows only the methods `getSignInMethods` returns (task 022): the configured
       providers, passkey, and the password form in local development only

@@ -1,4 +1,4 @@
-// The check that tells a browser too old for the app (docs/architecture.md, "Supported
+// The check that tells a browser too old for the app (docs/architecture/platform.md, "Supported
 // browsers"). It runs from <head>, before the app's scripts, which an old browser may not even
 // parse, so it is ES5 on its own <script>, and a test parses it as ES5. It tests features,
 // not versions: an older browser that has what the app uses sees no notice.

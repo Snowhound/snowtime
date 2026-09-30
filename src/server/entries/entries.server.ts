@@ -1,6 +1,6 @@
 // Time entries in the scope's organization. Everyone writes their own entries; admins and
 // owners also write other members' entries; team leads only read their teams' entries
-// (docs/architecture.md, "Tenancy").
+// (docs/architecture/data.md, "Tenancy").
 import { and, count, desc, eq, gt, inArray, isNull, lt, min, ne, or } from 'drizzle-orm'
 import type { Database, Executor } from '~/db'
 import { member, timeEntry } from '~/db/schema'

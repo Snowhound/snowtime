@@ -16,5 +16,5 @@ components exist. Server and database code stays on `bun test`.
 - [x] `bun run test` runs both suites; separate scripts run each one
 - [x] One test of a real component (for example the timer control) passes (task 023,
       timer)
-- [x] The testing split recorded in `docs/architecture.md`
+- [x] The testing split recorded in `docs/architecture/README.md`
 - [x] CI runs both suites (task 009)

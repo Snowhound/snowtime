@@ -193,7 +193,7 @@ the last two columns from 8 seconds at 10 concurrent.
   - `README.md` links the index.
   - `docs/hosting.md` gains the self-hosted constraints (single process, backups, server
     size).
-  - `docs/architecture.md` no longer names Vercel as the only adapter.
+  - `docs/architecture/platform.md` no longer names Vercel as the only adapter.
 - [x] A CI deploy job for the self-hosted target, or a documented manual deploy. Manual,
       in the runbook.
 - [ ] If Snowhound's production moves, the privacy page names the server's provider (and

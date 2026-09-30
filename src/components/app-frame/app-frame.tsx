@@ -46,7 +46,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
   })
 
   // The first getSettings call creates the user's settings from the browser's time zone
-  // and language (docs/architecture.md, "User settings"); the server can't know the zone.
+  // and language (docs/architecture/timer.md, "User settings"); the server can't know the zone.
   onMount(async () => {
     if (props.session.settings) return
     await getSettings({

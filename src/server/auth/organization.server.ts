@@ -1,5 +1,5 @@
 // Organization settings the app keeps in columns of its own, beside Better Auth's
-// (docs/architecture.md, "Tenancy"). Better Auth's organization client renames an
+// (docs/architecture/data.md, "Tenancy"). Better Auth's organization client renames an
 // organization; these cover what the plugin doesn't know about.
 import { eq } from 'drizzle-orm'
 import type { Database } from '~/db'

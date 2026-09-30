@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import { Uuidv7 } from '../schemas'
 
-// Team leads read their team members' entries and reports (docs/architecture.md,
+// Team leads read their team members' entries and reports (docs/architecture/data.md,
 // "Tenancy"); a team can have several.
 export const TEAM_ROLES = ['lead', 'member'] as const
 

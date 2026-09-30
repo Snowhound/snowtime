@@ -36,4 +36,4 @@ rules don't get the region. Easter shows from Good Friday to Easter Monday.
 - [x] The sets above are in the catalogue (subtask 01), with Easter computed for movable
       dates
 - [x] A test checks that no set falls on 14 June, 23 August, or 22 September
-- [x] `docs/architecture.md`, "Tagline", lists the dated sets
+- [x] `docs/architecture/taglines.md`, lists the dated sets

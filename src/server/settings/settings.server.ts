@@ -1,6 +1,6 @@
 // Per-user settings: time zone, week start, UI language and view settings
-// (docs/architecture.md, "Time zones" and "User settings"). They belong to the user, not an
-// organization, so these rules take the user id.
+// (docs/architecture/data.md, "Time zones", and docs/architecture/timer.md, "User settings").
+// They belong to the user, not an organization, so these rules take the user id.
 import { eq } from 'drizzle-orm'
 import type { Database } from '~/db'
 import { userSettings } from '~/db/schema'

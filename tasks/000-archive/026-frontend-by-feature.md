@@ -26,6 +26,6 @@ the parallel `src/functions/`, `src/schemas/`, and `src/server/` trees.
       more than one feature imports, generic helpers, and code shared with the server
 - [x] Solid-UI components stay in `src/components/ui/`, where the registry copies go
 - [x] Server code grouped by domain, with the client's allowed imports recorded in
-      `docs/architecture.md` ("Application rules")
+      `docs/architecture/README.md` ("Application rules")
 - [x] Views built after this task (023 subtasks 05 to 08) follow the layout: task 023's
       description points to it

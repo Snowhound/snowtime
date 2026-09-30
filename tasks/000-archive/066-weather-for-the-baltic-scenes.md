@@ -298,5 +298,5 @@ the finals:
 - [x] Each effect holds its frame rate on a 120 Hz screen with glass surfaces, and the
       taglines read over it
 - [x] New effects have hints in `messages/en.json` and `messages/et.json`
-- [x] `docs/architecture.md`, "Seasonal scene", describes the wind and the new effects, and
+- [x] `docs/architecture/scene.md`, describes the wind and the new effects, and
       `prototypes/README.md` matches the app

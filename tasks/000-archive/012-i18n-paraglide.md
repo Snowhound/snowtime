@@ -2,7 +2,7 @@
 
 Status: done
 
-Paraglide is planned in `docs/architecture.md`. Cheaper to add before UI strings pile up.
+Paraglide is planned in `docs/architecture/platform.md`. Cheaper to add before UI strings pile up.
 English is the default language and Estonian the second. The server side is task 018.
 
 ## Acceptance criteria

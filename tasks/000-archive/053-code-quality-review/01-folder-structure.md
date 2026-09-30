@@ -21,7 +21,7 @@ Changed:
 - `scene.ts`, `scene.test.ts`, `weather.ts`, `seasons.ts`, and `intro.ts` moved to
   `src/lib/scene/`; `scene-layer.tsx`, `scenery-fields.tsx`, `season-tagline.tsx`, and
   `intro.tsx` moved to `src/components/scene/`. Paths in comments, `src/styles.css`,
-  `docs/architecture.md`, `design/backgrounds/README.md`, and tasks 050 and 051 follow.
+  `docs/architecture/README.md`, `design/backgrounds/README.md`, and tasks 050 and 051 follow.
   The move is in `.git-blame-ignore-revs`.
 - The shared queries (`session.ts`, `settings.ts`, `members.ts`, `projects.ts`,
   `teams.ts`, `passkeys.ts`, `sign-in-methods.ts`, `query.ts`) moved to

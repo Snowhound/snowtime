@@ -14,5 +14,5 @@ which methods an environment has configured, so it shows only those.
 - [x] `getSignInMethods` in `src/functions/auth.ts` runs signed out and returns only
       method ids: `google`, `github`, `microsoft`, `password` (development only), `passkey`
 - [x] The rule that builds the list is a pure function in a `*.server.ts` module, with tests
-- [x] `docs/architecture.md`: env var list, sign-in table, redirect URLs per provider and
+- [x] `docs/architecture/auth.md`: env var list, sign-in table, redirect URLs per provider and
       environment, and profile edits going through the Better Auth client

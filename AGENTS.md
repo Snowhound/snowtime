@@ -4,7 +4,7 @@
 
 - Product scope: `docs/product.md`
 - Local setup, seeded users, and scripts: `docs/development.md`
-- Architecture decisions: `docs/architecture.md`
+- Architecture decisions: `docs/architecture/`
 - Data model: `datamodel/` (DBML diagram, `bun run datamodel` to view)
 - Migrations: `docs/migrations.md` — read before touching the schema
 - Hosting constraints: `docs/hosting.md`
@@ -50,7 +50,7 @@ Edit their source files at the paths above so both agents use the same instructi
 - A component gets its own folder, `<name>/<name>.tsx`, once it has subcomponents,
   helpers, or tests that nothing else in the feature uses.
 - Backend code is grouped by domain in `src/server/<domain>/` ("Application rules" in
-  `docs/architecture.md`). Client code imports a domain's `*.functions.ts` and
+  `docs/architecture/README.md`). Client code imports a domain's `*.functions.ts` and
   `*.schemas.ts`, plus `src/server/errors.ts` and `src/server/schemas.ts`. It never
   imports `*.server.ts`, not even for a type.
 - Import with a relative path inside the importer's area: one feature folder,

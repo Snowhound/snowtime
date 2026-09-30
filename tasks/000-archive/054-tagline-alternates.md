@@ -12,7 +12,7 @@ and nothing records how the app picks among a season's sets. Task 053 found the 
 ## Acceptance criteria
 
 - [x] How the app picks among a season's sets is decided and recorded in
-      `docs/architecture.md`, for example a different set per visit or per week, so the
+      `docs/architecture/taglines.md`, for example a different set per visit or per week, so the
       tagline doesn't wear out. The server and the browser pick the same set, so hydration
       keeps the text (see task 050).
 - [x] The intro and the page tagline show the picked set's lines together

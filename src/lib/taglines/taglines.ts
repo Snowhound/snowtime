@@ -1,4 +1,4 @@
-// The page tagline's pick (docs/architecture.md, "Tagline"), first match wins: a timer left
+// The page tagline's pick (docs/architecture/taglines.md), first match wins: a timer left
 // running, a date's set, a period's on its last days (the month's last three, else Friday),
 // gaps in the timesheet, praise, the days before filled but not today, else the season's sets
 // and the day's ranges in turn. Without a zone, as on the sign-in page, only the season's sets

@@ -37,4 +37,4 @@ Start with the cheapest to try; stop when the numbers are good enough.
       November's night drift) before and after, in the weather bench and under SwiftShader
 - [ ] Golden frames for the mist presets unchanged within tolerance, or Kait signed off the
       new fog in motion in the bench
-- [ ] `docs/architecture.md` ("Weather") describes how the fog is drawn and why
+- [ ] `docs/architecture/scene.md` ("Weather") describes how the fog is drawn and why

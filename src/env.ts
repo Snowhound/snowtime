@@ -17,7 +17,7 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: v.pipe(v.string(), v.minLength(32)),
     BETTER_AUTH_URL: v.pipe(v.string(), v.url()),
     // Each OAuth provider is enabled when both its client ID and secret are set
-    // (docs/architecture.md, "Sign-in methods").
+    // (docs/architecture/auth.md, "Sign-in methods").
     GOOGLE_CLIENT_ID: v.optional(secret),
     GOOGLE_CLIENT_SECRET: v.optional(secret),
     GITHUB_CLIENT_ID: v.optional(secret),
@@ -27,7 +27,7 @@ export const env = createEnv({
     // Restricts Microsoft sign-in to one Entra ID tenant; unset allows any account.
     MICROSOFT_TENANT_ID: v.optional(secret),
     // Upstash Redis for rate-limit counts shared by every function instance; unset keeps
-    // them in memory (docs/architecture.md, "Abuse limits").
+    // them in memory (docs/architecture/auth.md, "Abuse limits").
     UPSTASH_REDIS_REST_URL: v.optional(v.pipe(v.string(), v.url())),
     UPSTASH_REDIS_REST_TOKEN: v.optional(secret),
     // The request header that holds the user's IP address, for Better Auth's rate limits and

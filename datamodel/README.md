@@ -67,7 +67,7 @@ apostrophe.
 - Audit columns come last in every app-owned table, in this order: `created_at`,
   `created_by`, `updated_at`, `updated_by`, `sys_deleted`. Link tables that are only
   inserted and deleted have `created_*` only; `sys_deleted` is on entities users delete.
-  Rules and reasons: `docs/architecture.md`, "Data conventions".
+  Rules and reasons: `docs/architecture/data.md`, "Data conventions".
 - DBML cannot express partial indexes or `CHECK` constraints, so notes describe them;
   the migrations implement them.
 

@@ -3,8 +3,8 @@
 Status: done
 
 Tenancy is the main risk: one organization's data must never reach another, and roles
-must hold on every server function (`docs/architecture.md`, "Tenancy" and "Application
-rules").
+must hold on every server function (`docs/architecture/data.md`, "Tenancy", and
+`docs/architecture/README.md`, "Application rules").
 
 ## Acceptance criteria
 
@@ -43,7 +43,7 @@ TanStack Start 1.168.55 in `node_modules`.
   without trimming, so it accepts `member, owner` (reproduced against the dev
   database). Better Auth grants that string member rights, while `strongestRole`
   trimmed it and made the invitee an owner in every server function. `strongestRole`
-  now splits as Better Auth does (`scope.test.ts`, `docs/architecture.md` "Tenancy").
+  now splits as Better Auth does (`scope.test.ts`, `docs/architecture/data.md` "Tenancy").
 - Hardening: `requireEmailVerificationOnInvitation: true` is now explicit. Better Auth
   turned it on only because a custom `generateId` is set, so dropping that option
   would have let unverified users accept invitations to their claimed address.

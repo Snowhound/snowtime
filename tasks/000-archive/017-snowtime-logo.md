@@ -14,4 +14,4 @@ deployment configuration remain here.
 - [ ] Logo designed as an SVG, legible at 16, 32, and 180 px on light and dark backgrounds
 - [ ] Favicon and app icons exported
 - [ ] Logo and tagline come from deployment config, not code, so a dedicated client stack
-      can rebrand (`docs/architecture.md`, "Deployment model")
+      can rebrand (`docs/architecture/platform.md`, "Deployment model")

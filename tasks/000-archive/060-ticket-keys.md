@@ -48,4 +48,4 @@ keys at the start, in brackets, mid-sentence, a second key, and `Q3-2026`.
 - [x] Reports can group and filter by ticket, and both exports have a Ticket column.
 - [x] The migration adds `time_entry.ticket` and moves the key at the start of existing
       descriptions into it.
-- [x] `docs/architecture.md` records the storage, the detection rules, and the setting.
+- [x] `docs/architecture/reports.md` records the storage, the detection rules, and the setting.

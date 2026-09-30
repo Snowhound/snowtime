@@ -237,7 +237,7 @@ HTTP/2 to Caddy. The Caddyfile's HTTP/3 serves a domain that isn't proxied.
 
 Every deploy has the same four steps: copy a new release, migrate the database, switch
 `current` to the release, and restart the app. Migrations run before the restart and never
-at app start (`../architecture.md`, "Environments and deployment"), and the previous
+at app start (`../architecture/platform.md`, "Environments and deployment"), and the previous
 release keeps running against the migrated database until the restart, so migrations stay
 backward compatible (`../migrations.md`). Caddy holds requests for up to 30 seconds while
 the app restarts, so users see a pause of about a second rather than an error.

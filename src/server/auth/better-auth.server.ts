@@ -33,11 +33,11 @@ export const auth = betterAuth({
   },
   // The session and user ride in a signed cookie for 5 minutes, so a server function call
   // doesn't read them from the database. A session revoked elsewhere, or a deleted account,
-  // stays usable that long on a device that has the cookie (docs/architecture.md, "Sign-in
+  // stays usable that long on a device that has the cookie (docs/architecture/auth.md, "Sign-in
   // methods"). Membership is still read on every call (resolveScope).
   session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
   // On in production only, per IP address and path. The counts go where the server
-  // functions' go: Upstash Redis when configured, else memory (docs/architecture.md,
+  // functions' go: Upstash Redis when configured, else memory (docs/architecture/auth.md,
   // "Abuse limits").
   rateLimit: {
     customStorage: rateLimitStore,
@@ -47,7 +47,7 @@ export const auth = betterAuth({
     },
   },
   // Password sign-in is for local development with seeded users only: the MVP sends no
-  // email, so there is no verification or reset (docs/architecture.md, "Sign-in methods").
+  // email, so there is no verification or reset (docs/architecture/auth.md, "Sign-in methods").
   emailAndPassword: {
     enabled: passwordEnabled(env),
   },
@@ -57,7 +57,7 @@ export const auth = betterAuth({
   },
   hooks: {
     // A member removed from an organization, or leaving it, loses access to its entries, so
-    // their running timer there stops now (docs/architecture.md, "Tenancy"). The plugin's
+    // their running timer there stops now (docs/architecture/data.md, "Tenancy"). The plugin's
     // afterRemoveMember hook misses /organization/leave, so this hook watches both.
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== '/organization/remove-member' && ctx.path !== '/organization/leave') return
@@ -88,12 +88,12 @@ export const auth = betterAuth({
       membershipLimit: limits.membersPerOrganization,
       invitationLimit: limits.pendingInvitationsPerOrganization,
       // Admins share invitation links themselves; a link works for 48 hours
-      // (docs/architecture.md, "Sign-in methods").
+      // (docs/architecture/auth.md, "Sign-in methods").
       invitationExpiresIn: 48 * 60 * 60,
       // Only a verified address accepts or rejects an invitation to it. Better Auth turns
       // this on by itself only because generateId isn't its default, so it stays explicit.
       requireEmailVerificationOnInvitation: true,
-      // Organizations own time entries and are never hard-deleted (docs/architecture.md).
+      // Organizations own time entries and are never hard-deleted (docs/architecture/data.md).
       disableOrganizationDeletion: true,
       organizationHooks,
     }),

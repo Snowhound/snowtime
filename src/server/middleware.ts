@@ -25,7 +25,7 @@ export const sessionMiddleware = createMiddleware({ type: 'function' }).server(
   },
 )
 
-// The scope of the organization the call names, as context.scope (docs/architecture.md,
+// The scope of the organization the call names, as context.scope (docs/architecture/data.md,
 // "Tenancy"). Start merges this validator's input type into the function's, so every scoped
 // call must pass `organizationId`.
 export const scopeMiddleware = createMiddleware({ type: 'function' })

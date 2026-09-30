@@ -15,13 +15,13 @@ any local cleanup.
 - [x] Each server domain's layers (`*.functions.ts`, `*.server.ts`, schemas) carry
       their weight; none only forwards to the next
 - [x] Larger simplifications are done, split into reviewable commits, with the
-      decisions they change updated in `docs/architecture.md`
+      decisions they change updated in `docs/architecture/`
 
 ## Findings
 
 Changed:
 
-- `docs/architecture.md`, "Application rules", still said that switching organization
+- `docs/architecture/README.md`, "Application rules", still said that switching organization
   removes the old one's queries, and that the server answers for the session's
   organization. Both stopped being true with task 052. The paragraph now says each
   organization's data sits under its own keys and points to "Tenancy". Two server comments

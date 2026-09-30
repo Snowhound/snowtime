@@ -1,4 +1,4 @@
-// The Content-Security-Policy of every page (docs/architecture.md, "Content security
+// The Content-Security-Policy of every page (docs/architecture/auth.md, "Content security
 // policy"). Scripts run only with the page's nonce, or when a script that has it loads
 // them ('strict-dynamic'), so injected markup can't run code.
 

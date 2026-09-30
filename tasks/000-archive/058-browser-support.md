@@ -8,8 +8,8 @@ without a warning; ones that lack it should say so.
 
 ## Acceptance criteria
 
-- [x] `docs/architecture.md` ("Supported browsers") records the supported browsers, the last
-      two major versions of Chrome, Edge, Firefox, and Safari, and why older capable ones get
+- [x] `docs/architecture/platform.md` ("Supported browsers") records the supported browsers, the
+      last two major versions of Chrome, Edge, Firefox, and Safari, and why older capable ones get
       no notice
 - [x] Vite's build target stays Baseline Widely Available, and features the TypeScript `lib`
       allows beyond it are in the browser check's list

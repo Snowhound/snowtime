@@ -2,7 +2,7 @@
 
 Status: todo (later, optional)
 
-The MVP sends no email (`docs/architecture.md`, "Sign-in methods"). Add Brevo when
+The MVP sends no email (`docs/architecture/auth.md`, "Sign-in methods"). Add Brevo when
 email invitations, password sign-in outside development, or notifications are wanted.
 Email stays optional per deployment.
 
@@ -17,4 +17,4 @@ Email stays optional per deployment.
       outside development
 - [ ] Plain, text-first templates; no template engine
 - [ ] Sending domain verified (SPF, DKIM) for the production sender
-- [ ] `docs/architecture.md` updated; env vars added to the Vercel projects (task 009)
+- [ ] `docs/architecture/auth.md` updated; env vars added to the Vercel projects (task 009)

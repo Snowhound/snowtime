@@ -1,4 +1,4 @@
-// The Timer page's week calendar (prototypes/calendar.html; docs/architecture.md, "Timer
+// The Timer page's week calendar (prototypes/calendar.html; docs/architecture/timer.md, "Timer
 // calendar"): the user's entries of the shown week in their zone. A click or a drag on empty
 // time adds an entry in the entry popover; dragging an entry or its edges, or Alt+arrow keys on
 // it, move it or change its times; a click or Enter edits it. Each change is one optimistic

@@ -12,7 +12,7 @@ for your own deployment or for a dedicated stack per client:
 
 Both runbooks link here for the steps they share: the OAuth apps, the environment
 variables, and changing the host. The reasons behind the choices are in
-`../architecture.md` ("Environments and deployment"), and each platform's limits are in
+`../architecture/platform.md` ("Environments and deployment"), and each platform's limits are in
 `../hosting.md`.
 
 ## Choose a target
@@ -99,14 +99,14 @@ webhook URL and permissions, which sign-in doesn't use. In the OAuth App form:
   own session.
 
 Google and Microsoft also list several redirect URLs in one app. For Microsoft account
-types and `MICROSOFT_TENANT_ID`, see `../architecture.md` ("Sign-in methods").
+types and `MICROSOFT_TENANT_ID`, see `../architecture/auth.md` ("Sign-in methods").
 
 For Microsoft, also add the `xms_edov` optional claim, which says the account's tenant has
 verified its email domain. In the app registration, open **Token configuration**, choose
 **Add optional claim**, pick the **ID** token type, and select `xms_edov`. Without it, the
 app refuses work and school accounts at sign-up, because Microsoft doesn't otherwise say
 their address is verified; personal Microsoft accounts sign up either way. See
-`../architecture.md` ("Sign-in methods").
+`../architecture/auth.md` ("Sign-in methods").
 
 Google publishes an External app only with a privacy policy link. Under **Google Auth
 Platform > Branding**, enter `https://<host>/privacy` and `https://<host>/terms`, and add

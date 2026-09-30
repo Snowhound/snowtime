@@ -43,5 +43,5 @@ Try the filter in `prototypes/reports.html` first.
 - [x] Entries in the export have the member's email and are sorted by project, then date,
       member, and start; the XLSX has decimal hours next to h:mm
 - [x] The XLSX's first sheet, and the menu's first CSV, is the entries; the timesheet follows
-- [x] `docs/architecture.md` ("Report export", "Ticket keys") and `prototypes/README.md`
+- [x] `docs/architecture/reports.md` ("Report export", "Ticket keys") and `prototypes/README.md`
       record the changes

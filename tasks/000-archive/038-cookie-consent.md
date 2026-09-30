@@ -19,7 +19,7 @@ language, which covers all three. MinuPatsient
 (<https://www.minupatsient.ee/terms/data>) instead treats its preference cookies as
 consent-based (GDPR Article 6(1)(a)). Confirm the exemption holds, or add consent.
 
-The exemption holds; `docs/architecture.md`, "Cookies and consent", records the check.
+The exemption holds; `docs/architecture/auth.md`, "Cookies and consent", records the check.
 The language cookie is now written only for an account language that differs from the
 browser's, and lasts 30 days.
 
@@ -34,4 +34,4 @@ browser's, and lasts 30 days.
 - [x] The language cookie's lifetime is set deliberately rather than left at Paraglide's
       default, if the check calls for it
 - [x] Adding analytics or any third-party script later requires revisiting this task;
-      `docs/architecture.md` records that
+      `docs/architecture/auth.md` records that

@@ -34,7 +34,7 @@ it plays. The page is hidden under the intro then, so the switch isn't seen.
       languages
 - [x] The intro shows only the season's sets, in turn by UTC day, and never a range's set
 - [x] On the visit where the intro plays, the tagline shows the intro's set; a test covers it
-- [x] `docs/architecture.md`, "Tagline", replaces "the intro and the tagline show the same
+- [x] `docs/architecture/taglines.md`, replaces "the intro and the tagline show the same
       set" with the new rule and its reason
 - [x] A test checks that each set has three lines (two for period sets) in each language it
       has, that ids are unique, and that placeholders match between languages

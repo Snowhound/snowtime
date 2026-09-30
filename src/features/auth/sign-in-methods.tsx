@@ -1,5 +1,5 @@
 // The sign-in methods shared by the sign-in and invitation screens. Each shows only when
-// getSignInMethods returns it (docs/architecture.md, "Sign-in methods").
+// getSignInMethods returns it (docs/architecture/auth.md, "Sign-in methods").
 import { createForm } from '@tanstack/solid-form'
 import EyeIcon from 'lucide-solid/icons/eye'
 import EyeOffIcon from 'lucide-solid/icons/eye-off'

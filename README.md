@@ -45,7 +45,7 @@ The scope and what is left out on purpose are in [docs/product.md](docs/product.
 [Better Auth](https://www.better-auth.com), [Solid-UI](https://www.solid-ui.com) with
 Tailwind CSS, and [Paraglide JS](https://inlang.com/m/gerre34r/library-inlang-paraglideJs),
 built with Nitro and Bun. Each choice and its reason is recorded in
-[docs/architecture.md](docs/architecture.md).
+[docs/architecture/](docs/architecture/README.md).
 
 ## Where it runs
 
@@ -101,7 +101,7 @@ the scripts, and the database workflow are in [docs/development.md](docs/develop
 ## Documentation
 
 - [Product](docs/product.md): purpose, MVP scope, and tenancy
-- [Architecture](docs/architecture.md): recorded decisions and their reasons
+- [Architecture](docs/architecture/README.md): recorded decisions and their reasons
 - [Hosting](docs/hosting.md): Vercel, Turso, and self-hosted constraints
 - [Development](docs/development.md): local setup, seeded users, scripts, and the database
 - [Deployment](docs/deployment/README.md): runbooks for Vercel and for self-hosting

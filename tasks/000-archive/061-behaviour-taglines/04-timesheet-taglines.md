@@ -60,7 +60,7 @@ Draft lines, English (Estonian written separately, not translated):
 ## Query time
 
 `appSession` reads the summary's entries in one query, a `UNION ALL` of two index searches
-(`docs/architecture.md`, "Tagline"). On the seed data from `bun run db:seed --company` (21,234
+(`docs/architecture/taglines.md`). On the seed data from `bun run db:seed --company` (21,234
 entries), over 26 users with up to 237 rows each, it took 0.59 ms at the median, 1.13 ms at
 the 95th percentile, and 1.99 ms at most. The first version, with `OR` in one `WHERE`, scanned
 the table and took 11.6 ms at the median.

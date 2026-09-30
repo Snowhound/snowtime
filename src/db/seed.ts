@@ -18,7 +18,7 @@ import {
   userSettings,
 } from './schema'
 
-// Every seeded user signs in with this password, locally only (docs/architecture.md,
+// Every seeded user signs in with this password, locally only (docs/architecture/auth.md,
 // "Sign-in methods").
 export const SEED_PASSWORD = 'snowtime-local'
 

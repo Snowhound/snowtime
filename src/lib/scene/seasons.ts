@@ -2,7 +2,7 @@
 // season's sets of three intro lines, which are also the page tagline's fallback, and the
 // intro's text colors. Every set follows one pattern: the season does something, then the
 // timesheet does the same. The tagline's other sets are in src/lib/taglines/;
-// docs/architecture.md, "Tagline", has the rules for which set shows.
+// docs/architecture/taglines.md, has the rules for which set shows.
 import { type Accessor, createContext, useContext } from 'solid-js'
 import type { FillSummary } from '~/lib/taglines/fill'
 import { m } from '~/paraglide/messages.js'

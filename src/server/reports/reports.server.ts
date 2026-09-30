@@ -1,5 +1,5 @@
 // Reports: time totals per day or week, project, team and member, in the user's time zone
-// (docs/architecture.md, "Time zones"). The range's days are computed in TypeScript and
+// (docs/architecture/data.md, "Time zones"). The range's days are computed in TypeScript and
 // queried as one UTC range; entries are split at the zone's midnights and summed here.
 // Everyone reports on the entries they may read (readableUserIds); team totals count each
 // team's current members. Results are ids, dates and milliseconds, never display text; the
@@ -789,7 +789,7 @@ export type ReportEntries =
 
 // The Entries card's list, from the pieces the export reads under getReport's rules, so both
 // show the same entries and count a running timer alike. The server narrows, groups, and
-// pages it, so a large organization's month stays a bounded response (docs/architecture.md,
+// pages it, so a large organization's month stays a bounded response (docs/architecture/reports.md,
 // "Report entries").
 export async function getReportEntries(
   db: Database,

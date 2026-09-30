@@ -274,7 +274,7 @@
       const dot = (color, cls = 'size-2') => `<span class="inline-block ${cls} shrink-0 rounded-full" style="background:${color}" aria-hidden="true"></span>`
       const NO_PROJECT = { id: 'none', name: 'No project', color: 'var(--muted-foreground)' }
 
-      // --- Visibility (docs/architecture.md, Tenancy) -------------------------------------------
+      // --- Visibility (docs/architecture/data.md, Tenancy) ---------------------------------------
       const role = () => appFrame.role
       const ledTeams = () => state.org.teams.filter((t) => t.members.some(([u, r]) => u === ME && r === 'lead'))
       function visibleUsers() {

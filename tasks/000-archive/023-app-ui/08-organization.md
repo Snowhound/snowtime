@@ -3,7 +3,7 @@
 Status: done
 
 Members, invitations, and teams for admins and owners. Writes go through the Better Auth
-organization client, except team leads (`docs/architecture.md`, "Tenancy"). Prototype:
+organization client, except team leads (`docs/architecture/data.md`, "Tenancy"). Prototype:
 `prototypes/organization.html`.
 
 ## Acceptance criteria

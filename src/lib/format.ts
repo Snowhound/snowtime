@@ -3,7 +3,7 @@ import { getLocale } from '~/paraglide/runtime.js'
 import type { DurationFormat } from '~/server/settings/settings.schemas'
 
 // Display formatting in the user's language and time zone. The server returns instants
-// and milliseconds; only the client turns them into text (docs/architecture.md,
+// and milliseconds; only the client turns them into text (docs/architecture/platform.md,
 // "Internationalization").
 
 // A running timer or an entry: 1:05:09.

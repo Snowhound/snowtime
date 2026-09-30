@@ -14,7 +14,7 @@ reproduced, because no Microsoft or GitHub sign-in is configured locally.
   `false` (`@better-auth/core/dist/social-providers/microsoft-entra-id.mjs`). GitHub
   stores `false` when its `/user/emails` list doesn't mark the address verified. Such a
   user gets `EMAIL_VERIFICATION_REQUIRED_BEFORE_ACCEPTING_OR_REJECTING_INVITATION` and
-  can never join an organization. `docs/architecture.md` ("Sign-in methods") assumes the
+  can never join an organization. `docs/architecture/auth.md` ("Sign-in methods") assumes the
   providers supply a verified address.
 - Lockout: with Microsoft's default `common` tenant, anyone can sign in from a tenant
   they control, whose accounts can claim any address. The first such sign-in creates an
@@ -33,7 +33,7 @@ reproduced, because no Microsoft or GitHub sign-in is configured locally.
 - [x] An unverified provider email can't block a later verified sign-in with the same
       address. For example, a `databaseHooks.user.create.before` hook refuses social
       sign-ups whose email isn't verified, with a message on the sign-in screen
-- [x] `docs/architecture.md` ("Sign-in methods") and `docs/deployment/README.md` (the Microsoft
+- [x] `docs/architecture/auth.md` ("Sign-in methods") and `docs/deployment/README.md` (the Microsoft
       app setup) say which providers give verified addresses and what the app does with
       the others
 

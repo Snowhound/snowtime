@@ -11,7 +11,7 @@ plugin and teams.
 - [x] Organization plugin with teams enabled, no default team
 - [x] Better Auth generates UUIDv7 ids
 - [x] `team_member.role`: Better Auth 1.7 has no additional fields on team members, so
-      it is an app-managed column (recorded in `docs/architecture.md`)
+      it is an app-managed column (recorded in `docs/architecture/data.md`)
 - [x] Organization deletion disabled in the plugin (users and orgs are never hard-deleted)
 - [x] Account deletion stays disabled (Better Auth default); anonymization is a later task
 - [x] Sign up, create organization, create team, invite into a team, accept, and

@@ -92,7 +92,7 @@ each change in [`src/components/ui/README.md`](../src/components/ui/README.md).
 ## Workflow
 
 1. Name the decision the prototype should help make. Read any existing Solid implementation and
-   `docs/product.md` / `docs/architecture.md` so the prototype respects recorded behavior.
+   `docs/product.md` / `docs/architecture/` so the prototype respects recorded behavior.
 2. Create `prototypes/<feature>.html` with `lang`, UTF-8 charset, viewport meta, a descriptive
    title, and the dependencies above.
 3. Start with one complete design; add meaningfully different variants only when they help the
@@ -269,7 +269,7 @@ Task 033 ported this design to the Solid app: the brand, the Appearance popover,
 its weather, the surfaces, the tagline, and the intro. The app differs where this README says
 so. The header sticks, the frame rather than the body carries the scene's data attributes, and
 the sign-in page drops the hidden line under the card, so the card is centered with the tagline
-above it. `docs/architecture.md` ("Seasonal scene") records how the app builds it.
+above it. `docs/architecture/scene.md` records how the app builds it.
 
 Task 032 brings the sign-in page's scene (see [Seasonal scene and intro](#seasonal-scene-and-intro))
 to the signed-in pages. Every signed-in page has it. A page opts in with
@@ -567,7 +567,7 @@ Four tabs:
   Empty keeps them plain labels. Save refuses an address that isn't `https://` or has no `{key}`.
 
 Writes are named after the calls they map to: the Better Auth organization client for members,
-roles, invitations, and teams, and `setTeamRole` for leads (`docs/architecture.md`, "Tenancy").
+roles, invitations, and teams, and `setTeamRole` for leads (`docs/architecture/data.md`, "Tenancy").
 Members and team leads get a no-access message; the navigation hides the page for them. The
 invitation link's origin is a placeholder; the app builds it from `BETTER_AUTH_URL`.
 
@@ -584,8 +584,8 @@ admin, and owner: no horizontal page overflow, dialogs with validation, and no b
 Decision: how day and week totals by project, team, and member read, for members, team leads,
 and admins. The app had only the Timesheet, first chosen over the other two layouts; now the
 three are views of one report, as tabs between the filters and the report, and task 064 put
-them in the app (`docs/architecture.md`, "Report views"). The page opens on Timesheet. Export
-sits at the right of the tabs and always gives the timesheet and its entries.
+them in the app (`docs/architecture/reports.md`, "Report views"). The page opens on Timesheet.
+Export sits at the right of the tabs and always gives the timesheet and its entries.
 
 - **Timesheet**: a grid of rows by the chosen grouping and a column per day or week, with row
   and column totals and today's column shaded. It scrolls horizontally inside its card with the
@@ -680,7 +680,7 @@ scrolls to it. Changing any filter clears the narrowing.
 
 Long lists load in pages: By day shows seven days at a time, By description 25 rows, each with a
 "Show more" button. The app pages By day by entry count instead, up to 100 at a time, so one
-busy day of a large organization stays one page (`docs/architecture.md`, "Report entries").
+busy day of a large organization stays one page (`docs/architecture/reports.md`, "Report entries").
 
 Omitted: filters by project or description, saved reports, and billable rates.
 
@@ -933,7 +933,7 @@ Decided on 2026-09-29:
 ### [auth.html](auth.html) — Sign-in flows
 
 Decision: layout of the signed-out screens, and how the sign-in methods in
-`docs/architecture.md` ("Sign-in methods") appear on them.
+`docs/architecture/auth.md` ("Sign-in methods") appear on them.
 
 The form sits in a centered card on a muted background, or on the seasonal scene. This card layout
 is the one the app uses; a split layout with a brand panel beside the form was tried and removed
@@ -1089,7 +1089,7 @@ intro.
 
 `seasons.PERIODS` adds taglines for a timesheet period's last days, whatever the season: "It's
 Friday. So is the deadline." and "The month is almost out. Your hours shouldn't be." The app
-rotates the alternates in and shows the period lines (`docs/architecture.md`, "Tagline"); the
+rotates the alternates in and shows the period lines (`docs/architecture/taglines.md`); the
 prototypes show each season's first set only. The app's season sets, more per season, are in
 `src/lib/scene/seasons.ts`; its sets for dates and periods are in `src/lib/taglines/catalogue.ts`.
 

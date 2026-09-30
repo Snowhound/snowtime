@@ -29,4 +29,4 @@ builds on.
 - [x] The oxc VS Code extension is recommended in `.vscode/extensions.json` and set as
       the default formatter in `.vscode/settings.json`
 - [x] No Prettier in the project: no direct dependency, config file, or editor setting
-- [x] `docs/architecture.md` records the choice
+- [x] `docs/architecture/README.md` records the choice

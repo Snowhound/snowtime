@@ -9,7 +9,7 @@ import { Uuidv7 } from '../schemas'
 export const GetInvitationInput = v.object({ id: Uuidv7 })
 export type GetInvitationInput = v.InferOutput<typeof GetInvitationInput>
 
-// Password sign-in, local development only (docs/architecture.md, "Sign-in methods").
+// Password sign-in, local development only (docs/architecture/auth.md, "Sign-in methods").
 export const SignInForm = v.object({
   email: v.pipe(
     v.string(),

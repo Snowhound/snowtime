@@ -35,7 +35,7 @@ companies can use it too.
 
 ## Tenancy
 
-Organizations and teams are in scope from day one; see `architecture.md`.
+Organizations and teams are in scope from day one; see `architecture/data.md`.
 
 | Concept      | Meaning                                                 |
 | ------------ | ------------------------------------------------------- |

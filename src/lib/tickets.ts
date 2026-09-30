@@ -1,4 +1,4 @@
-// Ticket keys in entry descriptions (docs/architecture.md, "Ticket keys"). An entry has one
+// Ticket keys in entry descriptions (docs/architecture/reports.md, "Ticket keys"). An entry has one
 // ticket, found when its description is committed (Enter, blur, Save), never while typing.
 // The client runs this on commit and the seeds on their descriptions; the server only checks
 // a ticket's format.

@@ -56,4 +56,4 @@ every round trip.
 - [x] The report's access rules and results are unchanged: `reports.test.ts` and
       `reports-view.test.tsx` pass, and a browser check covered admin, team lead (with
       an allowed and a refused team link) and member
-- [x] `docs/architecture.md` needs no change: the scope and report rules keep their shape
+- [x] `docs/architecture/data.md` needs no change: the scope and report rules keep their shape

@@ -13,7 +13,7 @@ A user who is removed from an organization while their timer runs can still:
 - write `stopped_at` on that organization's entry through `stopTimer`, or indirectly by
   starting a timer in another organization
 
-This breaks the rule in `docs/architecture.md` ("Tenancy") that every server function
+This breaks the rule in `docs/architecture/data.md` ("Tenancy") that every server function
 checks membership before touching data. The fix must keep one running timer per user
 across organizations.
 
@@ -23,7 +23,7 @@ across organizations.
       entry's `organization_id` and the user, so the three functions ignore an entry in
       an organization the user has left
 - [x] Decide what happens to that orphaned running entry: stop it when the member is
-      removed, or leave it for an admin. Record the decision in `docs/architecture.md`
+      removed, or leave it for an admin. Record the decision in `docs/architecture/data.md`
 - [x] `startTimer` still succeeds when such an entry exists; if the partial unique index
       `time_entry_one_running` blocks the insert, handle that case as decided. Decided:
       the removal hook stops the entry, so none remains; if the hook ever fails,

@@ -25,4 +25,4 @@ still labeled the day before "Yesterday".
 - [x] A component test with a fake clock crosses midnight and finds a new entry
       listed, under "Today", with yesterday's entry under "Yesterday"
 - [x] A report keeps the day it was requested on, like its totals, until its filters
-      change, as `docs/architecture.md` ("Time zones") now records
+      change, as `docs/architecture/data.md` ("Time zones") now records

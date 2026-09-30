@@ -4,7 +4,7 @@ This runbook sets up one production stack from scratch: a Turso database, option
 Upstash Redis, a Vercel project, one or more OAuth apps, and the GitHub environment CI
 migrates and deploys from. Follow it for your own deployment or for a dedicated stack per
 client. [The deployment index](README.md) compares it with self-hosting and holds the steps
-both share. The reasons behind the choices are in `../architecture.md` ("Environments and
+both share. The reasons behind the choices are in `../architecture/platform.md` ("Environments and
 deployment"), and the free-tier limits are in `../hosting.md`.
 
 Staging (the `develop` branch) is planned and not covered here.
@@ -37,7 +37,7 @@ database, so store it only as a secret.
 
 Upstash holds the rate-limit counts, so every Vercel function instance sees the same
 counts. Without it the app runs, but each instance limits on its own
-(`../architecture.md`, "Abuse limits").
+(`../architecture/auth.md`, "Abuse limits").
 
 1. In the [Upstash console](https://console.upstash.com), create a Redis database with
    its primary region in the functions' AWS region (`eu-west-1` for Dublin) and no read
@@ -136,7 +136,7 @@ migrated database for a few minutes. Keep migrations backward compatible
    which Better Auth reads by default.
 
 3. Leave Preview environment variables unset. Preview deployments have generated hosts,
-   where OAuth and passkeys can't work (`../architecture.md`, "Sign-in methods").
+   where OAuth and passkeys can't work (`../architecture/auth.md`, "Sign-in methods").
 4. Redeploy the latest production deployment in Vercel, or re-run the latest workflow on
    `main`, so it runs with the region and variables. Vercel applies both only to
    deployments made after the change.
