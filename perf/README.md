@@ -1,13 +1,14 @@
 # Performance harnesses
 
 Checks that measure what the app sends, what the server reads, and what the scene draws,
-so a change can show its effect in numbers (task 069). There are three harnesses:
+so a change can show its effect in numbers (task 069). There are four harnesses:
 
-| Command                | Needs           | Measures                                            |
-| ---------------------- | --------------- | --------------------------------------------------- |
-| `bun run perf`         | Nothing but Bun | Bundle budgets, query plans, report rows and bytes  |
-| `bun run perf:pages`   | Chrome          | Page bytes, DOM nodes, hydration, long tasks, input |
-| `bun run perf:weather` | Chrome          | Weather GPU and CPU time per frame, golden frames   |
+| Command                | Needs           | Measures                                                 |
+| ---------------------- | --------------- | -------------------------------------------------------- |
+| `bun run perf`         | Nothing but Bun | Bundle budgets, query plans, report rows and bytes       |
+| `bun run perf:pages`   | Chrome          | Page bytes, DOM nodes, hydration, long tasks, input      |
+| `bun run perf:load`    | Nothing but Bun | Server response times, requests per second, CPU, and RSS |
+| `bun run perf:weather` | Chrome          | Weather GPU and CPU time per frame, golden frames        |
 
 ## Gated and reported
 
@@ -105,6 +106,42 @@ timer page runs last, because starting the timer writes entries the reports woul
 - `--no-build` reuses `perf/.cache/build`.
 - `--scene` turns the background and weather on, to see what they add. It prints the
   numbers without comparing them.
+
+## Server load: `bun run perf:load`
+
+Measures one server process rendering signed-in pages, to size a self-hosted server
+(task 075, `docs/deployment/self-hosted.md`). It signs in as `admin` over HTTP, with no
+browser, and requests `/lumen/timer`, `/lumen/settings`, and `/lumen/reports` for this
+week and for 2026-01-01 to 2026-09-30. Nothing is gated. A run takes about 40 seconds.
+
+For each page, after 5 warm-up requests:
+
+| Number      | How it's measured                                                          |
+| ----------- | -------------------------------------------------------------------------- |
+| p50, p95    | 30 requests one after another, until the last byte                         |
+| req/s at 10 | 8 seconds with 10 requests in flight, the count divided by the time        |
+| p95 at 10   | The same 8 seconds                                                         |
+| CPU/req     | The server's CPU time (user plus system) over the phase, per request       |
+| RSS         | At the end, and the peak: `VmHWM` on Linux, sampled every 100 ms elsewhere |
+
+The load generator shares the machine with the server, so on a laptop read the numbers as
+ratios between runs. CPU per request is the number that carries over to another machine.
+
+```sh
+bun run perf:load                                        # the build under Bun
+bun run perf:load --no-build                             # reuses perf/.cache/build
+bun run perf:load --executable=dist/snowtime-linux-arm64/snowtime
+bun run perf:load --url=http://127.0.0.1:3100 --pid=<server pid>
+```
+
+- `--executable` runs a compiled server from `bun run build:binary` on a copy of the
+  benchmark database. The executable can't take `clock.ts`, so it runs on the real clock;
+  "this week" is then the current week, not the seeded one.
+- `--url` and `--pid` measure a server that is already running, for example on the
+  self-hosted server. Start it on a copy of the benchmark database with
+  `NODE_ENV=development`, which enables password sign-in, and set
+  `update user_settings set scene_intro = 0` first. Never do this with the production
+  database or on the production port.
 
 ## Weather bench: `bun run perf:weather`
 

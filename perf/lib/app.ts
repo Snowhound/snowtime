@@ -67,6 +67,7 @@ async function freePort(): Promise<number> {
 
 export interface RunningApp {
   url: string
+  pid: number
   stop: () => Promise<void>
 }
 
@@ -78,16 +79,23 @@ export interface RunningApp {
 // production build. The server runs from an empty folder so Bun loads none of the
 // repository's .env files: OAuth keys there would change the sign-in page, and a database
 // URL would win over the benchmark's.
+//
+// With executable, a compiled server (scripts/build-self-hosted.ts) runs instead of the build.
+// It can't take clock.ts, so its clock is the real one.
 export async function startApp({
   database,
   build = BUILD,
   scene = false,
+  executable,
 }: {
   database: string
   build?: string
   scene?: boolean
+  executable?: string
 }): Promise<RunningApp> {
-  if (!existsSync(join(build, 'server/index.mjs'))) throw new Error(`[perf] No build in ${build}`)
+  if (!executable && !existsSync(join(build, 'server/index.mjs'))) {
+    throw new Error(`[perf] No build in ${build}`)
+  }
   const port = await freePort()
   const copy = join(CACHE, `run-${port}.db`)
   cpSync(database, copy)
@@ -101,25 +109,24 @@ export async function startApp({
   mkdirSync(cwd, { recursive: true })
   const log = join(CACHE, `server-${port}.log`)
   writeFileSync(log, '')
-  const server: ChildProcess = spawn(
-    'bun',
-    ['--preload', join(ROOT, 'perf/lib/clock.ts'), join(build, 'server/index.mjs')],
-    {
-      cwd,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: {
-        PATH: process.env.PATH,
-        HOME: process.env.HOME,
-        NODE_ENV: 'development',
-        PORT: String(port),
-        HOST: '127.0.0.1',
-        PERF_NOW: String(SEED_NOW.getTime()),
-        TURSO_DATABASE_URL: `file:${copy}`,
-        BETTER_AUTH_SECRET: 'perf-harness-secret-perf-harness-secret',
-        BETTER_AUTH_URL: url,
-      },
+  const [command, ...args] = executable
+    ? [executable]
+    : ['bun', '--preload', join(ROOT, 'perf/lib/clock.ts'), join(build, 'server/index.mjs')]
+  const server: ChildProcess = spawn(command, args, {
+    cwd,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      NODE_ENV: 'development',
+      PORT: String(port),
+      HOST: '127.0.0.1',
+      PERF_NOW: String(SEED_NOW.getTime()),
+      TURSO_DATABASE_URL: `file:${copy}`,
+      BETTER_AUTH_SECRET: 'perf-harness-secret-perf-harness-secret',
+      BETTER_AUTH_URL: url,
     },
-  )
+  })
   const output: string[] = []
   server.stdout?.on('data', (chunk) => output.push(String(chunk)))
   server.stderr?.on('data', (chunk) => output.push(String(chunk)))
@@ -141,6 +148,7 @@ export async function startApp({
 
   return {
     url,
+    pid: server.pid!,
     stop: async () => {
       if (server.exitCode !== null) return
       const exited = new Promise((resolve) => server.once('exit', resolve))
@@ -153,8 +161,8 @@ export async function startApp({
 }
 
 // Session headers for a seeded user.
-async function signInHeaders(
-  app: RunningApp,
+export async function signInHeaders(
+  app: Pick<RunningApp, 'url'>,
   who: keyof typeof USERS = 'admin',
 ): Promise<Record<string, string>> {
   const response = await fetch(`${app.url}/api/auth/sign-in/email`, {
