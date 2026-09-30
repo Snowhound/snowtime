@@ -154,8 +154,30 @@ Done:
   `bun install --os=linux --cpu=<arch>`, which adds them beside the host's.
 - `ff33378`: `perf/load.ts` (`perf:load`), documented in `perf/README.md`.
 
-Next: Caddyfile, systemd unit, Litestream, Turso Sync spike, docs split
-(`docs/deployment/self-hosted.md`, provider-neutral with Hetzner as the example).
+- `d05ec2a`: `deploy/self-hosted/Caddyfile`, tested locally with Caddy 2.11.4 in front of
+  the app (see "Tested locally" below).
+- `bd0e6fd`: `db:migrate` runs drizzle-kit on the running Bun; `bunx --bun` failed with
+  "env: node: No such file" for a user that doesn't own the checkout on a box without Node.
+- `accebda`: `deploy/self-hosted/snowtime.service`, `litestream.yml`, `litestream.service`.
+
+Tested locally: Debian trixie arm64 under systemd in Docker, with Caddy 2.11.4,
+Litestream 0.5.17, and adobe/s3mock as S3. The compiled release ran from the unit, the
+migrator ran through `systemd-run` as `snowtime`, Litestream replicated, and a second fresh
+box restored the latest state and a point in time before the last write. The
+build-on-server path (Bun 1.4.2 installed to `/usr/local`, `bun run build:self-hosted`,
+`bun run db:migrate` as `snowtime`) ran from the same unit with a drop-in `ExecStart`.
+`systemd-analyze security snowtime.service`: exposure 1.5 ("OK").
+
+Turso Sync spike (`@tursodatabase/sync` 0.8.1, Bun 1.4.2, darwin-arm64, local only):
+it runs under Bun; all 19 migrations and the demo plus company seed apply through
+`drizzle-orm/tursodatabase-sync` with equal row counts in all 14 tables; the year report's
+totals and bytes match libSQL. The engine stores table SQL reformatted, and it doesn't
+enforce foreign keys unless each connection runs `PRAGMA foreign_keys = ON` (libSQL
+enforces them by default). `push()` without a Turso Cloud URL fails ("sync is disabled");
+the package has no automatic push, so the app would call it after writes or on a timer.
+
+Next: docs split (`docs/deployment/self-hosted.md`, provider-neutral with Hetzner as the
+example), hosting and architecture docs, criteria.
 
 Measured so far (M1 Pro; Docker = Linux arm64 VM limited to 2 CPUs and 4 GB):
 
