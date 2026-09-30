@@ -233,6 +233,13 @@ a covering index is fine when it removes table reads from a hot query.
   that CPU cost, but cannot remove the required day/key result groups. It was dropped
   on the rows/bytes condition before implementing SQL totals or changing tests.
 
+  Checked in review: grouping by bucket instead of by day, with the tracked days counted in
+  a second small query, is the most a year report could shrink. On the company seed's year
+  (weekly buckets, days approximated in UTC+3) that is 20,248 entries against 4,859 week,
+  member, and project groups (4.2×), or 10,004 with tickets (2×). Week and month reports
+  use day buckets, so they stay at Codex's 2.1×. SQL still reads every entry in the range,
+  so Turso's billed rows don't change either. The decision stands.
+
 - **Busy days.** A page reads its boundary day whole, because the day's total needs every
   entry in it, and applies the member/time/ID cursor in JavaScript. On the company seed a
   day has at most 106 entries (18 members), so paging inside a day in SQL, with a separate total
