@@ -1,6 +1,6 @@
 # 06: Weather shaders
 
-Status: in-progress
+Status: done
 
 The effects in `src/lib/scene/weather.ts` work and look right, but they were written fast.
 Rework them so a graphics programmer would read them without wincing: each shader short and
@@ -128,7 +128,4 @@ the old shaders and signed it off, and the golden frames were updated.
 
 ## Follow-up
 
-- Kait (2026-09-30): a new effect for the Baltic countryside's November night, twinkling
-  stars ("vilkuvad tähed"). The photo already has many stars; the effect adds a dozen or so
-  fixed points on top, whose brightness flickers a little and now and then flashes, as
-  glitter does, without moving. Count and strength to be tuned together.
+- Twinkling stars for the Baltic countryside's November night: task 076.

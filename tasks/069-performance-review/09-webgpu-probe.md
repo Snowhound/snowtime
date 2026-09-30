@@ -1,6 +1,6 @@
 # 09: WebGPU probe
 
-Status: todo
+Status: cancelled
 
 A time-boxed check of whether WebGPU would make the weather faster, before anyone considers
 it. WebGPU isn't everywhere yet (only recent macOS and Safari versions, no Firefox on
@@ -13,6 +13,12 @@ in the compositor re-blurring the glass (subtask 05), and WebGPU changes neither
 composites into the page the same way. What it adds is compute shaders, which could build
 the fog's noise or its one-row texture (subtask 07), but WebGL 2 can do the same by drawing
 into a texture.
+
+## Cancelled (2026-09-30)
+
+Kait cancelled the probe: the reasons above make a gain almost certainly too small to keep a
+second renderer for. Revisit only once WebGPU runs everywhere the app does, so it could
+replace WebGL 2 rather than sit beside it.
 
 ## The probe
 

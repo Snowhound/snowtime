@@ -18,7 +18,7 @@ subtask as `NN-short-slug.md`, numbered within the folder (e.g.
 ```markdown
 # NNN: Title
 
-Status: todo | in-progress | done
+Status: todo | in-progress | done | cancelled
 
 Short description of what and why.
 
@@ -28,7 +28,8 @@ Short description of what and why.
 - [ ] ...
 ```
 
-Update the status line as work progresses; tick criteria as they are met.
+Update the status line as work progresses; tick criteria as they are met. A cancelled task
+says who cancelled it, when, and why.
 
 ## Archive
 
