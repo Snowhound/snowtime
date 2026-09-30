@@ -134,7 +134,7 @@ collections".
   counts scaled to the screen's area. The band, horizon, zones, count, and the uniforms that
   follow from them, and the colors, are worked out on a start or a resize; a frame uploads only
   the time. The canvas has at most 1.5 backing pixels per CSS pixel, and the mist, which is soft
-  and the costliest per pixel, 0.5. Its WebGL context starts the first time it runs. App pages
+  and the costliest per pixel, 0.25. Its WebGL context starts the first time it runs. App pages
   run it calm (half the points, 70% speed), and the sign-in page at full pace. It runs only with
   the Weather switch on, without reduced motion, and in a visible tab. Without WebGL 2, or when
   an effect's shaders don't compile, it stays off and the Weather hint says why. Unmounting

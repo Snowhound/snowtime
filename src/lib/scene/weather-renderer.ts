@@ -573,8 +573,9 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     // frame at 10 fps on a 900 px screen, which their soft, 100 px wide edges hide.
     fps: 10,
     // The costliest effect per pixel, and soft throughout: its finest noise spans over 100 CSS px,
-    // so half a backing pixel per CSS pixel looks the same.
-    resolution: 0.5,
+    // so a quarter of a backing pixel per CSS pixel looks the same as a half, for half the GPU
+    // time or less (task 069, subtask 07).
+    resolution: 0.25,
     quads: true,
     defines: (t) =>
       t.gather > 0 ? [`ZONES ${zoneCount(t)}`, 'GATHER'] : [`ZONES ${zoneCount(t)}`],

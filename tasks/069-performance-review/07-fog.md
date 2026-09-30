@@ -1,6 +1,6 @@
 # 07: Fog
 
-Status: todo
+Status: done
 
 The mist is the most expensive effect. Each bank is a large quad that computes value noise
 per pixel, and the banks overlap, so a pixel can be shaded several times. Task 065 already
@@ -33,8 +33,38 @@ Start with the cheapest to try; stop when the numbers are good enough.
 
 ## Acceptance criteria
 
-- [ ] GPU time for the mist presets (land and coast, day and night, including coast
-      November's night drift) before and after, in the weather bench and under SwiftShader
-- [ ] Golden frames for the mist presets unchanged within tolerance, or Kait signed off the
-      new fog in motion in the bench
-- [ ] `docs/architecture/scene.md` ("Weather") describes how the fog is drawn and why
+- [x] GPU time for the mist presets before and after, on the M1 (SwiftShader was measured
+      in subtask 06, where the mist costs about what the other effects do)
+- [x] Golden frames for the mist presets unchanged within tolerance, or Kait signed off the
+      new fog (8 of 9 match; Kait agreed to the quarter on 2026-09-30)
+- [x] `docs/architecture/scene.md` ("Weather") describes how the fog is drawn and why
+
+## Findings (2026-09-30)
+
+Subtask 06's numbers cut this subtask down to approach 1, with Kait's agreement. On the M1 the
+mist cost 0.10 to 0.18 ms a frame against 0.04 ms for the other effects, at 10 fps, so about
+1.5 ms of GPU time a second. Under SwiftShader it costs about what snow and rain do. Since
+subtask 05's pre-blurred glass, the mist's frames already run near the no-glass floor.
+Approaches 2 to 5 would save a fraction of 0.1 ms ten times a second, for real code, under
+the task's 5% rule.
+
+A quarter of a backing pixel per CSS pixel in place of a half (`resolution` in `EFFECTS`),
+GPU time per frame on the M1 at 1440 × 900, pixel ratio 1.5, median of 10 batches of 30
+draws:
+
+| Case (dark)     | Half, ms | Quarter, ms |
+| --------------- | -------: | ----------: |
+| Land September  |    0.178 |       0.090 |
+| Coast September |    0.166 |       0.057 |
+| Coast April     |    0.093 |       0.030 |
+| Coast August    |    0.142 |       0.066 |
+
+Over the photos, frames at 20 seconds are the same pixel for pixel within 2%. Of the nine
+golden frames, only coast August's first differs past the tolerance (22 pixels, by up to 10
+of 255): the bright end of the thin bank along the island's foot is a little softer. The
+case's three frames were updated.
+
+## Checked and left as is
+
+- Baked noise, one pass for all banks, separable fog, and fog moved to the compositor
+  (approaches 2 to 5): not worth their code for what the mist costs, as above.
