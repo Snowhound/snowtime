@@ -8,7 +8,7 @@ import { createTestDatabase } from './testing'
 
 let db: Database
 let url: string
-let cleanup: () => void
+let cleanup: () => Promise<void>
 
 beforeAll(async () => {
   ;({ db, url, cleanup } = await createTestDatabase())

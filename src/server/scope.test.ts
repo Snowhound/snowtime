@@ -7,7 +7,7 @@ import { createTestDatabase } from '~/db/testing'
 import { isAdmin, readableUserIds, resolveScope, strongestRole } from './scope.server'
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 const now = new Date()
 
 beforeAll(async () => {

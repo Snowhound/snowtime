@@ -10,7 +10,7 @@ import { listMembers, listTeams, setTeamRole } from './teams.server'
 const { users: U, orgs: O, teams: T } = seedIds
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 const scopes: Record<keyof typeof U, Scope> = {} as never
 
 beforeAll(async () => {

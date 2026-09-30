@@ -31,7 +31,7 @@ const DAY = 86_400_000
 const range = { from: new Date(NOW.getTime() - 22 * DAY), to: new Date(NOW.getTime() + DAY) }
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 const scopes: Record<keyof typeof U, Scope> = {} as never
 
 beforeAll(async () => {

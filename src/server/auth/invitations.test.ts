@@ -13,7 +13,7 @@ const NOW = new Date('2026-09-23T12:00:00Z')
 const HOUR = 60 * 60 * 1000
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 
 beforeAll(async () => {
   ;({ db, cleanup } = await createSeededDatabase(NOW))

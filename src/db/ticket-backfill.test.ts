@@ -13,7 +13,7 @@ import { organization, timeEntry, user } from './schema'
 import { createTestDatabase } from './testing'
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 
 const backfill = readFileSync('drizzle/20260927054729_time_entry_ticket/migration.sql', 'utf8')
   .split('--> statement-breakpoint')

@@ -82,6 +82,6 @@ test('SQL day windows match every reference page across busy days, cursors, and 
     } while (after)
     expect(pages).toBeGreaterThan(3)
   } finally {
-    cleanup()
+    await cleanup()
   }
 })

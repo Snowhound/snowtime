@@ -1,6 +1,6 @@
 # 043: Local database writes after SQLITE_BUSY
 
-Status: in-progress
+Status: done
 
 Task 039 found on 2026-09-25 that `@libsql/client` 0.18 with a `file:` URL can hold a
 connection's later writes back after a statement fails with `SQLITE_BUSY`. Other
@@ -23,8 +23,10 @@ second one.
 - [x] Local connections wait instead of failing at once: a busy `timeout` in the
       connection config of `src/db/index.ts` and `src/db/testing.ts`, WAL mode, or both,
       tested with the repro above
-- [ ] If it is a client bug, it is reported upstream with the repro, and the version
-      that fixes it is noted here
+- [x] ~~If it is a client bug, it is reported upstream with the repro, and the version
+      that fixes it is noted here~~ Declined by Kait on 2026-09-30: no upstream report.
+      The bug is in the `libsql` binding (0.5.29 still has it), and the busy timeout and
+      async test cleanup work around it locally
 
 ## Findings (2026-09-25)
 
@@ -49,3 +51,13 @@ loop, and the transaction holding the lock can't commit until the wait ends. The
 server's transactions contain only database calls, so they don't wait on other I/O while
 holding the lock. The remaining fix belongs upstream: reset a statement after an error,
 or have the client's pool close a connection whose statement failed.
+
+## Test databases on Windows (2026-09-30)
+
+The same missing `finalize()` kept every `bun test` database file open on Windows, so
+removing a test database failed with `EBUSY`. `client.close()` doesn't release the file:
+the binding's `close()` fails while any statement is unfinalized, and the pool swallows
+the error. The file closes once garbage collection frees the statements, which happens
+only after the event loop has turned. `cleanup()` in `src/db/testing.ts` is now async: it
+closes the client, then retries the removal, forcing a collection between tries. A
+binding that finalizes statements would make those retries unnecessary.

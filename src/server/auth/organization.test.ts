@@ -11,7 +11,7 @@ import { updateIssueLinks } from './organization.server'
 const { users: U, orgs: O } = seedIds
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 
 beforeAll(async () => {
   ;({ db, cleanup } = await createSeededDatabase())

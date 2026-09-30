@@ -25,7 +25,7 @@ import {
 const { users: U, orgs: O, projects: P, teams: T } = seedIds
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 const scopes: Record<keyof typeof U, Scope> = {} as never
 
 beforeAll(async () => {

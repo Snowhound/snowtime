@@ -9,7 +9,7 @@ import { organization, project, projectTeam, teamMember, team, timeEntry, user }
 import { createTestDatabase } from './testing'
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 
 const now = new Date()
 const alice = 'user-alice'

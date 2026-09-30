@@ -13,7 +13,7 @@ import { getSettings, updateSettings } from './settings.server'
 const { users: U } = seedIds
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 
 beforeAll(async () => {
   ;({ db, cleanup } = await createSeededDatabase(new Date('2026-09-23T12:00:00Z')))

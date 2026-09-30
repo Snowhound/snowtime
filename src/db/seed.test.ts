@@ -9,7 +9,7 @@ import { SEED_PASSWORD, seed, seedIds } from './seed'
 import { createTestDatabase } from './testing'
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 
 beforeAll(async () => {
   ;({ db, cleanup } = await createTestDatabase())

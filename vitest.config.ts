@@ -6,7 +6,8 @@ import { defineConfig } from 'vitest/config'
 // one in vite.config.ts; the Start, Nitro and devtools plugins stay out, since components
 // render here without a server.
 export default defineConfig({
-  plugins: [solidPlugin()],
+  // On Windows, Vitest fails to resolve the @solid-refresh import that hot reload adds.
+  plugins: [solidPlugin({ hot: process.platform !== 'win32' })],
   resolve: { tsconfigPaths: true },
   test: {
     environment: 'jsdom',

@@ -9,7 +9,7 @@ import { companyIds, seedCompany } from './seed-company'
 import { createTestDatabase } from './testing'
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 
 beforeAll(async () => {
   ;({ db, cleanup } = await createTestDatabase())

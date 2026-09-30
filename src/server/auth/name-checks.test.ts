@@ -14,7 +14,7 @@ import { databaseHooks, organizationHooks } from './name-checks.server'
 const long = 'x'.repeat(101)
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 let auth: ReturnType<typeof createAuth>
 let headers: Headers
 

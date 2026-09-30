@@ -15,7 +15,7 @@ import { getRunningTimer, startTimer, stopTimer, stopTimerOfRemovedMember } from
 const { users: U, orgs: O, projects: P, entries: E } = seedIds
 
 let db: Database
-let cleanup: () => void
+let cleanup: () => Promise<void>
 
 beforeAll(async () => {
   ;({ db, cleanup } = await createSeededDatabase())
@@ -145,13 +145,13 @@ describe('timer', () => {
         .where(and(eq(timeEntry.userId, U.engineer), isNull(timeEntry.stoppedAt)))
       expect(running).toEqual([])
     } finally {
-      freshCleanup()
+      await freshCleanup()
     }
   })
 
   describe('a member removed from an organization', () => {
     let fresh: Database
-    let freshCleanup: () => void
+    let freshCleanup: () => Promise<void>
 
     beforeAll(async () => {
       ;({ db: fresh, cleanup: freshCleanup } = await createSeededDatabase())
