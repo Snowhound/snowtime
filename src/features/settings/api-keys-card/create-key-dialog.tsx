@@ -96,7 +96,7 @@ function KeyForm(props: {
   onCancel: () => void
 }) {
   const create = useCreateApiKey()
-  // The least access is preselected; the Raycast extension needs read and write.
+  // The least access is preselected.
   const form = createForm(() => ({
     defaultValues: {
       name: '',

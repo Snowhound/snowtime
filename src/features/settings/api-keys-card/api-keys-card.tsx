@@ -1,4 +1,4 @@
-// Personal API keys for the Raycast extension and other clients (prototypes/settings.html). The
+// Personal API keys for clients outside the browser (prototypes/settings.html). The
 // list names each key and shows no part of it; the key itself appears once, when it's created.
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import KeyRoundIcon from 'lucide-solid/icons/key-round'
@@ -234,8 +234,6 @@ function KeyRow(props: {
           aria-hidden="true"
         />
         <div class="grid min-w-0 gap-0.5">
-          {/* A div, not a p: Badge renders a div, which a p can't hold, so the browser would
-              split the server's markup and hydration would fail. */}
           <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
             <span class="min-w-0 break-words">{props.item.name}</span>
             <Show
