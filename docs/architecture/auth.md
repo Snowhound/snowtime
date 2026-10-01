@@ -125,7 +125,7 @@ items, and must change with them.
 
 | Item                                         | Where        | Purpose                               | Lifetime                           |
 | -------------------------------------------- | ------------ | ------------------------------------- | ---------------------------------- |
-| `better-auth.session_token`                  | Cookie       | The session                           | 7 days, renewed daily while used   |
+| `better-auth.session_token`                  | Cookie       | The session                           | 30 days, renewed daily while used  |
 | `better-auth.session_data`                   | Cookie       | Session cache (see "Sign-in methods") | 5 minutes                          |
 | `better-auth.state`                          | Cookie       | Checks the OAuth callback             | 5 minutes, during sign-in          |
 | `better-auth-passkey`                        | Cookie       | The WebAuthn challenge                | 5 minutes, during a passkey step   |
@@ -149,9 +149,9 @@ On HTTPS, Better Auth prefixes its cookies with `__Secure-`.
   cookie on its first call in the browser, even when the language came from the browser's
   preference; `src/lib/locale-cookie.ts` skips that write while there is no cookie and the
   language matches the browser's. So a visitor who never signs in, or whose account
-  language matches the browser, gets no cookie. Its 30 days (Paraglide's default is 400)
-  outlast the 7-day session, so the sign-in page still shows in the last user's language
-  after a lapsed session.
+  language matches the browser, gets no cookie. Its 30 days (Paraglide's default is 400),
+  renewed on each page load, outlast the 30-day session, which is renewed at most daily, so
+  the sign-in page still shows in the last user's language after a lapsed session.
 - `snowtime.settings` holds choices made in an Appearance menu, or the account's copy of them
   (see "User settings" in [timer.md](timer.md)), with no identifier. The intro and passkey
   keys hold one flag or season each.

@@ -4,7 +4,7 @@ import { COMPANY, ContactEmail, LegalLayout } from './legal-layout'
 
 // Change the date with any change to the text below. The policy states what the app does, so
 // a change to what it stores, where, or for how long updates it too.
-const UPDATED = '2026-09-29'
+const UPDATED = '2026-10-01'
 
 export function PrivacyPage() {
   return (
@@ -110,7 +110,7 @@ function PrivacyEn() {
       <h2>How long we keep it</h2>
       <ul>
         <li>Account, settings, organizations, and entries: while your account exists.</li>
-        <li>Sessions: until you sign out, or about a week after you last use them.</li>
+        <li>Sessions: until you sign out, or about 30 days after you last use them.</li>
         <li>
           Rate-limit counters: a few minutes. Logs: a short period set by the hosting provider.
         </li>
@@ -142,7 +142,7 @@ function PrivacyEn() {
       </p>
       <ul>
         <li>
-          Sign-in cookies keep you signed in on this device until you sign out, or for a week after
+          Sign-in cookies keep you signed in on this device until you sign out, or for 30 days after
           you last use Snowtime. Short-lived ones, for up to 5 minutes, protect a sign-in or passkey
           step in progress and save rereading your session on every request.
         </li>
@@ -296,7 +296,7 @@ function PrivacyEt() {
       <h2>Kui kaua me andmeid hoiame</h2>
       <ul>
         <li>Konto, seaded, organisatsioonid ja kanded: kuni konto kustutamiseni.</li>
-        <li>Seansid: kuni väljalogimiseni või ligikaudu nädal pärast viimast tegevust.</li>
+        <li>Seansid: kuni väljalogimiseni või ligikaudu 30 päeva pärast viimast tegevust.</li>
         <li>
           Päringuloendurid: mõni minut. Logid: lühiajaliselt, vastavalt majutusteenuse pakkuja
           tingimustele.
@@ -330,8 +330,8 @@ function PrivacyEt() {
       </p>
       <ul>
         <li>
-          Sisselogimisküpsised hoiavad sind selles seadmes sisselogituna, kuni logid välja või nädal
-          pärast seda, kui Snowtime'i viimati kasutasid. Lühiajalised, kuni 5 minutit kehtivad
+          Sisselogimisküpsised hoiavad sind selles seadmes sisselogituna, kuni logid välja või 30
+          päeva pärast seda, kui Snowtime'i viimati kasutasid. Lühiajalised, kuni 5 minutit kehtivad
           küpsised kaitsevad pooleliolevat sisselogimist või pääsuvõtme lisamist ja hoiavad ära
           seansi uuesti lugemise igal päringul.
         </li>
