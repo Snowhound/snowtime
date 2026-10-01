@@ -1,0 +1,121 @@
+# Builds the Compose images from the chosen branch, pushes them to GHCR, and deploys them to the
+# Compose server (docs/deployment/compose.md). Runs only when started from the Actions tab.
+name: Compose deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      server:
+        description: 'After pushing the images: restart pulls them and restarts the app; pull only stops before the restart, as an import needs'
+        type: choice
+        options: [restart, pull only, skip]
+        default: restart
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compose-deploy
+  cancel-in-progress: false
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      release: ${{ steps.release.outputs.release }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: release
+        run: echo "release=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Both images come from one Dockerfile, so the Caddy build reuses the app build's stages.
+      - name: App image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: app
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/snowhound/snowtime-app:${{ steps.release.outputs.release }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Caddy image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: caddy
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/snowhound/snowtime-caddy:${{ steps.release.outputs.release }}
+
+  deploy:
+    needs: images
+    if: inputs.server != 'skip'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Repository secrets prefixed COMPOSE_ (docs/deployment/compose.md, step 3).
+    # Lets the server pull the images with this job's token.
+    permissions:
+      contents: read
+      packages: read
+    env:
+      RELEASE: ${{ needs.images.outputs.release }}
+      DEPLOY_TARGET: ${{ secrets.COMPOSE_DEPLOY_USER }}@${{ secrets.COMPOSE_DEPLOY_HOST }}
+      DEPLOY_PATH: ${{ secrets.COMPOSE_DEPLOY_PATH }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.COMPOSE_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.COMPOSE_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519
+
+      # The server's Compose files follow the deployed commit; .env and its secrets stay on it.
+      - name: Copy Compose files
+        run: scp deploy/compose/compose.yml deploy/compose/compose.import.yml "$DEPLOY_TARGET:$DEPLOY_PATH/"
+
+      # The token reaches the server on stdin, so it never shows in a process list.
+      - name: Pull images
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" |
+            ssh "$DEPLOY_TARGET" docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          ssh "$DEPLOY_TARGET" bash -s -- "$DEPLOY_PATH" "$RELEASE" <<'SCRIPT'
+          set -euo pipefail
+          trap 'docker logout ghcr.io' EXIT
+          cd "$1"
+          sed -i "s/^RELEASE=.*/RELEASE=$2/" .env
+          docker compose pull
+          SCRIPT
+
+      # Startup applies migrations, and --wait fails the job unless the app turns healthy.
+      - name: Restart
+        if: inputs.server == 'restart'
+        run: |
+          ssh "$DEPLOY_TARGET" bash -s -- "$DEPLOY_PATH" <<'SCRIPT'
+          set -euo pipefail
+          cd "$1"
+          docker compose stop app
+          docker compose up -d --no-build --force-recreate --wait
+          docker compose ps
+          SCRIPT
