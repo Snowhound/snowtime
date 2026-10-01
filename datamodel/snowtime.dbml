@@ -11,7 +11,7 @@ Project Snowtime {
   '''
 }
 
-// --- Auth (Better Auth core and passkey plugin) ----------------------------------------
+// --- Auth (Better Auth core, passkey and API key plugins) ------------------------------
 
 Table user [note: 'Better Auth user. One row per human, shared across organizations.'] {
   id text [pk, note: 'UUIDv7.']
@@ -76,6 +76,35 @@ Table passkey [note: 'Passkey plugin (@better-auth/passkey). A WebAuthn credenti
 
   indexes {
     user_id
+  }
+}
+
+Table api_key [note: 'API key plugin (@better-auth/api-key). A personal key for the /api/v1 routes (task 078); it reaches no other route.'] {
+  id text [pk]
+  config_id text [not null, default: 'default']
+  name text
+  start text [note: 'Always null: the plugin is set not to store the first characters.']
+  reference_id text [not null, ref: > user.id, note: 'The user who owns the key. ON DELETE CASCADE.']
+  prefix text
+  key text [not null, unique, note: 'Hash of the key. The key itself is shown once, at creation, and never stored.']
+  refill_interval integer
+  refill_amount integer
+  last_refill_at integer
+  enabled integer [not null, default: 1]
+  rate_limit_enabled integer [not null, default: 1]
+  rate_limit_time_window integer
+  rate_limit_max integer
+  request_count integer [not null, default: 0, note: 'Requests in the current per-key rate-limit window.']
+  remaining integer
+  last_request integer [note: 'Last verified use, shown in Settings.']
+  expires_at integer [note: 'Null when the user chose no expiry.']
+  created_at integer [not null]
+  updated_at integer [not null]
+  permissions text [note: 'JSON of scopes, read and optionally write, as {"api": [...]}.']
+  metadata text
+
+  indexes {
+    reference_id
   }
 }
 
@@ -257,6 +286,7 @@ TableGroup auth [color: #BAB0AC] {
   session
   account
   passkey
+  api_key
   verification
 }
 

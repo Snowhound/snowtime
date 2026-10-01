@@ -45,18 +45,23 @@ deferred as follows; nothing is posted on issue #2.
    (`keyExpiration.defaultExpiresIn` is `null`), because the plugin applies a default
    whenever `expiresIn` is empty, which would make `none` impossible. The plugin's
    `maxExpiresIn` default of 365 days allows `1y`.
-3. **Recheck when implementing: the plugin's per-key rate limit.** It is on by default at
-   10 requests a day (`rateLimit.maxRequests: 10`, `timeWindow` 24 hours), which a menu bar
-   item reloading the timer would hit in minutes. It also counts in the key's database
-   row, a Turso write per request, which `docs/architecture/auth.md` rejected for Better
-   Auth's own limits ("Abuse limits"). Kait asked to keep it, so subtask 01 sets a limit
-   that fits a polling client, or turns it off and counts each key in `rateLimitStore`
-   instead. Decide with numbers when implementing.
-4. **Settled on 2026-10-01: `deferUpdates: true`.** A verified key costs a read and a
-   write, not one lookup: even with its rate limit off, the plugin writes `lastRequest` on
-   every verification. `deferUpdates: true` moves that write after the response
-   (`runInBackground`), so a request waits on the read only. If the write costs too much,
-   the list drops "last used" and the write goes with it.
+3. **Settled in subtask 01: the plugin's per-key limit stays, at 60 requests a 5-second
+   window** (`rateLimits.apiKeyRequests`). Its default of 10 requests a day would stop a
+   menu bar item in minutes. The plugin restarts the window once a request comes more than
+   the window after the previous one, so the limit caps bursts, not a steady rate: a client
+   polling every 5 seconds or slower never reaches it. Keeping it costs no extra write,
+   because the plugin writes the key's row on every verification anyway (point 4).
+4. **Open again: the writes per request.** `deferUpdates: true` is set, as decided on
+   2026-10-01, but it doesn't do what this note first said. In 1.7.6, verifying a key with
+   database storage awaits a read and two writes: `lastRequest` (or the rate-limit count)
+   and `updatedAt`. `deferUpdates` moves only the deletion of expired keys after the
+   response; it defers the usage writes only with secondary storage. So each `/api/v1`
+   request costs three sequential Turso round trips before the route's own work. Settle
+   before subtask 02 with the user, who checks with Kait. Options: accept the cost;
+   verify keys with our own lookup (the plugin's hash, one read) and record last use at
+   most once a minute after the response, which departs from Kait's "verify with the
+   plugin"; or give the plugin secondary storage (Upstash), which Kait named as a later
+   step.
 5. **Settled: a missing scope answers 403.** When `verifyApiKey` checks permissions, a key
    without the scope fails as 401 `KEY_NOT_FOUND`, like an unknown key. The helper
    verifies without permissions, then checks the key's `permissions` itself and answers

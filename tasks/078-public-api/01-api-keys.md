@@ -1,6 +1,6 @@
 # 01: API keys
 
-Status: in-progress
+Status: done
 
 Users create, list, and revoke personal API keys in Settings. The keys sign in only to
 `/api/v1` (subtask 02).
@@ -21,34 +21,34 @@ Users create, list, and revoke personal API keys in Settings. The keys sign in o
       on desktop, in light and dark themes, and `prototypes/README.md` has a reference entry
       for it
 - [x] The user approves the prototype before the card is built in Solid
-- [ ] `@better-auth/api-key` is added at `1.7.6`, pinned as `@better-auth/passkey` is, and
+- [x] `@better-auth/api-key` is added at `1.7.6`, pinned as `@better-auth/passkey` is, and
       enabled in `src/server/auth/better-auth.server.ts` before `tanstackStartCookies()`
-- [ ] The plugin's options: `defaultPrefix: 'snow_'`, `enableSessionForAPIKeys: false`,
+- [x] The plugin's options: `defaultPrefix: 'snow_'`, `enableSessionForAPIKeys: false`,
       no `defaultExpiresIn` (README, point 2), and
       `startingCharactersConfig.shouldStore: false`, so no part of a key is stored or shown
       after it's created
-- [ ] The per-key rate limit is rechecked against a polling client and set with numbers
+- [x] The per-key rate limit is rechecked against a polling client and set with numbers
       (README, point 3)
-- [ ] `deferUpdates: true`, so recording a key's last use doesn't hold up the response
-      (README, point 4)
-- [ ] The key name's length limit matches the form's schema; the plugin's default is 32
+- [x] `deferUpdates: true` (README, point 4). It defers only the deletion of expired keys,
+      not the last-use write; point 4 is open again for subtask 02
+- [x] The key name's length limit matches the form's schema; the plugin's default is 32
       characters
-- [ ] A hand-written migration adds the plugin's table (`docs/migrations.md`), with
+- [x] A hand-written migration adds the plugin's table (`docs/migrations.md`), with
       `reference_id` referencing `user(id)` `ON DELETE CASCADE`, and an index on it for the
       Settings list
-- [ ] The DBML in `datamodel/` shows the table (`bun run datamodel`)
-- [ ] Creating a key goes through a server function, not the Better Auth client, because
+- [x] The DBML in `datamodel/` shows the table (`bun run datamodel:generate`)
+- [x] Creating a key goes through a server function, not the Better Auth client, because
       the plugin accepts `permissions` only from the server. It takes a name, a required
       lifetime (`30d`, `90d`, `1y`, or `none`), and scopes (`read`, or `read` and `write`).
       The form preselects `90d` and read only, the least access
-- [ ] The "API keys" card in `src/features/settings/`, built from the approved prototype,
+- [x] The "API keys" card in `src/features/settings/`, built from the approved prototype,
       lists each key's name, access, creation date, expiry, and last use, with a Revoke
       button. A new key shows in full once, with a copy button, and never again
-- [ ] Listing and revoking show only the user's own keys; a test revokes another user's
+- [x] Listing and revoking show only the user's own keys; a test revokes another user's
       key and gets refused
-- [ ] English and Estonian strings for the card and its errors
-- [ ] `docs/architecture/auth.md` gets an "API keys" section: how keys are issued, stored
+- [x] English and Estonian strings for the card and its errors
+- [x] `docs/architecture/auth.md` gets an "API keys" section: how keys are issued, stored
       (hashed), scoped, expired, revoked, and rate limited, and why they reach only
       `/api/v1`. The cookie table there is unchanged, because keys never reach the browser
-- [ ] The privacy policy (`src/features/legal/privacy-page.tsx`) mentions that a key's last
+- [x] The privacy policy (`src/features/legal/privacy-page.tsx`) mentions that a key's last
       use is recorded

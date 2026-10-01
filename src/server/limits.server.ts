@@ -12,6 +12,8 @@ export const limits = {
   // A member's entries in one organization that start within 24 hours of a new entry's
   // start, before or after it.
   entriesPerMemberPerDay: 200,
+  // Expired keys count until the plugin deletes them.
+  apiKeysPerUser: 25,
 } as const
 
 // Request rates, as { window in seconds, max requests } (src/server/rate-limit.server.ts).
@@ -22,4 +24,8 @@ export const rateLimits = {
   // Better Auth counts these per IP address, and everyone in an office may share one.
   createOrganization: { window: 60 * 60, max: 10 },
   inviteMember: { window: 60, max: 30 },
+  // The api-key plugin's own limit, per key. Its window restarts once a request comes more
+  // than `window` after the previous one, so it caps bursts, not a steady rate: a client
+  // polling every 5 seconds or slower never reaches it.
+  apiKeyRequests: { window: 5, max: 60 },
 } as const

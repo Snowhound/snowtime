@@ -10,6 +10,7 @@ export function SettingsPending() {
         <div class="hidden flex-col gap-2 lg:flex">
           <Skeleton class="h-9" />
           <Skeleton class="h-9" />
+          <Skeleton class="h-9" />
         </div>
         <Card class="grid max-w-3xl gap-5 p-6">
           <Skeleton class="h-5 w-40" />

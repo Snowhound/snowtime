@@ -51,6 +51,8 @@ export const errorMessages = {
   rate_limited: 'Too many changes in a short time. Wait a minute and try again.',
   organization_forbidden: 'Only admins and owners manage the organization.',
   database_unavailable: 'Snowtime is down for maintenance. Try again in a few minutes.',
+  api_key_not_found: 'API key not found.',
+  api_key_limit: 'You have too many API keys. Revoke unused ones first.',
 } as const
 
 export type AppErrorKey = keyof typeof errorMessages

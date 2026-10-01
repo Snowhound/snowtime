@@ -46,6 +46,10 @@ function PrivacyEn() {
           Passkeys: the public key and device details of each passkey you add. The private key never
           leaves your device.
         </li>
+        <li>
+          API keys: for each key you create, its name, access, expiry, and when it was last used. We
+          store only a hash of the key, so we can't show it again.
+        </li>
         <li>Sessions: for each signed-in device, its IP address, browser, and expiry time.</li>
         <li>Settings: your time zone, week start, language, and appearance choices.</li>
         <li>
@@ -129,9 +133,9 @@ function PrivacyEn() {
       <p>
         Snowtime has no delete button yet. Email <ContactEmail /> from your account's email address,
         and we'll delete the account within one month. We replace your name, email address, and
-        picture, and remove your sessions, passkeys, and sign-in connections. Time entries you
-        recorded in an organization stay in its records but no longer identify you. Before you ask,
-        you can export your entries from Reports as CSV or XLSX.
+        picture, and remove your sessions, passkeys, API keys, and sign-in connections. Time entries
+        you recorded in an organization stay in its records but no longer identify you. Before you
+        ask, you can export your entries from Reports as CSV or XLSX.
       </p>
 
       <h2>Cookies and browser storage</h2>
@@ -225,6 +229,10 @@ function PrivacyEt() {
           kunagi sinu seadmest.
         </li>
         <li>
+          API-võtmed: iga loodud võtme nimi, ligipääs, aegumisaeg ja viimase kasutamise aeg. Võtmest
+          säilitame ainult räsi, nii et me ei saa seda uuesti näidata.
+        </li>
+        <li>
           Seansid: iga sisselogitud seadme IP-aadress, veebilehitseja info ja seansi aegumisaeg.
         </li>
         <li>Seaded: ajavöönd, nädala alguspäev, keel ja kujunduseelistused.</li>
@@ -316,7 +324,7 @@ function PrivacyEt() {
       <p>
         Snowtime'is pole veel kustutamisnuppu. Kirjuta oma konto e-posti aadressilt aadressile{' '}
         <ContactEmail /> ja kustutame konto ühe kuu jooksul. Anonümiseerime või eemaldame sinu nime,
-        e-posti aadressi ja profiilipildi ning kustutame seansid, pääsuvõtmed ja
+        e-posti aadressi ja profiilipildi ning kustutame seansid, pääsuvõtmed, API-võtmed ja
         sisselogimisühendused. Organisatsioonis salvestatud ajakanded jäävad selle andmete hulka,
         kuid ei ole enam sinuga seostatavad. Enne konto sulgemist saad soovi korral oma kanded
         aruannete vaates CSV- või XLSX-failina alla laadida.
