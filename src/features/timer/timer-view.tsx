@@ -4,10 +4,12 @@
 // Every write is optimistic (queries.ts); its error shows under the edited row or above the
 // timer.
 import { keepPreviousData } from '@tanstack/solid-query'
+import { Link } from '@tanstack/solid-router'
 import CalendarDaysIcon from 'lucide-solid/icons/calendar-days'
 import ListIcon from 'lucide-solid/icons/list'
 import PlusIcon from 'lucide-solid/icons/plus'
 import {
+  For,
   Match,
   Show,
   Switch,
@@ -61,6 +63,29 @@ const MAX_DAYS = 84
 const FOCUS_DAYS = 3
 // How long a row shows "Saved" after the server confirms its change.
 const SAVED_MS = 1200
+
+// The note past MAX_DAYS, with its {reports} as a link to Reports.
+function EarlierInReports() {
+  const parts = m.timer_earlier_in_reports({ reports: '\u0000' }).split('\u0000')
+  return (
+    <For each={parts}>
+      {(part, i) => (
+        <>
+          {i() > 0 && (
+            <Link
+              from="/$org"
+              to="/$org/reports"
+              class="hover:text-foreground underline underline-offset-4"
+            >
+              {m.timer_earlier_in_reports_link()}
+            </Link>
+          )}
+          {part}
+        </>
+      )}
+    </For>
+  )
+}
 
 export function TimerView(props: {
   organizationId: string
@@ -452,7 +477,7 @@ export function TimerView(props: {
                             when={days() < MAX_DAYS}
                             fallback={
                               <p class="page-note text-muted-foreground text-sm">
-                                {m.timer_earlier_in_reports()}
+                                <EarlierInReports />
                               </p>
                             }
                           >
