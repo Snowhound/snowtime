@@ -1,4 +1,8 @@
 {
+	# The admin API stays on localhost:2019 inside the container, which serves the metrics:
+	# docker compose exec caddy wget -qO- localhost:2019/metrics
+	metrics
+
 	servers {
 		# HTTP/3 needs UDP 443 open. Behind Cloudflare's proxy only Cloudflare reaches the
 		# origin, over HTTP/1.1 or HTTP/2; HTTP/3 here serves a domain that isn't proxied.
@@ -13,12 +17,34 @@
 
 # Caddy gets the certificate from Let's Encrypt and redirects HTTP to HTTPS by itself.
 {$APP_HOST} {
-	# The current release's public files; the unit runs the same release's server.
+	# The public files baked into this image, from the same build as the app image.
 	root * /srv/snowtime
 
+	# Caddy already redacts cookies and Authorization; this drops headers nobody reads.
 	log {
 		output stdout
-		format json
+		format filter {
+			wrap json
+			fields {
+				request>tls delete
+				resp_headers delete
+				request>headers>Sec-Ch-Ua delete
+				request>headers>Sec-Ch-Ua-Mobile delete
+				request>headers>Sec-Ch-Ua-Platform delete
+				request>headers>Sec-Fetch-Site delete
+				request>headers>Sec-Fetch-Mode delete
+				request>headers>Sec-Fetch-Dest delete
+				request>headers>Accept delete
+				request>headers>Accept-Language delete
+				request>headers>Accept-Encoding delete
+				request>headers>Priority delete
+				request>headers>Cf-Visitor delete
+				request>headers>Cdn-Loop delete
+				request>headers>Cf-Ray delete
+				request>headers>X-Forwarded-For delete
+				request>headers>X-Forwarded-Proto delete
+			}
+		}
 	}
 
 	# Pages and server function responses. Precompressed files keep their encoding; images
@@ -45,6 +71,26 @@
 	header /assets/* Cache-Control "public, max-age=31536000, immutable"
 	header /backgrounds/* Cache-Control "public, max-age=604800"
 	header /brand/* Cache-Control "public, max-age=604800"
+
+	# Scanner probes end here instead of rendering the app's not-found page. These handle
+	# blocks come first, so they run before the file and app handlers below.
+	@bad_methods method TRACE TRACK
+	handle @bad_methods {
+		respond 405
+	}
+	@probes {
+		path /wp-admin* /wp-login.php /xmlrpc.php /phpmyadmin* /adminer* /cgi-bin*
+	}
+	@hidden {
+		path_regexp (?i)^(?:/\.[^/]+|/.*\.(?:bak|old|sql|zip|tar|gz|tgz|7z))$
+		not path /.well-known/*
+	}
+	handle @probes {
+		respond 404
+	}
+	handle @hidden {
+		respond 404
+	}
 
 	@file file {path}
 	handle @file {

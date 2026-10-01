@@ -4,17 +4,18 @@
 
 `DEMO_MODE=true` explicitly enables a deployed demo on local SQLite. It disables
 OAuth even when credentials are present, enables seeded password sign-in, and disables
-password sign-up. A startup notice explains that accounts and changes are shared;
-a visible demo button reopens it. The flag defaults to false and is read at runtime.
+password sign-up. A box on the sign-in page explains that accounts and changes are
+shared. The flag defaults to false and is read at runtime.
 Full-year sample data is seeded explicitly, never at startup. Demo mode is for sample
 data; company use starts with a fresh database and normal OAuth configuration.
 
-The login page also labels demo mode. `ALLOWED_LOGIN_DOMAINS` optionally restricts
-sign-in to a comma-separated list of exact email domains and labels the login page
-for internal use. The server checks user creation, email changes, new sessions for
-every authentication method, and existing sessions, including cached cookies.
-An empty list allows all domains; demo users still need their `example.com` domain
-allowed. The list supplies no organization membership or other permissions.
+`ALLOWED_LOGIN_DOMAINS` optionally restricts sign-in to a comma-separated list of
+exact email domains, and a box on the sign-in page names them for internal use. The
+server checks user creation, email changes, new sessions for every authentication
+method, and existing sessions, including cached cookies. An empty list allows all
+domains. The app refuses to start with both a list and `DEMO_MODE=true`, because the
+seeded users have `example.com` addresses. The list supplies no organization
+membership or other permissions.
 
 | Method           | Status               | Enabled when                                                |
 | ---------------- | -------------------- | ----------------------------------------------------------- |

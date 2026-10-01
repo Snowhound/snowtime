@@ -53,6 +53,10 @@ export const env = createEnv({
 if (env.DEMO_MODE && !env.TURSO_DATABASE_URL.startsWith('file:')) {
   throw new Error('DEMO_MODE needs a local file: TURSO_DATABASE_URL.')
 }
+// The seeded users have example.com addresses, so a domain allowlist would lock them out.
+if (env.DEMO_MODE && env.ALLOWED_LOGIN_DOMAINS) {
+  throw new Error('DEMO_MODE signs in seeded users; unset ALLOWED_LOGIN_DOMAINS.')
+}
 
 for (const provider of ['GOOGLE', 'GITHUB', 'MICROSOFT'] as const) {
   const id = `${provider}_CLIENT_ID` as const

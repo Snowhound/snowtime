@@ -64,6 +64,7 @@ export const auth = betterAuth({
   socialProviders: socialProviders(env),
   databaseHooks: {
     user: {
+      ...databaseHooks.user,
       create: {
         before: async (user, ctx) => {
           await domainHooks.user.create.before(user)

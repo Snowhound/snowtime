@@ -57,6 +57,10 @@ const providerTokenColumns = new Set([
   'refresh_token_expires_at',
 ])
 
+const PAGE_SIZE = 500
+// The page cursor's column; no Snowtime table has a column by this name.
+const ROWID = '__import_rowid'
+
 function identifier(name: string): string {
   return `"${name.replaceAll('"', '""')}"`
 }
@@ -135,6 +139,10 @@ export async function importDatabase(
       if (tables.some((table) => /^CREATE\s+VIRTUAL\s+TABLE/i.test(table.sql))) {
         throw new Error('Virtual tables are not supported by this importer.')
       }
+      // Rows are read in rowid order, page by page.
+      if (tables.some((table) => /\bWITHOUT\s+ROWID\s*$/i.test(table.sql))) {
+        throw new Error('WITHOUT ROWID tables are not supported by this importer.')
+      }
       if (organizationId && tables.some((table) => !Object.hasOwn(companyPredicates, table.name))) {
         throw new Error(
           'Company filtering needs updating for the source schema. No data was imported.',
@@ -171,18 +179,25 @@ export async function importDatabase(
         const insert = target.prepare(
           `INSERT INTO ${identifier(table.name)} (${fields}) VALUES (${names.map(() => '?').join(', ')})`,
         )
-        let offset = 0
+        // Each page starts after the last rowid read, so it reads only its own rows.
+        const sql = `${organizationId ? COMPANY_SCOPE : ''}
+          SELECT rowid AS ${identifier(ROWID)}, ${selectedFields} FROM ${identifier(table.name)}
+          WHERE rowid > :after ${organizationId ? `AND (${companyPredicates[table.name]})` : ''}
+          ORDER BY rowid LIMIT :pageSize`
+        let after: InValue = -1
+        let count = 0
         for (;;) {
           const page = await snapshot.execute({
-            sql: `${organizationId ? COMPANY_SCOPE : ''} SELECT ${selectedFields} FROM ${identifier(table.name)} ${organizationId ? `WHERE ${companyPredicates[table.name]}` : ''} LIMIT :pageSize OFFSET :offset`,
-            args: { ...(organizationId ? { organizationId } : {}), pageSize: 200, offset },
+            sql,
+            args: { ...(organizationId ? { organizationId } : {}), pageSize: PAGE_SIZE, after },
           })
           for (const row of page.rows) insert.run(...names.map((name) => binding(row[name])))
-          offset += page.rows.length
-          if (page.rows.length < 200) break
+          count += page.rows.length
+          if (page.rows.length < PAGE_SIZE) break
+          after = page.rows[page.rows.length - 1][ROWID]
         }
         insert.finalize()
-        counts[table.name] = offset
+        counts[table.name] = count
       }
       const sequence = await snapshot.execute(
         "SELECT 1 FROM sqlite_schema WHERE name = 'sqlite_sequence'",

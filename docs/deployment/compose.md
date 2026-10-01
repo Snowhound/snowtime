@@ -5,11 +5,13 @@ files, and one app process with local SQLite. Cloudflare can cache the static fi
 in front of Caddy. This setup follows the standalone architecture and the Caddy and
 app pattern used by minupatsient. Backups are deferred for this demo deployment.
 
-The commands below assume Debian 13, an SSH user with sudo, and an x64 or Arm64
-machine. On Ubuntu, install Docker from its
+The commands below assume Debian 13, an SSH user with sudo, and an x64 machine. On
+Ubuntu, install Docker from its
 [Ubuntu instructions](https://docs.docker.com/engine/install/ubuntu/), then continue
-at step 2. The server needs no Bun or Node installation. Allow about 4 GB of RAM
-for building; runtime requirements are in [Hosting](../hosting.md#self-hosted-one-linux-server).
+at step 2. The manual **Compose deploy** workflow builds the images on GitHub Actions,
+pushes them to GHCR, and deploys them over SSH, so the server needs no Bun, Node, or
+checkout of the repository. A 1 vCPU, 2 GB server runs the demo; other runtime
+requirements are in [Hosting](../hosting.md#self-hosted-one-linux-server).
 
 ## 1. Prepare the server
 
@@ -79,6 +81,12 @@ with Caddy's resolved client address before forwarding to the app. A direct requ
 to the origin cannot choose its own rate-limit address. Keep those ranges current
 from [Cloudflare's list](https://www.cloudflare.com/ips/).
 
+Caddy answers common scanner probes itself: `TRACE` and `TRACK` get 405, and paths such
+as `/wp-admin`, dotfiles other than `/.well-known/`, and backup archives get 404. Its
+JSON access log leaves out TLS details, response headers, and request headers nobody
+reads. Its metrics stay inside the container:
+`docker compose exec caddy wget -qO- localhost:2019/metrics`.
+
 For the bypass rule, use this custom expression and choose **Bypass cache**:
 
 ```text
@@ -105,26 +113,24 @@ If the first certificate fails with the proxy enabled, temporarily set the DNS r
 to **DNS only**, start Caddy and wait for its certificate, then enable **Proxied** again
 with **Full (strict)**. Keep the certificate challenge path reachable for renewals.
 
-## 3. Check out the branch and configure the demo
+## 3. Configure the demo and the deploy
 
-Use your normal GitHub authentication for this repository:
+On the server, let your user run Docker without sudo, which the workflow needs, and
+create the deploy directory. Membership in the `docker` group is equivalent to root.
 
 ```bash
-mkdir -p ~/projects
-cd ~/projects
-git clone --branch feat/compose-demo-deployment https://github.com/Snowhound/snowtime.git
-cd snowtime/deploy/compose
-cp .env.example .env
-chmod 600 .env
+sudo usermod -aG docker "$USER"
+mkdir -p ~/snowtime
 openssl rand -hex 32
 ```
 
-Copy the generated secret into `.env` as `BETTER_AUTH_SECRET`. Keep it for later
-deploys; changing it signs everyone out. The initial settings are:
+Log out and in again for the group to apply. Create `~/snowtime/.env` with
+`chmod 600`, putting the generated secret in `BETTER_AUTH_SECRET`. Keep it for later
+deploys; changing it signs everyone out. The workflow sets `RELEASE` on each deploy.
 
 ```dotenv
 APP_HOST=snowtime-internal.snowhound.eu
-RELEASE=local
+RELEASE=
 DATABASE_VOLUME=snowtime_demo_data
 BETTER_AUTH_SECRET=<generated-secret>
 DEMO_MODE=true
@@ -132,26 +138,61 @@ DEMO_MODE=true
 
 `DEMO_MODE` is a runtime setting, so changing it requires recreating the app container,
 without rebuilding. It enables seeded password sign-in, disables all OAuth providers,
-and disables password sign-up. The app shows a startup notice once per browser tab
-session and a persistent **Demo version** button to reopen it. Demo visitors share
+and disables password sign-up. A **Demo version** box on the sign-in page tells
+visitors that accounts and data are shared. Demo visitors share
 accounts and can change the sample data. No OAuth credentials are needed.
 
 Compose fixes the database URL to `file:/data/snowtime.db`, the public app URL to
 `https://$APP_HOST`, and the client IP header to `cf-connecting-ip`. The app runs as
 UID 10001. Its named volume retains the database and WAL across container replacements.
 
-## 4. Build, migrate, seed, and start
-
-Run these commands from `deploy/compose`:
+On your own machine, make a key for the workflow and authorize it on the server:
 
 ```bash
-sudo docker compose build --pull
-sudo docker compose run --rm --no-deps app ./snowtime-migrate
-sudo docker compose run --rm --no-deps app ./snowtime-seed --company
-sudo docker compose run --rm --no-deps caddy caddy validate --config /etc/caddy/Caddyfile
-sudo docker compose up -d
-sudo docker compose ps
-sudo docker compose logs --tail=100 app caddy
+ssh-keygen -t ed25519 -N '' -C snowtime-compose-deploy -f snowtime-deploy
+ssh-copy-id -i snowtime-deploy.pub <user>@<server-ip>
+ssh-keyscan -t ed25519 <server-ip>
+```
+
+Compare the scanned key with `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the
+server. In the repository's **Settings > Secrets and variables > Actions**, add these
+repository secrets:
+
+| Secret                    | Value                                                 |
+| ------------------------- | ----------------------------------------------------- |
+| `COMPOSE_DEPLOY_HOST`     | The server's IP address or SSH hostname               |
+| `COMPOSE_DEPLOY_USER`     | Your SSH user                                         |
+| `COMPOSE_DEPLOY_PATH`     | The deploy directory, such as `/home/<user>/snowtime` |
+| `COMPOSE_SSH_PRIVATE_KEY` | The contents of `snowtime-deploy`                     |
+| `COMPOSE_SSH_KNOWN_HOSTS` | The `ssh-keyscan` line                                |
+
+Delete the local key files afterwards. GitHub's runners connect from changing
+addresses, so the server's firewall must allow SSH from anywhere. Keep password login
+disabled (`PasswordAuthentication no` in `/etc/ssh/sshd_config`). Anyone who can push a
+branch can run a workflow that reads these secrets, so write access to the repository
+amounts to access to the server.
+
+## 4. Deploy, seed, and start
+
+In the repository's **Actions** tab, open **Compose deploy**, choose **Run workflow**,
+pick the branch, and keep **restart**. From a terminal:
+
+```bash
+gh workflow run compose-deploy.yml --ref feat/compose-demo-deployment -f server=restart
+```
+
+The workflow builds both images, pushes them to GHCR, copies `compose.yml` and
+`compose.import.yml` to the server, pulls the images with the job's token, and
+restarts the app. It waits for the app's health check and fails if the app doesn't
+become healthy. The first start creates and migrates an empty database. Seed it on the
+server:
+
+```bash
+cd ~/snowtime
+docker compose stop app
+docker compose run --rm --no-deps app ./snowtime-seed --company
+docker compose up -d --wait
+docker compose logs --tail=100 app caddy
 ```
 
 The seed adds Northwind Studio, Harbor Consulting, and Lumen Works with about 20,000
@@ -161,25 +202,29 @@ The [seeded accounts](../development.md#seeded-users) all use `snowtime-local`.
 The sign-in page lists them; choosing one fills the form. For a full-year report,
 sign in as `kristiina@lumen.example.com`, Lumen Works' owner.
 
-The Dockerfile builds native Linux executables for the server, migrator, and seeder.
-Caddy's image contains the same build's precompressed public files. It pins
+The Dockerfile builds native Linux executables for the server, migrator, seeder, and
+importer. Caddy's image contains the same build's precompressed public files. It pins
 [Caddy 2.11.4](https://github.com/caddyserver/caddy/releases/tag/v2.11.4), the latest
-stable release checked on 2026-10-01. Both images receive the same `RELEASE` tag.
+stable release checked on 2026-10-01. Both images are tagged with the commit's short
+ID, which `RELEASE` selects.
 Only the app and Caddy run continuously; migration and seed commands are temporary
 containers using the app image. Compose enables `MIGRATE_ON_START=true`: the standalone
 entry verifies and applies migrations in the app process before importing the HTTP
-server. A failed migration prevents the listener from starting. The explicit first
-migration above prepares the file for seeding before the first startup.
+server. A failed migration prevents the listener from starting, and the workflow fails.
+
+`compose.yml` sets no CPU or memory limits. Its commented-out `deploy` blocks show
+caps for sharing a larger host with other services; `docker stats` shows what the
+containers use.
 
 ## 5. Check the deployment
 
 Open `https://snowtime-internal.snowhound.eu` on desktop and phone:
 
-- The demo prompt appears, and **Continue to demo** closes it. The demo button reopens it.
+- The sign-in page shows the **Demo version** box.
 - The sign-in page lists sample accounts and shows no OAuth buttons.
 - Sign in as Kristiina, open Reports, and select the preceding year.
 - Start and stop a timer, reload, and check that the change remains.
-- `sudo docker compose ps` shows the app healthy and both services running.
+- `docker compose ps` shows the app healthy and both services running.
 
 Check the response headers:
 
@@ -195,42 +240,33 @@ There must be no cached sign-in page or authenticated response.
 
 ## 6. Deploy a later commit
 
-Build before stopping the running app. Set `RELEASE` in `.env` to a unique value,
-such as the short commit ID, so the old images remain available for rollback.
+Run **Compose deploy** again on the branch; it deploys the branch's latest commit. The
+build finishes before the app stops, and each deploy sets a new `RELEASE`, so earlier
+images stay on the server and in GHCR for rollback.
 
-```bash
-cd ~/projects/snowtime
-git pull --ff-only
-git rev-parse --short HEAD
-cd deploy/compose
-# Edit RELEASE in .env to that commit ID.
-sudo docker compose build --pull
-sudo docker compose stop app
-sudo docker compose up -d --force-recreate
-sudo docker compose ps
-```
+If the build or startup migration fails, inspect the workflow log and
+`docker compose logs app`. Caddy keeps serving static files while the app is stopped.
+Do not run a second app against the volume. Stop the app before using the seed or
+migration tools so they never compete with live writes. Do not use
+`docker compose down -v`: it deletes the database and Caddy's certificate storage.
 
-If building or startup migration fails, stop the deploy and inspect the error. The previous
-Caddy keeps serving static files while the app is stopped. Do not run a second app
-against the volume. Stop the app before using the seed or migration tools so they never compete
-with live writes. Do not use `docker compose down -v`: it deletes the database and
-Caddy's certificate storage.
-
-To roll back the code, restore the earlier `RELEASE` value and run
-`sudo docker compose up -d --no-build --force-recreate`. Keep the earlier images and
-use backward-compatible migrations. A rollback does not undo schema changes.
+To roll back the code, set `RELEASE` in `.env` to an earlier commit's short ID and run
+`docker compose up -d --no-build --force-recreate --wait`. Use backward-compatible
+migrations: a rollback does not undo schema changes. To build on the server instead,
+run `docker compose build` from `deploy/compose` in a checkout of the repository.
 
 ## Move to company use later
 
 `ALLOWED_LOGIN_DOMAINS=snowhound.eu` restricts every sign-in method to that exact
-email domain and shows an internal-use notice on the login page. Separate domains
+email domain and shows an **Internal use only** box on the sign-in page. Separate domains
 with commas; case and a leading `@` are ignored. Subdomains need their own entries.
-Existing sessions outside the list lose access. Leave it blank for the demo because
-the seeded users have `example.com` addresses. Demo mode also shows a login-page notice.
+Existing sessions outside the list lose access. The app refuses to start with both
+`DEMO_MODE=true` and `ALLOWED_LOGIN_DOMAINS` set, because the seeded users have
+`example.com` addresses.
 
 Stop the app, set `DATABASE_VOLUME=snowtime_company_data` in `.env`, configure an
-OAuth provider, and set `DEMO_MODE=false`. Run the migration command from step 4
-against the fresh volume, then `sudo docker compose up -d --force-recreate`.
+OAuth provider, and set `DEMO_MODE=false`. Then run
+`docker compose up -d --force-recreate --wait`; startup migrates the fresh volume.
 Do not reuse the demo's shared credentials
 for company data. The regular [OAuth setup](README.md#register-the-oauth-apps) applies.
 The [standalone backup guide](self-hosted.md#backups-and-restore) describes Litestream;
@@ -246,12 +282,12 @@ offline and reads the source through a Turso read transaction. It refuses an
 existing destination database or SQLite sidecar; use a fresh volume. Do not run
 the seed or migration command on that volume before importing.
 
-Build the branch's images first. From `deploy/compose`, stop the app:
+Run **Compose deploy** with **pull only**, so the server has the images without
+restarting the app. Then, in `~/snowtime`, stop the app and create `.env.import`:
 
 ```bash
-sudo docker compose build --pull
-sudo docker compose stop app
-cp .env.import.example .env.import
+docker compose stop app
+touch .env.import
 chmod 600 .env .env.import
 ```
 
@@ -272,13 +308,14 @@ IMPORT_SOURCE_DATABASE_URL=libsql://your-cloud-database.turso.io
 IMPORT_SOURCE_AUTH_TOKEN=your-read-only-token
 ```
 
-This file is gitignored and excluded from Docker builds. Only the import override
+This file stays on the server. Only the import override
 passes its credentials into a temporary container; normal startup does not use it.
+Use the override only with `run`: `up` with it would give the running app the token.
 Create the token with `turso db tokens create DATABASE --read-only`
 ([Turso token reference](https://docs.turso.tech/cli/db/tokens/create)).
 
 ```bash
-sudo docker compose -f compose.yml -f compose.import.yml run --rm --no-deps -it app ./snowtime-import
+docker compose -f compose.yml -f compose.import.yml run --rm --no-deps -it app ./snowtime-import
 ```
 
 The script asks you to confirm that all destination writers are stopped, choose
@@ -306,8 +343,8 @@ without overwriting an existing database. Failed imports leave no destination.
 After a successful import, start with the normal configuration:
 
 ```bash
-sudo docker compose up -d --force-recreate
-sudo docker compose logs --tail=100 app
+docker compose up -d --force-recreate
+docker compose logs --tail=100 app
 ```
 
 Startup applies any pending migrations before accepting requests. Verify company

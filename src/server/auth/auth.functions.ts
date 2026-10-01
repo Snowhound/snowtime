@@ -19,9 +19,9 @@ import { passwordEnabled, signInMethods } from './sign-in.server'
 // returns method ids only, never a client ID or secret.
 export const getSignInMethods = createServerFn({ method: 'GET' }).handler(() => signInMethods(env))
 
-export const getDemoMode = createServerFn({ method: 'GET' }).handler(() => env.DEMO_MODE)
-
-export const getLoginPolicy = createServerFn({ method: 'GET' }).handler(() => ({
+// Whether this is a demo deployment, and which email domains may sign in (empty allows all).
+// Signed-out pages show both, so it has no middleware.
+export const getDeployment = createServerFn({ method: 'GET' }).handler(() => ({
   demoMode: env.DEMO_MODE,
   allowedDomains: env.ALLOWED_LOGIN_DOMAINS ?? [],
 }))
