@@ -42,7 +42,12 @@ export function SignInPage(props: { redirect?: string; initialError?: string }) 
 
   return (
     <AuthLayout firstVisitIntro>
-      <AuthHeading title={m.sign_in_title()} description={m.sign_in_description()} />
+      <AuthHeading
+        title={m.sign_in_title()}
+        description={
+          deployment.data?.demoMode ? m.sign_in_demo_description() : m.sign_in_description()
+        }
+      />
       <Show when={deployment.data?.demoMode}>
         <Notice
           icon={<FlaskConicalIcon class="size-4" aria-hidden="true" />}
