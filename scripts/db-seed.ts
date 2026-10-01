@@ -14,6 +14,9 @@ import { SEED_PASSWORD, seed } from '~/db/seed'
 import { companyIds, companyUsers, seedCompany } from '~/db/seed-company'
 
 const url = process.env.TURSO_DATABASE_URL
+if (process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true') {
+  throw new Error('Production seeding requires DEMO_MODE=true.')
+}
 if (!url?.startsWith('file:')) {
   console.error(
     `[db-seed] Refusing to seed ${url ?? '(no TURSO_DATABASE_URL)'}: local file databases only.`,

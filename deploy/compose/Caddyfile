@@ -1,0 +1,69 @@
+{
+	servers {
+		# HTTP/3 needs UDP 443 open. Behind Cloudflare's proxy only Cloudflare reaches the
+		# origin, over HTTP/1.1 or HTTP/2; HTTP/3 here serves a domain that isn't proxied.
+		protocols h1 h2 h3
+
+		# Cloudflare's ranges (https://www.cloudflare.com/ips/, 2026-09-30). Caddy takes the
+		# client IP from CF-Connecting-IP only when the request comes from one of them.
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		client_ip_headers CF-Connecting-IP
+	}
+}
+
+# Caddy gets the certificate from Let's Encrypt and redirects HTTP to HTTPS by itself.
+{$APP_HOST} {
+	# The current release's public files; the unit runs the same release's server.
+	root * /srv/snowtime
+
+	log {
+		output stdout
+		format json
+	}
+
+	# Pages and server function responses. Precompressed files keep their encoding; images
+	# and fonts aren't compressed again.
+	encode zstd gzip {
+		minimum_length 1024
+	}
+
+	header {
+		# No preload: that is a commitment for the whole domain, made on its apex.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		# Pages carry the app's own policy, with a nonce per page (src/server/csp.server.ts).
+		# This one covers every other response, such as an SVG opened on its own.
+		?Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+		-Server
+	}
+
+	# The build hashes the names in /assets/, so they never change. Files in public/ keep
+	# their names and are cached for a week, as vite.config.ts sets for Nitro.
+	header /assets/* Cache-Control "public, max-age=31536000, immutable"
+	header /backgrounds/* Cache-Control "public, max-age=604800"
+	header /brand/* Cache-Control "public, max-age=604800"
+
+	@file file {path}
+	handle @file {
+		# The build writes .br, .zst, and .gz beside each text file (bun run build:self-hosted).
+		# Brotli at level 11 comes out about 6% smaller than zstd at 19, so it goes first.
+		file_server {
+			precompressed br zstd gzip
+		}
+	}
+
+	handle {
+		header Cache-Control "private, no-store"
+		reverse_proxy app:3000 {
+			# While the app restarts, requests wait for it instead of failing with 502.
+			lb_try_duration 30s
+			lb_try_interval 250ms
+			# Set from Caddy's client IP, so a request that bypasses Cloudflare can't choose
+			# its own address. The app reads it (CLIENT_IP_HEADER=cf-connecting-ip).
+			header_up CF-Connecting-IP {client_ip}
+		}
+	}
+}

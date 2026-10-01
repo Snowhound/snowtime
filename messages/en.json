@@ -1,4 +1,7 @@
 {
+  "demo_title": "Demo version",
+  "demo_continue": "Continue to demo",
+  "demo_notice": "Demo instance: shared sample accounts and data. Changes are visible to other visitors. Use the sample accounts below to sign in; do not enter company or personal data.",
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "error_sign_in_required": "Sign in first.",
   "error_not_organization_member": "You are not a member of this organization.",
@@ -126,7 +129,7 @@
   "create_org_submitting": "Creating…",
   "create_org_join_title": "Joining an existing organization?",
   "create_org_join_description": "Ask its admin for an invitation link for {email}, then open it.",
-  "sign_in_dev_users": "DEV users",
+  "sign_in_dev_users": "Sample accounts",
   "settings_sections": "Settings sections",
   "settings_saved": "Saved",
   "settings_preferences": "Preferences",

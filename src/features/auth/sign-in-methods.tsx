@@ -148,7 +148,7 @@ export function PasskeyButton(props: {
   )
 }
 
-// Email and password, for seeded users in local development only. The seeded users are
+// Email and password, for seeded users in development and demo deployments. The seeded users are
 // listed above the form; picking one fills in their email and password.
 export function PasswordSignIn(props: {
   email?: string

@@ -46,10 +46,11 @@ export const auth = betterAuth({
       '/organization/invite-member': rateLimits.inviteMember,
     },
   },
-  // Password sign-in is for local development with seeded users only: the MVP sends no
+  // Password sign-in is for local development and demo deployments with seeded users: the MVP sends no
   // email, so there is no verification or reset (docs/architecture/auth.md, "Sign-in methods").
   emailAndPassword: {
     enabled: passwordEnabled(env),
+    disableSignUp: env.DEMO_MODE,
   },
   socialProviders: socialProviders(env),
   databaseHooks: {

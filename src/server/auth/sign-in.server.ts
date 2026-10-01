@@ -7,6 +7,7 @@ export type SignInMethod = 'google' | 'github' | 'microsoft' | 'password' | 'pas
 
 export type SignInConfig = {
   NODE_ENV: 'development' | 'test' | 'production'
+  DEMO_MODE?: boolean
   GOOGLE_CLIENT_ID?: string
   GOOGLE_CLIENT_SECRET?: string
   GITHUB_CLIENT_ID?: string
@@ -19,6 +20,7 @@ export type SignInConfig = {
 // Better Auth's socialProviders option: a provider is enabled when its client ID and secret
 // are both set. src/env.ts rejects a half-set pair at startup.
 export function socialProviders(config: SignInConfig) {
+  if (config.DEMO_MODE) return {}
   return {
     ...(config.GOOGLE_CLIENT_ID &&
       config.GOOGLE_CLIENT_SECRET && {
@@ -43,10 +45,10 @@ export function socialProviders(config: SignInConfig) {
   }
 }
 
-// Password sign-in is for local development with seeded users only (docs/architecture/auth.md,
+// Password sign-in is for local development and demo deployments with seeded users (docs/architecture/auth.md,
 // "Sign-in methods").
 export function passwordEnabled(config: SignInConfig) {
-  return config.NODE_ENV === 'development'
+  return config.NODE_ENV === 'development' || config.DEMO_MODE === true
 }
 
 // The methods the sign-in view shows, in display order. Ids only: the client owns the

@@ -20,6 +20,7 @@ import {
 } from 'solid-js'
 import { HydrationScript, isServer } from 'solid-js/web'
 import { BrowserNotice } from '~/components/browser-notice'
+import { DemoNotice } from '~/components/demo-notice'
 import { appIcon, faviconLinks, setFavicon } from '~/lib/app-icon'
 import { browserCheckScript } from '~/lib/browser-check'
 import {
@@ -28,6 +29,7 @@ import {
   loadDeviceSettings,
   themeScript,
 } from '~/lib/device-settings'
+import { demoModeQuery } from '~/lib/queries/demo-mode'
 import { sessionQuery } from '~/lib/queries/session'
 import { useQuery } from '~/lib/queries/use-query'
 import { getLocale, setLocale } from '~/paraglide/runtime.js'
@@ -37,6 +39,7 @@ import '@fontsource-variable/plus-jakarta-sans'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   beforeLoad: async ({ context, location }) => {
+    await context.queryClient.query(demoModeQuery)
     const session = await context.queryClient.query({ ...sessionQuery, staleTime: 'static' })
     // The account's language differs from the one this page rendered in, and
     // getAppSession has set the cookie: load the page again in the account's language.
@@ -113,6 +116,7 @@ function RootComponent(props: ParentProps) {
         </For>
       </head>
       <body>
+        <DemoNotice />
         <BrowserNotice />
         <Suspense>
           {/* The root's match, inside the error and not-found boundaries it has from the

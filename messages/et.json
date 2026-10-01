@@ -1,4 +1,7 @@
 {
+  "demo_title": "Demoversioon",
+  "demo_continue": "Jätka demoga",
+  "demo_notice": "Demokeskkond: näidiskontod ja andmed on ühised. Muudatused on nähtavad teistele külastajatele. Sisselogimiseks kasuta allolevaid näidiskontosid; ära sisesta ettevõtte ega isikuandmeid.",
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "error_sign_in_required": "Logi kõigepealt sisse.",
   "error_not_organization_member": "Sa ei ole selle ettevõtte liige.",
@@ -126,7 +129,7 @@
   "create_org_submitting": "Loon…",
   "create_org_join_title": "Liitud olemasoleva ettevõttega?",
   "create_org_join_description": "Palu selle administraatorilt kutselink aadressile {email} ja ava see.",
-  "sign_in_dev_users": "DEV kasutajad",
+  "sign_in_dev_users": "Näidiskontod",
   "settings_sections": "Seadete jaotised",
   "settings_saved": "Salvestatud",
   "settings_preferences": "Eelistused",

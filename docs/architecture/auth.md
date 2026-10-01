@@ -2,13 +2,20 @@
 
 ## Sign-in methods
 
-| Method           | Status                 | Enabled when                                                |
-| ---------------- | ---------------------- | ----------------------------------------------------------- |
-| Email + password | Local development only | `NODE_ENV` is `development`; seeded users                   |
-| Google           | Implemented            | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set       |
-| GitHub           | Implemented            | `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set       |
-| Microsoft        | Implemented            | `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET` are set |
-| Passkey          | Implemented            | Always; `@better-auth/passkey` and its `passkey` table      |
+`DEMO_MODE=true` explicitly enables a deployed demo on local SQLite. It disables
+OAuth even when credentials are present, enables seeded password sign-in, and disables
+password sign-up. A startup notice explains that accounts and changes are shared;
+a visible demo button reopens it. The flag defaults to false and is read at runtime.
+Full-year sample data is seeded explicitly, never at startup. Demo mode is for sample
+data; company use starts with a fresh database and normal OAuth configuration.
+
+| Method           | Status               | Enabled when                                                |
+| ---------------- | -------------------- | ----------------------------------------------------------- |
+| Email + password | Development and demo | `NODE_ENV=development` or `DEMO_MODE=true`; seeded users    |
+| Google           | Implemented          | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set       |
+| GitHub           | Implemented          | `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set       |
+| Microsoft        | Implemented          | `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET` are set |
+| Passkey          | Implemented          | Always; `@better-auth/passkey` and its `passkey` table      |
 
 - Social providers are built into Better Auth and store their link in `account`, so
   adding one is configuration plus an OAuth app and its client ID and secret per
@@ -47,7 +54,7 @@
   Better Auth requires before an invitation can be accepted
   (`requireEmailVerificationOnInvitation`), and admins share invitation links
   themselves. Password sign-in, which would need email for
-  verification and reset, is enabled only in local development, where seeded users
+  verification and reset, is enabled in local development and explicit demo deployments, where seeded users
   (task 008) sign in with a known password. The sign-in form lists the seeded users, and
   picking one fills in the email and password; `getDevUsers` returns the list only
   where password sign-in is enabled.

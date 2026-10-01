@@ -38,6 +38,11 @@ Any Linux server with systemd works: a VPS, a dedicated server, or a machine on 
 Hetzner Cloud is the example in `deployment/self-hosted.md`, which also lists the
 requirements in full.
 
+[Docker Compose](deployment/compose.md) is an alternative to systemd for the app and
+Caddy. Cloudflare's proxy is a suggested CDN for static assets: cache the public files,
+and bypass HTML, authentication, and server functions. The initial Compose demo defers
+Litestream backups.
+
 - Exactly one app process per database. Two processes writing one SQLite file bring back
   the lost writes of task 043, so there is no second instance, cluster mode, or
   zero-downtime handover. A restart pauses requests for about a second; Caddy holds them.
@@ -46,7 +51,7 @@ requirements in full.
   that holds the write lock for more than 5 seconds still makes the app's write fail with
   `SQLITE_BUSY` and can lose that connection's later writes (task 043), so stop the app
   for a migration that rewrites a large table. Snowhound's production stays on Vercel and
-  Turso.
+  Turso; the internal demo runs on Hetzner.
 - Scaling is vertical only. One process renders on one core: in `perf:load` on 2026-09-30,
   ordinary pages took 15–50 ms of CPU and the 9-month report 85–92 ms, so a shared vCPU
   serves roughly 20–40 ordinary pages a second.

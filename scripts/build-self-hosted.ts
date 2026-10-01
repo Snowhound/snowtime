@@ -164,12 +164,13 @@ for (const arch of targets) {
   const release = join(DIST, `snowtime-linux-${arch}`)
   rmSync(release, { recursive: true, force: true })
   mkdirSync(release, { recursive: true })
-  await compile(join(OUTPUT, 'server/index.mjs'), join(release, 'snowtime'), arch, true)
+  await compile(join(ROOT, 'scripts/start-self-hosted.ts'), join(release, 'snowtime'), arch, true)
   await compile(
     join(ROOT, 'scripts/db-migrate-release.ts'),
     join(release, 'snowtime-migrate'),
     arch,
   )
+  await compile(join(ROOT, 'scripts/db-seed.ts'), join(release, 'snowtime-seed'), arch)
   cpSync(join(ROOT, 'drizzle'), join(release, 'drizzle'), { recursive: true })
   cpSync(join(OUTPUT, 'public'), join(release, 'public'), { recursive: true })
   const size = statSync(join(release, 'snowtime')).size

@@ -25,7 +25,7 @@ local overrides, such as OAuth credentials, there too; `.env.example` lists ever
 
 `bun run db:seed` fills the local database with demo data (`src/db/seed.ts`). It refuses
 any database that is not a local file. Every seeded user signs in with the password
-`snowtime-local`; password sign-in is enabled only in local development.
+`snowtime-local`; password sign-in is enabled in local development or with `DEMO_MODE=true`.
 
 | Email                | Name         | Role                                                                     |
 | -------------------- | ------------ | ------------------------------------------------------------------------ |
@@ -81,6 +81,10 @@ The sign-in page also lists five of its users, with the same password:
 | `bun run datamodel`           | Opens the data model in ChartDB (needs Docker)               |
 
 ## Database
+
+`bun run start:self-hosted` runs the standalone production build. With
+`MIGRATE_ON_START=true`, it verifies and applies local migrations before listening.
+The Docker Compose deployment enables this option.
 
 The SQL migrations in `drizzle/` define the schema; they are written by hand, and
 `src/db/schema.ts` follows them. Read [migrations.md](migrations.md) before

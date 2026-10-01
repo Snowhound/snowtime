@@ -11,6 +11,15 @@ export const env = createEnv({
     // Vite sets development for `dev`; anything unset counts as production, so
     // development-only features stay off unless explicitly on.
     NODE_ENV: v.optional(v.picklist(['development', 'test', 'production']), 'production'),
+    DEMO_MODE: v.pipe(
+      v.optional(v.picklist(['true', 'false']), 'false'),
+      v.transform((value) => value === 'true'),
+    ),
+    MIGRATE_ON_START: v.pipe(
+      v.optional(v.picklist(['true', 'false']), 'false'),
+      v.transform((value) => value === 'true'),
+    ),
+    MIGRATIONS_DIR: v.optional(secret),
     TURSO_DATABASE_URL: secret,
     // Absent locally, where the database is a file.
     TURSO_AUTH_TOKEN: v.optional(secret),
@@ -38,6 +47,10 @@ export const env = createEnv({
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
 })
+
+if (env.DEMO_MODE && !env.TURSO_DATABASE_URL.startsWith('file:')) {
+  throw new Error('DEMO_MODE needs a local file: TURSO_DATABASE_URL.')
+}
 
 for (const provider of ['GOOGLE', 'GITHUB', 'MICROSOFT'] as const) {
   const id = `${provider}_CLIENT_ID` as const

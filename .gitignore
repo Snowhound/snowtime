@@ -22,6 +22,7 @@ local.db*
 design/backgrounds/*.png
 design/backgrounds/masters/
 .vercel
+deploy/compose/.env
 
 .playwright-mcp
 # Claude Code agent worktrees

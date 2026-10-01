@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:self-hosted": "bun scripts/build-self-hosted.ts",
     "build:binary": "bun scripts/build-self-hosted.ts --binary",
+    "start:self-hosted": "bun scripts/start-self-hosted.ts",
     "start": "node .output/server/index.mjs",
     "preview": "vite preview",
     "lint": "oxlint",
