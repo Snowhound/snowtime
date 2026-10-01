@@ -48,6 +48,13 @@
         <option value="local">Local dev password</option>
         <option value="migrated">Saved before collections (Season: Winter)</option>
       </select>
+      <label for="keys-fixture" class="sr-only">API keys fixture</label>
+      <select id="keys-fixture" data-ui="select" class="h-9 w-56">
+        <option value="several">API keys: several</option>
+        <option value="none">API keys: none</option>
+        <option value="long">API keys: long name</option>
+        <option value="expiring">API keys: expiring and expired</option>
+      </select>
       <label for="proto-month" class="sr-only">Month (prototype)</label>
       <select id="proto-month" data-ui="select" class="h-9 w-44" title="Prototype only: the month the calendar pretends it is, on every page"></select>
     </div>
@@ -61,6 +68,7 @@
         <ul class="sticky top-6 flex flex-col gap-1">
           <li><a href="#preferences" data-ui="button" data-variant="ghost" class="w-full justify-start">Preferences</a></li>
           <li><a href="#profile" data-ui="button" data-variant="ghost" class="w-full justify-start">Profile</a></li>
+          <li><a href="#api-keys" data-ui="button" data-variant="ghost" class="w-full justify-start">API keys</a></li>
         </ul>
       </nav>
 
@@ -264,6 +272,21 @@
           </div>
         </section>
 
+        <section id="api-keys" data-ui="card" class="scroll-mt-6" aria-labelledby="api-keys-title">
+          <div data-ui="card-header">
+            <div class="flex items-center justify-between gap-4">
+              <h2 id="api-keys-title" data-ui="card-title">API keys</h2>
+              <button type="button" id="create-key" data-ui="button" data-variant="outline" data-size="sm" class="shrink-0" aria-haspopup="dialog"></button>
+            </div>
+            <p data-ui="card-description">Let an app such as the Raycast extension use Snowtime as you, in every organization you belong to. A key works only with the Snowtime API; it can't sign in or change your account.</p>
+          </div>
+          <div data-ui="card-content" class="grid grid-cols-[minmax(0,1fr)] gap-3">
+            <ul id="api-key-list" class="divide-y rounded-md border empty:hidden" aria-label="Your API keys"></ul>
+            <p id="api-key-empty" class="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground" hidden>No keys yet. Create one to connect the Raycast extension or a script.</p>
+            <p id="api-key-status" class="text-sm text-muted-foreground empty:hidden" aria-live="polite"></p>
+          </div>
+        </section>
+
       </div>
     </main>
 
@@ -272,9 +295,75 @@
         <h2 id="unlink-title" data-ui="dialog-title"></h2>
         <p id="unlink-description" data-ui="dialog-description"></p>
       </div>
-      <div data-ui="dialog-footer">
+      <div data-ui="dialog-footer" class="gap-2 sm:gap-0">
         <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
         <button type="button" data-ui="button" data-variant="destructive" id="unlink-confirm">Disconnect</button>
+      </div>
+    </dialog>
+
+    <dialog id="create-key-dialog" data-ui="dialog" class="max-w-md" aria-labelledby="create-key-title" aria-describedby="create-key-description">
+      <form id="create-key-form" class="grid gap-4" novalidate>
+        <div data-ui="dialog-header">
+          <h2 id="create-key-title" data-ui="dialog-title">Create API key</h2>
+          <p id="create-key-description" data-ui="dialog-description">You'll see the key once, right after you create it.</p>
+        </div>
+        <div class="grid gap-2">
+          <label data-ui="label" for="key-name">Name</label>
+          <input id="key-name" data-ui="input" type="text" autocomplete="off" placeholder="Raycast on my laptop" aria-describedby="key-name-hint key-name-error" />
+          <p id="key-name-hint" class="text-xs text-muted-foreground">So you can tell your keys apart. At most 32 characters.</p>
+          <p id="key-name-error" data-ui="error-message" class="empty:hidden"></p>
+        </div>
+        <div class="grid gap-2">
+          <label data-ui="label" for="key-lifetime">Expires</label>
+          <select id="key-lifetime" data-ui="select" aria-describedby="key-lifetime-hint">
+            <option value="30d">In 30 days</option>
+            <option value="90d" selected>In 90 days</option>
+            <option value="1y">In 1 year</option>
+            <option value="none">Never</option>
+          </select>
+          <p id="key-lifetime-hint" class="text-xs text-muted-foreground"></p>
+        </div>
+        <div class="grid gap-2">
+          <span data-ui="label" id="key-access-label">Access</span>
+          <div data-ui="toggle-group" class="justify-start" role="group" aria-labelledby="key-access-label" aria-describedby="key-access-hint">
+            <button type="button" data-ui="toggle" data-variant="outline" data-key-access="read">Read only</button>
+            <button type="button" data-ui="toggle" data-variant="outline" data-key-access="write">Read and write</button>
+          </div>
+          <p id="key-access-hint" class="text-xs text-muted-foreground"></p>
+        </div>
+        <div data-ui="dialog-footer" class="gap-2 sm:gap-0">
+          <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
+          <button type="submit" data-ui="button">Create key</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="new-key-dialog" data-ui="dialog" class="max-w-md" aria-labelledby="new-key-title" aria-describedby="new-key-description">
+      <div data-ui="dialog-header">
+        <h2 id="new-key-title" data-ui="dialog-title">Copy your new key</h2>
+        <p id="new-key-description" data-ui="dialog-description">Snowtime shows it only now. Paste it into the app that uses it, such as the Raycast extension's preferences.</p>
+      </div>
+      <div class="grid gap-2">
+        <label data-ui="label" for="new-key-value" id="new-key-label"></label>
+        <div class="flex gap-2">
+          <input id="new-key-value" data-ui="input" type="text" readonly spellcheck="false" class="min-w-0 flex-1 font-mono text-xs" />
+          <button type="button" id="copy-key" data-ui="button" data-variant="outline" class="shrink-0"></button>
+        </div>
+        <p id="copy-key-status" class="text-xs text-muted-foreground" aria-live="polite"></p>
+      </div>
+      <div data-ui="dialog-footer" class="gap-2 sm:gap-0">
+        <button type="button" data-ui="button" id="new-key-done">Done</button>
+      </div>
+    </dialog>
+
+    <dialog id="revoke-key-dialog" data-ui="dialog" aria-labelledby="revoke-key-title" aria-describedby="revoke-key-description">
+      <div data-ui="dialog-header">
+        <h2 id="revoke-key-title" data-ui="dialog-title"></h2>
+        <p id="revoke-key-description" data-ui="dialog-description"></p>
+      </div>
+      <div data-ui="dialog-footer" class="gap-2 sm:gap-0">
+        <button type="button" data-ui="button" data-variant="outline" data-dialog-cancel>Cancel</button>
+        <button type="button" data-ui="button" data-variant="destructive" id="revoke-key-confirm">Revoke key</button>
       </div>
     </dialog>
 
@@ -648,6 +737,187 @@
         appFrame.settings.set({})
       })
 
+      // --- API keys (@better-auth/api-key; created through a server function) --------------------
+      // The list shows no part of a key; names tell keys apart.
+      const DAY = 86_400_000
+      const LIFETIMES = { '30d': 30 * DAY, '90d': 90 * DAY, '1y': 365 * DAY, none: null }
+      const ACCESS_HINTS = {
+        read: 'Can see your running timer, projects, and entries.',
+        write: 'Can also start and stop your timer.',
+      }
+      const ago = (ms) => Date.now() - ms
+      const keyFixtures = {
+        several: () => [
+          { id: 'k1', name: 'Raycast on MacBook', access: 'write', createdAt: ago(21 * DAY), expiresAt: ago(21 * DAY) + 90 * DAY, lastUsedAt: ago(4 * 60_000) },
+          { id: 'k2', name: 'Team dashboard', access: 'read', createdAt: ago(140 * DAY), expiresAt: null, lastUsedAt: ago(2 * DAY) },
+          { id: 'k3', name: 'Invoice script', access: 'read', createdAt: ago(2 * DAY), expiresAt: ago(2 * DAY) + 30 * DAY, lastUsedAt: null },
+        ],
+        none: () => [],
+        long: () => [
+          { id: 'k4', name: 'Pohjamaade raamatupidamine 2', access: 'write', createdAt: ago(10 * DAY), expiresAt: ago(10 * DAY) + 365 * DAY, lastUsedAt: ago(3 * 3_600_000) },
+          { id: 'k5', name: 'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW', access: 'read', createdAt: ago(5 * DAY), expiresAt: null, lastUsedAt: null },
+        ],
+        // The plugin deletes an expired key when it's next used, so one can still be listed.
+        expiring: () => [
+          { id: 'k6', name: 'Raycast on MacBook', access: 'write', createdAt: ago(87 * DAY), expiresAt: ago(87 * DAY) + 90 * DAY, lastUsedAt: ago(20 * 60_000) },
+          { id: 'k7', name: 'Old tray app', access: 'write', createdAt: ago(95 * DAY), expiresAt: ago(5 * DAY), lastUsedAt: ago(6 * DAY) },
+        ],
+      }
+      let keys = []
+      const relative = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+      function when(ms) {
+        const diff = ms - Date.now()
+        const abs = Math.abs(diff)
+        if (abs < 60_000) return 'just now'
+        if (abs < 3_600_000) return relative.format(Math.round(diff / 60_000), 'minute')
+        if (abs < DAY) return relative.format(Math.round(diff / 3_600_000), 'hour')
+        return relative.format(Math.round(diff / DAY), 'day')
+      }
+
+      function expiryText(k) {
+        if (k.expiresAt === null) return { text: 'Never expires', tone: '' }
+        if (k.expiresAt <= Date.now()) return { text: `Expired ${dateFmt.format(k.expiresAt)}`, tone: 'expired' }
+        if (k.expiresAt - Date.now() < 7 * DAY) return { text: `Expires ${when(k.expiresAt)}`, tone: 'soon' }
+        return { text: `Expires ${dateFmt.format(k.expiresAt)}`, tone: '' }
+      }
+
+      function keyRow(k) {
+        const expiry = expiryText(k)
+        const access = k.access === 'write' ? 'Read and write' : 'Read only'
+        const badge =
+          expiry.tone === 'expired'
+            ? '<span data-ui="badge" data-variant="outline" class="border-destructive/50 text-destructive">Expired</span>'
+            : `<span data-ui="badge" data-variant="secondary">${access}</span>`
+        const expiryHtml = expiry.tone === 'soon' ? `<span class="font-medium text-foreground">${escapeHtml(expiry.text)}</span>` : escapeHtml(expiry.text)
+        return `<li class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center">
+          <div class="flex min-w-0 flex-1 items-start gap-3">
+            ${icon('key-round', `mt-0.5 size-5 shrink-0 ${expiry.tone === 'expired' ? 'text-muted-foreground/60' : 'text-muted-foreground'}`)}
+            <div class="grid min-w-0 gap-0.5">
+              <p class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium"><span class="min-w-0 break-words">${escapeHtml(k.name)}</span>${badge}</p>
+              <p class="text-sm text-muted-foreground">Created ${dateFmt.format(k.createdAt)} · ${expiryHtml}</p>
+              <p class="text-sm text-muted-foreground">${k.lastUsedAt === null ? 'Never used' : `Last used ${when(k.lastUsedAt)}`}</p>
+            </div>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            <button type="button" data-ui="button" data-variant="ghost" data-size="sm" data-revoke="${k.id}" aria-label="Revoke ${escapeHtml(k.name)}">${expiry.tone === 'expired' ? 'Remove' : 'Revoke'}</button>
+          </div>
+        </li>`
+      }
+
+      function renderKeys() {
+        const sorted = [...keys].sort((a, b) => b.createdAt - a.createdAt)
+        document.getElementById('api-key-list').innerHTML = sorted.map(keyRow).join('')
+        document.getElementById('api-key-empty').hidden = keys.length > 0
+      }
+      document.getElementById('create-key').innerHTML = `${icon('plus')}Create key`
+
+      // Create: name, a required lifetime, and access. The form preselects the least access, read only;
+      // the Raycast extension needs read and write, which takes one click.
+      const createDialog = document.getElementById('create-key-dialog')
+      const keyName = document.getElementById('key-name')
+      const keyNameError = document.getElementById('key-name-error')
+      const keyLifetime = document.getElementById('key-lifetime')
+      let keyAccess = 'read'
+      function renderCreateForm() {
+        const lifetime = LIFETIMES[keyLifetime.value]
+        document.getElementById('key-lifetime-hint').textContent =
+          lifetime === null ? 'The key works until you revoke it.' : `The key stops working on ${dateFmt.format(Date.now() + lifetime)}.`
+        document.querySelectorAll('[data-key-access]').forEach((b) => {
+          const pressed = b.dataset.keyAccess === keyAccess
+          b.setAttribute('aria-pressed', String(pressed))
+          b.toggleAttribute('data-pressed', pressed)
+        })
+        document.getElementById('key-access-hint').textContent = keyAccess === 'write' ? `${ACCESS_HINTS.read} ${ACCESS_HINTS.write}` : ACCESS_HINTS.read
+      }
+      function setNameError(message) {
+        keyNameError.textContent = message
+        keyName.toggleAttribute('data-invalid', Boolean(message))
+      }
+      document.getElementById('create-key').addEventListener('click', () => {
+        keyName.value = ''
+        keyLifetime.value = '90d'
+        keyAccess = 'read'
+        setNameError('')
+        renderCreateForm()
+        createDialog.showModal()
+      })
+      keyLifetime.addEventListener('change', renderCreateForm)
+      document.querySelectorAll('[data-key-access]').forEach((b) =>
+        b.addEventListener('click', () => {
+          keyAccess = b.dataset.keyAccess
+          renderCreateForm()
+        })
+      )
+      keyName.addEventListener('input', () => setNameError(''))
+
+      const newKeyDialog = document.getElementById('new-key-dialog')
+      const copyKey = document.getElementById('copy-key')
+      function randomKey() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+        return `snow_${Array.from(crypto.getRandomValues(new Uint8Array(64)), (n) => chars[n % chars.length]).join('')}`
+      }
+      document.getElementById('create-key-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const name = keyName.value.trim()
+        if (!name) setNameError('Enter a name.')
+        else if (name.length > 32) setNameError('Use at most 32 characters.')
+        if (keyNameError.textContent) return keyName.focus()
+        const key = randomKey() // createApiKey
+        const lifetime = LIFETIMES[keyLifetime.value]
+        keys.push({ id: crypto.randomUUID(), name, access: keyAccess, createdAt: Date.now(), expiresAt: lifetime === null ? null : Date.now() + lifetime, lastUsedAt: null })
+        renderKeys()
+        createDialog.close()
+        document.getElementById('new-key-label').textContent = name
+        document.getElementById('new-key-value').value = key
+        copyKey.innerHTML = `${icon('copy')}Copy`
+        document.getElementById('copy-key-status').textContent = ''
+        newKeyDialog.showModal()
+        document.getElementById('new-key-value').select()
+      })
+      copyKey.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(document.getElementById('new-key-value').value)
+        } catch {}
+        copyKey.innerHTML = `${icon('check')}Copied`
+        document.getElementById('copy-key-status').textContent = 'Copied to the clipboard.'
+      })
+      // The key is gone once the dialog closes, by Done or Escape.
+      newKeyDialog.addEventListener('close', () => {
+        document.getElementById('new-key-value').value = ''
+        document.getElementById('create-key').focus()
+      })
+      document.getElementById('new-key-done').addEventListener('click', () => newKeyDialog.close())
+
+      const revokeDialog = document.getElementById('revoke-key-dialog')
+      let revoking = null
+      document.getElementById('api-key-list').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-revoke]')
+        if (!button) return
+        revoking = keys.find((k) => k.id === button.dataset.revoke)
+        const expired = revoking.expiresAt !== null && revoking.expiresAt <= Date.now()
+        document.getElementById('revoke-key-title').textContent = expired ? `Remove “${revoking.name}”?` : `Revoke “${revoking.name}”?`
+        document.getElementById('revoke-key-description').textContent = expired
+          ? 'The key has already expired. Removing it takes it off this list.'
+          : 'Apps using this key stop working with Snowtime at once. You can create a new key for them.'
+        document.getElementById('revoke-key-confirm').textContent = expired ? 'Remove key' : 'Revoke key'
+        revokeDialog.showModal()
+      })
+      document.getElementById('revoke-key-confirm').addEventListener('click', () => {
+        keys = keys.filter((k) => k !== revoking) // deleteApiKey
+        renderKeys()
+        revokeDialog.close()
+        document.getElementById('api-key-status').textContent = `Revoked “${revoking.name}”.`
+        document.getElementById('create-key').focus()
+      })
+      ;[createDialog, revokeDialog].forEach((d) => d.querySelectorAll('[data-dialog-cancel]').forEach((b) => b.addEventListener('click', () => d.close())))
+
+      function loadKeyFixture(name) {
+        keys = keyFixtures[name]()
+        document.getElementById('api-key-status').textContent = ''
+        renderKeys()
+      }
+      document.getElementById('keys-fixture').addEventListener('change', (event) => loadKeyFixture(event.currentTarget.value))
+
       function loadFixture(name) {
         const f = fixtures[name]()
         Object.assign(state, { user: f.user, accounts: f.accounts, password: f.password })
@@ -661,6 +931,7 @@
 
       ui.ready.then(() => {
         loadFixture('populated')
+        loadKeyFixture('several')
         renderPreferences()
         if (location.hash) document.querySelector(location.hash)?.scrollIntoView()
       })

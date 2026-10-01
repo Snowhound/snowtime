@@ -1,6 +1,6 @@
 # 078: Public API with personal API keys
 
-Status: todo
+Status: in-progress
 
 A versioned HTTP API under `/api/v1`, signed in with personal API keys, so clients outside
 the browser can use the timer: a Raycast extension first, then a likely tray app and
@@ -52,10 +52,11 @@ deferred as follows; nothing is posted on issue #2.
    Auth's own limits ("Abuse limits"). Kait asked to keep it, so subtask 01 sets a limit
    that fits a polling client, or turns it off and counts each key in `rateLimitStore`
    instead. Decide with numbers when implementing.
-4. **Ask before implementing: the write per request.** A verified key costs a read and a
+4. **Settled on 2026-10-01: `deferUpdates: true`.** A verified key costs a read and a
    write, not one lookup: even with its rate limit off, the plugin writes `lastRequest` on
    every verification. `deferUpdates: true` moves that write after the response
-   (`runInBackground`). Ask the user before choosing; they will check with Kait.
+   (`runInBackground`), so a request waits on the read only. If the write costs too much,
+   the list drops "last used" and the write goes with it.
 5. **Settled: a missing scope answers 403.** When `verifyApiKey` checks permissions, a key
    without the scope fails as 401 `KEY_NOT_FOUND`, like an unknown key. The helper
    verifies without permissions, then checks the key's `permissions` itself and answers
