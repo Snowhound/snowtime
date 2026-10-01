@@ -2,13 +2,28 @@
 
 ## Sign-in methods
 
-| Method           | Status                 | Enabled when                                                |
-| ---------------- | ---------------------- | ----------------------------------------------------------- |
-| Email + password | Local development only | `NODE_ENV` is `development`; seeded users                   |
-| Google           | Implemented            | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set       |
-| GitHub           | Implemented            | `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set       |
-| Microsoft        | Implemented            | `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET` are set |
-| Passkey          | Implemented            | Always; `@better-auth/passkey` and its `passkey` table      |
+`DEMO_MODE=true` explicitly enables a deployed demo on local SQLite. It disables
+OAuth even when credentials are present, enables seeded password sign-in, and disables
+password sign-up. A box on the sign-in page explains that accounts and changes are
+shared. The flag defaults to false and is read at runtime.
+Full-year sample data is seeded explicitly, never at startup. Demo mode is for sample
+data; company use starts with a fresh database and normal OAuth configuration.
+
+`ALLOWED_LOGIN_DOMAINS` optionally restricts sign-in to a comma-separated list of
+exact email domains, and a box on the sign-in page names them for internal use. The
+server checks user creation, email changes, new sessions for every authentication
+method, and existing sessions, including cached cookies. An empty list allows all
+domains. The app refuses to start with both a list and `DEMO_MODE=true`, because the
+seeded users have `example.com` addresses. The list supplies no organization
+membership or other permissions.
+
+| Method           | Status               | Enabled when                                                |
+| ---------------- | -------------------- | ----------------------------------------------------------- |
+| Email + password | Development and demo | `NODE_ENV=development` or `DEMO_MODE=true`; seeded users    |
+| Google           | Implemented          | `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set       |
+| GitHub           | Implemented          | `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set       |
+| Microsoft        | Implemented          | `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET` are set |
+| Passkey          | Implemented          | Always; `@better-auth/passkey` and its `passkey` table      |
 
 - Social providers are built into Better Auth and store their link in `account`, so
   adding one is configuration plus an OAuth app and its client ID and secret per
@@ -47,7 +62,7 @@
   Better Auth requires before an invitation can be accepted
   (`requireEmailVerificationOnInvitation`), and admins share invitation links
   themselves. Password sign-in, which would need email for
-  verification and reset, is enabled only in local development, where seeded users
+  verification and reset, is enabled in local development and explicit demo deployments, where seeded users
   (task 008) sign in with a known password. The sign-in form lists the seeded users, and
   picking one fills in the email and password; `getDevUsers` returns the list only
   where password sign-in is enabled.

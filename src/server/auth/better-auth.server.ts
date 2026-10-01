@@ -12,12 +12,21 @@ import { env } from '~/env'
 import { limits, rateLimits } from '../limits.server'
 import { createRateLimitStore } from '../rate-limit.server'
 import { stopTimerOfRemovedMember } from '../timer/timer.server'
+import {
+  loginDomainHooks,
+  loginDomainMiddleware,
+  loginDomainSessionAllowed,
+} from './login-policy.server'
 import { databaseHooks, organizationHooks } from './name-checks.server'
 import { passwordEnabled, refuseUnverifiedSignUp, socialProviders } from './sign-in.server'
 
 // Passkeys are bound to the app's domain, so each environment's relying party follows its
 // BETTER_AUTH_URL; the plugin would otherwise default to localhost.
 const appUrl = new URL(env.BETTER_AUTH_URL)
+const domains = env.ALLOWED_LOGIN_DOMAINS ?? []
+const domainHooks = loginDomainHooks(domains, (id) =>
+  db.query.user.findFirst({ columns: { email: true }, where: { id } }),
+)
 
 // Shared with sessionMiddleware, which limits server-function writes with it.
 export const rateLimitStore = createRateLimitStore(env)
@@ -46,23 +55,44 @@ export const auth = betterAuth({
       '/organization/invite-member': rateLimits.inviteMember,
     },
   },
-  // Password sign-in is for local development with seeded users only: the MVP sends no
+  // Password sign-in is for local development and demo deployments with seeded users: the MVP sends no
   // email, so there is no verification or reset (docs/architecture/auth.md, "Sign-in methods").
   emailAndPassword: {
     enabled: passwordEnabled(env),
+    disableSignUp: env.DEMO_MODE,
   },
   socialProviders: socialProviders(env),
   databaseHooks: {
-    user: { ...databaseHooks.user, create: { before: refuseUnverifiedSignUp } },
+    user: {
+      ...databaseHooks.user,
+      create: {
+        before: async (user, ctx) => {
+          await domainHooks.user.create.before(user)
+          await refuseUnverifiedSignUp(user, ctx)
+        },
+      },
+      update: {
+        before: async (user) => {
+          await domainHooks.user.update.before(user)
+          await databaseHooks.user.update.before(user)
+        },
+      },
+    },
+    session: domainHooks.session,
   },
   hooks: {
+    before: loginDomainMiddleware(domains),
     // A member removed from an organization, or leaving it, loses access to its entries, so
     // their running timer there stops now (docs/architecture/data.md, "Tenancy"). The plugin's
     // afterRemoveMember hook misses /organization/leave, so this hook watches both.
     after: createAuthMiddleware(async (ctx) => {
-      if (ctx.path !== '/organization/remove-member' && ctx.path !== '/organization/leave') return
+      if (ctx.path === '/get-session' && !loginDomainSessionAllowed(domains, ctx.context.returned))
+        return ctx.json(null)
+      if (ctx.path !== '/organization/remove-member' && ctx.path !== '/organization/leave')
+        return undefined
       const returned = ctx.context.returned
-      if (typeof returned !== 'object' || !returned || returned instanceof APIError) return
+      if (typeof returned !== 'object' || !returned || returned instanceof APIError)
+        return undefined
       // remove-member returns { member }, leave returns the member itself.
       const removed = ('member' in returned ? returned.member : returned) as {
         userId: string
@@ -72,6 +102,7 @@ export const auth = betterAuth({
       await withActor(actor, () =>
         stopTimerOfRemovedMember(db, removed.userId, removed.organizationId),
       )
+      return undefined
     }),
   },
   plugins: [

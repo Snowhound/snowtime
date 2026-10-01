@@ -57,6 +57,9 @@ function Busy(props: { label: string }) {
 // unverified address is refused at sign-up (refuseUnverifiedSignUp), or by Better Auth when it
 // won't link one to an existing account.
 export function providerErrorMessage(code: string) {
+  if (code === 'LOGIN_DOMAIN_NOT_ALLOWED' || code === 'login_domain_not_allowed') {
+    return m.sign_in_error_domain()
+  }
   return code === 'EMAIL_UNVERIFIED' || code === 'email_not_verified'
     ? m.sign_in_error_unverified()
     : m.sign_in_error_failed()
@@ -148,7 +151,7 @@ export function PasskeyButton(props: {
   )
 }
 
-// Email and password, for seeded users in local development only. The seeded users are
+// Email and password, for seeded users in development and demo deployments. The seeded users are
 // listed above the form; picking one fills in their email and password.
 export function PasswordSignIn(props: {
   email?: string

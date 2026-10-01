@@ -18,7 +18,7 @@ import {
   userSettings,
 } from './schema'
 
-// Every seeded user signs in with this password, locally only (docs/architecture/auth.md,
+// Every seeded user signs in with this password in development and demo deployments (docs/architecture/auth.md,
 // "Sign-in methods").
 export const SEED_PASSWORD = 'snowtime-local'
 
@@ -61,7 +61,7 @@ const P = seedIds.projects
 const T = seedIds.teams
 const O = seedIds.orgs
 
-// Seeded users; the sign-in screen lists them in local development.
+// Seeded users; the sign-in screen lists them in development and demo deployments.
 export const seedUsers = [
   { id: U.owner, name: 'Olivia Owner', email: 'owner@example.com', timeZone: 'Europe/Tallinn' },
   { id: U.admin, name: 'Adam Admin', email: 'admin@example.com', timeZone: 'Europe/Berlin' },

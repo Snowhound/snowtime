@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/solid-router'
 import * as v from 'valibot'
 import { SignInPage } from '~/features/auth/sign-in-page'
+import { deploymentQuery } from '~/lib/queries/deployment'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { safeRedirect } from '~/lib/redirect'
 import { m } from '~/paraglide/messages.js'
@@ -16,7 +17,10 @@ export const Route = createFileRoute('/sign-in')({
     if (context.session) throw redirect({ href: safeRedirect(search.redirect) })
   },
   loader: ({ context }) =>
-    context.queryClient.query({ ...signInMethodsQuery, staleTime: 'static' }),
+    Promise.all([
+      context.queryClient.query({ ...signInMethodsQuery, staleTime: 'static' }),
+      context.queryClient.query(deploymentQuery),
+    ]),
   head: () => ({ meta: [{ title: `${m.sign_in_title()} · ${m.app_name()}` }] }),
   component: SignIn,
 })

@@ -9,6 +9,9 @@ for your own deployment or for a dedicated stack per client:
 - [Self-hosted](self-hosted.md): one Linux server running the app with its SQLite database
   in the same process, Caddy in front, and Litestream backups. Any VM or machine with
   systemd works; the runbook uses Hetzner as the example.
+- [Docker Compose](compose.md): Caddy and the app on one server, local SQLite, optional
+  Cloudflare caching, and an explicit demo mode with the full-year seed. The guide
+  covers `snowtime-internal.snowhound.eu`; backups are deferred for this demo.
 
 Both runbooks link here for the steps they share: the OAuth apps, the environment
 variables, and changing the host. The reasons behind the choices are in
@@ -60,18 +63,23 @@ Both targets read the same variables. `.env.example` lists them, and `src/env.ts
 them when the app starts and names the variable that is missing or set without its pair.
 Don't prefix a secret with `VITE_`: those variables reach the browser bundle.
 
-| Variable                                             | Value                                                         |
-| ---------------------------------------------------- | ------------------------------------------------------------- |
-| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`             | The Turso database, or `file:<path>` and no token self-hosted |
-| `BETTER_AUTH_SECRET`                                 | See below                                                     |
-| `BETTER_AUTH_URL`                                    | `https://<host>`, no trailing slash                           |
-| `<PROVIDER>_CLIENT_ID`, `<PROVIDER>_CLIENT_SECRET`   | [The OAuth apps](#register-the-oauth-apps), both or neither   |
-| `MICROSOFT_TENANT_ID`                                | Optional, restricts Microsoft sign-in                         |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Vercel only, optional, both or neither                        |
-| `CLIENT_IP_HEADER`                                   | Self-hosted: `cf-connecting-ip`. Unset on Vercel              |
+| Variable                                             | Value                                                                                                                 |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`             | The Turso database, or `file:<path>` and no token self-hosted                                                         |
+| `BETTER_AUTH_SECRET`                                 | See below                                                                                                             |
+| `BETTER_AUTH_URL`                                    | `https://<host>`, no trailing slash                                                                                   |
+| `<PROVIDER>_CLIENT_ID`, `<PROVIDER>_CLIENT_SECRET`   | [The OAuth apps](#register-the-oauth-apps), both or neither                                                           |
+| `MICROSOFT_TENANT_ID`                                | Optional, restricts Microsoft sign-in                                                                                 |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Vercel only, optional, both or neither                                                                                |
+| `CLIENT_IP_HEADER`                                   | Self-hosted: `cf-connecting-ip`. Unset on Vercel                                                                      |
+| `DEMO_MODE`                                          | `true` enables a local SQLite demo with seeded passwords, no OAuth, and a notice on the sign-in page; default `false` |
 
 Generate the auth secret once per stack. Better Auth signs sessions with it, so changing it
 later signs everyone out.
+
+The standalone entry also reads `MIGRATE_ON_START` (default `false`) and
+`MIGRATIONS_DIR` (default `drizzle/` in the working directory). Compose enables startup
+migration and sets its folder. Vercel uses the CI migration flow.
 
 ```bash
 bunx --bun @better-auth/cli secret     # BETTER_AUTH_SECRET, at least 32 characters
@@ -79,7 +87,7 @@ bunx --bun @better-auth/cli secret     # BETTER_AUTH_SECRET, at least 32 charact
 
 ## Register the OAuth apps
 
-Register them once you know the app's host (`<host>`). Production has no password sign-in, and a passkey can only be added to an existing
+Register them once you know the app's host (`<host>`). Outside demo mode, production has no password sign-in, and a passkey can only be added to an existing
 account, so at least one OAuth provider must be configured or nobody can sign in. Each
 provider redirects to `https://<host>/api/auth/callback/<id>`.
 

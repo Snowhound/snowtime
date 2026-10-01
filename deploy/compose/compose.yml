@@ -1,0 +1,73 @@
+name: snowtime
+# The Compose deploy workflow publishes both images (.github/workflows/compose-deploy.yml);
+# `build` remains for building in a checkout instead.
+services:
+  app:
+    image: ghcr.io/snowhound/snowtime-app:${RELEASE:?Set RELEASE in .env}
+    build:
+      context: ../..
+      target: app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      TURSO_DATABASE_URL: file:/data/snowtime.db
+      BETTER_AUTH_URL: https://${APP_HOST:?Set APP_HOST in .env}
+      CLIENT_IP_HEADER: cf-connecting-ip
+      MIGRATE_ON_START: 'true'
+      MIGRATIONS_DIR: /app/drizzle
+    volumes:
+      - app_data:/data
+    expose:
+      - '3000'
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', '-o', '/dev/null', 'http://localhost:3000/sign-in']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # Uncomment to cap the app on a larger shared host. Docker refuses a CPU limit above
+    # the host's CPU count.
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1.0'
+    #       memory: 768M
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+  caddy:
+    image: ghcr.io/snowhound/snowtime-caddy:${RELEASE:?Set RELEASE in .env}
+    build:
+      context: ../..
+      target: caddy
+    restart: unless-stopped
+    environment:
+      APP_HOST: ${APP_HOST:?Set APP_HOST in .env}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '0.5'
+    #       memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+volumes:
+  app_data:
+    name: ${DATABASE_VOLUME:-snowtime_demo_data}
+  caddy_data:
+  caddy_config:

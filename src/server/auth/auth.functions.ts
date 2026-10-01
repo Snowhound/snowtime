@@ -19,8 +19,15 @@ import { passwordEnabled, signInMethods } from './sign-in.server'
 // returns method ids only, never a client ID or secret.
 export const getSignInMethods = createServerFn({ method: 'GET' }).handler(() => signInMethods(env))
 
-// The seeded users and their shared password, for one-click sign-in in local development.
-// Empty wherever password sign-in is off, so deployed environments never list them. The
+// Whether this is a demo deployment, and which email domains may sign in (empty allows all).
+// Signed-out pages show both, so it has no middleware.
+export const getDeployment = createServerFn({ method: 'GET' }).handler(() => ({
+  demoMode: env.DEMO_MODE,
+  allowedDomains: env.ALLOWED_LOGIN_DOMAINS ?? [],
+}))
+
+// The seeded users and their shared password, for one-click sign-in in development and demo deployments.
+// Empty wherever password sign-in is off. The
 // company's users are listed once `bun run db:seed --company` has added them.
 export const getDevUsers = createServerFn({ method: 'GET' }).handler(async () => {
   if (!passwordEnabled(env)) return []

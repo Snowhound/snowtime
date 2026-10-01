@@ -11,6 +11,18 @@ import {
 
 const production = { NODE_ENV: 'production' } as const
 
+test('demo mode offers seeded passwords and disables configured OAuth providers', () => {
+  const demo = {
+    ...production,
+    DEMO_MODE: true,
+    GOOGLE_CLIENT_ID: 'id',
+    GOOGLE_CLIENT_SECRET: 'secret',
+  }
+  expect(signInMethods(demo)).toEqual(['password', 'passkey'])
+  expect(socialProviders(demo)).toEqual({})
+  expect(signInMethods({ ...production, DEMO_MODE: false })).toEqual(['passkey'])
+})
+
 test('with no provider configured, production offers passkeys only', () => {
   expect(signInMethods(production)).toEqual(['passkey'])
 })

@@ -52,7 +52,7 @@ this changes, switch before production holds real data.
 
 **Migrations and deploys:** CI runs `db:migrate` after the checks pass on a push to the
 environment's branch, and then deploys that commit to Vercel. Migrations never run in the
-Vercel build or on app start. A database only
+Vercel build or on Vercel app start. A database only
 receives merged migrations, because `db:verify` rejects an applied migration that a PR
 later edits, and two open PRs would mix their migrations in one shared database. PRs
 test their migrations on throwaway local databases only (`db:drift`).
@@ -77,6 +77,17 @@ test their migrations on throwaway local databases only (`db:drift`).
   migrate the file with `db:migrate` or the release's `snowtime-migrate`, then restart.
   Litestream streams the file to S3-compatible storage. Turso Sync was evaluated as the
   backup instead and not adopted, because it swaps libSQL for Turso's pre-1.0 engine.
+- Docker Compose is supported for the standalone app and Caddy, with exactly one app
+  process and a persistent SQLite volume. Both images contain the same release's code
+  and static files. Compose enables migration inside the standalone process before
+  it starts listening, so live writes cannot conflict with migrations. Explicit migration
+  and seed containers run while the app is stopped. Other standalone deployments can
+  opt in with `MIGRATE_ON_START=true`; Vercel retains its CI migration flow.
+  The initial Hetzner demo at `snowtime-internal.snowhound.eu` defers backups and uses
+  Cloudflare as a CDN for static files. HTML and server responses bypass caching.
+  Its images are built on GitHub Actions and pushed to GHCR, and it deploys only when
+  someone runs the manual Compose deploy workflow, never on a push.
+  Setup is in [the Compose runbook](../deployment/compose.md).
 - Both deployments use `@libsql/client` (task 077, decided 2026-09-30). Turso's own
   drivers were measured and not adopted:
   - `@tursodatabase/serverless` through Drizzle (`drizzle-orm/tursodatabase-serverless`)

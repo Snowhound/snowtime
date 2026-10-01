@@ -1,5 +1,8 @@
 # Deploy on your own Linux server
 
+For Caddy and the app in containers, use the [Docker Compose guide](compose.md).
+It includes the Hetzner demo setup and Cloudflare static asset caching.
+
 This runbook sets up one production stack on a single Linux server: the app as one
 process with its SQLite database in the same process, Caddy in front of it for HTTPS and
 static files, Litestream streaming the database to S3-compatible storage, and optionally
@@ -332,6 +335,47 @@ Everything in [Check the deployment](README.md#check-the-deployment) applies, pl
 
 Logs go to the journal, Caddy's as JSON: `journalctl -u caddy -o cat | jq`. Limit the
 journal's size with `SystemMaxUse=` in `/etc/systemd/journald.conf` if the disk is small.
+
+## Startup migrations
+
+Compiled releases can set `MIGRATE_ON_START=true` and
+`MIGRATIONS_DIR=/opt/snowtime/current/drizzle` in `/etc/snowtime/env`. The server
+verifies and applies migrations inside its process before opening the listener.
+A failure prevents startup. Stop the old process before starting the new release;
+there must never be two app processes on the file. This avoids task 043's conflict
+between a live server and a separate migration writer, including migrations that
+take more than five seconds.
+
+For builds run with Bun, use `bun run start:self-hosted` from the checkout, with
+`MIGRATIONS_DIR` pointing at that checkout's `drizzle/`. Running Nitro's `index.mjs`
+directly bypasses the migration entry. The default is `MIGRATE_ON_START=false`, so
+the existing explicit migration procedure remains available. Compose enables it.
+
+### Database engine and backup options
+
+Task 043's libSQL binding issue can lose later writes after `SQLITE_BUSY`: a connection
+can read its own successful-looking writes while other connections cannot see them,
+and closing it rolls them back. The repro did not show malformed database files.
+The app's statement queue prevents its requests from causing that conflict, but a
+second writer can still cause it. Startup migrations remove that competing writer.
+
+Running migrations and seeding in the same process with Turso's engine would remove
+task 077's file-sharing obstacle. It does not establish that the engine is ready for
+company data: rerun the application tests, concurrency tests, foreign-key checks, and
+restore tests before adopting it. The current deployment keeps libSQL.
+
+Turso Sync supports explicit `push()`, `pull()`, and `sync()` calls, so a periodic
+push can maintain a remote copy. Outages delay replication, and unwanted changes
+replicate too, so recovery history needs a separate retention policy. The project's
+[sync API](https://github.com/tursodatabase/turso/blob/main/bindings/javascript/sync/README.md)
+still recommends backups. An [open restore issue](https://github.com/tursodatabase/turso/issues/8129),
+reproduced with 0.7.1, reports that restoring an old client's files makes later pushes
+silently skip writes. Whether it affects the evaluated 0.8.1 needs a restore test.
+
+For libSQL, [Litestream](https://litestream.io/how-it-works/) provides continuous WAL
+replication and recovery history. SQLite's [backup API](https://www.sqlite.org/backup.html)
+is another way to produce consistent snapshots. Neither option's compatibility with
+Turso's rewritten engine has been established by this repository.
 
 ## Backups and restore
 

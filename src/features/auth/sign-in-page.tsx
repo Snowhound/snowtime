@@ -1,8 +1,12 @@
 import { useQueryClient } from '@tanstack/solid-query'
 import { useNavigate } from '@tanstack/solid-router'
-import { Show, createSignal } from 'solid-js'
+import FlaskConicalIcon from 'lucide-solid/icons/flask-conical'
+import LockIcon from 'lucide-solid/icons/lock'
+import { type JSX, Show, createSignal } from 'solid-js'
 import { AuthHeading, AuthLayout } from '~/components/auth-layout/auth-layout'
 import { ErrorAlert } from '~/components/error-alert'
+import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
+import { deploymentQuery } from '~/lib/queries/deployment'
 import { sessionQuery } from '~/lib/queries/session'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { useQuery } from '~/lib/queries/use-query'
@@ -19,6 +23,7 @@ export function SignInPage(props: { redirect?: string; initialError?: string }) 
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const methods = useQuery(() => signInMethodsQuery)
+  const deployment = useQuery(() => deploymentQuery)
   const [error, setError] = createSignal<string | null>(
     props.initialError ? providerErrorMessage(props.initialError) : null,
   )
@@ -37,7 +42,28 @@ export function SignInPage(props: { redirect?: string; initialError?: string }) 
 
   return (
     <AuthLayout firstVisitIntro>
-      <AuthHeading title={m.sign_in_title()} description={m.sign_in_description()} />
+      <AuthHeading
+        title={m.sign_in_title()}
+        description={
+          deployment.data?.demoMode ? m.sign_in_demo_description() : m.sign_in_description()
+        }
+      />
+      <Show when={deployment.data?.demoMode}>
+        <Notice
+          icon={<FlaskConicalIcon class="size-4" aria-hidden="true" />}
+          title={m.demo_title()}
+        >
+          {m.demo_notice()}
+        </Notice>
+      </Show>
+      <Show when={deployment.data?.allowedDomains.length}>
+        <Notice
+          icon={<LockIcon class="size-4" aria-hidden="true" />}
+          title={m.sign_in_internal_title()}
+        >
+          {m.sign_in_internal_notice({ domains: deployment.data?.allowedDomains.join(', ') ?? '' })}
+        </Notice>
+      </Show>
       <ErrorAlert message={error()} />
       <ProviderButtons
         methods={methods.data ?? []}
@@ -56,5 +82,19 @@ export function SignInPage(props: { redirect?: string; initialError?: string }) 
         />
       </Show>
     </AuthLayout>
+  )
+}
+
+// What this deployment is for, in the passkey prompt's style: a demo with shared sample data, or
+// an instance limited to the company's email domains.
+function Notice(props: { icon: JSX.Element; title: string; children: JSX.Element }) {
+  return (
+    <Alert class="py-3 [&>svg]:top-3.5">
+      {props.icon}
+      <AlertTitle class="text-sm">{props.title}</AlertTitle>
+      <AlertDescription class="text-muted-foreground text-[13px]">
+        {props.children}
+      </AlertDescription>
+    </Alert>
   )
 }
