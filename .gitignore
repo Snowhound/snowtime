@@ -23,6 +23,8 @@ design/backgrounds/*.png
 design/backgrounds/masters/
 .vercel
 deploy/compose/.env
+deploy/compose/.env.import
+.bun-cache/
 
 .playwright-mcp
 # Claude Code agent worktrees

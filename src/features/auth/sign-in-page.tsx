@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/solid-router'
 import { Show, createSignal } from 'solid-js'
 import { AuthHeading, AuthLayout } from '~/components/auth-layout/auth-layout'
 import { ErrorAlert } from '~/components/error-alert'
+import { loginPolicyQuery } from '~/lib/queries/login-policy'
 import { sessionQuery } from '~/lib/queries/session'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { useQuery } from '~/lib/queries/use-query'
@@ -19,6 +20,7 @@ export function SignInPage(props: { redirect?: string; initialError?: string }) 
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const methods = useQuery(() => signInMethodsQuery)
+  const policy = useQuery(() => loginPolicyQuery)
   const [error, setError] = createSignal<string | null>(
     props.initialError ? providerErrorMessage(props.initialError) : null,
   )
@@ -38,6 +40,16 @@ export function SignInPage(props: { redirect?: string; initialError?: string }) 
   return (
     <AuthLayout firstVisitIntro>
       <AuthHeading title={m.sign_in_title()} description={m.sign_in_description()} />
+      <Show when={policy.data?.demoMode}>
+        <p role="note" class="rounded-lg border border-amber-300/40 bg-amber-100/10 p-3 text-sm">
+          {m.sign_in_demo_notice()}
+        </p>
+      </Show>
+      <Show when={policy.data?.allowedDomains.length}>
+        <p role="note" class="text-muted-foreground text-sm">
+          {m.sign_in_internal_notice({ domains: policy.data?.allowedDomains.join(', ') ?? '' })}
+        </p>
+      </Show>
       <ErrorAlert message={error()} />
       <ProviderButtons
         methods={methods.data ?? []}

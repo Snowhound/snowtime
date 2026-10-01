@@ -11,7 +11,10 @@ import { join } from 'node:path'
 
 // Returns false, after printing what changed, when an applied migration differs from its
 // file in the migrations folder. db-migrate-release.ts runs it before migrating too.
-export async function verifyMigrations(client: Client, folder = 'drizzle'): Promise<boolean> {
+export async function verifyMigrations(
+  client: Pick<Client, 'execute'>,
+  folder = 'drizzle',
+): Promise<boolean> {
   const table = await client.execute(
     "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '__drizzle_migrations'",
   )

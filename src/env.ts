@@ -1,5 +1,6 @@
 import { createEnv } from '@t3-oss/env-core'
 import * as v from 'valibot'
+import { parseLoginDomains } from '~/lib/login-domains'
 
 const secret = v.pipe(v.string(), v.minLength(1))
 
@@ -20,6 +21,7 @@ export const env = createEnv({
       v.transform((value) => value === 'true'),
     ),
     MIGRATIONS_DIR: v.optional(secret),
+    ALLOWED_LOGIN_DOMAINS: v.optional(v.pipe(secret, v.transform(parseLoginDomains))),
     TURSO_DATABASE_URL: secret,
     // Absent locally, where the database is a file.
     TURSO_AUTH_TOKEN: v.optional(secret),

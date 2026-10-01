@@ -1,4 +1,7 @@
 {
+  "sign_in_demo_notice": "Demoversioon. Näidiskontod ja andmed on teiste külastajatega ühised. Kasuta näidiskontot ning ära sisesta ettevõtte ega isikuandmeid.",
+  "sign_in_internal_notice": "Ainult sisemiseks kasutamiseks. Logi sisse järgmise domeeni e-posti aadressiga: {domains}.",
+  "sign_in_error_domain": "Selle e-posti domeeniga ei saa siia keskkonda sisse logida.",
   "demo_title": "Demoversioon",
   "demo_continue": "Jätka demoga",
   "demo_notice": "Demokeskkond: näidiskontod ja andmed on ühised. Muudatused on nähtavad teistele külastajatele. Sisselogimiseks kasuta allolevaid näidiskontosid; ära sisesta ettevõtte ega isikuandmeid.",

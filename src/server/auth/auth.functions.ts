@@ -21,6 +21,11 @@ export const getSignInMethods = createServerFn({ method: 'GET' }).handler(() => 
 
 export const getDemoMode = createServerFn({ method: 'GET' }).handler(() => env.DEMO_MODE)
 
+export const getLoginPolicy = createServerFn({ method: 'GET' }).handler(() => ({
+  demoMode: env.DEMO_MODE,
+  allowedDomains: env.ALLOWED_LOGIN_DOMAINS ?? [],
+}))
+
 // The seeded users and their shared password, for one-click sign-in in development and demo deployments.
 // Empty wherever password sign-in is off. The
 // company's users are listed once `bun run db:seed --company` has added them.

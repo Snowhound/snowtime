@@ -222,6 +222,12 @@ use backward-compatible migrations. A rollback does not undo schema changes.
 
 ## Move to company use later
 
+`ALLOWED_LOGIN_DOMAINS=snowhound.eu` restricts every sign-in method to that exact
+email domain and shows an internal-use notice on the login page. Separate domains
+with commas; case and a leading `@` are ignored. Subdomains need their own entries.
+Existing sessions outside the list lose access. Leave it blank for the demo because
+the seeded users have `example.com` addresses. Demo mode also shows a login-page notice.
+
 Stop the app, set `DATABASE_VOLUME=snowtime_company_data` in `.env`, configure an
 OAuth provider, and set `DEMO_MODE=false`. Run the migration command from step 4
 against the fresh volume, then `sudo docker compose up -d --force-recreate`.
@@ -232,3 +238,81 @@ adding it to this Compose setup is deferred until the deployment holds real data
 
 To change the hostname, update `APP_HOST`, DNS, and the OAuth callbacks, then recreate
 both containers. Passkeys registered on the old hostname need to be added again.
+
+## Import an existing cloud company
+
+The importer is optional. It runs on this server while the destination app is
+offline and reads the source through a Turso read transaction. It refuses an
+existing destination database or SQLite sidecar; use a fresh volume. Do not run
+the seed or migration command on that volume before importing.
+
+Build the branch's images first. From `deploy/compose`, stop the app:
+
+```bash
+sudo docker compose build --pull
+sudo docker compose stop app
+cp .env.import.example .env.import
+chmod 600 .env .env.import
+```
+
+Set these values in `.env`:
+
+```dotenv
+DEMO_MODE=false
+DATABASE_VOLUME=snowtime_company_data
+ALLOWED_LOGIN_DOMAINS=snowhound.eu
+```
+
+Keep `TURSO_DATABASE_URL=file:/data/snowtime.db`. Configure the intended OAuth
+provider and its callback URL before enabling company logins. Set the source
+URL and a read-only Turso token in `.env.import`:
+
+```dotenv
+IMPORT_SOURCE_DATABASE_URL=libsql://your-cloud-database.turso.io
+IMPORT_SOURCE_AUTH_TOKEN=your-read-only-token
+```
+
+This file is gitignored and excluded from Docker builds. Only the import override
+passes its credentials into a temporary container; normal startup does not use it.
+Create the token with `turso db tokens create DATABASE --read-only`
+([Turso token reference](https://docs.turso.tech/cli/db/tokens/create)).
+
+```bash
+sudo docker compose -f compose.yml -f compose.import.yml run --rm --no-deps -it app ./snowtime-import
+```
+
+The script asks you to confirm that all destination writers are stopped, choose
+the same or a different hostname, and choose cleanup for sessions, verification
+challenges, passkeys, and stored OAuth tokens. It lists the source companies:
+select **Snowhound OÜ** by number to import only that company, or explicitly type
+`ALL` to import every company. Type `IMPORT` for the final confirmation.
+
+A company import includes its teams, members, projects, invitations, and time
+entries, including archived and deleted records. It includes the users and audit
+actors those records require, and company users' settings and login accounts.
+Shared users' other company memberships and work are excluded. Verification
+challenges are always excluded from a company import because they cannot be
+reliably assigned to one company. New unknown tables cause company filtering to
+fail until the importer is updated.
+
+Clearing sessions and OAuth tokens defaults to yes. OAuth account links and
+password hashes remain, so users can authenticate again. Passkey cleanup defaults
+to yes for a different hostname and no for the same hostname; passkeys tied to the
+old hostname need registration again. Use a new `BETTER_AUTH_SECRET` for this
+instance and clear old sessions. The importer verifies migration hashes, copies
+into a temporary file, checks integrity and foreign keys, then publishes the file
+without overwriting an existing database. Failed imports leave no destination.
+
+After a successful import, start with the normal configuration:
+
+```bash
+sudo docker compose up -d --force-recreate
+sudo docker compose logs --tail=100 app
+```
+
+Startup applies any pending migrations before accepting requests. Verify company
+access and records before switching users over. For a final move, stop cloud
+writes before importing: writes made after the read snapshot starts are not
+included. The script never modifies the cloud database. Keep the source available
+until you have checked the move. Remove `.env.import` and revoke its token when
+finished. Arrange backups before using the destination for company work.

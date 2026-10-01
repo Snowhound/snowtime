@@ -82,6 +82,11 @@ The sign-in page also lists five of its users, with the same password:
 
 ## Database
 
+`bun run db:import` interactively copies cloud data into a fresh local database,
+optionally selecting one company and clearing authentication state. Run it with
+the destination app offline. See the [Compose import guide](deployment/compose.md#import-an-existing-cloud-company)
+for environment variables, company filtering, and the deployment procedure.
+
 `bun run start:self-hosted` runs the standalone production build. With
 `MIGRATE_ON_START=true`, it verifies and applies local migrations before listening.
 The Docker Compose deployment enables this option.

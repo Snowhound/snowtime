@@ -41,6 +41,7 @@ const errorText: Record<AppErrorKey, () => string> = {
 // invitations itself (docs/architecture/data.md, "Tenancy"); these are the refusals the
 // Organization view, creating an organization, and accepting an invitation can meet.
 const authErrorText: Record<string, () => string> = {
+  LOGIN_DOMAIN_NOT_ALLOWED: m.sign_in_error_domain,
   YOU_CANNOT_LEAVE_THE_ORGANIZATION_AS_THE_ONLY_OWNER: m.error_last_owner,
   YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER: m.error_last_owner,
   YOU_ARE_NOT_ALLOWED_TO_UPDATE_THIS_MEMBER: m.error_member_forbidden,

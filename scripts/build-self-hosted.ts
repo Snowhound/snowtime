@@ -171,6 +171,7 @@ for (const arch of targets) {
     arch,
   )
   await compile(join(ROOT, 'scripts/db-seed.ts'), join(release, 'snowtime-seed'), arch)
+  await compile(join(ROOT, 'scripts/db-import.ts'), join(release, 'snowtime-import'), arch)
   cpSync(join(ROOT, 'drizzle'), join(release, 'drizzle'), { recursive: true })
   cpSync(join(OUTPUT, 'public'), join(release, 'public'), { recursive: true })
   const size = statSync(join(release, 'snowtime')).size

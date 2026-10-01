@@ -1,4 +1,7 @@
 {
+  "sign_in_demo_notice": "Demo version. Accounts and sample data are shared with other visitors. Please use a sample account and do not enter company or personal data.",
+  "sign_in_internal_notice": "For internal use only. Sign in with an email address from: {domains}.",
+  "sign_in_error_domain": "This email domain cannot sign in to this instance.",
   "demo_title": "Demo version",
   "demo_continue": "Continue to demo",
   "demo_notice": "Demo instance: shared sample accounts and data. Changes are visible to other visitors. Use the sample accounts below to sign in; do not enter company or personal data.",
