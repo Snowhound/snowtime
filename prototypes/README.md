@@ -1106,6 +1106,35 @@ field, and no browser errors. The scene was checked on 2026-09-24 at 1440 and 39
 dark: the intro's sequence, skip, replay, and first-visit memory, every variant, the
 Settings switches reaching an open sign-in tab, reduced motion, and no browser errors.
 
+### [stars.html](stars.html) — Twinkling stars
+
+Task 076: stars over the night sky of each candidate image, to tune with Kait before the app
+gets the effect. The page shows the dark photo with the app's tint and vignette and a WebGL
+canvas of stars over it; the image's own weather is off. A picker chooses the image (or ← and
+→), and the URL's hash keeps it. Stars keep to the image's open sky (`SKIES`: polygons in
+fractions of the photo) and out of a circle around its moon; **Markers** shows both and rings
+each star.
+
+Each star has a fixed point and its own brightness and color. Three detuned waves change its
+brightness and color a little all the time, and once a cycle it flashes brighter and larger,
+timed so about **Flashes at once** show together. The sliders set the count, placement seed,
+size, brightness, halo, spikes, twinkle, and flashes. Changes stay per image in this browser
+(`snowtime.prototypeStars`) until **Reset**, and **Copy** puts every image's changes on the
+clipboard as JSON.
+
+**Its effect** turns on the image's weather today (from [scene.js](scene.js), on its own canvas
+under the stars), to see the two together, as subtask 01 of task 076 would draw them. It starts
+on, except on countryside December, where the aurora replaces the snow.
+
+Countryside December also has an aurora (task 076, subtask 02) along the photo's own: curtains
+standing on smooth curves near its bands (`aurora` in `SKIES`), kept to the left, where the app's
+cards don't cover them. Each is a triangle strip whose rays lean a little, as real rays converge
+toward a point overhead. A curtain glows brighter where its edge turns steep on screen, as a fold
+does when its rays line up behind each other; that makes the photo's hook. Value noise along
+each curtain makes fine rays that drift sideways, the lower edge sways, brightness pulses travel
+along it, and the color fades from green to a little violet at the top. The treeline hides it.
+Its sliders show only on that image.
+
 ### [weather.html](weather.html) — Weather by image
 
 Task 066: each image's weather, tuned to the picture, compared with Kait before the app got it. The page shows one image full screen with the sign-in card, the app column, or nothing over

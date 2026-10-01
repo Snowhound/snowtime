@@ -57,7 +57,8 @@
   // - `zones`: up to four rectangles of the image, [left, top, right, bottom] as fractions of its
   //   width and height: where glitter lies, so it misses water (without them, the ground below the
   //   horizon), or where midges and fireflies keep. A fifth number scales glitter's opacity there.
-  // - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight.
+  // - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight, the
+  //   fireflies' flight and glow.
   // - `shimmer`, `peaks`, `peakTime`, `peakSize`: glitter's faint shimmer, and how many full glints
   //   show at once, for how long, and how much larger.
   // - `colors`: in place of the effect's colors, with the same arguments.
@@ -212,7 +213,7 @@
     'coast-april': { light: wx('motes-fine', { wind: -0.02, size: 0.9, opacity: 0.95, colors: COAST_SPECKS }), dark: wx('mist', { wind: -0.01, band: [0.48, 0.72], zones: [[0, 0.48, 0.68, 0.72]], opacity: 0.8 }) },
     'coast-may': { light: wx('seeds-fine', { wind: 0.03, amount: 0.6, colors: COAST_SPECKS }), dark: wx('seeds-fine', { wind: 0.03, amount: 0.45, opacity: 0.55 }) },
     'coast-june': { light: wx('seeds-fine', { wind: -0.08, gust: 0.4, colors: COAST_SPECKS }), dark: wx('seeds-fine', { wind: -0.08, gust: 0.4, amount: 0.75, opacity: 0.75 }) },
-    'coast-july': { light: wx('seeds-fine', { wind: 0.03, colors: COAST_SPECKS }), dark: wx('fireflies', { amount: 0.3 }) },
+    'coast-july': { light: wx('seeds-fine', { wind: 0.03, colors: COAST_SPECKS }), dark: wx('fireflies', { amount: 0.18, tempo: 0.55 }) },
     'coast-august': { light: wx('motes', { wind: 0.008, colors: COAST_SPECKS }), dark: wx('mist', { wind: 0.01, gather: 0.5, zones: [[0.34, 0.42, 1, 0.6, 0.8], [0.64, 0.41, 1, 0.47, 3]], amount: 2, size: 1.3, opacity: 1.2 }) },
     'coast-september': {
       light: wx('seeds-fine', { wind: 0.16, gust: 0.5, fall: 0.5, size: 0.3, amount: 0.7, colors: COAST_SPECKS }),
@@ -558,11 +559,11 @@
         float z = mix(.4, 1.0, r3);
         // Mostly low, over the meadow, a few up to the tree line.
         vec2 p = vec2(r1*2.0-1.0, mix(-.95, .3, pow(r2, 1.3)));
-        float t = u_time * mix(.12, .22, r4);
+        float t = u_time * u_tempo * mix(.12, .22, r4);
         p += vec2(sin(t*2.1 + r4*6.28) + .5*sin(t*4.7 + r1*6.28), cos(t*1.7 + r5*6.28) + .5*sin(t*3.9 + r2*6.28)) * vec2(.06, .05);
         gl_Position = vec4(p, 0.0, 1.0);
         // A quick glow, a slower fade, then dark for the rest of the cycle.
-        float ph = fract(u_time / mix(3.0, 6.0, r5) + r1);
+        float ph = fract(u_time * u_tempo / mix(3.0, 6.0, r5) + r1);
         float glow = smoothstep(0.0, .12, ph) * (1.0 - smoothstep(.18, .6, ph));
         v_alpha = glow * mix(.6, 1.0, z) * u_opacity;
         gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * mix(9.0, 18.0, z) * u_size;
