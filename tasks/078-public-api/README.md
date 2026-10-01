@@ -9,21 +9,21 @@ questions on 2026-10-01. The decisions below come from that reply.
 
 ## Decisions
 
-| Concern        | Decision                                                                                                                    |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Sign-in        | Personal API keys, `@better-auth/api-key` pinned to the `better-auth` version (1.7.6), as `@better-auth/passkey` is         |
-| Header         | `Authorization: Bearer <key>`; the `/api/v1` routes read it and call `verifyApiKey` themselves, so the header is our contract |
-| Key reach      | Only `/api/v1`. The plugin's sessions from API keys stay off, so a key can't call server functions or `/api/auth/*`        |
-| Cookie         | `/api/v1` ignores the session cookie, so it needs no CSRF check; no CORS headers for now                                    |
-| Prefix         | `snow_`, so people and secret scanners can spot a key                                                                       |
-| Per request    | After the key checks out: the user still exists, the login-domain policy still allows them, and `resolveScope` checks membership |
-| Expiry         | Chosen at creation: 30 days, 90 days (default), 1 year, or none                                                             |
-| Scopes         | `read` (me, timer, projects, entries) and `write` (start and stop), as plugin permissions                                   |
-| Organizations  | A key belongs to a user. Scoped endpoints take the organization in the path; `GET /api/v1/me` lists the user's organizations |
-| Rate limits    | The per-key limit plus the per-user write rate that `sessionMiddleware` counts                                              |
-| Contract       | `docs/api.md`; error body `{ "error": { "code", "message" } }`; fields are added, never changed in meaning; breaking changes go in `/api/v2` |
-| Extension      | Its own repository; the key is a Raycast password preference; Raycast Store through `raycast/extensions` later              |
-| User deletion  | Deletes the user's keys                                                                                                     |
+| Concern       | Decision                                                                                                                                     |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign-in       | Personal API keys, `@better-auth/api-key` pinned to the `better-auth` version (1.7.6), as `@better-auth/passkey` is                          |
+| Header        | `Authorization: Bearer <key>`; the `/api/v1` routes read it and call `verifyApiKey` themselves, so the header is our contract                |
+| Key reach     | Only `/api/v1`. The plugin's sessions from API keys stay off, so a key can't call server functions or `/api/auth/*`                          |
+| Cookie        | `/api/v1` ignores the session cookie, so it needs no CSRF check; no CORS headers for now                                                     |
+| Prefix        | `snow_`, so people and secret scanners can spot a key                                                                                        |
+| Per request   | After the key checks out: the user still exists, the login-domain policy still allows them, and `resolveScope` checks membership             |
+| Expiry        | Chosen at creation: 30 days, 90 days (default), 1 year, or none                                                                              |
+| Scopes        | `read` (me, timer, projects, entries) and `write` (start and stop), as plugin permissions                                                    |
+| Organizations | A key belongs to a user. Scoped endpoints take the organization in the path; `GET /api/v1/me` lists the user's organizations                 |
+| Rate limits   | The per-key limit plus the per-user write rate that `sessionMiddleware` counts                                                               |
+| Contract      | `docs/api.md`; error body `{ "error": { "code", "message" } }`; fields are added, never changed in meaning; breaking changes go in `/api/v2` |
+| Extension     | Its own repository; the key is a Raycast password preference; Raycast Store through `raycast/extensions` later                               |
+| User deletion | Deletes the user's keys                                                                                                                      |
 
 Device sign-in (Option B in the issue) can come later beside the keys; nothing here blocks
 it.

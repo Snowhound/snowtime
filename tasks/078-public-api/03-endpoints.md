@@ -6,14 +6,14 @@ The first six endpoints: what the Raycast extension needs. Each is a server rout
 `src/routes/api/v1/` that goes through the helper from subtask 02 and calls an existing
 rule in `src/server/<domain>/*.server.ts`.
 
-| Method and path                    | Scope   | Rule                         |
-| ---------------------------------- | ------- | ---------------------------- |
-| `GET /api/v1/me`                   | `read`  | user and organizations       |
-| `GET /api/v1/timer`                | `read`  | `getRunningTimer`            |
-| `POST /api/v1/orgs/:orgId/timer`   | `write` | `startTimer`                 |
-| `POST /api/v1/timer/:entryId/stop` | `write` | `stopTimer`                  |
-| `GET /api/v1/orgs/:orgId/projects` | `read`  | `listProjects`               |
-| `GET /api/v1/orgs/:orgId/entries`  | `read`  | `listEntries`                |
+| Method and path                    | Scope   | Rule                   |
+| ---------------------------------- | ------- | ---------------------- |
+| `GET /api/v1/me`                   | `read`  | user and organizations |
+| `GET /api/v1/timer`                | `read`  | `getRunningTimer`      |
+| `POST /api/v1/orgs/:orgId/timer`   | `write` | `startTimer`           |
+| `POST /api/v1/timer/:entryId/stop` | `write` | `stopTimer`            |
+| `GET /api/v1/orgs/:orgId/projects` | `read`  | `listProjects`         |
+| `GET /api/v1/orgs/:orgId/entries`  | `read`  | `listEntries`          |
 
 A user has at most one running timer across all their organizations
 (`time_entry_one_running`), so the timer endpoints name the running entry, not a list.
