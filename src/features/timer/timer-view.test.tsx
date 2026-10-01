@@ -336,12 +336,34 @@ describe('TimerView', () => {
     )
   })
 
+  test('saves a typed time on Enter and leaves the field', async () => {
+    server.entries = [entry(2, '09:00', '10:30', 'Invoice export review')]
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const { id } = server.entries[0]
+    fn.updateEntry.mockResolvedValue({})
+
+    const start = screen.getByLabelText('Start')
+    await userEvent.click(start)
+    await userEvent.clear(start)
+    await userEvent.type(start, '930{Enter}')
+
+    const date = addDays(localDate(Date.now(), zone), -2)
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith({
+        data: { organizationId, id, startedAt: new Date(atLocalTime(date, '09:30', zone)) },
+      }),
+    )
+    expect(start).not.toHaveFocus()
+  })
+
   test('keeps an end in the future on the field without saving, until Escape', async () => {
     server.entries = [entry(0, '00:00', '00:01', 'Invoice export review')]
     renderView()
     await screen.findByDisplayValue('Invoice export review')
 
     const end = screen.getByLabelText('End')
+    end.focus()
     fireEvent.input(end, { target: { value: '23:59' } })
     fireEvent.keyDown(end, { key: 'Enter' })
     expect(await screen.findByRole('alert')).toHaveTextContent("An entry can't end in the future.")

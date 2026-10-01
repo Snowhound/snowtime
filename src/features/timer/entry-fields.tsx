@@ -334,8 +334,9 @@ export function TimeField(props: { editor: EntryEditor; field: TimeKey; active: 
       buttonClass={cn('ml-0.5 size-6 [&_svg]:size-3.5', start() ? START_CLOCK : REVEAL)}
       idle={!props.active}
       onCommit={() => props.editor.commitTimes(props.field)}
+      // Enter leaves the field, whose blur formats the text and saves it.
       onKeyDown={commitKeys(
-        () => props.editor.commitTimes(props.field),
+        () => (document.activeElement as HTMLElement | null)?.blur(),
         () => props.editor.resetTime(props.field),
       )}
     />
