@@ -490,7 +490,8 @@ html:has(.scene-header) {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  clip-path: border-box;
+  /* Firefox ignores the border radius in `clip-path: border-box`, so the radius is given here. */
+  clip-path: inset(0 round var(--glass-radius, 0));
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.8s ease;
@@ -499,6 +500,16 @@ html:has(.scene-header) {
   :is(.surface, .scene-header)
   > .glass {
   opacity: 1;
+}
+/* The surfaces' radii, which the clip above can't inherit. */
+.surface.rounded-md {
+  --glass-radius: var(--radius-md);
+}
+.surface.rounded-lg {
+  --glass-radius: var(--radius-lg);
+}
+.surface.rounded-xl {
+  --glass-radius: var(--radius-xl);
 }
 @media (prefers-reduced-motion: reduce) {
   .glass {
