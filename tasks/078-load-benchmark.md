@@ -179,11 +179,42 @@ Findings:
   cache from reading Caddy's log, its cgroup reaches 37 to 42 MB of its 40 MB limit; the
   kernel reclaims that cache.
 
-Still to run locally: the overload run on M, and the A/B runs on M (app memory 768 and 512
-MB, `--smol` through `BUN_OPTIONS`, and a Caddy cap on requests in flight to the app).
+Overload on M (`--run=overload --users=6500`), twice: Caddy with 192 MB, then with 512 MB.
 
-Before Hetzner: `compose.bench.yml` pulls `ghcr.io/snowhound/snowtime-sampler`, which
-`.github/workflows/compose-deploy.yml` doesn't publish yet.
+- At 2 times the knee (13,000 users) the stack holds or nearly does: one run held its
+  targets at 55% app CPU, the other missed by a few hundred milliseconds. So M's real
+  limit lies between 6,500 and 13,000, and the stalls decide where.
+- At 4 times (26,000 users), nothing fails fast. Requests queue in Caddy and the app for
+  up to 200 s, while k6 gives up after 30 s and reconnects. Caddy fails first: its memory
+  grows with the waiting requests and thousands of TLS connections until the kernel kills
+  it, 6 times at 192 MB and 2 times at 512 MB. The app isn't killed, but peaks at 1.4 GB
+  (heap 400 MB, RSS 1.2 GB), which with Caddy's 0.5 GB nearly fills a 2 GB server.
+- Recovery: once the load is back at the knee and Caddy has restarted, p95 is back at 15 to
+  30 ms within 60 to 90 seconds.
+- On the server, Cloudflare pools connections to the origin, so Caddy sees far fewer than
+  one per user. A run that bypasses Cloudflare, as the Hetzner run does, sees them all.
+
+Cheap settings on M, each a 5-minute run at 6,500 users unless noted:
+
+| Setting                                    | Result                                                                                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App memory 768 MB                          | No change: within targets, 2.7 ms CPU a request, peak 433 MB                                                                                                        |
+| App memory 512 MB                          | No change: within targets, peak 445 MB with page cache, RSS 332 MB                                                                                                  |
+| `--smol` (`BUN_OPTIONS`)                   | 3% less RSS (316 against 326 MB), same CPU; not worth it                                                                                                            |
+| Caddy cap: 24 requests in flight, 1 s wait | Overload run: at 4 times the knee, 28% of requests get a quick 503, the rest p95 about 1 s; app peak 579 MB, Caddy 295 MB, no restarts; back within targets at once |
+
+A memory limit doesn't slow the app at the knee, but under overload the app grew to 1.4 GB
+without the cap, so a 512 MB limit would get it killed there. The cap keeps memory flat
+instead. Its 2 times phase held its targets, as in the second plain overload run, so the
+cap costs nothing below overload.
+
+Open: the capacity ramps ran with Caddy limited to 192 MB, and Caddy sat at 192 to 201 MB,
+most of it page cache from writing the bench log. Its 2 times phase missed with 192 MB and
+held twice with 512 MB. Whether the tight limit caused some stalls is open; a ramp with
+`--caddy-memory=512m` settles it.
+
+The deploy workflow publishes the sampler image and copies the bench files, and
+`docs/deployment/compose.md` ("Run the load benchmark") has the server steps.
 
 ## Acceptance criteria
 
@@ -191,7 +222,7 @@ Before Hetzner: `compose.bench.yml` pulls `ghcr.io/snowhound/snowtime-sampler`, 
 - [x] A dataset generator for S, M, and L, documented in `perf/README.md`
 - [x] `bun run perf:stress` runs a scenario on the local stack and prints a table per
       step, documented in `perf/README.md`
-- [ ] The sampler and `compose.bench.yml`, with the sampler's own cost measured
+- [x] The sampler and `compose.bench.yml`, with the sampler's own cost measured
 - [ ] Local results, with numbers: capacity on S, M, and L; the overload behavior; each
       cheap setting
 - [ ] On Hetzner: calibration and a ramp on at least M, with no stop rule broken for longer

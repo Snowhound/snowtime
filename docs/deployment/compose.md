@@ -181,9 +181,10 @@ pick the branch, and keep **restart**. From a terminal:
 gh workflow run compose-deploy.yml --ref feat/compose-demo-deployment -f server=restart
 ```
 
-The workflow builds both images, pushes them to GHCR, copies `compose.yml` and
-`compose.import.yml` to the server, pulls the images with the job's token, and
-restarts the app. It waits for the app's health check and fails if the app doesn't
+The workflow builds the app and Caddy images, and the load benchmark's sampler, pushes
+them to GHCR, copies the Compose files to the server (`compose.yml`, `compose.import.yml`,
+and the benchmark's `compose.bench.yml` and `bench/`), pulls the images with the job's
+token, and restarts the app. It waits for the app's health check and fails if the app doesn't
 become healthy. The first start creates and migrates an empty database. Seed it on the
 server:
 
@@ -353,3 +354,74 @@ writes before importing: writes made after the read snapshot starts are not
 included. The script never modifies the cloud database. Keep the source available
 until you have checked the move. Remove `.env.import` and revoke its token when
 finished. Arrange backups before using the destination for company work.
+
+## Run the load benchmark
+
+The load benchmark (`perf/README.md`, "Load benchmark") measures this server under the
+usage model. While it runs, the demo is offline: the bench stack serves a dataset from a
+volume of its own, `snowtime_bench_data`, and the demo's volume stays untouched. The load
+generator runs on your own machine, sends requests straight to the server's address past
+Cloudflare, and reads the sampler through Caddy with a password. It never connects to the
+server otherwise.
+
+1. Deploy a release that contains the benchmark (step 4). The workflow publishes the
+   sampler image and copies `compose.bench.yml` and `bench/` with the other Compose files.
+2. On your machine, generate the dataset on the day of the run. The data ends at the
+   moment it's generated, and the load generator needs the users file from the same run:
+
+   ```bash
+   bun perf/stress/dataset.ts M
+   scp perf/.cache/stress/M-<date>-<hash>.db <user>@<server-ip>:~/snowtime/bench.db
+   ```
+
+3. On the server, add the benchmark's settings to `~/snowtime/.env`. Pick a sampler
+   password and hash it; in `.env`, double each `$` of the hash:
+
+   ```bash
+   openssl rand -hex 32
+   docker run --rm caddy:2.11.4 caddy hash-password --plaintext '<sampler-password>'
+   ```
+
+   ```dotenv
+   BENCH_GENERATOR_IP=<your machine's public IPv4 address>
+   BENCH_AUTH_SECRET=<the generated secret>
+   BENCH_SAMPLER_HASH=<the hash, each $ doubled>
+   ```
+
+   Caddy trusts `CF-Connecting-IP` from `BENCH_GENERATOR_IP`, so each simulated user
+   counts as its own address in the rate limits.
+
+4. Load the dataset while the app is stopped, empty the page cache so the run starts from
+   the disk, and start the bench stack:
+
+   ```bash
+   cd ~/snowtime
+   docker compose stop app
+   docker compose -f compose.yml -f compose.bench.yml up -d --no-start
+   docker run --rm -v snowtime_bench_data:/data -v ~/snowtime:/source:ro alpine sh -c \
+     'rm -f /data/snowtime.db* && cp /source/bench.db /data/snowtime.db && chown -R 10001:10001 /data'
+   sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
+   docker compose -f compose.yml -f compose.bench.yml up -d --wait
+   ```
+
+5. If the Hetzner firewall limits TCP 443 to Cloudflare's ranges, allow your machine's
+   address too.
+6. On your machine, run the benchmark with the same secret and the sampler password:
+
+   ```bash
+   export BENCH_HOST=snowtime-internal.snowhound.eu BENCH_ORIGIN_IP=<server-ip>
+   export BENCH_AUTH_SECRET=<the generated secret> BENCH_SAMPLER_PASSWORD=<sampler-password>
+   bun run perf:stress --remote --dataset=M --run=calibration
+   bun run perf:stress --remote --dataset=M --run=ramp
+   ```
+
+   A ramp on the server stops at the first step that misses a target for 30 seconds, or
+   when memory passes 85% or the disk 80%, and then drops the load two steps.
+
+7. Bring the demo back, and remove the benchmark's data and request log:
+
+   ```bash
+   docker compose up -d --wait --remove-orphans
+   docker volume rm snowtime_bench_data snowtime_bench_log
+   rm ~/snowtime/bench.db
+   ```

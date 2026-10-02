@@ -62,6 +62,16 @@ jobs:
           push: true
           tags: ghcr.io/snowhound/snowtime-caddy:${{ steps.release.outputs.release }}
 
+      # The load benchmark's sampler, which only compose.bench.yml runs (perf/README.md).
+      - name: Sampler image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: sampler
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/snowhound/snowtime-sampler:${{ steps.release.outputs.release }}
+
   deploy:
     needs: images
     if: inputs.server != 'skip'
@@ -91,7 +101,10 @@ jobs:
 
       # The server's Compose files follow the deployed commit; .env and its secrets stay on it.
       - name: Copy Compose files
-        run: scp deploy/compose/compose.yml deploy/compose/compose.import.yml "$DEPLOY_TARGET:$DEPLOY_PATH/"
+        run: |
+          scp deploy/compose/compose.yml deploy/compose/compose.import.yml \
+            deploy/compose/compose.bench.yml "$DEPLOY_TARGET:$DEPLOY_PATH/"
+          scp -r deploy/compose/bench "$DEPLOY_TARGET:$DEPLOY_PATH/"
 
       # The token reaches the server on stdin, so it never shows in a process list.
       - name: Pull images
@@ -106,6 +119,8 @@ jobs:
           cd "$1"
           sed -i "s/^RELEASE=.*/RELEASE=$2/" .env
           docker compose pull
+          # The bench override's variables are unset outside a benchmark, so it pulls directly.
+          docker pull --quiet "ghcr.io/snowhound/snowtime-sampler:$2"
           SCRIPT
 
       # Startup applies migrations, and --wait fails the job unless the app turns healthy.

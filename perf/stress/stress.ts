@@ -64,6 +64,7 @@ const { values } = parseArgs({
     build: { type: 'boolean', default: true },
     load: { type: 'boolean', default: true },
     memory: { type: 'string' },
+    'caddy-memory': { type: 'string' },
     smol: { type: 'boolean', default: false },
     'max-requests': { type: 'string' },
     'try-duration': { type: 'string' },
@@ -537,6 +538,7 @@ async function main() {
     if (values.build) buildImages()
     const settings = {
       ...(values.memory && { BENCH_APP_MEMORY: values.memory }),
+      ...(values['caddy-memory'] && { BENCH_CADDY_MEMORY: values['caddy-memory'] }),
       ...(values.smol && { BENCH_BUN_OPTIONS: '--smol' }),
       ...(values['max-requests'] && { BENCH_MAX_REQUESTS: values['max-requests'] }),
       ...(values['try-duration'] && { BENCH_TRY_DURATION: values['try-duration'] }),
