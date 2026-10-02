@@ -77,9 +77,9 @@ rejected, as in task 069.
 5. Auth through [better-auth-rs](https://github.com/better-auth-rs/better-auth-rs) (MIT or
    Apache-2.0). It targets `better-auth@1.7.6`, the version this app uses, and tests its
    routes, payloads, and cookies against the TypeScript server with the real
-   `better-auth/client`, so the frontend's auth calls could stay unchanged. API keys with
-   permissions, which issue #2 chose for `/api/v1`, and device authorization, which Kait
-   expects to add beside them, are both in its v1 scope.
+   `better-auth/client`, so the frontend's auth calls could stay unchanged. Device
+   authorization, which issue #2 chose for `/api/v1` (Kait, 2026-10-02), and API keys,
+   which may follow for scripts, are both in its v1 scope.
 
    Checked on 2026-10-02 at `1.0.0-alpha.3`, it has these gaps for this app:
    - It hashes passwords with Argon2. Better Auth's default is scrypt, which this app's
