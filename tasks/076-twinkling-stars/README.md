@@ -1,6 +1,6 @@
 # 076: Twinkling stars
 
-Status: todo
+Status: done
 
 Kait (2026-09-30): a new effect for the Baltic countryside's November night (`land-november`,
 dark), "vilkuvad tähed". Stars sit at fixed points in the sky. Each one's brightness changes a
@@ -37,7 +37,7 @@ Candidates, with the dark effect each shows today:
 | land-may      | mist         | Bright early-summer night                                   | 11 stars, placement 72                                      |
 | land-july     | midges-night | Bright moon low on the right                                | 50 stars, placement 75                                      |
 | land-october  | leaves       | Crescent moon, a few small clouds                           | 10 stars, placement 7                                       |
-| land-december | snow         | Moonless; stars and an aurora (subtask 02) replace the snow | Placement 90, brightness 0.5; aurora defaults               |
+| land-december | snow         | Moonless; stars and an aurora (subtask 02) replace the snow | Placement 90, brightness 0.5; aurora in subtask 02          |
 | coast-march   | flurries     | Bright moon; stars replace the flurries                     | 24 stars, placement 89, brightness 0.6                      |
 | coast-april   | mist         | Bright moon on the left                                     | 16 stars, placement 89, brightness 0.5                      |
 | coast-may     | seeds-fine   | Bright early-summer night; stars replace the seeds          | 42 stars, placement 96, brightness 0.5, bright vs faint 0.8 |
@@ -56,10 +56,11 @@ fireflies effect now takes `tempo`, as the midges do. The app's `weather-rendere
 
 ## Acceptance criteria
 
-- [ ] A stars effect whose zones are each image's open sky, with a keep-out circle for the
+- [x] A stars effect whose zones are each image's open sky, with a keep-out circle for the
       moon, tuned with Kait in the prototype and then the bench
-- [ ] `IMAGE_WEATHER` gives stars, in the dark theme, to the images Kait picks from the table,
+- [x] `IMAGE_WEATHER` gives stars, in the dark theme, to the images Kait picks from the table,
       next to their current effect where Kait keeps it, with Weather hints and their messages
       in every language
-- [ ] Coast July's fireflies toned down in the app as in the prototype
-- [ ] Golden frames added for the new cases, and the effect's GPU time per frame recorded
+- [x] Coast July's fireflies toned down in the app as in the prototype
+- [x] Golden frames added for the new cases, and the effect's GPU time per frame recorded
+      (subtask 01, "Pairs in the app")

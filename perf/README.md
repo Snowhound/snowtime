@@ -173,11 +173,11 @@ saved to `perf/.cache/weather/` for comparison.
 **Timing.** Chrome on this machine's GPU (headless Chrome uses it on macOS). Nothing is gated.
 
 - Uncapped (`--disable-gpu-vsync --disable-frame-rate-limit`, renderer pacing off): frames
-  per second, and median GPU time per frame (`EXT_disjoint_timer_query_webgl2`) and CPU
-  time per frame. The page lets at most 64 frames queue on the GPU, since Chrome would
+  per second, the median and mean GPU time per frame (`EXT_disjoint_timer_query_webgl2`), and
+  the median CPU time per frame. With two canvases, a frame's time is both contexts'. The page lets at most 64 frames queue on the GPU, since Chrome would
   otherwise accept thousands a second and stall later.
-- Paced, as the app runs: frame rate, and busy milliseconds per second on the page's main
-  and compositor threads, the display compositor (viz), and the GPU process, from a trace.
+- Paced, as the app runs: frame rate, the weather's GPU milliseconds per second (`gpu/s`),
+  and busy milliseconds per second on the page's main and compositor threads, the display compositor (viz), and the GPU process, from a trace.
   Then the GPU process's CPU time per second over all its threads (`proc`, from CDP's
   `SystemInfo.getProcessInfo`), and on macOS the GPU's utilization (`use %`, the
   IOAccelerator's "Device Utilization %"). Utilization counts every process on the machine,
@@ -188,8 +188,11 @@ saved to `perf/.cache/weather/` for comparison.
   the app does before the copy is ready.
 
 A case is a preset from `IMAGE_WEATHER` with the tuning fields that take other paths
-through the shaders (`band`, `zones`, `shear`, `gather`, `share`, `glow`), drawn with its
-image that has the most items: 25 cases (`FEATURES` in `perf/weather.ts`). Timing uses the
+through the shaders (`band`, `zones`, `shear`, `gather`, `share`, `glow`) and the preset of
+its second effect, if any (`+stars`), drawn with its image that has the most items: 32 cases
+(`FEATURES` in `perf/weather.ts`). The bench draws an image's two effects as the app does,
+on one canvas or on two (`weatherCanvases` in `src/lib/scene/weather-renderer.ts`).
+`--image=<image>-<theme>` measures given images instead of the cases. Timing uses the
 timer layout at pixel ratio 1.5 and calm pace.
 
 ```sh
@@ -201,7 +204,11 @@ bun run perf:weather --only=mist,squall        # cases whose name or preset cont
 bun run perf:weather --timing --swiftshader    # timing on the weak-GPU proxy
 bun run perf:weather --timing --headed         # paced, in a window at the screen's refresh rate
 bun run perf:weather --timing --only=squall,mist --window=3000 --variant=live --variant=copy
+bun run perf:weather --timing --image=land-april-dark --variant=pair --variant=alone --variant=also
 ```
+
+`--variant=alone` draws only an image's first effect and `--variant=also` only its second,
+so a pair can be timed against each of its effects; any other name draws both.
 
 ### Compare two variants
 
@@ -224,18 +231,18 @@ bunx vite --config perf/weather/vite.config.ts --port 5199
 
 Then open `http://localhost:5199/weather.html` with these parameters:
 
-| Parameter  | Values                                                      | Default      |
-| ---------- | ----------------------------------------------------------- | ------------ |
-| `image`    | An image ID, such as `coast-november`                       | `winter`     |
-| `preset`   | A preset name, such as `blowing`, without an image's tuning |              |
-| `theme`    | `light` or `dark`                                           | `light`      |
-| `pace`     | `full` (sign-in page) or `calm` (app pages)                 | `calm`       |
-| `layout`   | `none`, `sign-in`, `timer`, or `reports`                    | `none`       |
-| `photo`    | `1` shows the image's photo, tint, and vignette             | off          |
-| `dpr`      | Canvas pixel ratio                                          | the screen's |
-| `uncapped` | `1` draws on every frame                                    | off          |
-| `t`        | Seconds: draws only the frame at that time                  | runs         |
-| `variant`  | Passed to the code under test; `live` blurs the glass live  |              |
+| Parameter  | Values                                                                                                 | Default      |
+| ---------- | ------------------------------------------------------------------------------------------------------ | ------------ |
+| `image`    | An image ID, such as `coast-november`                                                                  | `winter`     |
+| `preset`   | A preset name, such as `blowing`, without an image's tuning                                            |              |
+| `theme`    | `light` or `dark`                                                                                      | `light`      |
+| `pace`     | `full` (sign-in page) or `calm` (app pages)                                                            | `calm`       |
+| `layout`   | `none`, `sign-in`, `timer`, or `reports`                                                               | `none`       |
+| `photo`    | `1` shows the image's photo, tint, and vignette                                                        | off          |
+| `dpr`      | Canvas pixel ratio                                                                                     | the screen's |
+| `uncapped` | `1` draws on every frame                                                                               | off          |
+| `t`        | Seconds: draws only the frame at that time                                                             | runs         |
+| `variant`  | Passed to the code under test; `live` blurs the glass live, `alone` and `also` draw one of two effects |              |
 
 For example, `weather.html?image=coast-november&theme=dark&layout=timer&photo=1` shows
 November's coast mist by night under the timer page's cards.

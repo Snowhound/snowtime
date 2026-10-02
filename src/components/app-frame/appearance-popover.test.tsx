@@ -58,7 +58,9 @@ describe('AppearancePopover', () => {
       'href',
       '/$org/settings',
     )
-    expect(within(dialog).getByText('A few snowflakes.')).toBeVisible()
+    expect(
+      within(dialog).getByText('A few snowflakes by day, twinkling stars at night.'),
+    ).toBeVisible()
   })
 
   test('a refused change goes back and says why', async () => {

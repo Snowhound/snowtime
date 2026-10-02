@@ -22,6 +22,11 @@
       .seg button[aria-pressed='true'] {
         @apply bg-primary text-primary-foreground;
       }
+      /* Land December's dark photo with its painted aurora removed, from temp/aurora-clean/
+         (not in git), until the photo is regenerated without one. */
+      body.clean-photo .scene-photo-dark {
+        background-image: image-set(url('../temp/aurora-clean/land-december-dark-clean-1920.avif') 1x, url('../temp/aurora-clean/land-december-dark-clean-3840.avif') 2x) !important;
+      }
     </style>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -57,11 +62,15 @@
         <div class="seg" data-key="stars"><button data-value="on">On</button><button data-value="off">Off</button></div>
         <span class="aurora-only text-muted-foreground">Aurora</span>
         <div class="aurora-only seg" data-key="aurora"><button data-value="on">On</button><button data-value="off">Off</button></div>
-        <span class="text-muted-foreground" title="The image's weather today, drawn by scene.js under the stars">Its effect</span>
-        <div class="seg" data-key="effect"><button data-value="on">On</button><button data-value="off">Off</button></div>
+        <span class="aurora-only text-muted-foreground" title="The photo with its painted aurora removed, a local test file, or the app's photo">Photo</span>
+        <div class="aurora-only seg" data-key="photo"><button data-value="clean">Clean sky</button><button data-value="painted">Painted</button></div>
+        <span class="aurora-only self-start pt-1 text-muted-foreground" title="Sets the ray sliders to a version; a slider change after it leaves none picked">Rays</span>
+        <div class="aurora-only seg flex-wrap" data-key="rays"><button data-value="straight" title="Upright rays, the first version">Straight</button><button data-value="varied" title="Bent rays, groups leaning their own way, ragged tops">Varied</button><button data-value="patchy" title="Upright rays, with dimmer stretches along the curtain">A: Patchy</button><button data-value="patchyRagged" title="Upright rays, narrower dim stretches, rays ending at their own heights, a little brighter">B: Patchy, ragged</button><button data-value="converging" title="B, with the rays tilted very slightly toward one point far up, for depth">C: B, converging</button><button data-value="contrast" title="C, with the dim stretches much darker and the bright ones brighter">D: C, more contrast</button></div>
+        <span class="effect-only text-muted-foreground" title="The image's effect besides its stars and aurora, drawn by scene.js under them">Its effect</span>
+        <div class="effect-only seg" data-key="effect"><button data-value="on">On</button><button data-value="off">Off</button></div>
       </div>
       <div id="sliders" class="space-y-1.5"></div>
-      <p class="text-xs text-muted-foreground">← → images · H hides the panel · M markers · S stars · A aurora · E its effect · Space pauses</p>
+      <p class="text-xs text-muted-foreground">← → images · H hides the panel · M markers · S stars · A aurora · R rays · P photo · E its effect · Space pauses</p>
     </div>
 
     <script>
@@ -82,10 +91,17 @@
         flashTime: ['Flash length (s)', 0.2, 4, 0.05, 1.2],
         flashGain: ['Flash brightness', 1, 5, 0.05, 2.2],
         flashSize: ['Flash size', 1, 4, 0.05, 1.6],
-        aBright: ['Aurora brightness', 0, 2, 0.05, 0.65],
-        aHeight: ['Curtain height', 0.3, 3, 0.05, 1.15],
+        aBright: ['Aurora brightness', 0, 2, 0.05, 0.95],
+        aHeight: ['Curtain height', 0.3, 3, 0.05, 1.4],
         aRays: ['Ray density', 0.2, 3, 0.05, 1],
         aRayDepth: ['Ray contrast', 0, 1, 0.05, 0.6],
+        aBend: ['Ray bend', 0, 3, 0.05, 0],
+        aLean: ['Ray lean variety', 0, 3, 0.05, 0],
+        aRagged: ['Ragged tops', 0, 1, 0.05, 0.5],
+        aPatch: ['Dim patches', 0, 1, 0.05, 0.9],
+        aPatchSize: ['Patch size', 0.3, 3, 0.05, 0.6],
+        aConverge: ['Ray convergence', 0, 1.5, 0.05, 0.3],
+        aVanish: ['Converge on x', -0.5, 1, 0.01, 0.15],
         aDrift: ['Ray drift', 0, 3, 0.05, 0.4],
         aWave: ['Fold sway', 0, 3, 0.05, 1],
         aWaveSpeed: ['Sway speed', 0, 3, 0.05, 0.4],
@@ -94,42 +110,54 @@
         aTop: ['Violet top', 0, 1, 0.05, 0.2],
       }
       const AURORA_KEYS = Object.keys(SLIDERS).filter((k) => k.startsWith('a'))
+      // Versions of the rays the Rays switch picks between, as ray slider values.
+      const RAYS = {
+        straight: { aBright: 0.65, aBend: 0, aLean: 0, aRagged: 0, aPatch: 0, aPatchSize: 1, aConverge: 0 },
+        varied: { aBright: 0.65, aBend: 1, aLean: 1, aRagged: 0.6, aPatch: 0, aPatchSize: 1, aConverge: 0 },
+        patchy: { aBright: 0.65, aBend: 0, aLean: 0, aRagged: 0, aPatch: 0.7, aPatchSize: 1, aConverge: 0 },
+        patchyRagged: { aBright: 0.75, aBend: 0, aLean: 0, aRagged: 0.5, aPatch: 0.7, aPatchSize: 0.7, aConverge: 0 },
+        converging: { aBright: 0.75, aBend: 0, aLean: 0, aRagged: 0.5, aPatch: 0.7, aPatchSize: 0.7, aConverge: 0.3 },
+        contrast: { aBright: 0.95, aBend: 0, aLean: 0, aRagged: 0.5, aPatch: 0.9, aPatchSize: 0.6, aConverge: 0.3 },
+      }
+      // The version the ray sliders match, if any.
+      function raysVersion() {
+        return Object.keys(RAYS).find((name) => Object.entries(RAYS[name]).every(([k, v]) => values[k] === v)) ?? ''
+      }
       // Where stars may go in each image: the open sky as polygons, in fractions of the photo's
       // width and height, clear of trees, buildings, clouds and the horizon's haze, and a circle
       // around the moon (x, y, radius in photo heights) that they keep out of. `tuned` is Kait's
-      // pick for the image (2026-10-01), over the sliders' defaults; `effectOff` marks an image
-      // whose effect today the stars or aurora replace.
+      // pick for the image (2026-10-01), over the sliders' defaults. scene.js's IMAGE_WEATHER holds
+      // the same picks.
       const SKIES = {
-        'land-november': { note: 'Frost today; stars replace it (task 076).', tuned: { count: 52, seed: 88, brightness: 0.6 }, sky: [[[0.17, 0.02], [0.86, 0.02], [0.84, 0.3], [0.81, 0.46], [0.17, 0.46]]] },
-        'land-april': { note: 'Mist today. Moonless sky right of the trees.', tuned: { count: 5, seed: 96 }, sky: [[[0.54, 0.02], [0.99, 0.02], [0.99, 0.46], [0.54, 0.5]]] },
-        'land-may': { note: 'Mist today. A bright early-summer night.', tuned: { count: 11, seed: 72 }, sky: [[[0.12, 0.02], [0.66, 0.02], [0.58, 0.3], [0.55, 0.55], [0.22, 0.55], [0.12, 0.3]]] },
-        'land-july': { note: 'Midges today. Bright moon low on the right.', tuned: { count: 50, seed: 75 }, sky: [[[0.23, 0.02], [0.98, 0.02], [0.98, 0.56], [0.29, 0.56], [0.25, 0.2]]], moon: [0.855, 0.48, 0.07] },
-        'land-october': { note: 'Leaves today. A crescent moon and a few small clouds.', tuned: { count: 10, seed: 7 }, sky: [[[0.02, 0.02], [0.56, 0.02], [0.53, 0.58], [0.25, 0.58], [0.25, 0.44], [0.02, 0.42]]], moon: [0.245, 0.375, 0.05] },
+        'land-november': { note: 'Stars in place of the frost.', tuned: { count: 52, seed: 88, brightness: 0.6 }, sky: [[[0.17, 0.02], [0.86, 0.02], [0.84, 0.3], [0.81, 0.46], [0.17, 0.46]]] },
+        'land-april': { note: 'Over the mist. Moonless sky right of the trees.', tuned: { count: 5, seed: 96 }, sky: [[[0.54, 0.02], [0.99, 0.02], [0.99, 0.46], [0.54, 0.5]]] },
+        'land-may': { note: 'Over the mist. A bright early-summer night.', tuned: { count: 11, seed: 72 }, sky: [[[0.12, 0.02], [0.66, 0.02], [0.58, 0.3], [0.55, 0.55], [0.22, 0.55], [0.12, 0.3]]] },
+        'land-july': { note: 'Over the midges. Bright moon low on the right.', tuned: { count: 50, seed: 75 }, sky: [[[0.23, 0.02], [0.98, 0.02], [0.98, 0.56], [0.29, 0.56], [0.25, 0.2]]], moon: [0.855, 0.48, 0.07] },
+        'land-october': { note: 'Over the leaves. A crescent moon and a few small clouds.', tuned: { count: 10, seed: 7 }, sky: [[[0.02, 0.02], [0.56, 0.02], [0.53, 0.58], [0.25, 0.58], [0.25, 0.44], [0.02, 0.42]]], moon: [0.245, 0.375, 0.05] },
         'land-december': {
           tuned: { seed: 90, brightness: 0.5 },
-          note: 'Snow today; an aurora with the stars replaces it (task 076, subtask 02).',
-          effectOff: true,
-          // Curtains along the photo's aurora: each one's lower edge, its height in photo heights,
-          // its brightness, and how far its rays lean left. A thin band just over the treeline, a
-          // curtain above it whose edge bends down into the bright hook, a faint arc over the
-          // hook, and a faint glow on the left.
+          note: 'An aurora and stars in place of the snow (task 076, subtask 02).',
+          // Curtains, each one's lower edge, its height in photo heights, its brightness, and how
+          // far its rays lean left: a thin band just over the treeline, a curtain above it whose
+          // edge bends down into a bright hook, a faint arc over the hook, and a faint glow on the
+          // left. scene.js's IMAGE_WEATHER holds the same.
           aurora: [
-            { base: [[-0.03, 0.704], [0.08, 0.702], [0.17, 0.7], [0.23, 0.698], [0.27, 0.697]], height: 0.035, gain: 0.7 },
-            { base: [[-0.03, 0.673], [0.08, 0.669], [0.16, 0.667], [0.215, 0.669], [0.25, 0.677], [0.272, 0.69], [0.284, 0.699]], height: 0.075, gain: 1, lean: 0.3 },
-            { base: [[0.13, 0.588], [0.18, 0.6], [0.22, 0.614], [0.25, 0.63], [0.266, 0.642]], height: 0.035, gain: 0.28, lean: 0.3 },
-            { base: [[-0.03, 0.648], [0.05, 0.642], [0.13, 0.638], [0.18, 0.64]], height: 0.05, gain: 0.3 },
+            { base: [[-0.036, 0.704], [0.096, 0.702], [0.204, 0.7], [0.276, 0.698], [0.324, 0.697]], height: 0.035, gain: 0.7 },
+            { base: [[-0.036, 0.673], [0.096, 0.669], [0.192, 0.667], [0.258, 0.669], [0.3, 0.677], [0.326, 0.69], [0.341, 0.699]], height: 0.075, gain: 1, lean: 0.3 },
+            { base: [[0.156, 0.588], [0.216, 0.6], [0.264, 0.614], [0.3, 0.63], [0.319, 0.642]], height: 0.035, gain: 0.28, lean: 0.3 },
+            { base: [[-0.036, 0.648], [0.06, 0.642], [0.156, 0.638], [0.216, 0.64]], height: 0.05, gain: 0.3 },
           ],
           sky: [[[0.02, 0.02], [0.7, 0.02], [0.68, 0.15], [0.62, 0.4], [0.57, 0.55], [0.02, 0.55]]] },
-        'coast-march': { note: 'Flurries today; stars replace them. A bright moon.', effectOff: true, tuned: { count: 24, seed: 89, brightness: 0.6 }, sky: [[[0.02, 0.02], [0.98, 0.02], [0.98, 0.45], [0.9, 0.35], [0.75, 0.28], [0.62, 0.35], [0.6, 0.45], [0.02, 0.45]]], moon: [0.36, 0.29, 0.07] },
-        'coast-april': { note: 'Mist today. A bright moon on the left.', tuned: { count: 16, seed: 89, brightness: 0.5 }, sky: [[[0.02, 0.02], [0.64, 0.02], [0.66, 0.4], [0.02, 0.4]]], moon: [0.18, 0.36, 0.07] },
-        'coast-may': { note: 'Fine seeds today; stars replace them. A bright early-summer night.', effectOff: true, tuned: { count: 42, seed: 96, brightness: 0.5, spread: 0.8 }, sky: [[[0.22, 0.02], [0.98, 0.02], [0.98, 0.42], [0.22, 0.42]]] },
-        'coast-july': { note: 'Fireflies today. Moonless, low clouds only.', tuned: {}, sky: [[[0.02, 0.02], [0.98, 0.02], [0.98, 0.35], [0.85, 0.3], [0.8, 0.18], [0.65, 0.17], [0.6, 0.45], [0.02, 0.48]]] },
-        'coast-august': { note: 'Mist today. A small moon over the islet.', tuned: { count: 42, seed: 90, brightness: 0.4 }, sky: [[[0.15, 0.02], [0.98, 0.02], [0.98, 0.3], [0.5, 0.3], [0.5, 0.2], [0.15, 0.2]]], moon: [0.69, 0.345, 0.06] },
-        'coast-october': { note: 'A squall today. Stars only in the gaps between clouds.', tuned: { count: 10, seed: 85, brightness: 0.45 }, sky: [[[0.03, 0.02], [0.4, 0.02], [0.35, 0.1], [0.15, 0.2], [0.03, 0.2]], [[0.45, 0.01], [0.97, 0.01], [0.97, 0.06], [0.45, 0.06]]], moon: [0.6, 0.43, 0.08] },
+        'coast-march': { note: 'Stars in place of the flurries. A bright moon.', tuned: { count: 24, seed: 89, brightness: 0.6 }, sky: [[[0.02, 0.02], [0.98, 0.02], [0.98, 0.45], [0.9, 0.35], [0.75, 0.28], [0.62, 0.35], [0.6, 0.45], [0.02, 0.45]]], moon: [0.36, 0.29, 0.07] },
+        'coast-april': { note: 'Over the mist. A bright moon on the left.', tuned: { count: 16, seed: 89, brightness: 0.5 }, sky: [[[0.02, 0.02], [0.64, 0.02], [0.66, 0.4], [0.02, 0.4]]], moon: [0.18, 0.36, 0.07] },
+        'coast-may': { note: 'Stars in place of the fine seeds. A bright early-summer night.', tuned: { count: 42, seed: 96, brightness: 0.5, spread: 0.8 }, sky: [[[0.22, 0.02], [0.98, 0.02], [0.98, 0.42], [0.22, 0.42]]] },
+        'coast-july': { note: 'Over the fireflies, fewer and slower. Moonless, low clouds only.', tuned: {}, sky: [[[0.02, 0.02], [0.98, 0.02], [0.98, 0.35], [0.85, 0.3], [0.8, 0.18], [0.65, 0.17], [0.6, 0.45], [0.02, 0.48]]] },
+        'coast-august': { note: 'Over the mist. A small moon over the islet.', tuned: { count: 42, seed: 90, brightness: 0.4 }, sky: [[[0.15, 0.02], [0.98, 0.02], [0.98, 0.3], [0.5, 0.3], [0.5, 0.2], [0.15, 0.2]]], moon: [0.69, 0.345, 0.06] },
+        'coast-october': { note: 'Over the squall. Stars only in the gaps between clouds.', tuned: { count: 10, seed: 85, brightness: 0.45 }, sky: [[[0.03, 0.02], [0.4, 0.02], [0.35, 0.1], [0.15, 0.2], [0.03, 0.2]], [[0.45, 0.01], [0.97, 0.01], [0.97, 0.06], [0.45, 0.06]]], moon: [0.6, 0.43, 0.08] },
       }
       const ids = Object.keys(SKIES)
       const hashImage = location.hash.slice(1)
-      const view = { image: ids.includes(hashImage) ? hashImage : 'land-november', strength: 'dimmed', marks: 'off', stars: 'on', aurora: 'on', effect: 'on' }
+      const view = { image: ids.includes(hashImage) ? hashImage : 'land-november', strength: 'dimmed', marks: 'off', stars: 'on', aurora: 'on', effect: 'on', photo: 'clean' }
       let paused = false
 
       const KEY = 'snowtime.prototypeStars'
@@ -159,7 +187,14 @@
       }
       loadValues()
 
-      const ctl = scene.create({ image: view.image, weather: !SKIES[view.image].effectOff, strength: view.strength })
+      // The scene draws the image's weather without its stars and aurora, which this page draws.
+      const SKIP = ['stars', 'aurora']
+      const ctl = scene.create({ image: view.image, strength: view.strength, skip: SKIP })
+      // Whether the image's dark weather has an effect besides them, for Its effect.
+      function hasEffect(id) {
+        const weather = scene.weatherFor(id, 'dark')
+        return [weather, weather.also].some((w) => w?.effect && !SKIP.includes(w.effect))
+      }
       document.getElementById('scene-host').append(ctl.el)
 
       function inPolygon(poly, [x, y]) {
@@ -303,7 +338,7 @@
       // toward the viewer, its rays line up behind each other and it glows brighter.
       in float a_steep;
       uniform vec2 u_res, u_scale, u_offset;
-      uniform float u_time, u_aHeight, u_aWave, u_aWaveSpeed;
+      uniform float u_time, u_aHeight, u_aWave, u_aWaveSpeed, u_aConverge, u_aVanish;
       out float v_s, v_u, v_v, v_y, v_gain, v_seed;
       void main() {
         float s = a_suv.x, v = a_suv.z, seed = a_curtain.z;
@@ -315,6 +350,8 @@
         float h = a_curtain.x * u_aHeight * (.75 + .25 * sin(s * 7.0 + t * .4 + seed * 3.0));
         p.y -= v * h;
         p.x -= v * h * a_curtain.w / ${ASPECT.toFixed(4)};
+        // Rays seen in perspective: each tilts toward one point far above, at x u_aVanish.
+        p.x += v * h * (u_aVanish - a_base.x) * u_aConverge;
         vec2 px = u_offset + p * u_scale;
         gl_Position = vec4(px / u_res * vec2(2.0, -2.0) + vec2(-1.0, 1.0), 0.0, 1.0);
         v_s = s; v_u = a_suv.y; v_v = v; v_y = p.y; v_gain = a_curtain.y * (1.0 + 2.5 * a_steep); v_seed = seed;
@@ -322,6 +359,7 @@
       const AURORA_FS = `#version 300 es
       precision highp float;
       uniform float u_time, u_aBright, u_aRays, u_aRayDepth, u_aDrift, u_aPulse, u_aPulseSpeed, u_aTop;
+      uniform float u_aBend, u_aLean, u_aRagged, u_aPatch, u_aPatchSize;
       in float v_s, v_u, v_v, v_y, v_gain, v_seed;
       out vec4 outColor;
       float hash(float n) { return fract(sin(n * 127.1) * 43758.5453); }
@@ -333,6 +371,14 @@
       void main() {
         float t = u_time;
         float x = v_s * 150.0 * u_aRays;
+        // The varied take: rays curve as they rise, bending the same way along a stretch of the
+        // curtain and slowly changing; groups of rays lean their own way; and each ray ends at
+        // its own height. All three are 0 in the straight take.
+        float up = v_v * v_v;
+        x += u_aBend * up * (noise(v_s * 6.0 + v_seed * 3.0 + t * .04) * 2.0 - 1.0) * 14.0;
+        x += u_aLean * v_v * (noise(x * .12 + v_seed * 5.0) * 2.0 - 1.0) * 7.0;
+        float top = mix(.4, 1.05, noise(x * .9 + t * u_aDrift * .6 + v_seed * 11.0));
+        float ragged = mix(1.0, smoothstep(top, top - .3, v_v), u_aRagged);
         float rays = noise(x + t * u_aDrift * .6 + v_seed * 13.0) * .6 + noise(x * 2.7 - t * u_aDrift + v_seed * 7.0) * .4;
         rays = mix(1.0, pow(rays, 1.6) * 1.9, u_aRayDepth);
         // Brightest just above the lower edge, fading upward.
@@ -341,7 +387,12 @@
         float pulse = 1.0 - u_aPulse * (.5 + .5 * sin(v_u * 9.0 - t * u_aPulseSpeed + v_seed * 5.0));
         // Hidden behind the treeline.
         float trees = smoothstep(.73, .72, v_y);
-        float a = clamp(profile * ends * rays * pulse * v_gain * u_aBright * trees * .5, 0.0, 1.0);
+        // Dimmer stretches along the curtain, drifting slowly, so parts of it fade back while
+        // the rays stay upright.
+        float ps = v_s / u_aPatchSize;
+        float patchNoise = noise(ps * 12.0 + v_seed * 17.0 + t * .05) * .7 + noise(ps * 31.0 - t * .08 + v_seed * 3.0) * .3;
+        float dim = mix(1.0, .15 + .85 * smoothstep(.25, .75, patchNoise), u_aPatch);
+        float a = clamp(profile * ragged * ends * rays * dim * pulse * v_gain * u_aBright * trees * .5, 0.0, 1.0);
         vec3 green = vec3(.36, 1.0, .62), violet = vec3(.72, .42, 1.0);
         vec3 col = mix(green, violet, smoothstep(.35, 1.0, v_v) * u_aTop);
         outColor = vec4(col * a, a);
@@ -454,6 +505,7 @@
         }
       }
 
+
       let time = 0
       let last = performance.now()
       function frame(now) {
@@ -508,6 +560,7 @@
             return `${heading ? `<p class="pt-1 text-xs font-medium">${heading}</p>` : ''}<label class="grid grid-cols-[7.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 text-xs"><span class="${changed ? 'font-semibold text-foreground' : 'text-muted-foreground'}">${label}</span><input type="range" data-key="${key}" min="${min}" max="${max}" step="${step}" value="${values[key]}" class="w-full min-w-0 accent-primary" /><output class="text-right tabular-nums">${+(+values[key]).toFixed(2)}</output></label>`
           })
           .join('')
+        renderRays()
       }
       sliders.addEventListener('input', (event) => {
         const input = event.target.closest('input')
@@ -516,6 +569,7 @@
         input.nextElementSibling.textContent = +(+input.value).toFixed(2)
         input.previousElementSibling.className = values[input.dataset.key] !== base()[input.dataset.key] ? 'font-semibold text-foreground' : 'text-muted-foreground'
         save()
+        renderRays()
         if (input.dataset.key === 'count' || input.dataset.key === 'seed') upload()
       })
       document.getElementById('reset').addEventListener('click', () => {
@@ -534,18 +588,30 @@
         }
         setTimeout(() => (document.getElementById('copy').textContent = 'Copy'), 1500)
       })
+      function renderRays() {
+        const on = raysVersion()
+        for (const b of document.querySelectorAll('.seg[data-key="rays"] button')) b.setAttribute('aria-pressed', String(b.dataset.value === on))
+      }
       function renderSegs() {
         for (const seg of document.querySelectorAll('.seg')) {
+          if (seg.dataset.key === 'rays') continue
           for (const b of seg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.value === view[seg.dataset.key]))
         }
         ctl.set({ strength: view.strength, weather: view.effect === 'on' })
+        document.body.classList.toggle('clean-photo', view.image === 'land-december' && view.photo === 'clean')
         drawMarks()
+      }
+      function setRays(name) {
+        Object.assign(values, RAYS[name])
+        save()
+        renderSliders()
       }
       for (const seg of document.querySelectorAll('.seg')) {
         seg.addEventListener('click', (event) => {
           const b = event.target.closest('button')
           if (!b) return
-          view[seg.dataset.key] = b.dataset.value
+          if (seg.dataset.key === 'rays') setRays(b.dataset.value)
+          else view[seg.dataset.key] = b.dataset.value
           renderSegs()
         })
       }
@@ -555,6 +621,12 @@
         else if (event.key === 'm') (view.marks = view.marks === 'on' ? 'off' : 'on'), renderSegs()
         else if (event.key === 's') (view.stars = view.stars === 'on' ? 'off' : 'on'), renderSegs()
         else if (event.key === 'a') (view.aurora = view.aurora === 'on' ? 'off' : 'on'), renderSegs()
+        else if (event.key === 'r') {
+          const names = Object.keys(RAYS)
+          setRays(names[(names.indexOf(raysVersion()) + 1) % names.length])
+          renderSegs()
+        }
+        else if (event.key === 'p') (view.photo = view.photo === 'clean' ? 'painted' : 'clean'), renderSegs()
         else if (event.key === 'e') (view.effect = view.effect === 'on' ? 'off' : 'on'), renderSegs()
         else if (event.key === ' ') (paused = !paused), event.preventDefault()
       })
@@ -567,7 +639,7 @@
         select.value = id
         document.getElementById('note').textContent = SKIES[id].note
         history.replaceState(null, '', `#${id}`)
-        view.effect = SKIES[id].effectOff ? 'off' : 'on'
+        for (const el of document.querySelectorAll('.effect-only')) el.style.display = hasEffect(id) ? '' : 'none'
         ctl.set({ image: id })
         renderSegs()
         loadValues()

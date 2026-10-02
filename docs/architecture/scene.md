@@ -106,10 +106,18 @@ collections".
   prototype's, though each image resolves to the same weather (task 073).
   - Colors are data: each effect has two colors for dark pages, light pages over the image, and
     the plain light page, and a preset or an image can replace them for any of the three.
-  - Presets tune one of eight effects: snow (and flurries, blowing snow, sea spray), rain
+  - Presets tune one of ten effects: snow (and flurries, blowing snow, sea spray), rain
     (squalls), seeds (fine seeds, motes, dust), fireflies, leaves, glitter
-    (snow and frost), insects (midges, with fireflies at night), and mist. The `none` preset has
-    no effect, for an image that should be still; no image uses it now.
+    (snow and frost), insects (midges, with fireflies at night), mist, stars, and the aurora.
+    The `none` preset has no effect, for an image that should be still; no image uses it now.
+  - Two effects: an image's entry in a theme can name a second one (`also`), drawn over the
+    first. Night skies take stars this way over their mist, fireflies, midges, leaves, or
+    squalls, and land December's aurora takes them too (task 076). The second effect takes the
+    image's horizon but not its zones.
+  - Stars sit at fixed points of each image's open sky, polygons of the image with a circle
+    around the moon kept clear. `count` and `seed` place them as `prototypes/stars.html`
+    does, so Kait's picks there carry over; the pace doesn't thin them. The aurora's curtains
+    are Catmull-Rom curves through points of the image, drawn as quads along them.
   - Wind: every effect takes a wind in screen heights per second, gusts, and shear, so snow,
     rain, seeds, leaves, and midges in one image blow the same way, as the reeds, grass, and
     waves lean. Shear strengthens the wind below the image's horizon, so falling snow and rain
@@ -123,15 +131,23 @@ collections".
     maps them to the screen the way `cover` and `background-position: center 20%` crop the
     photo, so they stay on the ice or the water on any screen. A recomposed image changes only
     these numbers.
-  - The Weather hints name the showing image's preset (`scene_effect_*`), or "still air". The
-    weather follows the picture on screen, so a new image switches both as it starts to fade in.
+  - The Weather hints name the showing image's preset (`scene_effect_*`), both of them for a
+    pair ("drifting mist and twinkling stars"), or "still air". The weather follows the
+    picture on screen, so a new image switches both as it starts to fade in.
 - Weather rendering (`src/lib/scene/weather-renderer.ts`): `SceneLayer` loads the renderer
   when enabled weather first needs it, after mount. Presets and settings hints stay in
   `weather.ts`, so pages with weather off send no shaders (task 069). Explicit SSR guards
   keep the renderer and the browser's XLSX export library out of the server build.
-  Each effect is a WebGL 2 program that draws all its points (rain's and
-  the mist's quads) in one call with no buffers, on one canvas in the scene layer, with item
-  counts scaled to the screen's area. The band, horizon, zones, count, and the uniforms that
+  Each effect is a WebGL 2 program that draws all its points (rain's, the mist's, and the
+  aurora's quads) in one call with no buffers, with item counts scaled to the screen's area.
+  An image's effects share a canvas in the scene layer when they draw at the same resolution,
+  at the faster one's frame rate; the mist, at a coarser resolution, gets a second canvas
+  under the other effect, with its own rate. Every canvas costs a floor of about 0.2 ms a
+  frame on an Apple M1 Pro and 1.2 ms under SwiftShader. Drawing the mist with the stars, at
+  their rate and density, cost up to five times as much as two canvases under SwiftShader. A
+  framebuffer of the mist's, copied onto the stars' canvas each frame, tied two canvases on the
+  M1 and cost as much as drawing both under SwiftShader (task 076, subtask 01). Stars and the aurora place their items once a setup, as
+  uniform arrays. The band, horizon, zones, count, and the uniforms that
   follow from them, and the colors, are worked out on a start or a resize; a frame uploads only
   the time. The canvas has at most 1.5 backing pixels per CSS pixel, and the mist, which is soft
   and the costliest per pixel, 0.25. Its WebGL context starts the first time it runs. App pages

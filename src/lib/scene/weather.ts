@@ -13,6 +13,8 @@ export type Effect =
   | 'glitter'
   | 'insects'
   | 'mist'
+  | 'stars'
+  | 'aurora'
 
 export type Rgb = [number, number, number]
 
@@ -33,6 +35,13 @@ export type Pace = keyof typeof PACES
 // optionally a factor of glitter's or mist's opacity there.
 export type Zone = [number, number, number, number] | [number, number, number, number, number]
 
+// A point of the image, [x, y] as fractions of its width and height.
+export type Point = [number, number]
+
+// An aurora's curtain: its lower edge through `base`, its height in image heights, its brightness,
+// and how far its rays lean left per unit up.
+type Curtain = { base: Point[]; height: number; gain: number; lean?: number }
+
 // An image's tuning of its preset, all optional:
 // - `wind`: the sideways speed of the nearest items, in screen heights per second, positive to the
 //   right. Farther items move slower. Everything in the air moves with it, so seeds fly sideways
@@ -50,13 +59,19 @@ export type Zone = [number, number, number, number] | [number, number, number, n
 // - `zones`: up to four rectangles of the image: where glitter lies, so it misses water (without
 //   them, the ground below the horizon), where midges and fireflies keep, or where mist lies (the
 //   same default): each bank keeps to one zone.
-// - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight.
+// - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight, the
+//   fireflies' flight and glow, the stars' twinkle, the aurora's sway and drift.
 // - `gather` (0 to 1): the share of mist banks that stay in their zone, drifting through it and
 //   coming back in at its far side. They're thickest at the start and clear now and then. The
 //   rest drift across the whole screen and fade in and out at the zone's sides.
 // - `shimmer`, `peaks`, `peakTime`, `peakSize`: glitter's faint shimmer, and how many full glints
 //   show at once on a 1440 × 900 screen, for how many seconds, and how much larger.
 // - `colors`: in place of the effect's colors, on the pages it names.
+// - `count`, `seed`, `sky`, `moon`, `spread`: the stars, how many and the seed that places them,
+//   in the polygons of open sky and out of the moon's circle ([x, y, radius in image heights]),
+//   and how much brighter the bright ones are than the faint (0 all the same). `peaks`,
+//   `peakTime`, and `peakSize` are their flashes, as glitter's glints.
+// - `curtains`: the aurora's.
 type Tuning = {
   wind?: number
   gust?: number
@@ -76,6 +91,12 @@ type Tuning = {
   peakTime?: number
   peakSize?: number
   colors?: Partial<Colors>
+  count?: number
+  seed?: number
+  spread?: number
+  sky?: Point[][]
+  moon?: [number, number, number]
+  curtains?: Curtain[]
 }
 
 // The Weather hint's name for a preset: `scene_effect_<hint>` in messages/.
@@ -96,6 +117,8 @@ export type Hint =
   | 'glitter'
   | 'frost'
   | 'mist'
+  | 'stars'
+  | 'aurora'
   | 'none'
 
 // `effect: null` is no weather. `fps` is the preset's frame-rate target, by default its effect's.
@@ -172,13 +195,24 @@ export const PRESETS = {
   },
   frost: { effect: 'glitter', hint: 'frost' },
   mist: { effect: 'mist', hint: 'mist' },
+  // The defaults Kait tuned in prototypes/stars.html (task 076).
+  stars: {
+    effect: 'stars',
+    hint: 'stars',
+    opacity: 0.75,
+    peaks: 0.4,
+    peakTime: 1.2,
+    peakSize: 1.6,
+  },
+  aurora: { effect: 'aurora', hint: 'aurora', opacity: 0.95 },
   none: { effect: null, hint: 'none' },
 } satisfies Record<string, Preset>
 
 type PresetName = keyof typeof PRESETS
 
-// An image's weather in a theme: its preset and the fields it changes.
-type Entry = Tuning & { preset: PresetName }
+// An image's weather in a theme: its preset and the fields it changes, and a second effect drawn
+// over it (`also`).
+type Entry = Tuning & { preset: PresetName; also?: Entry }
 
 // An image's weather, in `both` themes or in each. `horizon`: where the sea, the ice, or the
 // ground meets the sky or the tree line, as a fraction of the image's height; glitter grows toward
@@ -189,8 +223,8 @@ type ImageWeather = { horizon?: number; zones?: Zone[] } & (
   | { light: Entry; dark: Entry }
 )
 
-function wx(preset: PresetName, tuning: Tuning = {}): Entry {
-  return { preset, ...tuning }
+function wx(preset: PresetName, tuning: Tuning = {}, also?: Entry): Entry {
+  return also ? { preset, ...tuning, also } : { preset, ...tuning }
 }
 
 // Wet snow by day: the far flakes grey-blue, so they show against the pale sky.
@@ -276,22 +310,67 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
       fall: 1.3,
       colors: WET_SNOW,
     }),
-    dark: wx('flurries', { wind: -0.15, gust: 0.5, shear: 1, amount: 0.25, size: 1.2, fall: 1.3 }),
+    // A clear night under a bright moon: stars in place of the flurries.
+    dark: wx('stars', {
+      count: 24,
+      seed: 89,
+      opacity: 0.6,
+      sky: [
+        [
+          [0.02, 0.02],
+          [0.98, 0.02],
+          [0.98, 0.45],
+          [0.9, 0.35],
+          [0.75, 0.28],
+          [0.62, 0.35],
+          [0.6, 0.45],
+          [0.02, 0.45],
+        ],
+      ],
+      moon: [0.36, 0.29, 0.07],
+    }),
   },
   'coast-april': {
     horizon: 0.55,
     light: wx('motes-fine', { wind: -0.02, size: 0.9, opacity: 0.95, colors: COAST_SPECKS }),
-    // Sea fog below the moon, clear of the cliff.
-    dark: wx('mist', {
-      wind: -0.01,
-      zones: [[0, 0.48, 0.68, 0.72]],
-      opacity: 0.8,
-    }),
+    // Sea fog below the moon, clear of the cliff, and stars away from the moon.
+    dark: wx(
+      'mist',
+      { wind: -0.01, zones: [[0, 0.48, 0.68, 0.72]], opacity: 0.8 },
+      wx('stars', {
+        count: 16,
+        seed: 89,
+        opacity: 0.5,
+        sky: [
+          [
+            [0.02, 0.02],
+            [0.64, 0.02],
+            [0.66, 0.4],
+            [0.02, 0.4],
+          ],
+        ],
+        moon: [0.18, 0.36, 0.07],
+      }),
+    ),
   },
   'coast-may': {
     horizon: 0.53,
     light: wx('seeds-fine', { wind: 0.03, amount: 0.6, colors: COAST_SPECKS }),
-    dark: wx('seeds-fine', { wind: 0.03, amount: 0.45, opacity: 0.55 }),
+    // A bright early-summer night: stars in place of the seeds.
+    dark: wx('stars', {
+      count: 42,
+      seed: 96,
+      opacity: 0.5,
+      spread: 0.8,
+      sky: [
+        [
+          [0.22, 0.02],
+          [0.98, 0.02],
+          [0.98, 0.42],
+          [0.22, 0.42],
+        ],
+      ],
+    }),
   },
   'coast-june': {
     horizon: 0.47,
@@ -301,7 +380,25 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
   'coast-july': {
     horizon: 0.74,
     light: wx('seeds-fine', { wind: 0.03, colors: COAST_SPECKS }),
-    dark: wx('fireflies', { amount: 0.3 }),
+    // Fewer, slower fireflies under a moonless sky, so the two don't look busy together.
+    dark: wx(
+      'fireflies',
+      { amount: 0.18, tempo: 0.55 },
+      wx('stars', {
+        sky: [
+          [
+            [0.02, 0.02],
+            [0.98, 0.02],
+            [0.98, 0.35],
+            [0.85, 0.3],
+            [0.8, 0.18],
+            [0.65, 0.17],
+            [0.6, 0.45],
+            [0.02, 0.48],
+          ],
+        ],
+      }),
+    ),
   },
   'coast-august': {
     horizon: 0.45,
@@ -309,17 +406,37 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
     // On the open water, fading out at the rocks on the left: across the rocks it lay as a flat
     // smear. Half the banks lie low and heavier along the island's foot, below the trunks. Half
     // stay in their zones, so the island has mist from the start, clearing now and then.
-    dark: wx('mist', {
-      wind: 0.01,
-      gather: 0.5,
-      zones: [
-        [0.34, 0.42, 1, 0.6, 0.8],
-        [0.64, 0.41, 1, 0.47, 3],
-      ],
-      amount: 2,
-      size: 1.3,
-      opacity: 1.2,
-    }),
+    // Stars above the clouds, out of the small moon's glow.
+    dark: wx(
+      'mist',
+      {
+        wind: 0.01,
+        gather: 0.5,
+        zones: [
+          [0.34, 0.42, 1, 0.6, 0.8],
+          [0.64, 0.41, 1, 0.47, 3],
+        ],
+        amount: 2,
+        size: 1.3,
+        opacity: 1.2,
+      },
+      wx('stars', {
+        count: 42,
+        seed: 90,
+        opacity: 0.4,
+        sky: [
+          [
+            [0.15, 0.02],
+            [0.98, 0.02],
+            [0.98, 0.3],
+            [0.5, 0.3],
+            [0.5, 0.2],
+            [0.15, 0.2],
+          ],
+        ],
+        moon: [0.69, 0.345, 0.06],
+      }),
+    ),
   },
   'coast-september': {
     horizon: 0.48,
@@ -346,8 +463,36 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
       opacity: 1.1,
     }),
   },
-  // The waves break from the right.
-  'coast-october': { horizon: 0.58, both: wx('squall', { wind: -0.6 }) },
+  // The waves break from the right. By night, a few stars in the gaps between the clouds.
+  'coast-october': {
+    horizon: 0.58,
+    light: wx('squall', { wind: -0.6 }),
+    dark: wx(
+      'squall',
+      { wind: -0.6 },
+      wx('stars', {
+        count: 10,
+        seed: 85,
+        opacity: 0.45,
+        sky: [
+          [
+            [0.03, 0.02],
+            [0.4, 0.02],
+            [0.35, 0.1],
+            [0.15, 0.2],
+            [0.03, 0.2],
+          ],
+          [
+            [0.45, 0.01],
+            [0.97, 0.01],
+            [0.97, 0.06],
+            [0.45, 0.06],
+          ],
+        ],
+        moon: [0.6, 0.43, 0.08],
+      }),
+    ),
+  },
   'coast-november': {
     horizon: 0.43,
     light: wx('spray', { wind: -0.5, band: [0.3, 1.05] }),
@@ -433,21 +578,54 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
     horizon: 0.75,
     light: wx('motes-fine', { wind: 0.01, size: 0.9, opacity: 0.95 }),
     // Ground mist at the foot of the near trunks, just above the flower bed, fainter along the far
-    // trees, and hardly any by the manor.
-    dark: wx('mist', {
-      wind: 0.006,
-      zones: [
-        [0, 0.67, 0.42, 0.79, 1.1],
-        [0.35, 0.64, 0.78, 0.76, 0.6],
-      ],
-      amount: 1.1,
-      opacity: 0.75,
-    }),
+    // trees, and hardly any by the manor. A few stars in the moonless sky right of the trees.
+    dark: wx(
+      'mist',
+      {
+        wind: 0.006,
+        zones: [
+          [0, 0.67, 0.42, 0.79, 1.1],
+          [0.35, 0.64, 0.78, 0.76, 0.6],
+        ],
+        amount: 1.1,
+        opacity: 0.75,
+      },
+      wx('stars', {
+        count: 5,
+        seed: 96,
+        sky: [
+          [
+            [0.54, 0.02],
+            [0.99, 0.02],
+            [0.99, 0.46],
+            [0.54, 0.5],
+          ],
+        ],
+      }),
+    ),
   },
   'land-may': {
     horizon: 0.75,
     light: wx('seeds', { wind: 0.015, share: 0.5, amount: 2.5, size: 0.5 }),
-    dark: wx('mist', { wind: 0.008 }),
+    // A bright early-summer night, so only a few stars.
+    dark: wx(
+      'mist',
+      { wind: 0.008 },
+      wx('stars', {
+        count: 11,
+        seed: 72,
+        sky: [
+          [
+            [0.12, 0.02],
+            [0.66, 0.02],
+            [0.58, 0.3],
+            [0.55, 0.55],
+            [0.22, 0.55],
+            [0.12, 0.3],
+          ],
+        ],
+      }),
+    ),
   },
   'land-june': {
     horizon: 0.44,
@@ -467,14 +645,32 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
       amount: 1.95,
       tempo: 1.15,
     }),
-    dark: wx('midges-night', {
-      wind: 0.005,
-      zones: [
-        [0.05, 0.64, 0.33, 0.9],
-        [0.34, 0.82, 0.88, 0.97],
-        [0.58, 0.68, 1, 0.78],
-      ],
-    }),
+    // Stars out of the bright moon's glow, low on the right.
+    dark: wx(
+      'midges-night',
+      {
+        wind: 0.005,
+        zones: [
+          [0.05, 0.64, 0.33, 0.9],
+          [0.34, 0.82, 0.88, 0.97],
+          [0.58, 0.68, 1, 0.78],
+        ],
+      },
+      wx('stars', {
+        count: 50,
+        seed: 75,
+        sky: [
+          [
+            [0.23, 0.02],
+            [0.98, 0.02],
+            [0.98, 0.56],
+            [0.29, 0.56],
+            [0.25, 0.2],
+          ],
+        ],
+        moon: [0.855, 0.48, 0.07],
+      }),
+    ),
   },
   'land-august': {
     horizon: 0.39,
@@ -506,17 +702,36 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
     horizon: 0.77,
     light: wx('leaves', { wind: 0.04, amount: 1.3, size: 0.7, opacity: 0.65 }),
     // The moonlit trees are near grey, so the leaves are dull rust and olive, not bright orange.
-    dark: wx('leaves', {
-      wind: 0.04,
-      size: 0.7,
-      opacity: 0.6,
-      colors: {
-        dark: [
-          [0.42, 0.3, 0.18],
-          [0.5, 0.44, 0.26],
-        ],
+    // A few stars between the crescent moon and the small clouds.
+    dark: wx(
+      'leaves',
+      {
+        wind: 0.04,
+        size: 0.7,
+        opacity: 0.6,
+        colors: {
+          dark: [
+            [0.42, 0.3, 0.18],
+            [0.5, 0.44, 0.26],
+          ],
+        },
       },
-    }),
+      wx('stars', {
+        count: 10,
+        seed: 7,
+        sky: [
+          [
+            [0.02, 0.02],
+            [0.56, 0.02],
+            [0.53, 0.58],
+            [0.25, 0.58],
+            [0.25, 0.44],
+            [0.02, 0.42],
+          ],
+        ],
+        moon: [0.245, 0.375, 0.05],
+      }),
+    ),
   },
   'land-november': {
     horizon: 0.57,
@@ -530,30 +745,110 @@ export const IMAGE_WEATHER: Record<ImageId, ImageWeather> = {
       peakTime: 2.6,
       peakSize: 3.1,
     }),
-    // No moon, so the frost barely catches light: few, faint specks that change slowly.
-    dark: wx('frost', {
-      amount: 1.8,
-      size: 2.2,
-      opacity: 0.55,
-      tempo: 0.45,
-      peaks: 0.5,
-      peakTime: 3.6,
+    // A moonless sky: stars in place of the frost, which barely caught light.
+    dark: wx('stars', {
+      count: 52,
+      seed: 88,
+      opacity: 0.6,
+      sky: [
+        [
+          [0.17, 0.02],
+          [0.86, 0.02],
+          [0.84, 0.3],
+          [0.81, 0.46],
+          [0.17, 0.46],
+        ],
+      ],
     }),
   },
   'land-december': {
     horizon: 0.74,
     light: wx('snow', { amount: 0.3, fall: 0.8 }),
-    dark: wx('snow', { amount: 0.2, fall: 0.8, opacity: 0.4 }),
+    // A clear, moonless night: the aurora and stars in place of the snow, low on the left: a thin
+    // band just over the treeline, a curtain above it whose edge bends down into a bright hook, a
+    // faint arc over the hook, and a faint glow on the left.
+    dark: wx(
+      'aurora',
+      {
+        curtains: [
+          {
+            base: [
+              [-0.036, 0.704],
+              [0.096, 0.702],
+              [0.204, 0.7],
+              [0.276, 0.698],
+              [0.324, 0.697],
+            ],
+            height: 0.035,
+            gain: 0.7,
+          },
+          {
+            base: [
+              [-0.036, 0.673],
+              [0.096, 0.669],
+              [0.192, 0.667],
+              [0.258, 0.669],
+              [0.3, 0.677],
+              [0.326, 0.69],
+              [0.341, 0.699],
+            ],
+            height: 0.075,
+            gain: 1,
+            lean: 0.3,
+          },
+          {
+            base: [
+              [0.156, 0.588],
+              [0.216, 0.6],
+              [0.264, 0.614],
+              [0.3, 0.63],
+              [0.319, 0.642],
+            ],
+            height: 0.035,
+            gain: 0.28,
+            lean: 0.3,
+          },
+          {
+            base: [
+              [-0.036, 0.648],
+              [0.06, 0.642],
+              [0.156, 0.638],
+              [0.216, 0.64],
+            ],
+            height: 0.05,
+            gain: 0.3,
+          },
+        ],
+      },
+      wx('stars', {
+        seed: 90,
+        opacity: 0.5,
+        sky: [
+          [
+            [0.02, 0.02],
+            [0.7, 0.02],
+            [0.68, 0.15],
+            [0.62, 0.4],
+            [0.57, 0.55],
+            [0.02, 0.55],
+          ],
+        ],
+      }),
+    ),
   },
 }
 
-// An image's weather in a theme, resolved: its preset, then the image's horizon and fields.
-export type Weather = Preset & { horizon?: number }
+// An image's weather in a theme, resolved: its preset, then the image's horizon and fields, and
+// its second effect, which takes the horizon but not the zones.
+export type Weather = Preset & { horizon?: number; also?: Weather }
 
 export function weatherFor(id: ImageId, theme: 'light' | 'dark'): Weather {
   const { horizon, zones, ...image } = IMAGE_WEATHER[id]
-  const { preset, ...tuning } = 'both' in image ? image.both : image[theme]
-  return { ...PRESETS[preset], horizon, zones, ...tuning }
+  const { preset, also, ...tuning } = 'both' in image ? image.both : image[theme]
+  const weather = { ...PRESETS[preset], horizon, zones, ...tuning }
+  if (!also) return weather
+  const { preset: second, also: _, ...more } = also
+  return { ...weather, also: { ...PRESETS[second], horizon, ...more } }
 }
 
 // Why the weather can't run here, for the Weather hint: 'webgl' without WebGL 2, 'failed' when

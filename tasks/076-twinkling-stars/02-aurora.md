@@ -1,6 +1,6 @@
 # 02: Aurora for countryside December
 
-Status: todo
+Status: done
 
 Kait (2026-10-01): countryside December's night (`land-december`, dark) needs an aurora effect,
 with the stars as well. The photo shows a faint green aurora low on the left, above the
@@ -13,10 +13,21 @@ tuned with Kait before it moves to the app. A first version is in `stars.html` (
 four curtains along the photo's bands, on the left only, with sliders for brightness, height, rays, sway, pulses,
 and a violet top.
 
+The photo has an aurora painted in, which the moving curtains can't follow freely; Kait will
+regenerate it without one. Until then `stars.html` tunes over a test copy with the sky cleaned
+(`temp/aurora-clean/`, not in git, made by its `clean.py`).
+
+Kait's pick (2026-10-02), in `stars.html`'s defaults, the app, and `scene.js`: curtains a fifth
+longer to the right, 1.4 times as tall, at brightness 0.95. Rays stay upright, as real ones
+look, but tilt very slightly toward one point far above (convergence 0.3, at x 0.15), each
+ends at its own height (ragged tops 0.5), and dim patches drift along the curtains (0.9, size
+0.6), as a real aurora's curtains vary in brightness. Rays that bend and lean in groups their
+own way were tried and dropped.
+
 ## Acceptance criteria
 
-- [ ] A prototype of the aurora over the land December photo, tuned with Kait
-- [ ] An aurora effect in the app, drawn with the stars through subtask 01, in place of the
+- [x] A prototype of the aurora over the land December photo, tuned with Kait
+- [x] An aurora effect in the app, drawn with the stars through subtask 01, in place of the
       dark theme's snow
-- [ ] A Weather hint and its message in every language, golden frames, and the effect's GPU
-      time per frame recorded
+- [x] A Weather hint and its message in every language, golden frames, and the effect's GPU
+      time per frame recorded (subtask 01, "Pairs in the app")
