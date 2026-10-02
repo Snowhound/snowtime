@@ -190,7 +190,7 @@ load, which it doesn't judge.
 `perf/stress/stack.ts` builds the `app`, `caddy`, and `sampler` images from the checkout
 for this machine, so an Arm64 Mac doesn't emulate x64. It runs `deploy/compose` with
 `compose.bench.yml` and `compose.bench.local.yml`: the three containers share one CPU, the
-app has 1,792 MB and Caddy 192 MB, and Caddy signs its own certificate for
+app has 1,792 MB and Caddy 512 MB, and Caddy signs its own certificate for
 `snowtime-bench.test` on `127.0.0.1:8443`. k6 runs in Docker on other cores.
 
 Before a run, the dataset is copied into the bench volume while the app is stopped, and

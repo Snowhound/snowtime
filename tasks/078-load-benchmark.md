@@ -141,13 +141,13 @@ drops the load two steps and ends the ramp.
 ## Local results so far (2026-10-02)
 
 Release image built for Arm64 from this branch, on one core of an M-series Mac with 1,792
-MB for the app. Capacity is the highest step that held its targets for 10 minutes. Results
-are in `perf/.cache/stress/runs/`.
+MB for the app and 512 MB for Caddy (192 MB in the S and L runs). Capacity is the highest
+step that held its targets for 10 minutes. Results are in `perf/.cache/stress/runs/`.
 
 | Dataset | Capacity              | Missed at                 | App CPU, memory at capacity                     | CPU per request |
 | ------- | --------------------- | ------------------------- | ----------------------------------------------- | --------------- |
 | S       | 8,000 (see the stall) | 12,500; 10,000 for 10 min | 43%, 362 MB                                     | 3.0 ms          |
-| M       | 6,500                 | 8,000, by 41 ms           | 31%, 441 MB (peak 496)                          | 2.6 ms          |
+| M       | 8,000                 | 10,000                    | 36%, 560 MB (peak 692)                          | 2.5 ms          |
 | L       | 8,000                 | 10,000                    | 39%, 763 MB (peak 790; 461 MB of it page cache) | 2.7 ms          |
 
 CPU per action on S, each action alone (`--run=kinds`): open 54 ms, return 25 ms, timer 27
@@ -167,8 +167,8 @@ Findings:
   cost less per request than S, whose users are mostly in Lumen Works (18 dense members,
   admins who see every entry).
 - The database's size barely shows. L's 4.7 GB is twice the memory, but the requests read
-  recent weeks: the app's page cache settled near 460 MB and disk reads under 1 MB/s. L
-  held more users than M, so M's miss at 8,000 by 41 ms was noise in a 30-second window.
+  recent weeks: the app's page cache settled near 460 MB and disk reads under 1 MB/s. All
+  three datasets hold 8,000 users and miss at 10,000.
 - Most of the app's memory isn't the JS heap. On M at 2,000 users, the heap used 53 MB
   and external buffers 36 MB, of 214 MB RSS. The rest is the runtime, SQLite's cache,
   and the allocator.
@@ -203,15 +203,19 @@ Cheap settings on M, each a 5-minute run at 6,500 users unless noted:
 | `--smol` (`BUN_OPTIONS`)                   | 3% less RSS (316 against 326 MB), same CPU; not worth it                                                                                                            |
 | Caddy cap: 24 requests in flight, 1 s wait | Overload run: at 4 times the knee, 28% of requests get a quick 503, the rest p95 about 1 s; app peak 579 MB, Caddy 295 MB, no restarts; back within targets at once |
 
+Kait decided on 2026-10-02 that the cap goes into the production Caddyfile once the
+Hetzner runs confirm its value on that CPU.
+
 A memory limit doesn't slow the app at the knee, but under overload the app grew to 1.4 GB
 without the cap, so a 512 MB limit would get it killed there. The cap keeps memory flat
 instead. Its 2 times phase held its targets, as in the second plain overload run, so the
 cap costs nothing below overload.
 
-Open: the capacity ramps ran with Caddy limited to 192 MB, and Caddy sat at 192 to 201 MB,
-most of it page cache from writing the bench log. Its 2 times phase missed with 192 MB and
-held twice with 512 MB. Whether the tight limit caused some stalls is open; a ramp with
-`--caddy-memory=512m` settles it.
+Caddy's memory: the first ramps limited Caddy to 192 MB, and it sat at that limit, mostly
+page cache from writing the bench log. M then held 6,500 and missed 8,000 by 41 ms. With
+512 MB, M held 8,000 for 10 minutes and missed 10,000 with Caddy at 130 MB, so the stalls
+don't come from Caddy's limit. The local stack now gives Caddy 512 MB. S and L held 8,000
+with 192 MB and weren't rerun.
 
 The deploy workflow publishes the sampler image and copies the bench files, and
 `docs/deployment/compose.md` ("Run the load benchmark") has the server steps.

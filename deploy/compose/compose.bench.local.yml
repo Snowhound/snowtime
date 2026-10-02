@@ -24,8 +24,9 @@ services:
     ports: !override
       - '127.0.0.1:${BENCH_PORT:-8443}:443'
     cpuset: '1'
-    # Thousands of load generator connections need more (perf:stress --caddy-memory).
-    mem_limit: ${BENCH_CADDY_MEMORY:-192m}
+    # Writing the bench log fills its page cache, and an overload's thousands of
+    # connections need more still (perf:stress --caddy-memory).
+    mem_limit: ${BENCH_CADDY_MEMORY:-512m}
     networks:
       default:
         aliases:
