@@ -4,7 +4,7 @@ Status: cancelled
 
 Cancelled by the user on 2026-10-02: Kait meant to choose device sign-in (Option B in issue
 #2), not the personal API keys his reply picked. The keys were built and then reverted in
-`f8f3848`; subtask 02 replaces them. The criteria below record what was built; all were
+`d4101d8`; subtask 02 replaces them. The criteria below record what was built; all were
 met before the revert. Subtask 02 keeps this one's order: Settings prototypes first, and
 they wait for the user's approval.
 

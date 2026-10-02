@@ -11,12 +11,12 @@ helper, a new route gets every check without writing any of them.
       in order:
   1. reads `Authorization: Bearer <token>`, and answers 401 without one;
   2. looks the token up in `session`, with its user, and answers 401 if there is none, it
-     has expired, or it isn't a device session (`session.client_id` is set), so a browser
+     has expired, or it isn't a device session (it has no `session.client_id`), so a browser
      session's token doesn't work here (README point 1);
   3. checks that the session has the route's scope (`read` or `write`), and answers 403
      `FORBIDDEN` without it (README point 2);
-  4. recheck first whether a login-domain policy exists by then, and apply it here if it
-     does (README point 5);
+  4. checks the login-domain policy with `loginDomainSessionAllowed`, as `/get-session`
+     does, and answers 401 if the user's address is no longer allowed (README point 1);
   5. renews the session as Better Auth would (`expiresIn` and `updateAge` in
      `better-auth.server.ts`), at most once a day, so a client in use stays signed in;
   6. for a write, counts against `write:${userId}` in `rateLimitStore`, the same count as

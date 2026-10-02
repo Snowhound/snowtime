@@ -5,7 +5,7 @@ Status: todo
 A client outside the browser signs in with the device authorization grant: it shows a short
 code and opens Snowtime, where the signed-in user approves it, and it gets a token for
 `/api/v1` (subtask 03). Settings lists the apps a user has connected, so they can sign one
-out. Points 1–4 in the README must be settled before this starts.
+out. Points 1–3 in the README must be settled before this starts.
 
 ## Acceptance criteria
 

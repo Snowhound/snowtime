@@ -1,4 +1,4 @@
-# 078: Public API with device sign-in
+# 082: Public API with device sign-in
 
 Status: todo
 
@@ -8,8 +8,19 @@ authorization grant (RFC 8628): it shows a code, the user approves it in Snowtim
 client gets a token. Issue #2 proposed this as Option B.
 
 On 2026-10-01 Kait's reply on issue #2 chose personal API keys (Option A), and subtask 01
-built them. On 2026-10-02 Kait told the user he had meant device sign-in, so subtask 01 is
-cancelled and its code reverted (`f8f3848`).
+built them. On 2026-10-02 Kait chose device sign-in instead, so subtask 01 is cancelled
+and its code reverted (`d4101d8`). Kait's reasons, from issue #2
+(https://github.com/Snowhound/snowtime/issues/2#issuecomment-5949004983):
+
+- Sessions last 30 days and renew daily while used (`825d977`), so a client that runs all
+  the time effectively never signs out.
+- Signing in goes through the normal flow, so the login-domain policy, passkeys, and OAuth
+  apply as in the browser.
+- No secret to copy into each app; every client, including the planned tray app, gets the
+  same "Sign in with Snowtime" flow.
+
+Task 081 (native backend) lists device authorization in better-auth-rs's v1 scope, and API
+keys as a possible later addition for scripts.
 
 ## What carries over from the reply
 
@@ -39,24 +50,31 @@ Read from `better-auth/dist/plugins/device-authorization/` and `bearer/` on 2026
   user answers). Codes last 30 minutes by default, and the client polls every 5 seconds.
 - An approved code becomes an ordinary Better Auth session: `/device/token` calls
   `createSession(userId)` and returns the session's token as `access_token`, with
-  `expires_in` the session's expiry. Sessions last 7 days and renew while they're used.
+  `expires_in` the session's expiry. Sessions last 30 days and renew daily while used.
 - The plugin stores the `scope` and `client_id` a client asked for on the device code, not
   on the session, and enforces neither. `validateClient` can refuse unknown client ids.
 - The `bearer` plugin turns an `Authorization: Bearer` header into the session on every
   Better Auth call. With it on, a device token would also reach server functions and
   `/api/auth/*`: change the profile, link accounts, create organizations.
+- The login-domain policy (`ALLOWED_LOGIN_DOMAINS`, `src/server/auth/login-policy.server.ts`)
+  checks a new session in a database hook, so it applies when `/device/token` creates one.
+  It checks existing sessions in an after hook on `/get-session`
+  (`loginDomainSessionAllowed`), which a lookup outside Better Auth doesn't pass through.
 
 ## To settle with Kait before subtask 02
 
 Asked on issue #2 on 2026-10-02
-(https://github.com/Snowhound/snowtime/issues/2#issuecomment-5949060428). Each item has a
-proposal.
+(https://github.com/Snowhound/snowtime/issues/2#issuecomment-5949060428). Kait's comment
+before it answered none of points 1–3; the user asks again with a correction. Each item has
+a proposal.
 
 1. **Where a token reaches.** Proposed: only `/api/v1`. Leave the `bearer` plugin off,
    and have the `/api/v1` helper look the token up in `session` itself. Without the plugin,
    a raw token can't stand in for the signed session cookie, so it can't call server
-   functions or `/api/auth/*`. This keeps the spirit of Kait's "keys only on `/api/v1`":
-   a leaked token can't change the account or sign in elsewhere.
+   functions or `/api/auth/*`: a leaked token can't change the account. The cost: the
+   helper calls `loginDomainSessionAllowed` itself, a check of the user's email against the
+   list, since the lookup skips `/get-session`. With `bearer` on, Better Auth's session
+   check and the policy run with no extra code, but the token reaches the whole app.
 2. **Scopes.** Kait wanted `read` and `write` from the start, because adding scopes once
    clients are out is hard. Proposed: the client asks for `scope=read` or
    `scope=read write`, the approval page says which, and a hook after `/device/token`
@@ -66,12 +84,14 @@ proposal.
    server's config, each with a display name, so the approval page can say "Raycast wants
    to use Snowtime as you". A script or a new client gets an entry there. The client id is
    copied onto the session too (`session.client_id`), so Settings can list connected apps.
-4. **Token lifetime.** Proposed: the usual 7-day session, renewed while used. A client
-   unused for a week signs in again. A longer lifetime for device sessions would need its
-   own expiry, since Better Auth's applies to every session.
-5. **Recheck when implementing: the login-domain policy.** Nothing in `src/`, `docs/`, or
-   `tasks/` restricts sign-in by email domain on 2026-10-02. Before subtask 03, find out
-   whether the policy exists by then, and check it per request if it does.
+
+Settled:
+
+- **Token lifetime:** the app's 30-day session, renewed daily while used (`825d977`). The
+  first reply on issue #2 said 7 days; the branch was behind `main`.
+- **The login-domain policy exists** (`89da7eb`): `ALLOWED_LOGIN_DOMAINS`. A device session
+  is checked when it's created, and the `/api/v1` helper checks it on each request
+  (point 1). The first reply said it couldn't be found, for the same reason.
 
 ## Subtasks
 
@@ -85,6 +105,6 @@ proposal.
 
 ## Acceptance criteria
 
-- [ ] Kait has confirmed or changed points 1–4 above, and this file records the answers
+- [ ] Kait has confirmed or changed points 1–3 above, and this file records the answers
 - [ ] `docs/product.md` moves the API and the Raycast extension out of "Not in MVP"
 - [ ] Subtasks 02–05 are done
