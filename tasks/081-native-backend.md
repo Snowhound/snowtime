@@ -70,6 +70,13 @@ rejected, as in task 069.
    in the browser, compressed bytes, bundle size, and code generation for both languages.
 3. The frontend adapter. The data layer calls the contract; Start serves it on Vercel and
    the native server self-hosted.
+
+   Task 078 found that Start's CSRF check accepts a self-hosted server function call only
+   by `Sec-Fetch-Site`: behind Caddy the app sees its own URL as `http`, so an `https`
+   `Origin` never matches it. Browsers send `Sec-Fetch-Site`, so the app works, but a
+   client that sends only `Origin`, such as a script or the `/api/v1` CLI, gets 403. Both
+   backends compare `Origin` with the public URL (`BETTER_AUTH_URL`), not the request's.
+
 4. A mechanical port. What the TypeScript side must keep for that (rules that take
    `(db, scope, input)`, SQL both sides share, the contract), and a conformance suite of
    HTTP-level tests on seeded databases that both backends pass. A port is complete when

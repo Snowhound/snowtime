@@ -1,13 +1,14 @@
 # Performance harnesses
 
 Checks that measure what the app sends, what the server reads, and what the scene draws,
-so a change can show its effect in numbers (task 069). There are four harnesses:
+so a change can show its effect in numbers (task 069). There are five harnesses:
 
 | Command                | Needs           | Measures                                                 |
 | ---------------------- | --------------- | -------------------------------------------------------- |
 | `bun run perf`         | Nothing but Bun | Bundle budgets, query plans, report rows and bytes       |
 | `bun run perf:pages`   | Chrome          | Page bytes, DOM nodes, hydration, long tasks, input      |
 | `bun run perf:load`    | Nothing but Bun | Server response times, requests per second, CPU, and RSS |
+| `bun run perf:stress`  | Docker, Chrome  | Active users the release image serves on 1 CPU and 2 GB  |
 | `bun run perf:weather` | Chrome          | Weather GPU and CPU time per frame, golden frames        |
 
 ## Gated and reported
@@ -154,6 +155,107 @@ bun run perf:load --url=http://127.0.0.1:3100 --pid=<server pid>
   `NODE_ENV=development`, which enables password sign-in, and set
   `update user_settings set scene_intro = 0` first. Never do this with the production
   database or on the production port.
+
+## Load benchmark: `bun run perf:stress`
+
+Finds how many active users the release image serves on 1 CPU and 2 GB, and what fails
+first beyond that (task 078). `perf:load` times pages for one user; this replays the
+usage model for many users at fixed arrival rates, so a slow server shows queueing,
+errors, and dropped iterations instead of slowing the load down. It needs Docker and
+Chrome.
+
+```sh
+bun run perf:stress --dataset=S --run=kinds              # each action alone, CPU per action
+bun run perf:stress --dataset=M --run=ramp               # capacity
+bun run perf:stress --dataset=M --run=fixed --users=500 --seconds=300
+bun run perf:stress --dataset=M --run=overload --users=<capacity>
+bun run perf:stress --dataset=M --run=ramp --memory=512m # the app limited to 512 MB
+bun run perf:stress --remote --dataset=M --run=ramp      # a server, see below
+```
+
+| Run        | What it does                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `kinds`    | Each action alone at 2 per second for 60 s; CPU and server time per action                                                      |
+| `fixed`    | One rate for `--seconds`; `calibration` is the same at 100 users                                                                |
+| `ramp`     | Steps of 2 minutes up to the first that misses a target, then 10 minutes at the last good one, or the step below if that misses |
+| `overload` | 2 minutes at `--users`, 5 at twice and four times that, 5 back at `--users`                                                     |
+
+`--no-build` skips the image builds and `--no-load` keeps the database in the bench
+volume. `--step-seconds`, `--hold-seconds`, and `--from` adjust a ramp, and `--label` names its
+results folder. A ramp `--from` a higher step first warms the app up for 30 s at half that
+load, which it doesn't judge.
+
+### The local stack
+
+`perf/stress/stack.ts` builds the `app`, `caddy`, and `sampler` images from the checkout
+for this machine, so an Arm64 Mac doesn't emulate x64. It runs `deploy/compose` with
+`compose.bench.yml` and `compose.bench.local.yml`: the three containers share one CPU, the
+app has 1,792 MB and Caddy 192 MB, and Caddy signs its own certificate for
+`snowtime-bench.test` on `127.0.0.1:8443`. k6 runs in Docker on other cores.
+
+Before a run, the dataset is copied into the bench volume while the app is stopped, and
+the host's page cache is dropped, so the run starts from the disk as a server would after
+a restart.
+
+### Datasets
+
+`perf/stress/dataset.ts` generates S, M, and L into `perf/.cache/stress/`, once a day and
+whenever the seed, the schema, or the generator change, because the release image runs on
+the real clock and the data must end now.
+
+| Dataset | Companies | People | Entries   | Database |
+| ------- | --------- | ------ | --------- | -------- |
+| S       | 3         | 23     | 21,000    | 17 MB    |
+| M       | 63        | 1,099  | 1,194,000 | 0.9 GB   |
+| L       | 303       | 5,442  | 5,949,000 | 4.7 GB   |
+
+People work as Lumen's do (`workEntries` in `src/db/seed-company.ts`), and 15% have a
+timer running. Every current member gets a session, so a run doesn't hash thousands of
+passwords first. `<dataset>.users.json` lists each member with their session token,
+locale, an entry to edit, and projects to log to.
+
+### Recording and replay
+
+Start addresses server functions by a hash from the build and encodes their bodies
+itself, so `perf/stress/record.ts` first runs every action in Chrome against the stack
+under test and records its requests, with the user's IDs as placeholders. The scenario
+(`scenario.js`) replays them as a random dataset user per action, with a session cookie
+it signs with the server's secret, the user's locale cookie, and a client address of its
+own in `CF-Connecting-IP`, which the bench Caddyfile trusts from the generator.
+
+Requests keep `Sec-Fetch-Site` from the recording: behind Caddy the app sees its own URL
+as `http`, so Start's CSRF check accepts a server function call by that header and would
+refuse one that carries only `Origin`.
+
+### What a step reports
+
+Per request kind (the action, and `page`, `fn`, or `auth`): the rate, latency in the
+client and in Caddy's access log, and the target. Per container, from cgroup v2: CPU,
+throttling, memory split into anonymous and page cache, disk traffic, and pressure (PSI).
+The host's steal time, memory, and the database size follow, then whether the step held
+its targets: server p95 under 300 ms for server functions, 1 s for pages and password
+sign-in, and 3 s for the year report and export, in every 30-second window, with under 0.1% errors and no dropped
+iterations. Results go to `perf/.cache/stress/runs/`.
+
+The sampler (`perf/stress/sampler/`) reads cgroup files and Caddy's bench log once a
+second and serves them behind basic auth at `/_bench/`. It costs about 0.5% of a CPU and
+16 MB. It also asks the app for its JS heap at `/api/bench/heap`, which only answers with
+`BENCH_HEAP=true` and which Caddy refuses from outside. The report shows the heap at its
+peak against RSS, and the slowest answer: an app that stalls for half a second or more,
+such as in a long garbage collection, misses the 500 ms timeout.
+
+Caddy's bench log keeps every run's requests, about 700 bytes each, in the `bench_log`
+volume. A run starts reading at the log's end. Remove the volume once the benchmark is
+done.
+
+### On a server
+
+`--remote` sends load to a server that runs `compose.bench.yml`, which someone with access
+started with the same dataset. The script reads `BENCH_HOST`, `BENCH_ORIGIN_IP`,
+`BENCH_AUTH_SECRET`, and `BENCH_SAMPLER_PASSWORD` from the environment and never connects
+to the server otherwise. k6 sends to the origin's address directly, past Cloudflare. A
+ramp there also stops when memory passes 85% or the disk 80%, then drops the load two
+steps for 2 minutes. Overload runs only locally.
 
 ## Weather bench: `bun run perf:weather`
 

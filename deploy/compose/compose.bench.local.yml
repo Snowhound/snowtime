@@ -1,0 +1,37 @@
+# The bench stack on a development machine (perf/README.md, "Load benchmark"): images built
+# from the checkout for this machine's architecture, a certificate of Caddy's own, and the
+# three containers on one CPU with 2 GB between them, as on a 1 vCPU, 2 GB server.
+# `bun run perf:stress` starts it; the variables come from perf/stress/stack.ts.
+name: snowtime-bench
+services:
+  app:
+    image: snowtime-app:bench
+    env_file: !reset []
+    environment:
+      # --smol, for an A/B run (perf:stress --smol).
+      BUN_OPTIONS: ${BENCH_BUN_OPTIONS:-}
+    cpuset: '1'
+    mem_limit: ${BENCH_APP_MEMORY:-1792m}
+    memswap_limit: ${BENCH_APP_MEMORY:-1792m}
+  caddy:
+    image: snowtime-caddy:bench
+    environment:
+      # A cap on requests in flight to the app (perf:stress --max-requests, --try-duration).
+      BENCH_MAX_REQUESTS: ${BENCH_MAX_REQUESTS:-0}
+      BENCH_TRY_DURATION: ${BENCH_TRY_DURATION:-30s}
+    volumes:
+      - ./bench/local-tls.caddy:/etc/caddy/bench/local-tls.caddy:ro
+    ports: !override
+      - '127.0.0.1:${BENCH_PORT:-8443}:443'
+    cpuset: '1'
+    mem_limit: 192m
+    networks:
+      default:
+        aliases:
+          - snowtime-bench.test
+  sampler:
+    image: snowtime-sampler:bench
+    cpuset: '1'
+volumes:
+  caddy_data:
+    name: snowtime_bench_caddy_data

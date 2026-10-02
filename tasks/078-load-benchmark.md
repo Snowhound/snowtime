@@ -1,6 +1,6 @@
 # 078: Load benchmark and capacity baseline
 
-Status: todo
+Status: in-progress (harness built and documented; local ramps under way, then Hetzner)
 
 Find how many companies and users today's backend serves on a 1 vCPU, 2 GB server, what
 fails first beyond that, and leave a repeatable harness that tasks 079 and 081 measure
@@ -43,9 +43,11 @@ An action is every request it causes, refetches included, recorded from the brow
 
 | Dataset | People | Companies | Entries (a year) | Database | Against 2 GB memory |
 | ------- | ------ | --------- | ---------------- | -------- | ------------------- |
-| S       | 19     | 2         | 20,000           | 14 MB    | Cached              |
-| M       | ~1,000 | ~60       | ~1.1 million     | ~0.7 GB  | Cached              |
-| L       | ~6,000 | ~300      | ~6.6 million     | ~4.2 GB  | Twice the memory    |
+| S       | 23     | 3         | 21,000           | 17 MB    | Cached              |
+| M       | 1,099  | 63        | 1.19 million     | 0.9 GB   | Cached              |
+| L       | 5,442  | 303       | 5.95 million     | 4.7 GB   | Twice the memory    |
+
+The counts are the generator's output on 2026-10-02 (`perf/README.md`, "Datasets").
 
 S is today's benchmark (the demo seed and Lumen Works). M and L follow a long tail of
 company sizes: most have 2 to 10 people, a few 50 to 200, and the largest 500, the
@@ -69,7 +71,11 @@ address. Scenarios live in `perf/stress/`.
 - Requests replay what the browser sends. Start addresses a server function by a hash
   from the build (`/_serverFn/<sha256>`) and encodes its own request bodies, so the harness
   records each action's requests in Chrome per build and replays them with each virtual
-  user's IDs. Requests send `Origin`, which Start's CSRF middleware checks.
+  user's IDs. Requests keep the browser's `Sec-Fetch-Site`, by which Start's CSRF check
+  accepts them: behind Caddy the app sees its own URL as `http`, so `Origin` alone never
+  matches (recorded for task 081). They also send the user's Paraglide locale cookie, as a
+  returning browser does; without it, a page answers a user whose language isn't English
+  with a redirect.
 - Each virtual user is a different seeded user. A request carries a client address of its
   own in `cf-connecting-ip`, and the bench Caddyfile trusts the load generator as a proxy,
   so Better Auth's per-address limits count users rather than one machine. `writesPerUser`
@@ -110,7 +116,9 @@ container runs locally.
    beyond configuration becomes its own task.
 
 Targets, server side, agreed on 2026-10-02: p95 under 300 ms for server
-function calls, 1 s for page loads, and 3 s for a year report, with under 0.1% errors. On
+function calls, 1 s for page loads and password sign-in, and 3 s for a year report, with
+under 0.1% errors. Sign-in moved from 300 ms to 1 s the same day: its password hash alone
+held S under 5,000 users while every other request stayed far below its target. On
 Hetzner, missing a target for 30 seconds, memory above 85% of 2 GB, or the disk above 80%
 drops the load two steps and ends the ramp.
 
@@ -130,11 +138,58 @@ drops the load two steps and ends the ramp.
   never connects to the server: it sends load to the origin and reads the sampler's URL
   with its password.
 
+## Local results so far (2026-10-02)
+
+Release image built for Arm64 from this branch, on one core of an M-series Mac with 1,792
+MB for the app. Capacity is the highest step that held its targets for 10 minutes. Results
+are in `perf/.cache/stress/runs/`.
+
+| Dataset | Capacity              | Missed at                 | App CPU, memory at capacity                     | CPU per request |
+| ------- | --------------------- | ------------------------- | ----------------------------------------------- | --------------- |
+| S       | 8,000 (see the stall) | 12,500; 10,000 for 10 min | 43%, 362 MB                                     | 3.0 ms          |
+| M       | 6,500                 | 8,000, by 41 ms           | 31%, 441 MB (peak 496)                          | 2.6 ms          |
+| L       | 8,000                 | 10,000                    | 39%, 763 MB (peak 790; 461 MB of it page cache) | 2.7 ms          |
+
+CPU per action on S, each action alone (`--run=kinds`): open 54 ms, return 25 ms, timer 27
+ms, edit 26 ms, week report 19 ms, month report 41 ms, year report 68 ms, export 27 ms,
+sign-in 107 ms. An active user costs about 0.46 s of app CPU per peak hour.
+
+Findings:
+
+- Password sign-in limited S below 5,000 users under the 300 ms target, while everything
+  else stayed under 100 ms. Kait moved sign-in to the page target (1 s) on 2026-10-02.
+- Below 50% CPU, a run can still miss: the app stalls for about 2 seconds, and every kind
+  misses in that 30-second window. In S's 10-minute run at 8,000 users, 239 of 248 slow
+  requests fell in one 2-second span. The cause is open: a long garbage collection, or
+  Docker's VM on the Mac. `/api/bench/heap` (the sampler's heap and stall columns) is
+  meant to tell.
+- CPU per request follows the size of the user's company, not of the database: M and L
+  cost less per request than S, whose users are mostly in Lumen Works (18 dense members,
+  admins who see every entry).
+- The database's size barely shows. L's 4.7 GB is twice the memory, but the requests read
+  recent weeks: the app's page cache settled near 460 MB and disk reads under 1 MB/s. L
+  held more users than M, so M's miss at 8,000 by 41 ms was noise in a 30-second window.
+- Most of the app's memory isn't the JS heap. On M at 2,000 users, the heap used 53 MB
+  and external buffers 36 MB, of 214 MB RSS. The rest is the runtime, SQLite's cache,
+  and the allocator.
+- Caddy's bench log kept every header and reached 1.3 GB in a day of local runs. It now
+  keeps only what the sampler reads, about 700 bytes a request: 8,000 users write about 365
+  MB an hour.
+- The sampler costs 0.1 to 0.5% of a CPU, and 12 to 33 MB of its own memory. With the page
+  cache from reading Caddy's log, its cgroup reaches 37 to 42 MB of its 40 MB limit; the
+  kernel reclaims that cache.
+
+Still to run locally: the overload run on M, and the A/B runs on M (app memory 768 and 512
+MB, `--smol` through `BUN_OPTIONS`, and a Caddy cap on requests in flight to the app).
+
+Before Hetzner: `compose.bench.yml` pulls `ghcr.io/snowhound/snowtime-sampler`, which
+`.github/workflows/compose-deploy.yml` doesn't publish yet.
+
 ## Acceptance criteria
 
 - [x] Usage model and targets agreed with Kait as the starting point (2026-10-02)
-- [ ] A dataset generator for S, M, and L, documented in `perf/README.md`
-- [ ] `bun run perf:stress` runs a scenario on the local stack and prints a table per
+- [x] A dataset generator for S, M, and L, documented in `perf/README.md`
+- [x] `bun run perf:stress` runs a scenario on the local stack and prints a table per
       step, documented in `perf/README.md`
 - [ ] The sampler and `compose.bench.yml`, with the sampler's own cost measured
 - [ ] Local results, with numbers: capacity on S, M, and L; the overload behavior; each

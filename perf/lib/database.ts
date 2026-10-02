@@ -54,9 +54,10 @@ function files(path: string): string[] {
     .sort()
 }
 
-function inputsHash() {
+// With extra, the hash also covers those files, for data built on top of the seed.
+export function inputsHash(extra: string[] = []) {
   const hash = createHash('sha256')
-  for (const file of INPUTS.flatMap(files)) {
+  for (const file of [...INPUTS, ...extra].flatMap(files)) {
     hash.update(file).update(readFileSync(join(ROOT, file)))
   }
   return hash.digest('hex').slice(0, 12)
