@@ -64,10 +64,8 @@ Read from `better-auth/dist/plugins/device-authorization/` and `bearer/` on 2026
 ## To settle with Kait before subtask 02
 
 Asked on issue #2 on 2026-10-02
-(https://github.com/Snowhound/snowtime/issues/2#issuecomment-5949060428). Kait's comment
-before it answered none of points 1–3, so the user asked again with a correction
-(https://github.com/Snowhound/snowtime/issues/2#issuecomment-5949182490). Each item has
-a proposal.
+(https://github.com/Snowhound/snowtime/issues/2#issuecomment-5949060428), edited to
+correct the session lifetime and the login-domain policy. Each item has a proposal.
 
 1. **Where a token reaches.** Proposed: only `/api/v1`. Leave the `bearer` plugin off,
    and have the `/api/v1` helper look the token up in `session` itself. Without the plugin,
@@ -88,11 +86,10 @@ a proposal.
 
 Settled:
 
-- **Token lifetime:** the app's 30-day session, renewed daily while used (`825d977`). The
-  first reply on issue #2 said 7 days; the branch was behind `main`.
+- **Token lifetime:** the app's 30-day session, renewed daily while used (`825d977`).
 - **The login-domain policy exists** (`89da7eb`): `ALLOWED_LOGIN_DOMAINS`. A device session
   is checked when it's created, and the `/api/v1` helper checks it on each request
-  (point 1). The first reply said it couldn't be found, for the same reason.
+  (point 1).
 
 ## Subtasks
 
