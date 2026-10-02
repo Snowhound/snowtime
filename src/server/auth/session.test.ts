@@ -85,6 +85,8 @@ describe('appSession', () => {
       durationFormat: 'clock',
       dateFormat: 'dmy',
       timeFormat: '24h',
+      copyDurationPattern: 'H:MM:SS',
+      copyDurationControl: 'text',
       country: null,
     })
     expect(session.invitationId).toBeNull()

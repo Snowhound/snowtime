@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/solid-query'
 import { useMatches } from '@tanstack/solid-router'
 import { type ParentProps, createContext, onMount } from 'solid-js'
+import { CopyAnnouncer } from '~/components/copy-duration'
 import { Intro, IntroPage } from '~/components/scene/intro'
 import { SceneLayer } from '~/components/scene/scene-layer'
 import { LAYERS_ID } from '~/lib/layers'
@@ -79,6 +80,8 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
         </SeasonProvider>
       </IntroPage>
       <div id={LAYERS_ID} />
+      {/* Outside IntroPage, which the intro hides from screen readers while it plays. */}
+      <CopyAnnouncer />
       <Intro />
     </div>
   )

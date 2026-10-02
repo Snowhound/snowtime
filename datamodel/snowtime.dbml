@@ -195,6 +195,8 @@ Table user_settings [note: 'Per-user settings, one row per user, shared across o
   scene_pin text [note: 'An image id in scene_collection, or null to follow the calendar. The season of the image picks the tagline. Validated in the app, no CHECK.']
   timer_view text [not null, default: 'list', note: 'list, calendar, default list. The Timer page shows entries as a list or a week calendar. Validated in the app, no CHECK.']
   calendar_weekend integer [not null, default: 0, note: 'Boolean 0/1 (CHECK), default 0. The calendar shows Saturday and Sunday even when they have no time.']
+  copy_duration_pattern text [not null, default: 'H:MM:SS']
+  copy_duration_control text [not null, default: 'text']
 }
 
 Table project [note: 'Owned by the organization. Visible to the whole organization unless assigned to teams.'] {

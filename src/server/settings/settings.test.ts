@@ -44,6 +44,8 @@ const DEFAULTS = {
   durationFormat: 'clock',
   dateFormat: 'dmy',
   timeFormat: '24h',
+  copyDurationPattern: 'H:MM:SS',
+  copyDurationControl: 'text',
   country: null,
 } as const
 
@@ -140,6 +142,23 @@ describe('updateSettings', () => {
     expect(set.country).toBe('US')
     const cleared = await as({ userId }, () => updateSettings(db, userId, { country: null }))
     expect(cleared.country).toBeNull()
+  })
+
+  test('the copy pattern and control save, starting at H:MM:SS and a click', async () => {
+    const userId = await newUser()
+    const created = await as({ userId }, () =>
+      getSettings(db, userId, { timeZone: 'Europe/Tallinn', locale: 'en' }),
+    )
+    expect(created.copyDurationPattern).toBe('H:MM:SS')
+    const set = await as({ userId }, () =>
+      updateSettings(db, userId, { copyDurationPattern: 'Hh Mm Ss' }),
+    )
+    expect(set.copyDurationPattern).toBe('Hh Mm Ss')
+    expect(set.copyDurationControl).toBe('text')
+    const button = await as({ userId }, () =>
+      updateSettings(db, userId, { copyDurationControl: 'button' }),
+    )
+    expect(button.copyDurationControl).toBe('button')
   })
 
   test('choosing a collection clears the pin, and a pin must be in the collection', async () => {
@@ -264,6 +283,24 @@ describe('settings input', () => {
     }
     for (const country of ['ee', 'FI', '', 1]) {
       expect(v.safeParse(UpdateSettingsInput, { country }).success).toBe(false)
+    }
+  })
+
+  test('a duration copies by a click on it or by a button', () => {
+    for (const copyDurationControl of ['text', 'button']) {
+      expect(v.safeParse(UpdateSettingsInput, { copyDurationControl }).success).toBe(true)
+    }
+    for (const copyDurationControl of ['icon', '', null]) {
+      expect(v.safeParse(UpdateSettingsInput, { copyDurationControl }).success).toBe(false)
+    }
+  })
+
+  test('the copy pattern has a field and at most 40 characters', () => {
+    for (const copyDurationPattern of ['H:MM:SS', 'Hh Mm Ss', 'S', `H${' '.repeat(39)}`]) {
+      expect(v.safeParse(UpdateSettingsInput, { copyDurationPattern }).success).toBe(true)
+    }
+    for (const copyDurationPattern of ['', 'hms', '\\H', `H${' '.repeat(40)}`, 1]) {
+      expect(v.safeParse(UpdateSettingsInput, { copyDurationPattern }).success).toBe(false)
     }
   })
 })

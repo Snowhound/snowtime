@@ -1190,3 +1190,38 @@ presets changed, with each overlay: every effect compiles and draws, glitter sta
 horizon, the bands sit where set, the mist leaves the tagline and cards readable, and there are
 no browser errors. Screenshots show single frames, so the motion, the gusts, the snow's arc,
 and how visible the day glitter, spray, and dust are need a look on a real screen.
+
+### [copy-durations.html](copy-durations.html) — Copy durations
+
+Decision: how a click on a duration shows what it copied (task 078). The page has the Timer
+page's day cards and table, simplified to the fields around the duration, and the "Copied
+durations" settings field beside them. Each entry's duration and each day's total is a button
+that reads as text. A click formats the raw milliseconds with the user's pattern
+(`copyDurationPattern` in the frame's settings) and writes it to the clipboard.
+
+- **Pattern**: `H`, `M`, and `S` are hours, minutes, and seconds, and a run of one letter sets
+  the minimum digits (`HH` gives `09`). A backslash copies the next character as typed, and
+  any other character is copied as typed. The first unit in the pattern holds the whole
+  duration, so `M:SS` copies 2:05:09 as `125:09`. The default is `H:MM:SS`.
+- **Settings field**: a live preview of 2:05:09, a key to the letters, example patterns, and
+  Reset. It saves on blur or Enter; an empty pattern or one without a field shows an error
+  and isn't saved, and Escape returns to the saved one.
+- **Feedback**: the prototype bar's **Feedback** select compares a bubble above the duration
+  ("Copied 2h 0m 0s") with the text swapping in place. A screen reader hears the same text
+  from a live region. **Refuse clipboard** shows "Couldn't copy".
+- **Prototype only**: "Last copied" and a paste box under the field, to check the clipboard
+  without leaving the page.
+
+Fixtures: populated, long durations (just under 24 hours), an invalid row whose duration is
+disabled, and empty. Checked on 2026-10-02 in the app's browser pane at 1440 and 390 px, light
+and dark, in both layouts, both feedback variants, and every fixture: no horizontal page
+scroll and no failed requests. In the table at 390 px, the duration column and its bubble sit
+in the table's own horizontal scroll, as the timer's table does.
+
+Decided on 2026-10-02: the bubble. Swapping the text in place made a list row grow from 68 to
+88 px at 390 px, where "11h 15m 10s" wrapped in the duration's column.
+
+The app later added what this page doesn't show: a copy button as an alternative to a click on
+the duration (the `copyDurationControl` setting), a field colored by token with a warning
+about a field inside a word, and a fifth example, `H \Hours M \Minutes`.
+`docs/architecture/timer.md`, "Copying durations", describes the app's behavior.
