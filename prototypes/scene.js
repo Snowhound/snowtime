@@ -276,9 +276,19 @@
       ...['march', 'april', 'may', 'june', 'july', 'september', 'october', 'november', 'december'].map((m) => `land-${m}`),
     ].map((id) => [id, 2])
   )
+  PHOTO_VERSIONS['land-december'] = 3
+  // Files a prototype shows in place of an image's own, by `<id>-<theme>`: a path up to the
+  // width, so the file is `<path>-<width>.avif`. Set with `useAlternate`.
+  const PHOTO_ALTERNATES = {}
   function photoUrl(id, theme, width) {
+    const alternate = PHOTO_ALTERNATES[`${id}-${theme}`]
+    if (alternate) return `${alternate}-${width}.avif`
     const version = String(PHOTO_VERSIONS[id] ?? 1).padStart(2, '0')
     return `${BASE}${image(id).collection}/${id}-${theme}-${version}-${width}.avif`
+  }
+  function useAlternate(id, theme, path) {
+    if (path) PHOTO_ALTERNATES[`${id}-${theme}`] = path
+    else delete PHOTO_ALTERNATES[`${id}-${theme}`]
   }
 
   function image(id) {
@@ -1196,5 +1206,6 @@
     imageFor,
     weatherHint,
     thumbUrl,
+    useAlternate,
   }
 })()

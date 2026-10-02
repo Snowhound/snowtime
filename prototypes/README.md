@@ -1112,7 +1112,9 @@ Task 066: each image's weather, tuned to the picture, compared with Kait before 
 it. A panel picks the image (or ← and →), the theme, the strength, the pace (the sign-in page's,
 or the app pages' calm one), and the weather: task 066's, the weather from before it
 (`LEGACY_WEATHER`), or off. The URL's hash keeps the view, so a link opens the same image and
-choices. The panel prints both themes' presets and tuning.
+choices. The panel prints both themes' presets and tuning. On Countryside December, a Night row
+(or N) swaps the dark image for the one kept with no aurora
+(`design/backgrounds/alternates/`), through `scene.useAlternate()`.
 
 A second panel, **Tune**, has sliders for the shown image and theme: the fields that apply to
 its effect, such as amount, size, opacity, wind, and glitter's shimmer and glints. A change

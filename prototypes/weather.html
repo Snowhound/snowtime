@@ -72,10 +72,12 @@
         <div class="seg" data-key="pace"><button data-value="full">Sign-in</button><button data-value="calm">App</button></div>
         <span class="text-muted-foreground">Over it</span>
         <div class="seg" data-key="overlay"><button data-value="sign-in">Sign-in</button><button data-value="app">App</button><button data-value="none">Nothing</button></div>
+        <span class="night-row text-muted-foreground">Night</span>
+        <div class="night-row seg" data-key="night" title="Countryside December's dark image"><button data-value="aurora">Aurora in the middle</button><button data-value="none">No aurora</button></div>
       </div>
       <p id="hint" class="font-medium"></p>
       <pre id="tuning" class="max-h-28 overflow-auto rounded-md bg-muted/60 p-2 text-[11px] leading-snug text-muted-foreground"></pre>
-      <p class="text-xs text-muted-foreground">← → images · T theme · W weather · H hides the panels</p>
+      <p class="text-xs text-muted-foreground">← → images · T theme · W weather · N December night · H hides the panels</p>
     </div>
 
     <!-- Sliders for the shown image and theme's weather. Changes are kept in this browser
@@ -99,7 +101,7 @@
       // The app's paces (PACES in src/lib/scene/weather.ts).
       const PACES = { full: { density: 1, speed: 1 }, calm: { density: 0.5, speed: 0.7 } }
       const [hashImage, ...rest] = location.hash.slice(1).split('/')
-      const view = { image: ids.includes(hashImage) ? hashImage : 'coast-january', theme: 'light', weather: '066', strength: 'dimmed', pace: 'full', overlay: 'sign-in' }
+      const view = { image: ids.includes(hashImage) ? hashImage : 'coast-january', theme: 'light', weather: '066', strength: 'dimmed', pace: 'full', overlay: 'sign-in', night: 'aurora' }
       for (const part of rest) {
         const [key, value] = part.split('=')
         if (key in view && document.querySelector(`.seg[data-key="${key}"] [data-value="${value}"]`)) view[key] = value
@@ -218,6 +220,9 @@
       function render() {
         document.documentElement.classList.toggle('dark', view.theme === 'dark')
         document.body.dataset.overlay = view.overlay
+        // The night kept in case the aurora in the middle shows past the cards.
+        scene.useAlternate('land-december', 'dark', view.night === 'none' ? '../design/backgrounds/alternates/land-december-dark-no-aurora' : null)
+        for (const el of document.querySelectorAll('.night-row')) el.classList.toggle('hidden', view.image !== 'land-december')
         ctl.set({ image: view.image, strength: view.strength, weather: view.weather !== 'off', legacy: view.weather === '062', pace: PACES[view.pace], tuning })
         select.value = view.image
         renderSliders()
@@ -260,6 +265,7 @@
         else if (event.key === 'ArrowRight') step(1)
         else if (event.key === 't') toggle('theme', ['light', 'dark'])
         else if (event.key === 'w') toggle('weather', ['066', '062'])
+        else if (event.key === 'n') toggle('night', ['aurora', 'none'])
         else if (event.key === 'h') for (const id of ['panel', 'tune']) document.getElementById(id).classList.toggle('hidden')
       })
       render()

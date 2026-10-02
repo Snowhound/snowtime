@@ -224,6 +224,7 @@ const PHOTO_VERSIONS: Partial<Record<ImageId, number>> = {
   'land-january': 1,
   'land-february': 1,
   'land-august': 1,
+  'land-december': 3,
 }
 
 // Each collection's files are in a folder of its own, public/backgrounds/<collection>/. They're
