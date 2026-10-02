@@ -22,7 +22,7 @@
   console with `datetime(x / 1000, 'unixepoch')`.
 - Audit columns on every app-owned table: `created_at`, `created_by`, and on
   tables whose rows are updated, `updated_at`, `updated_by`. Better Auth
-  tables keep the plugin's own columns.
+  tables, `team` and `team_member` included, keep the plugin's columns.
   - `created_at`/`updated_at` default to the current time in ms in the
     database. The app sets `updated_at` on every update (Drizzle
     `$onUpdate`); a guarded `AFTER UPDATE` trigger sets it only when a
@@ -61,7 +61,7 @@
 
 ## Tenancy
 
-- Model: Better Auth organization plugin with teams enabled
+- Model: Better Auth organization plugin for organizations; app-owned teams
   (`organization`, `member`, `team`, `teamMember`, `invitation` tables).
 - One shared database per environment; tenant isolation is row-level.
 - Every tenant-owned table has a non-null `organization_id`; team-scoped rows
@@ -110,22 +110,26 @@
     as Better Auth's permission check does, without trimming, so the app never grants
     more than the plugin. An admin can store `member, owner` through invite-member,
     whose owner check doesn't trim, and the plugin grants that member rights only.
-- Team role: `lead` or `member`, stored per team membership. The plugin has
-  no team roles and (as of Better Auth 1.7) no additional fields on team
-  members, so `team_member.role` is an extra column Better Auth never reads or
-  writes; its inserts get the default `member`, and the app sets leads.
-- The UI calls Better Auth's organization client directly for organizations, teams, team
-  membership, invitations, and org roles. The plugin's default access control limits
-  those writes to admins and owners, and removing a member deletes their team rows,
-  lead role included. Server functions cover only what involves `team_member.role`:
-  `setTeamRole` (admins and owners) and `listMembers`/`listTeams`, which return team
-  roles. Wrapping the plugin's endpoints would duplicate its checks for no new rule.
-  `listMembers` also returns each member's `memberId`, which the plugin's
+- Team role: `lead` or `member`, stored per team membership. New memberships start
+  as `member`; admins and owners set leads through `setTeamRole`.
+- The UI calls Better Auth's organization client for organizations, organization
+  membership, and organization roles. Teams and team membership go through the teams
+  domain, which checks admin or owner access, organization scope, names, and the team
+  limit, so teams don't depend on the auth backend.
+  `listMembers` returns each member's `memberId`, which the plugin's
   `updateMemberRole` and `removeMember` take.
-- Teams are optional, so the plugin runs with `allowRemovingAllTeams`: by default it
-  refuses to delete an organization's last team. Deleting a team deletes its
-  `team_member` rows (the plugin) and its `project_team` rows (a cascade), so a project
-  left without teams opens to the whole organization.
+- App invitation functions call Better Auth for its permission and recipient checks.
+  The invite function stores the optional team in `invitation.team_id`; after acceptance,
+  the accept function adds the recipient to that team. The two steps aren't atomic: if
+  adding to the team fails, the person joins the organization without it. Deleting the team clears the
+  invitation's team through its foreign key, so the invitation still joins the organization.
+  The member-removal hook stops the timer and deletes team memberships for both removal
+  and leaving.
+- Teams are optional, and the app permits deleting the last team. Foreign keys cascade
+  deletion to `team_member` and `project_team`, so a project left without teams opens
+  to the whole organization. The organization plugin runs without teams. The unused
+  `session.active_team_id` stays to avoid rebuilding the session table; the app never
+  reads or writes it.
 - Teams group people for access and reporting; data is owned by the
   organization, not the team.
 

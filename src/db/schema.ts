@@ -135,6 +135,7 @@ export const session = sqliteTable(
     activeOrganizationId: text('active_organization_id').references(() => organization.id, {
       onDelete: 'set null',
     }),
+    // Retained for compatibility; the app does not use an active team.
     activeTeamId: text('active_team_id').references(() => team.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').notNull(),
@@ -210,7 +211,7 @@ export const verification = sqliteTable(
   (t) => [index('verification_identifier_idx').on(t.identifier)],
 )
 
-// Tenancy (Better Auth organization plugin, teams enabled) -----------------------------------
+// Tenancy (Better Auth organizations, app-owned teams) -----------------------------------
 
 export const member = sqliteTable(
   'member',

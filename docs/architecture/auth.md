@@ -188,20 +188,22 @@ runs the forms' own `Name` and `Slug` schemas (`auth.schemas.ts`), so both sides
 limit, in two Better Auth hooks:
 
 - The organization plugin's `organizationHooks` check the organization's name and slug on
-  create, the name on update, and a team's name on create and rename. The slug's format
-  matters beyond the URL: the report export puts it in file names.
+  create and the name on update. The slug's format matters beyond the URL: the report
+  export puts it in file names.
 - The `user.update.before` database hook checks the profile's name. Sign-up isn't
   checked, since the OAuth provider supplies the name.
 
 A refusal is an `APIError` with a code such as `NAME_TOO_LONG`, which `errorMessage` in
-`src/lib/errors.ts` maps to the form's own message.
+`src/lib/errors.ts` maps to the form's own message. The teams domain checks team names
+with the same `Name` schema and returns translated `AppError`s.
 
 Rate limits bound how fast one user or address can write, which the caps don't. The rates
 are `rateLimits` in `src/server/limits.server.ts`.
 
 - `sessionMiddleware` counts every POST server function against the user's write rate,
   across all their organizations, and throws `AppError` with code `RATE_LIMITED` past it.
-  Every write is a POST, so a new write function is covered without extra code.
+  Every write is a POST, so a new write function is covered without extra code. The app's
+  invitation function also applies the invitation rate per user before calling Better Auth.
 - Better Auth limits `/api/auth/*` per IP address and path, in production only, with
   stricter rules for creating organizations and inviting members. Its per-IP rules stay
   loose because an office may share one address.

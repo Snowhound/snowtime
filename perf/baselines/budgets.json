@@ -5,7 +5,7 @@
     "/$org/reports": 228315,
     "/$org/settings": 229896,
     "/$org/projects": 230143,
-    "/$org/organization": 233021
+    "/$org/organization": 235671
   },
   "chunks": {
     "OGE3DKII.js": 9005,
@@ -33,13 +33,14 @@
     "globe.js": 250,
     "index.js": 51533,
     "invitation._id.js": 2780,
+    "invitations.functions.js": 296,
     "legal-layout.js": 1020,
     "legal_terms_title.js": 210,
     "loader-circle.js": 692,
     "mail.js": 260,
     "moon.js": 261,
     "nav_organization.js": 152,
-    "organization.js": 14019,
+    "organization.js": 14958,
     "page-pending.js": 2295,
     "passkeys.js": 2829,
     "pencil.js": 893,
@@ -57,7 +58,7 @@
     "sign-in-methods.js": 3334,
     "table.js": 3488,
     "tabs.js": 3150,
-    "teams.js": 410,
+    "teams.js": 650,
     "terms.js": 4206,
     "text-field.js": 16359,
     "theme-toggle.js": 3866,

@@ -1,22 +1,21 @@
 import { passkey } from '@better-auth/passkey'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { APIError, createAuthMiddleware } from 'better-auth/api'
+import { createAuthMiddleware } from 'better-auth/api'
 import { organization } from 'better-auth/plugins'
 import { tanstackStartCookies } from 'better-auth/tanstack-start/solid'
 import { v7 as uuidv7 } from 'uuid'
 import { db } from '~/db'
-import { withActor } from '~/db/actor'
 import * as schema from '~/db/schema'
 import { env } from '~/env'
 import { limits, rateLimits } from '../limits.server'
 import { createRateLimitStore } from '../rate-limit.server'
-import { stopTimerOfRemovedMember } from '../timer/timer.server'
 import {
   loginDomainHooks,
   loginDomainMiddleware,
   loginDomainSessionAllowed,
 } from './login-policy.server'
+import { memberRemovalHook } from './member-removal.server'
 import { databaseHooks, organizationHooks } from './name-checks.server'
 import { passwordEnabled, refuseUnverifiedSignUp, socialProviders } from './sign-in.server'
 
@@ -24,6 +23,7 @@ import { passwordEnabled, refuseUnverifiedSignUp, socialProviders } from './sign
 // BETTER_AUTH_URL; the plugin would otherwise default to localhost.
 const appUrl = new URL(env.BETTER_AUTH_URL)
 const domains = env.ALLOWED_LOGIN_DOMAINS ?? []
+const removalHook = memberRemovalHook(db)
 const domainHooks = loginDomainHooks(domains, (id) =>
   db.query.user.findFirst({ columns: { email: true }, where: { id } }),
 )
@@ -89,33 +89,12 @@ export const auth = betterAuth({
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path === '/get-session' && !loginDomainSessionAllowed(domains, ctx.context.returned))
         return ctx.json(null)
-      if (ctx.path !== '/organization/remove-member' && ctx.path !== '/organization/leave')
-        return undefined
-      const returned = ctx.context.returned
-      if (typeof returned !== 'object' || !returned || returned instanceof APIError)
-        return undefined
-      // remove-member returns { member }, leave returns the member itself.
-      const removed = ('member' in returned ? returned.member : returned) as {
-        userId: string
-        organizationId: string
-      }
-      const actor = ctx.context.session?.user.id ?? removed.userId
-      await withActor(actor, () =>
-        stopTimerOfRemovedMember(db, removed.userId, removed.organizationId),
-      )
+      await removalHook(ctx)
       return undefined
     }),
   },
   plugins: [
     organization({
-      teams: {
-        enabled: true,
-        // Teams are optional in Snowtime; an organization starts without one, and admins
-        // may delete its last one.
-        defaultTeam: { enabled: false },
-        allowRemovingAllTeams: true,
-        maximumTeams: limits.teamsPerOrganization,
-      },
       organizationLimit: limits.organizationsPerUser,
       membershipLimit: limits.membersPerOrganization,
       invitationLimit: limits.pendingInvitationsPerOrganization,

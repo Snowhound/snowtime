@@ -1,9 +1,7 @@
-// The Organization view's queries and its optimistic mutations. Members, teams and
-// invitations are written through Better Auth's organization client; team roles through
-// setTeamRole (docs/architecture/data.md, "Tenancy"). Each Better Auth call names the organization
-// the view shows, since the session's active one can change in another tab. Canceling an
-// invitation takes the invitation's organization. Members, teams and projects live in the
-// caches Reports, Projects and the timer read too, so each change shows there as well.
+// The Organization view's queries and its optimistic mutations. Each call names the
+// organization the view shows, since the session's active one can change in another tab.
+// Members, teams and projects live in the caches Reports, Projects and the timer read too, so
+// each change shows there as well.
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import { isServer } from 'solid-js/web'
 import { authClient, unwrap } from '~/lib/auth-client'
@@ -13,7 +11,15 @@ import { cacheUpdate, newId, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
 import { type Team, teamsQuery } from '~/lib/queries/teams'
 import { type AppSession, updateIssueLinks } from '~/server/auth/auth.functions'
-import { setTeamRole } from '~/server/teams/teams.functions'
+import { inviteMember, listInvitations } from '~/server/auth/invitations.functions'
+import {
+  setTeamRole,
+  createTeam,
+  renameTeam,
+  deleteTeam,
+  addTeamMember,
+  removeTeamMember,
+} from '~/server/teams/teams.functions'
 import type { SetTeamRoleInput } from '~/server/teams/teams.schemas'
 import type { OrgRole } from './roles'
 
@@ -38,26 +44,10 @@ export function invitationLink(appUrl: string, id: string) {
   return `${appUrl}/invitation/${id}`
 }
 
-// Open invitations, expired ones included so they can get a new link. They come from the
-// browser: the Better Auth client can't call itself during server rendering.
 export function invitationsQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['invitations', organizationId],
-    queryFn: async (): Promise<Invitation[]> => {
-      const all = await unwrap(
-        authClient.organization.listInvitations({ query: { organizationId } }),
-      )
-      return all
-        .filter((i) => i.status === 'pending')
-        .map((i) => ({
-          id: i.id,
-          email: i.email,
-          role: i.role,
-          teamId: i.teamId ?? null,
-          inviterId: i.inviterId,
-          expiresAt: new Date(i.expiresAt),
-        }))
-    },
+    queryFn: (): Promise<Invitation[]> => listInvitations({ data: { organizationId } }),
     enabled: !isServer,
   })
 }
@@ -109,7 +99,7 @@ export interface MemberInput {
   userId: string
 }
 
-// Better Auth deletes the member's team rows too, lead roles included.
+// The removal hook deletes team rows, lead roles included.
 export function useRemoveMember(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
@@ -153,11 +143,13 @@ export function useInviteMember(keys: Keys & { userId: string }) {
   return useMutation(() => ({
     mutationFn: async (input: InviteInput) => {
       const created = await unwrap(
-        authClient.organization.inviteMember({
-          email: input.email,
-          role: input.role,
-          organizationId: keys.organizationId,
-          ...(input.teamId ? { teamId: input.teamId } : {}),
+        inviteMember({
+          data: {
+            email: input.email,
+            role: input.role,
+            organizationId: keys.organizationId,
+            teamId: input.teamId,
+          },
         }),
       )
       if (input.replaces) {
@@ -200,7 +192,7 @@ export function useCancelInvitation(keys: Keys) {
 
 // --- Teams -----------------------------------------------------------------------------
 
-// Better Auth gives a new team its id; `id` is the optimistic card's stand-in.
+// The server gives a new team its id; `id` is the optimistic card's stand-in.
 export interface CreateTeamInput {
   id: string
   name: string
@@ -211,7 +203,7 @@ export function useCreateTeam(keys: Keys) {
   return useMutation(() => ({
     mutationKey: ['create-team'],
     mutationFn: ({ name }: CreateTeamInput) =>
-      unwrap(authClient.organization.createTeam({ name, organizationId: keys.organizationId })),
+      createTeam({ data: { name, organizationId: keys.organizationId } }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], CreateTeamInput>(teamsKey(keys.organizationId), (teams, { id, name }) => [
         ...teams,
@@ -230,12 +222,7 @@ export function useRenameTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: ({ teamId, name }: RenameTeamInput) =>
-      unwrap(
-        authClient.organization.updateTeam({
-          teamId,
-          data: { name, organizationId: keys.organizationId },
-        }),
-      ),
+      renameTeam({ data: { teamId, name, organizationId: keys.organizationId } }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], RenameTeamInput>(teamsKey(keys.organizationId), (teams, input) =>
         teams.map((t) => (t.id === input.teamId ? { ...t, name: input.name } : t)),
@@ -244,13 +231,13 @@ export function useRenameTeam(keys: Keys) {
   }))
 }
 
-// Better Auth deletes the team's members; the database cascades its project rows, so
+// Deleting a team cascades its members; the database cascades its project rows, so
 // projects left without teams open to the whole organization.
 export function useDeleteTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (teamId: string) =>
-      unwrap(authClient.organization.removeTeam({ teamId, organizationId: keys.organizationId })),
+      deleteTeam({ data: { teamId, organizationId: keys.organizationId } }),
     ...optimistic(
       queryClient,
       [
@@ -307,9 +294,7 @@ export function useAddTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(true)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) =>
-      unwrap(
-        authClient.organization.addTeamMember({ ...input, organizationId: keys.organizationId }),
-      ),
+      addTeamMember({ data: { ...input, organizationId: keys.organizationId } }),
     ...optimistic(
       queryClient,
       [
@@ -326,12 +311,7 @@ export function useRemoveTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(false)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) =>
-      unwrap(
-        authClient.organization.removeTeamMember({
-          ...input,
-          organizationId: keys.organizationId,
-        }),
-      ),
+      removeTeamMember({ data: { ...input, organizationId: keys.organizationId } }),
     ...optimistic(
       queryClient,
       [

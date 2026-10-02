@@ -8,6 +8,7 @@
   "error_sign_in_required": "Sign in first.",
   "error_not_organization_member": "You are not a member of this organization.",
   "error_member_not_found": "Member not found.",
+  "error_team_name_taken": "A team with this name already exists.",
   "error_team_not_found": "Team not found.",
   "error_team_member_not_found": "This member is not on the team.",
   "error_teams_forbidden": "Only admins can manage teams.",

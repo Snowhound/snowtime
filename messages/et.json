@@ -8,6 +8,7 @@
   "error_sign_in_required": "Logi kõigepealt sisse.",
   "error_not_organization_member": "Sa ei ole selle ettevõtte liige.",
   "error_member_not_found": "Liiget ei leitud.",
+  "error_team_name_taken": "Selle nimega meeskond on juba olemas.",
   "error_team_not_found": "Meeskonda ei leitud.",
   "error_team_member_not_found": "See liige ei ole meeskonnas.",
   "error_teams_forbidden": "Meeskondi saavad hallata ainult administraatorid.",

@@ -6,8 +6,9 @@ Project Snowtime {
   Note: '''
     Data model for Snowtime on Turso (libSQL/SQLite).
 
-    Tables in the auth and tenancy groups belong to Better Auth and its organization
-    plugin; their shape follows the plugin. Everything else is owned by the app.
+    Auth, organizations, members, and invitations use Better Auth. The app owns team
+    rules and stores invitation team choices; their tables retain the inherited shape.
+    The tracking and settings tables are owned by the app.
   '''
 }
 
@@ -23,7 +24,7 @@ Table user [note: 'Better Auth user. One row per human, shared across organizati
   updated_at integer [not null, note: 'Epoch ms, UTC.']
 }
 
-Table session [note: 'Better Auth session. Carries the active organization and team, which every server function reads to scope its queries.'] {
+Table session [note: 'Better Auth session. Carries the active organization; server functions scope queries to the organization named by the caller.'] {
   id text [pk]
   user_id text [not null, ref: > user.id, note: 'ON DELETE CASCADE.']
   token text [not null, unique, note: 'Session token held in the cookie.']
@@ -31,7 +32,7 @@ Table session [note: 'Better Auth session. Carries the active organization and t
   ip_address text
   user_agent text
   active_organization_id text [ref: > organization.id, note: 'Organization plugin. The tenant every query in this session is scoped to. ON DELETE SET NULL.']
-  active_team_id text [ref: > team.id, note: 'Organization plugin with teams. Optional filter, not an access boundary. ON DELETE SET NULL.']
+  active_team_id text [ref: > team.id, note: 'Unused legacy team field, retained to avoid a session-table rebuild. ON DELETE SET NULL.']
   created_at integer [not null]
   updated_at integer [not null]
 
@@ -92,7 +93,7 @@ Table verification [note: 'Better Auth one-time values: email verification, pass
   }
 }
 
-// --- Tenancy (Better Auth organization plugin, teams enabled) --------------------------
+// --- Tenancy (Better Auth organizations, app-owned teams) ------------------------------
 
 Table organization [note: 'Tenant. Every app-owned table carries organization_id and every query filters by it.'] {
   id text [pk]
@@ -121,7 +122,7 @@ Table team [note: 'A group of members within an organization. Groups people for 
   id text [pk]
   organization_id text [not null, ref: > organization.id, note: 'ON DELETE CASCADE.']
   name text [not null]
-  member_count integer [not null, default: 0, note: 'Maintained by Better Auth when members join or leave.']
+  member_count integer [not null, default: 0, note: 'Maintained by the teams domain when members join or leave.']
   created_at integer [not null]
   updated_at integer
 
@@ -135,8 +136,8 @@ Table team_member [note: 'A user in a team. A member can be in several teams of 
   id text [pk]
   team_id text [not null, ref: > team.id, note: 'ON DELETE CASCADE.']
   user_id text [not null, ref: > user.id, note: 'ON DELETE CASCADE.']
-  role text [not null, default: 'member', note: 'App-managed. CHECK: lead, member. A lead reads and reports on the time of the team. Better Auth 1.7 has no additional fields on team members, so it never reads or writes this column; new rows get the default.']
-  membership_key text [unique, note: 'Better Auth dedupe key, SHA-256 of team_id and user_id.']
+  role text [not null, default: 'member', note: 'CHECK: lead, member. A lead reads and reports on the time of the team. The teams domain owns memberships; new rows default to member.']
+  membership_key text [unique, note: 'Legacy Better Auth dedupe key. New app memberships leave it null.']
   created_at integer
 
   indexes {
@@ -217,7 +218,7 @@ Table project [note: 'Owned by the organization. Visible to the whole organizati
 
 Table project_team [note: 'Assigns a project to a team. A project with no rows here is available to everyone in the organization. Rows are inserted and deleted, never updated, so only created_* audit columns.'] {
   project_id text [not null, ref: > project.id, note: 'Composite FK (project_id, organization_id) to project (id, organization_id).']
-  team_id text [not null, ref: > team.id, note: 'Deleting a team (Better Auth deletes rows) drops its assignments. Composite FK (team_id, organization_id) to team (id, organization_id). ON DELETE CASCADE.']
+  team_id text [not null, ref: > team.id, note: 'Deleting a team cascades to its project assignments. Composite FK (team_id, organization_id) to team (id, organization_id). ON DELETE CASCADE.']
   organization_id text [not null, ref: > organization.id, note: 'Tenant key. The composite foreign keys to project and team make it equal the organization of both.']
   created_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Epoch ms, set by the database.']
   created_by text [not null, ref: > user.id, note: 'Audit. Acting user, set by the app per request.']

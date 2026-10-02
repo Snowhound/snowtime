@@ -23,6 +23,8 @@ export const errorMessages = {
   sign_in_required: 'Sign in first.',
   not_organization_member: 'You are not a member of this organization.',
   member_not_found: 'Member not found.',
+  team_name_taken: 'A team with this name already exists.',
+  team_limit: 'This organization has too many teams. Delete unused ones first.',
   team_not_found: 'Team not found.',
   team_member_not_found: 'This member is not on the team.',
   teams_forbidden: 'Only admins can manage teams.',
