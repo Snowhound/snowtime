@@ -65,7 +65,8 @@ Read from `better-auth/dist/plugins/device-authorization/` and `bearer/` on 2026
 
 Asked on issue #2 on 2026-10-02
 (https://github.com/Snowhound/snowtime/issues/2#issuecomment-5949060428). Kait's comment
-before it answered none of points 1–3; the user asks again with a correction. Each item has
+before it answered none of points 1–3, so the user asked again with a correction
+(https://github.com/Snowhound/snowtime/issues/2#issuecomment-5949182490). Each item has
 a proposal.
 
 1. **Where a token reaches.** Proposed: only `/api/v1`. Leave the `bearer` plugin off,
