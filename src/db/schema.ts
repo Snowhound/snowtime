@@ -197,48 +197,6 @@ export const passkey = sqliteTable(
   ],
 )
 
-// @better-auth/api-key's table. The export is named `apikey`, the plugin's model name, which
-// the Drizzle adapter looks up; the keys match the plugin's field names.
-export const apikey = sqliteTable(
-  'api_key',
-  {
-    id: text().primaryKey(),
-    configId: text('config_id').default('default').notNull(),
-    name: text(),
-    start: text(),
-    referenceId: text('reference_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    prefix: text(),
-    key: text().notNull(),
-    refillInterval: integer('refill_interval'),
-    refillAmount: integer('refill_amount'),
-    lastRefillAt: timestamp('last_refill_at'),
-    enabled: integer({ mode: 'boolean' })
-      .default(sql`1`)
-      .notNull(),
-    rateLimitEnabled: integer('rate_limit_enabled', { mode: 'boolean' })
-      .default(sql`1`)
-      .notNull(),
-    rateLimitTimeWindow: integer('rate_limit_time_window'),
-    rateLimitMax: integer('rate_limit_max'),
-    requestCount: integer('request_count').default(0).notNull(),
-    remaining: integer(),
-    lastRequest: timestamp('last_request'),
-    expiresAt: timestamp('expires_at'),
-    createdAt: timestamp('created_at').notNull(),
-    updatedAt: timestamp('updated_at').notNull(),
-    permissions: text(),
-    metadata: text(),
-  },
-  (t) => [
-    index('api_key_reference_id_idx').on(t.referenceId),
-    uniqueIndex('api_key_key_unique').on(t.key),
-    check('api_key_enabled', sql`enabled IN (0, 1)`),
-    check('api_key_rate_limit_enabled', sql`rate_limit_enabled IN (0, 1)`),
-  ],
-)
-
 export const verification = sqliteTable(
   'verification',
   {

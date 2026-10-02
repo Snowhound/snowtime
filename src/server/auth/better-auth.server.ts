@@ -1,4 +1,3 @@
-import { apiKey } from '@better-auth/api-key'
 import { passkey } from '@better-auth/passkey'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
@@ -18,7 +17,6 @@ import {
   loginDomainMiddleware,
   loginDomainSessionAllowed,
 } from './login-policy.server'
-import { apiKeyDisabledPaths, apiKeyOptions } from './api-keys.server'
 import { databaseHooks, organizationHooks } from './name-checks.server'
 import { passwordEnabled, refuseUnverifiedSignUp, socialProviders } from './sign-in.server'
 
@@ -65,10 +63,6 @@ export const auth = betterAuth({
     disableSignUp: env.DEMO_MODE,
   },
   socialProviders: socialProviders(env),
-  // Settings manages API keys through server functions: creating one sets permissions, which
-  // the plugin takes only from the server. Its HTTP endpoints stay closed, so a session can't
-  // make a key without scopes or change one's expiry (docs/architecture/auth.md, "API keys").
-  disabledPaths: apiKeyDisabledPaths,
   databaseHooks: {
     user: {
       ...databaseHooks.user,
@@ -136,7 +130,6 @@ export const auth = betterAuth({
       organizationHooks,
     }),
     passkey({ rpID: appUrl.hostname, rpName: 'Snowtime', origin: appUrl.origin }),
-    apiKey(apiKeyOptions),
     // Must stay last: it sets cookies from the other plugins' responses.
     tanstackStartCookies(),
   ],

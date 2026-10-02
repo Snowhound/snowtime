@@ -7,13 +7,12 @@ import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { ApiKeysCard } from './api-keys-card/api-keys-card'
 import { PreferencesCard } from './preferences-card/preferences-card'
 import { ProfileCard } from './profile-card'
 import { linkErrorMessage } from './sign-in-methods-list'
 
 // Preferences come first because they change most often; Profile holds the name and
-// the sign-in methods, and API keys come last (prototypes/settings.html).
+// the sign-in methods (prototypes/settings.html).
 export function SettingsPage(props: { initialError?: string }) {
   const session = useQuery(() => sessionQuery)
   const methods = useQuery(() => signInMethodsQuery)
@@ -62,14 +61,6 @@ export function SettingsPage(props: { initialError?: string }) {
                 {m.settings_profile()}
               </a>
             </li>
-            <li>
-              <a
-                href="#api-keys"
-                class={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start')}
-              >
-                {m.settings_api_keys()}
-              </a>
-            </li>
           </ul>
         </nav>
         <Show when={session.data}>
@@ -84,7 +75,6 @@ export function SettingsPage(props: { initialError?: string }) {
                 methods={methods.data ?? []}
                 linkError={linkError()}
               />
-              <ApiKeysCard timeZone={data().settings?.timeZone ?? 'UTC'} />
             </div>
           )}
         </Show>

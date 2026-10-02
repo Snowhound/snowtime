@@ -1,6 +1,5 @@
-// Sign-in, session, organization, and API key server functions. Thin wrappers: the rules live
-// in sign-in.server.ts, session.server.ts, invitations.server.ts, organization.server.ts, and
-// api-keys.server.ts.
+// Sign-in, session, and organization server functions. Thin wrappers: the rules live in
+// sign-in.server.ts, session.server.ts, invitations.server.ts, and organization.server.ts.
 import { createServerFn } from '@tanstack/solid-start'
 import { getRequestHeaders, setCookie } from '@tanstack/solid-start/server'
 import { db } from '~/db'
@@ -8,14 +7,8 @@ import { SEED_PASSWORD, seedUsers } from '~/db/seed'
 import { companyUsers } from '~/db/seed-company'
 import { env } from '~/env'
 import { cookieMaxAge, cookieName, getLocale } from '~/paraglide/runtime.js'
-import { scopeMiddleware, sessionMiddleware } from '../middleware'
-import * as apiKeys from './api-keys.server'
-import {
-  CreateApiKeyInput,
-  GetInvitationInput,
-  RevokeApiKeyInput,
-  UpdateIssueLinksInput,
-} from './auth.schemas'
+import { scopeMiddleware } from '../middleware'
+import { GetInvitationInput, UpdateIssueLinksInput } from './auth.schemas'
 import { auth } from './better-auth.server'
 import { invitationPreview } from './invitations.server'
 import * as organizations from './organization.server'
@@ -103,21 +96,3 @@ export const updateIssueLinks = createServerFn({ method: 'POST' })
   .middleware([scopeMiddleware])
   .validator(UpdateIssueLinksInput)
   .handler(({ data, context }) => organizations.updateIssueLinks(db, context.scope, data))
-
-// The signed-in user's API keys, for Settings. The key itself appears only in createApiKey's
-// answer, once.
-export const listApiKeys = createServerFn({ method: 'GET' })
-  .middleware([sessionMiddleware])
-  .handler(({ context }) => apiKeys.listApiKeys(db, context.userId))
-
-export const createApiKey = createServerFn({ method: 'POST' })
-  .middleware([sessionMiddleware])
-  .validator(CreateApiKeyInput)
-  .handler(({ data, context }) =>
-    apiKeys.createApiKey(db, (body) => auth.api.createApiKey({ body }), context.userId, data),
-  )
-
-export const revokeApiKey = createServerFn({ method: 'POST' })
-  .middleware([sessionMiddleware])
-  .validator(RevokeApiKeyInput)
-  .handler(({ data, context }) => apiKeys.revokeApiKey(db, context.userId, data.id))
