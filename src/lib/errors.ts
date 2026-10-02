@@ -34,6 +34,7 @@ const errorText: Record<AppErrorKey, () => string> = {
   scene_pin_not_in_collection: m.error_scene_pin_not_in_collection,
   rate_limited: m.error_rate_limited,
   organization_forbidden: m.error_organization_forbidden,
+  database_unavailable: m.error_database_unavailable,
 }
 
 // Refusals from Better Auth's client calls, by the code its error carries (unwrap in

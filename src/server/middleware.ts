@@ -3,10 +3,32 @@ import { getRequest, getRequestHeaders } from '@tanstack/solid-start/server'
 import { db } from '~/db'
 import { withActor } from '~/db/actor'
 import { auth, rateLimitStore } from './auth/better-auth.server'
+import { databaseAvailable } from './availability/availability.server'
 import { AppError } from './errors'
 import { rateLimits } from './limits.server'
 import { parseOrganizationInput } from './schemas'
 import { type Scope, resolveScope } from './scope.server'
+
+// Runs around every server function (src/start.ts). An unexpected error while the database is
+// unreachable, such as during a migration window, becomes an UNAVAILABLE AppError, so the page
+// shows the maintenance page rather than a generic error. Only unexpected errors pay for the
+// probe.
+export const availabilityMiddleware = createMiddleware({ type: 'function' }).server(
+  async ({ next }) => {
+    try {
+      return await next()
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        !(error instanceof AppError) &&
+        !(await databaseAvailable(db))
+      ) {
+        throw new AppError('UNAVAILABLE', 'database_unavailable')
+      }
+      throw error
+    }
+  },
+)
 
 // A signed-in user, as context.userId. The call runs as that user (withActor), and each POST
 // counts against their write rate.

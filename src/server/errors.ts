@@ -14,6 +14,8 @@ export type AppErrorCode =
   | 'LIMIT_REACHED'
   // A rate in rateLimits (src/server/limits.server.ts).
   | 'RATE_LIMITED'
+  // The database is unreachable (availabilityMiddleware in src/server/middleware.ts).
+  | 'UNAVAILABLE'
 
 // Every message an AppError can carry, by key. Keys are stable and snake_case, so they
 // name the Paraglide message error_<key> (src/lib/errors.ts); the English text is the fallback.
@@ -48,6 +50,7 @@ export const errorMessages = {
   scene_pin_not_in_collection: "That image isn't in your collection.",
   rate_limited: 'Too many changes in a short time. Wait a minute and try again.',
   organization_forbidden: 'Only admins and owners manage the organization.',
+  database_unavailable: 'Snowtime is down for maintenance. Try again in a few minutes.',
 } as const
 
 export type AppErrorKey = keyof typeof errorMessages

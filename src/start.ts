@@ -1,6 +1,7 @@
 import { createSerializationAdapter } from '@tanstack/solid-router'
 import { createCsrfMiddleware, createStart } from '@tanstack/solid-start'
 import { AppError, type AppErrorCode, type AppErrorKey } from '~/server/errors'
+import { availabilityMiddleware } from '~/server/middleware'
 
 // Start drops everything but the message of a thrown error; this keeps AppError's code, so
 // the client can tell "not found" from "forbidden", and its key, so the client can show
@@ -21,4 +22,5 @@ const csrfMiddleware = createCsrfMiddleware({
 export const startInstance = createStart(() => ({
   serializationAdapters: [appErrorAdapter],
   requestMiddleware: [csrfMiddleware],
+  functionMiddleware: [availabilityMiddleware],
 }))

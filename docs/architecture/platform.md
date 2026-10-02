@@ -154,6 +154,16 @@ test their migrations on throwaway local databases only (`db:drift`).
 - The error page shows `errorMessage` of the error (see "Internationalization"): an
   `AppError`'s message, or the generic one for anything else. It offers a retry, which
   reloads the routes, and a link home.
+- While the database is unreachable, for example while production moves to another
+  database, the error page is a maintenance page instead. `availabilityMiddleware`
+  (`src/server/middleware.ts`) runs around every server function. When one fails with an
+  unexpected error, the middleware runs `select 1`, and if that fails or takes over 3
+  seconds, it throws an `UNAVAILABLE` `AppError`. The maintenance page stays at the
+  requested URL, so a reload opens that page once the database is back. It calls
+  `checkAvailability` every 15 seconds while the tab is visible, and again on focus,
+  when the tab is shown, or when the device comes online. Once the database answers,
+  it reloads the routes. A failed change shows the same error's message. Better Auth's
+  own routes, such as sign-in, still fail with their generic error.
 - An unknown path answers 404. A route whose loader reads one record named in the URL
   throws `notFound()` when the record is missing, so the reader gets the not-found page
   and a 404 rather than an error. No route does so yet: the invitation page shows a missing
@@ -163,7 +173,7 @@ test their migrations on throwaway local databases only (`db:drift`).
   second page. `ErrorPage` therefore throws again during the server's first render, which
   has no `reset`, so that Solid's boundary renders it on both sides. Solid sends that error
   to the client before Start's serialization adapters load, so it is a plain `Error`
-  carrying only the message to show. Remove the workaround once the router renders both
+  carrying only the message to show and whether the database was unreachable. Remove the workaround once the router renders both
   sides alike.
 - The router's dehydrated state still carries a loader error's own message in the page
   source, though the page never shows it. Start already sends a server function's error

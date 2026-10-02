@@ -8,8 +8,10 @@ import { ErrorPage } from './error-page'
 import { NotFoundPage } from './not-found-page'
 
 const invalidate = vi.hoisted(() => vi.fn())
+const checkAvailability = vi.hoisted(() => vi.fn())
 const frame = vi.hoisted(() => ({ organizationId: undefined as string | undefined }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
+vi.mock('~/server/availability/availability.functions', () => ({ checkAvailability }))
 // The pages render without a router; the frames stand in as marked wrappers, since the
 // frame each page picks is what these tests check.
 vi.mock('@tanstack/solid-router', () => ({
@@ -139,5 +141,36 @@ describe('ErrorPage', () => {
     expect(invalidate).toHaveBeenCalledOnce()
     expect(reset).toHaveBeenCalledOnce()
     expect(invalidate.mock.invocationCallOrder[0]).toBeLessThan(reset.mock.invocationCallOrder[0])
+  })
+
+  test('while the database is unreachable, shows the maintenance page with no way home', () => {
+    const error = new AppError('UNAVAILABLE', 'database_unavailable')
+    renderPage(() => <ErrorPage error={error} reset={() => {}} />, member)
+    expect(screen.getByRole('heading', { name: 'Down for maintenance' })).toBeInTheDocument()
+    expect(screen.queryByRole('link')).toBeNull()
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+
+  test('shows the maintenance page the server rendered, when hydrating', () => {
+    const error = Object.assign(new Error('Snowtime is down for maintenance.'), {
+      name: 'ShownError',
+      unavailable: true,
+    })
+    renderPage(() => <ErrorPage error={error} reset={() => {}} />, null)
+    expect(screen.getByRole('heading', { name: 'Down for maintenance' })).toBeInTheDocument()
+  })
+
+  test('loads the page again once the database answers, checking when the window gets focus', async () => {
+    const reset = vi.fn()
+    const error = new AppError('UNAVAILABLE', 'database_unavailable')
+    renderPage(() => <ErrorPage error={error} reset={reset} />, member)
+    checkAvailability.mockResolvedValueOnce(false)
+    window.dispatchEvent(new Event('focus'))
+    await vi.waitFor(() => expect(checkAvailability).toHaveBeenCalledOnce())
+    expect(reset).not.toHaveBeenCalled()
+    checkAvailability.mockResolvedValueOnce(true)
+    window.dispatchEvent(new Event('focus'))
+    await vi.waitFor(() => expect(reset).toHaveBeenCalledOnce())
+    expect(invalidate).toHaveBeenCalledOnce()
   })
 })
