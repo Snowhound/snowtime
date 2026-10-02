@@ -1,9 +1,9 @@
-# 03: Endpoints
+# 04: Endpoints
 
 Status: todo
 
 The first six endpoints: what the Raycast extension needs. Each is a server route in
-`src/routes/api/v1/` that goes through the helper from subtask 02 and calls an existing
+`src/routes/api/v1/` that goes through the helper from subtask 03 and calls an existing
 rule in `src/server/<domain>/*.server.ts`.
 
 | Method and path                    | Scope   | Rule                   |
