@@ -3,7 +3,7 @@
 Status: todo
 
 Find how many companies and users today's backend serves on a 1 vCPU, 2 GB server, what
-fails first beyond that, and leave a repeatable harness that tasks 079 and 080 measure
+fails first beyond that, and leave a repeatable harness that tasks 079 and 081 measure
 their changes with. `perf:load` (task 075) times four pages for one user with 10 requests in
 flight. It covers no other users, no writes, no database larger than memory, and no
 overload, and its closed loop slows down with the server, which hides queueing.
@@ -88,7 +88,7 @@ Per request kind and per load step:
   and at peak split into anonymous and page cache, disk reads and writes, and CPU, memory,
   and IO pressure (PSI). From the host: steal time, and the database and WAL sizes.
 - Optionally, the JS heap against RSS in the app, from an endpoint that only an
-  environment variable on the bench deployment enables. Task 080 needs to know what
+  environment variable on the bench deployment enables. Task 081 needs to know what
   today's 400 MB is made of.
 
 A sampler container reads these files each second and serves them as JSON behind basic
@@ -144,7 +144,7 @@ drops the load two steps and ends the ramp.
 - [ ] `docs/hosting.md` sizing measured on the server, which closes task 075's server run.
       `README.md` states capacity with the date, the release, the dataset, and the usage
       model
-- [ ] A baseline that tasks 079 and 080 reuse: CPU per request kind, RSS at idle and peak, and
+- [ ] A baseline that tasks 079 and 081 reuse: CPU per request kind, RSS at idle and peak, and
       capacity per dataset
 
 ## Out of scope

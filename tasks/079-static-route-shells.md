@@ -9,7 +9,7 @@ hydration, and routes as it does today. Server rendering is the largest cost on 
 server: 15 to 50 ms of CPU for an ordinary page and 85 to 92 ms for the 9-month report
 (`docs/hosting.md`), and up to 385 KB of HTML for the year report
 (`perf/baselines/pages.json`). Without it, Caddy or Vercel's CDN serves the pages, and task
-080's native backend only has to answer the API. Users must be no worse off, measured
+081's native backend only has to answer the API. Users must be no worse off, measured
 before and after.
 
 ## Design to confirm
@@ -28,7 +28,7 @@ before and after.
   nonce. Caddy and `vercel.json` set it.
 - Public pages (sign-in, privacy, terms) are prerendered with their content.
 - Server functions stay as they are. Only how the HTML is made changes; the contract is
-  task 080's.
+  task 081's.
 - The build uses Start's SPA mode, its prerendering, or a plain Vite build of the client,
   whichever gives per-route shells with the least code.
 

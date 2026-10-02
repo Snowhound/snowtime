@@ -1,6 +1,6 @@
-# 080: Native backend
+# 081: Native backend
 
-Status: todo (waits on task 078's baseline; builds on task 079)
+Status: todo (waits on task 078's baseline; builds on tasks 079 and 080)
 
 A second backend for self-hosting that serves many companies on a fraction of today's
 memory and CPU, without a garbage collector. The TypeScript backend stays the source of
@@ -56,8 +56,6 @@ rejected, as in task 069.
    expects to add beside them, are both in its v1 scope.
 
    Checked on 2026-10-02 at `1.0.0-alpha.3`, it has these gaps for this app:
-   - Teams (create, update, remove, add and remove members) are roadmap phases 14 and 15,
-     outside its v1 scope. This app uses all five.
    - It hashes passwords with Argon2. Better Auth's default is scrypt, which this app's
      password users (development and demo seeds) have.
    - This app's hooks (name checks, the login domain policy, refusing unverified sign-ups,
@@ -68,31 +66,15 @@ rejected, as in task 069.
 
    It names Google and GitHub providers, the two production uses. Microsoft sign-in can go
    if it costs work (Kait, 2026-10-02). A spike runs the app's sign-in, passkey,
-   invitation, API key, and device authorization flows against it on this app's schema.
-   If it holds, the native backend is in Rust.
+   invitation, API key, and device authorization flows against it on this app's schema,
+   after task 080. If it holds, the native backend is in Rust.
 
-   Teams have two ways out, to choose before the port starts:
-   - Recommended: take teams out of Better Auth in today's app. The teams domain already
-     owns team roles and the team lists (`src/server/teams/teams.server.ts`). It takes the
-     five writes too, with the name checks and `teamsPerOrganization`, and Better Auth's
-     `teams.enabled` goes off. An invitation's team becomes this app's own step after the
-     invitation is accepted, and removing a member removes their team memberships in the
-     hook that already stops their timer. Both backends then treat teams like projects,
-     and better-auth-rs needs no team support.
-   - A teams plugin for better-auth-rs, limited to the five calls this app makes, built so
-     the official one can replace it: the routes, payloads, and error codes of
-     `better-auth@1.7.6`, checked with the project's compatibility harness against the
-     TypeScript server, shaped like its organization plugin, and offered upstream as
-     phases 14 and 15. On 2026-10-02 nobody had started them: no branch, pull request, or
-     issue, and no team tables in its schema. Invitations to a team and member removal
-     live in better-auth-rs's organization plugin, and its plugin trait has no hook that
-     runs after another plugin's route, so this way also patches that plugin, upstream or
-     in a fork.
-
-   Either way, a small redesign of how this app uses teams is open for discussion if it
-   makes the port simpler. For example, invitations could name only the organization,
-   with admins adding the person to teams after they join, which takes teams out of the
-   invitation endpoints. The agent brings such changes to Kait before making them.
+   It has no teams: they're its roadmap phases 14 and 15, outside its v1 scope, and on
+   2026-10-02 nobody had started them. So teams leave Better Auth first (task 080, Kait,
+   2026-10-02), and better-auth-rs needs no team support. The rejected way was a teams
+   plugin for better-auth-rs. Invitations to a team and member removal live in its
+   organization plugin, whose plugin trait has no hook that runs after another plugin's
+   route, so the plugin would also have meant patching that one.
 
 6. The language, if question 5 doesn't settle it: Rust or Zig. Criteria: control over
    allocation, memory safety in a server that parses untrusted input, SQLite interop,
@@ -109,7 +91,7 @@ The frontend reaches it through the adapter for those calls.
 - [ ] Each question above answered with numbers, recorded in this task
 - [ ] A decision record in `docs/architecture/`: language, auth, contract, and adapter,
       with what was rejected and why
-- [ ] The changes to the TypeScript app listed, teams included
+- [ ] The changes to the TypeScript app listed
 - [ ] The proof of concept measured against task 078's baseline: CPU per request kind, RSS
       at idle and peak, and capacity
 - [ ] A follow-up task for parity and the generation workflow, if the numbers justify a
