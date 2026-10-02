@@ -6,7 +6,7 @@ import { glassPhoto } from '~/lib/scene/glass'
 import type { ImageId } from '~/lib/scene/images'
 import { STRENGTHS, photoUrl, photoWidth } from '~/lib/scene/scene'
 import { PACES, PRESETS, type Pace, type Weather, weatherFor } from '~/lib/scene/weather'
-import { createWeatherRenderer, weatherColors } from '~/lib/scene/weather-renderer'
+import { createWeatherRenderer, weatherCanvases, weatherColors } from '~/lib/scene/weather-renderer'
 import { LAYOUTS, type Layout } from './layouts'
 import '~/styles.css'
 
@@ -63,9 +63,15 @@ photoImage.className = 'scene-photo-image'
 for (const name of ['scene-tint', 'scene-vignette']) {
   scene.appendChild(document.createElement('div')).className = name
 }
-const canvas = scene.appendChild(document.createElement('canvas'))
-canvas.className = 'scene-weather'
-canvas.dataset.on = ''
+function weatherCanvas() {
+  const made = scene.appendChild(document.createElement('canvas'))
+  made.className = 'scene-weather'
+  made.dataset.on = ''
+  return made
+}
+// As in the app's scene layer, an image's two effects draw on one canvas, or on two when they
+// differ in resolution (weatherCanvases).
+const canvases = [weatherCanvas(), weatherCanvas()]
 for (const rect of LAYOUTS[layout]) {
   const surface = frame.appendChild(document.createElement('div'))
   surface.className = 'header' in rect ? 'scene-header' : 'surface'
@@ -89,8 +95,9 @@ async function showGlass(url: string) {
   frame.setAttribute('data-glass', 'on')
 }
 
-// Every animation frame callback is timed, and a GPU timer query wraps it, so each frame the
-// renderer draws reports its cost; a callback that doesn't draw is left out.
+// Every animation frame's callbacks are timed together, and a GPU timer query on each context
+// wraps each callback, so each frame the renderers draw reports its cost; a frame that doesn't
+// draw is left out.
 //
 // Uncapped, Chrome lets the page queue frames seconds ahead of the GPU: the page counts thousands
 // of frames a second that the GPU finishes much later, and a call that waits for the GPU process,
@@ -100,30 +107,52 @@ async function showGlass(url: string) {
 // to cap the rate itself. The wrapper keeps its own ids, since a waiting frame asks again.
 const FRAMES_AHEAD = 64
 const sample: Sample = { seconds: 0, cpu: [], gpu: [] }
-const fences: WebGLSync[] = []
 const requests = new Map<number, number>()
 let lastRequest = 0
-let drew = false
+// The frame whose callbacks are running and its CPU time so far, and the GPU time and queries
+// still out of each frame.
+let frameAt = -1
+let frameCpu = 0
+const frameGpu = new Map<number, { ms: number; pending: number }>()
 const nativeFrame = requestAnimationFrame.bind(window)
 const nativeCancel = cancelAnimationFrame.bind(window)
+
+type Timed = {
+  gl: WebGL2RenderingContext
+  timer: { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null
+  queries: { query: WebGLQuery; frame: number }[]
+  fences: WebGLSync[]
+  drew: boolean
+}
+const contexts: Timed[] = []
+
 window.requestAnimationFrame = function timedFrame(callback) {
   const id = ++lastRequest
   function timed(now: number) {
-    while (fences.length && gl.clientWaitSync(fences[0], 0, 0) !== gl.TIMEOUT_EXPIRED) {
-      gl.deleteSync(fences.shift()!)
+    for (const c of contexts) {
+      while (c.fences.length && c.gl.clientWaitSync(c.fences[0], 0, 0) !== c.gl.TIMEOUT_EXPIRED) {
+        c.gl.deleteSync(c.fences.shift()!)
+      }
     }
-    if (fences.length >= FRAMES_AHEAD) {
+    if (contexts.some((c) => c.fences.length >= FRAMES_AHEAD)) {
       requests.set(id, nativeFrame(timed))
       return
     }
     requests.delete(id)
-    const query = beginQuery()
+    if (now !== frameAt) {
+      if (frameCpu > 0) sample.cpu.push(frameCpu)
+      frameCpu = 0
+      frameAt = now
+    }
+    const queries = contexts.map(beginQuery)
     const started = performance.now()
-    drew = false
+    for (const c of contexts) c.drew = false
     callback(now)
-    if (drew) sample.cpu.push(performance.now() - started)
-    endQuery(query, drew)
-    if (drew && uncapped) fences.push(gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)!)
+    if (contexts.some((c) => c.drew)) frameCpu += performance.now() - started
+    for (const [i, c] of contexts.entries()) {
+      endQuery(c, queries[i], now)
+      if (c.drew && uncapped) c.fences.push(c.gl.fenceSync(c.gl.SYNC_GPU_COMMANDS_COMPLETE, 0)!)
+    }
     measured(performance.now())
   }
   requests.set(id, nativeFrame(timed))
@@ -134,39 +163,67 @@ window.cancelAnimationFrame = function cancelTimedFrame(id) {
   requests.delete(id)
 }
 
-const renderer = createWeatherRenderer(canvas, () => PACES[pace], { uncapped })
-if (!renderer) throw new Error('No WebGL 2')
-// The renderer's context; getContext returns the one it made.
-const gl = canvas.getContext('webgl2')!
-const draw = gl.drawArrays.bind(gl)
-gl.drawArrays = function countedDraw(...args) {
-  drew = true
-  draw(...args)
+function timedRenderer(target: HTMLCanvasElement) {
+  const made = createWeatherRenderer(target, () => PACES[pace], { uncapped })
+  if (!made) throw new Error('No WebGL 2')
+  // The renderer's context; getContext returns the one it made.
+  const gl = target.getContext('webgl2')!
+  const c: Timed = {
+    gl,
+    timer: gl.getExtension('EXT_disjoint_timer_query_webgl2'),
+    queries: [],
+    fences: [],
+    drew: false,
+  }
+  const draw = gl.drawArrays.bind(gl)
+  gl.drawArrays = function countedDraw(...args) {
+    c.drew = true
+    draw(...args)
+  }
+  contexts.push(c)
+  return made
 }
-const timer = gl.getExtension('EXT_disjoint_timer_query_webgl2')
-const queries: WebGLQuery[] = []
 
-function beginQuery() {
-  if (!timer) return null
-  collectQueries()
-  const query = gl.createQuery()
-  gl.beginQuery(timer.TIME_ELAPSED_EXT, query)
+// The second canvas's context starts only when a weather needs it, as in the app.
+const renderers = [timedRenderer(canvases[0])]
+const gl = contexts[0].gl
+const timer = contexts[0].timer
+
+function beginQuery(c: Timed) {
+  if (!c.timer) return null
+  collectQueries(c)
+  const query = c.gl.createQuery()
+  c.gl.beginQuery(c.timer.TIME_ELAPSED_EXT, query)
   return query
 }
-function endQuery(query: WebGLQuery | null, keep: boolean) {
-  if (!timer || !query) return
-  gl.endQuery(timer.TIME_ELAPSED_EXT)
-  if (keep) queries.push(query)
-  else gl.deleteQuery(query)
+function endQuery(c: Timed, query: WebGLQuery | null, frame: number) {
+  if (!c.timer || !query) return
+  c.gl.endQuery(c.timer.TIME_ELAPSED_EXT)
+  if (!c.drew) return c.gl.deleteQuery(query)
+  c.queries.push({ query, frame })
+  const entry = frameGpu.get(frame) ?? { ms: 0, pending: 0 }
+  entry.pending++
+  frameGpu.set(frame, entry)
 }
 // Results arrive a frame or more later, in order. A disjoint event (a GPU reset or throttle)
-// spoils the ones in flight.
-function collectQueries() {
-  const disjoint = gl.getParameter(timer!.GPU_DISJOINT_EXT)
-  while (queries.length && gl.getQueryParameter(queries[0], gl.QUERY_RESULT_AVAILABLE)) {
-    const query = queries.shift()!
-    if (!disjoint) sample.gpu.push(gl.getQueryParameter(query, gl.QUERY_RESULT) / 1e6)
-    gl.deleteQuery(query)
+// spoils the ones in flight, and their frames are left out.
+function collectQueries(c: Timed) {
+  const disjoint = c.gl.getParameter(c.timer!.GPU_DISJOINT_EXT)
+  while (
+    c.queries.length &&
+    c.gl.getQueryParameter(c.queries[0].query, c.gl.QUERY_RESULT_AVAILABLE)
+  ) {
+    const { query, frame } = c.queries.shift()!
+    const entry = frameGpu.get(frame)
+    if (entry && disjoint) frameGpu.delete(frame)
+    else if (entry) {
+      entry.ms += c.gl.getQueryParameter(query, c.gl.QUERY_RESULT) / 1e6
+      if (--entry.pending === 0) {
+        sample.gpu.push(entry.ms)
+        frameGpu.delete(frame)
+      }
+    }
+    c.gl.deleteQuery(query)
   }
 }
 
@@ -186,28 +243,45 @@ function measured(now: number) {
     performance.mark(`bench:start:${mark}`)
     sample.cpu = []
     sample.gpu = []
+    frameGpu.clear()
+    frameCpu = 0
     measurement.started = now
   } else if (started && now >= started + window) {
     performance.mark(`bench:end:${mark}`)
     measurement = null
-    renderer!.stop()
+    stopAll()
     done({ ...sample, seconds: (now - started) / 1000 })
   }
 }
 
+function stopAll() {
+  for (const renderer of renderers) renderer.stop()
+}
+
+// The `alone` variant draws only an image's first effect, and `also` only its second, to time a
+// pair against each of its effects.
+function effectsOf(weather: Weather): Weather {
+  if (variant === 'alone') return { ...weather, also: undefined }
+  if (variant === 'also' && weather.also) return { ...weather.also }
+  return weather
+}
+
 function show({ image, preset, theme, t }: View) {
   document.documentElement.classList.toggle('dark', theme === 'dark')
-  const weather: Weather = image ? weatherFor(image, theme) : PRESETS[preset!]
+  const weather = effectsOf(image ? weatherFor(image, theme) : PRESETS[preset!])
   photoLayer.className = `scene-photo scene-photo-${theme}`
   const width = photoWidth({ width: innerWidth, height: innerHeight, dpr: devicePixelRatio })
   const url = photo && image ? photoUrl(image, theme, width) : ''
   photoImage.style.backgroundImage = url && `url("${url}")`
   void showGlass(url)
-  const { effect } = weather
-  if (!effect) return renderer!.stop()
-  const shown = { ...weather, effect }
-  renderer!.start(shown, weatherColors(shown, { dark: theme === 'dark', background: true }))
-  if (t !== undefined) renderer!.drawAt(t)
+  const page = { dark: theme === 'dark', background: true }
+  const groups = weatherCanvases(weather)
+  if (groups.length > renderers.length) renderers.push(timedRenderer(canvases[1]))
+  for (const [i, renderer] of renderers.entries()) {
+    const group = groups[i] ?? []
+    renderer.start(group.map((shown) => ({ weather: shown, colors: weatherColors(shown, page) })))
+    if (t !== undefined && group.length) renderer.drawAt(t)
+  }
 }
 
 const debug = gl.getExtension('WEBGL_debug_renderer_info')
@@ -217,7 +291,7 @@ window.bench = {
   variant,
   show,
   stop() {
-    renderer.stop()
+    stopAll()
   },
   measure(view, warm, window, mark) {
     show(view)

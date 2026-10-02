@@ -134,16 +134,21 @@
         peaks: ['Glints at once', 0, 6, 0.1],
         peakTime: ['Glint length (s)', 0.3, 4, 0.1],
         peakSize: ['Glint size', 1, 5, 0.1],
+        count: ['Stars', 1, 64, 1],
+        seed: ['Placement', 1, 99, 1],
+        spread: ['Bright vs faint', 0, 1, 0.05],
       }
       const EFFECT_SLIDERS = {
         snow: ['amount', 'size', 'opacity', 'fall', 'wind', 'gust', 'shear'],
         rain: ['amount', 'size', 'opacity', 'fall', 'wind', 'gust', 'shear'],
         seeds: ['amount', 'size', 'opacity', 'share', 'fall', 'wind', 'gust'],
         leaves: ['amount', 'size', 'opacity', 'fall', 'wind', 'gust'],
-        fireflies: ['amount', 'size', 'opacity'],
+        fireflies: ['amount', 'size', 'opacity', 'tempo'],
         insects: ['amount', 'size', 'opacity', 'tempo', 'share', 'glow', 'wind'],
         mist: ['amount', 'size', 'opacity', 'wind'],
         glitter: ['amount', 'size', 'opacity', 'shimmer', 'tempo', 'peaks', 'peakTime', 'peakSize'],
+        stars: ['count', 'seed', 'size', 'opacity', 'spread', 'tempo', 'peaks', 'peakTime', 'peakSize'],
+        aurora: ['opacity', 'tempo'],
       }
       const sliders = document.getElementById('sliders')
       function renderSliders() {
@@ -160,7 +165,7 @@
           .join('')
         const count = Object.values(tuning).reduce((n, themes) => n + Object.values(themes).reduce((m, t) => m + Object.keys(t).length, 0), 0)
         document.getElementById('tune-note').textContent =
-          view.weather !== '066' ? 'Sliders tune the task 066 weather.' : !keys.length ? 'No weather on this image.' : `${count} change${count === 1 ? '' : 's'} kept in this browser; bold ones are this image's.`
+          view.weather !== '066' ? 'Sliders tune the task 066 weather.' : !keys.length ? 'No weather on this image.' : `${base.also ? 'They tune the first effect. ' : ''}${count} change${count === 1 ? '' : 's'} kept in this browser; bold ones are this image's.`
       }
       sliders.addEventListener('input', (event) => {
         const input = event.target.closest('input')
@@ -205,15 +210,19 @@
         .map((c) => `<optgroup label="${c.label}">${c.images.map((id) => `<option value="${id}">${c.label === 'Mountain valley' ? scene.image(id).label : `${c.label === 'Baltic coast' ? 'Coast' : 'Countryside'} ${scene.image(id).label}`}</option>`).join('')}</optgroup>`)
         .join('')
 
-      // A theme's preset and the fields the image and the sliders change, as the table holds them.
+      // A theme's preset and the fields the image and the sliders change, as the table holds them,
+      // and its second effect's after a +.
       function describe(theme) {
         const legacy = view.weather === '062'
-        const { preset, ...fields } = (legacy ? scene.LEGACY_WEATHER : scene.IMAGE_WEATHER)[view.image][theme]
-        return `${preset}  ${JSON.stringify({ ...fields, ...(legacy ? null : tuning[view.image]?.[theme]) })}`
+        const { preset, also, ...fields } = (legacy ? scene.LEGACY_WEATHER : scene.IMAGE_WEATHER)[view.image][theme]
+        const first = `${preset}  ${JSON.stringify({ ...fields, ...(legacy ? null : tuning[view.image]?.[theme]) })}`
+        if (!also) return first
+        const { preset: second, ...more } = also
+        return `${first}\n     + ${second}  ${JSON.stringify(more)}`
       }
       // The hint, and both themes' presets with any slider changes.
       function renderReadout() {
-        const { hint } = scene.weatherFor(view.image, view.theme, { legacy: view.weather === '062' })
+        const hint = scene.hintFor(scene.weatherFor(view.image, view.theme, { legacy: view.weather === '062' }))
         document.getElementById('hint').textContent = view.weather === 'off' ? 'Weather off' : `${hint[0].toUpperCase()}${hint.slice(1)}`
         document.getElementById('tuning').textContent = `light  ${describe('light')}\ndark   ${describe('dark')}`
       }

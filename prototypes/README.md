@@ -1106,26 +1106,62 @@ field, and no browser errors. The scene was checked on 2026-09-24 at 1440 and 39
 dark: the intro's sequence, skip, replay, and first-visit memory, every variant, the
 Settings switches reaching an open sign-in tab, reduced motion, and no browser errors.
 
+### [stars.html](stars.html) — Twinkling stars
+
+Task 076: stars over the night sky of each candidate image, to tune with Kait before the app
+gets the effect. The page shows the dark photo with the app's tint and vignette and a WebGL
+canvas of stars over it. A picker chooses the image (or ← and
+→), and the URL's hash keeps it. Stars keep to the image's open sky (`SKIES`: polygons in
+fractions of the photo) and out of a circle around its moon; **Markers** shows both and rings
+each star.
+
+Each star has a fixed point and its own brightness and color. Three detuned waves change its
+brightness and color a little all the time, and once a cycle it flashes brighter and larger,
+timed so about **Flashes at once** show together. The sliders set the count, placement seed,
+size, brightness, halo, spikes, twinkle, and flashes. Changes stay per image in this browser
+(`snowtime.prototypeStars`) until **Reset**, and **Copy** puts every image's changes on the
+clipboard as JSON.
+
+The scene under them draws the image's weather from [scene.js](scene.js) without its stars and
+aurora (`create`'s `skip`), so they don't show twice. **Its effect** turns the rest on and off,
+such as the mist under the stars. It shows only where the image has such an effect, not on
+countryside November and December or coast March and May, whose stars or aurora replace it.
+
+Countryside December also has an aurora (task 076, subtask 02): curtains standing on smooth
+curves low on the left (`aurora` in `SKIES`), where the app's cards don't cover them. Each is a
+triangle strip whose upright rays tilt very slightly toward one point far above, as real rays
+converge in perspective. A curtain glows brighter where its edge turns steep on screen, as a
+fold does when its rays line up behind each other; that makes its hook. Value noise along each
+curtain makes fine rays that drift sideways and end at their own heights, and dim patches
+that drift along it; the lower edge sways, brightness pulses travel along it, and the color
+fades from green to a little violet at the top. The treeline hides it. Its sliders show only on
+that image, with **Rays** picking between versions of the ray sliders: the defaults are Kait's
+pick (2026-10-02). The app's photo keeps only a faint aurora in the middle, under the cards;
+**Photo** shows it or the night kept with no aurora (`design/backgrounds/alternates/`).
+
 ### [weather.html](weather.html) — Weather by image
 
 Task 066: each image's weather, tuned to the picture, compared with Kait before the app got it. The page shows one image full screen with the sign-in card, the app column, or nothing over
 it. A panel picks the image (or ← and →), the theme, the strength, the pace (the sign-in page's,
 or the app pages' calm one), and the weather: task 066's, the weather from before it
 (`LEGACY_WEATHER`), or off. The URL's hash keeps the view, so a link opens the same image and
-choices. The panel prints both themes' presets and tuning. On Countryside December, a Night row
-(or N) swaps the dark image for the one kept with no aurora
+choices. The panel prints both themes' presets and tuning, and a second effect's after a `+`. On
+Countryside December, a Night row (or N) swaps the dark image for the one kept with no aurora
 (`design/backgrounds/alternates/`), through `scene.useAlternate()`.
 
 A second panel, **Tune**, has sliders for the shown image and theme: the fields that apply to
 its effect, such as amount, size, opacity, wind, and glitter's shimmer and glints. A change
-applies at once and stays in this browser (`snowtime.prototypeWeatherTuning`) until **Reset**;
+applies at once, to an image's first effect only, and stays in this browser (`snowtime.prototypeWeatherTuning`) until **Reset**;
 **Copy** puts every change, for every image, on the clipboard as JSON, to send back for the
 table, and **Clear all** drops them.
 
 `IMAGE_WEATHER` in [scene.js](scene.js) gives each image a preset per theme, by name, and the
 fields it changes, from the list in its comment. `weatherFor()` merges them in order: the preset,
 then the image's horizon and fields, then the sliders' overrides. Task 066 records which image
-gets which and why.
+gets which and why. A dark entry can name a second effect drawn over the first (`also`, task
+076): stars over most Baltic night skies, out of the moon's glow, and over the aurora on
+countryside December. Countryside November and coast March and May show only stars by night.
+The hint names both: "Drifting mist and twinkling stars".
 
 The app (`src/lib/scene/weather.ts`) resolves every image to the same weather, but keeps its
 horizons and zones in `IMAGE_WEATHER`, colors as data, and presets that hold only values two or
@@ -1151,6 +1187,8 @@ at `center 20%`, it steps a frame down a refresh when frames drop, and it leaves
 | leaves       | leaves  | The autumn leaves; land September's take the birches' and rowans' colors, and land October's are smaller and fainter, so they sit in the tinted picture |
 | glitter, frost | glitter | Specks in the image's snowy `zones` that shimmer faintly and slowly, and now and then a full, larger glint, timed so about 1.2 show at once for 1.5 s each |
 | mist         | mist    | Wide, soft banks of uneven density drifting along a band near the horizon, or in zones |
+| stars        | stars   | Kait's stars from [stars.html](stars.html): fixed points in the image's open `sky`, out of the `moon`'s circle, twinkling and now and then flashing ("twinkling stars") |
+| aurora       | aurora  | The curtains tuned in stars.html, low over countryside December's treeline and behind it ("northern lights") |
 | none         | none    | No weather ("still air"), for a still image; no image uses it now                       |
 
 - **Wind** is the sideways speed of the nearest items, in screen heights per second, and
@@ -1184,6 +1222,10 @@ at `center 20%`, it steps a frame down a refresh when frames drop, and it leaves
   The band, horizon, zones, point count, and the uniforms that follow from them are worked out
   on a start or a resize, not every frame. The mist draws at half a backing pixel per CSS pixel
   (`resolution`), the rest at up to 1.5.
+- **Two effects.** As in the app, effects at the same resolution share a canvas and draw at the
+  faster one's rate; the mist gets a canvas of its own under the stars, so it keeps its rate and
+  resolution (`weatherCanvases`, task 076, subtask 01). The stars and the aurora place their
+  items once per start or resize (`layout`), and the pace doesn't thin them.
 - The blowing snow follows Kait's weather prototype (fine grains, a fast fall, a slant that
   grows with the wind), with the shear added for wind that picks up near the ground.
 

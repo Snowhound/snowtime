@@ -29,7 +29,7 @@ import {
   imageSeason,
   scenePin,
 } from '~/lib/scene/scene'
-import { type Hint, weatherFor, weatherProblem } from '~/lib/scene/weather'
+import { type Hint, type Weather, weatherFor, weatherProblem } from '~/lib/scene/weather'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 
@@ -62,16 +62,24 @@ const HINTS: Record<Hint, () => string> = {
   glitter: m.scene_effect_glitter,
   frost: m.scene_effect_frost,
   mist: m.scene_effect_mist,
+  stars: m.scene_effect_stars,
+  aurora: m.scene_effect_aurora,
   none: m.scene_effect_none,
 }
 
-// "falling snow", "drifting seeds by day, fireflies at night", or "still air" for an image
-// without weather.
+// "falling snow", "drifting seeds by day, fireflies at night", "drifting mist and twinkling
+// stars" for an image with two effects, or "still air" for an image without weather.
+function themeWeather(weather: Weather) {
+  const name = HINTS[weather.hint]()
+  if (!weather.also) return name
+  return m.scene_effect_pair({ first: name, second: HINTS[weather.also.hint]() })
+}
+
 function weatherName(id: ImageId) {
-  const light = weatherFor(id, 'light').hint
-  const dark = weatherFor(id, 'dark').hint
-  if (light === dark) return HINTS[light]()
-  return m.scene_effect_day_night({ day: HINTS[light](), night: HINTS[dark]() })
+  const light = themeWeather(weatherFor(id, 'light'))
+  const dark = themeWeather(weatherFor(id, 'dark'))
+  if (light === dark) return light
+  return m.scene_effect_day_night({ day: light, night: dark })
 }
 
 function sentence(text: string) {

@@ -50,8 +50,10 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
   const [dark, setDark] = createSignal(false)
   const reducedMotion = createReducedMotion()
   const [visible, setVisible] = createSignal(true)
-  const [weatherOn, setWeatherOn] = createSignal(false)
-  let canvas!: HTMLCanvasElement
+  // How many of the weather's canvases are running (weatherCanvases): one, or two when an image's
+  // second effect draws at another resolution.
+  const [weatherOn, setWeatherOn] = createSignal(0)
+  const canvases: HTMLCanvasElement[] = []
   let layer!: HTMLDivElement
   function visibility() {
     setVisible(!document.hidden)
@@ -221,8 +223,11 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     // shows. Its WebGL context starts the first time it runs, so with the switch off there's
     // none. An image without weather in this theme leaves it off. An effect that fails to compile
     // stays off, and the Weather hint says why.
-    let renderer: WeatherRenderer | null | undefined = weatherSupported() ? undefined : null
-    setWeatherProblem(renderer === null ? 'webgl' : null)
+    // A renderer per canvas, made the first time a picture needs that canvas. `broken` is why
+    // no weather can run: no WebGL 2, or the renderer's module failed to load.
+    const renderers: WeatherRenderer[] = []
+    let broken: 'webgl' | 'failed' | null = weatherSupported() ? null : 'webgl'
+    setWeatherProblem(broken)
     const [weatherModule, setWeatherModule] =
       createSignal<typeof import('~/lib/scene/weather-renderer')>()
     let requested = false
@@ -231,46 +236,63 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     document.addEventListener('visibilitychange', visibility)
     onCleanup(() => {
       document.removeEventListener('visibilitychange', visibility)
-      renderer?.destroy()
+      for (const renderer of renderers) renderer.destroy()
     })
     createEffect(() => {
       const isDark = dark()
       const background = props.settings.sceneBackground
       const weather = weatherFor(weatherImage(), isDark ? 'dark' : 'light')
-      const { effect } = weather
-      let on =
-        effect !== null &&
+      const effects = [weather.effect, weather.also?.effect].filter((e) => !!e)
+      const on =
+        effects.length > 0 &&
         props.settings.sceneWeather &&
         !reducedMotion() &&
         visible() &&
-        !failed.has(effect)
+        !broken
       const module = weatherModule()
       // Nitro traces imports inside onMount unless the server branch removes them.
-      if (on && renderer === undefined && !requested && !import.meta.env.SSR) {
+      if (on && !module && !requested && !import.meta.env.SSR) {
         requested = true
         import('~/lib/scene/weather-renderer').then(setWeatherModule, (error) => {
           console.warn('Weather renderer unavailable:', error)
-          renderer = null
-          setWeatherProblem('failed')
+          broken = 'failed'
+          setWeatherProblem(broken)
         })
       }
-      if (on && renderer === undefined && module) {
-        renderer = module.createWeatherRenderer(canvas, () => PACES[props.pace])
-        if (!renderer) setWeatherProblem('webgl')
-      }
-      if (renderer && on && effect && module) {
-        const shown = { ...weather, effect }
-        try {
-          renderer.start(shown, module.weatherColors(shown, { dark: isDark, background }))
-        } catch (error) {
-          console.warn(`Weather effect ${effect} unavailable:`, error)
-          failed.add(effect)
-          on = false
+      let running = 0
+      if (on && module) {
+        for (const group of module.weatherCanvases(weather)) {
+          const layers = group
+            .filter((shown) => !failed.has(shown.effect))
+            .map((shown) => ({
+              weather: shown,
+              colors: module.weatherColors(shown, { dark: isDark, background }),
+            }))
+          if (!layers.length) continue
+          const made =
+            renderers[running] ??
+            module.createWeatherRenderer(canvases[running], () => PACES[props.pace])
+          if (!made) {
+            broken = 'webgl'
+            break
+          }
+          renderers[running] = made
+          try {
+            made.start(layers)
+            running++
+          } catch (error) {
+            console.warn(
+              `Weather effect ${layers.map((l) => l.weather.effect).join(', ')} unavailable:`,
+              error,
+            )
+            made.stop()
+            for (const layer of layers) failed.add(layer.weather.effect)
+          }
         }
       }
-      if (!on) renderer?.stop()
-      if (renderer !== null) setWeatherProblem(effect && failed.has(effect) ? 'failed' : null)
-      setWeatherOn(on && !!renderer)
+      for (const renderer of renderers.slice(running)) renderer.stop()
+      setWeatherProblem(broken ?? (effects.some((e) => failed.has(e)) ? 'failed' : null))
+      setWeatherOn(running)
     })
   })
 
@@ -302,7 +324,15 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
       </For>
       <div class="scene-tint" />
       <div class="scene-vignette" />
-      <canvas ref={canvas} class="scene-weather" data-on={weatherOn() ? '' : undefined} />
+      <For each={[0, 1]}>
+        {(i) => (
+          <canvas
+            ref={(el) => (canvases[i] = el)}
+            class="scene-weather"
+            data-on={weatherOn() > i ? '' : undefined}
+          />
+        )}
+      </For>
     </div>
   )
 }

@@ -57,15 +57,25 @@
   // - `zones`: up to four rectangles of the image, [left, top, right, bottom] as fractions of its
   //   width and height: where glitter lies, so it misses water (without them, the ground below the
   //   horizon), or where midges and fireflies keep. A fifth number scales glitter's opacity there.
-  // - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight.
+  // - `tempo`: a factor of the effect's own motion: glitter's shimmer, the midges' flight, the
+  //   fireflies' flight and glow, the stars' twinkle, the aurora's sway and drift.
   // - `shimmer`, `peaks`, `peakTime`, `peakSize`: glitter's faint shimmer, and how many full glints
   //   show at once, for how long, and how much larger.
   // - `colors`: in place of the effect's colors, with the same arguments.
+  // - `count`, `seed`, `sky`, `moon`, `spread`: the stars, how many and the seed that places them,
+  //   in the polygons of open sky ([x, y] points of the image) and out of the moon's circle ([x, y,
+  //   radius in image heights]), and how much brighter the bright ones are than the faint (0 all
+  //   the same). `peaks`, `peakTime`, and `peakSize` are their flashes, as glitter's glints.
+  // - `curtains`: the aurora's, each `{ base, height, gain, lean }`: its lower edge through the
+  //   `base` points, its height in image heights, its brightness, and how far its rays lean left
+  //   per unit up.
   // Each image's horizon (HORIZONS) comes in too: glitter grows toward the viewer below it and shear
   // starts there. `effect: null` is no weather. `fps` is the preset's frame-rate target, by default
   // its effect's (task 063).
-  // An image's entry names its preset and the fields it changes. weatherFor() merges them in that
-  // order: the preset, then the image's horizon and fields, then weather.html's slider overrides.
+  // An image's entry names its preset and the fields it changes, and optionally a second entry
+  // drawn over it (`also`, the third argument of wx()). weatherFor() merges them in that order: the
+  // preset, then the image's horizon and fields, then weather.html's slider overrides, which tune
+  // the first effect only.
   const PRESETS = {
     snow: { effect: 'snow', hint: 'falling snow' },
     flurries: { effect: 'snow', hint: 'a few snowflakes', amount: 0.22, size: 1.45, fall: 0.75 },
@@ -103,10 +113,13 @@
     frost: { effect: 'glitter', hint: 'glittering frost', opacity: 0.85 },
     'frost-day': { effect: 'glitter', hint: 'glittering frost', size: 1.4, shimmer: 0.4, peakSize: 2.6 },
     mist: { effect: 'mist', hint: 'drifting mist' },
+    // The defaults Kait tuned in stars.html (task 076).
+    stars: { effect: 'stars', hint: 'twinkling stars', opacity: 0.75, peaks: 0.4, peakTime: 1.2, peakSize: 1.6 },
+    aurora: { effect: 'aurora', hint: 'northern lights', opacity: 0.95 },
     none: { effect: null, hint: 'still air' },
   }
-  function wx(preset, tuning = {}) {
-    return { preset, ...tuning }
+  function wx(preset, tuning = {}, also) {
+    return also ? { preset, ...tuning, also } : { preset, ...tuning }
   }
   // Each Baltic image's horizon, as a fraction of its height: where the sea, the ice, or the ground
   // meets the sky or the tree line. A recomposed image (task 065) updates these and the bands.
@@ -207,20 +220,51 @@
       light: wx('blowing', { amount: 0.55, size: 1.2, opacity: 1.3, fall: 2.35, wind: 0.2, gust: 1, shear: 5 }),
       dark: wx('blowing', { amount: 0.2, size: 1.15, opacity: 0.85, fall: 3, wind: -0.24 }),
     },
-    // The wind comes off the sea, on the right, even on a calm day.
-    'coast-march': { light: wx('flurries', { wind: -0.15, gust: 0.5, shear: 1, amount: 0.6, size: 1.4, fall: 1.3, colors: WET_SNOW }), dark: wx('flurries', { wind: -0.15, gust: 0.5, shear: 1, amount: 0.25, size: 1.2, fall: 1.3 }) },
-    'coast-april': { light: wx('motes-fine', { wind: -0.02, size: 0.9, opacity: 0.95, colors: COAST_SPECKS }), dark: wx('mist', { wind: -0.01, band: [0.48, 0.72], zones: [[0, 0.48, 0.68, 0.72]], opacity: 0.8 }) },
-    'coast-may': { light: wx('seeds-fine', { wind: 0.03, amount: 0.6, colors: COAST_SPECKS }), dark: wx('seeds-fine', { wind: 0.03, amount: 0.45, opacity: 0.55 }) },
+    // The wind comes off the sea, on the right, even on a calm day. By night, a clear sky under a
+    // bright moon: stars in place of the flurries.
+    'coast-march': {
+      light: wx('flurries', { wind: -0.15, gust: 0.5, shear: 1, amount: 0.6, size: 1.4, fall: 1.3, colors: WET_SNOW }),
+      dark: wx('stars', { count: 24, seed: 89, opacity: 0.6, sky: [[[0.02, 0.02], [0.98, 0.02], [0.98, 0.45], [0.9, 0.35], [0.75, 0.28], [0.62, 0.35], [0.6, 0.45], [0.02, 0.45]]], moon: [0.36, 0.29, 0.07] }),
+    },
+    // Sea fog below the moon, clear of the cliff, and stars away from the moon.
+    'coast-april': {
+      light: wx('motes-fine', { wind: -0.02, size: 0.9, opacity: 0.95, colors: COAST_SPECKS }),
+      dark: wx('mist', { wind: -0.01, band: [0.48, 0.72], zones: [[0, 0.48, 0.68, 0.72]], opacity: 0.8 }, wx('stars', { count: 16, seed: 89, opacity: 0.5, sky: [[[0.02, 0.02], [0.64, 0.02], [0.66, 0.4], [0.02, 0.4]]], moon: [0.18, 0.36, 0.07] })),
+    },
+    // A bright early-summer night: stars in place of the seeds.
+    'coast-may': {
+      light: wx('seeds-fine', { wind: 0.03, amount: 0.6, colors: COAST_SPECKS }),
+      dark: wx('stars', { count: 42, seed: 96, opacity: 0.5, spread: 0.8, sky: [[[0.22, 0.02], [0.98, 0.02], [0.98, 0.42], [0.22, 0.42]]] }),
+    },
     'coast-june': { light: wx('seeds-fine', { wind: -0.08, gust: 0.4, colors: COAST_SPECKS }), dark: wx('seeds-fine', { wind: -0.08, gust: 0.4, amount: 0.75, opacity: 0.75 }) },
-    'coast-july': { light: wx('seeds-fine', { wind: 0.03, colors: COAST_SPECKS }), dark: wx('fireflies', { amount: 0.3 }) },
-    'coast-august': { light: wx('motes', { wind: 0.008, colors: COAST_SPECKS }), dark: wx('mist', { wind: 0.01, gather: 0.5, zones: [[0.34, 0.42, 1, 0.6, 0.8], [0.64, 0.41, 1, 0.47, 3]], amount: 2, size: 1.3, opacity: 1.2 }) },
+    // Fewer, slower fireflies under a moonless sky, so the two don't look busy together.
+    'coast-july': {
+      light: wx('seeds-fine', { wind: 0.03, colors: COAST_SPECKS }),
+      dark: wx('fireflies', { amount: 0.18, tempo: 0.55 }, wx('stars', { sky: [[[0.02, 0.02], [0.98, 0.02], [0.98, 0.35], [0.85, 0.3], [0.8, 0.18], [0.65, 0.17], [0.6, 0.45], [0.02, 0.48]]] })),
+    },
+    // Stars above the clouds, out of the small moon's glow.
+    'coast-august': {
+      light: wx('motes', { wind: 0.008, colors: COAST_SPECKS }),
+      dark: wx(
+        'mist',
+        { wind: 0.01, gather: 0.5, zones: [[0.34, 0.42, 1, 0.6, 0.8], [0.64, 0.41, 1, 0.47, 3]], amount: 2, size: 1.3, opacity: 1.2 },
+        wx('stars', { count: 42, seed: 90, opacity: 0.4, sky: [[[0.15, 0.02], [0.98, 0.02], [0.98, 0.3], [0.5, 0.3], [0.5, 0.2], [0.15, 0.2]]], moon: [0.69, 0.345, 0.06] }),
+      ),
+    },
     'coast-september': {
       light: wx('seeds-fine', { wind: 0.16, gust: 0.5, fall: 0.5, size: 0.3, amount: 0.7, colors: COAST_SPECKS }),
       // Thick fog over the bay and the reed meadow, drifting the way the grass leans.
       dark: wx('mist', { wind: 0.012, zones: ZONES['coast-september'], amount: 1.6, size: 1.3, opacity: 1.1 }),
     },
-    // The waves break from the right.
-    'coast-october': { light: wx('squall', { wind: -0.6, amount: 1 }), dark: wx('squall', { wind: -0.6, amount: 1 }) },
+    // The waves break from the right. By night, a few stars in the gaps between the clouds.
+    'coast-october': {
+      light: wx('squall', { wind: -0.6, amount: 1 }),
+      dark: wx(
+        'squall',
+        { wind: -0.6, amount: 1 },
+        wx('stars', { count: 10, seed: 85, opacity: 0.45, sky: [[[0.03, 0.02], [0.4, 0.02], [0.35, 0.1], [0.15, 0.2], [0.03, 0.2]], [[0.45, 0.01], [0.97, 0.01], [0.97, 0.06], [0.45, 0.06]]], moon: [0.6, 0.43, 0.08] }),
+      ),
+    },
     'coast-november': { light: wx('spray', { wind: -0.5, band: [0.3, 1.05] }), dark: wx('mist', { wind: -0.03, band: [0.32, 0.58] }) },
     // A few flakes blowing in off the sea, on the right.
     'coast-december': { light: wx('blowing', { wind: -0.2, amount: 0.12, size: 1.1, fall: 2.5, shear: 2, colors: WET_SNOW }), dark: wx('blowing', { wind: -0.2, amount: 0.06, size: 1.1, opacity: 0.7, fall: 2.5, shear: 2 }) },
@@ -232,16 +276,24 @@
       dark: wx('glitter', { zones: ZONES['land-february'], size: 1.35, opacity: 0.85, shimmer: 0.72, tempo: 1.15, peaks: 5.1, peakTime: 2.8 }),
     },
     'land-march': { light: wx('flurries', { wind: 0.06, gust: 0.4, shear: 0.5, amount: 0.5, size: 1.3, fall: 1.3, colors: WET_SNOW }), dark: wx('mist', { wind: 0.008, band: [0.3, 0.68], amount: 1.3, opacity: 1.3 }) },
-    // Clear skies, as on the coast.
-    'land-april': { light: wx('motes-fine', { wind: 0.01, size: 0.9, opacity: 0.95 }), dark: wx('mist', { wind: 0.006, zones: [[0, 0.67, 0.42, 0.79, 1.1], [0.35, 0.64, 0.78, 0.76, 0.6]], amount: 1.1, opacity: 0.75 }) },
-    'land-may': { light: wx('seeds', { wind: 0.015, share: 0.5, amount: 2.5, size: 0.5 }), dark: wx('mist', { wind: 0.008, band: [0.66, 0.86] }) },
+    // Clear skies, as on the coast. By night, a few stars in the moonless sky right of the trees.
+    'land-april': {
+      light: wx('motes-fine', { wind: 0.01, size: 0.9, opacity: 0.95 }),
+      dark: wx('mist', { wind: 0.006, zones: [[0, 0.67, 0.42, 0.79, 1.1], [0.35, 0.64, 0.78, 0.76, 0.6]], amount: 1.1, opacity: 0.75 }, wx('stars', { count: 5, seed: 96, sky: [[[0.54, 0.02], [0.99, 0.02], [0.99, 0.46], [0.54, 0.5]]] })),
+    },
+    // A bright early-summer night, so only a few stars.
+    'land-may': {
+      light: wx('seeds', { wind: 0.015, share: 0.5, amount: 2.5, size: 0.5 }),
+      dark: wx('mist', { wind: 0.008, band: [0.66, 0.86] }, wx('stars', { count: 11, seed: 72, sky: [[[0.12, 0.02], [0.66, 0.02], [0.58, 0.3], [0.55, 0.55], [0.22, 0.55], [0.12, 0.3]]] })),
+    },
     'land-june': {
       light: wx('seeds', { wind: 0.015, amount: 2.5, size: 0.6, opacity: 0.9, gust: 0 }),
       dark: wx('fireflies', { amount: 2.2, size: 0.5, opacity: 0.75 }),
     },
     'land-july': {
       light: wx('midges', { wind: 0.005, zones: ZONES['land-july-day'], amount: 1.95, tempo: 1.15 }),
-      dark: wx('midges-night', { wind: 0.005, zones: ZONES['land-july'] }),
+      // Stars out of the bright moon's glow, low on the right.
+      dark: wx('midges-night', { wind: 0.005, zones: ZONES['land-july'] }, wx('stars', { count: 50, seed: 75, sky: [[[0.23, 0.02], [0.98, 0.02], [0.98, 0.56], [0.29, 0.56], [0.25, 0.2]]], moon: [0.855, 0.48, 0.07] })),
     },
     'land-august': { light: wx('dust', { wind: 0.03 }), dark: wx('mist', { wind: 0.01, band: [0.32, 0.56] }) },
     'land-september': {
@@ -249,12 +301,38 @@
       dark: wx('mist', { wind: 0.008, band: [0.57, 0.9], amount: 1.4, size: 1.2 }),
     },
     // Smaller and fainter, so they sit in the tinted picture rather than in front of it.
-    'land-october': { light: wx('leaves', { wind: 0.04, amount: 1.3, size: 0.7, opacity: 0.65 }), dark: wx('leaves', { wind: 0.04, size: 0.7, opacity: 0.6, colors: () => [[0.42, 0.3, 0.18], [0.5, 0.44, 0.26]] }) },
+    // By night, a few stars between the crescent moon and the small clouds.
+    'land-october': {
+      light: wx('leaves', { wind: 0.04, amount: 1.3, size: 0.7, opacity: 0.65 }),
+      dark: wx(
+        'leaves',
+        { wind: 0.04, size: 0.7, opacity: 0.6, colors: () => [[0.42, 0.3, 0.18], [0.5, 0.44, 0.26]] },
+        wx('stars', { count: 10, seed: 7, sky: [[[0.02, 0.02], [0.56, 0.02], [0.53, 0.58], [0.25, 0.58], [0.25, 0.44], [0.02, 0.42]]], moon: [0.245, 0.375, 0.05] }),
+      ),
+    },
     'land-november': {
       light: wx('frost-day', { zones: ZONES['land-november'], amount: 2.9, size: 2.4, opacity: 1.05, shimmer: 1, peaks: 2.9, peakTime: 2.6, peakSize: 3.1 }),
-      dark: wx('frost', { zones: ZONES['land-november'], amount: 1.8, size: 2.2, opacity: 0.55, tempo: 0.45, peaks: 0.5, peakTime: 3.6 }),
+      // A moonless sky: stars in place of the frost, which barely caught light.
+      dark: wx('stars', { count: 52, seed: 88, opacity: 0.6, sky: [[[0.17, 0.02], [0.86, 0.02], [0.84, 0.3], [0.81, 0.46], [0.17, 0.46]]] }),
     },
-    'land-december': { light: wx('snow', { amount: 0.3, fall: 0.8 }), dark: wx('snow', { amount: 0.2, fall: 0.8, opacity: 0.4 }) },
+    'land-december': {
+      light: wx('snow', { amount: 0.3, fall: 0.8 }),
+      // A clear, moonless night: the aurora and stars in place of the snow, low on the left: a thin
+      // band just over the treeline, a curtain above it whose edge bends down into a bright hook, a
+      // faint arc over the hook, and a faint glow on the left.
+      dark: wx(
+        'aurora',
+        {
+          curtains: [
+            { base: [[-0.036, 0.704], [0.096, 0.702], [0.204, 0.7], [0.276, 0.698], [0.324, 0.697]], height: 0.035, gain: 0.7 },
+            { base: [[-0.036, 0.673], [0.096, 0.669], [0.192, 0.667], [0.258, 0.669], [0.3, 0.677], [0.326, 0.69], [0.341, 0.699]], height: 0.075, gain: 1, lean: 0.3 },
+            { base: [[0.156, 0.588], [0.216, 0.6], [0.264, 0.614], [0.3, 0.63], [0.319, 0.642]], height: 0.035, gain: 0.28, lean: 0.3 },
+            { base: [[-0.036, 0.648], [0.06, 0.642], [0.156, 0.638], [0.216, 0.64]], height: 0.05, gain: 0.3 },
+          ],
+        },
+        wx('stars', { seed: 90, opacity: 0.5, sky: [[[0.02, 0.02], [0.7, 0.02], [0.68, 0.15], [0.62, 0.4], [0.57, 0.55], [0.02, 0.55]]] }),
+      ),
+    },
   }
   // The weather before task 066, for comparison on weather.html: one of the five effects per image,
   // blowing as it did on the mountains.
@@ -306,11 +384,19 @@
       weather: { light: weatherFor(id, 'light'), dark: weatherFor(id, 'dark') },
     }
   }
-  // An image's weather in a theme, resolved: its preset, then the image's fields, then `overrides`.
+  // An image's weather in a theme, resolved: its preset, then the image's fields, then `overrides`,
+  // and its second effect (`also`), which takes the image's horizon but not the overrides.
   // `legacy` reads the weather from before task 066.
   function weatherFor(id, theme, { legacy = false, overrides = null } = {}) {
-    const entry = (legacy ? LEGACY_WEATHER : IMAGE_WEATHER)[id]?.[theme] ?? IMAGE_WEATHER.winter.light
-    return { ...PRESETS[entry.preset], horizon: HORIZONS[id], ...entry, ...overrides }
+    const { also, ...entry } = (legacy ? LEGACY_WEATHER : IMAGE_WEATHER)[id]?.[theme] ?? IMAGE_WEATHER.winter.light
+    const weather = { ...PRESETS[entry.preset], horizon: HORIZONS[id], ...entry, ...overrides }
+    if (!also) return weather
+    const { also: _, ...second } = also
+    return { ...weather, also: { ...PRESETS[second.preset], horizon: HORIZONS[id], ...second } }
+  }
+  // A resolved weather's hint: "drifting mist", or "drifting mist and twinkling stars" for a pair.
+  function hintFor(weather) {
+    return weather.also ? `${weather.hint} and ${weather.also.hint}` : weather.hint
   }
   // The stored choice. Without a collection, the old `sceneSeason` reads as a pinned mountain image.
   function collectionSetting(s) {
@@ -337,8 +423,9 @@
   // season's.
   function weatherHint(id, background = true) {
     const { light, dark } = image(background ? id : image(id).season).weather
+    const [day, night] = [hintFor(light), hintFor(dark)]
     const cap = (t) => t[0].toUpperCase() + t.slice(1)
-    return light.hint === dark.hint ? `${cap(light.hint)}.` : `${cap(light.hint)} by day, ${dark.hint} at night.`
+    return day === night ? `${cap(day)}.` : `${cap(day)} by day, ${night} at night.`
   }
 
   // A 400 px version for pickers.
@@ -395,12 +482,32 @@
     .scene-vignette { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, transparent 0 35%, rgb(0 0 0 / .14) 75%, rgb(0 0 0 / .32) 100%); transition: opacity .8s ease; }
     :root:not(.dark) .scene-vignette { background: radial-gradient(circle at 50% 50%, transparent 0 35%, rgb(216 227 239 / .28) 100%); }
     .scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .5s ease; }
-    .scene[data-weather='on'] canvas { opacity: 1; }
+    .scene canvas[data-on] { opacity: 1; }
     @media (prefers-reduced-motion: reduce) { .scene, .scene * { transition: none !important; } }
   `
   document.head.append(style)
 
   // --- Weather: points in one draw call, positions computed in the vertex shader ----------------
+  // The photos' aspect ratio and `background-position` y (.scene-photo), to map a band from image
+  // rows to the screen the way `cover` crops the photo.
+  const PHOTO_ASPECT = 1920 / 1084
+  const PHOTO_Y = 0.5
+  const FULL_BAND = [1.2, -1.2]
+  // Quads per stretch of an aurora curtain between two of its points.
+  const AURORA_STEPS = 24
+  // Smooth value noise along a line, for the aurora's rays and patches.
+  const VNOISE = `
+  float vhash(float cell){ return float(lowbias32(uint(int(cell) + 65536))) / 4294967295.0; }
+  float vnoise(float x){
+    float i = floor(x), f = fract(x);
+    f = f*f*(3.0 - 2.0*f);
+    return mix(vhash(i), vhash(i + 1.0), f);
+  }
+  `
+  // lowbias32 (Chris Wellons), an integer hash, for the stars and the aurora, as in the app.
+  const HASH = `
+  highp uint lowbias32(highp uint x){ x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16; return x; }
+  `
   // Every effect draws `count` points (or, with `quads`, two triangles each) with no buffers: each
   // item's randomness comes from gl_VertexID. Colors come from `colors({ dark, background })` as two
   // RGB triples; the image's tuning (see "Weather by image") comes in as uniforms.
@@ -464,7 +571,8 @@
   // Each effect's `density` is its item count per 1440 x 900 screen, within `min` and `max`, and
   // `fps` its presets' frame-rate target unless a preset sets its own: 60 for what moves far per
   // frame, 15 for the mist, which barely moves, else 30, since every frame also redraws the glass
-  // surfaces' blur (task 063).
+  // surfaces' blur (task 063). The stars and the aurora place their items on the image instead
+  // (`layout`).
   const EFFECTS = {
     // Snow, from the mock-up. A is the near flakes' color, B the far ones'.
     snow: {
@@ -568,11 +676,11 @@
         float z = mix(.4, 1.0, r3);
         // Mostly low, over the meadow, a few up to the tree line.
         vec2 p = vec2(r1*2.0-1.0, mix(-.95, .3, pow(r2, 1.3)));
-        float t = u_time * mix(.12, .22, r4);
+        float t = u_time * u_tempo * mix(.12, .22, r4);
         p += vec2(sin(t*2.1 + r4*6.28) + .5*sin(t*4.7 + r1*6.28), cos(t*1.7 + r5*6.28) + .5*sin(t*3.9 + r2*6.28)) * vec2(.06, .05);
         gl_Position = vec4(p, 0.0, 1.0);
         // A quick glow, a slower fade, then dark for the rest of the cycle.
-        float ph = fract(u_time / mix(3.0, 6.0, r5) + r1);
+        float ph = fract(u_time * u_tempo / mix(3.0, 6.0, r5) + r1);
         float glow = smoothstep(0.0, .12, ph) * (1.0 - smoothstep(.18, .6, ph));
         v_alpha = glow * mix(.6, 1.0, z) * u_opacity;
         gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * mix(9.0, 18.0, z) * u_size;
@@ -872,14 +980,136 @@
       colors: ({ dark, background }) =>
         dark ? [[0.66, 0.74, 0.84], [0.5, 0.58, 0.7]] : background ? [[1.0, 1.0, 1.0], [0.92, 0.95, 0.98]] : [[0.7, 0.78, 0.86], [0.8, 0.86, 0.92]],
     },
+    // Night sky: stars at fixed points of the image's open sky (`sky`, out of the `moon`'s circle),
+    // each scintillating a little all the time and now and then flashing brighter, about `peaks` at
+    // once for `peakTime` seconds, `peakSize` times as large. `count` and `seed` pick them
+    // (placeStars), and the pace doesn't thin them (`layout`); `spread` sets bright against faint,
+    // `tempo` the twinkle's speed. A is a cool star's color, B a warm one's.
+    stars: {
+      fps: 30,
+      layout: starLayout,
+      vs: `${HEAD}${HASH}
+      uniform vec4 u_cover, u_stars[32];
+      uniform float u_spread, u_cycle, u_peakTime, u_peakSize;
+      uniform vec3 u_colorA, u_colorB;
+      flat out vec4 v_color;
+      float rnd(uint item, uint k){ return float(lowbias32(lowbias32(item) + k) >> 8) / 16777216.0; }
+      void main() {
+        uint item = uint(gl_VertexID);
+        vec4 two = u_stars[gl_VertexID / 2];
+        vec2 at = gl_VertexID % 2 == 0 ? two.xy : two.zw;
+        gl_Position = vec4(u_cover.zw + at * u_cover.xy, 0.0, 1.0);
+        float r1 = rnd(item, 1u), r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u);
+        // A few bright stars and more faint ones.
+        float base = mix(1.0, mix(.25, 1.0, r1*r1), u_spread);
+        // Scintillation: three detuned waves per star, so it never repeats visibly.
+        float t = u_time * u_tempo * .3;
+        float n = sin(t * mix(5.0, 9.0, r2) + r3 * 40.0) * .5
+                + sin(t * mix(11.0, 17.0, r3) + r4 * 40.0) * .3
+                + sin(t * mix(2.0, 3.5, r4) + r1 * 40.0) * .4;
+        float scint = clamp(1.0 + .32 * n, 0.0, 2.0);
+        // A quick rise and a slower fade, once a cycle at the star's own time.
+        float x = mod(u_time + r4 * u_cycle * 7.13, u_cycle) / u_peakTime;
+        float flash = x < 1.0 ? min(smoothstep(0.0, .15, x) * (1.0-x)*(1.0-x) / .72, 1.0) : 0.0;
+        float alpha = base * scint * mix(1.0, 2.2, flash) * u_opacity;
+        // Bluish white to warm white, with a slight color flicker as the atmosphere bends it.
+        float warm = clamp(r2 * .4 + .075 * sin(t * mix(7.0, 12.0, r1) + r2 * 30.0), 0.0, 1.0);
+        v_color = vec4(mix(u_colorA, u_colorB, warm), alpha);
+        // The core, and the halo reaching 3.4 times as far.
+        float core = .9 * u_size * u_dpr * mix(.7, 1.3, base) * mix(1.0, u_peakSize, flash);
+        gl_PointSize = alpha < .005 ? 0.0 : 6.8 * core;
+      }`,
+      fs: `${FS_HEAD}
+      flat in vec4 v_color;
+      void main() {
+        // 0 at the center, 1 at the point's edge; the core's radius is 0.18 of that.
+        float d = length(gl_PointCoord - .5) * 2.0;
+        float core = exp(-d*d * 32.1);
+        float a = min(1.0, (core + .07 * exp(-d * 2.27)) * v_color.a) * (1.0 - smoothstep(.85, 1.0, d));
+        // White in the middle, the star's color around it.
+        outColor = vec4(mix(v_color.rgb, vec3(1.0), core * .6) * a, a);
+      }`,
+      colors: () => [[0.82, 0.9, 1.0], [1.0, 0.9, 0.76]],
+    },
+    // An aurora's curtains (`curtains`), each standing on its lower edge, a Catmull-Rom curve
+    // through its points, drawn as quads along it. Its rays are value noise along the curtain that
+    // drifts sideways, upright but ending at their own heights; the edge sways slowly, brightness
+    // pulses travel along it, and dim patches drift along it. Where a curtain bends toward the
+    // viewer, its rays line up behind each other and it glows brighter.
+    // The treeline (0.72 of the image's height, land December's) hides it. A is the green, B the
+    // violet of its top.
+    aurora: {
+      fps: 30,
+      quads: true,
+      layout: auroraLayout,
+      vs: `${HEAD}${HASH}${VNOISE}
+      // Per control point: x, y, and the distance along its curtain in image widths. Per curtain:
+      // its first and last control points, height, and gain; then its lean, seed, length, and
+      // first quad.
+      uniform vec4 u_cover, u_base[24], u_curtain[4], u_curtainB[4];
+      out float v_u, v_v, v_y, v_gain, v_pulse, v_x, v_ray1, v_ray2, v_top;
+      const vec2 CORNERS[6] = vec2[6](vec2(0, 0), vec2(1, 0), vec2(1, 1), vec2(0, 0), vec2(1, 1), vec2(0, 1));
+      void main() {
+        int quad = gl_VertexID / 6;
+        vec2 corner = CORNERS[gl_VertexID % 6];
+        float q = float(quad);
+        int c = int(step(u_curtainB[1].w, q) + step(u_curtainB[2].w, q) + step(u_curtainB[3].w, q));
+        vec4 cur = u_curtain[c], curB = u_curtainB[c];
+        int local = quad - int(curB.w), first = int(cur.x), last = int(cur.y);
+        int k = first + local / ${AURORA_STEPS};
+        float t = (float(local % ${AURORA_STEPS}) + corner.x) / ${AURORA_STEPS}.0;
+        vec4 b1 = u_base[k], b2 = u_base[min(k + 1, last)];
+        vec2 p0 = u_base[max(k - 1, first)].xy, p1 = b1.xy, p2 = b2.xy, p3 = u_base[min(k + 2, last)].xy;
+        vec2 a = 2.0*p0 - 5.0*p1 + 4.0*p2 - p3, b = 3.0*p1 - p0 - 3.0*p2 + p3;
+        vec2 p = .5 * (2.0*p1 + (p2 - p0)*t + a*t*t + b*t*t*t);
+        vec2 dp = .5 * ((p2 - p0) + 2.0*a*t + 3.0*b*t*t);
+        float steep = abs(dp.y) / max(length(vec2(dp.x * ${PHOTO_ASPECT.toFixed(4)}, dp.y)), 1e-6);
+        float s = mix(b1.z, b2.z, t), v = corner.y, seed = curB.y;
+        float time = u_time * u_tempo, sway = time * .4, x0 = p.x;
+        p.y += sin(s*9.0 + sway*.7 + seed) * .006 + sin(s*23.0 - sway*1.1 + seed*2.0) * .0025;
+        p.x += sin(s*5.0 - sway*.5 + seed) * .004;
+        // Taller and shorter along the curtain, slowly changing.
+        float h = cur.z * 1.4 * (.75 + .25 * sin(s*7.0 + sway*.4 + seed*3.0));
+        p -= v * h * vec2(curB.x / ${PHOTO_ASPECT.toFixed(4)}, 1.0);
+        // Rays in perspective: each tilts very slightly toward one point far above x 0.15, the
+        // middle of land December's curtains.
+        p.x += v * h * (.15 - x0) * .3;
+        gl_Position = vec4(u_cover.zw + p * u_cover.xy, 0.0, 1.0);
+        v_x = s * 150.0;
+        v_ray1 = time * .24 + seed * 13.0;
+        v_ray2 = seed * 7.0 - time * .4;
+        v_top = time * .24 + seed * 11.0;
+        v_pulse = mod(seed * 5.0 - time * .5, 6.2832);
+        v_u = s / curB.z;
+        v_v = v;
+        v_y = p.y;
+        // Stretches of the curtain dim as patches drift along it, slowly enough to work out per
+        // corner.
+        float patches = vnoise(s * 20.0 + seed * 17.0 + time * .05) * .7 + vnoise(s * 51.67 + seed * 3.0 - time * .08) * .3;
+        v_gain = cur.w * (1.0 + 2.5 * steep) * u_opacity * (.235 + .765 * smoothstep(.25, .75, patches));
+      }`,
+      fs: `${FS_HEAD}${HASH}${VNOISE}
+      in float v_u, v_v, v_y, v_gain, v_pulse, v_x, v_ray1, v_ray2, v_top;
+      void main() {
+        float rays = vnoise(v_x + v_ray1) * .6 + vnoise(v_x * 2.7 + v_ray2) * .4;
+        rays = mix(1.0, pow(rays, 1.6) * 1.9, .6);
+        // Each ray ends at its own height.
+        float top = mix(.4, 1.05, vnoise(v_x * .9 + v_top));
+        float ragged = mix(1.0, smoothstep(top, top - .3, v_v), .5);
+        // Brightest just above the lower edge, fading upward, and out at the curtain's ends.
+        float profile = smoothstep(0.0, .22, v_v) * exp(-2.6 * v_v) * (1.0 - v_v);
+        float ends = smoothstep(0.0, .15, v_u) * smoothstep(1.0, .8, v_u);
+        float pulse = 1.0 - .45 * (.5 + .5 * sin(v_u * 9.0 + v_pulse));
+        float trees = smoothstep(.73, .72, v_y);
+        float a = clamp(profile * ragged * ends * rays * pulse * v_gain * trees * .5, 0.0, 1.0);
+        vec3 col = mix(u_colorA, u_colorB, smoothstep(.35, 1.0, v_v) * .2);
+        outColor = vec4(col * a, a);
+      }`,
+      colors: () => [[0.36, 1.0, 0.62], [0.72, 0.42, 1.0]],
+    },
   }
   // Uniform defaults for a preset's missing fields.
-  const TUNING = { wind: 0, gust: 0, shear: 0, amount: 1, size: 1, fall: 1, opacity: 1, share: 0.3, glow: 0, tempo: 1, gather: 0, shimmer: 0.3, peaks: 1.2, peakTime: 1.5, peakSize: 2 }
-  // The photos' aspect ratio and `background-position` y (.scene-photo), to map a band from image
-  // rows to the screen the way `cover` crops the photo.
-  const PHOTO_ASPECT = 1920 / 1084
-  const PHOTO_Y = 0.5
-  const FULL_BAND = [1.2, -1.2]
+  const TUNING = { wind: 0, gust: 0, shear: 0, amount: 1, size: 1, fall: 1, opacity: 1, share: 0.3, glow: 0, tempo: 1, gather: 0, shimmer: 0.3, peaks: 1.2, peakTime: 1.5, peakSize: 2, count: 60, seed: 91, spread: 0.6 }
   // A rectangle of the image, [left, top, right, bottom] as fractions of its width and height, in
   // clip space. `cover` centers the photo across.
   function zoneClip([left, top, right, bottom], w, h) {
@@ -894,6 +1124,14 @@
     const top = (h - shown) * PHOTO_Y
     return band.map((f) => 1 - (2 * (top + f * shown)) / h)
   }
+  // Where `cover` puts the image in clip space: x = z + f.x * x, y = w + f.y * y for a point f of
+  // the image, as zoneClip maps it.
+  function coverClip(w, h) {
+    const shownW = Math.max(w, h * PHOTO_ASPECT)
+    const shownH = Math.max(h, w / PHOTO_ASPECT)
+    const top = (h - shownH) * PHOTO_Y
+    return [(2 * shownW) / w, (-2 * shownH) / h, (w - shownW) / w - 1, 1 - (2 * top) / h]
+  }
 
   // How often each glitter speck glints, in seconds, so that about `peaks` glints show at once on a
   // 1440 x 900 screen, proportionally more on a larger one. It leaves out the screen's size, so a
@@ -901,8 +1139,114 @@
   function glitterCycle(t) {
     return (EFFECTS.glitter.density * t.amount * t.peakTime) / Math.max(t.peaks, 0.01)
   }
+  // How often each star flashes, in seconds, so that about `peaks` flash at once.
+  function starCycle(t, count) {
+    return Math.max(t.peakTime, (count * t.peakTime) / Math.max(t.peaks, 0.01))
+  }
 
-  // One WebGL context for all effects; each effect's program compiles the first time it runs.
+  // stars.html's generator, so a seed places the stars where Kait picked them.
+  function rng(seed) {
+    let s = seed * 2654435761
+    return () => {
+      s = (s + 0x6d2b79f5) | 0
+      let t = Math.imul(s ^ (s >>> 15), 1 | s)
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+  }
+  function inPolygon(polygon, [x, y]) {
+    let inside = false
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const [xi, yi] = polygon[i]
+      const [xj, yj] = polygon[j]
+      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside
+    }
+    return inside
+  }
+  // Up to `count` stars in the sky's polygons, out of the moon's circle, kept apart so they don't
+  // clump, as stars.html places them.
+  function placeStars({ sky = [], moon, count, seed }) {
+    const random = rng(seed)
+    const stars = []
+    const top = Math.max(0, ...sky.flat().map((p) => p[1]))
+    const gap = 0.35 / Math.sqrt(count)
+    for (let tries = 0; stars.length < count && tries < 5000; tries++) {
+      const p = [random(), random() * top]
+      if (moon && Math.hypot((p[0] - moon[0]) * PHOTO_ASPECT, p[1] - moon[1]) < moon[2]) continue
+      if (!sky.some((polygon) => inPolygon(polygon, p))) continue
+      const near = gap * (tries < 3000 ? 1 : 0.4)
+      if (stars.some((s) => Math.hypot((s[0] - p[0]) * 1.77, s[1] - p[1]) < near)) continue
+      stars.push(p)
+      // stars.html draws four more numbers per star; the shader hashes its own instead.
+      for (let k = 0; k < 4; k++) random()
+    }
+    return stars
+  }
+  const MAX_STARS = 64
+  // An effect's `layout` gives its item count, which the pace doesn't thin, and vec4 uniform arrays
+  // worked out on a start or a resize.
+  function starLayout(t, w, h) {
+    const packed = placeStars({ ...t, count: Math.min(t.count, MAX_STARS) }).flat()
+    return { count: packed.length / 2, uniforms: { u_cover: coverClip(w, h), u_stars: [...packed, ...Array(MAX_STARS * 2 - packed.length).fill(0)] } }
+  }
+  // A curtain's points along its Catmull-Rom curve, `steps` per stretch, the ends repeated.
+  function catmullRom(points, steps) {
+    const p = [points[0], ...points, points.at(-1)]
+    const out = []
+    for (let i = 1; i < p.length - 2; i++) {
+      for (let j = 0; j < steps; j++) {
+        const t = j / steps
+        out.push([0, 1].map((k) => 0.5 * (2 * p[i][k] + (p[i + 1][k] - p[i - 1][k]) * t + (2 * p[i - 1][k] - 5 * p[i][k] + 4 * p[i + 1][k] - p[i + 2][k]) * t * t + (3 * p[i][k] - p[i - 1][k] - 3 * p[i + 1][k] + p[i + 2][k]) * t * t * t)))
+      }
+    }
+    out.push(points.at(-1))
+    return out
+  }
+  const MAX_CURTAIN_POINTS = 24
+  function auroraLayout(t, w, h) {
+    const base = []
+    const curtain = []
+    const curtainB = []
+    let quads = 0
+    for (const [c, { base: points, height, gain, lean = 0 }] of (t.curtains ?? []).slice(0, 4).entries()) {
+      const first = base.length / 4
+      if (first + points.length > MAX_CURTAIN_POINTS) break
+      // The distance along the curve to each point, in image widths.
+      const curve = catmullRom(points, AURORA_STEPS)
+      let length = 0
+      for (const [i, [x, y]] of points.entries()) {
+        for (let j = (i - 1) * AURORA_STEPS + 1; i && j <= i * AURORA_STEPS; j++) length += Math.hypot(curve[j][0] - curve[j - 1][0], (curve[j][1] - curve[j - 1][1]) / PHOTO_ASPECT)
+        base.push(x, y, length, 0)
+      }
+      curtain.push(first, first + points.length - 1, height, gain)
+      curtainB.push(lean, c * 1.7 + 0.3, length, quads)
+      quads += (points.length - 1) * AURORA_STEPS
+    }
+    while (curtainB.length < 16) {
+      curtain.push(0, 0, 0, 0)
+      curtainB.push(0, 1, 1, 1e9)
+    }
+    return { count: quads, uniforms: { u_cover: coverClip(w, h), u_base: [...base, ...Array(MAX_CURTAIN_POINTS * 4 - base.length).fill(0)], u_curtain: curtain, u_curtainB: curtainB } }
+  }
+
+  function resolution(weather) {
+    return EFFECTS[weather.effect].resolution ?? 1.5
+  }
+  // A resolved weather's effects, as canvases from the lowest up, each with the effects it draws.
+  // As in the app, effects at the same resolution share a canvas and draw at the faster one's
+  // rate; one at a coarser resolution, as the mist is, gets a canvas of its own, so it keeps its own
+  // rate and density (task 076, subtask 01).
+  function weatherCanvases(weather) {
+    const canvases = []
+    for (const effect of [weather, weather.also].filter((w) => w?.effect)) {
+      const shared = canvases.at(-1)
+      if (shared && resolution(shared[0]) === resolution(effect)) shared.push(effect)
+      else canvases.push([effect])
+    }
+    return canvases
+  }
+
+  // One WebGL context per canvas; each effect's program compiles the first time it runs.
   // `pace()` returns factors for the point count and the speed, so app pages can run a calmer version.
   function renderer(canvas, pace) {
     const gl = canvas.getContext('webgl2', { alpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' })
@@ -914,7 +1258,7 @@
       if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh))
       return sh
     }
-    const UNIFORMS = ['u_res', 'u_band', 'u_horizon', 'u_time', 'u_dpr', 'u_wind', 'u_gust', 'u_shear', 'u_size', 'u_fall', 'u_opacity', 'u_share', 'u_glow', 'u_tempo', 'u_gather', 'u_zones', 'u_zoneCount', 'u_zoneGain', 'u_cycle', 'u_shimmer', 'u_peakTime', 'u_peakSize', 'u_colorA', 'u_colorB']
+    const UNIFORMS = ['u_res', 'u_band', 'u_horizon', 'u_time', 'u_dpr', 'u_wind', 'u_gust', 'u_shear', 'u_size', 'u_fall', 'u_opacity', 'u_share', 'u_glow', 'u_tempo', 'u_gather', 'u_zones', 'u_zoneCount', 'u_zoneGain', 'u_cycle', 'u_shimmer', 'u_peakTime', 'u_peakSize', 'u_spread', 'u_colorA', 'u_colorB']
     const programs = {}
     function program(name) {
       if (programs[name]) return programs[name]
@@ -937,23 +1281,24 @@
     new ResizeObserver(([entry]) => {
       cssWidth = entry.contentRect.width
       cssHeight = entry.contentRect.height
-      setup = null
+      for (const layer of layers) layer.setup = null
     }).observe(canvas)
 
     let raf = 0
     let last = 0
     let elapsed = 0
-    let current = null
-    let colors = null
-    // What a frame draws with, worked out again only on a start or a resize.
-    let setup = null
-    function prepare(w, h) {
-      const t = { ...TUNING, ...current }
-      const fx = EFFECTS[current.effect]
+    // The effects drawn, the first lowest: each `{ weather, colors, setup }`, where `setup` is what
+    // a frame draws it with, worked out again only on a start or a resize.
+    let layers = []
+    function prepare(weather, w, h) {
+      const t = { ...TUNING, ...weather }
+      const fx = EFFECTS[weather.effect]
       const zones = (t.zones ?? [[0, t.horizon ?? 1, 1, 1]]).slice(0, 4).map((zone) => zoneClip(zone.slice(0, 4), w, h))
       // Item counts scale with the drawn area. A band's effect keeps the count of its full-screen
       // version, so it's thicker in the band.
       const area = (cssWidth * cssHeight) / (1440 * 900)
+      const layout = fx.layout?.(t, w, h)
+      const count = layout ? layout.count : Math.round(Math.min(fx.max, Math.max(fx.min, fx.density * area)) * t.amount * pace().density)
       return {
         w,
         h,
@@ -964,7 +1309,9 @@
         zones: [...zones.flat(), ...Array((4 - zones.length) * 4).fill(0)],
         zoneCount: zones.length,
         zoneGain: [0, 1, 2, 3].map((i) => t.zones?.[i]?.[4] ?? 1),
-        count: Math.round(Math.min(fx.max, Math.max(fx.min, fx.density * area)) * t.amount * pace().density),
+        count,
+        cycle: weather.effect === 'stars' ? starCycle(t, count) : glitterCycle(t),
+        uniforms: layout?.uniforms ?? {},
       }
     }
 
@@ -983,12 +1330,13 @@
         gaps.push(gap)
         if (gaps.length === MEASURED_GAPS) hz = Math.round(1000 / gaps.sort((a, b) => a - b)[MEASURED_GAPS >> 2])
       }
-      const fps = current.fps ?? EFFECTS[current.effect].fps
+      // The fastest layer's rate, at the finest one's resolution.
+      const fps = Math.max(...layers.map(({ weather }) => weather.fps ?? EFFECTS[weather.effect].fps))
       const due = hz ? Math.round(((now - last) * hz) / 1000) >= Math.max(1, Math.round(hz / fps)) : now - last >= (1000 / fps) * 0.8
       if (!due) return
       elapsed += (Math.min(now - (last || now), 100) / 1000) * pace().speed
       last = now
-      const dpr = Math.min(devicePixelRatio || 1, EFFECTS[current.effect].resolution ?? 1.5)
+      const dpr = Math.min(devicePixelRatio || 1, Math.max(...layers.map(({ weather }) => resolution(weather))))
       const w = Math.max(1, Math.floor(cssWidth * dpr))
       const h = Math.max(1, Math.floor(cssHeight * dpr))
       if (canvas.width !== w || canvas.height !== h) {
@@ -996,39 +1344,41 @@
         canvas.height = h
         gl.viewport(0, 0, w, h)
       }
-      const { p, u } = program(current.effect)
-      // Uniforms that change only with the setup go up once; a program keeps them.
-      if (!setup || setup.w !== w || setup.h !== h || setup.dpr !== dpr) {
-        setup = prepare(w, h)
-        setup.dpr = dpr
-        const { t } = setup
-        gl.useProgram(p)
-        gl.uniform2f(u.u_res, w, h)
-        gl.uniform2f(u.u_band, ...setup.band)
-        gl.uniform1f(u.u_horizon, setup.horizon)
-        gl.uniform4fv(u.u_zones, setup.zones)
-        gl.uniform1f(u.u_zoneCount, setup.zoneCount)
-        gl.uniform4fv(u.u_zoneGain, setup.zoneGain)
-        gl.uniform1f(u.u_dpr, dpr)
-        for (const key of ['wind', 'gust', 'shear', 'size', 'fall', 'opacity', 'share', 'glow', 'tempo', 'gather', 'shimmer', 'peakTime', 'peakSize']) gl.uniform1f(u[`u_${key}`], t[key])
-        gl.uniform1f(u.u_cycle, glitterCycle(t))
-      }
-      const { fx } = setup
       gl.clear(gl.COLOR_BUFFER_BIT)
-      gl.uniform1f(u.u_time, elapsed)
-      gl.uniform3f(u.u_colorA, ...colors[0])
-      gl.uniform3f(u.u_colorB, ...colors[1])
-      if (fx.quads) gl.drawArrays(gl.TRIANGLES, 0, setup.count * 6)
-      else gl.drawArrays(gl.POINTS, 0, setup.count)
+      for (const layer of layers) {
+        const { p, u } = program(layer.weather.effect)
+        gl.useProgram(p)
+        // Uniforms that change only with the setup go up once; each layer's program keeps them.
+        if (!layer.setup || layer.setup.w !== w || layer.setup.h !== h || layer.setup.dpr !== dpr) {
+          const setup = (layer.setup = prepare(layer.weather, w, h))
+          setup.dpr = dpr
+          const { t } = setup
+          gl.uniform2f(u.u_res, w, h)
+          gl.uniform2f(u.u_band, ...setup.band)
+          gl.uniform1f(u.u_horizon, setup.horizon)
+          gl.uniform4fv(u.u_zones, setup.zones)
+          gl.uniform1f(u.u_zoneCount, setup.zoneCount)
+          gl.uniform4fv(u.u_zoneGain, setup.zoneGain)
+          gl.uniform1f(u.u_dpr, dpr)
+          for (const key of ['wind', 'gust', 'shear', 'size', 'fall', 'opacity', 'share', 'glow', 'tempo', 'gather', 'shimmer', 'peakTime', 'peakSize', 'spread']) gl.uniform1f(u[`u_${key}`], t[key])
+          gl.uniform1f(u.u_cycle, setup.cycle)
+          for (const [name, values] of Object.entries(setup.uniforms)) gl.uniform4fv(gl.getUniformLocation(p, name), values)
+        }
+        const { fx, count } = layer.setup
+        gl.uniform1f(u.u_time, elapsed)
+        gl.uniform3f(u.u_colorA, ...layer.colors[0])
+        gl.uniform3f(u.u_colorB, ...layer.colors[1])
+        if (fx.quads) gl.drawArrays(gl.TRIANGLES, 0, count * 6)
+        else gl.drawArrays(gl.POINTS, 0, count)
+      }
     }
     return {
-      // `weather` is an image's resolved weather (weatherFor), `colorsFn` its two colors for the
-      // page's theme. Throws if the effect's shaders don't compile.
-      start(weather, colorsFn) {
-        program(weather.effect)
-        current = weather
-        colors = colorsFn()
-        setup = null
+      // `shown` is the effects to draw, the first lowest: each `{ weather, colors }`, a resolved
+      // weather with an effect (weatherFor) and its two colors for the page's theme. Throws if an
+      // effect's shaders don't compile.
+      start(shown) {
+        for (const { weather } of shown) program(weather.effect)
+        layers = shown.map((layer) => ({ ...layer, setup: null }))
         if (raf) return
         last = 0
         prev = 0
@@ -1039,6 +1389,7 @@
       stop() {
         cancelAnimationFrame(raf)
         raf = 0
+        layers = []
         gl.clear(gl.COLOR_BUFFER_BIT)
       },
     }
@@ -1075,18 +1426,24 @@
 
   // --- Controller ------------------------------------------------------------------------------
   // `image` is an image id; a season id is also one, so auth.html's `season` still works.
-  // `pace` is `{ density, speed }`, each a factor of the sign-in page's weather.
-  function create({ season = 'winter', image: imageId = season, strength = 'full', background = true, weather = true, seasonWeather = false, pace = { density: 1, speed: 1 }, legacy = false, tuning = null } = {}) {
+  // `pace` is `{ density, speed }`, each a factor of the sign-in page's weather. `skip` lists effects
+  // the scene leaves out of an image's weather, for stars.html, which draws its own stars and aurora.
+  function create({ season = 'winter', image: imageId = season, strength = 'full', background = true, weather = true, seasonWeather = false, pace = { density: 1, speed: 1 }, legacy = false, tuning = null, skip = [] } = {}) {
     const el = document.createElement('div')
     el.className = 'scene'
     el.setAttribute('aria-hidden', 'true')
+    // Two canvases, the lower for an image's first effect when its second draws at another
+    // resolution (weatherCanvases).
     el.innerHTML = `<div class="scene-photo scene-photo-light"></div><div class="scene-photo scene-photo-dark"></div>
-      <div class="scene-tint"></div><div class="scene-vignette"></div><canvas></canvas>`
+      <div class="scene-tint"></div><div class="scene-vignette"></div><canvas></canvas><canvas></canvas>`
     // `tuning`, for weather.html's sliders: fields by image id and theme that override the table's.
     // `seasonWeather` shows the image's season's weather in place of its own, as a page without the
     // background does: an image's weather fits only its picture.
     const state = { image: imageId, strength, background, weather, seasonWeather, pace, legacy, tuning }
-    const fx = renderer(el.querySelector('canvas'), () => state.pace)
+    const canvases = [...el.querySelectorAll('canvas')]
+    // The second canvas's context starts the first time an image needs it.
+    const renderers = [renderer(canvases[0], () => state.pace)]
+    const fx = renderers[0]
     const failed = new Set()
     // `legacy` shows the weather from before task 066, for weather.html.
     function shownWeather() {
@@ -1094,8 +1451,14 @@
       const id = state.seasonWeather ? image(state.image).season : state.image
       return weatherFor(id, theme, { legacy: state.legacy, overrides: state.legacy ? null : state.tuning?.[id]?.[theme] })
     }
-    const effect = () => shownWeather().effect
-    const colors = () => (shownWeather().colors ?? EFFECTS[effect()].colors)({ dark: isDark(), background: state.background })
+    // The shown weather's effects, the first lowest, less the skipped ones.
+    function shownEffects() {
+      const weather = shownWeather()
+      return [weather, weather.also].filter((w) => w?.effect && !skip.includes(w.effect))
+    }
+    function colors(weather) {
+      return (weather.colors ?? EFFECTS[weather.effect].colors)({ dark: isDark(), background: state.background })
+    }
 
     // Themes whose sharp file loads even while the background is off: the intro's, which opens
     // without it and fades it in later (`preload`).
@@ -1143,18 +1506,25 @@
       photos()
       el.style.setProperty('--scene-tint', STRENGTHS[state.strength][dark ? 'dark' : 'light'])
       el.dataset.background = state.background ? 'on' : 'off'
-      let on = state.weather && !!fx && !!effect() && !failed.has(effect()) && !reducedMotion.matches && !document.hidden
-      if (on) {
+      const on = state.weather && !!fx && !reducedMotion.matches && !document.hidden
+      const effects = shownEffects().filter((w) => !failed.has(w.effect))
+      // How many canvases run.
+      let running = 0
+      for (const group of on ? weatherCanvases({ ...effects[0], also: effects[1] }) : []) {
+        const drawn = (renderers[running] ??= renderer(canvases[running], () => state.pace))
+        if (!drawn) break
         try {
-          fx.start(shownWeather(), colors)
+          drawn.start(group.map((weather) => ({ weather, colors: colors(weather) })))
+          running++
         } catch (error) {
-          console.warn(`Weather effect ${effect()} unavailable:`, error)
-          failed.add(effect())
-          on = false
+          console.warn(`Weather effect ${group.map((w) => w.effect).join(', ')} unavailable:`, error)
+          drawn.stop()
+          for (const w of group) failed.add(w.effect)
         }
       }
-      if (!on) fx?.stop()
-      el.dataset.weather = on ? 'on' : 'off'
+      for (const r of renderers.slice(running)) r?.stop()
+      canvases.forEach((canvas, i) => canvas.toggleAttribute('data-on', i < running))
+      el.dataset.weather = running ? 'on' : 'off'
     }
     new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     document.addEventListener('visibilitychange', render)
@@ -1178,7 +1548,7 @@
       weatherBlocked() {
         if (reducedMotion.matches) return 'Off while your device reduces motion.'
         if (!fx) return 'Your browser has no WebGL 2.'
-        if (failed.has(effect())) return "This image's weather didn't start in your browser."
+        if (shownEffects().some((w) => failed.has(w.effect))) return "This image's weather didn't start in your browser."
         return null
       },
     }
@@ -1196,6 +1566,7 @@
     IMAGE_WEATHER,
     LEGACY_WEATHER,
     weatherFor,
+    hintFor,
     STRENGTHS,
     DEFAULTS,
     reducedMotion,
