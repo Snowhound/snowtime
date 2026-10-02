@@ -48,7 +48,9 @@ Read from `better-auth/dist/plugins/device-authorization/` and `bearer/` on 2026
 
 ## To settle with Kait before subtask 02
 
-The user checks these with Kait; nothing is posted on issue #2. Each item has a proposal.
+Asked on issue #2 on 2026-10-02
+(https://github.com/Snowhound/snowtime/issues/2#issuecomment-5949060428). Each item has a
+proposal.
 
 1. **Where a token reaches.** Proposed: only `/api/v1`. Leave the `bearer` plugin off,
    and have the `/api/v1` helper look the token up in `session` itself. Without the plugin,
