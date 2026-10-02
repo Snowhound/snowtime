@@ -16,12 +16,38 @@ the gain on the hot path; full parity is a later task.
   peak load on the L dataset, SQLite's own cache included. The domain code makes no OS
   calls outside a thin layer, so a port to a microcontroller without an OS stays possible
   later.
-- No garbage collector, an arena per request, no allocation per row on hot paths, and
-  indexed arrays where the data allows.
+- No garbage collector and no allocation per row on hot paths. The data layout below says
+  how.
 - The same SQLite schema and migrations as the TypeScript backend, so a self-hoster can
   switch either way on one file. Turso's engine comes later.
 - One process with Caddy in front for TLS, static files, and the route shells. Folding the
   proxy into the binary comes later.
+
+## Data layout
+
+Data-oriented, after the prior art of Sebastian Aaltonen (his posts at
+[x.com/SebAaltonen](https://x.com/SebAaltonen) and his
+[OffsetAllocator](https://github.com/sebbbi/OffsetAllocator), which the `offset-allocator`
+crate ports to Rust) and the libraries that follow it. Crates are named for Rust; question
+6 can change them.
+
+- Records live in arrays and refer to each other by dense `u32` indices, not pointers or
+  IDs. A UUID maps to an index once, where the data enters (a SQLite row, a request), and
+  the code after that works on indices. A loop that reads a few fields of many rows gets
+  one array per field.
+- An array has a fixed capacity by default, sized from the app's limits where one applies
+  (`src/server/limits.server.ts`: 500 members, 1,000 projects, and 100 teams per
+  organization, and 200 entries per member per day).
+- One thin abstraction grows an array when a bound doesn't hold: doubling, which keeps
+  indices valid, or fixed-size chunks, which keep addresses valid too. A slot that is
+  freed and reused carries a generation counter, so a stale handle fails instead of
+  reading another record, as in the `slotmap` crate.
+- A request's data lives in an arena that is reset after the response.
+- A hash map is fine where arrays would add complexity out of proportion: hashbrown's
+  SwissTable, the table behind Rust's `HashMap`, with a seeded hasher for keys that come
+  from requests. A small set, such as an organization's projects, can be a sorted array
+  with binary search.
+- Anything beyond plain fixed arrays is justified with task 078's numbers, as in task 069.
 
 ## Questions to answer
 
