@@ -53,7 +53,7 @@
     "@tanstack/solid-router": "latest",
     "@tanstack/solid-router-devtools": "latest",
     "@tanstack/solid-router-ssr-query": "1.167.3",
-    "@tanstack/solid-start": "latest",
+    "@tanstack/solid-start": "1.168.57",
     "@upstash/redis": "^1.39.0",
     "better-auth": "1.7.6",
     "class-variance-authority": "^0.7.1",
