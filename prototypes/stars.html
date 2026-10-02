@@ -22,11 +22,6 @@
       .seg button[aria-pressed='true'] {
         @apply bg-primary text-primary-foreground;
       }
-      /* Land December's dark photo with no aurora at all, the night kept beside the app's, whose
-         aurora is a faint glow in the middle. */
-      body.clean-photo .scene-photo-dark {
-        background-image: image-set(url('../design/backgrounds/alternates/land-december-dark-no-aurora-1920.avif') 1x, url('../design/backgrounds/alternates/land-december-dark-no-aurora-3840.avif') 2x) !important;
-      }
     </style>
     <link rel="stylesheet" href="prototype.css" />
   </head>
@@ -62,15 +57,13 @@
         <div class="seg" data-key="stars"><button data-value="on">On</button><button data-value="off">Off</button></div>
         <span class="aurora-only text-muted-foreground">Aurora</span>
         <div class="aurora-only seg" data-key="aurora"><button data-value="on">On</button><button data-value="off">Off</button></div>
-        <span class="aurora-only text-muted-foreground" title="The night with no aurora, or the app's photo with a faint aurora in the middle">Photo</span>
-        <div class="aurora-only seg" data-key="photo"><button data-value="clean">No aurora</button><button data-value="painted">Middle glow</button></div>
         <span class="aurora-only self-start pt-1 text-muted-foreground" title="Sets the ray sliders to a version; a slider change after it leaves none picked">Rays</span>
         <div class="aurora-only seg flex-wrap" data-key="rays"><button data-value="straight" title="Upright rays, the first version">Straight</button><button data-value="varied" title="Bent rays, groups leaning their own way, ragged tops">Varied</button><button data-value="patchy" title="Upright rays, with dimmer stretches along the curtain">A: Patchy</button><button data-value="patchyRagged" title="Upright rays, narrower dim stretches, rays ending at their own heights, a little brighter">B: Patchy, ragged</button><button data-value="converging" title="B, with the rays tilted very slightly toward one point far up, for depth">C: B, converging</button><button data-value="contrast" title="C, with the dim stretches much darker and the bright ones brighter">D: C, more contrast</button></div>
         <span class="effect-only text-muted-foreground" title="The image's effect besides its stars and aurora, drawn by scene.js under them">Its effect</span>
         <div class="effect-only seg" data-key="effect"><button data-value="on">On</button><button data-value="off">Off</button></div>
       </div>
       <div id="sliders" class="space-y-1.5"></div>
-      <p class="text-xs text-muted-foreground">← → images · H hides the panel · M markers · S stars · A aurora · R rays · P photo · E its effect · Space pauses</p>
+      <p class="text-xs text-muted-foreground">← → images · H hides the panel · M markers · S stars · A aurora · R rays · E its effect · Space pauses</p>
     </div>
 
     <script>
@@ -157,7 +150,7 @@
       }
       const ids = Object.keys(SKIES)
       const hashImage = location.hash.slice(1)
-      const view = { image: ids.includes(hashImage) ? hashImage : 'land-november', strength: 'dimmed', marks: 'off', stars: 'on', aurora: 'on', effect: 'on', photo: 'clean' }
+      const view = { image: ids.includes(hashImage) ? hashImage : 'land-november', strength: 'dimmed', marks: 'off', stars: 'on', aurora: 'on', effect: 'on' }
       let paused = false
 
       const KEY = 'snowtime.prototypeStars'
@@ -598,7 +591,6 @@
           for (const b of seg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.value === view[seg.dataset.key]))
         }
         ctl.set({ strength: view.strength, weather: view.effect === 'on' })
-        document.body.classList.toggle('clean-photo', view.image === 'land-december' && view.photo === 'clean')
         drawMarks()
       }
       function setRays(name) {
@@ -626,7 +618,6 @@
           setRays(names[(names.indexOf(raysVersion()) + 1) % names.length])
           renderSegs()
         }
-        else if (event.key === 'p') (view.photo = view.photo === 'clean' ? 'painted' : 'clean'), renderSegs()
         else if (event.key === 'e') (view.effect = view.effect === 'on' ? 'off' : 'on'), renderSegs()
         else if (event.key === ' ') (paused = !paused), event.preventDefault()
       })

@@ -14,9 +14,9 @@ four curtains along the photo's bands, on the left only, with sliders for bright
 and a violet top.
 
 The photo had an aurora painted in on the left, which the moving curtains can't follow freely.
-Its version `03` night (2026-10-02, `design/backgrounds/baltic.md`) keeps only a faint glow in
-the middle, under the cards, with a night with no aurora beside it in case the glow shows;
-`stars.html` and `weather.html` switch between the two.
+Its version `03` night (2026-10-02, `design/backgrounds/baltic.md`) has no aurora: Kait compared
+it with one keeping a faint glow in the middle, under glass cards in `stars.html`, and chose the
+clear sky.
 
 Kait's pick (2026-10-02), in `stars.html`'s defaults, the app, and `scene.js`: curtains a fifth
 longer to the right, 1.4 times as tall, at brightness 0.95. Rays stay upright, as real ones

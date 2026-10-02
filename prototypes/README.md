@@ -1136,8 +1136,7 @@ curtain makes fine rays that drift sideways and end at their own heights, and di
 that drift along it; the lower edge sways, brightness pulses travel along it, and the color
 fades from green to a little violet at the top. The treeline hides it. Its sliders show only on
 that image, with **Rays** picking between versions of the ray sliders: the defaults are Kait's
-pick (2026-10-02). The app's photo keeps only a faint aurora in the middle, under the cards;
-**Photo** shows it or the night kept with no aurora (`design/backgrounds/alternates/`).
+pick (2026-10-02). The photo's night has no aurora of its own, so the curtains are the only one.
 
 ### [weather.html](weather.html) — Weather by image
 
@@ -1145,9 +1144,7 @@ Task 066: each image's weather, tuned to the picture, compared with Kait before 
 it. A panel picks the image (or ← and →), the theme, the strength, the pace (the sign-in page's,
 or the app pages' calm one), and the weather: task 066's, the weather from before it
 (`LEGACY_WEATHER`), or off. The URL's hash keeps the view, so a link opens the same image and
-choices. The panel prints both themes' presets and tuning, and a second effect's after a `+`. On
-Countryside December, a Night row (or N) swaps the dark image for the one kept with no aurora
-(`design/backgrounds/alternates/`), through `scene.useAlternate()`.
+choices. The panel prints both themes' presets and tuning, and a second effect's after a `+`.
 
 A second panel, **Tune**, has sliders for the shown image and theme: the fields that apply to
 its effect, such as amount, size, opacity, wind, and glitter's shimmer and glints. A change

@@ -565,17 +565,13 @@ Pick `land-december-b-1007` (task 065).
   > Edit <image1>: change only the time of day, to night. Keep the camera, and every building, tree, rock, shoreline and object exactly where it is in <image1>, with the same shapes; add or remove nothing. Keep the season and the ground of <image1> as they are: add no snow, no frost and no ice. The sun and its warm glow are gone. A realistic night photograph, like a long exposure: the sky a deep, clear blue, lighter near the horizon, never electric; trees and dark rocks close to black; snow, ice, sand, pale rock and water catch a cool blue moonlight with soft silver highlights, so the scene reads clearly, and nothing is lit or shaded as if by the sun. Stars are faint and few, with no Milky Way. A December night under a clear, deep blue sky with no moon at all. Soft green northern lights low over the far trees, a few faint stars. The snow is pale blue with a slight glitter, as in a long exposure; the spruces are near black. No pink.
 
 - Dark, version `03` (2026-10-02): the page draws a swaying aurora at the side, so the image
-  keeps only a faint one in the middle, under the cards. An edit of the dark image above, seed
-  1101 (`aurora-mid1101` in `out\nightfix\land-december\`):
+  has none of its own. An edit of the dark image above, seed 1121 (in
+  `out\nightfix\land-december\`):
 
-  > Edit <image1>: keep this night photograph exactly, the spruces, the road, the snowy field, the far trees, the stars, the exposure and the colours. Remove the northern lights from the left of the sky: the left third of the sky is a clean, even deep blue with a few faint stars, no green anywhere. Only in the middle of the frame, a soft, faint green glow of northern lights low above the far trees, narrow and gentle, fading out well before the left edge and before the spruces on the right. Nothing gets brighter. No moon.
+  > Edit <image1>: keep this night photograph exactly, the spruces, the road, the snowy field, the far trees, the stars, the exposure and the colours. Remove the northern lights completely: the whole sky is a clean, even deep blue, a little lighter near the horizon, with a few faint stars and no green anywhere. Nothing gets brighter. No moon.
 
-- Kept in case the middle glow shows past the cards: the same edit with no aurora at all, seed
-  1121, in `alternates/land-december-dark-no-aurora-<width>.avif`. Its prompt ends "Remove the
-  northern lights completely: the whole sky is a clean, even deep blue, a little lighter near
-  the horizon, with a few faint stars and no green anywhere. Nothing gets brighter. No moon."
-  `weather.html` switches between the two. To ship it, copy its files over the dark `03` files
-  and raise the version.
+  Kait also tried a faint glow in the middle, under the cards (seed 1101, `aurora-mid1101`),
+  and chose the night with none (2026-10-02).
 
 The light image didn't change; version `03` is the `02` file renamed. Both nights went through
 the finals in `art\snowtime-backgrounds\065\l12_finals.py`, which runs `062\finals.py` into
@@ -584,7 +580,6 @@ the finals in `art\snowtime-backgrounds\065\l12_finals.py`, which runs `062\fina
 | Theme | Enhance prompt | Enhance seed | Night gamma | Detail | 1920 | 3840 |
 | --- | --- | --- | --- | --- | --- | --- |
 | light | `enhance-plain-062.txt` | 5001 | - | seed 5101, 0.25 | 199 KB | 362 KB |
-| dark | `enhance-plain-night-062.txt` | 5001 | - | seed 5101, 0.25 | 130 KB | 267 KB |
-| dark, no aurora | `enhance-plain-night-062.txt` | 5001 | - | seed 5101, 0.25 | 131 KB | 263 KB |
+| dark | `enhance-plain-night-062.txt` | 5001 | - | seed 5101, 0.25 | 131 KB | 263 KB |
 
 
