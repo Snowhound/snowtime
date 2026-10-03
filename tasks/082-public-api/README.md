@@ -71,8 +71,9 @@ A `key` field for clients that translate can be added later without breaking the
   `docs/api.md`
 - [04: Endpoints](04-endpoints.md): the six `/api/v1` endpoints
 - [05: Raycast extension](05-raycast-extension.md): the client, in its own repository
+- [06: Custom expiry date](06-custom-expiry.md): optional; a key that ends on any chosen day
 
 ## Acceptance criteria
 
 - [x] `docs/product.md` moves the API and the Raycast extension out of "Not in MVP"
-- [ ] Subtasks 01 and 03–05 are done
+- [ ] Subtasks 01 and 03–05 are done; 06 is optional
