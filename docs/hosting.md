@@ -21,7 +21,8 @@ Linux server. Setup steps for both are in `deployment/README.md`.
 
 ## Turso (Free)
 
-- Hosts the `staging` and `prod` databases.
+- Hosts the `prod` database and `snowtime-staging`, the seeded database every preview
+  deployment shares (`architecture/auth.md`, "Preview deployments").
 - Free-tier quotas (storage, rows read/written per month) are the main scaling
   limit. Avoid query patterns that scan large ranges repeatedly; the running
   timer is never written periodically (see `architecture/data.md`).
@@ -31,6 +32,7 @@ Linux server. Setup steps for both are in `deployment/README.md`.
 - Holds the rate-limit counts, one Redis command per counted request. Optional: without
   it the app runs, but the limits apply per function instance.
 - Use one database per environment, so staging traffic doesn't count against `prod`.
+  Previews get their own database, or none and count in memory.
 
 ## Self-hosted (one Linux server)
 

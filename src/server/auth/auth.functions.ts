@@ -5,7 +5,7 @@ import { getRequestHeaders, setCookie } from '@tanstack/solid-start/server'
 import { db } from '~/db'
 import { SEED_PASSWORD, seedUsers } from '~/db/seed'
 import { companyUsers } from '~/db/seed-company'
-import { env } from '~/env'
+import { appUrl, env } from '~/env'
 import { cookieMaxAge, cookieName, getLocale } from '~/paraglide/runtime.js'
 import { scopeMiddleware } from '../middleware'
 import { GetInvitationInput, UpdateIssueLinksInput } from './auth.schemas'
@@ -44,7 +44,7 @@ export const getDevUsers = createServerFn({ method: 'GET' }).handler(async () =>
 })
 
 // The app frame's view of the session, or null when signed out, so it runs without
-// middleware. `appUrl` is the app's public origin, from BETTER_AUTH_URL, for the links
+// middleware. `appUrl` is the app's public origin (src/lib/app-url.ts), for the links
 // admins copy: an invitation link is <appUrl>/invitation/<id>. The Better Auth client only
 // knows the page's origin, which a proxy or a second domain can change. It also keeps two
 // things in step with the account:
@@ -76,7 +76,7 @@ export const getAppSession = createServerFn({ method: 'GET' }).handler(async () 
     user: { id: user.id, name: user.name, email: user.email, image: user.image ?? null },
     signedInAt: session.session.createdAt,
     ...state,
-    appUrl: new URL(env.BETTER_AUTH_URL).origin,
+    appUrl: new URL(appUrl).origin,
     localeChanged,
   }
 })

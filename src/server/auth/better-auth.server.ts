@@ -7,7 +7,7 @@ import { tanstackStartCookies } from 'better-auth/tanstack-start/solid'
 import { v7 as uuidv7 } from 'uuid'
 import { db } from '~/db'
 import * as schema from '~/db/schema'
-import { env } from '~/env'
+import { appUrl as appUrlString, env, trustedOrigins } from '~/env'
 import { limits, rateLimits } from '../limits.server'
 import { createRateLimitStore } from '../rate-limit.server'
 import {
@@ -20,8 +20,8 @@ import { databaseHooks, organizationHooks } from './name-checks.server'
 import { passwordEnabled, refuseUnverifiedSignUp, socialProviders } from './sign-in.server'
 
 // Passkeys are bound to the app's domain, so each environment's relying party follows its
-// BETTER_AUTH_URL; the plugin would otherwise default to localhost.
-const appUrl = new URL(env.BETTER_AUTH_URL)
+// URL; the plugin would otherwise default to localhost.
+const appUrl = new URL(appUrlString)
 const domains = env.ALLOWED_LOGIN_DOMAINS ?? []
 const removalHook = memberRemovalHook(db)
 const domainHooks = loginDomainHooks(domains, (id) =>
@@ -33,7 +33,8 @@ export const rateLimitStore = createRateLimitStore(env)
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
+  baseURL: appUrlString,
+  trustedOrigins,
   database: drizzleAdapter(db, { provider: 'sqlite', schema }),
   advanced: {
     database: { generateId: () => uuidv7() },

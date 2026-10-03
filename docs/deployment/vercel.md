@@ -7,7 +7,8 @@ client. [The deployment index](README.md) compares it with self-hosting and hold
 both share. The reasons behind the choices are in `../architecture/platform.md` ("Environments and
 deployment"), and the free-tier limits are in `../hosting.md`.
 
-Staging (the `develop` branch) is planned and not covered here.
+Preview deployments of other branches run against a shared staging database; step 8 sets
+them up.
 
 ## Before you start
 
@@ -135,8 +136,8 @@ migrated database for a few minutes. Keep migrations backward compatible
    Leave `CLIENT_IP_HEADER` unset: Vercel puts the user's address in `x-forwarded-for`,
    which Better Auth reads by default.
 
-3. Leave Preview environment variables unset. Preview deployments have generated hosts,
-   where OAuth and passkeys can't work (`../architecture/auth.md`, "Sign-in methods").
+3. Leave `BETTER_AUTH_URL` and `DEMO_MODE` unset for Preview: a preview takes its URL from
+   Vercel, and step 8 adds its variables.
 4. Redeploy the latest production deployment in Vercel, or re-run the latest workflow on
    `main`, so it runs with the region and variables. Vercel applies both only to
    deployments made after the change.
@@ -149,3 +150,47 @@ Everything in [Check the deployment](README.md#check-the-deployment) applies, pl
   after a few writes.
 - If a page fails, the function logs under the deployment in Vercel show the error,
   including the missing variable when `src/env.ts` rejects the configuration.
+
+## 8. Set up preview deployments on a staging database (optional)
+
+Previews have generated hosts, where OAuth can't work, so they run in demo mode against a
+seeded staging database and sign in with the seeded users (`../architecture/auth.md`,
+"Preview deployments"). The seed password is public, so keep staging free of real data.
+
+1. Seed a local file and create the staging database from it. `db:seed` refuses remote
+   databases, so this is also how to reset staging later:
+
+   ```bash
+   rm -f /tmp/staging.db
+   TURSO_DATABASE_URL=file:/tmp/staging.db bun run db:migrate
+   TURSO_DATABASE_URL=file:/tmp/staging.db bun run db:seed --company
+   turso db create <app>-staging --location <region> --from-file /tmp/staging.db
+   turso db show <app>-staging --url        # TURSO_DATABASE_URL
+   turso db tokens create <app>-staging     # TURSO_AUTH_TOKEN
+   ```
+
+   To reset, run `turso db destroy <app>-staging` before `turso db create`, and replace
+   the token in Vercel and GitHub.
+
+2. In the Vercel project, under **Settings > Environment Variables**, add these for the
+   Preview environment only, and mark the secrets sensitive:
+
+   | Variable                                 | Value                          |
+   | ---------------------------------------- | ------------------------------ |
+   | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | The staging database           |
+   | `BETTER_AUTH_SECRET`                     | A new secret, not production's |
+   | `DEMO_MODE`                              | `true`                         |
+
+   Upstash is optional, as its own database as in step 2, so previews don't share
+   production's counts. Leave `BETTER_AUTH_URL`, the OAuth variables, and
+   `ALLOWED_LOGIN_DOMAINS` unset. `src/env.ts` refuses `BETTER_AUTH_URL` and `ALLOWED_LOGIN_DOMAINS` on a
+   preview. Under **Settings > Environment Variables**, keep **Automatically expose
+   System Environment Variables** on: the app reads `VERCEL_ENV`, `VERCEL_BRANCH_URL`, and
+   `VERCEL_URL`.
+
+3. Under **Settings > Deployment Protection**, keep Vercel Authentication on for
+   previews.
+4. In GitHub, create the environment `staging` with the secrets `TURSO_DATABASE_URL` and
+   `TURSO_AUTH_TOKEN` of the staging database, for the **Migrate staging** workflow
+   (`../migrations.md`, "Staging").
+5. Push a branch, open its preview, and sign in as `owner@example.com`.
