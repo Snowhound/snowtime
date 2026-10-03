@@ -1,8 +1,12 @@
-# Applies the chosen branch's migrations to the staging database that every preview deployment
-# shares (docs/migrations.md, "Staging"). Runs only when started from the Actions tab.
+# Applies a branch's migrations to the staging database that every preview deployment shares
+# (docs/migrations.md, "Staging"): on each push that changes a migration, or from the Actions
+# tab, for example after staging is reseeded.
 name: Migrate staging
 
 on:
+  push:
+    branches-ignore: [main]
+    paths: ['drizzle/**']
   workflow_dispatch:
 
 permissions:
@@ -32,12 +36,13 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      # db:migrate runs db:verify first, so a migration edited after it reached staging stops
-      # it; reset staging then (docs/migrations.md, "Staging").
+      # db:migrate runs db:verify first, so a migration edited after it reached staging, or one
+      # another branch applied, stops it; reseed staging then (docs/migrations.md, "Staging").
+      # A fork or stack without staging skips visibly.
       - name: Migrate staging
         run: |
           if [ -z "$TURSO_DATABASE_URL" ] || [ -z "$TURSO_AUTH_TOKEN" ]; then
-            echo "::error title=Staging secrets missing::Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in the staging environment."
-            exit 1
+            echo "::notice title=Staging migration skipped::Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in the staging environment."
+            exit 0
           fi
           bun run db:migrate

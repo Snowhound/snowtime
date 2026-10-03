@@ -56,9 +56,9 @@ Vercel build or on Vercel app start. Production only
 receives merged migrations, because `db:verify` rejects an applied migration that a PR
 later edits, and two open PRs would mix their migrations in one shared database. PRs
 test their migrations on throwaway local databases (`db:drift`). The staging database is
-the exception: someone runs the manual **Migrate staging** workflow for a branch whose
-preview needs its migration, and staging is reset from a seeded file when branches diverge
-(`../migrations.md`, "Staging").
+the exception: a push that changes a branch's migrations applies them there, and staging
+is reseeded when branches' migrations conflict (`../migrations.md`, "Staging"). It holds
+only seeded data, so a reseed costs nothing.
 
 - Preview deployments of every branch run in demo mode against the seeded staging
   database and sign in with the seeded users (task 087; `auth.md`, "Preview

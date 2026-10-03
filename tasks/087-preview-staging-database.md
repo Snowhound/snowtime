@@ -11,7 +11,8 @@ be tried with the seeded users before it merges.
 - [x] `DEMO_MODE=true` is allowed with a remote database only when `VERCEL_ENV=preview`.
 - [x] On a preview, the app's URL is `https://$VERCEL_BRANCH_URL`, `$VERCEL_URL` is a
       trusted origin, and `BETTER_AUTH_URL` is refused.
-- [x] A manual **Migrate staging** workflow migrates staging from a chosen branch.
+- [x] The **Migrate staging** workflow migrates staging on each branch push that changes
+      `drizzle/`, and on demand.
 - [x] `docs/deployment/vercel.md`, `docs/architecture/auth.md`, `docs/hosting.md`,
       `docs/migrations.md`, and `docs/architecture/platform.md` describe previews on
       staging.

@@ -27,21 +27,16 @@ gitignored `.env.local`. Never put tokens in tracked env files.
 
 ## Staging
 
-Every Vercel preview shares one staging database (`deployment/vercel.md`, step 8), which CI
-doesn't migrate on its own. A branch with a new migration needs it applied there before its
-preview works:
+Every Vercel preview shares one staging database (`deployment/vercel.md`, step 8). The
+**Migrate staging** workflow runs `bun run db:migrate` against it on every push to a branch
+other than `main` that changes `drizzle/`, with secrets from the GitHub environment
+`staging`. Every other preview then runs against the migrated database too.
 
-1. In GitHub, open **Actions > Migrate staging > Run workflow** and pick the branch. The
-   workflow runs `bun run db:migrate` against staging, with secrets from the GitHub
-   environment `staging`.
-2. Every other preview now runs against the migrated database too, so the migration must
-   be backward compatible, as for production.
-
-Run it only for a migration that is ready for review. Once a branch's migration is on
-staging, `db:verify` fails the workflow for branches that lack that migration or carry an
-edited copy of it. If the branch is abandoned or the migration changes, reset staging from
-a freshly seeded file (`deployment/vercel.md`, step 8.1). Resetting also discards
-everything previews wrote.
+Staging holds only seeded data, so a broken staging database is reset rather than repaired.
+Once one branch's migration is on staging, `db:verify` fails the workflow for a branch that
+lacks it or carries an edited copy. Reset staging from a freshly seeded file
+(`deployment/vercel.md`, step 8.1), then run the workflow by hand from the Actions tab for
+the branch you're testing. Resetting discards everything previews wrote.
 
 ## Rules
 
