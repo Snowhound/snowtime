@@ -29,7 +29,7 @@
     statement did not, as a safety net. The trigger rewrites the row, so the
     app setting it keeps writes (a Turso quota) single.
   - `created_by`/`updated_by` are the acting user, set by the app from a
-    per-request context in server-function middleware (Drizzle
+    per-call context the API sets (`withActor`, Drizzle
     `$defaultFn`/`$onUpdateFn`). SQLite has no session variables, so a
     trigger cannot know the actor. `NOT NULL`, no default: a write without an
     actor fails. Scripts (seed, maintenance) act as a fixed system user.
@@ -68,8 +68,8 @@
   (e.g. project assignments) also reference `team_id`.
 - Each tab's organization comes from its URL: the app's pages live under the
   organization's slug (`/<slug>/timer`, `/<slug>/reports`, and so on). Every
-  organization-scoped server function takes `organizationId`, and `scopeMiddleware` checks
-  that the user is a member (`resolveScope`) before the function touches data; queries
+  organization-scoped API call names `organizationId` in its path, and `runOperation`
+  checks that the user is a member (`resolveScope`) before the call touches data; queries
   always filter by `organization_id`. Tabs never disagree with the server, and two
   organizations can stay open side by side (task 052).
   - Rejected: the session's active organization as the one every call acts in. Tabs share
@@ -98,12 +98,12 @@
   - The Organization view's Better Auth calls name the organization the view shows
     (`organizationId`). Canceling an invitation takes the invitation's organization.
   - The running timer spans organizations, so `getRunningTimer` and `stopTimer` check no
-    organization. `startTimer` creates an entry in one, so it goes through
-    `scopeMiddleware` like every other organization-scoped call.
+    organization. `startTimer` creates an entry in one, so it resolves that organization's
+    scope like every other organization-scoped call.
 - `getAppSession` loads the app frame's session: the user's organizations with their
   role in each, the default (active) one, and their settings. When the session has no
-  active organization, or one the user has left, it saves the first by name to the
-  session. A signed-in user with no organization goes to their open invitation, or to
+  active organization, or one the user has left, the first by name is the default; the read
+  doesn't save it, and only switching organizations does, through Better Auth. A signed-in user with no organization goes to their open invitation, or to
   create an organization.
 - Organization roles: owner / admin / member (plugin defaults).
   - `member.role` can hold several roles, comma-separated. `strongestRole` reads the list

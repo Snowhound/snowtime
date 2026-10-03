@@ -2,6 +2,8 @@ import { render, screen, waitFor, within } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
@@ -10,7 +12,7 @@ import { OrganizationPage } from './organization-page'
 import type { Invitation } from './queries'
 import type { OrganizationTab } from './search'
 
-// Server functions and the Better Auth client stay out of the DOM tests. Each mock answers
+// The backend and the Better Auth client stay out of the DOM tests. Each mock answers
 // from `server`, so a refetch after a mutation sees what the server would return; Better
 // Auth's calls resolve to { data, error } like the real client.
 const fn = vi.hoisted(() => ({
@@ -29,30 +31,12 @@ const fn = vi.hoisted(() => ({
   updateIssueLinks: vi.fn(),
   navigate: vi.fn(),
 }))
+setTransport(mockTransport(fn))
 const org = vi.hoisted(() => ({
   updateMemberRole: vi.fn(),
   removeMember: vi.fn(),
   cancelInvitation: vi.fn(),
   update: vi.fn(),
-}))
-vi.mock('~/server/teams/teams.functions', () => ({
-  listMembers: fn.listMembers,
-  listTeams: fn.listTeams,
-  setTeamRole: fn.setTeamRole,
-  createTeam: fn.createTeam,
-  renameTeam: fn.renameTeam,
-  deleteTeam: fn.deleteTeam,
-  addTeamMember: fn.addTeamMember,
-  removeTeamMember: fn.removeTeamMember,
-}))
-vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
-vi.mock('~/server/auth/auth.functions', () => ({
-  getAppSession: fn.getAppSession,
-  updateIssueLinks: fn.updateIssueLinks,
-}))
-vi.mock('~/server/auth/invitations.functions', () => ({
-  listInvitations: fn.listInvitations,
-  inviteMember: fn.inviteMember,
 }))
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
@@ -210,7 +194,7 @@ beforeEach(() => {
   fn.listMembers.mockImplementation(async () => server.members)
   fn.listTeams.mockImplementation(async () => server.teams)
   fn.listProjects.mockImplementation(async () => server.projects)
-  fn.setTeamRole.mockImplementation(async ({ data }) => {
+  fn.setTeamRole.mockImplementation(async (data) => {
     server.teams = server.teams.map((t) =>
       t.id !== data.teamId
         ? t
@@ -234,7 +218,7 @@ beforeEach(() => {
     server.members = server.members.filter((mb) => mb.memberId !== memberIdOrEmail)
     return ok({ member: { id: memberIdOrEmail } })
   })
-  fn.inviteMember.mockImplementation(({ data: { email, role, teamId } }) => {
+  fn.inviteMember.mockImplementation(({ email, role, teamId }) => {
     const invitation = {
       id: newId(),
       email,
@@ -245,13 +229,13 @@ beforeEach(() => {
       status: 'pending',
     }
     server.invitations = [...server.invitations, invitation]
-    return ok(invitation)
+    return Promise.resolve(invitation)
   })
   org.cancelInvitation.mockImplementation(({ invitationId }) => {
     server.invitations = server.invitations.filter((i) => i.id !== invitationId)
     return ok({ id: invitationId, status: 'canceled' })
   })
-  fn.deleteTeam.mockImplementation(async ({ data: { teamId } }) => {
+  fn.deleteTeam.mockImplementation(async ({ teamId }) => {
     server.teams = server.teams.filter((t) => t.id !== teamId)
     return { id: teamId }
   })
@@ -412,12 +396,10 @@ describe('OrganizationView', () => {
     await userEvent.selectOptions(within(dialog).getByLabelText('Team'), 'Design')
     await userEvent.click(submit)
     expect(fn.inviteMember).toHaveBeenCalledWith({
-      data: {
-        email: 'helena@example.com',
-        role: 'member',
-        organizationId,
-        teamId: ids.design,
-      },
+      email: 'helena@example.com',
+      role: 'member',
+      organizationId,
+      teamId: ids.design,
     })
 
     const created = server.invitations.at(-1)!
@@ -452,12 +434,10 @@ describe('OrganizationView', () => {
       within(expired).getByRole('button', { name: 'New link for priit@example.com' }),
     )
     expect(fn.inviteMember).toHaveBeenCalledWith({
-      data: {
-        email: 'priit@example.com',
-        role: 'admin',
-        organizationId,
-        teamId: null,
-      },
+      email: 'priit@example.com',
+      role: 'admin',
+      organizationId,
+      teamId: null,
     })
     await waitFor(() => expect(org.cancelInvitation).toHaveBeenCalledWith({ invitationId: old }))
     const renewed = server.invitations.find((i) => i.email === 'priit@example.com')!
@@ -500,7 +480,10 @@ describe('OrganizationView', () => {
 
     await userEvent.selectOptions(select(), 'lead')
     expect(fn.setTeamRole).toHaveBeenCalledWith({
-      data: { organizationId, teamId: ids.platform, userId: ids.max, role: 'lead' },
+      organizationId,
+      teamId: ids.platform,
+      userId: ids.max,
+      role: 'lead',
     })
     expect(
       await screen.findByText('2 members · Led by Lena Lead and Max Member'),
@@ -508,7 +491,10 @@ describe('OrganizationView', () => {
 
     await userEvent.selectOptions(select(), 'member')
     expect(fn.setTeamRole).toHaveBeenLastCalledWith({
-      data: { organizationId, teamId: ids.platform, userId: ids.max, role: 'member' },
+      organizationId,
+      teamId: ids.platform,
+      userId: ids.max,
+      role: 'member',
     })
   })
 
@@ -525,14 +511,14 @@ describe('OrganizationView', () => {
       ),
     ).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Delete team' }))
-    expect(fn.deleteTeam).toHaveBeenCalledWith({ data: { teamId: ids.platform, organizationId } })
+    expect(fn.deleteTeam).toHaveBeenCalledWith({ teamId: ids.platform, organizationId })
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: 'Platform' })).not.toBeInTheDocument(),
     )
   })
 
   test('General saves Issue links, an https:// address with {key}, and clears it', async () => {
-    fn.updateIssueLinks.mockImplementation(async ({ data }) => {
+    fn.updateIssueLinks.mockImplementation(async (data) => {
       server.issueLinks = data.issueLinks || null
       return { id: organizationId, issueLinks: server.issueLinks }
     })
@@ -554,7 +540,8 @@ describe('OrganizationView', () => {
     await userEvent.type(input, '{{key}')
     await userEvent.click(save)
     expect(fn.updateIssueLinks).toHaveBeenCalledWith({
-      data: { organizationId, issueLinks: 'https://acme.atlassian.net/browse/{key}' },
+      organizationId,
+      issueLinks: 'https://acme.atlassian.net/browse/{key}',
     })
     expect(org.update).not.toHaveBeenCalled()
     expect(await screen.findByText('Saved.')).toBeInTheDocument()
@@ -562,9 +549,7 @@ describe('OrganizationView', () => {
     await userEvent.clear(input)
     await userEvent.click(save)
     await waitFor(() =>
-      expect(fn.updateIssueLinks).toHaveBeenLastCalledWith({
-        data: { organizationId, issueLinks: '' },
-      }),
+      expect(fn.updateIssueLinks).toHaveBeenLastCalledWith({ organizationId, issueLinks: '' }),
     )
   })
 

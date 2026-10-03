@@ -63,16 +63,16 @@ Both targets read the same variables. `.env.example` lists them, and `src/env.ts
 them when the app starts and names the variable that is missing or set without its pair.
 Don't prefix a secret with `VITE_`: those variables reach the browser bundle.
 
-| Variable                                             | Value                                                                                                                 |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`             | The Turso database, or `file:<path>` and no token self-hosted                                                         |
-| `BETTER_AUTH_SECRET`                                 | See below                                                                                                             |
-| `BETTER_AUTH_URL`                                    | `https://<host>`, no trailing slash                                                                                   |
-| `<PROVIDER>_CLIENT_ID`, `<PROVIDER>_CLIENT_SECRET`   | [The OAuth apps](#register-the-oauth-apps), both or neither                                                           |
-| `MICROSOFT_TENANT_ID`                                | Optional, restricts Microsoft sign-in                                                                                 |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Vercel only, optional, both or neither                                                                                |
-| `CLIENT_IP_HEADER`                                   | Self-hosted: `cf-connecting-ip`. Unset on Vercel                                                                      |
-| `DEMO_MODE`                                          | `true` enables a local SQLite demo with seeded passwords, no OAuth, and a notice on the sign-in page; default `false` |
+| Variable                                             | Value                                                                                                                       |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`             | The Turso database, or `file:<path>` and no token self-hosted                                                               |
+| `BETTER_AUTH_SECRET`                                 | See below                                                                                                                   |
+| `BETTER_AUTH_URL`                                    | `https://<host>`, no trailing slash. Unset on Vercel previews                                                               |
+| `<PROVIDER>_CLIENT_ID`, `<PROVIDER>_CLIENT_SECRET`   | [The OAuth apps](#register-the-oauth-apps), both or neither                                                                 |
+| `MICROSOFT_TENANT_ID`                                | Optional, restricts Microsoft sign-in                                                                                       |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Vercel only, optional, both or neither                                                                                      |
+| `CLIENT_IP_HEADER`                                   | Self-hosted: `cf-connecting-ip`. Unset on Vercel                                                                            |
+| `DEMO_MODE`                                          | `true` enables a demo on local SQLite or a Vercel preview: seeded passwords, no OAuth, a notice on sign-in; default `false` |
 
 Generate the auth secret once per stack. Better Auth signs sessions with it, so changing it
 later signs everyone out.

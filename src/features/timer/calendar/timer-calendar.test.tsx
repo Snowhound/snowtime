@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import { atLocalTime } from '~/lib/calendar'
 import { newId } from '~/lib/queries/query'
 import type { Settings } from '~/lib/queries/settings'
@@ -10,7 +12,7 @@ import type { Entry } from '../queries'
 import { TimerPage } from '../timer-page'
 import { HOUR_PX } from './calendar-block'
 
-// The server functions stay out of the DOM tests; each mock answers from `server`.
+// The backend stays out of the DOM tests; each mock answers from `server`.
 const fn = vi.hoisted(() => ({
   getRunningTimer: vi.fn(),
   startTimer: vi.fn(),
@@ -24,21 +26,7 @@ const fn = vi.hoisted(() => ({
   getAppSession: vi.fn(),
   updateSettings: vi.fn(),
 }))
-vi.mock('~/server/timer/timer.functions', () => ({
-  getRunningTimer: fn.getRunningTimer,
-  startTimer: fn.startTimer,
-  stopTimer: fn.stopTimer,
-}))
-vi.mock('~/server/entries/entries.functions', () => ({
-  listEntries: fn.listEntries,
-  getFirstEntryStart: fn.getFirstEntryStart,
-  createEntry: fn.createEntry,
-  updateEntry: fn.updateEntry,
-  deleteEntry: fn.deleteEntry,
-}))
-vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
-vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
+setTransport(mockTransport(fn))
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; class?: string; children: JSX.Element }) => (
     <a href={props.to} class={props.class}>
@@ -149,19 +137,19 @@ beforeEach(() => {
   fn.listEntries.mockImplementation(async () => server.entries.map((e) => ({ ...e })))
   fn.getFirstEntryStart.mockResolvedValue(review.startedAt)
   fn.listProjects.mockResolvedValue([project])
-  fn.updateEntry.mockImplementation(async ({ data }) => {
+  fn.updateEntry.mockImplementation(async (data) => {
     const entry = server.entries.find((e) => e.id === data.id)!
     Object.assign(entry, data)
     return { ...entry }
   })
-  fn.createEntry.mockImplementation(async ({ data }) => {
+  fn.createEntry.mockImplementation(async (data) => {
     server.entries.push({ organizationId, userId, ticket: null, projectId: null, ...data })
     return data
   })
-  fn.deleteEntry.mockImplementation(async ({ data }) => {
+  fn.deleteEntry.mockImplementation(async (data) => {
     server.entries = server.entries.filter((e) => e.id !== data.id)
   })
-  fn.updateSettings.mockImplementation(async ({ data }) => {
+  fn.updateSettings.mockImplementation(async (data) => {
     Object.assign(server.settings, data)
     return server.settings
   })
@@ -203,7 +191,7 @@ describe('TimerCalendar', () => {
     renderView()
     await screen.findByDisplayValue('Invoice export review')
     await userEvent.click(screen.getByRole('button', { name: 'Calendar' }))
-    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { timerView: 'calendar' } })
+    expect(fn.updateSettings).toHaveBeenCalledWith({ timerView: 'calendar' })
     expect(await screen.findByRole('region', { name: /Sep 28/ })).toBeInTheDocument()
     expect(await block()).toBeInTheDocument()
   })
@@ -213,7 +201,7 @@ describe('TimerCalendar', () => {
     await block()
     expect(screen.queryByRole('group', { name: /Saturday/ })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Weekend' }))
-    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { calendarWeekend: true } })
+    expect(fn.updateSettings).toHaveBeenCalledWith({ calendarWeekend: true })
     expect(await screen.findByRole('group', { name: /Saturday/ })).toBeInTheDocument()
   })
 
@@ -231,18 +219,18 @@ describe('TimerCalendar', () => {
     expect(within(popover).getByLabelText('Project')).toHaveTextContent('Snowtime')
     await userEvent.type(within(popover).getByRole('combobox'), 'Planning')
     await userEvent.click(within(popover).getByRole('button', { name: 'Save' }))
-    expect(fn.createEntry).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(fn.createEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
         description: 'Planning',
         projectId: project.id,
         startedAt: at('2026-09-29', '10:00'),
         stoppedAt: at('2026-09-29', '10:30'),
       }),
-    })
+    )
     expect(status()).toHaveTextContent('Added “Planning”: Tue 10:00–10:30.')
-    const id = fn.createEntry.mock.calls[0][0].data.id
+    const id = fn.createEntry.mock.calls[0][0].id
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
-    expect(fn.deleteEntry).toHaveBeenCalledWith({ data: { id, organizationId } })
+    expect(fn.deleteEntry).toHaveBeenCalledWith({ id, organizationId })
     expect(status()).toHaveTextContent('Undone.')
   })
 
@@ -251,23 +239,19 @@ describe('TimerCalendar', () => {
     drag(await block(), point(0, 9.5), point(1, 10.6))
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: {
-          id: review.id,
-          organizationId,
-          startedAt: at('2026-09-29', '10:00'),
-          stoppedAt: at('2026-09-29', '11:30'),
-        },
+        id: review.id,
+        organizationId,
+        startedAt: at('2026-09-29', '10:00'),
+        stoppedAt: at('2026-09-29', '11:30'),
       }),
     )
     expect(status()).toHaveTextContent('Moved “Invoice export review”: Tue 10:00–11:30.')
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
     expect(fn.updateEntry).toHaveBeenLastCalledWith({
-      data: {
-        id: review.id,
-        organizationId,
-        startedAt: review.startedAt,
-        stoppedAt: review.stoppedAt,
-      },
+      id: review.id,
+      organizationId,
+      startedAt: review.startedAt,
+      stoppedAt: review.stoppedAt,
     })
   })
 
@@ -278,7 +262,9 @@ describe('TimerCalendar', () => {
     drag(end, point(0, 10.5), point(0, 11))
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: { id: review.id, organizationId, stoppedAt: at('2026-09-28', '11:00') },
+        id: review.id,
+        organizationId,
+        stoppedAt: at('2026-09-28', '11:00'),
       }),
     )
     expect(status()).toHaveTextContent('Changed “Invoice export review”: Mon 09:00–11:00.')
@@ -296,12 +282,10 @@ describe('TimerCalendar', () => {
     fireEvent.keyDown(entry, { key: 'ArrowDown', altKey: true })
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: {
-          id: review.id,
-          organizationId,
-          startedAt: at('2026-09-28', '09:15'),
-          stoppedAt: at('2026-09-28', '10:45'),
-        },
+        id: review.id,
+        organizationId,
+        startedAt: at('2026-09-28', '09:15'),
+        stoppedAt: at('2026-09-28', '10:45'),
       }),
     )
     expect(document.activeElement).toBe(entry)
@@ -309,12 +293,10 @@ describe('TimerCalendar', () => {
     fireEvent.keyDown(entry, { key: 'ArrowRight', altKey: true })
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenLastCalledWith({
-        data: {
-          id: review.id,
-          organizationId,
-          startedAt: at('2026-09-29', '09:15'),
-          stoppedAt: at('2026-09-29', '10:45'),
-        },
+        id: review.id,
+        organizationId,
+        startedAt: at('2026-09-29', '09:15'),
+        stoppedAt: at('2026-09-29', '10:45'),
       }),
     )
     // The entry is on Tuesday now, in a new block that has focus.
@@ -327,7 +309,9 @@ describe('TimerCalendar', () => {
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp', altKey: true, shiftKey: true })
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenLastCalledWith({
-        data: { id: review.id, organizationId, stoppedAt: at('2026-09-29', '10:30') },
+        id: review.id,
+        organizationId,
+        stoppedAt: at('2026-09-29', '10:30'),
       }),
     )
     expect(status()).toHaveTextContent('Changed “Invoice export review”: Tue 09:15–10:30.')
@@ -339,15 +323,15 @@ describe('TimerCalendar', () => {
     const popover = await screen.findByRole('dialog', { name: 'Edit entry' })
     expect(within(popover).getByLabelText('End')).toHaveValue('10:30')
     await userEvent.click(within(popover).getByRole('button', { name: 'Delete' }))
-    expect(fn.deleteEntry).toHaveBeenCalledWith({ data: { id: review.id, organizationId } })
+    expect(fn.deleteEntry).toHaveBeenCalledWith({ id: review.id, organizationId })
     expect(status()).toHaveTextContent('Deleted “Invoice export review”.')
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
-    expect(fn.createEntry).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(fn.createEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
         description: 'Invoice export review',
         startedAt: review.startedAt,
         stoppedAt: review.stoppedAt,
       }),
-    })
+    )
   })
 })

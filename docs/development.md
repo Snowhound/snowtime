@@ -68,6 +68,7 @@ The sign-in page also lists five of its users, with the same password:
 | `bun run build:self-hosted`   | Builds for a self-hosted server, with precompressed files    |
 | `bun run build:binary`        | Compiles self-hosted Linux releases for x64 and Arm64        |
 | `bun run test`                | Runs server tests (`bun test`) and component tests           |
+| `bun run test:conformance`    | Builds the app and tests its JSON API (`conformance/`)       |
 | `bun run lint`                | Runs oxlint                                                  |
 | `bun run format`              | Formats with oxfmt                                           |
 | `bun run env:init`            | Adds a `BETTER_AUTH_SECRET` to `.env.local`                  |

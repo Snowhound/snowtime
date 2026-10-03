@@ -1,12 +1,6 @@
 import fontLatin from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url'
 import type { QueryClient } from '@tanstack/solid-query'
-import {
-  HeadContent,
-  Scripts,
-  createRootRouteWithContext,
-  redirect,
-  useRouter,
-} from '@tanstack/solid-router'
+import { HeadContent, Scripts, createRootRouteWithContext, useRouter } from '@tanstack/solid-router'
 import { TanStackRouterDevtools } from '@tanstack/solid-router-devtools'
 import {
   For,
@@ -36,15 +30,8 @@ import '~/lib/locale-cookie'
 import '@fontsource-variable/plus-jakarta-sans'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  beforeLoad: async ({ context, location }) => {
+  beforeLoad: async ({ context }) => {
     const session = await context.queryClient.query({ ...sessionQuery, staleTime: 'static' })
-    // The account's language differs from the one this page rendered in, and
-    // getAppSession has set the cookie: load the page again in the account's language.
-    if (session?.localeChanged && session.settings) {
-      context.queryClient.removeQueries({ queryKey: sessionQuery.queryKey })
-      if (isServer) throw redirect({ href: location.href })
-      void setLocale(session.settings.locale)
-    }
     return { session }
   },
   head: () => ({
@@ -76,10 +63,14 @@ function RootComponent(props: ParentProps) {
 
   // Saving another language switches it in place: Paraglide takes the new locale and sets
   // the cookie for later requests, and the page renders again, since messages are plain
-  // functions that Solid doesn't track. The first render already has the right locale.
+  // functions that Solid doesn't track. The server renders in the request's language, so a
+  // page that arrives in another than the account's, as after signing in elsewhere, stores
+  // the account's and loads again: hydration can't render it anew.
+  let mounted = false
+  onMount(() => (mounted = true))
   const locale = createMemo(() => {
     const saved = session.data?.settings?.locale
-    if (!isServer && saved && saved !== getLocale()) void setLocale(saved, { reload: false })
+    if (!isServer && saved && saved !== getLocale()) void setLocale(saved, { reload: !mounted })
     return getLocale()
   })
 

@@ -5,7 +5,7 @@ import { v7 as uuidv7 } from 'uuid'
 import type { Database } from '~/db'
 import { invitation, user } from '~/db/schema'
 import { seedIds } from '~/db/seed'
-import { getSettings } from '../settings/settings.server'
+import { createSettings } from '../settings/settings.server'
 import { as, createSeededDatabase } from '../testing'
 import { appSession } from './session.server'
 
@@ -102,7 +102,7 @@ describe('appSession', () => {
     const loner = await newUser('fill@example.com')
     expect((await appSession(db, loner, null, NOW)).fill).toBeNull()
     await as({ userId: loner.id }, () =>
-      getSettings(db, loner.id, { timeZone: 'Europe/Tallinn', locale: 'en' }),
+      createSettings(db, loner.id, { timeZone: 'Europe/Tallinn', locale: 'en' }),
     )
     expect((await appSession(db, loner, null, NOW)).fill).toMatchObject({
       timerStartedAt: null,

@@ -26,7 +26,7 @@ of the code keeps; the rest is by area:
 | Auth          | Better Auth with the Drizzle adapter; organization plugin without teams (organization deletion disabled); teams are app rules                                                                                                    |
 | Data fetching | TanStack Query with optimistic updates                                                                                                                                                                                           |
 | Forms         | TanStack Form                                                                                                                                                                                                                    |
-| Validation    | Valibot, shared by forms and server functions                                                                                                                                                                                    |
+| Validation    | Valibot, shared by forms and the JSON API's input and output schemas                                                                                                                                                             |
 | UI            | Solid-UI + Tailwind; components in `src/components/ui/`, copied from the Solid-UI registry at the commit the prototypes use (`21ba4fa`)                                                                                          |
 | i18n          | English and Estonian; Paraglide JS                                                                                                                                                                                               |
 | Testing       | `bun test` for server and database code (`*.test.ts`); Vitest with Solid Testing Library in jsdom for components (`*.test.tsx`); `bunfig.toml` and `vitest.config.ts` keep each runner off the other's files                     |
@@ -37,9 +37,12 @@ of the code keeps; the rest is by area:
 
 ## Application rules
 
-- All DB access goes through server functions; the Turso token never reaches
-  the browser.
-- Authorization checks live in server functions (SQLite has no RLS).
+- All DB access goes through the JSON API (`/api/v1`, task 084); the Turso token never
+  reaches the browser. The browser calls it over HTTP, and Start's server render calls the
+  same handlers in process, so a page load makes no HTTP request to itself. A GET only
+  reads: a read that needs state works it out, and only an explicit write saves it.
+  Better Auth's sliding session, which may send its cookie again, is the one exception.
+- Authorization checks live in the rules the API's handlers call (SQLite has no RLS).
 - Writes are named mutations (`startTimer`, `stopTimer`, `updateEntry`, …),
   not generic CRUD.
 - The UI applies writes optimistically. `optimistic` in `src/lib/queries/query.ts` updates
@@ -79,8 +82,8 @@ of the code keeps; the rest is by area:
   first, so the usual refusal has its own message, and maps a guard's failure to the
   same error.
 - Queries on soft-deleted tables filter `sys_deleted = 0` through shared
-  helpers, not ad hoc in each server function.
-- On Vercel each statement is an HTTP round trip to Turso, so a server function runs
+  helpers, not ad hoc in each rule.
+- On Vercel each statement is an HTTP round trip to Turso, so a rule runs
   statements that don't depend on each other together. Outside a transaction,
   `Promise.all` sends them as parallel requests. Inside one, libSQL sends statements
   issued in the same tick as one pipeline request. Checks that throw go through
@@ -89,42 +92,52 @@ of the code keeps; the rest is by area:
   the running timer goes with the checks, because a failed check rolls it back.
 - Server code is grouped by domain: `auth`, `entries`, `timer`, `projects`, `reports`,
   `teams`, and `settings`, each in `src/server/<domain>/`. A domain folder holds:
-  - `<domain>.functions.ts`: the server functions the UI calls. Each is a thin wrapper
-    that picks a middleware, validates input, and calls the rules. The client imports
-    these files; Start compiles them to RPC calls there.
   - `<domain>.server.ts`: server-only modules holding the rules. They take the database
     and scope as arguments, so tests run them against seeded throwaway databases.
     TanStack Start's import protection keeps `*.server.*` files out of the client
     bundle. The auth domain also holds the Better Auth instance
     (`better-auth.server.ts`).
-  - `<domain>.schemas.ts`: Valibot input schemas shared by forms and server functions.
-    They must stay importable from the browser. A domain that needs another's schema
-    imports that domain's file.
+  - `<domain>.schemas.ts`: the Valibot schemas of the domain's calls, what they take and
+    what they send, shared by forms, the API, and the client. They must stay importable
+    from the browser. A domain that needs another's schema imports that domain's file.
+    `src/lib/api/operations.ts` lists each call's method, path, scope, input, and output.
   - `<domain>.test.ts`: tests of the rules.
 - Code that several domains share sits directly in `src/server/`:
-  - `middleware.ts`: `sessionMiddleware` resolves the Better Auth session; `scopeMiddleware`
-    requires `organizationId` in the call's input and adds the tenancy scope of that
-    organization ("Tenancy" in [data.md](data.md)). Both run the call inside `withActor()`.
+  - `operations.server.ts`: each call's handler, which calls the domain's rules the way
+    its route would. `runOperation` resolves the call's scope (organization, user, or
+    public, for the signed-out calls), validates its input, and turns a refusal into the
+    contract's answer. An organization call names `organizationId` and gets the tenancy
+    scope of that organization ("Tenancy" in [data.md](data.md)).
+  - `api.server.ts`: the JSON API over HTTP, and `renderTransport`, which Start's server
+    render calls in process. Both check the session in `guards.server.ts`, run the call
+    inside `withActor()`, and count a write against the user's rate. Writes need the
+    app's own `Origin`, which on a preview is its branch or deployment URL. A read whose input is a filter object, as the reports' are, is a
+    POST marked `read` in the operation list, so its filters travel as a JSON body; it
+    passes the checks a GET does.
   - `scope.server.ts`, `queries.server.ts`, and `testing.ts`: the tenancy scope, the
     shared query helpers, and the seeded test databases.
-  - `schemas.ts`: Valibot building blocks (`Uuidv7`, `Description`, `Timestamp`) for
-    the domain schemas, and `OrganizationInput`, which `scopeMiddleware` checks.
+  - `schemas.ts`: Valibot building blocks (`Uuidv7`, `Description`, `Timestamp`,
+    `OrgRole`) for the domain schemas, `OrganizationInput`, which `runOperation` checks,
+    and the `Operation` type.
   - `errors.ts`: `AppError`, thrown with a code (`FORBIDDEN`, `NOT_FOUND`, and so on).
-    A serialization adapter in `src/start.ts` keeps the code across the wire; Start
-    would otherwise send only the message. `src/start.ts` also registers Start's CSRF
-    middleware, which Start applies by default only when no start instance exists.
-- The client imports a domain's `*.functions.ts` and `*.schemas.ts`, `schemas.ts`, and
-  `errors.ts`: that is the backend's contract. It never imports `*.server.ts`, even
-  for a type. Response types are derived from the server function
-  (`Awaited<ReturnType<typeof listEntries>>`), so they can't drift. A type the client
-  needs by name is exported from `*.functions.ts` (`AppSession`, `SignInMethod`). Code
-  the client and server share that isn't part of the contract, such as `calendar.ts`,
-  lives in `src/lib/`.
+    The API sends its code and key, with an HTTP status from the code, and the client's
+    transport throws it again. Better Auth's own refusals keep Better Auth's status and
+    code. A serialization adapter in `src/start.ts` keeps an `AppError` that a loader
+    throws during the server render; Start would otherwise send only the message.
+- The client imports a domain's `*.schemas.ts`, `schemas.ts`, and `errors.ts`: that is
+  the backend's contract. It never imports `*.server.ts`, even for a type. Queries and
+  mutations call `call` in `src/lib/api/client.ts`, whose transport is the JSON API over
+  HTTP in the browser, and the API in process during a server render
+  (`src/server-entry.ts` sets it). Both decode answers with the output schemas
+  (`src/lib/api/wire.ts`), so the cache holds the same `Date`s and `AppError`s either
+  way, and the handlers' return types are checked against the same schemas. Code the
+  client and server share that isn't part of the contract, such as `calendar.ts`, lives
+  in `src/lib/`.
 - One folder per domain replaced parallel `src/functions/`, `src/schemas/`, and
   `src/server/` trees, in which one change to a domain touched three folders. The
-  separate route, service, and DAO layers of minupatsient-api were not adopted: a
-  server function already is the route, and one rules module per domain is tested
-  directly, so the extra layers would mostly pass calls through.
+  separate route, service, and DAO layers of minupatsient-api were not adopted: one
+  handler per call is the route, and one rules module per domain is tested directly, so
+  the extra layers would mostly pass calls through.
 
 ## Deferred / out of scope
 

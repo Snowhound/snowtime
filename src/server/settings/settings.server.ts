@@ -6,7 +6,7 @@ import type { Database } from '~/db'
 import { userSettings } from '~/db/schema'
 import { inCollection } from '~/lib/scene/images'
 import { AppError } from '../errors'
-import type { GetSettingsInput, UpdateSettingsInput } from './settings.schemas'
+import type { CreateSettingsInput, UpdateSettingsInput } from './settings.schemas'
 
 const columns = {
   timeZone: userSettings.timeZone,
@@ -38,9 +38,9 @@ export async function findSettings(db: Database, userId: string) {
   return (await db.select(columns).from(userSettings).where(eq(userSettings.userId, userId))).at(0)
 }
 
-// Returns the user's settings, creating them on the first call with the browser's time
-// zone and locale and a Monday week start. Later calls ignore the input.
-export async function getSettings(db: Database, userId: string, input: GetSettingsInput) {
+// Creates the user's settings, if they have none, with the browser's time zone and locale
+// and a Monday week start, and returns them. Later calls ignore the input.
+export async function createSettings(db: Database, userId: string, input: CreateSettingsInput) {
   const existing = await findSettings(db, userId)
   if (existing) return existing
   // A concurrent first call may insert first; either way the row now exists.

@@ -1,20 +1,11 @@
 // The Projects view's queries and its optimistic mutations. Projects live in the cache
 // the timer reads too (src/lib/queries/projects.ts), so each write shows there at once as well.
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
+import { call } from '~/lib/api/client'
 import { localDate, monthDates } from '~/lib/calendar'
 import type { Project } from '~/lib/queries/projects'
 import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
-import {
-  archiveProject,
-  assignProjectToTeam,
-  createProject,
-  deleteProject,
-  unarchiveProject,
-  unassignProjectFromTeam,
-  updateProject,
-} from '~/server/projects/projects.functions'
 import type { ProjectIdInput } from '~/server/projects/projects.schemas'
-import { getReport } from '~/server/reports/reports.functions'
 
 // Time per project this month in the user's zone: the organization's for admins and
 // owners, the user's own otherwise. Without a userId a team lead would get their teams'
@@ -23,7 +14,7 @@ export function monthReportQuery(organizationId: string, zone: string, userId: s
   const { from, to } = monthDates(localDate(Date.now(), zone))
   return queryOptions({
     queryKey: [...reportsKey, organizationId, { from, to, userId }],
-    queryFn: () => getReport({ data: { organizationId, from, to, ...(userId ? { userId } : {}) } }),
+    queryFn: () => call('getReport', { organizationId, from, to, ...(userId ? { userId } : {}) }),
   })
 }
 
@@ -50,18 +41,18 @@ function projectsKey(organizationId: string) {
 async function saveProject(organizationId: string, input: SaveProjectInput) {
   const { id } = input
   if (input.kind === 'create') {
-    await createProject({ data: { organizationId, id, name: input.name, color: input.color } })
+    await call('createProject', { organizationId, id, name: input.name, color: input.color })
   } else if (input.name !== undefined || input.color !== undefined) {
-    await updateProject({ data: { organizationId, id, name: input.name, color: input.color } })
+    await call('updateProject', { organizationId, id, name: input.name, color: input.color })
   }
   const assign = input.kind === 'create' ? input.teamIds : input.assign
   const unassign = input.kind === 'create' ? [] : input.unassign
   await Promise.all([
     ...assign.map((teamId) =>
-      assignProjectToTeam({ data: { organizationId, projectId: id, teamId } }),
+      call('assignProjectToTeam', { organizationId, projectId: id, teamId }),
     ),
     ...unassign.map((teamId) =>
-      unassignProjectFromTeam({ data: { organizationId, projectId: id, teamId } }),
+      call('unassignProjectFromTeam', { organizationId, projectId: id, teamId }),
     ),
   ])
 }
@@ -100,7 +91,7 @@ function setArchived(projects: Project[], id: string, archivedAt: Date | null) {
 export function useArchiveProject({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: ProjectIdInput) => archiveProject({ data: { ...input, organizationId } }),
+    mutationFn: (input: ProjectIdInput) => call('archiveProject', { ...input, organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Project[], ProjectIdInput>(projectsKey(organizationId), (projects, { id }) =>
         setArchived(projects, id, new Date()),
@@ -112,7 +103,7 @@ export function useArchiveProject({ organizationId }: Keys) {
 export function useUnarchiveProject({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: ProjectIdInput) => unarchiveProject({ data: { ...input, organizationId } }),
+    mutationFn: (input: ProjectIdInput) => call('unarchiveProject', { ...input, organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Project[], ProjectIdInput>(projectsKey(organizationId), (projects, { id }) =>
         setArchived(projects, id, null),
@@ -124,7 +115,7 @@ export function useUnarchiveProject({ organizationId }: Keys) {
 export function useDeleteProject({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: ProjectIdInput) => deleteProject({ data: { ...input, organizationId } }),
+    mutationFn: (input: ProjectIdInput) => call('deleteProject', { ...input, organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Project[], ProjectIdInput>(projectsKey(organizationId), (projects, { id }) =>
         projects.filter((p) => p.id !== id),

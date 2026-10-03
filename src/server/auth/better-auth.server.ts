@@ -7,7 +7,7 @@ import { tanstackStartCookies } from 'better-auth/tanstack-start/solid'
 import { v7 as uuidv7 } from 'uuid'
 import { db } from '~/db'
 import * as schema from '~/db/schema'
-import { env } from '~/env'
+import { appUrl as appUrlString, env, trustedOrigins } from '~/env'
 import { limits, rateLimits } from '../limits.server'
 import { createRateLimitStore } from '../rate-limit.server'
 import {
@@ -20,34 +20,35 @@ import { databaseHooks, organizationHooks } from './name-checks.server'
 import { passwordEnabled, refuseUnverifiedSignUp, socialProviders } from './sign-in.server'
 
 // Passkeys are bound to the app's domain, so each environment's relying party follows its
-// BETTER_AUTH_URL; the plugin would otherwise default to localhost.
-const appUrl = new URL(env.BETTER_AUTH_URL)
+// URL; the plugin would otherwise default to localhost.
+const appUrl = new URL(appUrlString)
 const domains = env.ALLOWED_LOGIN_DOMAINS ?? []
 const removalHook = memberRemovalHook(db)
 const domainHooks = loginDomainHooks(domains, (id) =>
   db.query.user.findFirst({ columns: { email: true }, where: { id } }),
 )
 
-// Shared with sessionMiddleware, which limits server-function writes with it.
+// Shared with the API's session check, which limits each user's writes with it.
 export const rateLimitStore = createRateLimitStore(env)
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
+  baseURL: appUrlString,
+  trustedOrigins,
   database: drizzleAdapter(db, { provider: 'sqlite', schema }),
   advanced: {
     database: { generateId: () => uuidv7() },
     // Without a trustworthy address, every request shares one rate-limit count.
     ...(env.CLIENT_IP_HEADER && { ipAddress: { ipAddressHeaders: [env.CLIENT_IP_HEADER] } }),
   },
-  // The session and user ride in a signed cookie for 5 minutes, so a server function call
+  // The session and user ride in a signed cookie for 5 minutes, so an API call
   // doesn't read them from the database. A session revoked elsewhere, or a deleted account,
   // stays usable that long on a device that has the cookie (docs/architecture/auth.md, "Sign-in
   // methods"). Membership is still read on every call (resolveScope). A session lasts 30 days
   // and is renewed daily while used, so someone who tracks time often stays signed in.
   session: { expiresIn: 30 * 24 * 60 * 60, cookieCache: { enabled: true, maxAge: 5 * 60 } },
-  // On in production only, per IP address and path. The counts go where the server
-  // functions' go: Upstash Redis when configured, else memory (docs/architecture/auth.md,
+  // On in production only, per IP address and path. The counts go where the API's
+  // go: Upstash Redis when configured, else memory (docs/architecture/auth.md,
   // "Abuse limits").
   rateLimit: {
     customStorage: rateLimitStore,

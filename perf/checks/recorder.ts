@@ -1,4 +1,4 @@
-// The app's server functions on a copy of the benchmark database, with every statement they
+// The app's rules on a copy of the benchmark database, with every statement they
 // run recorded: its SQL, its arguments, and the rows it returned.
 
 import type { InStatement } from '@libsql/client'
