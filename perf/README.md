@@ -6,7 +6,7 @@ so a change can show its effect in numbers (task 069). There are four harnesses:
 | Command                | Needs           | Measures                                                 |
 | ---------------------- | --------------- | -------------------------------------------------------- |
 | `bun run perf`         | Nothing but Bun | Bundle budgets, query plans, report rows and bytes       |
-| `bun run perf:pages`   | Chrome          | Page bytes, DOM nodes, hydration, long tasks, input      |
+| `bun run perf:pages`   | Chrome          | Page bytes, DOM nodes, load timings, input, navigation   |
 | `bun run perf:load`    | Nothing but Bun | Server response times, requests per second, CPU, and RSS |
 | `bun run perf:weather` | Chrome          | Weather GPU and CPU time per frame, golden frames        |
 
@@ -88,17 +88,23 @@ Loads pages of the production build in the installed Chrome (`channel: 'chrome'`
 is downloaded) and counts what they send. It signs in as `admin` and opens `/lumen/timer`,
 `/lumen/reports` for this week and this year, `/lumen/settings`, and `/sign-in` signed
 out, each in a fresh context with an empty cache. The viewport is 1440 × 900 at pixel ratio
-1.5, with a 4× CPU slowdown. A default run takes about 25 seconds.
+1.5, with a 4× CPU slowdown. First it times loads of the timer and both reports on Chrome's
+"Fast 4G" (165 ms latency, 9 Mbit/s down): each with an empty cache, then again in the same
+context, whose cache and storage hold what the first load left, median of `--runs` (3). A
+default run takes about 80 seconds.
 
-| Number                      | Kind     | How it's measured                                                                                                    |
-| --------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
-| HTML bytes, raw and gzipped | Gated    | The document, with the request's CSP nonce and the router's timestamps replaced by text of the same length           |
-| JS and CSS, gzipped         | Gated    | Every script and stylesheet loaded until a second after hydration, gzipped at level 9 (the preview doesn't compress) |
-| DOM nodes                   | Gated    | Elements after hydration                                                                                             |
-| Time to hydrate             | Reported | When Solid hydrated the last server-rendered element (`_$HY.completed`)                                              |
-| Grid                        | Reported | The first animation frame with a timesheet cell button in the DOM, on the reports pages                              |
-| Long tasks                  | Reported | Count and total from a `longtask` observer                                                                           |
-| Interactions                | Reported | Start the timer, open an entry's project field, step the report range back: input to the next paint, median of 3     |
+| Number                      | Kind     | How it's measured                                                                                                                                                                 |
+| --------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HTML bytes, raw and gzipped | Gated    | The document, with anything that varies per request (a nonce, the router's timestamps) replaced by text of the same length                                                        |
+| JS and CSS, gzipped         | Gated    | Every script and stylesheet loaded until a second after the page has settled, gzipped at level 9 (the preview doesn't compress)                                                   |
+| DOM nodes                   | Gated    | Elements once the page has settled                                                                                                                                                |
+| Paint, skeleton             | Reported | The first contentful paint, and the frame after the page's `h1` is in the DOM                                                                                                     |
+| Content                     | Reported | The frame after the page's content is in the DOM: an entry row, a timesheet cell, a form field, a sign-in button                                                                  |
+| Ready                       | Reported | When the page answers input: content for a page the browser renders, the end of hydration for a server-rendered one                                                               |
+| Main ms, long tasks         | Reported | Main-thread task time until content, and the long tasks before it                                                                                                                 |
+| Data bytes                  | Reported | Server function responses, gzipped, on the load timings' cold load                                                                                                                |
+| Interactions                | Reported | Start the timer, open an entry's project field, step the report range back: input to the next paint, median of 3                                                                  |
+| Navigation                  | Reported | The header's link from the timer to the reports and back, the pointer resting 100 ms first so the router preloads: click to the new page's content with nothing busy, median of 3 |
 
 A gated number fails when it grows by more than 1% (and 200 bytes, for bytes). The sign-in
 page shows the scene whatever the settings say, so its numbers include the scene. The
