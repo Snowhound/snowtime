@@ -5,8 +5,8 @@ of the code keeps; the rest is by area:
 
 - [data.md](data.md): data conventions, tenancy, schema and migrations, time zones, and
   working days
-- [auth.md](auth.md): sign-in methods, cookies and consent, abuse limits, and the content
-  security policy
+- [auth.md](auth.md): sign-in methods, API keys, cookies and consent, abuse limits, and the
+  content security policy
 - [platform.md](platform.md): supported browsers, deployment, environments,
   internationalization, error pages, and the performance harnesses
 - [reports.md](reports.md): report export, entries, views, and ticket keys
