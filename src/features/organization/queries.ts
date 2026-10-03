@@ -11,8 +11,7 @@ import type { Project } from '~/lib/queries/projects'
 import { cacheUpdate, newId, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
 import { type Team, teamsQuery } from '~/lib/queries/teams'
-import { type AppSession, updateIssueLinks } from '~/server/auth/auth.functions'
-import type { Invitation } from '~/server/auth/auth.schemas'
+import type { AppSession, Invitation } from '~/server/auth/auth.schemas'
 import type { SetTeamRoleInput } from '~/server/teams/teams.schemas'
 import type { OrgRole } from './roles'
 
@@ -369,8 +368,9 @@ export function useUpdateIssueLinks(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (issueLinks: string | null) =>
-      updateIssueLinks({
-        data: { organizationId: keys.organizationId, issueLinks: issueLinks ?? '' },
+      call('updateIssueLinks', {
+        organizationId: keys.organizationId,
+        issueLinks: issueLinks ?? '',
       }),
     ...optimistic(queryClient, [
       cacheUpdate<AppSession | null, string | null>(sessionQuery.queryKey, (session, issueLinks) =>

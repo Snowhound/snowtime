@@ -14,7 +14,9 @@ import { matchPath } from '~/lib/api/wire'
 import { AppError } from './errors'
 import { createSeededDatabase } from './testing'
 
-// Better Auth needs the server's environment, which tests don't have; these calls don't use it.
+// Better Auth and the environment need the server's settings, which tests don't have; these
+// calls don't use them.
+await mock.module('~/env', () => ({ env: {} }))
 await mock.module('./auth/better-auth.server', () => ({ auth: {}, rateLimitStore: {} }))
 const { runOperation } = await import('./operations.server')
 

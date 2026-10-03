@@ -15,7 +15,6 @@ const fn = vi.hoisted(() => ({
   updateSettings: vi.fn(),
 }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
   authClient: { organization: { setActive: fn.setActive } },

@@ -8,7 +8,6 @@ import { PreferencesCard } from './preferences-card'
 
 const fn = vi.hoisted(() => ({ updateSettings: vi.fn() }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
 
 const SETTINGS: Settings = {
   timeZone: 'Europe/Tallinn',

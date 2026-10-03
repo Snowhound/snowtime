@@ -17,7 +17,6 @@ vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
   authClient: client,
 }))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
 
 const user = { id: newId(), name: 'Max Member', email: 'member@example.com', image: null }
 

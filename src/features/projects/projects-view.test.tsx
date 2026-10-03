@@ -26,7 +26,6 @@ const fn = vi.hoisted(() => ({
 }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
 vi.mock('~/server/reports/reports.functions', () => ({ getReport: fn.getReport }))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 // The view renders without a router; its one link only needs to be there.
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; class?: string; children: JSX.Element }) => (

@@ -26,7 +26,6 @@ const fn = vi.hoisted(() => ({
   updateSettings: vi.fn(),
 }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; class?: string; children: JSX.Element }) => (
     <a href={props.to} class={props.class}>

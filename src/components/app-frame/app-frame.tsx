@@ -12,7 +12,7 @@ import { SCENE_DEFAULTS, sceneAttributes, shownSeason } from '~/lib/scene/scene'
 import { SeasonProvider, TaglineProvider } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 import { getLocale } from '~/paraglide/runtime.js'
-import type { AppSession } from '~/server/auth/auth.functions'
+import type { AppSession } from '~/server/auth/auth.schemas'
 import { AppHeader } from './app-header'
 import { PasskeyPrompt } from './passkey-prompt'
 

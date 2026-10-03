@@ -4,11 +4,16 @@
 // file, so the TypeScript app's client bundle leaves it out.
 import * as v from 'valibot'
 import {
+  AppSession,
   CreatedInvitation,
+  Deployment,
+  DevUser,
   GetInvitationInput,
   Invitation,
   InvitationPreview,
   InviteMemberInput,
+  SignInMethod,
+  UpdateIssueLinksInput,
 } from '~/server/auth/auth.schemas'
 import {
   CreateEntryInput,
@@ -54,6 +59,44 @@ const teamPath = `${organizationPath}/teams/:teamId`
 const teamMemberPath = `${teamPath}/members/:userId`
 
 export const operations = {
+  // The signed-in user, their organizations and settings, or null when signed out.
+  getAppSession: {
+    method: 'GET',
+    path: '/api/v1/session',
+    scope: 'public',
+    input: undefined,
+    output: v.nullable(AppSession),
+  },
+  getSignInMethods: {
+    method: 'GET',
+    path: '/api/v1/sign-in-methods',
+    scope: 'public',
+    input: undefined,
+    output: v.array(SignInMethod),
+  },
+  getDeployment: {
+    method: 'GET',
+    path: '/api/v1/deployment',
+    scope: 'public',
+    input: undefined,
+    output: Deployment,
+  },
+  // Empty wherever password sign-in is off.
+  getDevUsers: {
+    method: 'GET',
+    path: '/api/v1/dev-users',
+    scope: 'public',
+    input: undefined,
+    output: v.array(DevUser),
+  },
+  // Better Auth's organization client can't set the app's own columns.
+  updateIssueLinks: {
+    method: 'PATCH',
+    path: `${organizationPath}/issue-links`,
+    scope: 'organization',
+    input: UpdateIssueLinksInput,
+    output: v.object({ id: v.string(), issueLinks: v.nullable(v.string()) }),
+  },
   // The running timer spans organizations, so stopping and reading it names no
   // organization.
   getRunningTimer: {

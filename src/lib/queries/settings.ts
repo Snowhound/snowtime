@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/solid-query'
 import { call } from '~/lib/api/client'
-import type { AppSession } from '~/server/auth/auth.functions'
+import type { AppSession } from '~/server/auth/auth.schemas'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
 import { cacheUpdate, optimistic } from './query'
 import { sessionQuery } from './session'

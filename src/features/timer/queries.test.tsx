@@ -14,7 +14,6 @@ const fn = vi.hoisted(() => ({
   listEntries: vi.fn(),
 }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
 
 const HOUR = 3_600_000
 const organizationId = newId()

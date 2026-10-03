@@ -4,14 +4,15 @@ import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { Show } from 'solid-js'
 import { describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
 import { sessionQuery } from '~/lib/queries/session'
 import type { Settings } from '~/lib/queries/settings'
 import { useQuery } from '~/lib/queries/use-query'
 import { AppearancePopover } from './appearance-popover'
 
 const fn = vi.hoisted(() => ({ updateSettings: vi.fn(), getAppSession: vi.fn() }))
+setTransport((name, input) => fn[name as keyof typeof fn](input))
 vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; children: JSX.Element }) => <a href={props.to}>{props.children}</a>,
 }))

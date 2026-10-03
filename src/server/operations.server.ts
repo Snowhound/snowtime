@@ -4,6 +4,9 @@
 import { APIError } from 'better-auth/api'
 import * as v from 'valibot'
 import type { Database } from '~/db'
+import { SEED_PASSWORD, seedUsers } from '~/db/seed'
+import { companyUsers } from '~/db/seed-company'
+import { env } from '~/env'
 import {
   type OperationName,
   operations,
@@ -13,6 +16,9 @@ import {
 import { decode, type WireError, type WireResponse } from '~/lib/api/wire'
 import { auth, rateLimitStore } from './auth/better-auth.server'
 import * as invitations from './auth/invitations.server'
+import * as organizations from './auth/organization.server'
+import { appSession } from './auth/session.server'
+import { passwordEnabled, signInMethods } from './auth/sign-in.server'
 import * as entries from './entries/entries.server'
 import { AppError, type AppErrorCode } from './errors'
 import { rateLimits } from './limits.server'
@@ -44,6 +50,41 @@ type Context<K extends OperationName> = {
 const handlers: {
   [K in OperationName]: (context: Context<K>, input: ParsedInputOf<K>) => Promise<OutputOf<K>>
 } = {
+  // The session read keeps the account's state as it is: it returns the fallback
+  // organization without saving it, and the browser stores the account's language.
+  getAppSession: async ({ db, headers }) => {
+    const session = await auth.api.getSession({ headers })
+    if (!session) return null
+    const { user } = session
+    const state = await appSession(db, user, session.session.activeOrganizationId ?? null)
+    return {
+      user: { id: user.id, name: user.name, email: user.email, image: user.image ?? null },
+      signedInAt: session.session.createdAt,
+      ...state,
+      appUrl: new URL(env.BETTER_AUTH_URL).origin,
+    }
+  },
+  // Method ids only, never a client ID or secret.
+  getSignInMethods: async () => signInMethods(env),
+  getDeployment: async () => ({
+    demoMode: env.DEMO_MODE,
+    allowedDomains: env.ALLOWED_LOGIN_DOMAINS ?? [],
+  }),
+  // The company's users are listed once `bun run db:seed --company` has added them.
+  getDevUsers: async ({ db }) => {
+    if (!passwordEnabled(env)) return []
+    const company = await db.query.user.findMany({
+      columns: { email: true },
+      where: { email: { in: companyUsers.map((u) => u.email) } },
+    })
+    const seeded = new Set(company.map((u) => u.email))
+    return [...seedUsers, ...companyUsers.filter((u) => seeded.has(u.email))].map((u) => ({
+      name: u.name,
+      email: u.email,
+      password: SEED_PASSWORD,
+    }))
+  },
+  updateIssueLinks: ({ db, scope }, input) => organizations.updateIssueLinks(db, scope, input),
   getRunningTimer: ({ db, userId }) => timer.getRunningTimer(db, userId),
   startTimer: ({ db, scope }, input) => timer.startTimer(db, scope, input),
   stopTimer: ({ db, userId }, input) => timer.stopTimer(db, userId, input),

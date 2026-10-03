@@ -37,10 +37,6 @@ const org = vi.hoisted(() => ({
   cancelInvitation: vi.fn(),
   update: vi.fn(),
 }))
-vi.mock('~/server/auth/auth.functions', () => ({
-  getAppSession: fn.getAppSession,
-  updateIssueLinks: fn.updateIssueLinks,
-}))
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
   authClient: { organization: org },
@@ -521,7 +517,7 @@ describe('OrganizationView', () => {
   })
 
   test('General saves Issue links, an https:// address with {key}, and clears it', async () => {
-    fn.updateIssueLinks.mockImplementation(async ({ data }) => {
+    fn.updateIssueLinks.mockImplementation(async (data) => {
       server.issueLinks = data.issueLinks || null
       return { id: organizationId, issueLinks: server.issueLinks }
     })
@@ -543,7 +539,8 @@ describe('OrganizationView', () => {
     await userEvent.type(input, '{{key}')
     await userEvent.click(save)
     expect(fn.updateIssueLinks).toHaveBeenCalledWith({
-      data: { organizationId, issueLinks: 'https://acme.atlassian.net/browse/{key}' },
+      organizationId,
+      issueLinks: 'https://acme.atlassian.net/browse/{key}',
     })
     expect(org.update).not.toHaveBeenCalled()
     expect(await screen.findByText('Saved.')).toBeInTheDocument()
@@ -551,9 +548,7 @@ describe('OrganizationView', () => {
     await userEvent.clear(input)
     await userEvent.click(save)
     await waitFor(() =>
-      expect(fn.updateIssueLinks).toHaveBeenLastCalledWith({
-        data: { organizationId, issueLinks: '' },
-      }),
+      expect(fn.updateIssueLinks).toHaveBeenLastCalledWith({ organizationId, issueLinks: '' }),
     )
   })
 

@@ -10,7 +10,6 @@ import { NotFoundPage } from './not-found-page'
 const invalidate = vi.hoisted(() => vi.fn())
 const checkAvailability = vi.hoisted(() => vi.fn())
 const frame = vi.hoisted(() => ({ organizationId: undefined as string | undefined }))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
 vi.mock('~/server/availability/availability.functions', () => ({ checkAvailability }))
 // The pages render without a router; the frames stand in as marked wrappers, since the
 // frame each page picks is what these tests check.
