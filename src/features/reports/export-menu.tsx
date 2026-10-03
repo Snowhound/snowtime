@@ -16,9 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { call } from '~/lib/api/client'
 import { type IsoDate, addDays } from '~/lib/calendar'
 import { m } from '~/paraglide/messages.js'
-import { getReportExport } from '~/server/reports/reports.functions'
 import type { ReportInput } from '~/server/reports/reports.schemas'
 import {
   EXPORT_LOCALE,
@@ -105,8 +105,11 @@ export function ExportMenu(props: {
     let done = 0
     setProgress({ done, total })
     function fetchPiece(piece: (typeof pieces)[number], now?: Report['now']) {
-      return getReportExport({
-        data: { organizationId: props.organizationId, report: props.input, ...piece, now },
+      return call('getReportExport', {
+        organizationId: props.organizationId,
+        report: props.input,
+        ...piece,
+        now,
       }).then((data) => {
         setProgress({ done: ++done, total })
         return data

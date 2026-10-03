@@ -129,12 +129,9 @@ describe('createEntry', () => {
         ...past(30),
       }),
     )
-    expect(entry).toMatchObject({
-      id,
-      userId: U.member,
-      organizationId: O.northwind,
-      createdBy: U.member,
-    })
+    expect(entry).toMatchObject({ id, userId: U.member, organizationId: O.northwind })
+    const [row] = await db.select().from(timeEntry).where(eq(timeEntry.id, id))
+    expect(row.createdBy).toBe(U.member)
   })
 
   test('an entry takes a ticket key in its format', async () => {
@@ -173,7 +170,8 @@ describe('createEntry', () => {
       code: 'FORBIDDEN',
     })
     const entry = await as(scopes.admin, () => createEntry(db, scopes.admin, forMax()))
-    expect(entry).toMatchObject({ userId: U.member, createdBy: U.admin })
+    const [row] = await db.select().from(timeEntry).where(eq(timeEntry.id, entry.id))
+    expect(row).toMatchObject({ userId: U.member, createdBy: U.admin })
   })
 
   test('the other user must be a member of the organization', async () => {
@@ -264,11 +262,9 @@ describe('updateEntry', () => {
     const updated = await as(scopes.member, () =>
       updateEntry(db, scopes.member, { id: entry.id, description: 'Final', projectId: P.mobile }),
     )
-    expect(updated).toMatchObject({
-      description: 'Final',
-      projectId: P.mobile,
-      updatedBy: U.member,
-    })
+    expect(updated).toMatchObject({ description: 'Final', projectId: P.mobile })
+    const [row] = await db.select().from(timeEntry).where(eq(timeEntry.id, entry.id))
+    expect(row.updatedBy).toBe(U.member)
     expect(updated.startedAt).toEqual(entry.startedAt)
   })
 
@@ -304,7 +300,8 @@ describe('updateEntry', () => {
     const updated = await as(scopes.admin, () =>
       updateEntry(db, scopes.admin, { id: entry.id, description: 'Admin' }),
     )
-    expect(updated).toMatchObject({ description: 'Admin', userId: U.member, updatedBy: U.admin })
+    const [row] = await db.select().from(timeEntry).where(eq(timeEntry.id, updated.id))
+    expect(row).toMatchObject({ description: 'Admin', userId: U.member, updatedBy: U.admin })
   })
 
   test('the end must stay after the start, and a running entry is stopped by the timer', async () => {

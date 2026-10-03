@@ -1,6 +1,6 @@
 // The tenancy helper: who is acting, in which organization, with which rights. Every
-// server function that touches tenant data gets its scope from here (through
-// scopeMiddleware) and filters by scope.organizationId.
+// call that touches tenant data gets its scope from here (through runOperation) and
+// filters by scope.organizationId.
 import { and, eq, inArray } from 'drizzle-orm'
 import type { Database } from '~/db'
 import { member, team, teamMember } from '~/db/schema'
@@ -32,7 +32,7 @@ export async function resolveScope(
   userId: string,
   organizationId: string,
 ): Promise<Scope> {
-  // Both reads run together: every server function resolves its scope first, so each
+  // Both reads run together: every organization call resolves its scope first, so each
   // round trip here delays all of them.
   const [[membership], led] = await Promise.all([
     db

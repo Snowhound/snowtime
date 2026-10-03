@@ -58,7 +58,7 @@ browser and takes about 10 seconds with a seeded database. CI runs it.
 | Check          | Measures                                                               | Fails when                                              |
 | -------------- | ---------------------------------------------------------------------- | ------------------------------------------------------- |
 | Bundle budgets | Gzipped JS per route, gzipped CSS, and the server bundle's size        | A number grows by more than 1% or 200 bytes             |
-| Query plans    | `EXPLAIN QUERY PLAN` of every statement the hot server functions run   | A plan gains a `SCAN time_entry` or a `USE TEMP B-TREE` |
+| Query plans    | `EXPLAIN QUERY PLAN` of every statement the hot calls' rules run       | A plan gains a `SCAN time_entry` or a `USE TEMP B-TREE` |
 | Report reads   | Rows returned and result bytes of the report calls, per range and user | Rows grow, or bytes grow by more than 1% or 200 bytes   |
 
 Each check prints the change against the baseline, pass or fail. A number that shrinks
@@ -73,7 +73,7 @@ never fails.
   that grew, so the growth can be told apart from an accident: a feature's own chunk is
   expected, growth in a chunk that every route loads is not. Accept it with `--update` and
   commit the new baseline with the feature.
-- **Query plans:** the script runs the real server functions (`resolveScope`,
+- **Query plans:** the script runs the real rules (`resolveScope`,
   `getRunningTimer`, `listEntries`, `getReport`, `getReportEntries`), records every SQL
   statement they send, and explains each one, so a changed query is followed without
   editing the harness. Other plan changes are printed as notes.
@@ -102,7 +102,7 @@ default run takes about 80 seconds.
 | Content                     | Reported | The frame after the page's content is in the DOM: an entry row, a timesheet cell, a form field, a sign-in button                                                                  |
 | Ready                       | Reported | When the page answers input: content for a page the browser renders, the end of hydration for a server-rendered one                                                               |
 | Main ms, long tasks         | Reported | Main-thread task time until content, and the long tasks before it                                                                                                                 |
-| Data bytes                  | Reported | Server function responses, gzipped, on the load timings' cold load                                                                                                                |
+| Data bytes                  | Reported | JSON API responses, gzipped, on the load timings' cold load                                                                                                                       |
 | Interactions                | Reported | Start the timer, open an entry's project field, step the report range back: input to the next paint, median of 3                                                                  |
 | Navigation                  | Reported | The header's link from the timer to the reports and back, the pointer resting 100 ms first so the router preloads: click to the new page's content with nothing busy, median of 3 |
 

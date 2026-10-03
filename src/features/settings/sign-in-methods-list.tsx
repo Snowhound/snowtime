@@ -27,7 +27,7 @@ import { formatDateTime } from '~/lib/format'
 import { passkeysQuery } from '~/lib/queries/passkeys'
 import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
-import type { SignInMethod } from '~/server/auth/auth.functions'
+import type { SignInMethod } from '~/server/auth/auth.schemas'
 
 type SocialProvider = Exclude<SignInMethod, 'password' | 'passkey'>
 

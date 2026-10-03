@@ -120,13 +120,15 @@ test their migrations on throwaway local databases only (`db:drift`).
   `bun run test` run.
 - The locale lives in the `PARAGLIDE_LOCALE` cookie, not the URL: the app has no public pages
   that need localized links. Without the cookie, the browser's `Accept-Language` picks it,
-  then English. Signed-in pages set the cookie from `user_settings.locale`: when the account's
-  language differs from the request's, `getAppSession` sets the cookie and the page loads
-  again, so the user sees only the account's language. The cookie never holds anything but the
+  then English. Signed-in pages set the cookie from `user_settings.locale` in the browser:
+  the session read only reads (task 084), so when a page arrives in another language than the
+  account's, the root route stores the account's in the cookie and loads the page again.
+  After that, saving another language switches it in place. The cookie never holds anything but the
   account's language (see "Cookies and consent" in [auth.md](auth.md)). `src/server-entry.ts`
   runs Paraglide's middleware around every request, which scopes the locale per request.
 - The user's language is `user_settings.locale` (see "User settings" in [timer.md](timer.md)).
-  The first `getSettings` call sets it from the browser, as it does the time zone.
+  A new user's settings, which `PUT /api/v1/settings` creates, take it from the browser, as
+  they do the time zone.
 - The server returns keys, dates, and numbers, never display text; the client translates
   and formats them in the user's locale and zone.
   - Each `AppError` carries a stable snake_case message key from the catalog in
@@ -155,10 +157,9 @@ test their migrations on throwaway local databases only (`db:drift`).
   `AppError`'s message, or the generic one for anything else. It offers a retry, which
   reloads the routes, and a link home.
 - While the database is unreachable, for example while production moves to another
-  database, the error page is a maintenance page instead. `availabilityMiddleware`
-  (`src/server/middleware.ts`) runs around every server function. When one fails with an
-  unexpected error, the middleware runs `select 1`, and if that fails or takes over 3
-  seconds, it throws an `UNAVAILABLE` `AppError`. The maintenance page stays at the
+  database, the error page is a maintenance page instead. When an API call fails with an
+  unexpected error, `unavailableOr` (`src/server/guards.server.ts`) runs `select 1`, and
+  if that fails or takes over 3 seconds, the call fails with an `UNAVAILABLE` `AppError`. The maintenance page stays at the
   requested URL, so a reload opens that page once the database is back. It calls
   `checkAvailability` every 15 seconds while the tab is visible, and again on focus,
   when the tab is shown, or when the device comes online. Once the database answers,
@@ -176,8 +177,8 @@ test their migrations on throwaway local databases only (`db:drift`).
   carrying only the message to show and whether the database was unreachable. Remove the workaround once the router renders both
   sides alike.
 - The router's dehydrated state still carries a loader error's own message in the page
-  source, though the page never shows it. Start already sends a server function's error
-  message to the browser, so this adds no new exposure.
+  source, though the page never shows it. The API already sends a refusal's code and key
+  to the browser, and the message is the key's text, so this adds no new exposure.
 
 ## Performance harnesses
 

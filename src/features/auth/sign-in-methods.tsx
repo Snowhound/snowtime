@@ -17,13 +17,12 @@ import {
   TextFieldInput,
   TextFieldLabel,
 } from '~/components/ui/text-field'
+import { call } from '~/lib/api/client'
 import { authClient } from '~/lib/auth-client'
 import { fieldError } from '~/lib/form'
 import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
-import { getDevUsers } from '~/server/auth/auth.functions'
-import type { SignInMethod } from '~/server/auth/auth.functions'
-import { SignInForm } from '~/server/auth/auth.schemas'
+import { type SignInMethod, SignInForm } from '~/server/auth/auth.schemas'
 
 type SocialProvider = Exclude<SignInMethod, 'password' | 'passkey'>
 
@@ -163,7 +162,7 @@ export function PasswordSignIn(props: {
   const [revealed, setRevealed] = createSignal(false)
   const devUsers = useQuery(() => ({
     queryKey: ['dev-users'],
-    queryFn: () => getDevUsers(),
+    queryFn: () => call('getDevUsers'),
     staleTime: Infinity,
   }))
   let formRef!: HTMLFormElement

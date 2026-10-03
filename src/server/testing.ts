@@ -1,5 +1,5 @@
 // Helpers for tests of server logic: a migrated, seeded throwaway database and the scope
-// of a seeded user, the way scopeMiddleware would resolve it.
+// of a seeded user, the way runOperation would resolve it.
 import type { InStatement } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import type { Database } from '~/db'

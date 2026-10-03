@@ -46,43 +46,15 @@ import {
   type ReportEntriesInput,
   type ReportEntryTotalsInput,
   type ReportExportInput,
+  type DescriptionRow,
+  type ExportEntry,
+  type Report,
+  type ReportBreakdown,
+  type ReportEntries,
+  type ReportEntryPiece,
   type ReportInput,
+  type Totals,
 } from './reports.schemas'
-
-export interface Totals {
-  total: number
-  // Milliseconds per bucket, in the order of Report.buckets.
-  perBucket: number[]
-}
-
-export interface Report extends Totals {
-  timeZone: string
-  weekStart: WeekStart
-  unit: ReportInput['unit']
-  // The range as UTC instants; `to` is exclusive.
-  from: Date
-  to: Date
-  // Running entries count up to this moment.
-  now: Date
-  // First day of each bucket: every day of the range, or the week start of each week it
-  // touches. A partial first or last week counts only the days in the range.
-  buckets: IsoDate[]
-  // Days of the range with time, for the average per tracked day, which the buckets can't
-  // give when they are weeks.
-  trackedDays: number
-  // Entries with time in the range; one that crosses midnight counts once.
-  entries: number
-  // Only rows with time, most time first. projectId null is time without a project, and
-  // ticket null time without a ticket. Tickets only when the input asks for them.
-  projects: (Totals & { projectId: string | null })[]
-  tickets: (Totals & { ticket: string | null })[]
-  members: (Totals & { userId: string })[]
-  // A member in two teams counts in both, so team totals can add up to more than total.
-  teams: (Totals & { teamId: string })[]
-  // The members' names that the organization's member list lacks: people who have left it,
-  // whose time still counts.
-  formerMembers: { userId: string; name: string; email: string }[]
-}
 
 interface ReportEntry {
   userId: string
@@ -121,6 +93,20 @@ function rangeOf(a: Pick<Aggregation, 'timeZone' | 'from' | 'to'>): Range {
   return { from: startOfDay(a.from, a.timeZone), to: startOfDay(a.to, a.timeZone) }
 }
 
+function add(t: Totals | undefined, bucket: number, ms: number) {
+  if (!t) return
+  t.total += ms
+  t.perBucket[bucket] += ms
+}
+
+// The rows with time, most time first.
+function rows<K extends string, V>(key: K, map: Map<V, Totals>) {
+  return [...map]
+    .filter(([, t]) => t.total > 0)
+    .map(([id, t]) => ({ [key]: id, ...t }) as Totals & Record<K, V>)
+    .sort((x, y) => y.total - x.total || String(x[key]).localeCompare(String(y[key])))
+}
+
 // Sums the entries into the report's buckets and rows. Pure, so the day splitting and
 // running-entry rules are tested without a database.
 export function aggregate(entries: ReportEntry[], a: Aggregation) {
@@ -133,11 +119,6 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
   )
   function empty() {
     return { total: 0, perBucket: buckets.map(() => 0) }
-  }
-  function add(t: Totals | undefined, bucket: number, ms: number) {
-    if (!t) return
-    t.total += ms
-    t.perBucket[bucket] += ms
   }
   function rowOf<K>(map: Map<K, Totals>, key: K) {
     const row = map.get(key) ?? empty()
@@ -166,13 +147,6 @@ export function aggregate(entries: ReportEntry[], a: Aggregation) {
       add(member, bucket, piece.ms)
       if (piece.ms > 0) days.add(piece.date)
     }
-  }
-
-  function rows<K extends string, V>(key: K, map: Map<V, Totals>) {
-    return [...map]
-      .filter(([, t]) => t.total > 0)
-      .map(([id, t]) => ({ [key]: id, ...t }) as Totals & Record<K, V>)
-      .sort((x, y) => y.total - x.total || String(x[key]).localeCompare(String(y[key])))
   }
 
   const teams = new Map<string, Totals>()
@@ -450,14 +424,6 @@ export async function getReport(
   return reportOf(c, entries, former, now)
 }
 
-// Breakdown's second level: the range's time per project and member, and per ticket and member.
-// Null is time without a project or ticket. Team, then member needs none: it comes from team
-// membership and the report's member totals. Tickets only when the input asks for them.
-export interface ReportBreakdown {
-  projects: { projectId: string | null; userId: string; total: number }[]
-  tickets: { ticket: string | null; userId: string; total: number }[]
-}
-
 // Most time first, then by member.
 function byMemberTotal<T extends { userId: string; total: number }>(map: Map<string, T>) {
   return [...map.values()].sort((x, y) => y.total - x.total || x.userId.localeCompare(y.userId))
@@ -505,25 +471,6 @@ export async function getReportBreakdown(
   return breakdownOf(await reportEntries(db, scope, c), c.a)
 }
 
-// One entry's time on one day of the range, for the Entries card: clipped to the range, split
-// at the zone's midnights like the report's totals, and a running entry up to now.
-export interface ReportEntryPiece {
-  entryId: string
-  userId: string
-  projectId: string | null
-  description: string
-  ticket: string | null
-  date: IsoDate
-  from: Date
-  to: Date
-  // The whole entry, which the card shows for a piece of an entry that crosses midnight.
-  startedAt: Date
-  stoppedAt: Date | null
-  // The entry was running at `now`, so `to` is now, not its end.
-  running: boolean
-  ms: number
-}
-
 // The pieces of the entries, oldest first.
 function piecesOf(c: ReportContext, entries: ListedEntry[], now: Date): ReportEntryPiece[] {
   const pieces: ReportEntryPiece[] = []
@@ -554,13 +501,6 @@ function piecesOf(c: ReportContext, entries: ListedEntry[], now: Date): ReportEn
   pieces.sort((x, y) => x.from.getTime() - y.from.getTime() || x.entryId.localeCompare(y.entryId))
   return pieces
 }
-
-// A piece as the export lists it: it ends `ms` after `from`, and needs neither the whole
-// entry nor its id.
-export type ExportEntry = Pick<
-  ReportEntryPiece,
-  'userId' | 'projectId' | 'description' | 'ticket' | 'date' | 'from' | 'running' | 'ms'
->
 
 // One piece of the report's export, under getReport's rules: the entries of the piece's days,
 // and for the first piece the report. Every piece counts a running entry up to the first
@@ -610,12 +550,6 @@ function byDay(a: DayCursor, b: DayCursor) {
   )
 }
 
-interface EntryDay {
-  date: IsoDate
-  // The whole day's time in the list, also when the page holds only part of the day.
-  total: number
-}
-
 // One page of By day: up to ENTRY_PAGE_SIZE pieces after the cursor. A page ends with a whole
 // day when it holds more than one, so a day splits between pages only when it alone is
 // longer than a page.
@@ -633,7 +567,7 @@ export function dayPage(pieces: ReportEntryPiece[], after?: DayCursor) {
   const page = sorted.slice(start, end)
   const totals = new Map<IsoDate, number>()
   for (const p of sorted) totals.set(p.date, (totals.get(p.date) ?? 0) + p.ms)
-  const days: EntryDay[] = [...new Set(page.map((p) => p.date))].map((date) => ({
+  const days = [...new Set(page.map((p) => p.date))].map((date) => ({
     date,
     total: totals.get(date)!,
   }))
@@ -718,17 +652,6 @@ async function pagedDays(
   }
 }
 
-export interface DescriptionRow {
-  projectId: string | null
-  ticket: string | null
-  description: string
-  total: number
-  // How many entries and days the row merges, and who tracked it.
-  entries: number
-  days: number
-  userIds: string[]
-}
-
 // By description: one row per project, ticket, and description, most time first.
 export function mergeByDescription(pieces: ReportEntryPiece[]): DescriptionRow[] {
   const rows = new Map<
@@ -775,17 +698,6 @@ export function mergeByDescription(pieces: ReportEntryPiece[]): DescriptionRow[]
         (a.projectId ?? '').localeCompare(b.projectId ?? ''),
     )
 }
-
-export type ReportEntries =
-  | { view: 'day'; days: EntryDay[]; pieces: ReportEntryPiece[]; next: DayCursor | null }
-  | {
-      view: 'description'
-      rows: DescriptionRow[]
-      // All the list's rows, of which the first page has the top DESCRIPTION_PAGE_SIZE.
-      rowCount: number
-      // The offset of the rows not yet sent: the next page sends them all.
-      next: number | null
-    }
 
 // The Entries card's list, from the pieces the export reads under getReport's rules, so both
 // show the same entries and count a running timer alike. The server narrows, groups, and

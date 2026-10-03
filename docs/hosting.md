@@ -40,7 +40,7 @@ requirements in full.
 
 [Docker Compose](deployment/compose.md) is an alternative to systemd for the app and
 Caddy. Cloudflare's proxy is a suggested CDN for static assets: cache the public files,
-and bypass HTML, authentication, and server functions. The initial Compose demo defers
+and bypass HTML, authentication, and the JSON API. The initial Compose demo defers
 Litestream backups.
 
 - Exactly one app process per database. Two processes writing one SQLite file bring back

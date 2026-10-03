@@ -30,6 +30,54 @@ rest:
 
 Code templates stay out; AI sessions write those well.
 
+## The workflow
+
+Kait, 2026-10-03: a port runs in three steps, and the session proposes nothing before the
+user has checked what it found.
+
+1. **Survey.** The session reads the app and lists everything that needs porting, by
+   layer: frontend and server framework, how the client reaches the server (server
+   functions, an API, or both), serialization, middleware, ORM and database, migrations,
+   auth and its plugins, background work, i18n, and anything else the server runs. Each
+   item names where the app uses it and how much: for example 41 server functions in 9
+   files.
+2. **Check with the user.** The session presents the list. The user confirms it, corrects
+   it, and adds what code can't show, such as which features may be dropped and which
+   deployments must keep working.
+3. **Propose.** Only then does the session propose a port for each item, from the
+   recipes, or marks the item as having no recipe yet.
+
+## Starting from server functions
+
+An app whose client calls server functions, as this one does, is a supported starting
+point. A Rust server can't serve server functions (task 081.02), so the port goes through
+a middle step: the app keeps its server functions and gains the JSON API beside them, as
+task 084 did for the timer. Each server function gets an operation (method, path, input
+and output schemas), its logic sits in a rule shaped `(db, scope, input)` that both the
+server function and the API call, and conformance tests over HTTP define what the Rust
+port must pass.
+
+Before that step, the session checks that each server function can move to the API, and
+reports one of three verdicts for each:
+
+- **Transferable:** its input and output are JSON, with dates decoded by the schemas; its
+  logic is in a rule or can move into one; its middleware is a check the API can repeat
+  (session, scope, rate limit).
+- **Transferable with changes:** for example, it returns a `Map`, a class instance, or
+  internal columns; it sets cookies or redirects; it reads the request inside its logic.
+  The report says what to change.
+- **Not transferable as is:** for example, it streams, returns a raw `Response`, or takes
+  `FormData`. The report says why and suggests another way, which the user decides on.
+
+The user reviews the report as part of step 2.
+
+The move from server functions to the API is a standard recipe (Kait, 2026-10-03), not a
+step only this app needed: task 084 does it for all of this app's calls. Its rules
+include that a GET only reads. A read works out what it needs, and only an explicit write
+saves it, so a read that repairs state (an active organization, a cookie, a missing row)
+becomes a derived value plus an idempotent write. The auth library's sliding session is
+the one accepted exception.
+
 ## Shape
 
 - An index skill routes a session to recipes by layer: frontend framework, server
@@ -48,3 +96,7 @@ Code templates stay out; AI sessions write those well.
       clean boundary in the port (isolate pool, host functions, bundle loading)
 - [ ] A fresh AI session ports a further handler or a small app using only the
       repository, and the gaps it hits are fixed
+- [ ] The workflow above written as the repository's entry point: the survey, the user's
+      check, then proposals
+- [ ] The transferability check for server functions, run on this app's 41 and checked by
+      hand, and the middle step to the API written as a recipe from task 084

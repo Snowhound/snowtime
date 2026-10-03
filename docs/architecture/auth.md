@@ -47,14 +47,14 @@ membership or other permissions.
     accounts. `MICROSOFT_TENANT_ID` restricts sign-in to one tenant, for example in a
     dedicated stack for one client.
 - Better Auth caches the session and user in a signed cookie for 5 minutes
-  (`cookieCache`), so a server function call doesn't read them from the database, which
+  (`cookieCache`), so an API call doesn't read them from the database, which
   was 2 of its reads. The cost: a session revoked on another device, or an erased user,
   stays usable for up to 5 minutes where the cookie is. Organization access is still
   checked on every call, because `resolveScope` reads the `member` row.
 - Profile edits go straight through the Better Auth client, as organization management does
   (see "Tenancy" in [data.md](data.md)): changing the name, linking and unlinking providers,
   and adding and removing passkeys. Better Auth checks that the session owns the account, and
-  no Snowtime rule applies, so there are no server functions for them.
+  no Snowtime rule applies, so the API has no calls for them.
   - Better Auth's defaults apply. A provider links only when its email matches the
     user's. Unlinking and passkey changes need a session from the last day, and the last
     account can't be unlinked; passkeys don't count as accounts.
@@ -200,10 +200,11 @@ with the same `Name` schema and returns translated `AppError`s.
 Rate limits bound how fast one user or address can write, which the caps don't. The rates
 are `rateLimits` in `src/server/limits.server.ts`.
 
-- `sessionMiddleware` counts every POST server function against the user's write rate,
-  across all their organizations, and throws `AppError` with code `RATE_LIMITED` past it.
-  Every write is a POST, so a new write function is covered without extra code. The app's
-  invitation function also applies the invitation rate per user before calling Better Auth.
+- The API's session check (`signedInUser` in `src/server/guards.server.ts`) counts every
+  write against the user's write rate, across all their organizations, and refuses with
+  `AppError` code `RATE_LIMITED` past it. Every call but a GET or a POST marked `read` writes, so a new
+  write is covered without extra code. The app's invitation call also applies the
+  invitation rate per user before calling Better Auth.
 - Better Auth limits `/api/auth/*` per IP address and path, in production only, with
   stricter rules for creating organizations and inviting members. Its per-IP rules stay
   loose because an office may share one address.

@@ -6,7 +6,7 @@ import { and, eq, isNull, not, sql } from 'drizzle-orm'
 import type { Database, Executor } from '~/db'
 import { member, timeEntry } from '~/db/schema'
 import { MAX_ENTRY_MS } from '../entries/entries.schemas'
-import { assertEntryRoom } from '../entries/entries.server'
+import { assertEntryRoom, entryColumns } from '../entries/entries.server'
 import { AppError } from '../errors'
 import { assertUsableProject } from '../projects/projects.server'
 import { allInOrder, failedConstraint, notDeleted } from '../queries.server'
@@ -38,7 +38,7 @@ async function stopRunning(db: Executor, userId: string, now: Date, id?: string)
     .update(timeEntry)
     .set({ stoppedAt: stopAt(now) })
     .where(where)
-    .returning()
+    .returning(entryColumns)
   return stopped ?? null
 }
 
@@ -76,7 +76,7 @@ export async function startTimer(db: Database, scope: Scope, input: StartTimerIn
           ticket: input.ticket ?? null,
           startedAt: now,
         })
-        .returning()
+        .returning(entryColumns)
       return { started, stopped }
     })
   } catch (error) {
@@ -118,6 +118,16 @@ export async function getRunningTimer(db: Database, userId: string) {
       stoppedAt: { isNull: true },
       RAW: notDeleted,
       organization: { members: { userId } },
+    },
+    columns: {
+      id: true,
+      organizationId: true,
+      userId: true,
+      projectId: true,
+      description: true,
+      ticket: true,
+      startedAt: true,
+      stoppedAt: true,
     },
     with: { project: { columns: { id: true, name: true, color: true } } },
   })

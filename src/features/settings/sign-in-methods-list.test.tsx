@@ -2,7 +2,7 @@ import { render, screen, within } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import type { SignInMethod } from '~/server/auth/auth.functions'
+import type { SignInMethod } from '~/server/auth/auth.schemas'
 import { SignInMethodsList } from './sign-in-methods-list'
 
 // Better Auth stays out of the DOM tests; each call resolves to { data, error } like the

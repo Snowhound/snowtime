@@ -1,7 +1,7 @@
-// Errors server functions throw on purpose. The code tells the client what went wrong
+// Errors the rules throw on purpose. The code tells the client what went wrong
 // without it parsing messages; the key names the message, so the client can show it in
-// the user's language. This file reaches the client through src/start.ts: no server
-// imports.
+// the user's language. This file reaches the client through src/lib/api/wire.ts and
+// src/start.ts: no server imports.
 export type AppErrorCode =
   | 'UNAUTHENTICATED'
   | 'FORBIDDEN'
@@ -14,7 +14,7 @@ export type AppErrorCode =
   | 'LIMIT_REACHED'
   // A rate in rateLimits (src/server/limits.server.ts).
   | 'RATE_LIMITED'
-  // The database is unreachable (availabilityMiddleware in src/server/middleware.ts).
+  // The database is unreachable (unavailableOr in src/server/guards.server.ts).
   | 'UNAVAILABLE'
 
 // Every message an AppError can carry, by key. Keys are stable and snake_case, so they

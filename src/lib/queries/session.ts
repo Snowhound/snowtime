@@ -1,7 +1,8 @@
 import { type Query, type QueryClient, queryOptions } from '@tanstack/solid-query'
 import { redirect } from '@tanstack/solid-router'
+import { call } from '~/lib/api/client'
 import { isAppPage } from '~/lib/app-paths'
-import { type AppSession, getAppSession } from '~/server/auth/auth.functions'
+import type { AppSession } from '~/server/auth/auth.schemas'
 
 // The signed-in user, their organizations and settings, or null when signed out. The root
 // route loads it before every page; changes to the session (switching organization,
@@ -9,7 +10,7 @@ import { type AppSession, getAppSession } from '~/server/auth/auth.functions'
 // only the default for `/` and old links: each tab shows the organization in its URL.
 export const sessionQuery = queryOptions({
   queryKey: ['session'],
-  queryFn: () => getAppSession(),
+  queryFn: () => call('getAppSession'),
 })
 
 function isSession(query: Query) {
@@ -38,8 +39,8 @@ export function followSession(queryClient: QueryClient) {
   })
 }
 
-// The organization `/` and old links open: the session's active one, which getAppSession
-// keeps valid. Null for a user without an organization.
+// The organization `/` and old links open: the session's active one, or the first by name
+// when it has none or one the user has left. Null for a user without an organization.
 export function defaultOrganization(session: AppSession) {
   return session.organizations.find((o) => o.id === session.activeOrganizationId) ?? null
 }
