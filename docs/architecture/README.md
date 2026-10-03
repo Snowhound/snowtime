@@ -37,9 +37,9 @@ of the code keeps; the rest is by area:
 
 ## Application rules
 
-- All DB access goes through server functions; the Turso token never reaches
-  the browser.
-- Authorization checks live in server functions (SQLite has no RLS).
+- All DB access goes through server functions or the JSON API (`/api/v1`), which run the
+  same rules; the Turso token never reaches the browser.
+- Authorization checks live in the rules the server functions call (SQLite has no RLS).
 - Writes are named mutations (`startTimer`, `stopTimer`, `updateEntry`, …),
   not generic CRUD.
 - The UI applies writes optimistically. `optimistic` in `src/lib/queries/query.ts` updates
@@ -99,7 +99,8 @@ of the code keeps; the rest is by area:
     (`better-auth.server.ts`).
   - `<domain>.schemas.ts`: Valibot input schemas shared by forms and server functions.
     They must stay importable from the browser. A domain that needs another's schema
-    imports that domain's file.
+    imports that domain's file. A domain on the contract (task 084) also defines its
+    output schemas here, and its operations: each call's method, path, input, and output.
   - `<domain>.test.ts`: tests of the rules.
 - Code that several domains share sits directly in `src/server/`:
   - `middleware.ts`: `sessionMiddleware` resolves the Better Auth session; `scopeMiddleware`
@@ -109,14 +110,21 @@ of the code keeps; the rest is by area:
     shared query helpers, and the seeded test databases.
   - `schemas.ts`: Valibot building blocks (`Uuidv7`, `Description`, `Timestamp`) for
     the domain schemas, and `OrganizationInput`, which `scopeMiddleware` checks.
+  - `operations.server.ts` and `api.server.ts`: the contract's calls run against their
+    rules, and the JSON API that serves them over HTTP (task 084). `guards.server.ts`
+    holds the session and availability checks that the middleware and the API share.
   - `errors.ts`: `AppError`, thrown with a code (`FORBIDDEN`, `NOT_FOUND`, and so on).
     A serialization adapter in `src/start.ts` keeps the code across the wire; Start
     would otherwise send only the message. `src/start.ts` also registers Start's CSRF
     middleware, which Start applies by default only when no start instance exists.
 - The client imports a domain's `*.functions.ts` and `*.schemas.ts`, `schemas.ts`, and
   `errors.ts`: that is the backend's contract. It never imports `*.server.ts`, even
-  for a type. Response types are derived from the server function
-  (`Awaited<ReturnType<typeof listEntries>>`), so they can't drift. A type the client
+  for a type. Queries on the contract (the timer's, so far) call `call` in
+  `src/lib/api/client.ts`, whose transport is a server function in this app and the
+  JSON API on the native backend (task 084); their types come from the output schemas,
+  and the server-function transport checks the rules' return types against them. Other
+  response types are derived from the server function
+  (`Awaited<ReturnType<typeof listProjects>>`), so they can't drift. A type the client
   needs by name is exported from `*.functions.ts` (`AppSession`, `SignInMethod`). Code
   the client and server share that isn't part of the contract, such as `calendar.ts`,
   lives in `src/lib/`.

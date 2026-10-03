@@ -2,10 +2,7 @@ import { createMiddleware } from '@tanstack/solid-start'
 import { getRequest, getRequestHeaders } from '@tanstack/solid-start/server'
 import { db } from '~/db'
 import { withActor } from '~/db/actor'
-import { auth, rateLimitStore } from './auth/better-auth.server'
-import { databaseAvailable } from './availability/availability.server'
-import { AppError } from './errors'
-import { rateLimits } from './limits.server'
+import { signedInUser, unavailableOr } from './guards.server'
 import { parseOrganizationInput } from './schemas'
 import { type Scope, resolveScope } from './scope.server'
 
@@ -18,14 +15,7 @@ export const availabilityMiddleware = createMiddleware({ type: 'function' }).ser
     try {
       return await next()
     } catch (error) {
-      if (
-        error instanceof Error &&
-        !(error instanceof AppError) &&
-        !(await databaseAvailable(db))
-      ) {
-        throw new AppError('UNAVAILABLE', 'database_unavailable')
-      }
-      throw error
+      throw await unavailableOr(error)
     }
   },
 )
@@ -34,15 +24,7 @@ export const availabilityMiddleware = createMiddleware({ type: 'function' }).ser
 // counts against their write rate.
 export const sessionMiddleware = createMiddleware({ type: 'function' }).server(
   async ({ next, method }) => {
-    const session = await auth.api.getSession({ headers: getRequestHeaders() })
-    if (!session) {
-      throw new AppError('UNAUTHENTICATED', 'sign_in_required')
-    }
-    const { userId } = session.session
-    if (method === 'POST') {
-      const { allowed } = await rateLimitStore.consume(`write:${userId}`, rateLimits.writesPerUser)
-      if (!allowed) throw new AppError('RATE_LIMITED', 'rate_limited')
-    }
+    const userId = await signedInUser(getRequestHeaders(), method === 'POST')
     return withActor(userId, () => next({ context: { userId } }))
   },
 )

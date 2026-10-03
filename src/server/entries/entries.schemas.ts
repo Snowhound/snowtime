@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import { m } from '~/paraglide/messages.js'
-import { Description, Ticket, Timestamp, Uuidv7 } from '../schemas'
+import { Description, operation, Ticket, Timestamp, Uuidv7 } from '../schemas'
 
 // The longest an entry runs. Stopping a timer ends it here at the latest, so the queries of
 // a range can start reading entries this long before it, on the started_at index, instead of
@@ -73,3 +73,57 @@ export type ListEntriesInput = v.InferOutput<typeof ListEntriesInput>
 // The start of one user's earliest entry, for telling the timer whether earlier time exists.
 export const GetFirstEntryStartInput = v.object({ userId: Uuidv7 })
 export type GetFirstEntryStartInput = v.InferOutput<typeof GetFirstEntryStartInput>
+
+// An entry as the contract returns it. IDs are plain strings: seeded and imported rows
+// predate uuid v7.
+export const Entry = v.object({
+  id: v.string(),
+  organizationId: v.string(),
+  userId: v.string(),
+  projectId: v.nullable(v.string()),
+  description: v.string(),
+  ticket: v.nullable(v.string()),
+  startedAt: Timestamp,
+  stoppedAt: v.nullable(Timestamp),
+})
+export type Entry = v.InferOutput<typeof Entry>
+
+const entriesPath = '/api/v1/organizations/:organizationId/entries'
+
+export const entriesOperations = {
+  listEntries: operation({
+    method: 'GET',
+    path: entriesPath,
+    scope: 'organization',
+    input: ListEntriesInput,
+    output: v.array(Entry),
+  }),
+  getFirstEntryStart: operation({
+    method: 'GET',
+    path: `${entriesPath}/first-start`,
+    scope: 'organization',
+    input: GetFirstEntryStartInput,
+    output: v.nullable(Timestamp),
+  }),
+  createEntry: operation({
+    method: 'POST',
+    path: entriesPath,
+    scope: 'organization',
+    input: CreateEntryInput,
+    output: Entry,
+  }),
+  updateEntry: operation({
+    method: 'PATCH',
+    path: `${entriesPath}/:id`,
+    scope: 'organization',
+    input: UpdateEntryInput,
+    output: Entry,
+  }),
+  deleteEntry: operation({
+    method: 'DELETE',
+    path: `${entriesPath}/:id`,
+    scope: 'organization',
+    input: DeleteEntryInput,
+    output: v.object({ id: v.string() }),
+  }),
+}
