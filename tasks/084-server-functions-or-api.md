@@ -153,10 +153,17 @@ comes in month-sized JSON pieces.
 Some transferable functions need the seam to handle what the timer's 8 calls didn't.
 These changes go in `src/lib/api/` and `operations.server.ts` once, not in the functions:
 
-- **A: GET input beyond strings and dates.** `wire.ts` sends a GET's input as
+- **A: Read input beyond strings and dates.** `wire.ts` sends a GET's input as
   `URLSearchParams`, so every value arrives as a string, and the server's `decode` only
-  revives dates. `listProjects` takes a boolean, `getReportEntries` a number, and the
-  report reads nested objects (`report`, `row`, `after`). Open: question 1 below.
+  revives dates. `listProjects` takes a boolean, and the report reads take the report's
+  filters, with nested objects (`report`, `row`, `after`) and numbers. Kait decided on
+  2026-10-03: a read whose input is a filter object, as the reports' are, uses HTTP
+  `QUERY` with a JSON body, where an app of 2008 would have used POST. The other reads
+  stay GET, and `decode` reads a boolean query value (`includeArchived=true`) by the
+  schema as it revives dates. The API treats `QUERY` as a read: no `Origin` check and no
+  write rate limit. `QUERY` is an IETF draft, so one preview deployment checks that
+  Vercel passes it to the function before the reports move; if not, the reports' filters
+  travel as JSON in their own query parameters.
 - **B: Signed-out calls.** `runOperation` assumes a signed-in user. Six calls run without
   one, so the contract gains a third scope, `public`, whose handler gets the session or
   `null`.
@@ -183,11 +190,11 @@ These changes go in `src/lib/api/` and `operations.server.ts` once, not in the f
 | `removeTeamMember`        | Transferable | `DELETE …/teams/:teamId/members/:userId`     |       |
 | `setTeamRole`             | Transferable | `PATCH …/teams/:teamId/members/:userId`      |       |
 | `listMembers`             | Transferable | `GET …/members`                              |       |
-| `getReport`               | Transferable | `GET …/report`                               | A     |
-| `getReportBreakdown`      | Transferable | `GET …/report/breakdown`                     | A     |
-| `getReportEntries`        | Transferable | `GET …/report/entries`                       | A     |
-| `getReportEntryTotals`    | Transferable | `GET …/report/entry-totals`                  | A     |
-| `getReportExport`         | Transferable | `GET …/report/export`                        | A     |
+| `getReport`               | Transferable | `QUERY …/report`                             | A     |
+| `getReportBreakdown`      | Transferable | `QUERY …/report/breakdown`                   | A     |
+| `getReportEntries`        | Transferable | `QUERY …/report/entries`                     | A     |
+| `getReportEntryTotals`    | Transferable | `QUERY …/report/entry-totals`                | A     |
+| `getReportExport`         | Transferable | `QUERY …/report/export`                      | A     |
 | `updateIssueLinks`        | Transferable | `PATCH …/issue-links`                        |       |
 | `listInvitations`         | Transferable | `GET …/invitations`                          |       |
 | `inviteMember`            | With changes | `POST …/invitations`                         | 2, C  |
@@ -237,19 +244,12 @@ transport caches scopes per render.
 
 ### Questions for Kait
 
-1. **GET input (A).** Recommended: `decode` coerces query strings by the schema, as it
-   already revives dates, so `includeArchived=true` and `offset=25` parse, and a field
-   whose schema is an object travels in its own query parameter as JSON
-   (`report={"from":…}`). The timer's URLs stay as they are, and the Rust handlers do the
-   same with serde. Rejected: all input as one `?input=<JSON>` parameter, as tRPC does,
-   which changes the timer's URLs and hides the fields; and POST for the report reads,
-   which puts reads behind the `Origin` check and the write rate limit.
-2. **Better Auth's refusals (2).** Recommended: the API answers with Better Auth's status
+1. **Better Auth's refusals (2).** Recommended: the API answers with Better Auth's status
    and `{ error: { code, message } }` carrying Better Auth's code, the shape Better Auth's
    own HTTP API sends. The transport throws it as `{ code, status }`, so the client's
    messages for Better Auth codes keep working. Rejected: `{ data, error }` in a 200, which
    hides a refusal from the status and from the conformance tests.
-3. **The paths in the table.** Recommended as listed, with organization calls under
+2. **The paths in the table.** Recommended as listed, with organization calls under
    `/organizations/:organizationId` as the entries are.
 
 ## Acceptance criteria
