@@ -3,6 +3,7 @@
 ## Project context
 
 - Product scope: `docs/product.md`
+- HTTP API contract: `docs/api.md`
 - Local setup, seeded users, and scripts: `docs/development.md`
 - Architecture decisions: `docs/architecture/`
 - Data model: `datamodel/` (DBML diagram, `bun run datamodel` to view)

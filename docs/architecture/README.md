@@ -5,8 +5,8 @@ of the code keeps; the rest is by area:
 
 - [data.md](data.md): data conventions, tenancy, schema and migrations, time zones, and
   working days
-- [auth.md](auth.md): sign-in methods, cookies and consent, abuse limits, and the content
-  security policy
+- [auth.md](auth.md): sign-in methods, API keys, cookies and consent, abuse limits, and the
+  content security policy
 - [platform.md](platform.md): supported browsers, deployment, environments,
   internationalization, error pages, and the performance harnesses
 - [reports.md](reports.md): report export, entries, views, and ticket keys
@@ -37,8 +37,8 @@ of the code keeps; the rest is by area:
 
 ## Application rules
 
-- All DB access goes through server functions; the Turso token never reaches
-  the browser.
+- All DB access goes through server functions and the `/api/v1` routes; the Turso token
+  never reaches the browser.
 - Authorization checks live in server functions (SQLite has no RLS).
 - Writes are named mutations (`startTimer`, `stopTimer`, `updateEntry`, …),
   not generic CRUD.
@@ -113,6 +113,18 @@ of the code keeps; the rest is by area:
     A serialization adapter in `src/start.ts` keeps the code across the wire; Start
     would otherwise send only the message. `src/start.ts` also registers Start's CSRF
     middleware, which Start applies by default only when no start instance exists.
+- The `/api/v1` routes serve clients outside the browser ([docs/api.md](../api.md)). Like
+  a server function, an endpoint is a thin wrapper around the rules in `*.server.ts`. The
+  endpoints are in `src/server/api/endpoints.server.ts`, and each names its key scope,
+  whether it acts in the organization in its path, and its input schema. `createApiRoute`
+  (`api.server.ts`) wraps each one: it signs the request in with an API key, counts writes
+  against the rate `sessionMiddleware` counts, resolves the scope, runs the endpoint inside
+  `withActor()`, and answers errors as JSON. The route files in `src/routes/api/v1/` map a
+  method to an endpoint of `v1` (`v1.server.ts`). Endpoints answer named fields rather than
+  table rows, so a new column doesn't reach the contract unnoticed. The API doesn't reuse
+  Start's RPC, whose function IDs come from the build, whose wire format is Start's
+  serialization, and which signs in with the session cookie. An outside client needs
+  stable paths, plain JSON, and a key.
 - The client imports a domain's `*.functions.ts` and `*.schemas.ts`, `schemas.ts`, and
   `errors.ts`: that is the backend's contract. It never imports `*.server.ts`, even
   for a type. Response types are derived from the server function

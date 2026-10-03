@@ -1,0 +1,25 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{apiKey}}
+}
+
+docs {
+  # Snowtime API
+
+  The `/api/v1` endpoints, as `docs/api.md` documents them.
+
+  1. Pick an environment: **Local** for `bun run dev`, or **Instance** for a deployment
+     (set its `baseUrl`).
+  2. Create an API key in Snowtime under Settings → API keys, and paste it into the
+     environment's secret `apiKey`. Bruno keeps secrets on your machine, outside these files.
+     A `read` key runs the GET requests; starting and stopping need a `write` key.
+  3. Run **Me** first. It saves your first organization's id as `orgId`, which the
+     Organization requests and **Start timer** use. To act in another organization, set
+     `orgId` yourself.
+
+  **Start timer** and **Running timer** save the entry's id as `entryId`, which **Stop
+  timer** stops.
+}

@@ -1,0 +1,52 @@
+meta {
+  name: Start timer
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/orgs/{{orgId}}/timer
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "id": "{{newEntryId}}",
+    "description": "Started from Bruno",
+    "ticket": null,
+    "projectId": null
+  }
+}
+
+script:pre-request {
+  // The client names the entry with a UUID v7, so a retried request can't start a second
+  // timer. Version 7: 48 bits of Unix milliseconds, then random bits.
+  function hex(length) {
+    return Array.from({ length }, () => Math.floor(Math.random() * 16).toString(16)).join('')
+  }
+  const ms = Date.now().toString(16).padStart(12, '0')
+  const variant = '89ab'[Math.floor(Math.random() * 4)]
+  bru.setVar('newEntryId', `${ms.slice(0, 8)}-${ms.slice(8)}-7${hex(3)}-${variant}${hex(3)}-${hex(12)}`)
+}
+
+script:post-response {
+  const started = res.getBody()?.started
+  if (started) bru.setVar('entryId', started.id)
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  # POST /api/v1/orgs/:orgId/timer
+
+  Starts a timer in `orgId` and answers `{ started, stopped }`; `stopped` is the timer it
+  stopped, or null. Needs a `write` key.
+
+  Each run generates a new `id` (`newEntryId`). `projectId` takes an id from **Projects**.
+  `ticket` takes a key such as `WEB-12`.
+
+  Saves the started entry's id as `entryId`.
+}

@@ -42,6 +42,7 @@ const companyPredicates: Record<string, string> = {
   user_settings: 'user_id IN (SELECT id FROM company_users)',
   account: 'user_id IN (SELECT id FROM company_users)',
   passkey: 'user_id IN (SELECT id FROM company_users)',
+  api_key: 'reference_id IN (SELECT id FROM company_users)',
   session: `user_id IN (SELECT id FROM company_users)
     AND (active_organization_id IS NULL OR active_organization_id = :organizationId)
     AND (active_team_id IS NULL OR active_team_id IN (SELECT id FROM team WHERE organization_id = :organizationId))`,

@@ -125,6 +125,13 @@ test their migrations on throwaway local databases only (`db:drift`).
   again, so the user sees only the account's language. The cookie never holds anything but the
   account's language (see "Cookies and consent" in [auth.md](auth.md)). `src/server-entry.ts`
   runs Paraglide's middleware around every request, which scopes the locale per request.
+- The HTTP API answers in English only ([docs/api.md](../api.md)). For `/api/v1`,
+  `localeRequest` (`src/server/locale.server.ts`) hands Paraglide's middleware a copy of the
+  request without its cookie or `Accept-Language`, so the locale falls back to English and
+  the domain schemas' validation messages match the API's other messages. An API client
+  isn't a user's browser, and one language keeps the contract simple. Paraglide's own
+  `routeStrategies` option would do the same, but compiles route matching into the browser
+  runtime, 5.7 kB gzipped on every page.
 - The user's language is `user_settings.locale` (see "User settings" in [timer.md](timer.md)).
   The first `getSettings` call sets it from the browser, as it does the time zone.
 - The server returns keys, dates, and numbers, never display text; the client translates

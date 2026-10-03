@@ -14,21 +14,22 @@ companies can use it too.
 
 ## MVP scope
 
-| Area     | Included                                                                                                                         |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Auth     | Sign up / sign in via Better Auth                                                                                                |
-| Tenancy  | Organizations, teams, members, invitations; org switcher                                                                         |
-| Timer    | Start / stop a single running timer with a description                                                                           |
-| Entries  | List, edit, delete, and manually add past entries, in a list by day or a week calendar                                           |
-| Projects | Org-level projects, optionally assigned to teams; CRUD                                                                           |
-| Reports  | Totals per day / week / project / team / member, user's zone; their entries, read-only; CSV and XLSX export of a report as shown |
-| Settings | Time zone, week start, and country, whose public holidays the taglines don't count as missing hours                              |
+| Area     | Included                                                                                                                           |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Auth     | Sign up / sign in via Better Auth                                                                                                  |
+| Tenancy  | Organizations, teams, members, invitations; org switcher                                                                           |
+| Timer    | Start / stop a single running timer with a description                                                                             |
+| Entries  | List, edit, delete, and manually add past entries, in a list by day or a week calendar                                             |
+| Projects | Org-level projects, optionally assigned to teams; CRUD                                                                             |
+| Reports  | Totals per day / week / project / team / member, user's zone; their entries, read-only; CSV and XLSX export of a report as shown   |
+| Settings | Time zone, week start, and country, whose public holidays the taglines don't count as missing hours                                |
+| API      | Personal API keys and a small `/api/v1` for the timer, projects, and entries, for a Raycast extension and other clients (task 082) |
 
 ## Not in MVP
 
 - Billing, rates, invoicing
 - Tags, clients, custom roles beyond owner / admin / member
-- Integrations, browser extension, mobile app
+- Integrations beyond the API and its Raycast extension, browser extension, mobile app
 - Offline / local-first sync
 - Exports beyond a report as shown and its entries (for example payroll formats or scheduled
   exports)

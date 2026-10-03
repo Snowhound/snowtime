@@ -1,0 +1,25 @@
+meta {
+  name: Stop timer
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/timer/{{entryId}}/stop
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  # POST /api/v1/timer/:entryId/stop
+
+  Stops the running timer if it is `entryId`, and answers `{ stopped }`. Needs a `write`
+  key.
+
+  If `entryId` isn't the running timer, for example because another one started since,
+  the API answers 404 and leaves the newer timer running.
+}

@@ -111,6 +111,53 @@ membership or other permissions.
   link from the session's `appUrl` (`getAppSession`), the origin of `BETTER_AUTH_URL`: the Better Auth
   client only knows the page's origin, which a proxy or a second domain can change.
 
+## API keys
+
+Clients outside the browser, such as the Raycast extension, sign in with a personal API key.
+Task 082 records why keys came before device sign-in. `@better-auth/api-key` issues and
+stores the keys, pinned to the `better-auth` version as `@better-auth/passkey` is. Its
+options are `apiKeyOptions` in `src/server/auth/api-keys.server.ts`.
+
+- A key belongs to a user, not an organization. It starts with `snow_`, so people and
+  secret scanners can spot one.
+- The `api_key` table holds a hash of the key. The key itself appears once, in the answer
+  to `createApiKey`. The plugin stores none of its characters
+  (`startingCharactersConfig.shouldStore: false`), so Settings names keys and shows no part
+  of one.
+- The user picks a lifetime when creating a key: 30 days, 90 days (preselected), 1 year,
+  or none. `CreateApiKeyInput` requires one, so no expiry is a choice, never a missing
+  value. The plugin's own default stays unset, because the plugin applies it whenever
+  `expiresIn` is empty, which would rule out a key that never expires.
+- A key has scopes, as the plugin's permissions: `read` (`{ api: ['read'] }`), or `write`,
+  which includes read. The form preselects read only, the least access.
+- Settings creates, lists, and revokes keys through server functions (`createApiKey`,
+  `listApiKeys`, `revokeApiKey` in `auth.functions.ts`), not the Better Auth client. The
+  plugin takes permissions only from the server, so the server function calls it without
+  request headers. The plugin's HTTP endpoints are closed (`apiKeyDisabledPaths`), so a
+  session can't make a key without scopes or extend one's expiry. Listing and revoking
+  read and delete the plugin's rows directly, filtered by the user.
+- `api_key.reference_id` references `user(id)` with `ON DELETE CASCADE`, which the plugin
+  doesn't declare, so a deleted user's keys go with the user row.
+- The plugin's sessions from API keys stay off (`enableSessionForAPIKeys: false`), so a key
+  can't call server functions or `/api/auth/*`. The `/api/v1` routes read
+  `Authorization: Bearer <key>` and verify the key themselves (`createApiRoute` in
+  `src/server/api/api.server.ts`), and ignore the session cookie.
+- `createApiRoute` verifies a key without permissions and checks its scope itself, because
+  the plugin refuses a key without the asked-for permissions as an unknown key. A read-only
+  key on a write route then answers 403, and an unknown one 401.
+- `createApiRoute` checks the key's user against `ALLOWED_LOGIN_DOMAINS` on every request,
+  as the session hooks check a session, so a key stops working when its user's domain
+  leaves the list.
+- The plugin reports a failed database read as an invalid key. Before answering 401,
+  `createApiRoute` checks that the database answers, and answers 503 if it doesn't, so a
+  client isn't told to replace a working key during an outage.
+- The plugin limits each key to 60 requests whose gaps are all under 5 seconds
+  (`rateLimits.apiKeyRequests`). A longer gap restarts the count, so the limit caps bursts,
+  not a steady rate: a client polling every 5 seconds or slower never reaches it.
+- In 1.7.6, the plugin verifies a key with a read and two writes before the response: it
+  records `last_request` and touches `updated_at`. `deferUpdates` moves only the deletion
+  of expired keys after the response. Whether `/api/v1` accepts that cost is open in task 082.
+
 ## Cookies and consent
 
 Snowtime asks for no cookie consent (task 038). The ePrivacy Directive, Article 5(3) (in
@@ -173,6 +220,8 @@ the database, and the Turso quotas in `docs/hosting.md`, without bound. The valu
   counts every organization the user belongs to), members, pending invitations, and
   teams per organization.
 - `createProject` caps projects per organization, archived ones included.
+- `createApiKey` caps a user's API keys, expired ones included until the plugin deletes
+  them.
 - `createEntry` and `startTimer` cap a member's entries starting within 24 hours of the
   new one, either side. `updateEntry` checks the same when an entry's start moves,
   without counting the entry itself. The count is one range read on the
