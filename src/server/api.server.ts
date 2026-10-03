@@ -4,7 +4,7 @@
 import { getRequest } from '@tanstack/solid-start/server'
 import { db } from '~/db'
 import { withActor } from '~/db/actor'
-import { env } from '~/env'
+import { appUrl, trustedOrigins } from '~/env'
 import { type OperationName, operations } from '~/lib/api/operations'
 import { hostTransport } from '~/lib/api/transports'
 import { matchPath, type WireResponse } from '~/lib/api/wire'
@@ -31,7 +31,8 @@ async function inputOf(request: Request, params: Record<string, string>) {
   return { ...(body as object), ...params }
 }
 
-const appOrigin = new URL(env.BETTER_AUTH_URL).origin
+// A preview also accepts its deployment URL (src/lib/app-url.ts).
+const appOrigins = new Set([new URL(appUrl).origin, ...trustedOrigins])
 
 // A GET reads, and so does a POST marked `read`; every other call writes.
 function writes(name: OperationName) {
@@ -44,7 +45,7 @@ async function respond(request: Request): Promise<WireResponse> {
   if (!match) return failure(404, { message: 'No such call.' })
   // Writes come only from the app's own pages: the public URL, not the request's own,
   // since a proxy in front may change the host.
-  if (writes(match.name) && request.headers.get('origin') !== appOrigin) {
+  if (writes(match.name) && !appOrigins.has(request.headers.get('origin') ?? '')) {
     return failure(403, { message: 'Cross-origin request refused.' })
   }
   let input: unknown

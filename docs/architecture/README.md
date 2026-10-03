@@ -111,7 +111,7 @@ of the code keeps; the rest is by area:
   - `api.server.ts`: the JSON API over HTTP, and `renderTransport`, which Start's server
     render calls in process. Both check the session in `guards.server.ts`, run the call
     inside `withActor()`, and count a write against the user's rate. Writes need the
-    app's own `Origin`. A read whose input is a filter object, as the reports' are, is a
+    app's own `Origin`, which on a preview is its branch or deployment URL. A read whose input is a filter object, as the reports' are, is a
     POST marked `read` in the operation list, so its filters travel as a JSON body; it
     passes the checks a GET does.
   - `scope.server.ts`, `queries.server.ts`, and `testing.ts`: the tenancy scope, the

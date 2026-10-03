@@ -39,7 +39,7 @@ works; one that lacks it gets a notice at the top of each page.
 | Environment | Branch    | Database                                                   |
 | ----------- | --------- | ---------------------------------------------------------- |
 | Local       |           | `file:local.db`, no token                                  |
-| Staging     | `develop` | `staging` Turso database (planned)                         |
+| Preview     | any other | `snowtime-staging` Turso database, seeded and shared       |
 | Production  | `main`    | `prod` Turso database, same region as the Vercel functions |
 
 Production runs in Vercel's `dub1` (Dublin) with Turso's `aws-eu-west-1` (Ireland), the
@@ -52,15 +52,18 @@ this changes, switch before production holds real data.
 
 **Migrations and deploys:** CI runs `db:migrate` after the checks pass on a push to the
 environment's branch, and then deploys that commit to Vercel. Migrations never run in the
-Vercel build or on Vercel app start. A database only
+Vercel build or on Vercel app start. Production only
 receives merged migrations, because `db:verify` rejects an applied migration that a PR
 later edits, and two open PRs would mix their migrations in one shared database. PRs
-test their migrations on throwaway local databases only (`db:drift`).
+test their migrations on throwaway local databases (`db:drift`). The staging database is
+the exception: a push that changes a branch's migrations applies them there, and staging
+is reseeded when branches' migrations conflict (`../migrations.md`, "Staging"). It holds
+only seeded data, so a reseed costs nothing.
 
-- Staging is planned, not set up. When added, the `develop` branch deploys to a stable
-  host such as `staging.<domain>`, with branch-scoped Preview env vars, so OAuth
-  callbacks and passkeys can be registered for it once. Other preview deployments have
-  generated URLs and no sign-in.
+- Preview deployments of every branch run in demo mode against the seeded staging
+  database and sign in with the seeded users (task 087; `auth.md`, "Preview
+  deployments"). A `develop` branch on a fixed staging host was planned before and
+  dropped: only that branch could sign in.
 - Vercel doesn't deploy `main` by itself (`vercel.json`). CI's `deploy-prod` job runs
   `vercel deploy --prod` once the migration has applied, so a failed check or migration
   keeps new code off production. Vercel used to deploy each push in parallel with CI;

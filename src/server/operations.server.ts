@@ -6,7 +6,7 @@ import * as v from 'valibot'
 import type { Database } from '~/db'
 import { SEED_PASSWORD, seedUsers } from '~/db/seed'
 import { companyUsers } from '~/db/seed-company'
-import { env } from '~/env'
+import { appUrl, env } from '~/env'
 import {
   type OperationName,
   operations,
@@ -63,7 +63,7 @@ const handlers: {
       user: { id: user.id, name: user.name, email: user.email, image: user.image ?? null },
       signedInAt: session.session.createdAt,
       ...state,
-      appUrl: new URL(env.BETTER_AUTH_URL).origin,
+      appUrl: new URL(appUrl).origin,
     }
   },
   // Method ids only, never a client ID or secret.
