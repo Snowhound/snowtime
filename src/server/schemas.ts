@@ -41,7 +41,8 @@ export function parseOrganizationInput<T extends { organizationId: string }>(inp
 // One call of the contract both backends serve (task 084): how the JSON API addresses it,
 // and the shapes it takes and returns. An organization-scoped call names the organization
 // in its path (`:organizationId`); a user-scoped one acts for the signed-in user anywhere.
-// Other `:name` segments come from the input field of that name.
+// Other `:name` segments come from the input field of that name. The calls are listed in
+// src/lib/api/operations.ts.
 export interface Operation<
   TScope extends 'organization' | 'user' = 'organization' | 'user',
   TInput extends v.GenericSchema | undefined = v.GenericSchema | undefined,
@@ -52,12 +53,4 @@ export interface Operation<
   scope: TScope
   input: TInput
   output: TOutput
-}
-
-export function operation<
-  TScope extends 'organization' | 'user',
-  TInput extends v.GenericSchema | undefined,
-  TOutput extends v.GenericSchema,
->(definition: Operation<TScope, TInput, TOutput>) {
-  return definition
 }

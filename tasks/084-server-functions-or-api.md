@@ -72,10 +72,11 @@ comparison of middleware and CSRF, which the design above answers.
   user, with JSON in and out. `api.server.ts` adds the session, the write rate limit, the
   `Origin` check against `BETTER_AUTH_URL`, and the availability probe, which it shares
   with the middleware through `guards.server.ts`.
-- The operations (`timerOperations`, `entriesOperations`) sit in the domains'
-  `*.schemas.ts`, beside the output schemas `Entry` and `RunningTimer`. The rules now
-  return only the contract's fields, not the audit columns, so both transports send the
-  same entry.
+- `src/lib/api/operations.ts` lists the calls: method, path, scope, and input and output
+  schemas. The output schemas, `Entry` and `RunningTimer`, sit in the domains'
+  `*.schemas.ts`. Only the API's and the host's transports import the list, so the
+  TypeScript app's client bundle leaves it out. The rules now return only the contract's
+  fields, not the audit columns, so both transports send the same entry.
 - Tests: `src/server/operations.test.ts` (hydration equality),
   `src/lib/api/transports.test.ts` (the HTTP encoding), and `conformance/` (13 tests over
   HTTP, `bun run test:conformance`, any backend through `CONFORMANCE_URL`).

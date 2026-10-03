@@ -100,7 +100,8 @@ of the code keeps; the rest is by area:
   - `<domain>.schemas.ts`: Valibot input schemas shared by forms and server functions.
     They must stay importable from the browser. A domain that needs another's schema
     imports that domain's file. A domain on the contract (task 084) also defines its
-    output schemas here, and its operations: each call's method, path, input, and output.
+    output schemas here; `src/lib/api/operations.ts` lists each call's method, path,
+    input, and output.
   - `<domain>.test.ts`: tests of the rules.
 - Code that several domains share sits directly in `src/server/`:
   - `middleware.ts`: `sessionMiddleware` resolves the Better Auth session; `scopeMiddleware`

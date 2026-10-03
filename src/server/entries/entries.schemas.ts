@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import { m } from '~/paraglide/messages.js'
-import { Description, operation, Ticket, Timestamp, Uuidv7 } from '../schemas'
+import { Description, Ticket, Timestamp, Uuidv7 } from '../schemas'
 
 // The longest an entry runs. Stopping a timer ends it here at the latest, so the queries of
 // a range can start reading entries this long before it, on the started_at index, instead of
@@ -87,43 +87,3 @@ export const Entry = v.object({
   stoppedAt: v.nullable(Timestamp),
 })
 export type Entry = v.InferOutput<typeof Entry>
-
-const entriesPath = '/api/v1/organizations/:organizationId/entries'
-
-export const entriesOperations = {
-  listEntries: operation({
-    method: 'GET',
-    path: entriesPath,
-    scope: 'organization',
-    input: ListEntriesInput,
-    output: v.array(Entry),
-  }),
-  getFirstEntryStart: operation({
-    method: 'GET',
-    path: `${entriesPath}/first-start`,
-    scope: 'organization',
-    input: GetFirstEntryStartInput,
-    output: v.nullable(Timestamp),
-  }),
-  createEntry: operation({
-    method: 'POST',
-    path: entriesPath,
-    scope: 'organization',
-    input: CreateEntryInput,
-    output: Entry,
-  }),
-  updateEntry: operation({
-    method: 'PATCH',
-    path: `${entriesPath}/:id`,
-    scope: 'organization',
-    input: UpdateEntryInput,
-    output: Entry,
-  }),
-  deleteEntry: operation({
-    method: 'DELETE',
-    path: `${entriesPath}/:id`,
-    scope: 'organization',
-    input: DeleteEntryInput,
-    output: v.object({ id: v.string() }),
-  }),
-}

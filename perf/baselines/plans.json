@@ -57,7 +57,7 @@
   ],
   "timer entries, own week (member)": [
     {
-      "sql": "select \"id\", \"organization_id\", \"user_id\", \"project_id\", \"description\", \"started",
+      "sql": "select \"id\", \"organization_id\", \"user_id\", \"project_id\", \"description\", \"ticket\"",
       "scans": 0,
       "sorts": 0,
       "plan": [
@@ -67,7 +67,7 @@
   ],
   "timer entries, own week (admin)": [
     {
-      "sql": "select \"id\", \"organization_id\", \"user_id\", \"project_id\", \"description\", \"started",
+      "sql": "select \"id\", \"organization_id\", \"user_id\", \"project_id\", \"description\", \"ticket\"",
       "scans": 0,
       "sorts": 0,
       "plan": [
