@@ -88,8 +88,9 @@ only seeded data, so a reseed costs nothing.
   opt in with `MIGRATE_ON_START=true`; Vercel retains its CI migration flow.
   The initial Hetzner demo at `snowtime-internal.snowhound.eu` defers backups and uses
   Cloudflare as a CDN for static files. HTML and server responses bypass caching.
-  Its images are built on GitHub Actions and pushed to GHCR, and it deploys only when
-  someone runs the manual Compose deploy workflow, never on a push.
+  Its images are built on GitHub Actions and pushed to GHCR. The Compose deploy workflow
+  deploys `main` after CI passes on it (`COMPOSE_AUTO_DEPLOY`), and any branch when run
+  by hand. The repository is public, so its Actions minutes cost nothing.
   Setup is in [the Compose runbook](../deployment/compose.md).
 - Both deployments use `@libsql/client` (task 077, decided 2026-09-30). Turso's own
   drivers were measured and not adopted:
