@@ -131,8 +131,8 @@ already does what previews need, and its shared-accounts box is true of staging.
   fixed preview domain was rejected because only the branch it's assigned to could sign in.
 - The seed password is public in the repository, so Vercel Deployment Protection stays on
   for previews, and staging holds no real data.
-- Previews can have Upstash, as their own database, so staging traffic doesn't count
-  against production's limits (`../hosting.md`). Without it they count in memory.
+- Previews have no Upstash and count rate limits in memory, so staging traffic doesn't
+  count against production's limits.
 
 ## Cookies and consent
 
@@ -243,6 +243,14 @@ are `rateLimits` in `src/server/limits.server.ts`.
 - Upstash was chosen over Better Auth's `storage: 'database'`, which would cost a Turso
   write per counted request, and over Vercel Firewall rules, which limit only per IP.
   Upstash is Redis over HTTP, so it doesn't tie the app to Vercel.
+- Snowhound's Vercel deployment runs without Upstash, decided on 2026-10-03. Each counted
+  write would wait for one round trip to Upstash, which offers no region nearer than
+  Frankfurt to the Stockholm functions. Users are few, production has no password
+  sign-in, and the caps above bound the database whatever the rates do. Each warm
+  instance still stops a sustained flood from one user or address; a client spread over
+  many instances gets the rate times the instance count. Add Upstash once abuse shows in
+  the logs or the app opens to the public at scale. Self-hosted, one process counts
+  exactly in memory.
 
 ## Content security policy
 

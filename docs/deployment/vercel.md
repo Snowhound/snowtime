@@ -182,7 +182,7 @@ seeded staging database and sign in with the seeded users (`../architecture/auth
    | `DEMO_MODE`                              | `true`                         |
 
    Upstash is optional, as its own database as in step 2, so previews don't share
-   production's counts. Leave `BETTER_AUTH_URL`, the OAuth variables, and
+   production's counts; without it they count in memory. Leave `BETTER_AUTH_URL`, the OAuth variables, and
    `ALLOWED_LOGIN_DOMAINS` unset. `src/env.ts` refuses `BETTER_AUTH_URL` and `ALLOWED_LOGIN_DOMAINS` on a
    preview. Under **Settings > Environment Variables**, keep **Automatically expose
    System Environment Variables** on: the app reads `VERCEL_ENV`, `VERCEL_BRANCH_URL`, and

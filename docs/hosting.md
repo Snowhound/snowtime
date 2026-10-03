@@ -15,9 +15,8 @@ Linux server. Setup steps for both are in `deployment/README.md`.
   time. On 2026-09-29 the owner's year on the Lumen Works seed (19 people, 20,300 entries) came in
   13 pieces of at most 755 KB as sent, 8.1 MB in all; in one response it had been 7.8 MB.
 - Each function instance has its own memory, so in-memory state doesn't hold across
-  requests. Rate-limit counts therefore need Upstash Redis on Vercel: set
-  `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, with the Upstash database in
-  the functions' region (`architecture/auth.md`, "Abuse limits").
+  requests. Rate-limit counts stay per instance unless Upstash Redis holds them. Snowhound's
+  deployment runs without Upstash for now (`architecture/auth.md`, "Abuse limits").
 
 ## Turso (Free)
 
@@ -32,7 +31,7 @@ Linux server. Setup steps for both are in `deployment/README.md`.
 - Holds the rate-limit counts, one Redis command per counted request. Optional: without
   it the app runs, but the limits apply per function instance.
 - Use one database per environment, so staging traffic doesn't count against `prod`.
-  Previews get their own database, or none and count in memory.
+  The free plan allows one database, so previews count in memory.
 
 ## Self-hosted (one Linux server)
 
