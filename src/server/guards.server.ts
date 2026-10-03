@@ -1,7 +1,7 @@
 // Checks every call of the JSON API runs through (api.server.ts), over HTTP or in a
 // server render.
 import { db } from '~/db'
-import { auth, rateLimitStore } from './auth/better-auth.server'
+import { rateLimitStore, sessionOf } from './auth/better-auth.server'
 import { databaseAvailable } from './availability/availability.server'
 import { AppError } from './errors'
 import { rateLimits } from './limits.server'
@@ -17,7 +17,7 @@ export async function unavailableOr(error: unknown) {
 
 // The signed-in user of a request, counting a write against their rate.
 export async function signedInUser(headers: Headers, write: boolean) {
-  const session = await auth.api.getSession({ headers })
+  const session = await sessionOf(headers)
   if (!session) {
     throw new AppError('UNAUTHENTICATED', 'sign_in_required')
   }

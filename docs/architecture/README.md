@@ -8,7 +8,7 @@ of the code keeps; the rest is by area:
 - [auth.md](auth.md): sign-in methods, cookies and consent, abuse limits, and the content
   security policy
 - [platform.md](platform.md): supported browsers, deployment, environments,
-  internationalization, error pages, and the performance harnesses
+  internationalization, error pages, the performance harnesses, and Server-Timing
 - [reports.md](reports.md): report export, entries, views, and ticket keys
 - [timer.md](timer.md): the timer calendar, date and time fields, and user settings
 - [scene.md](scene.md): the seasonal scene, its glass, weather, and intro
