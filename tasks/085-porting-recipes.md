@@ -71,6 +71,13 @@ reports one of three verdicts for each:
 
 The user reviews the report as part of step 2.
 
+The move from server functions to the API is a standard recipe (Kait, 2026-10-03), not a
+step only this app needed: task 084 does it for all of this app's calls. Its rules
+include that a GET only reads. A read works out what it needs, and only an explicit write
+saves it, so a read that repairs state (an active organization, a cookie, a missing row)
+becomes a derived value plus an idempotent write. The auth library's sliding session is
+the one accepted exception.
+
 ## Shape
 
 - An index skill routes a session to recipes by layer: frontend framework, server

@@ -1,17 +1,17 @@
-# 084: Server functions and the API behind one client
+# 084: From server functions to one JSON API
 
-Status: done
+Status: in-progress (the seam and the timer are done; the full move is next)
 
-The TypeScript app keeps Start's server functions, and the native backend serves the JSON
-API of task 081.02. The frontend reaches either through one client module (Kait,
-2026-10-03). The app moves to the API only once that costs little and hydration stays the
-same. This task designs the seam, proves it on the timer's reads and writes, and measures
-what tells when a switch would cost little.
+The TypeScript app moves fully to the JSON API of task 081.02, and Start's server
+functions go (Kait, 2026-10-03). The timer's measurements below showed the API no slower
+and its responses smaller, and the schemas, the shared checks, and the API's encoding now
+give what server functions gave: types end to end, `Date` and `AppError` across the wire,
+middleware, and CSRF. Keeping them would mean binding every call twice and following
+Start's private protocol, which the native backend can't serve.
 
-Rejected for now: moving the TypeScript app to the API, which this task first set out to
-decide. Server functions give types end to end, Start's serialization of `Date` and
-`AppError`, middleware, and CSRF with no code in the app. Giving them up buys nothing
-until the native backend exists.
+Earlier the same day Kait chose to keep server functions behind the client module and
+switch once the API cost little; the measurements settled that. The seam below was built
+for that plan and carries the move.
 
 ## Design
 
@@ -113,14 +113,34 @@ p50s and CPU at 10 agreed within 0.1 ms, and the writes' p95 varied by up to 1.3
 - Hydration stays the same: the test above passes for the running timer, a range of
   entries with a running one, a date alone, and a refusal.
 
-## When to switch
+## The full move
 
-Speed is not a reason to stay on server functions, so the switch waits only on work. The
-TypeScript app can drop server functions once every call is on the contract: its output
-schema, its operation, and its handler, as the timer's eight are now (42 server
-functions remain). Its server render then needs an in-process transport like the host's,
-running `runOperation` for the page's session, so a page load makes no HTTP request to
-itself. Until then, a domain moves to the contract when the native backend needs it.
+Speed is not a reason to stay on server functions, so the move is only work:
+
+- **Transferability first.** Each of the 50 server functions is checked as task 085
+  describes and gets a verdict: transferable, transferable with changes, or not as is.
+  The report is the first commit.
+- **Every call on the contract:** its output schema, its operation, its handler, its
+  `/api/v1` route, and conformance tests, one domain per commit.
+- **An in-process transport for Start's server render,** running `runOperation` for the
+  page's session, as the native backend's host does, so a page load makes no HTTP request
+  to itself. The browser uses `httpTransport`. The hydration test covers both.
+- **A GET only reads** (Kait, 2026-10-03). A read works out what it needs, and only an
+  explicit write saves it:
+  - The session read returns the fallback active organization without saving it. Only
+    switching organizations saves it, through Better Auth's own call. Check first that
+    nothing relies on the saved value being repaired.
+  - The session read no longer sets the language cookie. Saving the language setting and
+    signing in set it. When the account's language differs from the page's, the browser
+    sets its cookie and loads the page again, as it does now.
+  - `getSettings` no longer creates the settings row. The read returns none, and the
+    client creates the row with an idempotent `PUT /api/v1/settings` carrying the
+    browser's time zone and language.
+  - Better Auth's session check may extend the session and send its cookie again. That
+    sliding expiry is the auth library's, not the app's data, and stays; the native
+    backend must do the same.
+- **Server functions deleted last,** with `src/start.ts`'s serialization adapter and
+  CSRF middleware if nothing else needs them.
 
 ## Acceptance criteria
 
@@ -133,3 +153,9 @@ itself. Until then, a domain moves to the contract when the native backend needs
       against them over HTTP
 - [x] The hydration equality test
 - [x] The measurements above, recorded in this task, with the condition for a switch
+- [ ] The transferability report for all 50 server functions
+- [ ] Every call on the contract, with conformance tests, and no `createServerFn` left
+- [ ] The in-process transport for Start's server render, with the hydration test
+      covering it and the HTTP transport
+- [ ] No GET that writes, except Better Auth's sliding session
+- [ ] `docs/architecture/` and `AGENTS.md` describe the API instead of server functions

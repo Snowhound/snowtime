@@ -3,8 +3,8 @@
 Status: todo
 
 Both backends implement one JSON API over HTTP. The frontend's data layer calls one client
-module, whose implementations reach server functions, the API, or the render isolate's
-host (task 084). Server functions can't be the contract: Start addresses each one by a
+module, whose transports reach the API over HTTP or, during a server render, in process
+(task 084). Server functions can't be the contract: Start addresses each one by a
 hash of the build (`/_serverFn/<sha256>`), encodes its bodies in its own format, and
 accepts calls by `Sec-Fetch-Site`, so a Rust server would have to track Start's internals
 release by release. Today the app has 50 server functions in 9 `*.functions.ts` files.
@@ -19,16 +19,16 @@ release by release. Today the app has 50 server functions in 9 `*.functions.ts` 
   large responses (report entries, the export, the year timesheet) may use columns
   instead of rows, as 081 question 2 lists.
 - **The adapter.** Query and mutation functions in `src/lib/queries/` and the features
-  call one client module, not `*.functions.ts`. The TypeScript app keeps server functions
-  behind it, and the native backend's pages use the API (task 084, Kait, 2026-10-03).
+  call one client module, not `*.functions.ts`. Both backends serve the API behind it,
+  and the TypeScript app drops server functions (task 084, Kait, 2026-10-03).
   Query keys and the cached data's shape stay as they are, so components don't change.
 - **Server rendering calls in process.** In the native backend, the render isolate runs
   the app's own TanStack loaders (subtask 01). The adapter there calls a host function
   instead of `fetch`; Rust runs the same handler the HTTP API runs and resolves the
   loader's promise with the same JSON. The loaders keep deciding a page's reads, so a
   route change needs nothing in Rust, and the first load makes no HTTP request. On
-  Vercel, the adapter calls server functions, which Start runs in process during its
-  server render.
+  Vercel, the adapter runs the TypeScript handlers in process during Start's server
+  render.
 - **After hydration** the browser of a native backend's page calls the same API over HTTP
   and gets the same shapes, so the cache the server dehydrated stays consistent with
   later fetches.
@@ -39,10 +39,8 @@ release by release. Today the app has 50 server functions in 9 `*.functions.ts` 
   the request's own URL (081 question 3), and the session cookie keeps Better Auth's
   default, `SameSite=Lax`.
 
-The TypeScript app serves the contract too, in every build, beside its server functions,
-so the conformance tests run against both backends (task 084). Both deployments share
-one client module, and the TypeScript app moves to the API only once that costs little
-and hydration stays the same.
+The TypeScript app serves the contract too, in every build, so the conformance tests run
+against both backends, and both deployments share one client module (task 084).
 
 ## Acceptance criteria
 
