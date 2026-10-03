@@ -215,8 +215,6 @@ Kait agreed to both on 2026-10-03:
   an unexplained 219 MB peak.
 - The peak. V8 peaked at 237 MB on Linux and 219 MB on macOS in runs whose samples stayed
   at 103–126 MB and 66–118 MB. Its cause is unknown.
-- Server functions still go (081 question 2). The loaders in the isolate call the API's
-  handlers in process, and the client calls the API over HTTP (subtask 02).
 
 ## Acceptance criteria
 

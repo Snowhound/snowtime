@@ -89,8 +89,9 @@ rejected, as in task 069.
    if measured worth it, as typed arrays over the response's `ArrayBuffer`, which the
    browser reads without parsing. Compare against Protobuf with ConnectRPC on decode time
    in the browser, compressed bytes, bundle size, and code generation for both languages.
-3. The frontend adapter. The data layer calls the contract; Start serves it on Vercel and
-   the native server self-hosted.
+3. The frontend adapter. The data layer calls one client module. On Vercel it calls
+   Start's server functions, which the app keeps; self-hosted on the native server it
+   calls the contract (task 084, Kait, 2026-10-03).
 4. A mechanical port. What the TypeScript side must keep for that (rules that take
    `(db, scope, input)`, SQL both sides share, the contract), and a conformance suite of
    HTTP-level tests on seeded databases that both backends pass. A port is complete when
@@ -157,7 +158,7 @@ changes to the Vercel deployment beyond the adapter.
 - [03](03-port-libraries.md): the Rust libraries, chosen on a small port of the timer
 
 Task 083 checks whether Perry, a native TypeScript compiler, could replace the isolate or
-the Rust port. Task 084 decides whether the TypeScript app keeps server functions or
-serves the same API.
+the Rust port. Task 084 keeps server functions in the TypeScript app behind the same
+client module as the API, and proves that seam on the timer.
 Task 085 turns what this task learns into a general repository of porting recipes, once
 the port works.
