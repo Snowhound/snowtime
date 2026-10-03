@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { getLocale, overwriteGetLocale } from '~/paraglide/runtime.js'
@@ -17,7 +18,7 @@ const fn = vi.hoisted(() => ({
   getReportExport: vi.fn(),
   toXlsx: vi.fn(),
 }))
-setTransport((name, input) => fn[name as keyof typeof fn](input))
+setTransport(mockTransport(fn))
 // The files themselves are export.test.ts's; here only the tables that go into them count.
 vi.mock('./export', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./export')>()),

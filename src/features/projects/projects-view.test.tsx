@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import type { Project } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
 import { AppError } from '~/server/errors'
@@ -24,7 +25,7 @@ const fn = vi.hoisted(() => ({
   getReport: vi.fn(),
   getAppSession: vi.fn(),
 }))
-setTransport((name, input) => fn[name as keyof typeof fn](input))
+setTransport(mockTransport(fn))
 // The view renders without a router; its one link only needs to be there.
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; class?: string; children: JSX.Element }) => (

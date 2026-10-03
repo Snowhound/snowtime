@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import { AppError } from '~/server/errors'
 import { ErrorPage } from './error-page'
 import { NotFoundPage } from './not-found-page'
@@ -11,11 +12,7 @@ import { NotFoundPage } from './not-found-page'
 const invalidate = vi.hoisted(() => vi.fn())
 const checkAvailability = vi.hoisted(() => vi.fn())
 const frame = vi.hoisted(() => ({ organizationId: undefined as string | undefined }))
-// Only the maintenance page's checks answer; any other call fails, so the session each test
-// sets stays as it is.
-setTransport((name) =>
-  name === 'checkAvailability' ? checkAvailability() : Promise.reject(new Error('Offline')),
-)
+setTransport(mockTransport({ checkAvailability }))
 // The pages render without a router; the frames stand in as marked wrappers, since the
 // frame each page picks is what these tests check.
 vi.mock('@tanstack/solid-router', () => ({

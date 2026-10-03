@@ -5,6 +5,7 @@ import { type JSX, createSignal } from 'solid-js'
 import * as v from 'valibot'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import { addDays, datesBetween, startOfWeek } from '~/lib/calendar'
 import { writeCookie } from '~/lib/cookies'
 import { newId } from '~/lib/queries/query'
@@ -29,7 +30,7 @@ const fn = vi.hoisted(() => ({
   getAppSession: vi.fn(),
   navigate: vi.fn(),
 }))
-setTransport((name, input) => fn[name as keyof typeof fn](input))
+setTransport(mockTransport(fn))
 // The view renders without a router: navigating sets the search params the page reads.
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; hash?: string; class?: string; children: JSX.Element }) => (

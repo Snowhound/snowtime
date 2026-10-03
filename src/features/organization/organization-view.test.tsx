@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
@@ -30,7 +31,7 @@ const fn = vi.hoisted(() => ({
   updateIssueLinks: vi.fn(),
   navigate: vi.fn(),
 }))
-setTransport((name, input) => fn[name as keyof typeof fn](input))
+setTransport(mockTransport(fn))
 const org = vi.hoisted(() => ({
   updateMemberRole: vi.fn(),
   removeMember: vi.fn(),

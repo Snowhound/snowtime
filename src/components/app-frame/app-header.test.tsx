@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import { newId } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
 import { AppHeader } from './app-header'
@@ -14,7 +15,7 @@ const fn = vi.hoisted(() => ({
   navigate: vi.fn(),
   updateSettings: vi.fn(),
 }))
-setTransport((name, input) => fn[name as keyof typeof fn](input))
+setTransport(mockTransport(fn))
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
   authClient: { organization: { setActive: fn.setActive } },

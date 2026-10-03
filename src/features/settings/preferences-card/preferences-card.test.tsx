@@ -3,11 +3,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import type { Settings } from '~/lib/queries/settings'
 import { PreferencesCard } from './preferences-card'
 
 const fn = vi.hoisted(() => ({ updateSettings: vi.fn() }))
-setTransport((name, input) => fn[name as keyof typeof fn](input))
+setTransport(mockTransport(fn))
 
 const SETTINGS: Settings = {
   timeZone: 'Europe/Tallinn',
