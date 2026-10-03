@@ -1,4 +1,4 @@
-// The contract's JSON encoding (task 084), which the HTTP API and the render isolate's host
+// The contract's JSON encoding (task 084), which the HTTP API and a server render's host
 // share. Dates travel as ISO 8601 strings; the schemas say which fields hold dates, so
 // decoding turns those back into Date before it validates, and a GET's booleans, which
 // arrive as query strings, back into booleans. An AppError travels as its code and key.
@@ -12,8 +12,9 @@ export interface WireResponse {
   body: unknown
 }
 
-// The body of a failed call. A rule's refusal carries its AppError; anything else, such as
-// input that fails the schema, a message, and Better Auth's refusals its code too.
+// The body of a failed call. A rule's refusal carries its AppError's code and key. Anything
+// else carries a message: input that fails the schema, or a refusal of Better Auth's, which
+// adds Better Auth's code.
 export type WireError =
   | { code: AppErrorCode; key: AppErrorKey }
   | { code?: string; message: string }
@@ -33,8 +34,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-// The value with each string the schema expects as a date or a boolean turned into one. A piped
-// schema keeps its first schema's type and entries, so pipes need no case of their own.
+// The value with each string the schema expects as a date or a boolean turned into one. A
+// piped schema keeps its first schema's type and entries, so pipes need no case of their own.
 function revive(schema: AnySchema, value: unknown): unknown {
   if (value === null || value === undefined) return value
   switch (schema.type) {
@@ -95,7 +96,7 @@ export function matchPath(pattern: string, pathname: string): Record<string, str
 }
 
 // Where a call goes: its path with the parameters filled in from the input, and the rest of
-// the input as the query string of a GET or the JSON body of a write.
+// the input as the query string of a GET or the JSON body of a QUERY or a write.
 export function requestOf(
   operation: Operation,
   input: unknown,

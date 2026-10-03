@@ -48,7 +48,7 @@ type Context<K extends OperationName> = {
     ? { userId: string }
     : unknown)
 
-// Each call's rule.
+// Each call's handler, which runs its rule.
 const handlers: {
   [K in OperationName]: (context: Context<K>, input: ParsedInputOf<K>) => Promise<OutputOf<K>>
 } = {

@@ -1,6 +1,6 @@
-// The JSON API (task 084): the contract's calls over HTTP, running the rules through
-// operations.server.ts. The native backend serves the same API, and
-// the conformance tests (conformance/) check both.
+// The JSON API (task 084): the contract's calls over HTTP, and in process for Start's server
+// render, running the rules through operations.server.ts. The native backend serves the
+// same API, and the conformance tests (conformance/) check both.
 import { getRequest } from '@tanstack/solid-start/server'
 import { db } from '~/db'
 import { withActor } from '~/db/actor'

@@ -1,7 +1,6 @@
 // The contract's calls by name (task 084): how the JSON API addresses each one, and the
 // schemas of what it takes and returns. Both backends serve each one, and the client module
-// reaches them through one transport. Only the API's and the host's transports import this
-// file, so the TypeScript app's client bundle leaves it out.
+// reaches them through one transport, which uses the schemas to decode the answers.
 import * as v from 'valibot'
 import {
   AppSession,
