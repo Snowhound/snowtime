@@ -7,7 +7,7 @@ module, whose transports reach the API over HTTP or, during a server render, in 
 (task 084). Server functions can't be the contract: Start addresses each one by a
 hash of the build (`/_serverFn/<sha256>`), encodes its bodies in its own format, and
 accepts calls by `Sec-Fetch-Site`, so a Rust server would have to track Start's internals
-release by release. Today the app has 50 server functions in 9 `*.functions.ts` files.
+release by release. Today the app has 41 server functions in 9 `*.functions.ts` files.
 
 ## Design to confirm
 

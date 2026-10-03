@@ -39,7 +39,7 @@ user has checked what it found.
    layer: frontend and server framework, how the client reaches the server (server
    functions, an API, or both), serialization, middleware, ORM and database, migrations,
    auth and its plugins, background work, i18n, and anything else the server runs. Each
-   item names where the app uses it and how much: for example 50 server functions in 9
+   item names where the app uses it and how much: for example 41 server functions in 9
    files.
 2. **Check with the user.** The session presents the list. The user confirms it, corrects
    it, and adds what code can't show, such as which features may be dropped and which
@@ -98,5 +98,5 @@ the one accepted exception.
       repository, and the gaps it hits are fixed
 - [ ] The workflow above written as the repository's entry point: the survey, the user's
       check, then proposals
-- [ ] The transferability check for server functions, run on this app's 50 and checked by
+- [ ] The transferability check for server functions, run on this app's 41 and checked by
       hand, and the middle step to the API written as a recipe from task 084

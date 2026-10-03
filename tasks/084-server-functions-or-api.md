@@ -117,7 +117,7 @@ p50s and CPU at 10 agreed within 0.1 ms, and the writes' p95 varied by up to 1.3
 
 Speed is not a reason to stay on server functions, so the move is only work:
 
-- **Transferability first.** Each of the 50 server functions is checked as task 085
+- **Transferability first.** Each of the 41 server functions is checked as task 085
   describes and gets a verdict: transferable, transferable with changes, or not as is.
   The report is the first commit.
 - **Every call on the contract:** its output schema, its operation, its handler, its
@@ -142,6 +142,116 @@ Speed is not a reason to stay on server functions, so the move is only work:
 - **Server functions deleted last,** with `src/start.ts`'s serialization adapter and
   CSRF middleware if nothing else needs them.
 
+## Transferability
+
+Checked on 2026-10-03 as task 085 describes. The app has 41 server functions in 9
+`*.functions.ts` files (tasks 081.02 and 085 counted 50). Of them, 32 are
+transferable, 9 are transferable with changes, and none is not transferable as is:
+nothing streams, returns a raw `Response`, or takes `FormData`, and the export already
+comes in month-sized JSON pieces.
+
+Some transferable functions need the seam to handle what the timer's 8 calls didn't.
+These changes go in `src/lib/api/` and `operations.server.ts` once, not in the functions:
+
+- **A: GET input beyond strings and dates.** `wire.ts` sends a GET's input as
+  `URLSearchParams`, so every value arrives as a string, and the server's `decode` only
+  revives dates. `listProjects` takes a boolean, `getReportEntries` a number, and the
+  report reads nested objects (`report`, `row`, `after`). Open: question 1 below.
+- **B: Signed-out calls.** `runOperation` assumes a signed-in user. Six calls run without
+  one, so the contract gains a third scope, `public`, whose handler gets the session or
+  `null`.
+- **C: Better Auth calls.** `inviteMember` and `acceptInvitation` call Better Auth's
+  server API with the request's headers, so their handlers take the caller's headers, and
+  the in-process transport passes the page's.
+
+| Function                  | Verdict      | Proposed call                                | Notes |
+| ------------------------- | ------------ | -------------------------------------------- | ----- |
+| Timer (3), entries (5)    | Transferable | On the contract already                      |       |
+| `listProjects`            | With changes | `GET …/projects`                             | 1, A  |
+| `createProject`           | With changes | `POST …/projects`                            | 1     |
+| `updateProject`           | With changes | `PATCH …/projects/:id`                       | 1     |
+| `archiveProject`          | With changes | `POST …/projects/:id/archive`                | 1     |
+| `unarchiveProject`        | With changes | `POST …/projects/:id/unarchive`              | 1     |
+| `deleteProject`           | Transferable | `DELETE …/projects/:id`                      |       |
+| `assignProjectToTeam`     | Transferable | `PUT …/projects/:projectId/teams/:teamId`    |       |
+| `unassignProjectFromTeam` | Transferable | `DELETE …/projects/:projectId/teams/:teamId` |       |
+| `listTeams`               | Transferable | `GET …/teams`                                |       |
+| `createTeam`              | Transferable | `POST …/teams`                               |       |
+| `renameTeam`              | Transferable | `PATCH …/teams/:teamId`                      |       |
+| `deleteTeam`              | Transferable | `DELETE …/teams/:teamId`                     |       |
+| `addTeamMember`           | Transferable | `PUT …/teams/:teamId/members/:userId`        |       |
+| `removeTeamMember`        | Transferable | `DELETE …/teams/:teamId/members/:userId`     |       |
+| `setTeamRole`             | Transferable | `PATCH …/teams/:teamId/members/:userId`      |       |
+| `listMembers`             | Transferable | `GET …/members`                              |       |
+| `getReport`               | Transferable | `GET …/report`                               | A     |
+| `getReportBreakdown`      | Transferable | `GET …/report/breakdown`                     | A     |
+| `getReportEntries`        | Transferable | `GET …/report/entries`                       | A     |
+| `getReportEntryTotals`    | Transferable | `GET …/report/entry-totals`                  | A     |
+| `getReportExport`         | Transferable | `GET …/report/export`                        | A     |
+| `updateIssueLinks`        | Transferable | `PATCH …/issue-links`                        |       |
+| `listInvitations`         | Transferable | `GET …/invitations`                          |       |
+| `inviteMember`            | With changes | `POST …/invitations`                         | 2, C  |
+| `acceptInvitation`        | With changes | `POST /api/v1/invitations/:id/accept`        | 2, C  |
+| `getInvitation`           | Transferable | `GET /api/v1/invitations/:id`                | B     |
+| `getSettings`             | With changes | `PUT /api/v1/settings`                       | 3     |
+| `updateSettings`          | Transferable | `PATCH /api/v1/settings`                     |       |
+| `getAppSession`           | With changes | `GET /api/v1/session`                        | 4, B  |
+| `getSignInMethods`        | Transferable | `GET /api/v1/sign-in-methods`                | B     |
+| `getDeployment`           | Transferable | `GET /api/v1/deployment`                     | B     |
+| `getDevUsers`             | Transferable | `GET /api/v1/dev-users`                      | B     |
+| `checkAvailability`       | Transferable | `GET /api/v1/availability`                   | B     |
+
+`…` stands for `/api/v1/organizations/:organizationId`. `checkAvailability` reads no
+session, because it answers while the database is down.
+
+The changes:
+
+1. **Projects return their audit columns.** `listProjects` selects
+   `getTableColumns(project)`, and the writes use a bare `.returning()`, so responses carry
+   `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, and `sysDeleted`. They return the
+   contract's fields only, as the entries' rules do, plus `hasEntries` and `teamIds` on the
+   list.
+2. **Invitations send Better Auth's refusals as successes.** `authResult` turns Better
+   Auth's `APIError` into `{ data: null, error: { code, status } }`, which the client's
+   `unwrap` throws, as with Better Auth's client calls. `inviteMember` also returns Better
+   Auth's whole invitation, of which the client reads `id`, `email`, and `expiresAt`; its
+   output narrows to those. How the refusal travels is open: question 2 below.
+3. **`getSettings` is a GET that creates the row.** Its only caller is the app frame,
+   which creates a new user's settings from the browser's time zone and language; the
+   session read carries the settings. It becomes `PUT /api/v1/settings`, which inserts the
+   row if it is missing and returns it. No settings GET remains.
+4. **`getAppSession` writes and reads the request.** It saves the fallback active
+   organization through `auth.api.setActiveOrganization`, sets the language cookie, and
+   compares the account's language with `getLocale()`, the page's. As decided above, it
+   returns the fallback without saving it and sets no cookie. `localeChanged` leaves the
+   response: the root route compares `settings.locale` with its own `getLocale()`, and
+   then redirects on the server or sets the cookie and reloads in the browser, as now. Its
+   handler needs the session itself (the user and `createdAt`), which scope B gives.
+   `defaultOrganization` already reads the returned fallback, not the saved one; the port
+   checks the other readers of `activeOrganizationId`.
+
+`middleware.ts` caches scopes per request, so a server render's parallel loaders share
+one lookup. `runOperation` resolves the scope per call, so the in-process transport
+repeats that indexed read once per loader. If `bun run perf` shows the cost, the
+transport caches scopes per render.
+
+### Questions for Kait
+
+1. **GET input (A).** Recommended: `decode` coerces query strings by the schema, as it
+   already revives dates, so `includeArchived=true` and `offset=25` parse, and a field
+   whose schema is an object travels in its own query parameter as JSON
+   (`report={"from":…}`). The timer's URLs stay as they are, and the Rust handlers do the
+   same with serde. Rejected: all input as one `?input=<JSON>` parameter, as tRPC does,
+   which changes the timer's URLs and hides the fields; and POST for the report reads,
+   which puts reads behind the `Origin` check and the write rate limit.
+2. **Better Auth's refusals (2).** Recommended: the API answers with Better Auth's status
+   and `{ error: { code, message } }` carrying Better Auth's code, the shape Better Auth's
+   own HTTP API sends. The transport throws it as `{ code, status }`, so the client's
+   messages for Better Auth codes keep working. Rejected: `{ data, error }` in a 200, which
+   hides a refusal from the status and from the conformance tests.
+3. **The paths in the table.** Recommended as listed, with organization calls under
+   `/organizations/:organizationId` as the entries are.
+
 ## Acceptance criteria
 
 - [x] The client module with server-function and HTTP implementations, and the timer's
@@ -153,7 +263,7 @@ Speed is not a reason to stay on server functions, so the move is only work:
       against them over HTTP
 - [x] The hydration equality test
 - [x] The measurements above, recorded in this task, with the condition for a switch
-- [ ] The transferability report for all 50 server functions
+- [x] The transferability report for all 41 server functions
 - [ ] Every call on the contract, with conformance tests, and no `createServerFn` left
 - [ ] The in-process transport for Start's server render, with the hydration test
       covering it and the HTTP transport
