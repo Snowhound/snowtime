@@ -92,6 +92,11 @@ rejected, as in task 069.
 3. The frontend adapter. The data layer calls one client module, which calls the contract
    on both backends; the TypeScript app drops server functions (task 084, Kait,
    2026-10-03).
+
+   Task 078 found that behind Caddy the app sees its own URL as `http`, so an `https`
+   `Origin` never matches the request's URL. Both backends compare `Origin` with the
+   public URL instead, as the JSON API's write check does (`src/server/api.server.ts`).
+
 4. A mechanical port. What the TypeScript side must keep for that (rules that take
    `(db, scope, input)`, SQL both sides share, the contract), and a conformance suite of
    HTTP-level tests on seeded databases that both backends pass. A port is complete when

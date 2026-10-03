@@ -1,0 +1,2 @@
+# The local bench stack has no public name, so Caddy signs its own certificate.
+tls internal
