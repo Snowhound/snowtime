@@ -1,26 +1,31 @@
 # 081: Native backend
 
-Status: todo (waits on task 078's baseline; builds on tasks 079 and 080)
+Status: todo (waits on task 078's baseline; builds on task 080; subtask 01 in progress)
 
 A second backend for self-hosting that serves many companies on a fraction of today's
-memory and CPU, without a garbage collector. The TypeScript backend stays the source of
-truth and keeps the Vercel deployment. An AI session generates the native port from a
-given commit of it. One frontend source works with both. Changes to the TypeScript app are
-welcome where they make this task much simpler. The native server renders no HTML: task
-079's route shells leave it the API alone. This task researches the decisions and proves
-the gain on the hot path; full parity is a later task.
+memory and CPU, without a garbage collector in its own code. The TypeScript backend stays
+the source of truth and keeps the Vercel deployment. An AI session generates the native
+port from a given commit of it. One frontend source works with both. Changes to the
+TypeScript app are welcome where they make this task much simpler. The native server
+renders pages in an embedded V8 isolate, and the browser hydrates them (subtask 01, Kait,
+2026-10-02); task 079's shells, which would have left it the API alone, are on hold. This
+task researches the decisions and proves the gain on the hot path; full parity is a later
+task.
 
 ## Targets
 
 - Linux on one core, with resident memory under 64 MB, aiming at 32 MB, at task 078's
-  peak load on the L dataset, SQLite's own cache included. The domain code makes no OS
+  peak load on the L dataset, SQLite's own cache included. This target predates server
+  rendering: the V8 isolate alone runs at 66–118 MB on macOS (subtask 01), so the target
+  with a renderer is open. The domain code makes no OS
   calls outside a thin layer, so a port to a microcontroller without an OS stays possible
   later.
-- No garbage collector and no allocation per row on hot paths. The data layout below says
+- No garbage collector and no allocation per row on hot paths in the Rust code. The V8
+  isolate that renders pages has its own collector, which the host schedules. The data layout below says
   how.
 - The same SQLite schema and migrations as the TypeScript backend, so a self-hoster can
   switch either way on one file. Turso's engine comes later.
-- One process with Caddy in front for TLS, static files, and the route shells. Folding the
+- One process with Caddy in front for TLS and static files. Folding the
   proxy into the binary comes later.
 
 ## Data layout
@@ -110,7 +115,8 @@ rejected, as in task 069.
 
 The hot path in the native backend: session check, running timer, start and stop, entry
 list, and the week report, on the same database file, measured with task 078's harness.
-The frontend reaches it through the adapter for those calls.
+The frontend reaches it through the adapter for those calls. The isolate server-renders
+the timer page and the week report, and the browser hydrates them (subtask 01).
 
 ## Acceptance criteria
 
@@ -127,3 +133,12 @@ The frontend reaches it through the adapter for those calls.
 
 TLS, certificates, and static files in the binary (Caddy stays), Turso's engine, and
 changes to the Vercel deployment beyond the adapter.
+
+## Subtasks
+
+- [01](01-server-rendering.md): server rendering in the native backend
+- [02](02-api-contract.md): the API contract and the frontend adapter
+
+Task 083 checks whether Perry, a native TypeScript compiler, could replace the isolate or
+the Rust port. Task 084 decides whether the TypeScript app keeps server functions or
+serves the same API.
