@@ -11,7 +11,12 @@ Vercel preview against staging. Neither number says how much of it is the databa
 ## Acceptance criteria
 
 - [ ] Server-rendered pages send `Server-Timing` with `session`, `db`, and `render`
-      durations; `db` sums the request's queries, including calls made in process
+      durations; `db` sums the request's queries, including calls made in process.
+      Start streams the HTML and sends headers once the loaders finish, so `render` covers
+      the time to the first byte only; the pages stay streamed rather than buffered to time
+      the whole render
+- [ ] The timing lives in one helper module (a request-scoped timer and a wrapped database
+      client); handlers and pages don't change
 - [ ] JSON API responses send the same header for their session and database time
 - [ ] The header names no tables, queries, or user data, so it can stay on in production
 - [ ] The overhead is measured with `bun run perf` and stays within its budgets
