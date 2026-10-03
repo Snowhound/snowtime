@@ -75,7 +75,7 @@ function authErrorCode(error: unknown): string | undefined {
   return typeof error.code === 'string' ? error.code : undefined
 }
 
-// The text to show for an error from a server function or a Better Auth client call. An
+// The text to show for an error from an API call or a Better Auth client call. An
 // AppError from a newer server than this client falls back to the server's English
 // message; anything else is unexpected and gets a generic message instead of internals.
 export function errorMessage(error: unknown): string {

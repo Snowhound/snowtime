@@ -70,7 +70,7 @@ In the Cloudflare zone for `snowhound.eu`:
 
 Caddy serves hashed `/assets/` files with a one-year immutable cache lifetime and
 backgrounds and brand images for one week. It marks proxied responses
-`private, no-store`, including HTML, authentication, and server functions. Static
+`private, no-store`, including HTML, authentication, and the JSON API. Static
 files stay on the same hostname, so the app needs no asset-domain setting or CSP change.
 Cloudflare's [default cache behavior](https://developers.cloudflare.com/cache/concepts/default-cache-behavior/)
 and [cache rules](https://developers.cloudflare.com/cache/how-to/cache-rules/settings/)

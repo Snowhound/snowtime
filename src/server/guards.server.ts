@@ -1,5 +1,5 @@
-// Checks every call runs through, whether it arrives as a server function (middleware.ts)
-// or over the JSON API (api.server.ts).
+// Checks every call of the JSON API runs through (api.server.ts), over HTTP or in a
+// server render.
 import { db } from '~/db'
 import { auth, rateLimitStore } from './auth/better-auth.server'
 import { databaseAvailable } from './availability/availability.server'

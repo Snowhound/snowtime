@@ -1,6 +1,6 @@
 # 084: From server functions to one JSON API
 
-Status: in-progress (the seam and the timer are done; the full move is next)
+Status: in-progress (the move is done; QUERY on Vercel is still to check)
 
 The TypeScript app moves fully to the JSON API of task 081.02, and Start's server
 functions go (Kait, 2026-10-03). The timer's measurements below showed the API no slower
@@ -61,27 +61,26 @@ comparison of middleware and CSRF, which the design above answers.
   transport over the API's own handler, for the page's request, so a loader's read makes
   no HTTP request.
 - `src/lib/api/transports.ts`: `httpTransport` for the browser, and `hostTransport` for a
-  server render, in Start or in the native backend's render isolate. The host implements one function,
-  `call(name, input) → { status, body }`, with `input` and `body` as the JSON the API
-  takes and sends. Rust answers it by running the API's handler for the page's own
-  session, so a loader's read makes no HTTP request.
+  server render, in Start or in the native backend's render isolate. The host implements
+  one function, `call(name, input) → { status, body }`, with `input` and `body` as the JSON
+  the API takes and sends. Rust answers it by running the API's handler for the page's own
+  session.
 - `src/lib/api/wire.ts`: the encoding both share. A GET sends its input as the query
-  string, a write as a JSON body, and the IDs in the path. A refusal is
-  `{ error: { code, key } }` with an HTTP status from the code (401, 403, 404, 409, 422,
-  429, 503); input that fails a schema is a 400 with a message.
-- `src/server/operations.server.ts`: each operation run against its rule, for a signed-in
-  user, with JSON in and out. `api.server.ts` adds the session, the write rate limit, the
-  `Origin` check against `BETTER_AUTH_URL`, and the availability probe, which it shares
-  with the middleware through `guards.server.ts`.
+  string, a QUERY or a write as a JSON body, and the IDs in the path. The schemas turn
+  dates, and a GET's booleans, back into their types. A refusal is `{ error: { code, key } }`
+  with an HTTP status from the code (401, 403, 404, 409, 422, 429, 503); input that fails a
+  schema is a 400 with a message; Better Auth's refusals keep its status and code.
+- `src/server/operations.server.ts`: each call's handler, with JSON in and out, for an
+  organization, the signed-in user, or anyone (`public`). `api.server.ts` adds the
+  session, the write rate limit, the `Origin` check on writes against `BETTER_AUTH_URL`,
+  and the availability probe (`guards.server.ts`).
 - `src/lib/api/operations.ts` lists the calls: method, path, scope, and input and output
-  schemas. The output schemas, `Entry` and `RunningTimer`, sit in the domains'
-  `*.schemas.ts`. The browser's transport imports the list, and the route loaders put
-  it in the entry chunk: about 600 bytes gzipped on every page for the timer's 8 calls. The rules now return only the contract's
-  fields, not the audit columns, so both transports send the same entry.
+  schemas, which sit in the domains' `*.schemas.ts`. The browser's transport imports the
+  list. The rules return only the contract's fields, not the audit columns.
 - Tests: `src/server/operations.test.ts` (hydration equality: the server render's
-  transport against `httpTransport`),
-  `src/lib/api/transports.test.ts` (the HTTP encoding), and `conformance/` (13 tests over
-  HTTP, `bun run test:conformance`, any backend through `CONFORMANCE_URL`).
+  transport against `httpTransport`), `src/lib/api/transports.test.ts` (the HTTP
+  encoding), and `conformance/` (43 tests over HTTP, one file per domain,
+  `bun run test:conformance`, any backend through `CONFORMANCE_URL`).
 
 ## Measured
 
@@ -239,10 +238,11 @@ The changes:
    `defaultOrganization` already reads the returned fallback, not the saved one; the port
    checks the other readers of `activeOrganizationId`.
 
-`middleware.ts` caches scopes per request, so a server render's parallel loaders share
+`middleware.ts` cached scopes per request, so a server render's parallel loaders shared
 one lookup. `runOperation` resolves the scope per call, so the in-process transport
-repeats that indexed read once per loader. If `bun run perf` shows the cost, the
-transport caches scopes per render.
+repeats that indexed read once per loader. The transport keeps no cache: the cost hasn't
+been compared, and `bun run perf:pages`' cold loads, run on the old and the new build in
+one session, would show it.
 
 ### Kait's answers
 
@@ -268,8 +268,9 @@ Kait agreed on 2026-10-03:
 - [x] The hydration equality test
 - [x] The measurements above, recorded in this task, with the condition for a switch
 - [x] The transferability report for all 41 server functions
-- [ ] Every call on the contract, with conformance tests, and no `createServerFn` left
+- [x] Every call on the contract, with conformance tests, and no `createServerFn` left
 - [x] The in-process transport for Start's server render, with the hydration test
       covering it and the HTTP transport
-- [ ] No GET that writes, except Better Auth's sliding session
-- [ ] `docs/architecture/` and `AGENTS.md` describe the API instead of server functions
+- [x] No GET that writes, except Better Auth's sliding session
+- [x] `docs/architecture/` and `AGENTS.md` describe the API instead of server functions
+- [ ] A QUERY reaches the function on a Vercel preview deployment

@@ -1,4 +1,4 @@
-// Shared query helpers. Server functions build their queries on the soft-delete filters
+// Shared query helpers. The rules build their queries on the soft-delete filters
 // instead of repeating sys_deleted = 0 (docs/architecture/README.md, "Application rules").
 import { and, eq, type SQL, sql } from 'drizzle-orm'
 import { project, timeEntry } from '~/db/schema'

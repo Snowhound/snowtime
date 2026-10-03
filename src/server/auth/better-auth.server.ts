@@ -28,7 +28,7 @@ const domainHooks = loginDomainHooks(domains, (id) =>
   db.query.user.findFirst({ columns: { email: true }, where: { id } }),
 )
 
-// Shared with sessionMiddleware, which limits server-function writes with it.
+// Shared with the API's session check, which limits each user's writes with it.
 export const rateLimitStore = createRateLimitStore(env)
 
 export const auth = betterAuth({
@@ -40,14 +40,14 @@ export const auth = betterAuth({
     // Without a trustworthy address, every request shares one rate-limit count.
     ...(env.CLIENT_IP_HEADER && { ipAddress: { ipAddressHeaders: [env.CLIENT_IP_HEADER] } }),
   },
-  // The session and user ride in a signed cookie for 5 minutes, so a server function call
+  // The session and user ride in a signed cookie for 5 minutes, so an API call
   // doesn't read them from the database. A session revoked elsewhere, or a deleted account,
   // stays usable that long on a device that has the cookie (docs/architecture/auth.md, "Sign-in
   // methods"). Membership is still read on every call (resolveScope). A session lasts 30 days
   // and is renewed daily while used, so someone who tracks time often stays signed in.
   session: { expiresIn: 30 * 24 * 60 * 60, cookieCache: { enabled: true, maxAge: 5 * 60 } },
-  // On in production only, per IP address and path. The counts go where the server
-  // functions' go: Upstash Redis when configured, else memory (docs/architecture/auth.md,
+  // On in production only, per IP address and path. The counts go where the API's
+  // go: Upstash Redis when configured, else memory (docs/architecture/auth.md,
   // "Abuse limits").
   rateLimit: {
     customStorage: rateLimitStore,

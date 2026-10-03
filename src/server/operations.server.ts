@@ -170,8 +170,8 @@ export function refusal(error: unknown): WireResponse {
   throw error
 }
 
-// Runs one call, with its input as JSON, after the session check. Like scopeMiddleware, it
-// resolves the scope before it validates the call's own input.
+// Runs one call, with its input as JSON, after the session check. It resolves the scope
+// before it validates the call's own input.
 export async function runOperation(
   db: Database,
   name: OperationName,

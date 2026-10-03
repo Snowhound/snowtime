@@ -9,7 +9,7 @@ import { newId } from '~/lib/queries/query'
 import { AppError } from '~/server/errors'
 import { ProjectsPage } from './projects-page'
 
-// The server functions stay out of the DOM tests. Each mock answers from `server`, so a
+// The backend stays out of the DOM tests. Each mock answers from `server`, so a
 // refetch after a mutation sees what the server would return.
 const fn = vi.hoisted(() => ({
   listProjects: vi.fn(),

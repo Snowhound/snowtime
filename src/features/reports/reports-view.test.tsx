@@ -16,7 +16,7 @@ import type {
 import { ReportSearch } from './filters'
 import { ReportsPage } from './reports-page'
 
-// The server functions stay out of the DOM tests; getReport answers from `server.rows`,
+// The backend stays out of the DOM tests; getReport answers from `server.rows`,
 // spread over the buckets of the range it is asked for.
 const fn = vi.hoisted(() => ({
   getReport: vi.fn(),

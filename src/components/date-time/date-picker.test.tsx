@@ -6,9 +6,6 @@ import { describe, expect, test, vi } from 'vitest'
 import { DatePicker } from './date-picker'
 import { TimeInput } from './time-input'
 
-// The session query's server function, which the settings are read through; the tests put the
-// session in the cache instead.
-
 // A client whose session carries these settings, as the app's root loads it.
 function withSettings(settings: object, children: () => JSX.Element) {
   const queryClient = new QueryClient()
