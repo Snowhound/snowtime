@@ -15,10 +15,6 @@ services:
     memswap_limit: ${BENCH_APP_MEMORY:-1792m}
   caddy:
     image: snowtime-caddy:bench
-    environment:
-      # A cap on requests in flight to the app (perf:stress --max-requests, --try-duration).
-      BENCH_MAX_REQUESTS: ${BENCH_MAX_REQUESTS:-0}
-      BENCH_TRY_DURATION: ${BENCH_TRY_DURATION:-30s}
     volumes:
       - ./bench/local-tls.caddy:/etc/caddy/bench/local-tls.caddy:ro
     ports: !override

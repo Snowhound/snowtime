@@ -20,6 +20,10 @@ services:
     environment:
       BENCH_TRUSTED_PROXIES: ${BENCH_GENERATOR_IP:?Set BENCH_GENERATOR_IP in .env}
       BENCH_SAMPLER_HASH: ${BENCH_SAMPLER_HASH:?Set BENCH_SAMPLER_HASH in .env}
+      # An optional cap on requests in flight to the app, and how long a request waits for
+      # a free slot before a 503 (perf:stress --max-requests and --try-duration locally).
+      BENCH_MAX_REQUESTS: ${BENCH_MAX_REQUESTS:-0}
+      BENCH_TRY_DURATION: ${BENCH_TRY_DURATION:-30s}
     volumes:
       - ./bench/bench.caddy:/etc/caddy/bench/bench.caddy:ro
       - bench_log:/var/log/caddy

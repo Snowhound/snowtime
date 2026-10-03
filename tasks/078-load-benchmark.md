@@ -220,6 +220,30 @@ with 192 MB and weren't rerun.
 The deploy workflow publishes the sampler image and copies the bench files, and
 `docs/deployment/compose.md` ("Run the load benchmark") has the server steps.
 
+## Next: the Hetzner run
+
+The local work is done and pushed on branch `078-load-benchmark`. In order:
+
+1. Kait deploys the branch:
+   `gh workflow run compose-deploy.yml --ref 078-load-benchmark -f server=restart`.
+2. The agent generates M on the day of the run (`bun perf/stress/dataset.ts M`), because
+   the data ends when it's generated and the users file must match. It gives Kait the
+   file's path under `perf/.cache/stress/`.
+3. Kait follows steps 2 to 5 of "Run the load benchmark": copies the file, adds the three
+   `BENCH_*` settings to `.env`, loads the dataset, and starts the bench stack.
+4. Kait gives the agent `BENCH_HOST`, `BENCH_ORIGIN_IP`, `BENCH_AUTH_SECRET`, and
+   `BENCH_SAMPLER_PASSWORD`. The agent runs `--remote --dataset=M --run=calibration`,
+   then `--run=ramp` from the bottom, because the CX11's shared x64 vCPU can be far
+   slower than a Mac core. The ramp stops at the knee on its own.
+5. If time allows, Kait sets `BENCH_MAX_REQUESTS=24` and `BENCH_TRY_DURATION=1s` in `.env`
+   and restarts the bench stack, and the agent runs `--remote --run=fixed` at the knee, to
+   check that the cap costs nothing on that CPU. Overload runs stay local. The production
+   Caddyfile gets the cap afterwards (Kait, 2026-10-02).
+6. Kait brings the demo back (step 7 of "Run the load benchmark").
+7. The agent writes the measured sizing into `docs/hosting.md` (closing task 075's server
+   run) and the capacity into `README.md` with the date, release, dataset, and usage
+   model, and records the calibration ratio of server CPU to local CPU per request here.
+
 ## Acceptance criteria
 
 - [x] Usage model and targets agreed with Kait as the starting point (2026-10-02)
