@@ -6,7 +6,7 @@ The native backend renders pages and the browser hydrates them, as it does with 
 Start server. Rust embeds a V8 isolate that runs the app's Solid server render. Kait chose
 this on 2026-10-02 over task 079's shells: a shell's warm load shows content 430–480 ms
 later than a server-rendered page (task 079, "Measured"), and the spike below found
-rendering cheap and hydration compatible. Task 079 is on hold.
+rendering cheap and hydration compatible. Task 079 is cancelled.
 
 ## Findings
 

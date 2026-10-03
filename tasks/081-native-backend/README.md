@@ -8,7 +8,7 @@ the source of truth and keeps the Vercel deployment. An AI session generates the
 port from a given commit of it. One frontend source works with both. Changes to the
 TypeScript app are welcome where they make this task much simpler. The native server
 renders pages in an embedded V8 isolate, and the browser hydrates them (subtask 01, Kait,
-2026-10-02); task 079's shells, which would have left it the API alone, are on hold. This
+2026-10-02); task 079's shells, which would have left it the API alone, are cancelled. This
 task researches the decisions and proves the gain on the hot path; full parity is a later
 task.
 
