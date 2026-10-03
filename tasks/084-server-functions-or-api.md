@@ -222,7 +222,7 @@ The changes:
    Auth's `APIError` into `{ data: null, error: { code, status } }`, which the client's
    `unwrap` throws, as with Better Auth's client calls. `inviteMember` also returns Better
    Auth's whole invitation, of which the client reads `id`, `email`, and `expiresAt`; its
-   output narrows to those. How the refusal travels is open: question 2 below.
+   output narrows to those. How the refusal travels is under Kait's answers below.
 3. **`getSettings` is a GET that creates the row.** Its only caller is the app frame,
    which creates a new user's settings from the browser's time zone and language; the
    session read carries the settings. It becomes `PUT /api/v1/settings`, which inserts the
@@ -242,15 +242,17 @@ one lookup. `runOperation` resolves the scope per call, so the in-process transp
 repeats that indexed read once per loader. If `bun run perf` shows the cost, the
 transport caches scopes per render.
 
-### Questions for Kait
+### Kait's answers
 
-1. **Better Auth's refusals (2).** Recommended: the API answers with Better Auth's status
-   and `{ error: { code, message } }` carrying Better Auth's code, the shape Better Auth's
-   own HTTP API sends. The transport throws it as `{ code, status }`, so the client's
-   messages for Better Auth codes keep working. Rejected: `{ data, error }` in a 200, which
-   hides a refusal from the status and from the conformance tests.
-2. **The paths in the table.** Recommended as listed, with organization calls under
-   `/organizations/:organizationId` as the entries are.
+Kait agreed on 2026-10-03:
+
+- **Better Auth's refusals (2).** The API answers with Better Auth's status and
+  `{ error: { code, message } }` carrying Better Auth's code, the shape Better Auth's own
+  HTTP API sends. The transport throws it as `{ code, status }`, so the client's messages
+  for Better Auth codes keep working. Rejected: `{ data, error }` in a 200, which hides a
+  refusal from the status and from the conformance tests.
+- **The paths in the table**, with organization calls under
+  `/organizations/:organizationId` as the entries are.
 
 ## Acceptance criteria
 
