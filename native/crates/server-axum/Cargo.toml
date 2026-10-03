@@ -1,0 +1,13 @@
+[package]
+name = "snowtime-axum"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+axum.workspace = true
+snowtime-api.workspace = true
+snowtime-core.workspace = true
+snowtime-rules-sql.workspace = true
+tokio.workspace = true

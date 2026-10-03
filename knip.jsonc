@@ -5,6 +5,7 @@
   // The compiled release's migrator, which scripts/build-self-hosted.ts compiles by path.
   // The harnesses (perf/README.md); the weather bench's page script loads from its HTML and
   // its config from createServer. The load benchmark's k6 scenario runs in k6's container.
+  // The native backend's harnesses (native/README.md).
   "entry": [
     "src/server-entry.ts",
     "drizzle.config.ts",
@@ -13,6 +14,7 @@
     "perf/weather/bench.ts",
     "perf/weather/vite.config.ts",
     "perf/stress/scenario.js",
+    "native/bench/*.ts",
   ],
   "drizzle": false,
   // Static prototypes and design files load their scripts from HTML.

@@ -1,0 +1,19 @@
+[package]
+name = "snowtime-auth"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+base64.workspace = true
+hmac.workspace = true
+rand.workspace = true
+rusqlite.workspace = true
+scrypt.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+snowtime-core.workspace = true
+unicode-normalization.workspace = true
+uuid.workspace = true
