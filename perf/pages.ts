@@ -380,7 +380,45 @@ async function changeRange(page: Page): Promise<{ paint: number; data: number }>
   return { paint: median(paint), data: median(data) }
 }
 
+// Go to another page with the header's link: the pointer rests on it, which starts the router's
+// preload as a user's would, then clicks. The click to the new page's content on screen with
+// nothing busy.
+async function follow(page: Page, path: string, content: string): Promise<number> {
+  const link = page.locator(`header a[href="/lumen/${path}"]:visible`).first()
+  const box = await link.boundingBox()
+  if (!box) throw new Error(`[perf] The ${path} link has no box`)
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.waitForTimeout(100)
+  await page.mouse.down()
+  await page.mouse.up()
+  await page.waitForFunction(
+    ([wanted, selector]) =>
+      location.pathname.endsWith(wanted) &&
+      document.querySelector(selector) !== null &&
+      !document.querySelector('[aria-busy="true"]'),
+    [`/${path}`, content],
+    { polling: 'raf' },
+  )
+  const ms = await page.evaluate(() => performance.now() - window.perfProbe.lastInput)
+  await page.mouse.move(2, 2)
+  await page.waitForTimeout(300)
+  return ms
+}
+
+// Timer to reports and back, three times.
+async function navigate(page: Page): Promise<{ toReports: number; toTimer: number }> {
+  const toReports: number[] = []
+  const toTimer: number[] = []
+  for (let i = 0; i < 3; i++) {
+    toReports.push(await follow(page, 'reports', TIMESHEET_CELL))
+    toTimer.push(await follow(page, 'timer', 'main li'))
+  }
+  return { toReports: median(toReports), toTimer: median(toTimer) }
+}
+
 interface Interactions {
+  navigateReports: number
+  navigateTimer: number
   startTimer: number
   openEntryHover: number
   openEntry: number
@@ -494,6 +532,9 @@ async function run() {
         const open = await openEntry(loaded.page)
         interactions.openEntryHover = open.hover
         interactions.openEntry = open.click
+        const moved = await navigate(loaded.page)
+        interactions.navigateReports = moved.toReports
+        interactions.navigateTimer = moved.toTimer
       } else if (spec.name === 'reports (week)') {
         const range = await changeRange(loaded.page)
         interactions.rangePaint = range.paint
@@ -555,6 +596,8 @@ async function run() {
         ['open its project field (timer)', fixed(interactions.openEntry!)],
         ['previous range, to paint (reports)', fixed(interactions.rangePaint!)],
         ['previous range, to new data (reports)', fixed(interactions.rangeData!)],
+        ['header link, timer to reports', fixed(interactions.navigateReports!)],
+        ['header link, reports to timer', fixed(interactions.navigateTimer!)],
       ],
     ),
   )
