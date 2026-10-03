@@ -20,13 +20,29 @@ task.
   with a renderer is open. The domain code makes no OS
   calls outside a thin layer, so a port to a microcontroller without an OS stays possible
   later.
-- No garbage collector and no allocation per row on hot paths in the Rust code. The V8
+- No garbage collector and, after the first port, no allocation per row on hot paths in
+  the Rust code. The V8
   isolate that renders pages has its own collector, which the host schedules. The data layout below says
   how.
 - The same SQLite schema and migrations as the TypeScript backend, so a self-hoster can
   switch either way on one file. Turso's engine comes later.
 - One process with Caddy in front for TLS and static files. Folding the
   proxy into the binary comes later.
+
+## Port approach
+
+Kait, 2026-10-03:
+
+- **Make it work, then make it fast.** The first port uses the libraries' defaults and
+  ordinary allocation. The data layout below comes after, where task 078's numbers show a
+  gain; the libraries may already avoid much of the allocation it targets.
+- **Libraries are chosen for ease of porting** where a proof of concept shows a measurable
+  difference and no significant performance penalty. Handler code should look like the
+  TypeScript handlers, and the query layer like Drizzle, as far as a library allows.
+  Subtask 03 measures both on a small app.
+- **Fast defaults.** FxHash (`rustc-hash`) for keys the server makes itself, such as
+  indices and UUIDs from the database. It isn't resistant to collision attacks, so keys
+  that come from requests use a seeded hasher such as `foldhash`, hashbrown's default.
 
 ## Data layout
 
@@ -138,6 +154,7 @@ changes to the Vercel deployment beyond the adapter.
 
 - [01](01-server-rendering.md): server rendering in the native backend
 - [02](02-api-contract.md): the API contract and the frontend adapter
+- [03](03-port-libraries.md): the Rust libraries, chosen on a small port of the timer
 
 Task 083 checks whether Perry, a native TypeScript compiler, could replace the isolate or
 the Rust port. Task 084 decides whether the TypeScript app keeps server functions or
