@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
@@ -29,21 +30,12 @@ const fn = vi.hoisted(() => ({
   updateIssueLinks: vi.fn(),
   navigate: vi.fn(),
 }))
+setTransport((name, input) => fn[name as keyof typeof fn](input))
 const org = vi.hoisted(() => ({
   updateMemberRole: vi.fn(),
   removeMember: vi.fn(),
   cancelInvitation: vi.fn(),
   update: vi.fn(),
-}))
-vi.mock('~/server/teams/teams.functions', () => ({
-  listMembers: fn.listMembers,
-  listTeams: fn.listTeams,
-  setTeamRole: fn.setTeamRole,
-  createTeam: fn.createTeam,
-  renameTeam: fn.renameTeam,
-  deleteTeam: fn.deleteTeam,
-  addTeamMember: fn.addTeamMember,
-  removeTeamMember: fn.removeTeamMember,
 }))
 vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
 vi.mock('~/server/auth/auth.functions', () => ({
@@ -210,7 +202,7 @@ beforeEach(() => {
   fn.listMembers.mockImplementation(async () => server.members)
   fn.listTeams.mockImplementation(async () => server.teams)
   fn.listProjects.mockImplementation(async () => server.projects)
-  fn.setTeamRole.mockImplementation(async ({ data }) => {
+  fn.setTeamRole.mockImplementation(async (data) => {
     server.teams = server.teams.map((t) =>
       t.id !== data.teamId
         ? t
@@ -251,7 +243,7 @@ beforeEach(() => {
     server.invitations = server.invitations.filter((i) => i.id !== invitationId)
     return ok({ id: invitationId, status: 'canceled' })
   })
-  fn.deleteTeam.mockImplementation(async ({ data: { teamId } }) => {
+  fn.deleteTeam.mockImplementation(async ({ teamId }) => {
     server.teams = server.teams.filter((t) => t.id !== teamId)
     return { id: teamId }
   })
@@ -500,7 +492,10 @@ describe('OrganizationView', () => {
 
     await userEvent.selectOptions(select(), 'lead')
     expect(fn.setTeamRole).toHaveBeenCalledWith({
-      data: { organizationId, teamId: ids.platform, userId: ids.max, role: 'lead' },
+      organizationId,
+      teamId: ids.platform,
+      userId: ids.max,
+      role: 'lead',
     })
     expect(
       await screen.findByText('2 members · Led by Lena Lead and Max Member'),
@@ -508,7 +503,10 @@ describe('OrganizationView', () => {
 
     await userEvent.selectOptions(select(), 'member')
     expect(fn.setTeamRole).toHaveBeenLastCalledWith({
-      data: { organizationId, teamId: ids.platform, userId: ids.max, role: 'member' },
+      organizationId,
+      teamId: ids.platform,
+      userId: ids.max,
+      role: 'member',
     })
   })
 
@@ -525,7 +523,7 @@ describe('OrganizationView', () => {
       ),
     ).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Delete team' }))
-    expect(fn.deleteTeam).toHaveBeenCalledWith({ data: { teamId: ids.platform, organizationId } })
+    expect(fn.deleteTeam).toHaveBeenCalledWith({ teamId: ids.platform, organizationId })
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: 'Platform' })).not.toBeInTheDocument(),
     )

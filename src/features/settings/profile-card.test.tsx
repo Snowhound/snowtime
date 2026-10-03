@@ -18,7 +18,6 @@ vi.mock('~/lib/auth-client', async (importOriginal) => ({
   authClient: client,
 }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
-vi.mock('~/server/teams/teams.functions', () => ({ listMembers: vi.fn() }))
 
 const user = { id: newId(), name: 'Max Member', email: 'member@example.com', image: null }
 

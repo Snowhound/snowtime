@@ -12,9 +12,23 @@ import {
   UpdateEntryInput,
 } from '~/server/entries/entries.schemas'
 import { type Operation, Timestamp } from '~/server/schemas'
+import {
+  CreateTeamInput,
+  Member,
+  RenameTeamInput,
+  SetTeamRoleInput,
+  Team,
+  TeamIdInput,
+  TeamMemberInput,
+  TeamMembership,
+  TeamName,
+} from '~/server/teams/teams.schemas'
 import { RunningTimer, StartTimerInput, StopTimerInput } from '~/server/timer/timer.schemas'
 
-const entriesPath = '/api/v1/organizations/:organizationId/entries'
+const organizationPath = '/api/v1/organizations/:organizationId'
+const entriesPath = `${organizationPath}/entries`
+const teamPath = `${organizationPath}/teams/:teamId`
+const teamMemberPath = `${teamPath}/members/:userId`
 
 export const operations = {
   // The running timer spans organizations, so stopping and reading it names no
@@ -75,17 +89,73 @@ export const operations = {
     input: DeleteEntryInput,
     output: v.object({ id: v.string() }),
   },
+  listTeams: {
+    method: 'GET',
+    path: `${organizationPath}/teams`,
+    scope: 'organization',
+    input: undefined,
+    output: v.array(Team),
+  },
+  createTeam: {
+    method: 'POST',
+    path: `${organizationPath}/teams`,
+    scope: 'organization',
+    input: CreateTeamInput,
+    output: TeamName,
+  },
+  renameTeam: {
+    method: 'PATCH',
+    path: teamPath,
+    scope: 'organization',
+    input: RenameTeamInput,
+    output: TeamName,
+  },
+  deleteTeam: {
+    method: 'DELETE',
+    path: teamPath,
+    scope: 'organization',
+    input: TeamIdInput,
+    output: v.object({ id: v.string() }),
+  },
+  addTeamMember: {
+    method: 'PUT',
+    path: teamMemberPath,
+    scope: 'organization',
+    input: TeamMemberInput,
+    output: v.object({ teamId: v.string(), userId: v.string() }),
+  },
+  removeTeamMember: {
+    method: 'DELETE',
+    path: teamMemberPath,
+    scope: 'organization',
+    input: TeamMemberInput,
+    output: v.object({ teamId: v.string(), userId: v.string() }),
+  },
+  setTeamRole: {
+    method: 'PATCH',
+    path: teamMemberPath,
+    scope: 'organization',
+    input: SetTeamRoleInput,
+    output: TeamMembership,
+  },
+  listMembers: {
+    method: 'GET',
+    path: `${organizationPath}/members`,
+    scope: 'organization',
+    input: undefined,
+    output: v.array(Member),
+  },
 } satisfies Record<string, Operation>
 
 type Operations = typeof operations
 export type OperationName = keyof Operations
 
-type OwnInput<Schema> = Schema extends v.GenericSchema ? v.InferInput<Schema> : void
+type OwnInput<Schema, None> = Schema extends v.GenericSchema ? v.InferInput<Schema> : None
 
 // What a caller passes: the call's own input, plus the organization it acts in.
 export type InputOf<K extends OperationName> = Operations[K]['scope'] extends 'organization'
-  ? OwnInput<Operations[K]['input']> & { organizationId: string }
-  : OwnInput<Operations[K]['input']>
+  ? OwnInput<Operations[K]['input'], unknown> & { organizationId: string }
+  : OwnInput<Operations[K]['input'], void>
 
 // The call's input once validated, as the rules take it.
 export type ParsedInputOf<K extends OperationName> = Operations[K]['input'] extends v.GenericSchema

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { type JSX, createSignal } from 'solid-js'
 import * as v from 'valibot'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
 import { addDays, datesBetween, startOfWeek } from '~/lib/calendar'
 import { writeCookie } from '~/lib/cookies'
 import { newId } from '~/lib/queries/query'
@@ -28,15 +29,12 @@ const fn = vi.hoisted(() => ({
   getAppSession: vi.fn(),
   navigate: vi.fn(),
 }))
+setTransport((name, input) => fn[name as keyof typeof fn](input))
 vi.mock('~/server/reports/reports.functions', () => ({
   getReport: fn.getReport,
   getReportBreakdown: fn.getReportBreakdown,
   getReportEntries: fn.getReportEntries,
   getReportEntryTotals: fn.getReportEntryTotals,
-}))
-vi.mock('~/server/teams/teams.functions', () => ({
-  listTeams: fn.listTeams,
-  listMembers: fn.listMembers,
 }))
 vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))

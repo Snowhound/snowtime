@@ -4,6 +4,7 @@
 // each change shows there as well.
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import { isServer } from 'solid-js/web'
+import { call } from '~/lib/api/client'
 import { authClient, unwrap } from '~/lib/auth-client'
 import { type Member, membersQuery } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
@@ -12,14 +13,6 @@ import { sessionQuery } from '~/lib/queries/session'
 import { type Team, teamsQuery } from '~/lib/queries/teams'
 import { type AppSession, updateIssueLinks } from '~/server/auth/auth.functions'
 import { inviteMember, listInvitations } from '~/server/auth/invitations.functions'
-import {
-  setTeamRole,
-  createTeam,
-  renameTeam,
-  deleteTeam,
-  addTeamMember,
-  removeTeamMember,
-} from '~/server/teams/teams.functions'
 import type { SetTeamRoleInput } from '~/server/teams/teams.schemas'
 import type { OrgRole } from './roles'
 
@@ -203,7 +196,7 @@ export function useCreateTeam(keys: Keys) {
   return useMutation(() => ({
     mutationKey: ['create-team'],
     mutationFn: ({ name }: CreateTeamInput) =>
-      createTeam({ data: { name, organizationId: keys.organizationId } }),
+      call('createTeam', { name, organizationId: keys.organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], CreateTeamInput>(teamsKey(keys.organizationId), (teams, { id, name }) => [
         ...teams,
@@ -222,7 +215,7 @@ export function useRenameTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: ({ teamId, name }: RenameTeamInput) =>
-      renameTeam({ data: { teamId, name, organizationId: keys.organizationId } }),
+      call('renameTeam', { teamId, name, organizationId: keys.organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], RenameTeamInput>(teamsKey(keys.organizationId), (teams, input) =>
         teams.map((t) => (t.id === input.teamId ? { ...t, name: input.name } : t)),
@@ -237,7 +230,7 @@ export function useDeleteTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (teamId: string) =>
-      deleteTeam({ data: { teamId, organizationId: keys.organizationId } }),
+      call('deleteTeam', { teamId, organizationId: keys.organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -294,7 +287,7 @@ export function useAddTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(true)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) =>
-      addTeamMember({ data: { ...input, organizationId: keys.organizationId } }),
+      call('addTeamMember', { ...input, organizationId: keys.organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -311,7 +304,7 @@ export function useRemoveTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(false)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) =>
-      removeTeamMember({ data: { ...input, organizationId: keys.organizationId } }),
+      call('removeTeamMember', { ...input, organizationId: keys.organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -327,7 +320,7 @@ export function useSetTeamRole(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (input: SetTeamRoleInput) =>
-      setTeamRole({ data: { ...input, organizationId: keys.organizationId } }),
+      call('setTeamRole', { ...input, organizationId: keys.organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], SetTeamRoleInput>(teamsKey(keys.organizationId), (teams, input) =>
         teams.map((t) =>

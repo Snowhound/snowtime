@@ -14,6 +14,7 @@ import * as entries from './entries/entries.server'
 import { AppError, type AppErrorCode } from './errors'
 import { parseOrganizationInput } from './schemas'
 import { resolveScope, type Scope } from './scope.server'
+import * as teams from './teams/teams.server'
 import * as timer from './timer/timer.server'
 
 type Context<K extends OperationName> = (typeof operations)[K]['scope'] extends 'organization'
@@ -32,6 +33,14 @@ const handlers: {
   createEntry: ({ db, scope }, input) => entries.createEntry(db, scope, input),
   updateEntry: ({ db, scope }, input) => entries.updateEntry(db, scope, input),
   deleteEntry: ({ db, scope }, input) => entries.deleteEntry(db, scope, input),
+  listTeams: ({ db, scope }) => teams.listTeams(db, scope),
+  createTeam: ({ db, scope }, input) => teams.createTeam(db, scope, input),
+  renameTeam: ({ db, scope }, input) => teams.renameTeam(db, scope, input),
+  deleteTeam: ({ db, scope }, input) => teams.deleteTeam(db, scope, input),
+  addTeamMember: ({ db, scope }, input) => teams.addTeamMember(db, scope, input),
+  removeTeamMember: ({ db, scope }, input) => teams.removeTeamMember(db, scope, input),
+  setTeamRole: ({ db, scope }, input) => teams.setTeamRole(db, scope, input),
+  listMembers: ({ db, scope }) => teams.listMembers(db, scope),
 }
 
 const statusOf: Record<AppErrorCode, number> = {

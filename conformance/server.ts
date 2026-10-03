@@ -2,6 +2,8 @@
 // as the native backend, which must serve the benchmark database (perf/lib/database.ts)
 // with its clock at SEED_NOW and password sign-in on. Without it, the tests build the
 // TypeScript app and serve it as the perf harnesses do (perf/lib/app.ts).
+import { type OperationName, operations } from '~/lib/api/operations'
+import { requestOf } from '~/lib/api/wire'
 import { buildApp, signInHeaders, startApp } from '../perf/lib/app'
 import { seededDatabase, type USERS } from '../perf/lib/database'
 
@@ -28,4 +30,25 @@ export async function serverUnderTest(): Promise<ServerUnderTest> {
     as: async (who) => ({ ...(await signInHeaders(app, who)), origin: app.url }),
     stop: app.stop,
   }
+}
+
+// A call's raw answer, for the refusals the transport would throw.
+export async function send(
+  url: string,
+  name: OperationName,
+  input: unknown,
+  headers: Record<string, string>,
+) {
+  const operation = operations[name]
+  const { path, body } = requestOf(operation, input)
+  const response = await fetch(`${url}${path}`, {
+    method: operation.method,
+    headers: body ? { ...headers, 'content-type': 'application/json' } : headers,
+    body,
+  })
+  return { status: response.status, body: (await response.json()) as unknown }
+}
+
+export function refused(code: string, key: string) {
+  return { error: { code, key } }
 }

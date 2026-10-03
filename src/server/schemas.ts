@@ -28,6 +28,9 @@ export const Ticket = v.nullable(TicketKey)
 
 export const Timestamp = v.date()
 
+// A member's role in an organization: the strongest of Better Auth's roles they hold.
+export const OrgRole = v.picklist(['owner', 'admin', 'member'])
+
 // The organization an organization-scoped call acts in. scopeMiddleware checks it on the
 // call's whole input and passes the input on unchanged, for the function's own schema; the
 // server then checks that the caller is a member.
@@ -48,7 +51,7 @@ export interface Operation<
   TInput extends v.GenericSchema | undefined = v.GenericSchema | undefined,
   TOutput extends v.GenericSchema = v.GenericSchema,
 > {
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   path: string
   scope: TScope
   input: TInput

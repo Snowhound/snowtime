@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
 import type { Project } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
 import { AppError } from '~/server/errors'
@@ -23,6 +24,7 @@ const fn = vi.hoisted(() => ({
   getReport: vi.fn(),
   getAppSession: vi.fn(),
 }))
+setTransport((name, input) => fn[name as keyof typeof fn](input))
 vi.mock('~/server/projects/projects.functions', () => ({
   listProjects: fn.listProjects,
   createProject: fn.createProject,
@@ -33,7 +35,6 @@ vi.mock('~/server/projects/projects.functions', () => ({
   assignProjectToTeam: fn.assignProjectToTeam,
   unassignProjectFromTeam: fn.unassignProjectFromTeam,
 }))
-vi.mock('~/server/teams/teams.functions', () => ({ listTeams: fn.listTeams }))
 vi.mock('~/server/reports/reports.functions', () => ({ getReport: fn.getReport }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 // The view renders without a router; its one link only needs to be there.

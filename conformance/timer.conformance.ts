@@ -5,11 +5,10 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { v7 as uuidv7 } from 'uuid'
 import type { Transport } from '~/lib/api/client'
-import { type OperationName, operations } from '~/lib/api/operations'
+import type { OperationName } from '~/lib/api/operations'
 import { httpTransport } from '~/lib/api/transports'
-import { requestOf } from '~/lib/api/wire'
 import { COMPANY, SEED_NOW } from '../perf/lib/database'
-import { type ServerUnderTest, serverUnderTest } from './server'
+import { refused, send as sendTo, type ServerUnderTest, serverUnderTest } from './server'
 
 const HOUR = 3_600_000
 
@@ -25,24 +24,8 @@ beforeAll(async () => {
 }, 120_000)
 afterAll(() => server?.stop())
 
-// A call's raw answer, for the refusals the transport would throw.
-async function send(
-  name: OperationName,
-  input: unknown,
-  requestHeaders: Record<string, string> = headers.admin,
-) {
-  const operation = operations[name]
-  const { path, body } = requestOf(operation, input)
-  const response = await fetch(`${server.url}${path}`, {
-    method: operation.method,
-    headers: body ? { ...requestHeaders, 'content-type': 'application/json' } : requestHeaders,
-    body,
-  })
-  return { status: response.status, body: (await response.json()) as unknown }
-}
-
-function refused(code: string, key: string) {
-  return { error: { code, key } }
+function send(name: OperationName, input: unknown, as = headers.admin) {
+  return sendTo(server.url, name, input, as)
 }
 
 const organizationId = COMPANY.id
