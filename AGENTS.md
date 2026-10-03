@@ -54,7 +54,7 @@ Edit their source files at the paths above so both agents use the same instructi
   and mutations call `call` (`src/lib/api/client.ts`), and each call is listed in
   `src/lib/api/operations.ts` with its handler in `src/server/operations.server.ts`. A new
   call adds both, its output schema, and conformance tests in `conformance/`. A GET only
-  reads; a read with a filter object for input is a QUERY. Client code imports a domain's
+  reads; a read with a filter object for input is a POST marked `read`. Client code imports a domain's
   `*.schemas.ts`, plus `src/server/errors.ts` and `src/server/schemas.ts`. It never imports
   `*.server.ts`, not even for a type.
 - Import with a relative path inside the importer's area: one feature folder,

@@ -1,6 +1,6 @@
 # 084: From server functions to one JSON API
 
-Status: in-progress (the move is done; QUERY on Vercel is still to check)
+Status: done
 
 The TypeScript app moves fully to the JSON API of task 081.02, and Start's server
 functions go (Kait, 2026-10-03). The timer's measurements below showed the API no slower
@@ -66,7 +66,7 @@ comparison of middleware and CSRF, which the design above answers.
   the API takes and sends. Rust answers it by running the API's handler for the page's own
   session.
 - `src/lib/api/wire.ts`: the encoding both share. A GET sends its input as the query
-  string, a QUERY or a write as a JSON body, and the IDs in the path. The schemas turn
+  string, any other call as a JSON body, and the IDs in the path. The schemas turn
   dates, and a GET's booleans, back into their types. A refusal is `{ error: { code, key } }`
   with an HTTP status from the code (401, 403, 404, 409, 422, 429, 503); input that fails a
   schema is a 400 with a message; Better Auth's refusals keep its status and code.
@@ -157,14 +157,14 @@ These changes go in `src/lib/api/` and `operations.server.ts` once, not in the f
 - **A: Read input beyond strings and dates.** `wire.ts` sends a GET's input as
   `URLSearchParams`, so every value arrives as a string, and the server's `decode` only
   revives dates. `listProjects` takes a boolean, and the report reads take the report's
-  filters, with nested objects (`report`, `row`, `after`) and numbers. Kait decided on
-  2026-10-03: a read whose input is a filter object, as the reports' are, uses HTTP
-  `QUERY` with a JSON body, where an app of 2008 would have used POST. The other reads
+  filters, with nested objects (`report`, `row`, `after`) and numbers. The other reads
   stay GET, and `decode` reads a boolean query value (`includeArchived=true`) by the
-  schema as it revives dates. The API treats `QUERY` as a read: no `Origin` check and no
-  write rate limit. `QUERY` is an IETF draft, so one preview deployment checks that
-  Vercel passes it to the function before the reports move; if not, the reports' filters
-  travel as JSON in their own query parameters.
+  schema as it revives dates. Kait first chose HTTP `QUERY`, a read with a JSON body, for
+  the report reads. Vercel's edge refuses it: a preview answered `405` with
+  `x-vercel-error: INVALID_REQUEST_METHOD` on 2026-10-03, before the function ran. Kait
+  then chose POST over JSON in the query string, the agreed fallback, which reads badly in
+  URLs and logs: the report reads are POSTs marked `read` in the operation list, so the
+  API skips the `Origin` check and the write rate limit for them, as for a GET.
 - **B: Signed-out calls.** `runOperation` assumes a signed-in user. Six calls run without
   one, so the contract gains a third scope, `public`, whose handler gets the session or
   `null`.
@@ -191,11 +191,11 @@ These changes go in `src/lib/api/` and `operations.server.ts` once, not in the f
 | `removeTeamMember`        | Transferable | `DELETE …/teams/:teamId/members/:userId`     |       |
 | `setTeamRole`             | Transferable | `PATCH …/teams/:teamId/members/:userId`      |       |
 | `listMembers`             | Transferable | `GET …/members`                              |       |
-| `getReport`               | Transferable | `QUERY …/report`                             | A     |
-| `getReportBreakdown`      | Transferable | `QUERY …/report/breakdown`                   | A     |
-| `getReportEntries`        | Transferable | `QUERY …/report/entries`                     | A     |
-| `getReportEntryTotals`    | Transferable | `QUERY …/report/entry-totals`                | A     |
-| `getReportExport`         | Transferable | `QUERY …/report/export`                      | A     |
+| `getReport`               | Transferable | `POST …/report`                              | A     |
+| `getReportBreakdown`      | Transferable | `POST …/report/breakdown`                    | A     |
+| `getReportEntries`        | Transferable | `POST …/report/entries`                      | A     |
+| `getReportEntryTotals`    | Transferable | `POST …/report/entry-totals`                 | A     |
+| `getReportExport`         | Transferable | `POST …/report/export`                       | A     |
 | `updateIssueLinks`        | Transferable | `PATCH …/issue-links`                        |       |
 | `listInvitations`         | Transferable | `GET …/invitations`                          |       |
 | `inviteMember`            | With changes | `POST …/invitations`                         | 2, C  |
@@ -273,4 +273,3 @@ Kait agreed on 2026-10-03:
       covering it and the HTTP transport
 - [x] No GET that writes, except Better Auth's sliding session
 - [x] `docs/architecture/` and `AGENTS.md` describe the API instead of server functions
-- [ ] A QUERY reaches the function on a Vercel preview deployment

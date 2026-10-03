@@ -11,6 +11,7 @@ import { matchPath, type WireResponse } from '~/lib/api/wire'
 import { AppError } from './errors'
 import { signedInUser, unavailableOr } from './guards.server'
 import { failure, refusal, runOperation } from './operations.server'
+import type { Operation } from './schemas'
 
 function matchOperation(method: string, pathname: string) {
   for (const [name, operation] of Object.entries(operations)) {
@@ -32,9 +33,10 @@ async function inputOf(request: Request, params: Record<string, string>) {
 
 const appOrigin = new URL(env.BETTER_AUTH_URL).origin
 
-// GET and QUERY read; every other method writes.
-function writes(method: string) {
-  return method !== 'GET' && method !== 'QUERY'
+// A GET reads, and so does a POST marked `read`; every other call writes.
+function writes(name: OperationName) {
+  const operation: Operation = operations[name]
+  return operation.method !== 'GET' && !operation.read
 }
 
 async function respond(request: Request): Promise<WireResponse> {
@@ -42,7 +44,7 @@ async function respond(request: Request): Promise<WireResponse> {
   if (!match) return failure(404, { message: 'No such call.' })
   // Writes come only from the app's own pages: the public URL, not the request's own,
   // since a proxy in front may change the host.
-  if (writes(request.method) && request.headers.get('origin') !== appOrigin) {
+  if (writes(match.name) && request.headers.get('origin') !== appOrigin) {
     return failure(403, { message: 'Cross-origin request refused.' })
   }
   let input: unknown
@@ -60,7 +62,7 @@ async function answer(headers: Headers, name: OperationName, input: unknown) {
     if (operations[name].scope === 'public') {
       return await runOperation(db, name, { userId: null, headers }, input)
     }
-    const userId = await signedInUser(headers, writes(operations[name].method))
+    const userId = await signedInUser(headers, writes(name))
     return await withActor(userId, () => runOperation(db, name, { userId, headers }, input))
   } catch (error) {
     const mapped = await unavailableOr(error)

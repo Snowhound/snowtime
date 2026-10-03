@@ -248,7 +248,8 @@ export const operations = {
     output: v.object({ projectId: v.string(), teamId: v.string() }),
   },
   getReport: {
-    method: 'QUERY',
+    method: 'POST',
+    read: true,
     path: reportPath,
     scope: 'organization',
     input: ReportInput,
@@ -256,7 +257,8 @@ export const operations = {
   },
   // Breakdown's second level: time per project and member and per ticket and member.
   getReportBreakdown: {
-    method: 'QUERY',
+    method: 'POST',
+    read: true,
     path: `${reportPath}/breakdown`,
     scope: 'organization',
     input: ReportInput,
@@ -264,7 +266,8 @@ export const operations = {
   },
   // The Entries card's list: By description's merged rows, or one page of By day.
   getReportEntries: {
-    method: 'QUERY',
+    method: 'POST',
+    read: true,
     path: `${reportPath}/entries`,
     scope: 'organization',
     input: ReportEntriesInput,
@@ -272,7 +275,8 @@ export const operations = {
   },
   // The Entries card's count and total for one part of the timesheet.
   getReportEntryTotals: {
-    method: 'QUERY',
+    method: 'POST',
+    read: true,
     path: `${reportPath}/entry-totals`,
     scope: 'organization',
     input: ReportEntryTotalsInput,
@@ -280,7 +284,8 @@ export const operations = {
   },
   // One month or less of the export's entries; the first piece brings the report as well.
   getReportExport: {
-    method: 'QUERY',
+    method: 'POST',
+    read: true,
     path: `${reportPath}/export`,
     scope: 'organization',
     input: ReportExportInput,

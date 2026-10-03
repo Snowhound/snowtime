@@ -96,7 +96,7 @@ export function matchPath(pattern: string, pathname: string): Record<string, str
 }
 
 // Where a call goes: its path with the parameters filled in from the input, and the rest of
-// the input as the query string of a GET or the JSON body of a QUERY or a write.
+// the input as the query string of a GET or the JSON body of any other call.
 export function requestOf(
   operation: Operation,
   input: unknown,

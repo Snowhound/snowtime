@@ -45,14 +45,16 @@ export function parseOrganizationInput<T extends { organizationId: string }>(inp
 // and the shapes it takes and returns. An organization-scoped call names the organization
 // in its path (`:organizationId`); a user-scoped one acts for the signed-in user anywhere;
 // a public one needs no session. Other `:name` segments come from the input field of that
-// name. A read whose input is a filter object, as the reports' are, is a QUERY: a read with
-// a JSON body. The calls are listed in src/lib/api/operations.ts.
+// name. A read whose input is a filter object, as the reports' are, is a POST marked `read`,
+// so its filters travel as a JSON body. The calls are listed in src/lib/api/operations.ts.
 export interface Operation<
   TScope extends 'organization' | 'user' | 'public' = 'organization' | 'user' | 'public',
   TInput extends v.GenericSchema | undefined = v.GenericSchema | undefined,
   TOutput extends v.GenericSchema = v.GenericSchema,
 > {
-  method: 'GET' | 'QUERY' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+  // Only reads, though it isn't a GET: no Origin check and no write rate limit.
+  read?: true
   path: string
   scope: TScope
   input: TInput

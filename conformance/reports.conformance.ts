@@ -1,5 +1,5 @@
 // Reports on the contract (task 084), over HTTP, as timer.conformance.ts runs. The reads take
-// the report's filters as a JSON body, so they are QUERY requests. The admin is the Lumen
+// the report's filters as a JSON body, so they are POSTs marked as reads. The admin is the Lumen
 // Works owner and sees everyone's time; the member sees their own.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import type { Transport } from '~/lib/api/client'
@@ -28,7 +28,7 @@ const organizationId = COMPANY.id
 const week = { from: '2026-09-21', to: '2026-09-28' }
 
 describe('reports', () => {
-  test('the week, a day at a time, as a QUERY that needs no Origin', async () => {
+  test('the week, a day at a time, as a read that needs no Origin', async () => {
     const { origin: _, ...noOrigin } = headers.admin
     const { status, body } = await send('getReport', { organizationId, ...week }, noOrigin)
     expect(status).toBe(200)
