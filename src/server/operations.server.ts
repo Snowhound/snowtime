@@ -12,6 +12,7 @@ import {
 import { decode, type WireError, type WireResponse } from '~/lib/api/wire'
 import * as entries from './entries/entries.server'
 import { AppError, type AppErrorCode } from './errors'
+import * as projects from './projects/projects.server'
 import { parseOrganizationInput } from './schemas'
 import { resolveScope, type Scope } from './scope.server'
 import * as teams from './teams/teams.server'
@@ -33,6 +34,15 @@ const handlers: {
   createEntry: ({ db, scope }, input) => entries.createEntry(db, scope, input),
   updateEntry: ({ db, scope }, input) => entries.updateEntry(db, scope, input),
   deleteEntry: ({ db, scope }, input) => entries.deleteEntry(db, scope, input),
+  listProjects: ({ db, scope }, input) => projects.listProjects(db, scope, input),
+  createProject: ({ db, scope }, input) => projects.createProject(db, scope, input),
+  updateProject: ({ db, scope }, input) => projects.updateProject(db, scope, input),
+  archiveProject: ({ db, scope }, input) => projects.archiveProject(db, scope, input),
+  unarchiveProject: ({ db, scope }, input) => projects.unarchiveProject(db, scope, input),
+  deleteProject: ({ db, scope }, input) => projects.deleteProject(db, scope, input),
+  assignProjectToTeam: ({ db, scope }, input) => projects.assignProjectToTeam(db, scope, input),
+  unassignProjectFromTeam: ({ db, scope }, input) =>
+    projects.unassignProjectFromTeam(db, scope, input),
   listTeams: ({ db, scope }) => teams.listTeams(db, scope),
   createTeam: ({ db, scope }, input) => teams.createTeam(db, scope, input),
   renameTeam: ({ db, scope }, input) => teams.renameTeam(db, scope, input),

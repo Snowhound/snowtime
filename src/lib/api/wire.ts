@@ -1,7 +1,7 @@
 // The contract's JSON encoding (task 084), which the HTTP API and the render isolate's host
 // share. Dates travel as ISO 8601 strings; the schemas say which fields hold dates, so
-// decoding turns those back into Date before it validates. An AppError travels as its code
-// and key.
+// decoding turns those back into Date before it validates, and a GET's booleans, which
+// arrive as query strings, back into booleans. An AppError travels as its code and key.
 import * as v from 'valibot'
 import { AppError, type AppErrorCode, type AppErrorKey } from '~/server/errors'
 import type { Operation } from '~/server/schemas'
@@ -27,13 +27,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-// The value with each string the schema expects as a date turned into a Date. A piped
+// The value with each string the schema expects as a date or a boolean turned into one. A piped
 // schema keeps its first schema's type and entries, so pipes need no case of their own.
 function revive(schema: AnySchema, value: unknown): unknown {
   if (value === null || value === undefined) return value
   switch (schema.type) {
     case 'date':
       return typeof value === 'string' ? new Date(value) : value
+    case 'boolean':
+      if (value === 'true') return true
+      if (value === 'false') return false
+      return value
     case 'optional':
     case 'nullable':
     case 'nullish':

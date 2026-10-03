@@ -36,7 +36,6 @@ vi.mock('~/server/reports/reports.functions', () => ({
   getReportEntries: fn.getReportEntries,
   getReportEntryTotals: fn.getReportEntryTotals,
 }))
-vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 // The view renders without a router: navigating sets the search params the page reads.
 vi.mock('@tanstack/solid-router', () => ({

@@ -11,6 +11,15 @@ import {
   ListEntriesInput,
   UpdateEntryInput,
 } from '~/server/entries/entries.schemas'
+import {
+  CreateProjectInput,
+  ListedProject,
+  ListProjectsInput,
+  Project,
+  ProjectIdInput,
+  ProjectTeamInput,
+  UpdateProjectInput,
+} from '~/server/projects/projects.schemas'
 import { type Operation, Timestamp } from '~/server/schemas'
 import {
   CreateTeamInput,
@@ -27,6 +36,8 @@ import { RunningTimer, StartTimerInput, StopTimerInput } from '~/server/timer/ti
 
 const organizationPath = '/api/v1/organizations/:organizationId'
 const entriesPath = `${organizationPath}/entries`
+const projectPath = `${organizationPath}/projects/:id`
+const projectTeamPath = `${organizationPath}/projects/:projectId/teams/:teamId`
 const teamPath = `${organizationPath}/teams/:teamId`
 const teamMemberPath = `${teamPath}/members/:userId`
 
@@ -88,6 +99,62 @@ export const operations = {
     scope: 'organization',
     input: DeleteEntryInput,
     output: v.object({ id: v.string() }),
+  },
+  listProjects: {
+    method: 'GET',
+    path: `${organizationPath}/projects`,
+    scope: 'organization',
+    input: ListProjectsInput,
+    output: v.array(ListedProject),
+  },
+  createProject: {
+    method: 'POST',
+    path: `${organizationPath}/projects`,
+    scope: 'organization',
+    input: CreateProjectInput,
+    output: Project,
+  },
+  updateProject: {
+    method: 'PATCH',
+    path: projectPath,
+    scope: 'organization',
+    input: UpdateProjectInput,
+    output: Project,
+  },
+  archiveProject: {
+    method: 'POST',
+    path: `${projectPath}/archive`,
+    scope: 'organization',
+    input: ProjectIdInput,
+    output: Project,
+  },
+  unarchiveProject: {
+    method: 'POST',
+    path: `${projectPath}/unarchive`,
+    scope: 'organization',
+    input: ProjectIdInput,
+    output: Project,
+  },
+  deleteProject: {
+    method: 'DELETE',
+    path: projectPath,
+    scope: 'organization',
+    input: ProjectIdInput,
+    output: v.object({ id: v.string() }),
+  },
+  assignProjectToTeam: {
+    method: 'PUT',
+    path: projectTeamPath,
+    scope: 'organization',
+    input: ProjectTeamInput,
+    output: v.object({ projectId: v.string(), teamId: v.string() }),
+  },
+  unassignProjectFromTeam: {
+    method: 'DELETE',
+    path: projectTeamPath,
+    scope: 'organization',
+    input: ProjectTeamInput,
+    output: v.object({ projectId: v.string(), teamId: v.string() }),
   },
   listTeams: {
     method: 'GET',

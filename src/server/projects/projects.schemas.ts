@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import { m } from '~/paraglide/messages.js'
-import { Uuidv7 } from '../schemas'
+import { Timestamp, Uuidv7 } from '../schemas'
 
 export const ProjectName = v.pipe(
   v.string(),
@@ -44,3 +44,20 @@ export const ListProjectsInput = v.optional(
   {},
 )
 export type ListProjectsInput = v.InferOutput<typeof ListProjectsInput>
+
+// A project as the API sends it.
+export const Project = v.object({
+  id: v.string(),
+  name: v.string(),
+  color: v.nullable(v.string()),
+  archivedAt: v.nullable(Timestamp),
+})
+
+// A listed project also has the ids of the teams it is assigned to, and whether it has
+// entries, which deleteProject refuses.
+export const ListedProject = v.object({
+  ...Project.entries,
+  teamIds: v.array(v.string()),
+  hasEntries: v.boolean(),
+})
+export type ListedProject = v.InferOutput<typeof ListedProject>

@@ -26,7 +26,6 @@ const fn = vi.hoisted(() => ({
   updateSettings: vi.fn(),
 }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
-vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
 vi.mock('@tanstack/solid-router', () => ({

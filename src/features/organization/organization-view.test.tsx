@@ -37,7 +37,6 @@ const org = vi.hoisted(() => ({
   cancelInvitation: vi.fn(),
   update: vi.fn(),
 }))
-vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
 vi.mock('~/server/auth/auth.functions', () => ({
   getAppSession: fn.getAppSession,
   updateIssueLinks: fn.updateIssueLinks,

@@ -25,16 +25,6 @@ const fn = vi.hoisted(() => ({
   getAppSession: vi.fn(),
 }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
-vi.mock('~/server/projects/projects.functions', () => ({
-  listProjects: fn.listProjects,
-  createProject: fn.createProject,
-  updateProject: fn.updateProject,
-  archiveProject: fn.archiveProject,
-  unarchiveProject: fn.unarchiveProject,
-  deleteProject: fn.deleteProject,
-  assignProjectToTeam: fn.assignProjectToTeam,
-  unassignProjectFromTeam: fn.unassignProjectFromTeam,
-}))
 vi.mock('~/server/reports/reports.functions', () => ({ getReport: fn.getReport }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 // The view renders without a router; its one link only needs to be there.
@@ -108,23 +98,23 @@ beforeEach(() => {
   function change(id: string, patch: (p: Project) => Partial<Project>) {
     server.projects = server.projects.map((p) => (p.id === id ? { ...p, ...patch(p) } : p))
   }
-  fn.createProject.mockImplementation(async ({ data }) => {
+  fn.createProject.mockImplementation(async (data) => {
     server.projects = [...server.projects, project(data.name, data)]
   })
-  fn.updateProject.mockImplementation(async ({ data }) => change(data.id, () => data))
-  fn.archiveProject.mockImplementation(async ({ data }) =>
+  fn.updateProject.mockImplementation(async (data) => change(data.id, () => data))
+  fn.archiveProject.mockImplementation(async (data) =>
     change(data.id, () => ({ archivedAt: new Date() })),
   )
-  fn.unarchiveProject.mockImplementation(async ({ data }) =>
+  fn.unarchiveProject.mockImplementation(async (data) =>
     change(data.id, () => ({ archivedAt: null })),
   )
-  fn.deleteProject.mockImplementation(async ({ data }) => {
+  fn.deleteProject.mockImplementation(async (data) => {
     server.projects = server.projects.filter((p) => p.id !== data.id)
   })
-  fn.assignProjectToTeam.mockImplementation(async ({ data }) =>
+  fn.assignProjectToTeam.mockImplementation(async (data) =>
     change(data.projectId, (p) => ({ teamIds: [...p.teamIds, data.teamId] })),
   )
-  fn.unassignProjectFromTeam.mockImplementation(async ({ data }) =>
+  fn.unassignProjectFromTeam.mockImplementation(async (data) =>
     change(data.projectId, (p) => ({ teamIds: p.teamIds.filter((t) => t !== data.teamId) })),
   )
 })
@@ -228,13 +218,15 @@ describe('ProjectsView', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Create project' }))
 
     expect(await screen.findByText('Q4 planning')).toBeInTheDocument()
-    expect(fn.createProject).toHaveBeenCalledWith({
-      data: expect.objectContaining({ name: 'Q4 planning', color: '#d9703f' }),
-    })
-    const { id } = fn.createProject.mock.calls[0][0].data
+    expect(fn.createProject).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Q4 planning', color: '#d9703f' }),
+    )
+    const { id } = fn.createProject.mock.calls[0][0]
     await waitFor(() =>
       expect(fn.assignProjectToTeam).toHaveBeenCalledWith({
-        data: { organizationId, projectId: id, teamId: design.id },
+        organizationId,
+        projectId: id,
+        teamId: design.id,
       }),
     )
     expect(fn.assignProjectToTeam).toHaveBeenCalledTimes(1)
@@ -254,11 +246,15 @@ describe('ProjectsView', () => {
 
     await waitFor(() => expect(fn.unassignProjectFromTeam).toHaveBeenCalledTimes(1))
     expect(fn.unassignProjectFromTeam).toHaveBeenCalledWith({
-      data: { organizationId, projectId: snowtime.id, teamId: design.id },
+      organizationId,
+      projectId: snowtime.id,
+      teamId: design.id,
     })
     expect(fn.assignProjectToTeam).toHaveBeenCalledTimes(1)
     expect(fn.assignProjectToTeam).toHaveBeenCalledWith({
-      data: { organizationId, projectId: snowtime.id, teamId: client.id },
+      organizationId,
+      projectId: snowtime.id,
+      teamId: client.id,
     })
     // Name and color are unchanged.
     expect(fn.updateProject).not.toHaveBeenCalled()
@@ -276,7 +272,7 @@ describe('ProjectsView', () => {
     await chooseAction('Snowtime', 'Archive')
     dialog = await screen.findByRole('dialog', { name: 'Archive Snowtime?' })
     await userEvent.click(within(dialog).getByRole('button', { name: 'Archive' }))
-    expect(fn.archiveProject).toHaveBeenCalledWith({ data: { organizationId, id: snowtime.id } })
+    expect(fn.archiveProject).toHaveBeenCalledWith({ organizationId, id: snowtime.id })
     // Moved to Archived before the server answers.
     expect(screen.getByText('Snowhound · 0 active, 2 archived')).toBeInTheDocument()
   })
@@ -288,7 +284,7 @@ describe('ProjectsView', () => {
     await chooseAction('Snowtime', 'Delete')
     const confirm = await screen.findByRole('dialog', { name: 'Delete Snowtime?' })
     await userEvent.click(within(confirm).getByRole('button', { name: 'Delete project' }))
-    expect(fn.deleteProject).toHaveBeenCalledWith({ data: { organizationId, id: snowtime.id } })
+    expect(fn.deleteProject).toHaveBeenCalledWith({ organizationId, id: snowtime.id })
     await waitFor(() => expect(screen.queryByText('Snowtime')).not.toBeInTheDocument())
   })
 
@@ -299,7 +295,7 @@ describe('ProjectsView', () => {
     await chooseAction('Snowtime', 'Delete')
     const dialog = await screen.findByRole('dialog', { name: 'Snowtime has tracked time' })
     await userEvent.click(within(dialog).getByRole('button', { name: 'Archive instead' }))
-    expect(fn.archiveProject).toHaveBeenCalledWith({ data: { organizationId, id: snowtime.id } })
+    expect(fn.archiveProject).toHaveBeenCalledWith({ organizationId, id: snowtime.id })
     expect(fn.deleteProject).not.toHaveBeenCalled()
   })
 
