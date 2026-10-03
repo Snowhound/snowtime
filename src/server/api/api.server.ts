@@ -10,7 +10,7 @@ import { user } from '~/db/schema'
 import { loginDomainAllowed } from '~/lib/login-domains'
 import type { ApiKeyAccess } from '../auth/auth.schemas'
 import { databaseAvailable } from '../availability/availability.server'
-import { AppError, type AppErrorCode, type AppErrorKey, errorMessages } from '../errors'
+import { AppError, type AppErrorCode, errorMessages } from '../errors'
 import { rateLimits } from '../limits.server'
 import type { RateLimitStore } from '../rate-limit.server'
 import { resolveScope, type Scope } from '../scope.server'
@@ -72,8 +72,15 @@ function failure(code: AppErrorCode | 'INTERNAL', message: string, retryAfter?: 
   return json(status, { error: { code, message } }, headers)
 }
 
-function refuse(code: AppErrorCode, key: AppErrorKey, retryAfter?: number) {
-  return failure(code, errorMessages[key], retryAfter)
+// Refusals only /api/v1 sends. They stay out of errorMessages, which the browser loads
+// with a translation of each.
+const apiMessages = {
+  api_key_missing: 'API key missing.',
+  api_key_invalid: 'Invalid API key.',
+  api_key_expired: 'API key expired.',
+  api_key_read_only: 'API key is read-only.',
+  api_rate_limited: 'Too many requests.',
+  login_domain_not_allowed: 'Email domain not allowed.',
 }
 
 function bearerKey(request: Request) {
@@ -100,33 +107,38 @@ export function createApiRoute(deps: ApiDeps) {
   // The key's user, or the response that refuses the request.
   async function signIn(request: Request, access: ApiKeyAccess) {
     const key = bearerKey(request)
-    if (!key) return refuse('UNAUTHENTICATED', 'api_key_missing')
+    if (!key) return failure('UNAUTHENTICATED', apiMessages.api_key_missing)
 
     const verified = await deps.verifyKey(key)
     if (!verified.valid || !verified.key) {
       const code = verified.error?.code
       if (code === 'RATE_LIMITED') {
         const ms = verified.error?.details?.tryAgainIn ?? 1000
-        return refuse('RATE_LIMITED', 'api_rate_limited', Math.max(1, Math.ceil(ms / 1000)))
+        return failure(
+          'RATE_LIMITED',
+          apiMessages.api_rate_limited,
+          Math.max(1, Math.ceil(ms / 1000)),
+        )
       }
-      if (code === 'KEY_EXPIRED') return refuse('UNAUTHENTICATED', 'api_key_expired')
+      if (code === 'KEY_EXPIRED') return failure('UNAUTHENTICATED', apiMessages.api_key_expired)
       // The plugin reports a failed database read as an invalid key, so a refusal while
       // the database is down would tell the client to replace a working key.
-      if (!(await databaseAvailable(db))) return refuse('UNAVAILABLE', 'database_unavailable')
-      return refuse('UNAUTHENTICATED', 'api_key_invalid')
+      if (!(await databaseAvailable(db)))
+        return failure('UNAVAILABLE', errorMessages.database_unavailable)
+      return failure('UNAUTHENTICATED', apiMessages.api_key_invalid)
     }
 
     if (!verified.key.permissions?.api?.includes(access)) {
-      return refuse('FORBIDDEN', 'api_key_read_only')
+      return failure('FORBIDDEN', apiMessages.api_key_read_only)
     }
 
     const userId = verified.key.referenceId
     const [owner] = await db.select({ email: user.email }).from(user).where(eq(user.id, userId))
-    if (!owner) return refuse('UNAUTHENTICATED', 'api_key_invalid')
+    if (!owner) return failure('UNAUTHENTICATED', apiMessages.api_key_invalid)
     // The login-domain policy applies to keys as it does to sessions, so a key outlives
     // neither a domain's removal from ALLOWED_LOGIN_DOMAINS nor a changed address.
     if (!loginDomainAllowed(owner.email, deps.loginDomains)) {
-      return refuse('UNAUTHENTICATED', 'login_domain_not_allowed')
+      return failure('UNAUTHENTICATED', apiMessages.login_domain_not_allowed)
     }
 
     // The same count as sessionMiddleware's, so a user's writes share one rate whether
@@ -136,7 +148,8 @@ export function createApiRoute(deps: ApiDeps) {
         `write:${userId}`,
         rateLimits.writesPerUser,
       )
-      if (!allowed) return refuse('RATE_LIMITED', 'rate_limited', retryAfter ?? undefined)
+      if (!allowed)
+        return failure('RATE_LIMITED', errorMessages.rate_limited, retryAfter ?? undefined)
     }
     return userId
   }
@@ -174,7 +187,8 @@ export function createApiRoute(deps: ApiDeps) {
       } catch (error) {
         if (error instanceof AppError) return failure(error.code, error.message)
         console.error(error)
-        if (!(await databaseAvailable(db))) return refuse('UNAVAILABLE', 'database_unavailable')
+        if (!(await databaseAvailable(db)))
+          return failure('UNAVAILABLE', errorMessages.database_unavailable)
         return failure('INTERNAL', 'Something went wrong.')
       }
     }

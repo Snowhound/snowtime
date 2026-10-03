@@ -723,12 +723,6 @@
   "error_organization_forbidden": "Ettevõtet haldavad ainult administraatorid ja omanikud.",
   "error_api_key_not_found": "API-võtit ei leitud.",
   "error_api_key_limit": "Sul on liiga palju API-võtmeid. Tühista kõigepealt need, mida sa ei kasuta.",
-  "error_api_key_missing": "API-võti puudub.",
-  "error_api_key_invalid": "Vigane API-võti.",
-  "error_api_key_expired": "API-võti on aegunud.",
-  "error_api_key_read_only": "API-võti on ainult lugemiseks.",
-  "error_api_rate_limited": "Liiga palju päringuid.",
-  "error_login_domain_not_allowed": "E-posti domeen pole lubatud.",
   "organization_no_access_title": "Ettevõtet haldavad ainult administraatorid ja omanikud",
   "organization_no_access_description": "Rollide, meeskondade või kutsete muutmiseks pöördu administraatori poole.",
   "organization_subtitle": [

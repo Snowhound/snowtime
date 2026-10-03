@@ -723,12 +723,6 @@
   "error_organization_forbidden": "Only admins and owners manage the organization.",
   "error_api_key_not_found": "API key not found.",
   "error_api_key_limit": "You have too many API keys. Revoke unused ones first.",
-  "error_api_key_missing": "API key missing.",
-  "error_api_key_invalid": "Invalid API key.",
-  "error_api_key_expired": "API key expired.",
-  "error_api_key_read_only": "API key is read-only.",
-  "error_api_rate_limited": "Too many requests.",
-  "error_login_domain_not_allowed": "Email domain not allowed.",
   "organization_no_access_title": "Only admins and owners manage the organization",
   "organization_no_access_description": "Ask an admin to change roles, teams, or invitations.",
   "organization_subtitle": [

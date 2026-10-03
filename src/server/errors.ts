@@ -55,12 +55,6 @@ export const errorMessages = {
   database_unavailable: 'Snowtime is down for maintenance. Try again in a few minutes.',
   api_key_not_found: 'API key not found.',
   api_key_limit: 'You have too many API keys. Revoke unused ones first.',
-  api_key_missing: 'API key missing.',
-  api_key_invalid: 'Invalid API key.',
-  api_key_expired: 'API key expired.',
-  api_key_read_only: 'API key is read-only.',
-  api_rate_limited: 'Too many requests.',
-  login_domain_not_allowed: 'Email domain not allowed.',
 } as const
 
 export type AppErrorKey = keyof typeof errorMessages
