@@ -42,13 +42,9 @@ works; one that lacks it gets a notice at the top of each page.
 | Preview     | any other | `snowtime-staging` Turso database, seeded and shared       |
 | Production  | `main`    | `prod` Turso database, same region as the Vercel functions |
 
-Production runs in Vercel's `dub1` (Dublin) with Turso's `aws-eu-west-1` (Ireland), the
-only EU region Turso offers. A page makes several database round trips, so the functions
-sit beside the database rather than nearer to users in Estonia. Postgres nearer to
-Estonia was rejected for now: Supabase in Stockholm (with Vercel `arn1`) or Neon in
-Frankfurt (`fra1`) would save roughly 20–30 ms per request, but both mean porting the
-schema, migrations, and tooling from SQLite, and the free tiers pause idle databases. If
-this changes, switch before production holds real data.
+Production runs in Vercel's `arn1` (Stockholm) with Turso's `aws-eu-north-1` (Stockholm),
+the Turso region nearest users in Estonia. A page makes several database round trips, so
+the functions sit beside the database.
 
 **Migrations and deploys:** CI runs `db:migrate` after the checks pass on a push to the
 environment's branch, and then deploys that commit to Vercel. Migrations never run in the

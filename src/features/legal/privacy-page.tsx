@@ -4,7 +4,7 @@ import { COMPANY, ContactEmail, LegalLayout } from './legal-layout'
 
 // Change the date with any change to the text below. The policy states what the app does, so
 // a change to what it stores, where, or for how long updates it too.
-const UPDATED = '2026-10-01'
+const UPDATED = '2026-10-03'
 
 export function PrivacyPage() {
   return (
@@ -87,9 +87,8 @@ function PrivacyEn() {
         <li>
           Processors that run Snowtime for us under data processing terms:
           <ul>
-            <li>Vercel hosts the application, which runs in Dublin, Ireland.</li>
-            <li>Turso stores the database in Ireland.</li>
-            <li>Upstash stores short-lived rate-limit counters in Ireland.</li>
+            <li>Vercel hosts the application, which runs in Stockholm, Sweden.</li>
+            <li>Turso stores the database in Sweden.</li>
           </ul>
         </li>
         <li>
@@ -101,8 +100,8 @@ function PrivacyEn() {
 
       <h2>Transfers outside the EU</h2>
       <p>
-        We store data in the EU, in Ireland. Vercel, Turso, and Upstash are US companies, so data
-        may be accessed from the US, for example for support. These transfers rely on the European
+        We store data in the EU, in Sweden. Vercel and Turso are US companies, so data may be
+        accessed from the US, for example for support. These transfers rely on the European
         Commission's standard contractual clauses or an adequacy decision, such as the EU–US Data
         Privacy Framework.
       </p>
@@ -272,9 +271,8 @@ function PrivacyEt() {
           Volitatud töötlejad, kes tagavad Snowtime'i tehnilise toimimise andmetöötlustingimuste
           alusel:
           <ul>
-            <li>Vercel majutab rakendust, mille serverid asuvad Iirimaal Dublinis.</li>
-            <li>Turso majutab andmebaasi Iirimaal.</li>
-            <li>Upstash haldab lühiajalisi päringupiirangu loendureid Iirimaal.</li>
+            <li>Vercel majutab rakendust, mille serverid asuvad Rootsis Stockholmis.</li>
+            <li>Turso majutab andmebaasi Rootsis.</li>
           </ul>
         </li>
         <li>
@@ -287,10 +285,10 @@ function PrivacyEt() {
 
       <h2>Andmete edastamine väljapoole EL-i</h2>
       <p>
-        Hoiame andmeid Euroopa Liidus, Iirimaal. Vercel, Turso ja Upstash on USA ettevõtted, seega
-        võidakse andmetele ligi pääseda ka USA-st, näiteks klienditoe või tehnilise toe osutamisel.
-        Need edastused põhinevad Euroopa Komisjoni lepingu tüüptingimustel (standard contractual
-        clauses) või kaitse piisavuse otsusel, näiteks ELi–USA andmekaitseraamistikul.
+        Hoiame andmeid Euroopa Liidus, Rootsis. Vercel ja Turso on USA ettevõtted, seega võidakse
+        andmetele ligi pääseda ka USA-st, näiteks klienditoe või tehnilise toe osutamisel. Need
+        edastused põhinevad Euroopa Komisjoni lepingu tüüptingimustel (standard contractual clauses)
+        või kaitse piisavuse otsusel, näiteks ELi–USA andmekaitseraamistikul.
       </p>
 
       <h2>Kui kaua me andmeid hoiame</h2>
