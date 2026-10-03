@@ -114,6 +114,38 @@ p50s and CPU at 10 agreed within 0.1 ms, and the writes' p95 varied by up to 1.3
 - Hydration stays the same: the test above passes for the running timer, a range of
   entries with a running one, a date alone, and a refusal.
 
+## After the move
+
+`bun run perf:load` and `bun run perf:pages` on 2026-10-03, `081-server-rendering`
+(`183015c`, server functions) against this branch (the API), alternated A, B, B, A on one
+machine. Each cell is the two runs' values.
+
+| Server render, per request |           Server functions |                        API |
+| -------------------------- | -------------------------: | -------------------------: |
+| Timer p50 / CPU            | 18.3, 18.4 / 29.3, 28.7 ms | 16.6, 16.6 / 26.7, 26.0 ms |
+| Reports, week p50 / CPU    | 15.8, 14.4 / 16.7, 15.7 ms | 12.8, 13.1 / 15.3, 13.7 ms |
+| Reports, year p50 / CPU    | 43.6, 43.9 / 47.0, 47.0 ms | 42.5, 43.4 / 46.3, 49.3 ms |
+| Settings p50 / CPU         | 14.1, 14.2 / 15.7, 15.7 ms | 19.2, 12.1 / 17.0, 12.7 ms |
+
+| Browser, 4x CPU, Fast 4G            | Server functions |           API |
+| ----------------------------------- | ---------------: | ------------: |
+| Timer HTML, gzipped                 |          18.3 KB |       17.9 KB |
+| Reports (week) HTML, gzipped        |          17.8 KB |       17.5 KB |
+| JS per page, gzipped                |   +0.9 to 1.1 KB |      baseline |
+| Timer, cold load to ready           |    2370, 2385 ms | 2288, 2291 ms |
+| Reports (week), cold load to ready  |    2163, 2207 ms | 2122, 2115 ms |
+| Reports, previous range to new data |        41, 39 ms |     48, 46 ms |
+
+- The server render is as fast or faster: the timer page takes about 1.7 ms and 2.5 ms of CPU
+  less per request, and the week report about 2 ms less. The in-process transport repeats the
+  scope lookup per loader, and that doesn't show. Settings' first API run is an outlier; its
+  second is faster than both server-function runs.
+- Pages are smaller: the client no longer loads Start's server-function runtime, and the
+  server-rendered HTML shrank by 2 to 4%, for a reason not yet traced.
+- One step is slower: a report refetch in the browser takes about 7 ms more to new data.
+  Decoding the report with its output schema is the likely cause, not yet confirmed. It is
+  the one number to watch.
+
 ## The full move
 
 Speed is not a reason to stay on server functions, so the move is only work:
@@ -240,9 +272,8 @@ The changes:
 
 `middleware.ts` cached scopes per request, so a server render's parallel loaders shared
 one lookup. `runOperation` resolves the scope per call, so the in-process transport
-repeats that indexed read once per loader. The transport keeps no cache: the cost hasn't
-been compared, and `bun run perf:pages`' cold loads, run on the old and the new build in
-one session, would show it.
+repeats that indexed read once per loader. The transport keeps no cache: under
+"After the move", the server render is as fast or faster than with server functions.
 
 ### Kait's answers
 
