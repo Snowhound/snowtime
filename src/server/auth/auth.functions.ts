@@ -8,9 +8,8 @@ import { companyUsers } from '~/db/seed-company'
 import { env } from '~/env'
 import { cookieMaxAge, cookieName, getLocale } from '~/paraglide/runtime.js'
 import { scopeMiddleware } from '../middleware'
-import { GetInvitationInput, UpdateIssueLinksInput } from './auth.schemas'
+import { UpdateIssueLinksInput } from './auth.schemas'
 import { auth } from './better-auth.server'
-import { invitationPreview } from './invitations.server'
 import * as organizations from './organization.server'
 import { appSession } from './session.server'
 import { passwordEnabled, signInMethods } from './sign-in.server'
@@ -85,11 +84,6 @@ export type AppSession = NonNullable<Awaited<ReturnType<typeof getAppSession>>>
 
 // Named here so client code imports the type from this file, not from sign-in.server.ts.
 export type { SignInMethod } from './sign-in.server'
-
-// An invitation link's details, shown before sign-in; null when the id is unknown.
-export const getInvitation = createServerFn({ method: 'GET' })
-  .validator(GetInvitationInput)
-  .handler(({ data }) => invitationPreview(db, data.id))
 
 // The organization's Issue links setting, which Better Auth's organization client can't set.
 export const updateIssueLinks = createServerFn({ method: 'POST' })

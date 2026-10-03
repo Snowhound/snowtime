@@ -13,8 +13,10 @@ export interface WireResponse {
 }
 
 // The body of a failed call. A rule's refusal carries its AppError; anything else, such as
-// input that fails the schema, only a message.
-export type WireError = { code: AppErrorCode; key: AppErrorKey } | { message: string }
+// input that fails the schema, a message, and Better Auth's refusals its code too.
+export type WireError =
+  | { code: AppErrorCode; key: AppErrorKey }
+  | { code?: string; message: string }
 
 type AnySchema = v.GenericSchema & {
   type: string
@@ -108,7 +110,7 @@ export function requestOf(
   }
 }
 
-// The call's result, or the error it failed with, thrown as the rule threw it.
+// The call's result, or the error it failed with: an AppError as the rule threw it.
 export function resultOf<O extends Operation>(
   operation: O,
   response: WireResponse,
@@ -118,5 +120,9 @@ export function resultOf<O extends Operation>(
   }
   const error = isRecord(response.body) ? (response.body.error as WireError | undefined) : undefined
   if (error && 'key' in error) throw new AppError(error.code, error.key)
-  throw new Error(error && 'message' in error ? error.message : `HTTP ${response.status}`)
+  // With its status and code, as Better Auth's client reports a refusal (src/lib/errors.ts).
+  throw Object.assign(new Error(error?.message ?? `HTTP ${response.status}`), {
+    status: response.status,
+    code: error?.code,
+  })
 }

@@ -12,7 +12,7 @@ import { cacheUpdate, newId, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
 import { type Team, teamsQuery } from '~/lib/queries/teams'
 import { type AppSession, updateIssueLinks } from '~/server/auth/auth.functions'
-import { inviteMember, listInvitations } from '~/server/auth/invitations.functions'
+import type { Invitation } from '~/server/auth/auth.schemas'
 import type { SetTeamRoleInput } from '~/server/teams/teams.schemas'
 import type { OrgRole } from './roles'
 
@@ -20,14 +20,7 @@ import type { OrgRole } from './roles'
 const INVITATION_HOURS = 48
 const HOUR = 3_600_000
 
-export interface Invitation {
-  id: string
-  email: string
-  role: OrgRole
-  teamId: string | null
-  inviterId: string
-  expiresAt: Date
-}
+export type { Invitation }
 
 export function isExpired(invitation: Invitation, now = Date.now()) {
   return invitation.expiresAt.getTime() <= now
@@ -40,7 +33,7 @@ export function invitationLink(appUrl: string, id: string) {
 export function invitationsQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['invitations', organizationId],
-    queryFn: (): Promise<Invitation[]> => listInvitations({ data: { organizationId } }),
+    queryFn: () => call('listInvitations', { organizationId }),
     enabled: !isServer,
   })
 }
@@ -135,20 +128,16 @@ export function useInviteMember(keys: Keys & { userId: string }) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: async (input: InviteInput) => {
-      const created = await unwrap(
-        inviteMember({
-          data: {
-            email: input.email,
-            role: input.role,
-            organizationId: keys.organizationId,
-            teamId: input.teamId,
-          },
-        }),
-      )
+      const created = await call('inviteMember', {
+        email: input.email,
+        role: input.role,
+        organizationId: keys.organizationId,
+        teamId: input.teamId,
+      })
       if (input.replaces) {
         await unwrap(authClient.organization.cancelInvitation({ invitationId: input.replaces }))
       }
-      return { id: created.id, email: created.email, expiresAt: new Date(created.expiresAt) }
+      return created
     },
     ...optimistic(queryClient, [
       cacheUpdate<Invitation[], InviteInput>(

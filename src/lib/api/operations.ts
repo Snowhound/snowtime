@@ -4,6 +4,13 @@
 // file, so the TypeScript app's client bundle leaves it out.
 import * as v from 'valibot'
 import {
+  CreatedInvitation,
+  GetInvitationInput,
+  Invitation,
+  InvitationPreview,
+  InviteMemberInput,
+} from '~/server/auth/auth.schemas'
+import {
   CreateEntryInput,
   DeleteEntryInput,
   Entry,
@@ -176,6 +183,35 @@ export const operations = {
     scope: 'organization',
     input: ProjectTeamInput,
     output: v.object({ projectId: v.string(), teamId: v.string() }),
+  },
+  listInvitations: {
+    method: 'GET',
+    path: `${organizationPath}/invitations`,
+    scope: 'organization',
+    input: undefined,
+    output: v.array(Invitation),
+  },
+  inviteMember: {
+    method: 'POST',
+    path: `${organizationPath}/invitations`,
+    scope: 'organization',
+    input: InviteMemberInput,
+    output: CreatedInvitation,
+  },
+  // An invitation link's details, which anyone with the link may see before signing in.
+  getInvitation: {
+    method: 'GET',
+    path: '/api/v1/invitations/:id',
+    scope: 'public',
+    input: GetInvitationInput,
+    output: InvitationPreview,
+  },
+  acceptInvitation: {
+    method: 'POST',
+    path: '/api/v1/invitations/:id/accept',
+    scope: 'user',
+    input: GetInvitationInput,
+    output: v.object({ id: v.string() }),
   },
   listTeams: {
     method: 'GET',

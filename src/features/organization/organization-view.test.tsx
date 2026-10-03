@@ -11,7 +11,7 @@ import { OrganizationPage } from './organization-page'
 import type { Invitation } from './queries'
 import type { OrganizationTab } from './search'
 
-// Server functions and the Better Auth client stay out of the DOM tests. Each mock answers
+// The backend and the Better Auth client stay out of the DOM tests. Each mock answers
 // from `server`, so a refetch after a mutation sees what the server would return; Better
 // Auth's calls resolve to { data, error } like the real client.
 const fn = vi.hoisted(() => ({
@@ -40,10 +40,6 @@ const org = vi.hoisted(() => ({
 vi.mock('~/server/auth/auth.functions', () => ({
   getAppSession: fn.getAppSession,
   updateIssueLinks: fn.updateIssueLinks,
-}))
-vi.mock('~/server/auth/invitations.functions', () => ({
-  listInvitations: fn.listInvitations,
-  inviteMember: fn.inviteMember,
 }))
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
@@ -225,7 +221,7 @@ beforeEach(() => {
     server.members = server.members.filter((mb) => mb.memberId !== memberIdOrEmail)
     return ok({ member: { id: memberIdOrEmail } })
   })
-  fn.inviteMember.mockImplementation(({ data: { email, role, teamId } }) => {
+  fn.inviteMember.mockImplementation(({ email, role, teamId }) => {
     const invitation = {
       id: newId(),
       email,
@@ -236,7 +232,7 @@ beforeEach(() => {
       status: 'pending',
     }
     server.invitations = [...server.invitations, invitation]
-    return ok(invitation)
+    return Promise.resolve(invitation)
   })
   org.cancelInvitation.mockImplementation(({ invitationId }) => {
     server.invitations = server.invitations.filter((i) => i.id !== invitationId)
@@ -403,12 +399,10 @@ describe('OrganizationView', () => {
     await userEvent.selectOptions(within(dialog).getByLabelText('Team'), 'Design')
     await userEvent.click(submit)
     expect(fn.inviteMember).toHaveBeenCalledWith({
-      data: {
-        email: 'helena@example.com',
-        role: 'member',
-        organizationId,
-        teamId: ids.design,
-      },
+      email: 'helena@example.com',
+      role: 'member',
+      organizationId,
+      teamId: ids.design,
     })
 
     const created = server.invitations.at(-1)!
@@ -443,12 +437,10 @@ describe('OrganizationView', () => {
       within(expired).getByRole('button', { name: 'New link for priit@example.com' }),
     )
     expect(fn.inviteMember).toHaveBeenCalledWith({
-      data: {
-        email: 'priit@example.com',
-        role: 'admin',
-        organizationId,
-        teamId: null,
-      },
+      email: 'priit@example.com',
+      role: 'admin',
+      organizationId,
+      teamId: null,
     })
     await waitFor(() => expect(org.cancelInvitation).toHaveBeenCalledWith({ invitationId: old }))
     const renewed = server.invitations.find((i) => i.email === 'priit@example.com')!

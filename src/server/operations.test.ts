@@ -2,7 +2,7 @@
 // what it got through Start's serializer, seroval; after hydration the browser calls the
 // same API over HTTP. Both must fill the query cache with equal values, or the first
 // refetch after hydration changes what the page shows.
-import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, describe, expect, mock, test } from 'bun:test'
 import { deserialize, serialize } from 'seroval'
 import type { Database } from '~/db'
 import { withActor } from '~/db/actor'
@@ -12,8 +12,11 @@ import { type InputOf, type OperationName, operations } from '~/lib/api/operatio
 import { type Host, hostTransport, httpTransport } from '~/lib/api/transports'
 import { matchPath } from '~/lib/api/wire'
 import { AppError } from './errors'
-import { runOperation } from './operations.server'
 import { createSeededDatabase } from './testing'
+
+// Better Auth needs the server's environment, which tests don't have; these calls don't use it.
+await mock.module('./auth/better-auth.server', () => ({ auth: {}, rateLimitStore: {} }))
+const { runOperation } = await import('./operations.server')
 
 const NOW = new Date('2026-09-30T07:30:00Z')
 const { users: U, orgs: O } = seedIds
@@ -34,7 +37,10 @@ afterEach(() => {
 // The API's handlers for one user, as renderTransport runs them for the page's request.
 function hostFor(userId: string): Host {
   return {
-    call: (name, input) => withActor(userId, () => runOperation(db, name as never, userId, input)),
+    call: (name, input) =>
+      withActor(userId, () =>
+        runOperation(db, name as never, { userId, headers: new Headers() }, input),
+      ),
   }
 }
 

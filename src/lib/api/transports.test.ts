@@ -75,4 +75,20 @@ describe('the HTTP transport', () => {
     answer(200, { ...entry, startedAt: 'yesterday' })
     await expect(call('stopTimer', { id: entry.id })).rejects.toThrow()
   })
+
+  test("Better Auth's refusal throws with its status and code, as its client reports it", async () => {
+    answer(400, {
+      error: { code: 'USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION', message: 'Taken' },
+    })
+    const invite = call('inviteMember', {
+      organizationId,
+      email: 'member@example.com',
+      role: 'member',
+      teamId: null,
+    })
+    await expect(invite).rejects.toMatchObject({
+      status: 400,
+      code: 'USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION',
+    })
+  })
 })

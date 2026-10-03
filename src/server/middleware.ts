@@ -22,7 +22,7 @@ export const availabilityMiddleware = createMiddleware({ type: 'function' }).ser
 
 // A signed-in user, as context.userId. The call runs as that user (withActor), and each POST
 // counts against their write rate.
-export const sessionMiddleware = createMiddleware({ type: 'function' }).server(
+const sessionMiddleware = createMiddleware({ type: 'function' }).server(
   async ({ next, method }) => {
     const userId = await signedInUser(getRequestHeaders(), method === 'POST')
     return withActor(userId, () => next({ context: { userId } }))

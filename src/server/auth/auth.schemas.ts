@@ -4,7 +4,7 @@
 import * as v from 'valibot'
 import { SLUG_PATTERN, isReservedSlug } from '~/lib/app-paths'
 import { m } from '~/paraglide/messages.js'
-import { Uuidv7 } from '../schemas'
+import { OrgRole, Timestamp, Uuidv7 } from '../schemas'
 
 export const GetInvitationInput = v.object({ id: Uuidv7 })
 export type GetInvitationInput = v.InferOutput<typeof GetInvitationInput>
@@ -110,3 +110,44 @@ export const InviteMemberInput = v.object({
   teamId: v.nullable(Uuidv7),
 })
 export type InviteMemberInput = v.InferOutput<typeof InviteMemberInput>
+
+// An invitation link's details, shown before sign-in; null when the id is unknown. Once
+// the invitation can't be accepted, the link shows less.
+export const InvitationPreview = v.nullable(
+  v.variant('state', [
+    v.object({ id: v.string(), state: v.literal('closed') }),
+    v.object({
+      id: v.string(),
+      state: v.literal('expired'),
+      organizationName: v.string(),
+      inviterName: v.string(),
+    }),
+    v.object({
+      id: v.string(),
+      state: v.literal('pending'),
+      email: v.string(),
+      role: OrgRole,
+      organizationId: v.string(),
+      organizationName: v.string(),
+      teamName: v.nullable(v.string()),
+      inviterName: v.string(),
+    }),
+  ]),
+)
+
+// An open invitation, expired ones included so they can get a new link.
+export const Invitation = v.object({
+  id: v.string(),
+  email: v.string(),
+  role: OrgRole,
+  teamId: v.nullable(v.string()),
+  inviterId: v.string(),
+  expiresAt: Timestamp,
+})
+export type Invitation = v.InferOutput<typeof Invitation>
+
+export const CreatedInvitation = v.object({
+  id: v.string(),
+  email: v.string(),
+  expiresAt: Timestamp,
+})

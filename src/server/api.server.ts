@@ -53,8 +53,11 @@ async function respond(request: Request): Promise<WireResponse> {
 // Runs one call for the session in `headers`, under the checks every call passes.
 async function answer(headers: Headers, name: OperationName, input: unknown) {
   try {
+    if (operations[name].scope === 'public') {
+      return await runOperation(db, name, { userId: null, headers }, input)
+    }
     const userId = await signedInUser(headers, operations[name].method !== 'GET')
-    return await withActor(userId, () => runOperation(db, name, userId, input))
+    return await withActor(userId, () => runOperation(db, name, { userId, headers }, input))
   } catch (error) {
     const mapped = await unavailableOr(error)
     if (mapped instanceof AppError) return refusal(mapped)

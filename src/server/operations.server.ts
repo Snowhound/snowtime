@@ -1,6 +1,7 @@
 // Each call of the contract run against its rule (task 084), with its input and result as
 // JSON. The JSON API runs these for a request (api.server.ts), and the native backend's
 // host runs its port of them for the render isolate.
+import { APIError } from 'better-auth/api'
 import * as v from 'valibot'
 import type { Database } from '~/db'
 import {
@@ -10,8 +11,11 @@ import {
   type ParsedInputOf,
 } from '~/lib/api/operations'
 import { decode, type WireError, type WireResponse } from '~/lib/api/wire'
+import { auth, rateLimitStore } from './auth/better-auth.server'
+import * as invitations from './auth/invitations.server'
 import * as entries from './entries/entries.server'
 import { AppError, type AppErrorCode } from './errors'
+import { rateLimits } from './limits.server'
 import * as projects from './projects/projects.server'
 import { parseOrganizationInput } from './schemas'
 import { resolveScope, type Scope } from './scope.server'
@@ -19,9 +23,22 @@ import * as settings from './settings/settings.server'
 import * as teams from './teams/teams.server'
 import * as timer from './timer/timer.server'
 
-type Context<K extends OperationName> = (typeof operations)[K]['scope'] extends 'organization'
-  ? { db: Database; scope: Scope }
-  : { db: Database; userId: string }
+// Who a call runs for: the signed-in user, or null for a public call, and the request's
+// headers, which Better Auth's own calls read.
+export interface Caller {
+  userId: string | null
+  headers: Headers
+}
+
+type ScopeOf<K extends OperationName> = (typeof operations)[K]['scope']
+type Context<K extends OperationName> = {
+  db: Database
+  headers: Headers
+} & (ScopeOf<K> extends 'organization'
+  ? { scope: Scope }
+  : ScopeOf<K> extends 'user'
+    ? { userId: string }
+    : unknown)
 
 // Each call's rule.
 const handlers: {
@@ -46,6 +63,26 @@ const handlers: {
   assignProjectToTeam: ({ db, scope }, input) => projects.assignProjectToTeam(db, scope, input),
   unassignProjectFromTeam: ({ db, scope }, input) =>
     projects.unassignProjectFromTeam(db, scope, input),
+  listInvitations: ({ db, scope }) => invitations.listInvitations(db, scope),
+  inviteMember: async ({ db, scope, headers }, input) => {
+    const { allowed } = await rateLimitStore.consume(
+      `invite:${scope.userId}`,
+      rateLimits.inviteMember,
+    )
+    if (!allowed) throw new AppError('RATE_LIMITED', 'rate_limited')
+    const { id, email, expiresAt } = await invitations.inviteMember(db, scope, input, () =>
+      auth.api.createInvitation({
+        headers,
+        body: { email: input.email, role: input.role, organizationId: scope.organizationId },
+      }),
+    )
+    return { id, email, expiresAt }
+  },
+  getInvitation: ({ db }, input) => invitations.invitationPreview(db, input.id),
+  acceptInvitation: ({ db, userId, headers }, input) =>
+    invitations.acceptInvitation(db, userId, input.id, () =>
+      auth.api.acceptInvitation({ headers, body: { invitationId: input.id } }),
+    ),
   listTeams: ({ db, scope }) => teams.listTeams(db, scope),
   createTeam: ({ db, scope }, input) => teams.createTeam(db, scope, input),
   renameTeam: ({ db, scope }, input) => teams.renameTeam(db, scope, input),
@@ -77,15 +114,19 @@ export function refusal(error: unknown): WireResponse {
     return failure(statusOf[error.code], { code: error.code, key: error.key })
   }
   if (error instanceof v.ValiError) return failure(400, { message: error.message })
+  // Better Auth's own refusal, as its HTTP API sends it.
+  if (error instanceof APIError) {
+    return failure(error.statusCode, { code: error.body?.code, message: error.message })
+  }
   throw error
 }
 
-// Runs one call for a signed-in user, with its input as JSON, after the session check.
-// Like scopeMiddleware, it resolves the scope before it validates the call's own input.
+// Runs one call, with its input as JSON, after the session check. Like scopeMiddleware, it
+// resolves the scope before it validates the call's own input.
 export async function runOperation(
   db: Database,
   name: OperationName,
-  userId: string,
+  { userId, headers }: Caller,
   input: unknown,
 ): Promise<WireResponse> {
   const operation = operations[name]
@@ -94,13 +135,14 @@ export async function runOperation(
       operation.scope === 'organization'
         ? {
             db,
+            headers,
             scope: await resolveScope(
               db,
-              userId,
+              userId!,
               parseOrganizationInput(input as { organizationId: string }).organizationId,
             ),
           }
-        : { db, userId }
+        : { db, headers, userId }
     const parsed = operation.input ? decode(operation.input, input) : undefined
     const handler = handlers[name] as (context: unknown, input: unknown) => Promise<unknown>
     return { status: 200, body: await handler(context, parsed) }
