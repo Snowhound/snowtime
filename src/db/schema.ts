@@ -205,6 +205,9 @@ export const apikey = sqliteTable(
     id: text().primaryKey(),
     configId: text('config_id').default('default').notNull(),
     name: text(),
+    // Always null: apiKeyOptions turns off storing a key's first characters. The column stays
+    // because Better Auth refuses to start when the Drizzle schema lacks any field a plugin
+    // declares, optional or not.
     start: text(),
     referenceId: text('reference_id')
       .notNull()

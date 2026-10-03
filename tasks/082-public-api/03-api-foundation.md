@@ -10,13 +10,15 @@ helper, a new route gets every check without writing any of them.
 - [ ] A helper in `src/server/api/` (for example `api.server.ts`) wraps a route handler and,
       in order:
   1. reads `Authorization: Bearer <key>`, and answers 401 without one;
-  2. verifies the key with `auth.api.verifyApiKey`, without passing permissions;
+  2. verifies the key as README point 4 settles: with `auth.api.verifyApiKey`, or with our
+     own lookup of the plugin's hash. Either way without permissions;
   3. checks that the key has the route's scope (`read` or `write`), and answers 403
      `FORBIDDEN` without it (README, point 5);
   4. loads the user, and answers 401 if they no longer exist, or if `loginDomainAllowed`
      refuses their address under `ALLOWED_LOGIN_DOMAINS` (README, point 1);
   5. for a write, counts against `write:${userId}` in `rateLimitStore`, the same count as
-     `sessionMiddleware`, plus the key's own limit as subtask 01 sets it (README, point 3);
+     `sessionMiddleware`. The key's own limit (README, point 3) still applies, which our
+     own lookup would have to count itself;
   6. for a route under `/api/v1/orgs/:orgId/`, resolves the scope with `resolveScope`;
   7. runs the handler inside `withActor(userId, ...)`
 - [ ] Inputs are checked with the domains' Valibot schemas (`*.schemas.ts`); a failure

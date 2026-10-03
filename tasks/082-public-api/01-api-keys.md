@@ -2,7 +2,7 @@
 
 Status: done
 
-Users create, list, and revoke personal API keys in Settings. The keys sign in only to
+Users create, list, and revoke personal API keys in Settings. The keys work only on
 `/api/v1` (subtask 03).
 
 ## Acceptance criteria
@@ -27,16 +27,18 @@ Users create, list, and revoke personal API keys in Settings. The keys sign in o
       no `defaultExpiresIn` (README, point 2), and
       `startingCharactersConfig.shouldStore: false`, so no part of a key is stored or shown
       after it's created
-- [x] The per-key rate limit is rechecked against a polling client and set with numbers
-      (README, point 3)
-- [x] `deferUpdates: true` (README, point 4). It defers only the deletion of expired keys,
-      not the last-use write; point 4 is open again for subtask 03
+- [x] The per-key rate limit allows 60 requests whose gaps are all under 5 seconds, which a
+      polling client never reaches (README, point 3)
+- [x] `deferUpdates: true`, which defers only the deletion of expired keys, not the writes
+      on each verification (README, point 4)
 - [x] The key name's length limit matches the form's schema; the plugin's default is 32
       characters
 - [x] A hand-written migration adds the plugin's table (`docs/migrations.md`), with
       `reference_id` referencing `user(id)` `ON DELETE CASCADE`, and an index on it for the
       Settings list
 - [x] The DBML in `datamodel/` shows the table (`bun run datamodel:generate`)
+- [x] The company import (`scripts/import-database.ts`) copies the API keys of the
+      company's users, as it does their passkeys
 - [x] Creating a key goes through a server function, not the Better Auth client, because
       the plugin accepts `permissions` only from the server. It takes a name, a required
       lifetime (`30d`, `90d`, `1y`, or `none`), and scopes (`read`, or `read` and `write`).

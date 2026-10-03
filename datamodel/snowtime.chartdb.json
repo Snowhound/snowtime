@@ -885,7 +885,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Always null: the plugin is set not to store the first characters."
+          "comments": "Always null: the plugin is set not to store the first characters. Kept because Better Auth refuses to start without any field a plugin declares."
         },
         {
           "id": "t4f4",

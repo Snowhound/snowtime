@@ -83,7 +83,7 @@ Table api_key [note: 'API key plugin (@better-auth/api-key). A personal key for 
   id text [pk]
   config_id text [not null, default: 'default']
   name text
-  start text [note: 'Always null: the plugin is set not to store the first characters.']
+  start text [note: 'Always null: the plugin is set not to store the first characters. Kept because Better Auth refuses to start without any field a plugin declares.']
   reference_id text [not null, ref: > user.id, note: 'The user who owns the key. ON DELETE CASCADE.']
   prefix text
   key text [not null, unique, note: 'Hash of the key. The key itself is shown once, at creation, and never stored.']

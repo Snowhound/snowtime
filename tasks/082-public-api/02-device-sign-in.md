@@ -2,11 +2,10 @@
 
 Status: cancelled
 
-Cancelled by Kait and the user on 2026-10-03: the device authorization grant needs Better
-Auth's OAuth device authorization with registered applications and their client ids to
-maintain, which is out of scope while task 081 moves the backend to Rust. API keys
-(subtask 01) serve the clients for now; device sign-in can come later beside them. The
-criteria below were never started.
+Cancelled by Kait and the user on 2026-10-03. Device sign-in needs OAuth device
+authorization with registered applications and client ids to maintain, which is out of
+scope while task 081 moves the backend to Rust. API keys (subtask 01) serve clients for now,
+and device sign-in can come later beside them. Work on the criteria below never started.
 
 A client outside the browser signs in with the device authorization grant: it shows a short
 code and opens Snowtime, where the signed-in user approves it, and it gets a token for

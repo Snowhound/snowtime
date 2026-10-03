@@ -101,7 +101,8 @@ export const tables: Record<string, TableNotes> = {
     columns: {
       reference_id: 'The user who owns the key.',
       key: 'Hash of the key. The key itself is shown once, at creation, and never stored.',
-      start: 'Always null: the plugin is set not to store the first characters.',
+      start:
+        'Always null: the plugin is set not to store the first characters. Kept because Better Auth refuses to start without any field a plugin declares.',
       permissions: 'JSON of scopes, read and optionally write, as {"api": [...]}.',
       expires_at: 'Null when the user chose no expiry.',
       last_request: 'Last verified use, shown in Settings.',

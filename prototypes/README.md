@@ -699,7 +699,7 @@ Three cards, with section links beside them from 1024 px:
 | ----------- | ----------------- | -------------------------------------------------------------- |
 | Preferences | `user_settings`   | Language, time zone, week start, theme, timer layout, show summary, wide page, scenery; each saves on change |
 | Profile     | `user`, `account` | Name with "Save profile"; email read-only; sign-in methods      |
-| API keys    | `apikey`          | Personal API keys for `/api/v1` (task 082): list, create, revoke |
+| API keys    | `api_key`         | Personal API keys for `/api/v1` (task 082): list, create, revoke |
 
 Preferences come first because they change most often. Theme and timer layout moved from
 per-device `localStorage` into `user_settings` so they follow the user and the server can render
@@ -723,19 +723,20 @@ Fixtures: populated (Google and GitHub), new account (one provider; resets prefe
 defaults with the browser's zone), long content (long name and email), local dev password
 (only the seeded credential account), and scenery saved before collections (Season: Winter).
 
-The API keys card lists each key with its name, access badge (Read only, or Read and write),
-creation date, expiry, and last use. It shows no part of a key, not even its first characters:
-names tell keys apart, and the full key appears only once, when it's created. **Create key**
-sits on the title's line. A key expiring within 7 days says so in relative time ("Expires in 3 days") in the
-foreground color. An expired key, which the plugin deletes only when it's next used, shows an
-Expired badge and **Remove** instead of **Revoke**. Both confirm in a dialog. **Create key** opens
-a dialog with a name (at most 32 characters, the plugin's limit), Expires (in 30 days, in 90
-days, in 1 year, or never; 90 days preselected, and the hint gives the date), and Access as a
-toggle group (read only preselected, the least access; the Raycast extension needs read and
-write). Creating it shows
-the full key once, selected, with **Copy**; closing the dialog by Done or Escape clears it.
-Its own fixture select: several keys (one never used, one that never expires), none, a long
-name, and expiring and expired.
+The API keys card lists each key's name, access (Read only, or Read and write), creation
+date, expiry, and last use. It shows no part of a key, not even its first characters: names
+tell keys apart, and the full key appears only once, when it's created. A key that expires
+within 7 days says so in relative time ("Expires in 3 days") in the foreground color. An
+expired key, which the plugin deletes only when it's next used, shows an Expired badge and
+**Remove** instead of **Revoke**; both confirm in a dialog.
+
+**Create key** sits on the card title's line and opens a dialog: a name (at most 32
+characters, the plugin's limit), Expires (in 30 days, 90 days, or 1 year, or never; 90
+days preselected, with the end date in the hint), and Access as a toggle group (read only
+preselected, the least access). The dialog then shows the full key once, selected, with
+**Copy**; closing it by Done or Escape clears the key. The card has its own fixture select:
+several keys (one never used, one that never expires), none, a long name, and expiring and
+expired.
 
 Omitted: avatar upload, email change, account deletion (users are anonymized, not deleted), and
 active sessions.
