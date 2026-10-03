@@ -20,22 +20,10 @@ export async function appSession(
   now = new Date(),
 ) {
   // Every signed-in page waits for this, so independent reads share a round trip.
-  const [memberships, settings] = await Promise.all([
-    db
-      .select({
-        id: organization.id,
-        name: organization.name,
-        slug: organization.slug,
-        issueLinks: organization.issueLinks,
-        role: member.role,
-      })
-      .from(member)
-      .innerJoin(organization, eq(organization.id, member.organizationId))
-      .where(eq(member.userId, user.id))
-      .orderBy(asc(organization.name), asc(organization.id)),
+  const [organizations, settings] = await Promise.all([
+    organizationsOf(db, user.id),
     findSettings(db, user.id),
   ])
-  const organizations = memberships.map((o) => ({ ...o, role: strongestRole(o.role) }))
 
   // The session may have no active organization yet, or one the user has since left; the
   // first by name stands in, and the caller saves it to the session.
@@ -54,6 +42,23 @@ export async function appSession(
     fill,
     invitationId,
   }
+}
+
+// The user's organizations by name, with their strongest role in each.
+export async function organizationsOf(db: Database, userId: string) {
+  const memberships = await db
+    .select({
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      issueLinks: organization.issueLinks,
+      role: member.role,
+    })
+    .from(member)
+    .innerJoin(organization, eq(organization.id, member.organizationId))
+    .where(eq(member.userId, userId))
+    .orderBy(asc(organization.name), asc(organization.id))
+  return memberships.map((o) => ({ ...o, role: strongestRole(o.role) }))
 }
 
 // Only asked when there is no organization: such a user goes to their invitation, or to

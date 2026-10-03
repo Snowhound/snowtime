@@ -23,6 +23,12 @@ import { Route as OrgSettingsRouteImport } from './routes/$org/settings'
 import { Route as OrgTimerRouteImport } from './routes/$org/timer'
 import { Route as InvitationIdRouteImport } from './routes/invitation.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
+import { Route as ApiV1TimerRouteImport } from './routes/api/v1/timer'
+import { Route as ApiV1OrgsOrgIdEntriesRouteImport } from './routes/api/v1/orgs.$orgId.entries'
+import { Route as ApiV1OrgsOrgIdProjectsRouteImport } from './routes/api/v1/orgs.$orgId.projects'
+import { Route as ApiV1OrgsOrgIdTimerRouteImport } from './routes/api/v1/orgs.$orgId.timer'
+import { Route as ApiV1TimerEntryIdStopRouteImport } from './routes/api/v1/timer.$entryId.stop'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +100,36 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1MeRoute = ApiV1MeRouteImport.update({
+  id: '/api/v1/me',
+  path: '/api/v1/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1TimerRoute = ApiV1TimerRouteImport.update({
+  id: '/api/v1/timer',
+  path: '/api/v1/timer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsOrgIdEntriesRoute = ApiV1OrgsOrgIdEntriesRouteImport.update({
+  id: '/api/v1/orgs/$orgId/entries',
+  path: '/api/v1/orgs/$orgId/entries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsOrgIdProjectsRoute = ApiV1OrgsOrgIdProjectsRouteImport.update({
+  id: '/api/v1/orgs/$orgId/projects',
+  path: '/api/v1/orgs/$orgId/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OrgsOrgIdTimerRoute = ApiV1OrgsOrgIdTimerRouteImport.update({
+  id: '/api/v1/orgs/$orgId/timer',
+  path: '/api/v1/orgs/$orgId/timer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1TimerEntryIdStopRoute = ApiV1TimerEntryIdStopRouteImport.update({
+  id: '/$entryId/stop',
+  path: '/$entryId/stop',
+  getParentRoute: () => ApiV1TimerRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +146,12 @@ export interface FileRoutesByFullPath {
   '/invitation/$id': typeof InvitationIdRoute
   '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/v1/me': typeof ApiV1MeRoute
+  '/api/v1/timer': typeof ApiV1TimerRouteWithChildren
+  '/api/v1/orgs/$orgId/entries': typeof ApiV1OrgsOrgIdEntriesRoute
+  '/api/v1/orgs/$orgId/projects': typeof ApiV1OrgsOrgIdProjectsRoute
+  '/api/v1/orgs/$orgId/timer': typeof ApiV1OrgsOrgIdTimerRoute
+  '/api/v1/timer/$entryId/stop': typeof ApiV1TimerEntryIdStopRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,6 +167,12 @@ export interface FileRoutesByTo {
   '/invitation/$id': typeof InvitationIdRoute
   '/$org': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/v1/me': typeof ApiV1MeRoute
+  '/api/v1/timer': typeof ApiV1TimerRouteWithChildren
+  '/api/v1/orgs/$orgId/entries': typeof ApiV1OrgsOrgIdEntriesRoute
+  '/api/v1/orgs/$orgId/projects': typeof ApiV1OrgsOrgIdProjectsRoute
+  '/api/v1/orgs/$orgId/timer': typeof ApiV1OrgsOrgIdTimerRoute
+  '/api/v1/timer/$entryId/stop': typeof ApiV1TimerEntryIdStopRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,6 +190,12 @@ export interface FileRoutesById {
   '/invitation/$id': typeof InvitationIdRoute
   '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/v1/me': typeof ApiV1MeRoute
+  '/api/v1/timer': typeof ApiV1TimerRouteWithChildren
+  '/api/v1/orgs/$orgId/entries': typeof ApiV1OrgsOrgIdEntriesRoute
+  '/api/v1/orgs/$orgId/projects': typeof ApiV1OrgsOrgIdProjectsRoute
+  '/api/v1/orgs/$orgId/timer': typeof ApiV1OrgsOrgIdTimerRoute
+  '/api/v1/timer/$entryId/stop': typeof ApiV1TimerEntryIdStopRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,6 +214,12 @@ export interface FileRouteTypes {
     | '/invitation/$id'
     | '/$org/'
     | '/api/auth/$'
+    | '/api/v1/me'
+    | '/api/v1/timer'
+    | '/api/v1/orgs/$orgId/entries'
+    | '/api/v1/orgs/$orgId/projects'
+    | '/api/v1/orgs/$orgId/timer'
+    | '/api/v1/timer/$entryId/stop'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -175,6 +235,12 @@ export interface FileRouteTypes {
     | '/invitation/$id'
     | '/$org'
     | '/api/auth/$'
+    | '/api/v1/me'
+    | '/api/v1/timer'
+    | '/api/v1/orgs/$orgId/entries'
+    | '/api/v1/orgs/$orgId/projects'
+    | '/api/v1/orgs/$orgId/timer'
+    | '/api/v1/timer/$entryId/stop'
   id:
     | '__root__'
     | '/'
@@ -191,6 +257,12 @@ export interface FileRouteTypes {
     | '/invitation/$id'
     | '/$org/'
     | '/api/auth/$'
+    | '/api/v1/me'
+    | '/api/v1/timer'
+    | '/api/v1/orgs/$orgId/entries'
+    | '/api/v1/orgs/$orgId/projects'
+    | '/api/v1/orgs/$orgId/timer'
+    | '/api/v1/timer/$entryId/stop'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -202,6 +274,11 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   InvitationIdRoute: typeof InvitationIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiV1MeRoute: typeof ApiV1MeRoute
+  ApiV1TimerRoute: typeof ApiV1TimerRouteWithChildren
+  ApiV1OrgsOrgIdEntriesRoute: typeof ApiV1OrgsOrgIdEntriesRoute
+  ApiV1OrgsOrgIdProjectsRoute: typeof ApiV1OrgsOrgIdProjectsRoute
+  ApiV1OrgsOrgIdTimerRoute: typeof ApiV1OrgsOrgIdTimerRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -304,6 +381,48 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/me': {
+      id: '/api/v1/me'
+      path: '/api/v1/me'
+      fullPath: '/api/v1/me'
+      preLoaderRoute: typeof ApiV1MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/timer': {
+      id: '/api/v1/timer'
+      path: '/api/v1/timer'
+      fullPath: '/api/v1/timer'
+      preLoaderRoute: typeof ApiV1TimerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/$orgId/entries': {
+      id: '/api/v1/orgs/$orgId/entries'
+      path: '/api/v1/orgs/$orgId/entries'
+      fullPath: '/api/v1/orgs/$orgId/entries'
+      preLoaderRoute: typeof ApiV1OrgsOrgIdEntriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/$orgId/projects': {
+      id: '/api/v1/orgs/$orgId/projects'
+      path: '/api/v1/orgs/$orgId/projects'
+      fullPath: '/api/v1/orgs/$orgId/projects'
+      preLoaderRoute: typeof ApiV1OrgsOrgIdProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/orgs/$orgId/timer': {
+      id: '/api/v1/orgs/$orgId/timer'
+      path: '/api/v1/orgs/$orgId/timer'
+      fullPath: '/api/v1/orgs/$orgId/timer'
+      preLoaderRoute: typeof ApiV1OrgsOrgIdTimerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/timer/$entryId/stop': {
+      id: '/api/v1/timer/$entryId/stop'
+      path: '/$entryId/stop'
+      fullPath: '/api/v1/timer/$entryId/stop'
+      preLoaderRoute: typeof ApiV1TimerEntryIdStopRouteImport
+      parentRoute: typeof ApiV1TimerRoute
+    }
   }
 }
 
@@ -327,6 +446,18 @@ const OrgRouteChildren: OrgRouteChildren = {
 
 const OrgRouteWithChildren = OrgRoute._addFileChildren(OrgRouteChildren)
 
+interface ApiV1TimerRouteChildren {
+  ApiV1TimerEntryIdStopRoute: typeof ApiV1TimerEntryIdStopRoute
+}
+
+const ApiV1TimerRouteChildren: ApiV1TimerRouteChildren = {
+  ApiV1TimerEntryIdStopRoute: ApiV1TimerEntryIdStopRoute,
+}
+
+const ApiV1TimerRouteWithChildren = ApiV1TimerRoute._addFileChildren(
+  ApiV1TimerRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OrgRoute: OrgRouteWithChildren,
@@ -336,6 +467,11 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   InvitationIdRoute: InvitationIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiV1MeRoute: ApiV1MeRoute,
+  ApiV1TimerRoute: ApiV1TimerRouteWithChildren,
+  ApiV1OrgsOrgIdEntriesRoute: ApiV1OrgsOrgIdEntriesRoute,
+  ApiV1OrgsOrgIdProjectsRoute: ApiV1OrgsOrgIdProjectsRoute,
+  ApiV1OrgsOrgIdTimerRoute: ApiV1OrgsOrgIdTimerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

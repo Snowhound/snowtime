@@ -152,7 +152,7 @@ export function createApiRoute(deps: ApiDeps) {
     let input: unknown
     if (options.input) {
       const raw = await rawInput(request)
-      if (!raw) return failure('INVALID', 'The body must be JSON.')
+      if (!raw) return failure('INVALID', 'Body is not valid JSON.')
       const parsed = v.safeParse(options.input, raw.value)
       if (!parsed.success) return failure('INVALID', parsed.issues[0].message)
       input = parsed.output

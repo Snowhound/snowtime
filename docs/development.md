@@ -39,6 +39,9 @@ any database that is not a local file. Every seeded user signs in with the passw
 
 To start over: `rm local.db && bun run db:migrate && bun run db:seed`.
 
+To call the HTTP API as a seeded user, sign in, create a key under Settings → API keys,
+and use the Bruno collection in `bruno/` ("Trying the API" in [api.md](api.md)).
+
 ## A mid-sized company
 
 `bun run db:seed --company` also adds Lumen Works (`src/db/seed-company.ts`), for checking

@@ -1,0 +1,22 @@
+meta {
+  name: Projects
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/orgs/{{orgId}}/projects
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  # GET /api/v1/orgs/:orgId/projects
+
+  The organization's active projects the user can see, sorted by name, each with `id`,
+  `name`, and `color`. Needs a `read` key.
+}

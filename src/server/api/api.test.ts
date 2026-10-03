@@ -104,7 +104,7 @@ describe('signing in', () => {
     expect(response.status).toBe(401)
     expect(await errorOf(response)).toEqual({
       code: 'UNAUTHENTICATED',
-      message: 'Send an API key in the Authorization header: Bearer <key>.',
+      message: 'API key missing.',
     })
   })
 
@@ -126,9 +126,7 @@ describe('signing in', () => {
     const route = createApiRoute(deps())({ access: 'read' }, whoami)
     const response = await route({ request: request('snow_unknown'), params: {} })
     expect(response.status).toBe(401)
-    expect((await errorOf(response)).message).toBe(
-      'This API key is not valid. It may have been revoked.',
-    )
+    expect((await errorOf(response)).message).toBe('Invalid API key.')
   })
 
   test('an expired key answers 401 and says so', async () => {
@@ -140,9 +138,7 @@ describe('signing in', () => {
     const route = createApiRoute(deps())({ access: 'read' }, whoami)
     const response = await route({ request: request(key), params: {} })
     expect(response.status).toBe(401)
-    expect((await errorOf(response)).message).toBe(
-      'This API key has expired. Create a new one in Settings.',
-    )
+    expect((await errorOf(response)).message).toBe('API key expired.')
   })
 
   test('a revoked key answers 401', async () => {
@@ -161,9 +157,7 @@ describe('signing in', () => {
     )
     const response = await route({ request: request(key), params: {} })
     expect(response.status).toBe(401)
-    expect((await errorOf(response)).message).toBe(
-      'This email domain cannot sign in to this instance.',
-    )
+    expect((await errorOf(response)).message).toBe('Email domain not allowed.')
   })
 
   test('the key does not sign in to server functions or /api/auth/*', async () => {
