@@ -15,6 +15,7 @@ import { AppError, type AppErrorCode } from './errors'
 import * as projects from './projects/projects.server'
 import { parseOrganizationInput } from './schemas'
 import { resolveScope, type Scope } from './scope.server'
+import * as settings from './settings/settings.server'
 import * as teams from './teams/teams.server'
 import * as timer from './timer/timer.server'
 
@@ -29,6 +30,8 @@ const handlers: {
   getRunningTimer: ({ db, userId }) => timer.getRunningTimer(db, userId),
   startTimer: ({ db, scope }, input) => timer.startTimer(db, scope, input),
   stopTimer: ({ db, userId }, input) => timer.stopTimer(db, userId, input),
+  createSettings: ({ db, userId }, input) => settings.createSettings(db, userId, input),
+  updateSettings: ({ db, userId }, input) => settings.updateSettings(db, userId, input),
   listEntries: ({ db, scope }, input) => entries.listEntries(db, scope, input),
   getFirstEntryStart: ({ db, scope }, input) => entries.getFirstEntryStart(db, scope, input),
   createEntry: ({ db, scope }, input) => entries.createEntry(db, scope, input),

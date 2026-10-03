@@ -22,6 +22,11 @@ import {
 } from '~/server/projects/projects.schemas'
 import { type Operation, Timestamp } from '~/server/schemas'
 import {
+  CreateSettingsInput,
+  Settings,
+  UpdateSettingsInput,
+} from '~/server/settings/settings.schemas'
+import {
   CreateTeamInput,
   Member,
   RenameTeamInput,
@@ -64,6 +69,22 @@ export const operations = {
     scope: 'user',
     input: StopTimerInput,
     output: Entry,
+  },
+  // Settings are per user, so they name no organization. A new user's are created by an
+  // explicit write, so the session read stays a read.
+  createSettings: {
+    method: 'PUT',
+    path: '/api/v1/settings',
+    scope: 'user',
+    input: CreateSettingsInput,
+    output: Settings,
+  },
+  updateSettings: {
+    method: 'PATCH',
+    path: '/api/v1/settings',
+    scope: 'user',
+    input: UpdateSettingsInput,
+    output: Settings,
   },
   listEntries: {
     method: 'GET',

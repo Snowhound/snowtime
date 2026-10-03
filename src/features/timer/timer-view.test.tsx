@@ -29,7 +29,6 @@ const fn = vi.hoisted(() => ({
 }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
-vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
 // The view renders without a router; its one link only needs to be there.
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; hash?: string; class?: string; children: JSX.Element }) => (
@@ -586,7 +585,7 @@ describe('TimerView', () => {
       '/$org/settings#preferences',
     )
     await userEvent.click(within(view).getByRole('button', { name: 'Table' }))
-    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { timerLayout: 'table' } })
+    expect(fn.updateSettings).toHaveBeenCalledWith({ timerLayout: 'table' })
 
     // The table, with its day subtotal row, before the server answers.
     const table = await screen.findByRole('table')
@@ -624,8 +623,8 @@ describe('TimerView', () => {
       stoppedAt: null,
       project: null,
     }
-    fn.updateSettings.mockImplementation(async (input: { data: UpdateSettingsInput }) => {
-      Object.assign(server.settings, input.data)
+    fn.updateSettings.mockImplementation(async (input: UpdateSettingsInput) => {
+      Object.assign(server.settings, input)
       return server.settings
     })
     renderView()
@@ -637,7 +636,7 @@ describe('TimerView', () => {
     expect(within(summary).getByText('No project')).toBeInTheDocument()
 
     await userEvent.click(within(await openView()).getByRole('switch', { name: 'Show summary' }))
-    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { showSummary: false } })
+    expect(fn.updateSettings).toHaveBeenCalledWith({ showSummary: false })
     expect(screen.queryByRole('complementary', { name: 'Summary' })).not.toBeInTheDocument()
   })
 
@@ -676,8 +675,8 @@ describe('TimerView', () => {
   })
 
   test('the View popover turns compact rows on', async () => {
-    fn.updateSettings.mockImplementation(async (input: { data: UpdateSettingsInput }) => {
-      Object.assign(server.settings, input.data)
+    fn.updateSettings.mockImplementation(async (input: UpdateSettingsInput) => {
+      Object.assign(server.settings, input)
       return server.settings
     })
     renderView()
@@ -686,7 +685,7 @@ describe('TimerView', () => {
     const toggle = within(await openView()).getByRole('switch', { name: 'Compact rows' })
     expect(toggle).not.toBeChecked()
     await userEvent.click(toggle)
-    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { compactRows: true } })
+    expect(fn.updateSettings).toHaveBeenCalledWith({ compactRows: true })
     expect(toggle).toBeChecked()
   })
 
@@ -891,8 +890,8 @@ describe('ticket keys', () => {
   })
 
   test('Wide page gives the table a Ticket column', async () => {
-    fn.updateSettings.mockImplementation(async (input: { data: UpdateSettingsInput }) => {
-      Object.assign(server.settings, input.data)
+    fn.updateSettings.mockImplementation(async (input: UpdateSettingsInput) => {
+      Object.assign(server.settings, input)
       return server.settings
     })
     server.settings.timerLayout = 'table'
@@ -901,7 +900,7 @@ describe('ticket keys', () => {
     expect(screen.queryByRole('columnheader', { name: 'Ticket' })).not.toBeInTheDocument()
 
     await userEvent.click(within(await openView()).getByRole('switch', { name: /Wide page/ }))
-    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { wideTimer: true } })
+    expect(fn.updateSettings).toHaveBeenCalledWith({ wideTimer: true })
     expect(await screen.findByRole('columnheader', { name: 'Ticket' })).toBeInTheDocument()
   })
 })

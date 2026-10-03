@@ -3,6 +3,7 @@ import { useMatches } from '@tanstack/solid-router'
 import { type ParentProps, createContext, onMount } from 'solid-js'
 import { Intro, IntroPage } from '~/components/scene/intro'
 import { SceneLayer } from '~/components/scene/scene-layer'
+import { call } from '~/lib/api/client'
 import { LAYERS_ID } from '~/lib/layers'
 import { sessionQuery } from '~/lib/queries/session'
 import { useQuery } from '~/lib/queries/use-query'
@@ -12,7 +13,6 @@ import { SeasonProvider, TaglineProvider } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { AppSession } from '~/server/auth/auth.functions'
-import { getSettings } from '~/server/settings/settings.functions'
 import { AppHeader } from './app-header'
 import { PasskeyPrompt } from './passkey-prompt'
 
@@ -45,12 +45,13 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
     } else releaseIntroPending()
   })
 
-  // The first getSettings call creates the user's settings from the browser's time zone
-  // and language (docs/architecture/timer.md, "User settings"); the server can't know the zone.
+  // A new user's settings start from the browser's time zone and language
+  // (docs/architecture/timer.md, "User settings"); the server can't know the zone.
   onMount(async () => {
     if (props.session.settings) return
-    await getSettings({
-      data: { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, locale: getLocale() },
+    await call('createSettings', {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      locale: getLocale(),
     })
     await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })
   })

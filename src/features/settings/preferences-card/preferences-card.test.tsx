@@ -2,11 +2,12 @@ import { render, screen } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
 import type { Settings } from '~/lib/queries/settings'
 import { PreferencesCard } from './preferences-card'
 
 const fn = vi.hoisted(() => ({ updateSettings: vi.fn() }))
-vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
+setTransport((name, input) => fn[name as keyof typeof fn](input))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
 
 const SETTINGS: Settings = {
@@ -46,7 +47,7 @@ function renderCard(settings: Partial<Settings> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  fn.updateSettings.mockImplementation(({ data }) => Promise.resolve({ ...SETTINGS, ...data }))
+  fn.updateSettings.mockImplementation((data) => Promise.resolve({ ...SETTINGS, ...data }))
 })
 
 describe('Country', () => {
@@ -62,8 +63,8 @@ describe('Country', () => {
     const select = screen.getByLabelText<HTMLSelectElement>('Country')
     expect(select.value).toBe('US')
     await userEvent.selectOptions(select, 'From time zone (Estonia)')
-    expect(fn.updateSettings).toHaveBeenLastCalledWith({ data: { country: null } })
+    expect(fn.updateSettings).toHaveBeenLastCalledWith({ country: null })
     await userEvent.selectOptions(select, 'Other')
-    expect(fn.updateSettings).toHaveBeenLastCalledWith({ data: { country: 'other' } })
+    expect(fn.updateSettings).toHaveBeenLastCalledWith({ country: 'other' })
   })
 })

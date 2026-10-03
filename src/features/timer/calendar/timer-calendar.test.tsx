@@ -27,7 +27,6 @@ const fn = vi.hoisted(() => ({
 }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
-vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; class?: string; children: JSX.Element }) => (
     <a href={props.to} class={props.class}>
@@ -150,7 +149,7 @@ beforeEach(() => {
   fn.deleteEntry.mockImplementation(async (data) => {
     server.entries = server.entries.filter((e) => e.id !== data.id)
   })
-  fn.updateSettings.mockImplementation(async ({ data }) => {
+  fn.updateSettings.mockImplementation(async (data) => {
     Object.assign(server.settings, data)
     return server.settings
   })
@@ -192,7 +191,7 @@ describe('TimerCalendar', () => {
     renderView()
     await screen.findByDisplayValue('Invoice export review')
     await userEvent.click(screen.getByRole('button', { name: 'Calendar' }))
-    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { timerView: 'calendar' } })
+    expect(fn.updateSettings).toHaveBeenCalledWith({ timerView: 'calendar' })
     expect(await screen.findByRole('region', { name: /Sep 28/ })).toBeInTheDocument()
     expect(await block()).toBeInTheDocument()
   })
@@ -202,7 +201,7 @@ describe('TimerCalendar', () => {
     await block()
     expect(screen.queryByRole('group', { name: /Saturday/ })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Weekend' }))
-    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { calendarWeekend: true } })
+    expect(fn.updateSettings).toHaveBeenCalledWith({ calendarWeekend: true })
     expect(await screen.findByRole('group', { name: /Saturday/ })).toBeInTheDocument()
   })
 
