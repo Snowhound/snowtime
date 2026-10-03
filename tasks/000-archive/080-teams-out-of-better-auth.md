@@ -1,6 +1,6 @@
 # 080: Teams out of Better Auth
 
-Status: todo
+Status: done
 
 Move team writes from Better Auth's organization plugin into the teams domain, so teams
 become ordinary app data, like projects. Task 081's native backend builds on
@@ -40,12 +40,31 @@ A small redesign of how teams work is open for discussion if it makes this task 
 
 ## Acceptance criteria
 
-- [ ] No team write goes through Better Auth, and the organization plugin runs without
+- [x] No team write goes through Better Auth, and the organization plugin runs without
       `teams`
-- [ ] Tests on seeded databases for each rule above, including an invitation into a team
+- [x] Tests on seeded databases for each rule above, including an invitation into a team
       and a removed member losing their team rows
-- [ ] The organization view works as before, checked in the browser in both languages
-- [ ] `docs/architecture/data.md` ("Tenancy") and the stack table in
+- [x] The organization view works as before, checked in the browser in both languages
+- [x] `docs/architecture/data.md` ("Tenancy") and the stack table in
       `docs/architecture/README.md` describe teams as app rules; the DBML follows any
       schema change
-- [ ] `bun run test`, lint, and `bun run perf` pass
+- [x] `bun run test`, lint, and `bun run perf` pass
+
+## Implementation and validation
+
+The teams domain owns writes, including member counts. Invitations use app server
+functions around Better Auth's invitation checks; the app stores the team and adds the
+recipient after acceptance. The invite function keeps the invitation rate per user.
+The removal hook handles both removal and leaving. The inherited team columns and unused
+`session.active_team_id` stay, so this change needs no migration.
+
+Seeded tests cover permissions, names, uniqueness, the team cap, organization boundaries,
+last-team deletion, invitations, and removal cleanup. Browser checks on port 3080 cover
+team controls in English and Estonian and accepting a team invitation, with desktop and
+narrow layouts. `bun run test`, lint, TypeScript, Knip, formatting, schema drift, and
+`bun run perf` pass.
+
+The organization bundle baseline increases from 233,021 to 235,671 gzipped bytes for the
+new team and invitation RPCs. Compared with unchanged HEAD built with the same dependencies
+(234,914 bytes), this change adds 562 bytes. Other route and server budgets, query plans,
+and report-read baselines stay unchanged.

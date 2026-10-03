@@ -1,6 +1,6 @@
 // Inputs of the signed-out screens, of creating and managing an organization, and of the
-// profile. Sign-in and organizations go through the Better Auth client, so these validate
-// the forms only; Better Auth checks again on its side.
+// profile. Better Auth checks client writes again; the app invitation function also
+// validates its input here.
 import * as v from 'valibot'
 import { SLUG_PATTERN, isReservedSlug } from '~/lib/app-paths'
 import { m } from '~/paraglide/messages.js'
@@ -132,3 +132,10 @@ export type CreateApiKeyInput = v.InferOutput<typeof CreateApiKeyInput>
 
 export const RevokeApiKeyInput = v.object({ id: Uuidv7 })
 export type RevokeApiKeyInput = v.InferOutput<typeof RevokeApiKeyInput>
+
+export const InviteMemberInput = v.object({
+  email: InvitationEmail,
+  role: v.picklist(['member', 'admin', 'owner']),
+  teamId: v.nullable(Uuidv7),
+})
+export type InviteMemberInput = v.InferOutput<typeof InviteMemberInput>

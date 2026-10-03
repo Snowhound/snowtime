@@ -279,7 +279,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Organization plugin with teams. Optional filter, not an access boundary. ON DELETE SET NULL."
+          "comments": "Unused legacy team field, retained to avoid a session-table rebuild. ON DELETE SET NULL."
         },
         {
           "id": "t1f8",
@@ -332,7 +332,7 @@
       "color": "#BAB0AC",
       "isView": false,
       "createdAt": 1700000000000,
-      "comments": "Better Auth session. Carries the active organization and team, which every server function reads to scope its queries.",
+      "comments": "Better Auth session. Carries the active organization; server functions scope queries to the organization named by the caller.",
       "order": 1,
       "parentAreaId": "a0"
     },
@@ -1677,7 +1677,7 @@
           "precision": null,
           "scale": null,
           "default": "0",
-          "comments": "Maintained by Better Auth when members join or leave."
+          "comments": "Maintained by the teams domain when members join or leave."
         },
         {
           "id": "t8f4",
@@ -1820,7 +1820,7 @@
           "precision": null,
           "scale": null,
           "default": "'member'",
-          "comments": "App-managed. CHECK: lead, member. A lead reads and reports on the time of the team. Better Auth 1.7 has no additional fields on team members, so it never reads or writes this column; new rows get the default."
+          "comments": "CHECK: lead, member. A lead reads and reports on the time of the team. The teams domain owns memberships; new rows default to member."
         },
         {
           "id": "t9f4",
@@ -1837,7 +1837,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Better Auth dedupe key, SHA-256 of team_id and user_id."
+          "comments": "Legacy Better Auth dedupe key. New app memberships leave it null."
         },
         {
           "id": "t9f5",
@@ -2830,7 +2830,7 @@
           "precision": null,
           "scale": null,
           "default": null,
-          "comments": "Deleting a team (Better Auth deletes rows) drops its assignments. Composite FK (team_id, organization_id) to team (id, organization_id). ON DELETE CASCADE."
+          "comments": "Deleting a team cascades to its project assignments. Composite FK (team_id, organization_id) to team (id, organization_id). ON DELETE CASCADE."
         },
         {
           "id": "t13f2",

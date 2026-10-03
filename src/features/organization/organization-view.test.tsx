@@ -17,33 +17,42 @@ const fn = vi.hoisted(() => ({
   listMembers: vi.fn(),
   listTeams: vi.fn(),
   setTeamRole: vi.fn(),
+  createTeam: vi.fn(),
+  renameTeam: vi.fn(),
+  deleteTeam: vi.fn(),
+  addTeamMember: vi.fn(),
+  removeTeamMember: vi.fn(),
+  listInvitations: vi.fn(),
+  inviteMember: vi.fn(),
   listProjects: vi.fn(),
   getAppSession: vi.fn(),
   updateIssueLinks: vi.fn(),
   navigate: vi.fn(),
 }))
 const org = vi.hoisted(() => ({
-  listInvitations: vi.fn(),
   updateMemberRole: vi.fn(),
   removeMember: vi.fn(),
-  inviteMember: vi.fn(),
   cancelInvitation: vi.fn(),
-  createTeam: vi.fn(),
-  updateTeam: vi.fn(),
-  removeTeam: vi.fn(),
-  addTeamMember: vi.fn(),
-  removeTeamMember: vi.fn(),
   update: vi.fn(),
 }))
 vi.mock('~/server/teams/teams.functions', () => ({
   listMembers: fn.listMembers,
   listTeams: fn.listTeams,
   setTeamRole: fn.setTeamRole,
+  createTeam: fn.createTeam,
+  renameTeam: fn.renameTeam,
+  deleteTeam: fn.deleteTeam,
+  addTeamMember: fn.addTeamMember,
+  removeTeamMember: fn.removeTeamMember,
 }))
 vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
 vi.mock('~/server/auth/auth.functions', () => ({
   getAppSession: fn.getAppSession,
   updateIssueLinks: fn.updateIssueLinks,
+}))
+vi.mock('~/server/auth/invitations.functions', () => ({
+  listInvitations: fn.listInvitations,
+  inviteMember: fn.inviteMember,
 }))
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
@@ -214,7 +223,7 @@ beforeEach(() => {
     )
     return data
   })
-  org.listInvitations.mockImplementation(() => ok(server.invitations))
+  fn.listInvitations.mockImplementation(async () => server.invitations)
   org.updateMemberRole.mockImplementation(({ memberId, role }) => {
     server.members = server.members.map((mb) =>
       mb.memberId === memberId ? { ...mb, orgRole: role } : mb,
@@ -225,7 +234,7 @@ beforeEach(() => {
     server.members = server.members.filter((mb) => mb.memberId !== memberIdOrEmail)
     return ok({ member: { id: memberIdOrEmail } })
   })
-  org.inviteMember.mockImplementation(({ email, role, teamId }) => {
+  fn.inviteMember.mockImplementation(({ data: { email, role, teamId } }) => {
     const invitation = {
       id: newId(),
       email,
@@ -242,9 +251,9 @@ beforeEach(() => {
     server.invitations = server.invitations.filter((i) => i.id !== invitationId)
     return ok({ id: invitationId, status: 'canceled' })
   })
-  org.removeTeam.mockImplementation(({ teamId }) => {
+  fn.deleteTeam.mockImplementation(async ({ data: { teamId } }) => {
     server.teams = server.teams.filter((t) => t.id !== teamId)
-    return ok({ message: 'Team removed successfully.' })
+    return { id: teamId }
   })
 })
 
@@ -396,17 +405,19 @@ describe('OrganizationView', () => {
         'kristjan@example.com already has an open invitation. Copy its link from the list.',
       ),
     ).toBeInTheDocument()
-    expect(org.inviteMember).not.toHaveBeenCalled()
+    expect(fn.inviteMember).not.toHaveBeenCalled()
 
     await userEvent.clear(email)
     await userEvent.type(email, 'helena@example.com')
     await userEvent.selectOptions(within(dialog).getByLabelText('Team'), 'Design')
     await userEvent.click(submit)
-    expect(org.inviteMember).toHaveBeenCalledWith({
-      email: 'helena@example.com',
-      role: 'member',
-      organizationId,
-      teamId: ids.design,
+    expect(fn.inviteMember).toHaveBeenCalledWith({
+      data: {
+        email: 'helena@example.com',
+        role: 'member',
+        organizationId,
+        teamId: ids.design,
+      },
     })
 
     const created = server.invitations.at(-1)!
@@ -440,10 +451,13 @@ describe('OrganizationView', () => {
     await userEvent.click(
       within(expired).getByRole('button', { name: 'New link for priit@example.com' }),
     )
-    expect(org.inviteMember).toHaveBeenCalledWith({
-      email: 'priit@example.com',
-      role: 'admin',
-      organizationId,
+    expect(fn.inviteMember).toHaveBeenCalledWith({
+      data: {
+        email: 'priit@example.com',
+        role: 'admin',
+        organizationId,
+        teamId: null,
+      },
     })
     await waitFor(() => expect(org.cancelInvitation).toHaveBeenCalledWith({ invitationId: old }))
     const renewed = server.invitations.find((i) => i.email === 'priit@example.com')!
@@ -453,9 +467,7 @@ describe('OrganizationView', () => {
   })
 
   test('invitations that fail to load say why instead of that there are none', async () => {
-    org.listInvitations.mockImplementation(() =>
-      Promise.resolve({ data: null, error: { status: 500 } }),
-    )
+    fn.listInvitations.mockRejectedValue(new Error('Failed'))
     renderPage('invitations')
     expect(await screen.findByText('Something went wrong. Try again.')).toBeInTheDocument()
     expect(screen.queryByText('No open invitations')).not.toBeInTheDocument()
@@ -513,7 +525,7 @@ describe('OrganizationView', () => {
       ),
     ).toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Delete team' }))
-    expect(org.removeTeam).toHaveBeenCalledWith({ teamId: ids.platform, organizationId })
+    expect(fn.deleteTeam).toHaveBeenCalledWith({ data: { teamId: ids.platform, organizationId } })
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: 'Platform' })).not.toBeInTheDocument(),
     )

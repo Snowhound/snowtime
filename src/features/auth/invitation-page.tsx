@@ -8,12 +8,13 @@ import { AuthHeading, AuthIcon, AuthLayout } from '~/components/auth-layout/auth
 import { ErrorAlert } from '~/components/error-alert'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
-import { authClient } from '~/lib/auth-client'
+import { authClient, unwrap } from '~/lib/auth-client'
 import { errorMessage } from '~/lib/errors'
 import { sessionQuery } from '~/lib/queries/session'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
+import { acceptInvitation } from '~/server/auth/invitations.functions'
 import { invitationQuery } from './queries'
 import { PasswordSignIn, ProviderButtons, providerErrorMessage } from './sign-in-methods'
 
@@ -63,8 +64,9 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
     const data = pending()!
     setError(null)
     setAccepting(true)
-    const { error } = await authClient.organization.acceptInvitation({ invitationId: data.id })
-    if (error) {
+    try {
+      await unwrap(acceptInvitation({ data: { id: data.id } }))
+    } catch (error) {
       setAccepting(false)
       setError(errorMessage(error))
       return
