@@ -98,6 +98,17 @@ describe('a server render fills the cache as the browser does later', () => {
     expect(fetched).toStrictEqual(hydrated)
   })
 
+  test("a report's entries, one of two shapes, with their dates", async () => {
+    const { hydrated, fetched } = await bothWays(U.admin, 'getReportEntries', {
+      organizationId: O.northwind,
+      report: { from: '2026-09-21', to: '2026-09-28' },
+      view: 'day',
+    })
+    expect(fetched).toStrictEqual(hydrated)
+    if (fetched.view !== 'day') throw new Error('Not By day')
+    expect(fetched.pieces[0].from).toBeInstanceOf(Date)
+  })
+
   test('a refusal arrives as the same AppError both ways', async () => {
     const host = hostFor(U.member)
     const input = { organizationId: O.northwind, userId: U.owner }

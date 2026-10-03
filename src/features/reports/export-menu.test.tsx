@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@solidjs/testing-library'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { getLocale, overwriteGetLocale } from '~/paraglide/runtime.js'
@@ -16,7 +17,7 @@ const fn = vi.hoisted(() => ({
   getReportExport: vi.fn(),
   toXlsx: vi.fn(),
 }))
-vi.mock('~/server/reports/reports.functions', () => ({ getReportExport: fn.getReportExport }))
+setTransport((name, input) => fn[name as keyof typeof fn](input))
 // The files themselves are export.test.ts's; here only the tables that go into them count.
 vi.mock('./export', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./export')>()),
@@ -168,7 +169,7 @@ describe('ExportMenu', () => {
     expect(await screen.findByRole('button', { name: 'Exporting… 2/3' })).toBeDisabled()
     answer({ entries: [] })
     expect(await screen.findByRole('button', { name: 'Export the report' })).toBeEnabled()
-    expect(fn.getReportExport.mock.calls.map(([{ data }]) => data)).toEqual([
+    expect(fn.getReportExport.mock.calls.map(([input]) => input)).toEqual([
       { organizationId: 'org', report: expect.anything(), from: '2026-07-15', to: '2026-08-01' },
       {
         organizationId: 'org',

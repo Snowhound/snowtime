@@ -24,6 +24,7 @@ import * as entries from './entries/entries.server'
 import { AppError, type AppErrorCode } from './errors'
 import { rateLimits } from './limits.server'
 import * as projects from './projects/projects.server'
+import * as reports from './reports/reports.server'
 import { parseOrganizationInput } from './schemas'
 import { resolveScope, type Scope } from './scope.server'
 import * as settings from './settings/settings.server'
@@ -106,6 +107,11 @@ const handlers: {
   assignProjectToTeam: ({ db, scope }, input) => projects.assignProjectToTeam(db, scope, input),
   unassignProjectFromTeam: ({ db, scope }, input) =>
     projects.unassignProjectFromTeam(db, scope, input),
+  getReport: ({ db, scope }, input) => reports.getReport(db, scope, input),
+  getReportBreakdown: ({ db, scope }, input) => reports.getReportBreakdown(db, scope, input),
+  getReportEntries: ({ db, scope }, input) => reports.getReportEntries(db, scope, input),
+  getReportEntryTotals: ({ db, scope }, input) => reports.getReportEntryTotals(db, scope, input),
+  getReportExport: ({ db, scope }, input) => reports.getReportExport(db, scope, input),
   listInvitations: ({ db, scope }) => invitations.listInvitations(db, scope),
   inviteMember: async ({ db, scope, headers }, input) => {
     const { allowed } = await rateLimitStore.consume(

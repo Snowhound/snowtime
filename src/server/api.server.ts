@@ -32,13 +32,17 @@ async function inputOf(request: Request, params: Record<string, string>) {
 
 const appOrigin = new URL(env.BETTER_AUTH_URL).origin
 
+// GET and QUERY read; every other method writes.
+function writes(method: string) {
+  return method !== 'GET' && method !== 'QUERY'
+}
+
 async function respond(request: Request): Promise<WireResponse> {
   const match = matchOperation(request.method, new URL(request.url).pathname)
   if (!match) return failure(404, { message: 'No such call.' })
   // Writes come only from the app's own pages: the public URL, not the request's own,
   // since a proxy in front may change the host.
-  const write = request.method !== 'GET'
-  if (write && request.headers.get('origin') !== appOrigin) {
+  if (writes(request.method) && request.headers.get('origin') !== appOrigin) {
     return failure(403, { message: 'Cross-origin request refused.' })
   }
   let input: unknown
@@ -56,7 +60,7 @@ async function answer(headers: Headers, name: OperationName, input: unknown) {
     if (operations[name].scope === 'public') {
       return await runOperation(db, name, { userId: null, headers }, input)
     }
-    const userId = await signedInUser(headers, operations[name].method !== 'GET')
+    const userId = await signedInUser(headers, writes(operations[name].method))
     return await withActor(userId, () => runOperation(db, name, { userId, headers }, input))
   } catch (error) {
     const mapped = await unavailableOr(error)

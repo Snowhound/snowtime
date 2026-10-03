@@ -25,7 +25,6 @@ const fn = vi.hoisted(() => ({
   getAppSession: vi.fn(),
 }))
 setTransport((name, input) => fn[name as keyof typeof fn](input))
-vi.mock('~/server/reports/reports.functions', () => ({ getReport: fn.getReport }))
 // The view renders without a router; its one link only needs to be there.
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; class?: string; children: JSX.Element }) => (
@@ -132,9 +131,7 @@ describe('ProjectsView', () => {
   test('members see their own time and no actions', async () => {
     renderView()
     expect(await screen.findByText('Snowtime')).toBeInTheDocument()
-    expect(fn.getReport).toHaveBeenCalledWith({
-      data: expect.objectContaining({ userId }),
-    })
+    expect(fn.getReport).toHaveBeenCalledWith(expect.objectContaining({ userId }))
     expect(screen.getByText('You, this month')).toBeInTheDocument()
     expect(screen.getByText('12:30')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New project' })).not.toBeInTheDocument()
@@ -146,7 +143,7 @@ describe('ProjectsView', () => {
     server.role = 'admin'
     renderView()
     expect(await screen.findByText('Snowtime')).toBeInTheDocument()
-    const report = fn.getReport.mock.calls[0][0].data
+    const report = fn.getReport.mock.calls[0][0]
     expect(report).not.toHaveProperty('userId')
     expect(screen.getByText('This month')).toBeInTheDocument()
     expect(screen.getByText('Snowhound · 1 active, 1 archived')).toBeInTheDocument()

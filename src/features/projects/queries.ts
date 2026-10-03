@@ -6,7 +6,6 @@ import { localDate, monthDates } from '~/lib/calendar'
 import type { Project } from '~/lib/queries/projects'
 import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
 import type { ProjectIdInput } from '~/server/projects/projects.schemas'
-import { getReport } from '~/server/reports/reports.functions'
 
 // Time per project this month in the user's zone: the organization's for admins and
 // owners, the user's own otherwise. Without a userId a team lead would get their teams'
@@ -15,7 +14,7 @@ export function monthReportQuery(organizationId: string, zone: string, userId: s
   const { from, to } = monthDates(localDate(Date.now(), zone))
   return queryOptions({
     queryKey: [...reportsKey, organizationId, { from, to, userId }],
-    queryFn: () => getReport({ data: { organizationId, from, to, ...(userId ? { userId } : {}) } }),
+    queryFn: () => call('getReport', { organizationId, from, to, ...(userId ? { userId } : {}) }),
   })
 }
 

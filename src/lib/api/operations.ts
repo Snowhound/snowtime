@@ -32,6 +32,17 @@ import {
   ProjectTeamInput,
   UpdateProjectInput,
 } from '~/server/projects/projects.schemas'
+import {
+  Report,
+  ReportBreakdown,
+  ReportEntries,
+  ReportEntriesInput,
+  ReportEntryTotals,
+  ReportEntryTotalsInput,
+  ReportExport,
+  ReportExportInput,
+  ReportInput,
+} from '~/server/reports/reports.schemas'
 import { type Operation, Timestamp } from '~/server/schemas'
 import {
   CreateSettingsInput,
@@ -53,6 +64,7 @@ import { RunningTimer, StartTimerInput, StopTimerInput } from '~/server/timer/ti
 
 const organizationPath = '/api/v1/organizations/:organizationId'
 const entriesPath = `${organizationPath}/entries`
+const reportPath = `${organizationPath}/report`
 const projectPath = `${organizationPath}/projects/:id`
 const projectTeamPath = `${organizationPath}/projects/:projectId/teams/:teamId`
 const teamPath = `${organizationPath}/teams/:teamId`
@@ -235,6 +247,45 @@ export const operations = {
     scope: 'organization',
     input: ProjectTeamInput,
     output: v.object({ projectId: v.string(), teamId: v.string() }),
+  },
+  getReport: {
+    method: 'QUERY',
+    path: reportPath,
+    scope: 'organization',
+    input: ReportInput,
+    output: Report,
+  },
+  // Breakdown's second level: time per project and member and per ticket and member.
+  getReportBreakdown: {
+    method: 'QUERY',
+    path: `${reportPath}/breakdown`,
+    scope: 'organization',
+    input: ReportInput,
+    output: ReportBreakdown,
+  },
+  // The Entries card's list: By description's merged rows, or one page of By day.
+  getReportEntries: {
+    method: 'QUERY',
+    path: `${reportPath}/entries`,
+    scope: 'organization',
+    input: ReportEntriesInput,
+    output: ReportEntries,
+  },
+  // The Entries card's count and total for one part of the timesheet.
+  getReportEntryTotals: {
+    method: 'QUERY',
+    path: `${reportPath}/entry-totals`,
+    scope: 'organization',
+    input: ReportEntryTotalsInput,
+    output: ReportEntryTotals,
+  },
+  // One month or less of the export's entries; the first piece brings the report as well.
+  getReportExport: {
+    method: 'QUERY',
+    path: `${reportPath}/export`,
+    scope: 'organization',
+    input: ReportExportInput,
+    output: ReportExport,
   },
   listInvitations: {
     method: 'GET',

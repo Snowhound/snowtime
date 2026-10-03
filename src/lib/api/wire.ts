@@ -23,6 +23,10 @@ type AnySchema = v.GenericSchema & {
   entries?: Record<string, AnySchema>
   item?: AnySchema
   wrapped?: AnySchema
+  // A variant's key, and its options, each of which holds the key's literal.
+  key?: string
+  options?: AnySchema[]
+  literal?: unknown
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -55,6 +59,13 @@ function revive(schema: AnySchema, value: unknown): unknown {
         if (key in revived) revived[key] = revive(entry, revived[key])
       }
       return revived
+    }
+    case 'variant': {
+      if (!isRecord(value)) return value
+      const option = schema.options!.find(
+        (o) => o.entries![schema.key!].literal === value[schema.key!],
+      )
+      return option ? revive(option, value) : value
     }
     default:
       return value
