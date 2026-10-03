@@ -1,6 +1,6 @@
 # 081: Native backend
 
-Status: todo (waits on task 078's baseline; builds on task 080; subtask 01 in progress)
+Status: in-progress (subtasks 01 and 03 under way; builds on task 080)
 
 A second backend for self-hosting that serves many companies on a fraction of today's
 memory and CPU, without a garbage collector in its own code. The TypeScript backend stays
@@ -134,6 +134,14 @@ rejected, as in task 069.
    libraries for passkeys and OAuth, and how reliably an AI session writes and ports it.
 
 ## Proof of concept
+
+Kait, 2026-10-04: the proof of concept starts without task 078's final baseline. It
+measures the TypeScript and Rust servers side by side with task 078's harness
+(`perf:stress`), each limited to one CPU. The Rust code lives in a `native/` Cargo
+workspace in this repository until it needs its own release cadence. For the slice, the
+Rust server owns email sign-in: it verifies Better Auth's scrypt hash, writes the session
+row, and sets the same signed cookie, because two processes must not write one SQLite file
+(task 043). The better-auth-rs spike (question 5) stays separate.
 
 The hot path in the native backend: session check, running timer, start and stop, entry
 list, and the week report, on the same database file, measured with task 078's harness.
