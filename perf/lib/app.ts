@@ -11,7 +11,7 @@ import type { Browser, BrowserContext } from 'playwright-core'
 import { shiftBrowserClock } from './clock'
 import { CACHE, ROOT, SEED_NOW, USERS } from './database'
 
-const BUILD = join(CACHE, 'build')
+export const BUILD = join(CACHE, 'build')
 const LOCK = join(CACHE, 'build.lock')
 
 // One build at a time: harnesses run in parallel share .output and .nitro.

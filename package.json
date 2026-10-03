@@ -33,6 +33,7 @@
     "knip": "knip",
     "perf": "bun perf/check.ts",
     "perf:load": "bun perf/load.ts",
+    "perf:api": "bun perf/api.ts",
     "perf:pages": "bun perf/pages.ts",
     "perf:weather": "bun perf/weather.ts",
     "test": "bun run i18n:compile && bun run icons:check && bun test && vitest run",
