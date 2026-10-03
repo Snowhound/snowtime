@@ -29,8 +29,8 @@ gitignored `.env.local`. Never put tokens in tracked env files.
 
 Every Vercel preview shares one staging database (`deployment/vercel.md`, step 8). The
 **Migrate staging** workflow runs `bun run db:migrate` against it on every push to a branch
-other than `main` that changes `drizzle/`, with secrets from the GitHub environment
-`staging`. Every other preview then runs against the migrated database too.
+other than `main` that changes `drizzle/`, with the repository secrets `STAGING_TURSO_DATABASE_URL` and
+`STAGING_TURSO_AUTH_TOKEN`. Every other preview then runs against the migrated database too.
 
 Staging holds only seeded data, so a broken staging database is reset rather than repaired.
 Once one branch's migration is on staging, `db:verify` fails the workflow for a branch that

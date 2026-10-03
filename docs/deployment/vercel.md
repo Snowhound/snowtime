@@ -190,7 +190,8 @@ seeded staging database and sign in with the seeded users (`../architecture/auth
 
 3. Under **Settings > Deployment Protection**, keep Vercel Authentication on for
    previews.
-4. In GitHub, create the environment `staging` with the secrets `TURSO_DATABASE_URL` and
-   `TURSO_AUTH_TOKEN` of the staging database, for the **Migrate staging** workflow
-   (`../migrations.md`, "Staging").
+4. In GitHub, under **Settings > Secrets and variables > Actions**, add the repository
+   secrets `STAGING_TURSO_DATABASE_URL` and `STAGING_TURSO_AUTH_TOKEN` for the
+   **Migrate staging** workflow (`../migrations.md`, "Staging"). The prefix keeps them
+   apart from production's `TURSO_` secrets, which may also be repository secrets.
 5. Push a branch, open its preview, and sign in as `owner@example.com`.

@@ -20,11 +20,11 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Secrets live in the GitHub environment "staging".
-    environment: staging
+    # Repository secrets prefixed STAGING_. Never the unprefixed TURSO_ secrets, which may be
+    # production's.
     env:
-      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      TURSO_DATABASE_URL: ${{ secrets.STAGING_TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.STAGING_TURSO_AUTH_TOKEN }}
     steps:
       - uses: actions/checkout@v7
 
@@ -42,7 +42,7 @@ jobs:
       - name: Migrate staging
         run: |
           if [ -z "$TURSO_DATABASE_URL" ] || [ -z "$TURSO_AUTH_TOKEN" ]; then
-            echo "::notice title=Staging migration skipped::Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in the staging environment."
+            echo "::notice title=Staging migration skipped::Set the repository secrets STAGING_TURSO_DATABASE_URL and STAGING_TURSO_AUTH_TOKEN."
             exit 0
           fi
           bun run db:migrate
