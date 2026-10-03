@@ -37,6 +37,12 @@ const errorText: Record<AppErrorKey, () => string> = {
   database_unavailable: m.error_database_unavailable,
   api_key_not_found: m.error_api_key_not_found,
   api_key_limit: m.error_api_key_limit,
+  api_key_missing: m.error_api_key_missing,
+  api_key_invalid: m.error_api_key_invalid,
+  api_key_expired: m.error_api_key_expired,
+  api_key_read_only: m.error_api_key_read_only,
+  api_rate_limited: m.error_api_rate_limited,
+  login_domain_not_allowed: m.error_login_domain_not_allowed,
 }
 
 // Refusals from Better Auth's client calls, by the code its error carries (unwrap in

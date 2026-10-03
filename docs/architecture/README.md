@@ -37,8 +37,8 @@ of the code keeps; the rest is by area:
 
 ## Application rules
 
-- All DB access goes through server functions; the Turso token never reaches
-  the browser.
+- All DB access goes through server functions and the `/api/v1` routes; the Turso token
+  never reaches the browser.
 - Authorization checks live in server functions (SQLite has no RLS).
 - Writes are named mutations (`startTimer`, `stopTimer`, `updateEntry`, …),
   not generic CRUD.
@@ -113,6 +113,16 @@ of the code keeps; the rest is by area:
     A serialization adapter in `src/start.ts` keeps the code across the wire; Start
     would otherwise send only the message. `src/start.ts` also registers Start's CSRF
     middleware, which Start applies by default only when no start instance exists.
+- The `/api/v1` routes in `src/routes/api/v1/` serve clients outside the browser
+  ([docs/api.md](../api.md)). Like a server function, a route is a thin wrapper around the
+  rules in `*.server.ts`: `createApiRoute` (`src/server/api/api.server.ts`) wraps its
+  handler, and the route names the key scope, whether it acts in the organization in its
+  path, and its input schema. The wrapper signs the request in with an API key, counts
+  writes against the rate `sessionMiddleware` counts, resolves the scope, runs the handler
+  inside `withActor()`, and answers errors as JSON. The API doesn't reuse Start's RPC,
+  whose function IDs come from the build, whose wire format is Start's serialization, and
+  which signs in with the session cookie. An outside client needs stable paths, plain JSON,
+  and a key.
 - The client imports a domain's `*.functions.ts` and `*.schemas.ts`, `schemas.ts`, and
   `errors.ts`: that is the backend's contract. It never imports `*.server.ts`, even
   for a type. Response types are derived from the server function

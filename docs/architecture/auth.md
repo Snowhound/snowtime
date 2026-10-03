@@ -139,9 +139,18 @@ options are `apiKeyOptions` in `src/server/auth/api-keys.server.ts`.
 - `api_key.reference_id` references `user(id)` with `ON DELETE CASCADE`, which the plugin
   doesn't declare, so a deleted user's keys go with the user row.
 - The plugin's sessions from API keys stay off (`enableSessionForAPIKeys: false`), so a key
-  can't call server functions or `/api/auth/*`. Planned (task 082, subtask 03): the
-  `/api/v1` routes read `Authorization: Bearer <key>`, verify the key themselves, check its
-  user against `ALLOWED_LOGIN_DOMAINS`, and ignore the session cookie.
+  can't call server functions or `/api/auth/*`. The `/api/v1` routes read
+  `Authorization: Bearer <key>` and verify the key themselves (`createApiRoute` in
+  `src/server/api/api.server.ts`), and ignore the session cookie.
+- `createApiRoute` verifies a key without permissions and checks its scope itself, because
+  the plugin refuses a key without the asked-for permissions as an unknown key. A read-only
+  key on a write route then answers 403, and an unknown one 401.
+- `createApiRoute` checks the key's user against `ALLOWED_LOGIN_DOMAINS` on every request,
+  as the session hooks check a session, so a key stops working when its user's domain
+  leaves the list.
+- The plugin reports a failed database read as an invalid key. Before answering 401,
+  `createApiRoute` checks that the database answers, and answers 503 if it doesn't, so a
+  client isn't told to replace a working key during an outage.
 - The plugin limits each key to 60 requests whose gaps are all under 5 seconds
   (`rateLimits.apiKeyRequests`). A longer gap restarts the count, so the limit caps bursts,
   not a steady rate: a client polling every 5 seconds or slower never reaches it.

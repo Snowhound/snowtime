@@ -20,6 +20,9 @@ A user has at most one running timer across all their organizations
 
 ## Acceptance criteria
 
+- [ ] `src/server/api/v1.server.ts` creates the app's `apiRoute` with `createApiRoute`: `db`,
+      `auth.api.verifyApiKey` with the key as its body, `rateLimitStore`, and
+      `env.ALLOWED_LOGIN_DOMAINS`
 - [ ] `GET /api/v1/me` returns the user's id, name, and email, and their organizations
       with id, name, slug, and role. It reuses `appSession`'s reads, not `getAppSession`,
       which sets cookies and the active organization

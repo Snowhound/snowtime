@@ -45,16 +45,19 @@ records how the settled ones are built.
    `1y`, and `none`, and the plugin's own default stays unset.
 3. **Settled: the plugin's per-key limit stays,** at 60 requests whose gaps are all under 5
    seconds. Its default of 10 requests a day would stop a menu bar item in minutes.
-4. **Open, before subtask 03: the writes per request.** In 1.7.6 the plugin verifies a key
-   with a read and two writes (`last_request`, or the rate-limit count, and `updated_at`),
-   all before the response, so each `/api/v1` request waits on three sequential Turso round
-   trips. `deferUpdates: true` is set but defers only the deletion of expired keys. The
+4. **Open: the writes per request.** In 1.7.6 the plugin verifies a key with a read and
+   two writes (`last_request`, or the rate-limit count, and `updated_at`), all before the
+   response, so each `/api/v1` request waits on three sequential Turso round trips. `deferUpdates: true` is set but defers only the deletion of expired keys. The
    options:
    1. Accept the cost.
    2. Verify keys with our own lookup of the plugin's hash, one read, and record last use at
       most once a minute after the response. This departs from Kait's "verify with the
       plugin", and the per-key limit would need its own count.
    3. Give the plugin secondary storage in Upstash, which Kait named as a later step.
+
+   Subtask 03 verifies with the plugin for now, so option 1 holds until this settles. Any
+   other option changes only the `verifyKey` that `createApiRoute` takes.
+
 5. **Settled: a missing scope answers 403.** `verifyApiKey` refuses a key without the
    asked-for permissions as 401 `KEY_NOT_FOUND`, like an unknown key. So the helper
    verifies without permissions, checks the key's `permissions` itself, and answers 403
