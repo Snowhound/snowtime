@@ -11,6 +11,8 @@ import type { Database } from '~/db'
 import { currentActor } from '~/db/actor'
 import * as schema from '~/db/schema'
 import { SEED_PASSWORD, seedIds } from '~/db/seed'
+import { getLocale } from '~/paraglide/runtime.js'
+import { paraglideMiddleware } from '~/paraglide/server.js'
 import {
   apiKeyDisabledPaths,
   apiKeyOptions,
@@ -20,7 +22,9 @@ import {
 import type { ApiKeyAccess } from '../auth/auth.schemas'
 import { AppError } from '../errors'
 import { rateLimits } from '../limits.server'
+import { localeRequest } from '../locale.server'
 import { memoryStore, type RateLimitStore } from '../rate-limit.server'
+import { Uuidv7 } from '../schemas'
 import { createSeededDatabase } from '../testing'
 import { type ApiDeps, createApiRoute } from './api.server'
 
@@ -283,6 +287,27 @@ describe('input and errors', () => {
       params: {},
     })
     expect(notJson.status).toBe(422)
+  })
+
+  test('messages are English whatever the language the request asks for', async () => {
+    const { key } = await newKey(U.member, 'write')
+    const route = createApiRoute(deps())(
+      { access: 'write', input: v.object({ id: Uuidv7 }) },
+      async () => null,
+    )
+    const estonian = { cookie: 'PARAGLIDE_LOCALE=et', 'accept-language': 'et' }
+    // The same request elsewhere in the app renders in Estonian.
+    const page = new Request(`${BASE}/sign-in`, { headers: estonian })
+    const locale = await paraglideMiddleware(localeRequest(page), async () =>
+      Response.json(getLocale()),
+    )
+    expect(await locale.json()).toBe('et')
+
+    const api = request(key, { method: 'POST', headers: estonian, body: '{"id":"nope"}' })
+    const response = await paraglideMiddleware(localeRequest(api), () =>
+      route({ request: api, params: {} }),
+    )
+    expect(await errorOf(response)).toEqual({ code: 'INVALID', message: 'Invalid id.' })
   })
 
   test("an AppError answers its code's status", async () => {

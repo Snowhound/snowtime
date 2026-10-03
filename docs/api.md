@@ -47,8 +47,7 @@ A failed request answers a JSON body with a code and an English message:
 ```
 
 Clients branch on the HTTP status and `code`; the message is for people and may change.
-Messages from input validation follow `Accept-Language`, as in the web app (English or
-Estonian); the others are always English.
+Messages are always in English, whatever the request's `Accept-Language` or cookies.
 
 | Status | `code`            | Meaning                                                         |
 | ------ | ----------------- | --------------------------------------------------------------- |
