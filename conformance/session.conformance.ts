@@ -1,4 +1,4 @@
-// The session and the signed-out reads on the contract (task 084), over HTTP, as
+// The session, the signed-out reads, and the availability check on the contract (task 084), over HTTP, as
 // timer.conformance.ts runs. The server runs with password sign-in on and no demo mode.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import type { Transport } from '~/lib/api/client'
@@ -59,6 +59,10 @@ describe('the session', () => {
 })
 
 describe('signed-out reads', () => {
+  test('the app says it can serve pages', async () => {
+    expect(await send('checkAvailability', undefined, {})).toEqual({ status: 200, body: true })
+  })
+
   test('the sign-in methods, the deployment, and the seeded users', async () => {
     expect((await send('getSignInMethods', undefined, {})).body).toEqual(
       expect.arrayContaining(['password', 'passkey']),

@@ -81,6 +81,15 @@ export const operations = {
     input: undefined,
     output: Deployment,
   },
+  // Whether the app can serve pages, which the maintenance page polls during an outage. It
+  // reads no session, since the database may be down.
+  checkAvailability: {
+    method: 'GET',
+    path: '/api/v1/availability',
+    scope: 'public',
+    input: undefined,
+    output: v.boolean(),
+  },
   // Empty wherever password sign-in is off.
   getDevUsers: {
     method: 'GET',

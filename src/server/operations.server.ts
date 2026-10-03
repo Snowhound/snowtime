@@ -19,6 +19,7 @@ import * as invitations from './auth/invitations.server'
 import * as organizations from './auth/organization.server'
 import { appSession } from './auth/session.server'
 import { passwordEnabled, signInMethods } from './auth/sign-in.server'
+import { databaseAvailable } from './availability/availability.server'
 import * as entries from './entries/entries.server'
 import { AppError, type AppErrorCode } from './errors'
 import { rateLimits } from './limits.server'
@@ -70,6 +71,7 @@ const handlers: {
     demoMode: env.DEMO_MODE,
     allowedDomains: env.ALLOWED_LOGIN_DOMAINS ?? [],
   }),
+  checkAvailability: ({ db }) => databaseAvailable(db),
   // The company's users are listed once `bun run db:seed --company` has added them.
   getDevUsers: async ({ db }) => {
     if (!passwordEnabled(env)) return []
