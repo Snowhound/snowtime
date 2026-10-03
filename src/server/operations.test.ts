@@ -17,7 +17,11 @@ import { createSeededDatabase } from './testing'
 // Better Auth and the environment need the server's settings, which tests don't have; these
 // calls don't use them.
 await mock.module('~/env', () => ({ env: {}, appUrl: 'http://localhost:3000', trustedOrigins: [] }))
-await mock.module('./auth/better-auth.server', () => ({ auth: {}, rateLimitStore: {} }))
+await mock.module('./auth/better-auth.server', () => ({
+  auth: {},
+  rateLimitStore: {},
+  sessionOf: async () => null,
+}))
 const { runOperation } = await import('./operations.server')
 
 const NOW = new Date('2026-09-30T07:30:00Z')

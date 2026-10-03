@@ -12,6 +12,7 @@ import { AppError } from './errors'
 import { signedInUser, unavailableOr } from './guards.server'
 import { failure, refusal, runOperation } from './operations.server'
 import type { Operation } from './schemas'
+import { serverTiming, withTiming } from './timing.server'
 
 function matchOperation(method: string, pathname: string) {
   for (const [name, operation] of Object.entries(operations)) {
@@ -78,7 +79,13 @@ export const renderTransport = hostTransport({
   call: (name, input) => answer(getRequest().headers, name as OperationName, input),
 })
 
-export async function handleApiRequest(request: Request): Promise<Response> {
-  const { status, body } = await respond(request)
-  return Response.json(body, { status, headers: { 'cache-control': 'no-store' } })
+export function handleApiRequest(request: Request): Promise<Response> {
+  return withTiming(async () => {
+    const { status, body } = await respond(request)
+    const headers = {
+      'cache-control': 'no-store',
+      'server-timing': serverTiming(['session', 'db']),
+    }
+    return Response.json(body, { status, headers })
+  })
 }
