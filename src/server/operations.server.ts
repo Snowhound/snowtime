@@ -20,7 +20,7 @@ type Context<K extends OperationName> = (typeof operations)[K]['scope'] extends 
   ? { db: Database; scope: Scope }
   : { db: Database; userId: string }
 
-// Each call's rule, as its server function calls it.
+// Each call's rule.
 const handlers: {
   [K in OperationName]: (context: Context<K>, input: ParsedInputOf<K>) => Promise<OutputOf<K>>
 } = {

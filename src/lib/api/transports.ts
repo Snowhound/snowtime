@@ -1,5 +1,5 @@
-// The native backend's transports. Both send the contract's JSON (wire.ts) and decode the
-// answer with the output schemas, so they fill the cache as server functions do.
+// The client module's transports. Both send the contract's JSON (wire.ts) and decode the
+// answer with the output schemas, so a server render and the browser fill the cache alike.
 import type { Transport } from './client'
 import { operations } from './operations'
 import { requestOf, resultOf, type WireResponse } from './wire'
@@ -20,9 +20,10 @@ export function httpTransport(origin = '', headers: Record<string, string> = {})
   }
 }
 
-// What the native backend's render isolate gets from its host (task 081.01). The host runs
-// the handler the HTTP API runs, in process and for the page's own request, and answers
-// with the status and body it would send. The input arrives as JSON, as over HTTP.
+// What a server render calls the API through: Start's server render (renderTransport in
+// src/server/api.server.ts), or the native backend's render isolate (task 081.01). The host
+// runs the handler the HTTP API runs, in process and for the page's own request, and
+// answers with the status and body it would send. The input arrives as JSON, as over HTTP.
 export interface Host {
   call(name: string, input: unknown): Promise<WireResponse>
 }

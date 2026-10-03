@@ -1,11 +1,7 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import { AppError } from '~/server/errors'
-
-// Start's server function stubs need its client runtime, which Bun's tests don't load.
-const serverFunctions = mock(() => Promise.reject(new Error('Not over HTTP')))
-await mock.module('./server-functions', () => ({ serverFunctions }))
-const { call, setTransport } = await import('./client')
-const { httpTransport } = await import('./transports')
+import { call, setTransport } from './client'
+import { httpTransport } from './transports'
 
 const organizationId = '01900000-0000-7000-8000-000000000201'
 const userId = '01900000-0000-7000-8000-000000000104'
@@ -23,7 +19,6 @@ const entry = {
 const realFetch = globalThis.fetch
 afterEach(() => {
   globalThis.fetch = realFetch
-  setTransport(serverFunctions)
 })
 
 // Answers every request with `body` and records what was asked.

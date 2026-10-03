@@ -104,8 +104,7 @@ export function requestOf(
   }
 }
 
-// The call's result, or the error it failed with, thrown as the server function would
-// throw it.
+// The call's result, or the error it failed with, thrown as the rule threw it.
 export function resultOf<O extends Operation>(
   operation: O,
   response: WireResponse,

@@ -1,19 +1,19 @@
-// Hydration equality (task 084): a page the TypeScript app renders dehydrates what a server
-// function returned, through Start's serializer, seroval. The native backend's page gets the
-// same reads from its host, as the JSON API sends them, decoded by the output schemas. Both
-// must fill the query cache with equal values, or the first refetch after hydration changes
-// what the page shows.
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+// Hydration equality (task 084): a server render calls the API in process and dehydrates
+// what it got through Start's serializer, seroval; after hydration the browser calls the
+// same API over HTTP. Both must fill the query cache with equal values, or the first
+// refetch after hydration changes what the page shows.
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
 import { deserialize, serialize } from 'seroval'
 import type { Database } from '~/db'
 import { withActor } from '~/db/actor'
 import { seedIds } from '~/db/seed'
-import { hostTransport } from '~/lib/api/transports'
-import * as entries from './entries/entries.server'
+import type { Transport } from '~/lib/api/client'
+import { type InputOf, type OperationName, operations } from '~/lib/api/operations'
+import { type Host, hostTransport, httpTransport } from '~/lib/api/transports'
+import { matchPath } from '~/lib/api/wire'
 import { AppError } from './errors'
 import { runOperation } from './operations.server'
-import { createSeededDatabase, scopeOf } from './testing'
-import * as timer from './timer/timer.server'
+import { createSeededDatabase } from './testing'
 
 const NOW = new Date('2026-09-30T07:30:00Z')
 const { users: U, orgs: O } = seedIds
@@ -26,62 +26,77 @@ beforeAll(async () => {
 })
 afterAll(() => cleanup())
 
-function dehydrated<T>(value: T): T {
-  return deserialize(serialize(value))
+const realFetch = globalThis.fetch
+afterEach(() => {
+  globalThis.fetch = realFetch
+})
+
+// The API's handlers for one user, as renderTransport runs them for the page's request.
+function hostFor(userId: string): Host {
+  return {
+    call: (name, input) => withActor(userId, () => runOperation(db, name as never, userId, input)),
+  }
 }
 
-// The render isolate's transport, with a host that runs the TypeScript handler and sends
-// its body through JSON, as the native backend's host would.
-function hostFor(userId: string) {
-  return hostTransport({
-    call: async (name, input) => {
-      const { status, body } = await withActor(userId, () =>
-        runOperation(db, name as never, userId, input),
-      )
-      return { status, body: JSON.parse(JSON.stringify(body)) }
-    },
-  })
+// The browser's transport, with each request answered by the same handlers as JSON.
+function overHttp(name: OperationName, host: Host): Transport {
+  globalThis.fetch = (async (url: string, init: RequestInit) => {
+    const { pathname, searchParams } = new URL(url)
+    const input = {
+      ...Object.fromEntries(searchParams),
+      ...(init.body ? JSON.parse(init.body as string) : {}),
+      ...matchPath(operations[name].path, pathname),
+    }
+    const { status, body } = await host.call(name, input)
+    return Response.json(body, { status })
+  }) as typeof fetch
+  return httpTransport('https://snowtime.example')
 }
 
-describe('the host transport fills the cache as a server render does', () => {
+// What the page dehydrates from the server render, and what the browser decodes later.
+async function bothWays<K extends OperationName>(userId: string, name: K, input: InputOf<K>) {
+  const host = hostFor(userId)
+  const rendered = await hostTransport(host)(name, input)
+  const fetched = await overHttp(name, host)(name, input)
+  return { hydrated: deserialize(serialize(rendered)) as typeof rendered, fetched }
+}
+
+describe('a server render fills the cache as the browser does later', () => {
   test('the running timer, with its project', async () => {
-    const value = await hostFor(U.member)('getRunningTimer', undefined)
-    expect(value).not.toBeNull()
-    expect(value!.startedAt).toBeInstanceOf(Date)
-    expect(value).toStrictEqual(dehydrated(await timer.getRunningTimer(db, U.member)))
+    const { hydrated, fetched } = await bothWays(U.member, 'getRunningTimer', undefined)
+    expect(fetched).not.toBeNull()
+    expect(fetched!.startedAt).toBeInstanceOf(Date)
+    expect(fetched).toStrictEqual(hydrated)
   })
 
   test('a range of entries, a running one included', async () => {
-    const scope = await scopeOf(db, U.member, O.northwind)
-    const input = {
+    const { hydrated, fetched } = await bothWays(U.member, 'listEntries', {
+      organizationId: O.northwind,
       from: new Date('2026-09-01T00:00:00Z'),
       to: new Date('2026-10-01T00:00:00Z'),
       userId: U.member,
-    }
-    const value = await hostFor(U.member)('listEntries', { ...input, organizationId: O.northwind })
-    expect(value.length).toBeGreaterThan(0)
-    expect(value.some((e) => e.stoppedAt === null)).toBe(true)
-    expect(value).toStrictEqual(dehydrated(await entries.listEntries(db, scope, input)))
+    })
+    expect(fetched.length).toBeGreaterThan(0)
+    expect(fetched.some((e) => e.stoppedAt === null)).toBe(true)
+    expect(fetched).toStrictEqual(hydrated)
   })
 
   test('a date alone', async () => {
-    const scope = await scopeOf(db, U.member, O.northwind)
-    const value = await hostFor(U.member)('getFirstEntryStart', {
+    const { hydrated, fetched } = await bothWays(U.member, 'getFirstEntryStart', {
       organizationId: O.northwind,
       userId: U.member,
     })
-    expect(value).toBeInstanceOf(Date)
-    expect(value).toStrictEqual(
-      dehydrated(await entries.getFirstEntryStart(db, scope, { userId: U.member })),
-    )
+    expect(fetched).toBeInstanceOf(Date)
+    expect(fetched).toStrictEqual(hydrated)
   })
 
-  test('a refusal arrives as the AppError the server function throws', async () => {
-    const call = hostFor(U.member)('getFirstEntryStart', {
-      organizationId: O.northwind,
-      userId: U.owner,
-    })
-    await expect(call).rejects.toBeInstanceOf(AppError)
-    await expect(call).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
+  test('a refusal arrives as the same AppError both ways', async () => {
+    const host = hostFor(U.member)
+    const input = { organizationId: O.northwind, userId: U.owner }
+    for (const transport of [hostTransport(host), overHttp('getFirstEntryStart', host)]) {
+      const call = transport('getFirstEntryStart', input)
+      await expect(call).rejects.toBeInstanceOf(AppError)
+      await expect(call).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
+    }
   })
 })

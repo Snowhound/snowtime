@@ -1,6 +1,10 @@
 import handler from '@tanstack/solid-start/server-entry'
+import { setTransport } from '~/lib/api/client'
 import { paraglideMiddleware } from '~/paraglide/server.js'
+import { renderTransport } from '~/server/api.server'
 import { contentSecurityPolicy, newNonce } from '~/server/csp.server'
+
+setTransport(renderTransport)
 
 // Scopes the locale to each request, so messages rendered on the server use the request's
 // cookie or Accept-Language even while requests run concurrently. Pages get a fresh CSP

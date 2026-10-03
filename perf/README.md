@@ -1,15 +1,14 @@
 # Performance harnesses
 
 Checks that measure what the app sends, what the server reads, and what the scene draws,
-so a change can show its effect in numbers (task 069). There are five harnesses:
+so a change can show its effect in numbers (task 069). There are four harnesses:
 
-| Command                | Needs           | Measures                                                  |
-| ---------------------- | --------------- | --------------------------------------------------------- |
-| `bun run perf`         | Nothing but Bun | Bundle budgets, query plans, report rows and bytes        |
-| `bun run perf:pages`   | Chrome          | Page bytes, DOM nodes, load timings, input, navigation    |
-| `bun run perf:load`    | Nothing but Bun | Server response times, requests per second, CPU, and RSS  |
-| `bun run perf:api`     | Chrome          | The timer's calls as server functions and as the JSON API |
-| `bun run perf:weather` | Chrome          | Weather GPU and CPU time per frame, golden frames         |
+| Command                | Needs           | Measures                                                 |
+| ---------------------- | --------------- | -------------------------------------------------------- |
+| `bun run perf`         | Nothing but Bun | Bundle budgets, query plans, report rows and bytes       |
+| `bun run perf:pages`   | Chrome          | Page bytes, DOM nodes, load timings, input, navigation   |
+| `bun run perf:load`    | Nothing but Bun | Server response times, requests per second, CPU, and RSS |
+| `bun run perf:weather` | Chrome          | Weather GPU and CPU time per frame, golden frames        |
 
 ## Gated and reported
 
@@ -161,17 +160,6 @@ bun run perf:load --url=http://127.0.0.1:3100 --pid=<server pid>
   `NODE_ENV=development`, which enables password sign-in, and set
   `update user_settings set scene_intro = 0` first. Never do this with the production
   database or on the production port.
-
-## Server functions against the API: `bun run perf:api`
-
-Prices a move of the TypeScript app from server functions to the JSON API (task 084). On
-one server, it calls the timer's reads (running timer, the user's entries for 14 days) and
-writes (start, stop) through Start's server function protocol and through `/api/v1`,
-then times Start's decoder against the API's on the user's entries for 14 and 93 days in
-Chrome. Each read runs 50 warm-ups, 100 sequential calls, and 4 seconds at 10 in flight,
-twice per transport in the order A, B, B, A. The writes are 25 start-and-stop pairs, the
-server functions as `admin` and the API as `member`, under the 120-a-minute write limit.
-`--no-build` reuses `perf/.cache/build`. A run takes about 40 seconds.
 
 ## Weather bench: `bun run perf:weather`
 

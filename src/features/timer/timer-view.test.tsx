@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
 import { addDays, atLocalTime, localDate } from '~/lib/calendar'
 import { newId } from '~/lib/queries/query'
 import type { Settings } from '~/lib/queries/settings'
@@ -11,7 +12,7 @@ import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
 import type { Entry, RunningTimer } from './queries'
 import { TimerPage } from './timer-page'
 
-// The server functions stay out of the DOM tests. Each mock answers from `server`, which
+// The backend stays out of the DOM tests. Each mock answers from `server`, which
 // a test sets up, so a refetch after a mutation sees what the server would return.
 const fn = vi.hoisted(() => ({
   getRunningTimer: vi.fn(),
@@ -26,18 +27,7 @@ const fn = vi.hoisted(() => ({
   getAppSession: vi.fn(),
   updateSettings: vi.fn(),
 }))
-vi.mock('~/server/timer/timer.functions', () => ({
-  getRunningTimer: fn.getRunningTimer,
-  startTimer: fn.startTimer,
-  stopTimer: fn.stopTimer,
-}))
-vi.mock('~/server/entries/entries.functions', () => ({
-  listEntries: fn.listEntries,
-  getFirstEntryStart: fn.getFirstEntryStart,
-  createEntry: fn.createEntry,
-  updateEntry: fn.updateEntry,
-  deleteEntry: fn.deleteEntry,
-}))
+setTransport((name, input) => fn[name as keyof typeof fn](input))
 vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
 vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
@@ -207,10 +197,10 @@ describe('TimerView', () => {
 
     // Running before the server answers.
     expect(await within(timer()).findByRole('button', { name: 'Stop' })).toBeInTheDocument()
-    expect(fn.startTimer).toHaveBeenCalledWith({
-      data: expect.objectContaining({ description: 'Timer view', projectId: snowtime.id }),
-    })
-    const { id } = fn.startTimer.mock.calls[0][0].data
+    expect(fn.startTimer).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Timer view', projectId: snowtime.id }),
+    )
+    const { id } = fn.startTimer.mock.calls[0][0]
     server.running = {
       ...entry(0, '00:00', '00:01', 'Timer view'),
       id,
@@ -225,7 +215,7 @@ describe('TimerView', () => {
       server.running = null
     })
     await userEvent.click(within(timer()).getByRole('button', { name: 'Stop' }))
-    expect(fn.stopTimer).toHaveBeenCalledWith({ data: { id } })
+    expect(fn.stopTimer).toHaveBeenCalledWith({ id })
     expect(await within(timer()).findByRole('button', { name: 'Start' })).toBeInTheDocument()
     expect(within(timer()).getByPlaceholderText('What are you working on?')).toHaveValue('')
     expect(await screen.findByDisplayValue('Timer view')).toBeInTheDocument()
@@ -255,9 +245,7 @@ describe('TimerView', () => {
 
     await clickInRow('Actions for Invoice export review')
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }))
-    expect(fn.deleteEntry).toHaveBeenCalledWith({
-      data: { organizationId, id: expect.any(String) },
-    })
+    expect(fn.deleteEntry).toHaveBeenCalledWith({ organizationId, id: expect.any(String) })
     expect(screen.queryByDisplayValue('Invoice export review')).not.toBeInTheDocument()
     expect(await screen.findByText('No time tracked yet')).toBeInTheDocument()
   })
@@ -266,7 +254,7 @@ describe('TimerView', () => {
     renderView()
     const input = await screen.findByDisplayValue('Invoice export review')
     const { id } = server.entries[0]
-    fn.updateEntry.mockImplementation(async ({ data }: { data: Partial<Entry> }) => {
+    fn.updateEntry.mockImplementation(async (data: Partial<Entry>) => {
       Object.assign(server.entries[0], data)
     })
 
@@ -274,7 +262,9 @@ describe('TimerView', () => {
     await userEvent.type(input, 'Invoice export{Enter}')
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: { organizationId, id, description: 'Invoice export' },
+        organizationId,
+        id,
+        description: 'Invoice export',
       }),
     )
 
@@ -290,7 +280,7 @@ describe('TimerView', () => {
     const input = await screen.findByDisplayValue('Invoice export review')
     let confirm: (() => void) | undefined
     fn.updateEntry.mockImplementation(
-      ({ data }: { data: Partial<Entry> }) =>
+      (data: Partial<Entry>) =>
         new Promise<void>((resolve) => {
           confirm = () => {
             Object.assign(server.entries[0], data)
@@ -326,12 +316,10 @@ describe('TimerView', () => {
     const date = addDays(localDate(Date.now(), zone), -2)
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: {
-          organizationId,
-          id,
-          startedAt: new Date(atLocalTime(date, '23:00', zone)),
-          stoppedAt: new Date(atLocalTime(addDays(date, 1), '10:30', zone)),
-        },
+        organizationId,
+        id,
+        startedAt: new Date(atLocalTime(date, '23:00', zone)),
+        stoppedAt: new Date(atLocalTime(addDays(date, 1), '10:30', zone)),
       }),
     )
   })
@@ -351,7 +339,9 @@ describe('TimerView', () => {
     const date = addDays(localDate(Date.now(), zone), -2)
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: { organizationId, id, startedAt: new Date(atLocalTime(date, '09:30', zone)) },
+        organizationId,
+        id,
+        startedAt: new Date(atLocalTime(date, '09:30', zone)),
       }),
     )
     expect(start).not.toHaveFocus()
@@ -398,9 +388,7 @@ describe('TimerView', () => {
     await clickInRow('Project: Snowtime')
     await userEvent.click(await screen.findByRole('menuitemradio', { name: 'No project' }))
     await waitFor(() =>
-      expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: { organizationId, id, projectId: null },
-      }),
+      expect(fn.updateEntry).toHaveBeenCalledWith({ organizationId, id, projectId: null }),
     )
   })
 
@@ -418,12 +406,10 @@ describe('TimerView', () => {
 
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: {
-          organizationId,
-          id,
-          startedAt: new Date(atLocalTime(date, '09:00', zone)),
-          stoppedAt: new Date(atLocalTime(date, '10:30', zone)),
-        },
+        organizationId,
+        id,
+        startedAt: new Date(atLocalTime(date, '09:00', zone)),
+        stoppedAt: new Date(atLocalTime(date, '10:30', zone)),
       }),
     )
   })
@@ -485,7 +471,7 @@ describe('TimerView', () => {
   test('adds a past entry by hand once its times are valid', async () => {
     renderView()
     await screen.findByDisplayValue('Invoice export review')
-    fn.createEntry.mockImplementation(async ({ data }: { data: Entry }) => {
+    fn.createEntry.mockImplementation(async (data: Entry) => {
       server.entries = [...server.entries, { ...data, organizationId, userId }]
     })
 
@@ -503,14 +489,14 @@ describe('TimerView', () => {
     expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
 
-    expect(fn.createEntry).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(fn.createEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
         description: 'Planning',
         projectId: null,
         startedAt: new Date(atLocalTime(date, '13:00', zone)),
         stoppedAt: new Date(atLocalTime(date, '14:15', zone)),
       }),
-    })
+    )
     expect(await screen.findByDisplayValue('Planning')).toBeInTheDocument()
   })
 
@@ -530,12 +516,12 @@ describe('TimerView', () => {
     expect(within(timer()).queryByRole('listbox')).not.toBeInTheDocument()
     expect(fn.startTimer).not.toHaveBeenCalled()
     await userEvent.type(description, '{Enter}')
-    expect(fn.startTimer).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(fn.startTimer).toHaveBeenCalledWith(
+      expect.objectContaining({
         description: 'Invoice export review',
         projectId: snowtime.id,
       }),
-    })
+    )
   })
 
   test('Add entry picks recent work from the keyboard and starts after today’s last entry', async () => {
@@ -666,7 +652,7 @@ describe('TimerView', () => {
     })
     server.settings.showSummary = true
     server.entries = [entry(0, '09:00', '10:30', 'Invoice export review')]
-    fn.listEntries.mockImplementation(async ({ data }: { data: { from: Date; to: Date } }) =>
+    fn.listEntries.mockImplementation(async (data: { from: Date; to: Date }) =>
       server.entries
         .filter((e) => e.startedAt < data.to && (!e.stoppedAt || e.stoppedAt > data.from))
         .map((e) => ({ ...e })),
@@ -719,12 +705,12 @@ describe('TimerView', () => {
     const chips = within(recent).getAllByRole('button')
     expect(chips).toHaveLength(1)
     await userEvent.click(chips[0])
-    expect(fn.startTimer).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(fn.startTimer).toHaveBeenCalledWith(
+      expect.objectContaining({
         description: 'Invoice export review',
         projectId: snowtime.id,
       }),
-    })
+    )
     expect(await within(timer()).findByRole('button', { name: 'Stop' })).toBeInTheDocument()
   })
 
@@ -732,7 +718,7 @@ describe('TimerView', () => {
     const old = entry(20, '09:00', '10:00', 'Kickoff')
     server.entries = [entry(1, '09:00', '10:30', 'Invoice export review'), old]
     // The first range holds only the recent entry.
-    fn.listEntries.mockImplementation(async ({ data }: { data: { from: Date } }) =>
+    fn.listEntries.mockImplementation(async (data: { from: Date }) =>
       server.entries.filter((e) => e.startedAt >= data.from),
     )
     renderView()
@@ -749,7 +735,7 @@ describe('TimerView', () => {
       entry(1, '09:00', '10:30', 'Invoice export review'),
       entry(20, '09:00', '10:00', 'Kickoff'),
     ]
-    fn.listEntries.mockImplementation(async ({ data }: { data: { from: Date } }) =>
+    fn.listEntries.mockImplementation(async (data: { from: Date }) =>
       server.entries.filter((e) => e.startedAt >= data.from),
     )
     renderView()
@@ -768,14 +754,12 @@ describe('TimerView', () => {
 
 describe('ticket keys', () => {
   function saveOnServer() {
-    fn.updateEntry.mockImplementation(
-      async ({ data }: { data: Partial<Entry> & { id: string } }) => {
-        Object.assign(
-          server.entries.find((e) => e.id === data.id)!,
-          data,
-        )
-      },
-    )
+    fn.updateEntry.mockImplementation(async (data: Partial<Entry> & { id: string }) => {
+      Object.assign(
+        server.entries.find((e) => e.id === data.id)!,
+        data,
+      )
+    })
   }
 
   test('a key typed at the start of the timer becomes the ticket when it starts', async () => {
@@ -785,9 +769,9 @@ describe('ticket keys', () => {
 
     const input = within(timer()).getByPlaceholderText('What are you working on?')
     await userEvent.type(input, '[[NBW-412] Fix the login{Enter}')
-    expect(fn.startTimer).toHaveBeenCalledWith({
-      data: expect.objectContaining({ description: 'Fix the login', ticket: 'NBW-412' }),
-    })
+    expect(fn.startTimer).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Fix the login', ticket: 'NBW-412' }),
+    )
     expect(input).toHaveValue('Fix the login')
     expect(within(timer()).getByText('NBW-412')).toBeInTheDocument()
   })
@@ -802,14 +786,20 @@ describe('ticket keys', () => {
     await userEvent.type(input, 'Q3-2026 planning{Enter}')
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: { organizationId, id, description: 'planning', ticket: 'Q3-2026' },
+        organizationId,
+        id,
+        description: 'planning',
+        ticket: 'Q3-2026',
       }),
     )
     const remove = await screen.findByRole('button', { name: 'Turn Q3-2026 back into text' })
     await userEvent.click(remove)
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenLastCalledWith({
-        data: { organizationId, id, description: 'Q3-2026 planning', ticket: null },
+        organizationId,
+        id,
+        description: 'Q3-2026 planning',
+        ticket: null,
       }),
     )
     expect(input).toHaveValue('Q3-2026 planning')
@@ -819,7 +809,9 @@ describe('ticket keys', () => {
     await userEvent.type(input, ' review{Enter}')
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenLastCalledWith({
-        data: { organizationId, id, description: 'Q3-2026 planning review' },
+        organizationId,
+        id,
+        description: 'Q3-2026 planning review',
       }),
     )
     expect(screen.queryByRole('button', { name: /back into text/ })).not.toBeInTheDocument()
@@ -833,11 +825,11 @@ describe('ticket keys', () => {
 
     await userEvent.type(input, ' with CP-91{Enter}')
     await waitFor(() =>
-      expect(fn.updateEntry).toHaveBeenCalledWith({
-        data: expect.objectContaining({ description: 'Invoice export review with CP-91' }),
-      }),
+      expect(fn.updateEntry).toHaveBeenCalledWith(
+        expect.objectContaining({ description: 'Invoice export review with CP-91' }),
+      ),
     )
-    expect(fn.updateEntry.mock.calls[0][0].data).not.toHaveProperty('ticket')
+    expect(fn.updateEntry.mock.calls[0][0]).not.toHaveProperty('ticket')
   })
 
   test('chips link through Issue links, in a new tab', async () => {
@@ -860,9 +852,9 @@ describe('ticket keys', () => {
     await userEvent.click(
       within(recent).getByRole('button', { name: 'Continue NBW-412 Invoice export review' }),
     )
-    expect(fn.startTimer).toHaveBeenCalledWith({
-      data: expect.objectContaining({ description: 'Invoice export review', ticket: 'NBW-412' }),
-    })
+    expect(fn.startTimer).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Invoice export review', ticket: 'NBW-412' }),
+    )
   })
 
   test('picking recent work in the timer brings its ticket, found by its key', async () => {
@@ -894,9 +886,9 @@ describe('ticket keys', () => {
     )
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
 
-    expect(fn.createEntry).toHaveBeenCalledWith({
-      data: expect.objectContaining({ description: 'review', ticket: 'NBW-9' }),
-    })
+    expect(fn.createEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'review', ticket: 'NBW-9' }),
+    )
   })
 
   test('Wide page gives the table a Ticket column', async () => {

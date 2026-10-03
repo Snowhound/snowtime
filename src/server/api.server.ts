@@ -1,10 +1,12 @@
-// The JSON API (task 084): the contract's calls over HTTP, beside the server functions and
-// running the same rules (operations.server.ts). The native backend serves the same API, and
+// The JSON API (task 084): the contract's calls over HTTP, running the rules through
+// operations.server.ts. The native backend serves the same API, and
 // the conformance tests (conformance/) check both.
+import { getRequest } from '@tanstack/solid-start/server'
 import { db } from '~/db'
 import { withActor } from '~/db/actor'
 import { env } from '~/env'
 import { type OperationName, operations } from '~/lib/api/operations'
+import { hostTransport } from '~/lib/api/transports'
 import { matchPath, type WireResponse } from '~/lib/api/wire'
 import { AppError } from './errors'
 import { signedInUser, unavailableOr } from './guards.server'
@@ -45,15 +47,26 @@ async function respond(request: Request): Promise<WireResponse> {
   } catch {
     return failure(400, { message: 'The body is not JSON.' })
   }
+  return answer(request.headers, match.name, input)
+}
+
+// Runs one call for the session in `headers`, under the checks every call passes.
+async function answer(headers: Headers, name: OperationName, input: unknown) {
   try {
-    const userId = await signedInUser(request.headers, write)
-    return await withActor(userId, () => runOperation(db, match.name, userId, input))
+    const userId = await signedInUser(headers, operations[name].method !== 'GET')
+    return await withActor(userId, () => runOperation(db, name, userId, input))
   } catch (error) {
     const mapped = await unavailableOr(error)
     if (mapped instanceof AppError) return refusal(mapped)
     throw mapped
   }
 }
+
+// Start's server render calls the API in process, for the page's own request, as the
+// native backend's host does for its render isolate.
+export const renderTransport = hostTransport({
+  call: (name, input) => answer(getRequest().headers, name as OperationName, input),
+})
 
 export async function handleApiRequest(request: Request): Promise<Response> {
   const { status, body } = await respond(request)

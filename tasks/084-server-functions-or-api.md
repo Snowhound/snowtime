@@ -56,11 +56,12 @@ comparison of middleware and CSRF, which the design above answers.
 ## The seam
 
 - `src/lib/api/client.ts`: `call(name, input)`, the one entry point, and `setTransport`.
-  The TypeScript app keeps the default, `serverFunctions` (`server-functions.ts`), whose
-  map from operation to server function type-checks every rule's return type against its
-  output schema.
-- `src/lib/api/transports.ts`: `httpTransport` for the browser on the native backend, and
-  `hostTransport` for its render isolate. The host implements one function,
+  The browser keeps the default, `httpTransport`. `src/server-entry.ts` sets
+  `renderTransport` (`src/server/api.server.ts`) for Start's server render: the host
+  transport over the API's own handler, for the page's request, so a loader's read makes
+  no HTTP request.
+- `src/lib/api/transports.ts`: `httpTransport` for the browser, and `hostTransport` for a
+  server render, in Start or in the native backend's render isolate. The host implements one function,
   `call(name, input) → { status, body }`, with `input` and `body` as the JSON the API
   takes and sends. Rust answers it by running the API's handler for the page's own
   session, so a loader's read makes no HTTP request.
@@ -74,16 +75,17 @@ comparison of middleware and CSRF, which the design above answers.
   with the middleware through `guards.server.ts`.
 - `src/lib/api/operations.ts` lists the calls: method, path, scope, and input and output
   schemas. The output schemas, `Entry` and `RunningTimer`, sit in the domains'
-  `*.schemas.ts`. Only the API's and the host's transports import the list, so the
-  TypeScript app's client bundle leaves it out. The rules now return only the contract's
+  `*.schemas.ts`. The browser's transport imports the list, and the route loaders put
+  it in the entry chunk: about 600 bytes gzipped on every page for the timer's 8 calls. The rules now return only the contract's
   fields, not the audit columns, so both transports send the same entry.
-- Tests: `src/server/operations.test.ts` (hydration equality),
+- Tests: `src/server/operations.test.ts` (hydration equality: the server render's
+  transport against `httpTransport`),
   `src/lib/api/transports.test.ts` (the HTTP encoding), and `conformance/` (13 tests over
   HTTP, `bun run test:conformance`, any backend through `CONFORMANCE_URL`).
 
 ## Measured
 
-`bun run perf:api` on 2026-10-03: the production build under Bun 1.4.2 on an Apple M1
+`bun run perf:api` on 2026-10-03 (removed with the timer's server functions; see git): the production build under Bun 1.4.2 on an Apple M1
 Pro, Lumen Works seed. Of the two runs with the final harness, the second is below; their
 p50s and CPU at 10 agreed within 0.1 ms, and the writes' p95 varied by up to 1.3 ms.
 
@@ -267,7 +269,7 @@ Kait agreed on 2026-10-03:
 - [x] The measurements above, recorded in this task, with the condition for a switch
 - [x] The transferability report for all 41 server functions
 - [ ] Every call on the contract, with conformance tests, and no `createServerFn` left
-- [ ] The in-process transport for Start's server render, with the hydration test
+- [x] The in-process transport for Start's server render, with the hydration test
       covering it and the HTTP transport
 - [ ] No GET that writes, except Better Auth's sliding session
 - [ ] `docs/architecture/` and `AGENTS.md` describe the API instead of server functions
