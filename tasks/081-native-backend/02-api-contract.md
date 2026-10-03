@@ -29,7 +29,7 @@ release by release. Today the app has 50 server functions in 9 `*.functions.ts` 
   route change needs nothing in Rust, and the first load makes no HTTP request. On
   Vercel, the adapter runs the TypeScript handlers in process during Start's server
   render.
-- **After hydration** the browser of a native backend's page calls the same API over HTTP
+- **After hydration** the browser calls the same API over HTTP
   and gets the same shapes, so the cache the server dehydrated stays consistent with
   later fetches.
 - **Errors** keep `AppError`'s code and key (`src/server/errors.ts`) in the response body,
