@@ -16,5 +16,5 @@ be tried with the seeded users before it merges.
 - [x] `docs/deployment/vercel.md`, `docs/architecture/auth.md`, `docs/hosting.md`,
       `docs/migrations.md`, and `docs/architecture/platform.md` describe previews on
       staging.
-- [x] The Vercel Preview variables and the GitHub `staging` environment are set.
+- [x] The Vercel Preview variables and the `STAGING_TURSO_*` repository secrets are set.
 - [x] On a preview, `owner@example.com` signs in, starts a timer, and stops it.
