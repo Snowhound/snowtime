@@ -159,3 +159,5 @@ changes to the Vercel deployment beyond the adapter.
 Task 083 checks whether Perry, a native TypeScript compiler, could replace the isolate or
 the Rust port. Task 084 decides whether the TypeScript app keeps server functions or
 serves the same API.
+Task 085 turns what this task learns into a general repository of porting recipes, once
+the port works.
