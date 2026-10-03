@@ -156,9 +156,10 @@ changes to the Vercel deployment beyond the adapter.
 - [01](01-server-rendering.md): server rendering in the native backend
 - [02](02-api-contract.md): the API contract and the frontend adapter
 - [03](03-port-libraries.md): the Rust libraries, chosen on a small port of the timer
+- [04](04-perry.md): Perry, a native TypeScript compiler, in place of the isolate or the
+  Rust port
+- [05](05-porting-recipes.md): a general repository of porting recipes, once the port
+  works
 
-Task 083 checks whether Perry, a native TypeScript compiler, could replace the isolate or
-the Rust port. Task 084 moves the TypeScript app from server functions to the same API,
-through one client module.
-Task 085 turns what this task learns into a general repository of porting recipes, once
-the port works.
+Task 084 moved the TypeScript app from server functions to the same API, through one
+client module.

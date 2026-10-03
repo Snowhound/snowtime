@@ -53,7 +53,7 @@ Week and year report, from [engines.md](server-rendering/engines.md):
 | SpiderMonkey 153 (`mozjs`)                |         97 |                 6.7 / 12.2 |             55 → 348 | Equal; ICU text on the week report |
 | QuickJS-ng with FormatJS `Intl`           |       ~500 |                  327 / 649 |             71 → 121 | ICU text on the week report        |
 | Boa 0.22                                  |      1,630 |                ~355 / ~397 |            205 → 217 | Wrong: renders the error page      |
-| Perry 0.5.1520                            |          — |                          — |                    — | Doesn't compile (task 083)         |
+| Perry 0.5.1520                            |          — |                          — |                    — | Doesn't compile (task 081.04)      |
 
 Recommended: V8. It renders within 2–3× of Bun's time, its startup snapshot creates a
 context in 7 ms, it ships prebuilt static libraries for Linux, and it formats text with
