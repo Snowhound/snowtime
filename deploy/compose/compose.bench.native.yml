@@ -6,7 +6,7 @@ services:
     image: snowtime-native:bench
     environment:
       EDGE_COMPRESSION: 'false'
-      EDGE_ACCESS_LOG: 'false'
+      EDGE_ACCESS_LOG: 'off'
       EDGE_HEADERS: 'false'
     healthcheck:
       test: ['CMD', 'curl', '-fsS', '-o', '/dev/null', 'http://localhost:3000/api/v1/availability']

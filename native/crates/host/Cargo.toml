@@ -21,7 +21,8 @@ axum-server = { version = "0.8", features = ["tls-rustls-no-provider"] }
 rustls = { version = "0.23", features = ["aws_lc_rs"] }
 rustls-acme = { version = "0.15", features = ["axum"] }
 tokio-stream = "0.1"
-tower-http = { version = "0.7", features = ["compression-gzip", "compression-zstd", "fs", "limit", "timeout", "trace"] }
+http-body = "1"
+tower-http = { version = "0.7", features = ["compression-gzip", "compression-zstd", "fs", "limit", "timeout"] }
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = { version = "0.3", features = ["json"] }

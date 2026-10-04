@@ -2,7 +2,7 @@ mod accept;
 mod access;
 mod config;
 pub use access::init as init_logs;
-pub use config::{Config, Tls};
+pub use config::{AccessLog, Config, Tls};
 
 use axum::{
     Router,
@@ -164,7 +164,7 @@ pub async fn serve(
             domains,
             contact,
             cache,
-            production,
+            staging,
         } => {
             use std::os::unix::fs::PermissionsExt;
             std::fs::create_dir_all(&cache)?;
@@ -172,7 +172,7 @@ pub async fn serve(
             let mut state = rustls_acme::AcmeConfig::new(domains)
                 .contact(contact)
                 .cache(rustls_acme::caches::DirCache::new(cache))
-                .directory_lets_encrypt(production)
+                .directory_lets_encrypt(!staging)
                 .state();
             let mut tls = (*state.default_rustls_config()).clone();
             tls.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
