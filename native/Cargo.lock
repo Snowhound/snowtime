@@ -3935,6 +3935,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "axum-server",
+ "http-body",
  "percent-encoding",
  "rcgen 0.14.10",
  "rustls",
@@ -4516,7 +4517,6 @@ dependencies = [
  "tokio-util",
  "tower-layer",
  "tower-service",
- "tracing",
 ]
 
 [[package]]

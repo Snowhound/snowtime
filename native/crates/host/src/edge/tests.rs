@@ -36,10 +36,7 @@ fn tls_modes_and_redirects_are_explicit() {
     }
     assert!(matches!(
         config(&[("ACME_DOMAINS", "snowtime.test")]).tls,
-        Tls::Acme {
-            production: false,
-            ..
-        }
+        Tls::Acme { staging: false, .. }
     ));
 }
 #[tokio::test]
@@ -244,10 +241,10 @@ async fn tls_serves_with_pem_files_and_a_cached_acme_certificate() {
             domains: vec!["snowtime.test".into()],
             contact: vec![],
             cache,
-            production: false,
+            staging: true,
         },
     ] {
-        let mut config = config(&[("EDGE_ACCESS_LOG", "false")]);
+        let mut config = config(&[("EDGE_ACCESS_LOG", "off")]);
         config.tls = tls;
         let handle = axum_server::Handle::new();
         let server = tokio::spawn(serve(

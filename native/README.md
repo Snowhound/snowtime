@@ -127,13 +127,14 @@ TLS_CERT_FILE=/certs/fullchain.pem TLS_KEY_FILE=/certs/key.pem PORT=443 \
   BETTER_AUTH_URL=https://snowtime.example snowtime-axum
 
 ACME_DOMAINS=snowtime.example ACME_EMAIL=ops@snowtime.example \
-  ACME_CACHE_DIR=/data/acme ACME_PRODUCTION=true PORT=443 HTTP_REDIRECT_PORT=80 \
+  ACME_CACHE_DIR=/data/acme PORT=443 HTTP_REDIRECT_PORT=80 \
   BETTER_AUTH_URL=https://snowtime.example snowtime-axum
 ```
 
 Supply the database URL and authentication secret as in "Run it". Certificate files
-and ACME are mutually exclusive. ACME defaults to Let's Encrypt's staging service;
-set `ACME_PRODUCTION=true` for trusted certificates. Persist `/data/acme` across
+and ACME are mutually exclusive. ACME uses Let's Encrypt's production service; set
+`ACME_STAGING=true` to try a setup against staging, whose certificates browsers don't
+trust, without using up production's rate limits. Persist `/data/acme` across
 restarts and allow the host user to write it. The host sets this directory to mode
 0700 because the cache contains account and certificate private keys.
 
@@ -148,10 +149,10 @@ the certificate-file mode. Wildcard certificates are unsupported.
 | `ACME_DOMAINS`                  | unset        | Comma-separated DNS names, including the app URL's hostname                  |
 | `ACME_EMAIL`                    | unset        | ACME account contact email                                                   |
 | `ACME_CACHE_DIR`                | `/data/acme` | Persistent account and certificate cache                                     |
-| `ACME_PRODUCTION`               | `false`      | Use production instead of staging                                            |
+| `ACME_STAGING`                  | `false`      | Use Let's Encrypt's staging service instead of production                    |
 | `HTTP_REDIRECT_PORT`            | unset        | Separate HTTP listener issuing 308 redirects to the configured app origin    |
 | `EDGE_COMPRESSION`              | `true`       | Gzip and zstd for compressible responses of at least 1024 bytes              |
-| `EDGE_ACCESS_LOG`               | `true`       | JSON access events on stdout, after the response body drains                 |
+| `EDGE_ACCESS_LOG`               | `sampled`    | JSON access events on stdout: `sampled`, `all`, or `off`                     |
 | `EDGE_HEADERS`                  | `true`       | Security headers, CSP fallback, and private no-store fallback                |
 | `EDGE_STATIC_DIR`               | unset        | Serve this public build directory, with `.br`, `.zst`, and `.gz` variants    |
 | `EDGE_TIMEOUT_SECONDS`          | `30`         | Response-header timeout; zero disables this host layer                       |
@@ -165,8 +166,11 @@ use that origin rather than the request's Host header.
 
 Access logs contain the method, path, status, duration, and transferred body bytes.
 They omit query strings, cookies, authorization, and request bodies. General server
-and ACME events also go to stdout. `EDGE_BENCH_LOG` writes a separate buffered file;
-disable `EDGE_ACCESS_LOG` when only that file is needed. The benchmark file has no
+and ACME events also go to stdout. An event is written once the response body has
+been sent or the client has gone away. `sampled` keeps the first 10 events each second
+and then one in 100, as the Caddyfiles do. `EDGE_BENCH_LOG` writes a separate,
+complete, buffered file of the requests that carry `X-Bench-Kind`; set
+`EDGE_ACCESS_LOG=off` when only that file is needed. The benchmark file has no
 rotation and belongs only in the benchmark stack.
 
 Static files get the Caddy cache policy: one year and immutable under `/assets/`,

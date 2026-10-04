@@ -349,10 +349,6 @@ type Request struct {
 
 type logLine struct {
 	Fields RequestFields `json:"fields"`
-	Span   struct {
-		Kind string `json:"kind"`
-		Step string `json:"step"`
-	} `json:"span"`
 	Target  string  `json:"target"`
 	Time    float64 `json:"ts"`
 	Request struct {
@@ -364,6 +360,8 @@ type logLine struct {
 }
 
 type RequestFields struct {
+	Kind     string  `json:"kind"`
+	Step     string  `json:"step"`
 	Time     float64 `json:"ts"`
 	Duration float64 `json:"duration"`
 	Size     int64   `json:"size"`
@@ -377,7 +375,7 @@ func requestFromLine(line []byte) (Request, bool) {
 	}
 	if entry.Target == "snowtime_bench" {
 		f := entry.Fields
-		return Request{f.Time, entry.Span.Kind, entry.Span.Step, f.Status, f.Duration, f.Size}, entry.Span.Kind != ""
+		return Request{f.Time, f.Kind, f.Step, f.Status, f.Duration, f.Size}, f.Kind != ""
 	}
 	kind := entry.Request.Headers["X-Bench-Kind"]
 	if len(kind) == 0 {

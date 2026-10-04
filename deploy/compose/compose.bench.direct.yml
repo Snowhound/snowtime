@@ -7,7 +7,7 @@ services:
       TLS_CERT_FILE: /tls/cert.pem
       TLS_KEY_FILE: /tls/key.pem
       EDGE_COMPRESSION: 'true'
-      EDGE_ACCESS_LOG: 'false'
+      EDGE_ACCESS_LOG: 'off'
       EDGE_HEADERS: 'true'
       EDGE_BENCH_LOG: /var/log/caddy/access.log
     volumes:

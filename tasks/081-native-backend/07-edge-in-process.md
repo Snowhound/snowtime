@@ -248,13 +248,15 @@ The application router remains callable in process, without TLS or middleware.
 
 - `axum-server` serves plain HTTP or rustls HTTPS with PEM files. `rustls-acme` obtains
   and renews Let's Encrypt certificates through TLS-ALPN-01, persists account and
-  certificate keys, and loads cached certificates at startup. Staging is the default.
+  certificate keys, and loads cached certificates at startup. Production is the default;
+  `ACME_STAGING=true` selects staging.
   Both TLS modes advertise HTTP/2 and HTTP/1.1; HTTP/3 remains deferred.
-- `tower-http` supplies gzip/zstd compression, tracing, response-header timeouts,
+- `tower-http` supplies gzip/zstd compression, response-header timeouts,
   request-body limits, and static files with precompressed variants. Defaults match
   Caddy's compression threshold and security/cache policies. Configuration can disable
   each middleware concern independently. The API's own body limit remains in place.
-- Access events include complete body duration and transferred size, with no query,
+- Access events, sampled as Caddy's are unless `EDGE_ACCESS_LOG=all`, include complete
+  body duration and transferred size, with no query,
   credentials, or body. A separate buffered benchmark log feeds the sampler; its parser
   accepts either Caddy or native events. Caddy receives no application requests in the
   direct benchmark, but still exposes the sampler.

@@ -11,15 +11,21 @@ pub enum Tls {
         domains: Vec<String>,
         contact: Vec<String>,
         cache: PathBuf,
-        production: bool,
+        staging: bool,
     },
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AccessLog {
+    Off,
+    Sampled,
+    All,
 }
 #[derive(Clone, Debug)]
 pub struct Config {
     pub tls: Tls,
     pub redirect_port: Option<u16>,
     pub compression: bool,
-    pub access_log: bool,
+    pub access_log: AccessLog,
     pub headers: bool,
     pub static_dir: Option<PathBuf>,
     pub timeout_seconds: u64,
@@ -84,7 +90,7 @@ impl Config {
                     cache: var("ACME_CACHE_DIR")
                         .unwrap_or_else(|| "/data/acme".into())
                         .into(),
-                    production: flag("ACME_PRODUCTION", false)?,
+                    staging: flag("ACME_STAGING", false)?,
                 }
             }
             _ => {
@@ -111,7 +117,12 @@ impl Config {
             tls,
             redirect_port,
             compression: flag("EDGE_COMPRESSION", true)?,
-            access_log: flag("EDGE_ACCESS_LOG", true)?,
+            access_log: match var("EDGE_ACCESS_LOG").as_deref() {
+                None | Some("sampled") => AccessLog::Sampled,
+                Some("all") => AccessLog::All,
+                Some("off") => AccessLog::Off,
+                _ => return Err("EDGE_ACCESS_LOG is sampled, all, or off.".into()),
+            },
             headers: flag("EDGE_HEADERS", true)?,
             static_dir: var("EDGE_STATIC_DIR").map(PathBuf::from),
             timeout_seconds: number("EDGE_TIMEOUT_SECONDS", 30)?,
