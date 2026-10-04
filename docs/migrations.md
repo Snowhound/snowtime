@@ -25,6 +25,19 @@ bun run db:verify            # only check that applied migrations are unchanged
 Target another database by setting `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`, e.g. in the
 gitignored `.env.local`. Never put tokens in tracked env files.
 
+## Staging
+
+Every Vercel preview shares one staging database (`deployment/vercel.md`, step 8). The
+**Migrate staging** workflow runs `bun run db:migrate` against it on every push to a branch
+other than `main` that changes `drizzle/`, with the repository secrets `STAGING_TURSO_DATABASE_URL` and
+`STAGING_TURSO_AUTH_TOKEN`. Every other preview then runs against the migrated database too.
+
+Staging holds only seeded data, so a broken staging database is reset rather than repaired.
+Once one branch's migration is on staging, `db:verify` fails the workflow for a branch that
+lacks it or carries an edited copy. Reset staging from a freshly seeded file
+(`deployment/vercel.md`, step 8.1), then run the workflow by hand from the Actions tab for
+the branch you're testing. Resetting discards everything previews wrote.
+
 ## Rules
 
 - **Roll forward only.** No down migrations. Fix a mistake with a new migration.

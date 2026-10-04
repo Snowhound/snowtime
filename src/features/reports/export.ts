@@ -8,7 +8,7 @@ import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
 import type { Locale } from '~/paraglide/runtime.js'
-import type { getReportExport } from '~/server/reports/reports.functions'
+import type { ExportEntry } from '~/server/reports/reports.schemas'
 import { GROUP_LABELS, type Group } from './filters'
 import type { Report } from './queries'
 import { type Row, person } from './rows'
@@ -16,7 +16,7 @@ import { type Row, person } from './rows'
 // The entries and what the entry list needs of their report.
 export interface ReportEntries {
   report: Pick<Report, 'timeZone' | 'formerMembers'>
-  entries: Awaited<ReturnType<typeof getReportExport>>['entries']
+  entries: ExportEntry[]
 }
 export type ExportKind = 'xlsx' | 'csv' | 'entries'
 

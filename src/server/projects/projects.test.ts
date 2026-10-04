@@ -130,11 +130,9 @@ describe('createProject', () => {
     const created = await as(scopes.admin, () =>
       createProject(db, scopes.admin, { id: uuidv7(), name: '  Research ', color: '#AABBCC' }),
     )
-    expect(created).toMatchObject({
-      organizationId: O.northwind,
-      color: '#AABBCC',
-      createdBy: U.admin,
-    })
+    expect(created).toMatchObject({ color: '#AABBCC', archivedAt: null })
+    const [row] = await db.select().from(project).where(eq(project.id, created.id))
+    expect(row).toMatchObject({ organizationId: O.northwind, createdBy: U.admin })
     expect(await idsOf(scopes.loner)).toContain(created.id)
   })
 
@@ -162,7 +160,9 @@ describe('updateProject', () => {
     const updated = await as(scopes.admin, () =>
       updateProject(db, scopes.admin, { id: created.id, name: 'Final name', color: '#112233' }),
     )
-    expect(updated).toMatchObject({ name: 'Final name', color: '#112233', updatedBy: U.admin })
+    expect(updated).toMatchObject({ name: 'Final name', color: '#112233' })
+    const [row] = await db.select().from(project).where(eq(project.id, created.id))
+    expect(row.updatedBy).toBe(U.admin)
     await expect(
       as(scopes.admin, () =>
         updateProject(db, scopes.admin, { id: created.id, name: 'Mobile app' }),

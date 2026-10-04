@@ -10,17 +10,26 @@ import * as v from 'valibot'
 import type { Database } from '~/db'
 import * as schema from '~/db/schema'
 import { seedIds } from '~/db/seed'
-import { limits } from '../limits.server'
+import { getLocale } from '~/paraglide/runtime.js'
+import { paraglideMiddleware } from '~/paraglide/server.js'
+import { AppError } from '../errors'
+import { limits, rateLimits } from '../limits.server'
+import { localeRequest } from '../locale.server'
+import { memoryStore } from '../rate-limit.server'
 import { createSeededDatabase } from '../testing'
 import {
+  ApiKeyRefusal,
   apiKeyDisabledPaths,
   apiKeyOptions,
+  bearerKey,
   createApiKey,
   type IssueApiKey,
+  type KeyCheckDeps,
+  keyChecker,
   listApiKeys,
   revokeApiKey,
 } from './api-keys.server'
-import { CreateApiKeyInput } from './auth.schemas'
+import { type ApiKeyAccess, CreateApiKeyInput } from './auth.schemas'
 
 const { users: U } = seedIds
 const DAY = 24 * 60 * 60 * 1000
@@ -196,4 +205,124 @@ test("the plugin's HTTP endpoints are closed", async () => {
     )
     expect(response.status).toBe(404)
   }
+})
+
+describe('keyUser', () => {
+  function keyUser(overrides: Partial<KeyCheckDeps> = {}) {
+    return keyChecker({
+      db,
+      verifyKey: (key) => auth.api.verifyApiKey({ body: { key } }),
+      rateLimitStore: memoryStore(),
+      loginDomains: [],
+      ...overrides,
+    })
+  }
+
+  async function newKey(userId: string, access: ApiKeyAccess = 'read') {
+    return createApiKey(db, issue, userId, input({ access }))
+  }
+
+  async function refusalOf(call: Promise<unknown>) {
+    const error = await errorOf(call)
+    return error instanceof ApiKeyRefusal
+      ? { status: error.status, code: error.code, message: error.message }
+      : error
+  }
+
+  test("signs a valid key in as its user, and a write key's writes too", async () => {
+    const { key } = await newKey(U.member, 'write')
+    expect(await keyUser()(key, false)).toBe(U.member)
+    expect(await keyUser()(key, true)).toBe(U.member)
+  })
+
+  test('refuses an unknown or revoked key with 401', async () => {
+    const { id, key } = await newKey(U.member)
+    await revokeApiKey(db, U.member, id)
+    for (const refused of ['snow_unknown', key]) {
+      expect(await refusalOf(keyUser()(refused, false))).toEqual({
+        status: 401,
+        code: 'UNAUTHENTICATED',
+        message: 'Invalid API key.',
+      })
+    }
+  })
+
+  test('refuses an expired key and says so', async () => {
+    const { id, key } = await newKey(U.member)
+    await db
+      .update(schema.apikey)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(schema.apikey.id, id))
+    expect(await refusalOf(keyUser()(key, false))).toMatchObject({ message: 'API key expired.' })
+  })
+
+  test('refuses a key whose user the login-domain policy refuses', async () => {
+    const { key } = await newKey(U.member)
+    expect(await refusalOf(keyUser({ loginDomains: ['snowhound.eu'] })(key, false))).toEqual({
+      status: 401,
+      code: 'UNAUTHENTICATED',
+      message: 'Email domain not allowed.',
+    })
+  })
+
+  test('refuses a read-only key a write with 403', async () => {
+    const { key } = await newKey(U.member, 'read')
+    expect(await refusalOf(keyUser()(key, true))).toEqual({
+      status: 403,
+      code: 'FORBIDDEN',
+      message: 'API key is read-only.',
+    })
+  })
+
+  test("refuses past the key's own burst limit with 429", async () => {
+    const { id, key } = await newKey(U.member)
+    await db
+      .update(schema.apikey)
+      .set({ requestCount: rateLimits.apiKeyRequests.max, lastRequest: new Date() })
+      .where(eq(schema.apikey.id, id))
+    expect(await refusalOf(keyUser()(key, false))).toMatchObject({ status: 429 })
+  })
+
+  test("counts writes against the rate the user's session shares", async () => {
+    const { key } = await newKey(U.lead, 'write')
+    const store = memoryStore()
+    for (let i = 0; i < rateLimits.writesPerUser.max; i++) {
+      await store.consume(`write:${U.lead}`, rateLimits.writesPerUser)
+    }
+    expect(await keyUser({ rateLimitStore: store })(key, false)).toBe(U.lead)
+    const error = await errorOf(keyUser({ rateLimitStore: store })(key, true))
+    expect(error).toBeInstanceOf(AppError)
+    expect(error).toMatchObject({ code: 'RATE_LIMITED', key: 'rate_limited' })
+  })
+
+  test('the key signs in to neither a session nor /api/auth/*', async () => {
+    const { key } = await newKey(U.member, 'write')
+    const headers = new Headers({ authorization: `Bearer ${key}`, 'x-api-key': key })
+    expect(await auth.api.getSession({ headers })).toBeNull()
+    const response = await auth.handler(
+      new Request('http://localhost:3000/api/auth/get-session', { headers }),
+    )
+    expect(await response.json()).toBeNull()
+  })
+
+  test('bearerKey reads only a Bearer authorization', () => {
+    expect(bearerKey(new Headers({ authorization: 'Bearer snow_abc' }))).toBe('snow_abc')
+    expect(bearerKey(new Headers({ authorization: 'Basic snow_abc' }))).toBeNull()
+    expect(bearerKey(new Headers())).toBeNull()
+  })
+
+  test("a key's API requests use English, and the app's own the user's language", async () => {
+    const estonian = { cookie: 'PARAGLIDE_LOCALE=et', 'accept-language': 'et' }
+    async function localeOf(path: string, headers: Record<string, string>) {
+      const request = new Request(`http://localhost:3000${path}`, { headers })
+      const response = await paraglideMiddleware(localeRequest(request), async () =>
+        Response.json(getLocale()),
+      )
+      return response.json()
+    }
+    expect(await localeOf('/api/v1/timer', estonian)).toBe('et')
+    expect(await localeOf('/api/v1/timer', { ...estonian, authorization: 'Bearer snow_abc' })).toBe(
+      'en',
+    )
+  })
 })

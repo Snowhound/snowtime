@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/orgs/{{orgId}}/entries?from={{rangeFrom}}&to={{rangeTo}}
+  url: {{baseUrl}}/organizations/{{orgId}}/entries?from={{rangeFrom}}&to={{rangeTo}}
   body: none
   auth: inherit
 }
@@ -28,9 +28,9 @@ assert {
 }
 
 docs {
-  # GET /api/v1/orgs/:orgId/entries
+  # GET /api/v1/organizations/:orgId/entries
 
-  Entries that overlap `[from, to)`, newest first. Needs a `read` key.
+  Entries that overlap `[from, to)`, newest first, as an array. Needs a `read` key.
 
   - `from` and `to` are ISO 8601 timestamps, at most 93 days apart. The script sets them
     to the last 7 days; for another range, type timestamps over `{{rangeFrom}}` and

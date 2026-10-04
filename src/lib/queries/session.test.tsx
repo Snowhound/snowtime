@@ -3,8 +3,6 @@ import { describe, expect, test, vi } from 'vitest'
 import { newId } from './query'
 import { followSession, organizationOfPath, sessionQuery } from './session'
 
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
-
 const organizationId = newId()
 const projectsKey = ['projects', organizationId]
 

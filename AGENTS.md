@@ -51,12 +51,16 @@ Edit their source files at the paths above so both agents use the same instructi
 - A component gets its own folder, `<name>/<name>.tsx`, once it has subcomponents,
   helpers, or tests that nothing else in the feature uses.
 - Backend code is grouped by domain in `src/server/<domain>/` ("Application rules" in
-  `docs/architecture/README.md`). Client code imports a domain's `*.functions.ts` and
-  `*.schemas.ts`, plus `src/server/errors.ts` and `src/server/schemas.ts`. It never
-  imports `*.server.ts`, not even for a type.
+  `docs/architecture/README.md`). The client reaches it only through the JSON API: queries
+  and mutations call `call` (`src/lib/api/client.ts`), and each call is listed in
+  `src/lib/api/operations.ts` with its handler in `src/server/operations.server.ts`. A new
+  call adds both, its output schema, and conformance tests in `conformance/`. A GET only
+  reads; a read with a filter object for input is a POST marked `read`. Client code imports a domain's
+  `*.schemas.ts`, plus `src/server/errors.ts` and `src/server/schemas.ts`. It never imports
+  `*.server.ts`, not even for a type.
 - Import with a relative path inside the importer's area: one feature folder,
   `src/server/`, or another top-level folder of `src/`. Import anything else through the
-  `~/` alias for `src/` (`~/lib/format`, `~/server/timer/timer.functions`), as
+  `~/` alias for `src/` (`~/lib/format`, `~/server/timer/timer.schemas`), as
   `scripts/` and `datamodel/` do. oxlint checks this: no parent imports where the area is
   flat, and none that climb two levels inside a feature or `src/server/`.
 - Write named functions as `function` declarations, not arrows assigned to a `const`,

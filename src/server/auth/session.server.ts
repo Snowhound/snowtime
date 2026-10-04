@@ -4,7 +4,7 @@
 // "Tenancy"; docs/architecture/timer.md, "User settings"; and docs/architecture/taglines.md).
 import { and, asc, eq, gt, gte, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Database } from '~/db'
-import { invitation, member, organization, timeEntry } from '~/db/schema'
+import { invitation, member, organization, timeEntry, user } from '~/db/schema'
 import { localDate } from '~/lib/calendar'
 import { userRegion } from '~/lib/holidays/region'
 import { fillRange, fillSummary } from '~/lib/taglines/fill'
@@ -44,8 +44,24 @@ export async function appSession(
   }
 }
 
+// The getMe call: the user and their organizations, without the settings and fill totals
+// appSession reads for the app frame.
+export async function me(db: Database, userId: string) {
+  const [[account], organizations] = await Promise.all([
+    db
+      .select({ id: user.id, name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId)),
+    organizationsOf(db, userId),
+  ])
+  return {
+    user: account,
+    organizations: organizations.map(({ id, name, slug, role }) => ({ id, name, slug, role })),
+  }
+}
+
 // The user's organizations by name, with their strongest role in each.
-export async function organizationsOf(db: Database, userId: string) {
+async function organizationsOf(db: Database, userId: string) {
   const memberships = await db
     .select({
       id: organization.id,

@@ -1,19 +1,7 @@
 // Projects in the scope's organization. Everyone lists the projects they may see; admins
-// and owners create, change, archive and assign them. The timer and entry server
-// functions check projects through assertUsableProject.
-import {
-  and,
-  asc,
-  count,
-  eq,
-  exists,
-  getTableColumns,
-  isNull,
-  notExists,
-  or,
-  sql,
-  type SQL,
-} from 'drizzle-orm'
+// and owners create, change, archive and assign them. The timer's and the entries' rules
+// check projects through assertUsableProject.
+import { and, asc, count, eq, exists, isNull, notExists, or, sql, type SQL } from 'drizzle-orm'
 import type { Database, Executor } from '~/db'
 import { project, projectTeam, team, teamMember, timeEntry } from '~/db/schema'
 import { AppError } from '../errors'
@@ -44,6 +32,14 @@ function visibleProjects(db: Executor, scope: Scope): SQL | undefined {
   return or(notExists(assignments), exists(ownTeamAssignments))
 }
 
+// What the API sends of a project.
+const projectColumns = {
+  id: project.id,
+  name: project.name,
+  color: project.color,
+  archivedAt: project.archivedAt,
+}
+
 function assertAdmin(scope: Scope) {
   if (!isAdmin(scope)) {
     throw new AppError('FORBIDDEN', 'projects_forbidden')
@@ -52,7 +48,7 @@ function assertAdmin(scope: Scope) {
 
 async function findProject(db: Executor, scope: Scope, id: string) {
   const [row] = await db
-    .select()
+    .select(projectColumns)
     .from(project)
     .where(and(eq(project.id, id), live(project, scope)))
   if (!row) throw new AppError('NOT_FOUND', 'project_not_found')
@@ -83,7 +79,7 @@ export async function listProjects(db: Database, scope: Scope, input: ListProjec
   // which saves a round trip; the few of unlisted projects are dropped below.
   const [rows, assignments] = await Promise.all([
     db
-      .select({ ...getTableColumns(project), hasEntries: sql`${exists(entries)}`.mapWith(Boolean) })
+      .select({ ...projectColumns, hasEntries: sql`${exists(entries)}`.mapWith(Boolean) })
       .from(project)
       .where(
         and(
@@ -119,7 +115,7 @@ export async function createProject(db: Database, scope: Scope, input: CreatePro
         name: input.name,
         color: input.color,
       })
-      .returning()
+      .returning(projectColumns)
     return created
   } catch (error) {
     const failed = failedConstraint(error)
@@ -144,7 +140,7 @@ export async function updateProject(db: Database, scope: Scope, input: UpdatePro
       .update(project)
       .set({ name: input.name, color: input.color })
       .where(and(eq(project.id, existing.id), live(project, scope)))
-      .returning()
+      .returning(projectColumns)
     if (!updated) throw new AppError('NOT_FOUND', 'project_not_found')
     return updated
   } catch (error) {
@@ -165,7 +161,7 @@ async function setArchived(db: Database, scope: Scope, id: string, archived: boo
     .update(project)
     .set({ archivedAt: archived ? new Date() : null })
     .where(and(eq(project.id, existing.id), live(project, scope)))
-    .returning()
+    .returning(projectColumns)
   if (!updated) throw new AppError('NOT_FOUND', 'project_not_found')
   return updated
 }

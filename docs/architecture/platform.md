@@ -39,7 +39,7 @@ works; one that lacks it gets a notice at the top of each page.
 | Environment | Branch    | Database                                                   |
 | ----------- | --------- | ---------------------------------------------------------- |
 | Local       |           | `file:local.db`, no token                                  |
-| Staging     | `develop` | `staging` Turso database (planned)                         |
+| Preview     | any other | `snowtime-staging` Turso database, seeded and shared       |
 | Production  | `main`    | `prod` Turso database, same region as the Vercel functions |
 
 Production runs in Vercel's `dub1` (Dublin) with Turso's `aws-eu-west-1` (Ireland), the
@@ -52,15 +52,18 @@ this changes, switch before production holds real data.
 
 **Migrations and deploys:** CI runs `db:migrate` after the checks pass on a push to the
 environment's branch, and then deploys that commit to Vercel. Migrations never run in the
-Vercel build or on Vercel app start. A database only
+Vercel build or on Vercel app start. Production only
 receives merged migrations, because `db:verify` rejects an applied migration that a PR
 later edits, and two open PRs would mix their migrations in one shared database. PRs
-test their migrations on throwaway local databases only (`db:drift`).
+test their migrations on throwaway local databases (`db:drift`). The staging database is
+the exception: a push that changes a branch's migrations applies them there, and staging
+is reseeded when branches' migrations conflict (`../migrations.md`, "Staging"). It holds
+only seeded data, so a reseed costs nothing.
 
-- Staging is planned, not set up. When added, the `develop` branch deploys to a stable
-  host such as `staging.<domain>`, with branch-scoped Preview env vars, so OAuth
-  callbacks and passkeys can be registered for it once. Other preview deployments have
-  generated URLs and no sign-in.
+- Preview deployments of every branch run in demo mode against the seeded staging
+  database and sign in with the seeded users (task 087; `auth.md`, "Preview
+  deployments"). A `develop` branch on a fixed staging host was planned before and
+  dropped: only that branch could sign in.
 - Vercel doesn't deploy `main` by itself (`vercel.json`). CI's `deploy-prod` job runs
   `vercel deploy --prod` once the migration has applied, so a failed check or migration
   keeps new code off production. Vercel used to deploy each push in parallel with CI;
@@ -85,8 +88,9 @@ test their migrations on throwaway local databases only (`db:drift`).
   opt in with `MIGRATE_ON_START=true`; Vercel retains its CI migration flow.
   The initial Hetzner demo at `snowtime-internal.snowhound.eu` defers backups and uses
   Cloudflare as a CDN for static files. HTML and server responses bypass caching.
-  Its images are built on GitHub Actions and pushed to GHCR, and it deploys only when
-  someone runs the manual Compose deploy workflow, never on a push.
+  Its images are built on GitHub Actions and pushed to GHCR. The Compose deploy workflow
+  deploys `main` after CI passes on it (`COMPOSE_AUTO_DEPLOY`), and any branch when run
+  by hand. The repository is public, so its Actions minutes cost nothing.
   Setup is in [the Compose runbook](../deployment/compose.md).
 - Both deployments use `@libsql/client` (task 077, decided 2026-09-30). Turso's own
   drivers were measured and not adopted:
@@ -120,20 +124,24 @@ test their migrations on throwaway local databases only (`db:drift`).
   `bun run test` run.
 - The locale lives in the `PARAGLIDE_LOCALE` cookie, not the URL: the app has no public pages
   that need localized links. Without the cookie, the browser's `Accept-Language` picks it,
-  then English. Signed-in pages set the cookie from `user_settings.locale`: when the account's
-  language differs from the request's, `getAppSession` sets the cookie and the page loads
-  again, so the user sees only the account's language. The cookie never holds anything but the
+  then English. Signed-in pages set the cookie from `user_settings.locale` in the browser:
+  the session read only reads (task 084), so when a page arrives in another language than the
+  account's, the root route stores the account's in the cookie and loads the page again.
+  After that, saving another language switches it in place. The cookie never holds anything but the
   account's language (see "Cookies and consent" in [auth.md](auth.md)). `src/server-entry.ts`
   runs Paraglide's middleware around every request, which scopes the locale per request.
-- The HTTP API answers in English only ([docs/api.md](../api.md)). For `/api/v1`,
-  `localeRequest` (`src/server/locale.server.ts`) hands Paraglide's middleware a copy of the
-  request without its cookie or `Accept-Language`, so the locale falls back to English and
-  the domain schemas' validation messages match the API's other messages. An API client
-  isn't a user's browser, and one language keeps the contract simple. Paraglide's own
+- The JSON API answers a request with an API key in English only
+  ([docs/api.md](../api.md)). For such a request, `localeRequest`
+  (`src/server/locale.server.ts`) hands Paraglide's middleware a copy of the request
+  without its cookie or `Accept-Language`, so the locale falls back to English and the
+  domain schemas' validation messages match the API's other messages. An API client isn't
+  a user's browser, and one language keeps the contract simple. The app's own calls keep
+  the user's language. Paraglide's own
   `routeStrategies` option would do the same, but compiles route matching into the browser
   runtime, 5.7 kB gzipped on every page.
 - The user's language is `user_settings.locale` (see "User settings" in [timer.md](timer.md)).
-  The first `getSettings` call sets it from the browser, as it does the time zone.
+  A new user's settings, which `PUT /api/v1/settings` creates, take it from the browser, as
+  they do the time zone.
 - The server returns keys, dates, and numbers, never display text; the client translates
   and formats them in the user's locale and zone.
   - Each `AppError` carries a stable snake_case message key from the catalog in
@@ -162,10 +170,9 @@ test their migrations on throwaway local databases only (`db:drift`).
   `AppError`'s message, or the generic one for anything else. It offers a retry, which
   reloads the routes, and a link home.
 - While the database is unreachable, for example while production moves to another
-  database, the error page is a maintenance page instead. `availabilityMiddleware`
-  (`src/server/middleware.ts`) runs around every server function. When one fails with an
-  unexpected error, the middleware runs `select 1`, and if that fails or takes over 3
-  seconds, it throws an `UNAVAILABLE` `AppError`. The maintenance page stays at the
+  database, the error page is a maintenance page instead. When an API call fails with an
+  unexpected error, `unavailableOr` (`src/server/guards.server.ts`) runs `select 1`, and
+  if that fails or takes over 3 seconds, the call fails with an `UNAVAILABLE` `AppError`. The maintenance page stays at the
   requested URL, so a reload opens that page once the database is back. It calls
   `checkAvailability` every 15 seconds while the tab is visible, and again on focus,
   when the tab is shown, or when the device comes online. Once the database answers,
@@ -183,8 +190,8 @@ test their migrations on throwaway local databases only (`db:drift`).
   carrying only the message to show and whether the database was unreachable. Remove the workaround once the router renders both
   sides alike.
 - The router's dehydrated state still carries a loader error's own message in the page
-  source, though the page never shows it. Start already sends a server function's error
-  message to the browser, so this adds no new exposure.
+  source, though the page never shows it. The API already sends a refusal's code and key
+  to the browser, and the message is the key's text, so this adds no new exposure.
 
 ## Performance harnesses
 

@@ -2,10 +2,13 @@
 
 ## Sign-in methods
 
-`DEMO_MODE=true` explicitly enables a deployed demo on local SQLite. It disables
+`DEMO_MODE=true` explicitly enables a deployed demo on local SQLite, or a Vercel preview
+on the shared staging database ([Preview deployments](#preview-deployments)). It disables
 OAuth even when credentials are present, enables seeded password sign-in, and disables
 password sign-up. A box on the sign-in page explains that accounts and changes are
-shared. The flag defaults to false and is read at runtime.
+shared. The flag defaults to false and is read at runtime. The app refuses to start with
+`DEMO_MODE=true` and a remote database anywhere but a preview, so a production database
+can't be opened to the public seed password by mistake.
 Full-year sample data is seeded explicitly, never at startup. Demo mode is for sample
 data; company use starts with a fresh database and normal OAuth configuration.
 
@@ -35,8 +38,8 @@ membership or other permissions.
 - Each provider's OAuth app redirects to `<BETTER_AUTH_URL>/api/auth/callback/<id>`, for
   example `http://localhost:3000/api/auth/callback/github` locally. Providers match the
   redirect URL exactly and allow no wildcards, so OAuth sign-in works only on hosts
-  registered in advance: local, the staging host, and production. A
-  preview deployment on its own generated URL cannot use OAuth.
+  registered in advance: local and production. A preview deployment on its own
+  generated URL cannot use OAuth.
   - Google: one OAuth client can list the redirect URLs of every environment.
   - GitHub: an OAuth app lists up to 10 redirect URIs, so one app can serve every
     environment. A separate app per environment keeps a staging secret from signing in
@@ -47,14 +50,14 @@ membership or other permissions.
     accounts. `MICROSOFT_TENANT_ID` restricts sign-in to one tenant, for example in a
     dedicated stack for one client.
 - Better Auth caches the session and user in a signed cookie for 5 minutes
-  (`cookieCache`), so a server function call doesn't read them from the database, which
+  (`cookieCache`), so an API call doesn't read them from the database, which
   was 2 of its reads. The cost: a session revoked on another device, or an erased user,
   stays usable for up to 5 minutes where the cookie is. Organization access is still
   checked on every call, because `resolveScope` reads the `member` row.
 - Profile edits go straight through the Better Auth client, as organization management does
   (see "Tenancy" in [data.md](data.md)): changing the name, linking and unlinking providers,
   and adding and removing passkeys. Better Auth checks that the session owns the account, and
-  no Snowtime rule applies, so there are no server functions for them.
+  no Snowtime rule applies, so the API has no calls for them.
   - Better Auth's defaults apply. A provider links only when its email matches the
     user's. Unlinking and passkey changes need a session from the last day, and the last
     account can't be unlinked; passkeys don't count as accounts.
@@ -89,13 +92,13 @@ membership or other permissions.
     without a passkey, in a browser with WebAuthn. Adding one or choosing "Not now" hides
     it on that device (`snowtime.passkeyPromptDismissed` in localStorage), so a user is
     asked again on a new device, where a passkey helps.
-- A passkey is bound to its relying party, the host of `BETTER_AUTH_URL`, so it works
-  only in the environment where it was registered. A preview deployment with its own
-  URL needs its own passkeys.
+- A passkey is bound to its relying party, the host of the app's URL (`BETTER_AUTH_URL`,
+  or a preview's branch URL), so it works only in the environment where it was
+  registered.
 - Email provider when email is added: Brevo (free tier 300 emails a day, EU-based
   company), optional per deployment through env vars (task 016).
 - Sign-up and sign-in screens are prototyped in `prototypes/auth.html`.
-- An invitation link is `<BETTER_AUTH_URL>/invitation/<id>`. Better Auth shows an
+- An invitation link is `<app URL>/invitation/<id>`. Better Auth shows an
   invitation only to the invited user's session, but the screen must name the
   organization, team, inviter, and invited address before sign-in, so the reader knows
   which account to use. `getInvitation` returns those details signed out. The id is
@@ -108,8 +111,28 @@ membership or other permissions.
 - Links last 48 hours (`invitationExpiresIn`). Better Auth ignores expired invitations
   when it checks for an open one, so a new link for an expired invitation is a new
   invitation; the Organization view then cancels the expired one. The view builds the
-  link from the session's `appUrl` (`getAppSession`), the origin of `BETTER_AUTH_URL`: the Better Auth
+  link from the session's `appUrl` (`getAppSession`), the origin of the app's URL: the Better Auth
   client only knows the page's origin, which a proxy or a second domain can change.
+
+### Preview deployments
+
+Vercel preview deployments run against `snowtime-staging`, a Turso database seeded with
+`bun run db:seed --company` and shared by every preview (task 087). Seeded users sign in with
+the public seed password, through `DEMO_MODE=true` in Vercel's Preview environment. OAuth
+callbacks can't follow generated hosts, and a separate staging flag was rejected: demo mode
+already does what previews need, and its shared-accounts box is true of staging.
+
+- The app's URL follows the preview host. When `VERCEL_ENV` is `preview`,
+  `src/lib/app-url.ts` uses `https://$VERCEL_BRANCH_URL` as Better Auth's `baseURL`, the
+  passkey relying party, and the invitation link origin, and Better Auth also trusts
+  `https://$VERCEL_URL`. The branch URL stays the same across a branch's pushes, so
+  invitation links keep working; the deployment URL is the one Vercel's PR comment links.
+  `BETTER_AUTH_URL` must stay unset on previews, and the app refuses to start otherwise. A
+  fixed preview domain was rejected because only the branch it's assigned to could sign in.
+- The seed password is public in the repository, so Vercel Deployment Protection stays on
+  for previews, and staging holds no real data.
+- Previews have no Upstash and count rate limits in memory, so staging traffic doesn't
+  count against production's limits.
 
 ## API keys
 
@@ -130,33 +153,39 @@ options are `apiKeyOptions` in `src/server/auth/api-keys.server.ts`.
   `expiresIn` is empty, which would rule out a key that never expires.
 - A key has scopes, as the plugin's permissions: `read` (`{ api: ['read'] }`), or `write`,
   which includes read. The form preselects read only, the least access.
-- Settings creates, lists, and revokes keys through server functions (`createApiKey`,
-  `listApiKeys`, `revokeApiKey` in `auth.functions.ts`), not the Better Auth client. The
-  plugin takes permissions only from the server, so the server function calls it without
-  request headers. The plugin's HTTP endpoints are closed (`apiKeyDisabledPaths`), so a
+- Settings creates, lists, and revokes keys through the JSON API's `createApiKey`,
+  `listApiKeys`, and `revokeApiKey` calls, not the Better Auth client. The plugin takes
+  permissions only from the server, so the handler calls it without request headers. A
+  key can't make these calls, so a key can't mint or revoke keys. The plugin's HTTP endpoints are closed (`apiKeyDisabledPaths`), so a
   session can't make a key without scopes or extend one's expiry. Listing and revoking
   read and delete the plugin's rows directly, filtered by the user.
 - `api_key.reference_id` references `user(id)` with `ON DELETE CASCADE`, which the plugin
   doesn't declare, so a deleted user's keys go with the user row.
 - The plugin's sessions from API keys stay off (`enableSessionForAPIKeys: false`), so a key
-  can't call server functions or `/api/auth/*`. The `/api/v1` routes read
-  `Authorization: Bearer <key>` and verify the key themselves (`createApiRoute` in
-  `src/server/api/api.server.ts`), and ignore the session cookie.
-- `createApiRoute` verifies a key without permissions and checks its scope itself, because
-  the plugin refuses a key without the asked-for permissions as an unknown key. A read-only
-  key on a write route then answers 403, and an unknown one 401.
-- `createApiRoute` checks the key's user against `ALLOWED_LOGIN_DOMAINS` on every request,
-  as the session hooks check a session, so a key stops working when its user's domain
-  leaves the list.
+  can't reach `/api/auth/*`. The JSON API reads `Authorization: Bearer <key>` and verifies
+  the key itself (`keyUser` in `src/server/guards.server.ts`). A request with a key is
+  signed in by the key alone: the API drops its cookie, so a session can't widen it.
+- A key reaches only the calls marked `apiKeys: true` in `src/lib/api/operations.ts`. The
+  rest, such as the Settings calls above, answer 403 to a key.
+- `keyUser` verifies a key without permissions and checks its scope itself, because the
+  plugin refuses a key without the asked-for permissions as an unknown key. A read-only key
+  on a write then answers 403, and an unknown one 401.
+- `keyUser` checks the key's user against `ALLOWED_LOGIN_DOMAINS` on every request, as the
+  session hooks check a session, so a key stops working when its user's domain leaves the
+  list.
 - The plugin reports a failed database read as an invalid key. Before answering 401,
-  `createApiRoute` checks that the database answers, and answers 503 if it doesn't, so a
-  client isn't told to replace a working key during an outage.
+  `keyUser` checks that the database answers, and answers 503 if it doesn't, so a client
+  isn't told to replace a working key during an outage.
+- A key's writes skip the `Origin` check, which stops other sites from writing with the
+  session cookie; a key travels in a header no other site can set. They count against the
+  same per-user write rate as the browser's.
 - The plugin limits each key to 60 requests whose gaps are all under 5 seconds
   (`rateLimits.apiKeyRequests`). A longer gap restarts the count, so the limit caps bursts,
   not a steady rate: a client polling every 5 seconds or slower never reaches it.
 - In 1.7.6, the plugin verifies a key with a read and two writes before the response: it
   records `last_request` and touches `updated_at`. `deferUpdates` moves only the deletion
-  of expired keys after the response. Whether `/api/v1` accepts that cost is open in task 082.
+  of expired keys after the response. Whether the API accepts that cost for keys is open in
+  task 082.
 
 ## Cookies and consent
 
@@ -249,10 +278,11 @@ with the same `Name` schema and returns translated `AppError`s.
 Rate limits bound how fast one user or address can write, which the caps don't. The rates
 are `rateLimits` in `src/server/limits.server.ts`.
 
-- `sessionMiddleware` counts every POST server function against the user's write rate,
-  across all their organizations, and throws `AppError` with code `RATE_LIMITED` past it.
-  Every write is a POST, so a new write function is covered without extra code. The app's
-  invitation function also applies the invitation rate per user before calling Better Auth.
+- The API's session check (`signedInUser` in `src/server/guards.server.ts`) counts every
+  write against the user's write rate, across all their organizations, and refuses with
+  `AppError` code `RATE_LIMITED` past it. Every call but a GET or a POST marked `read` writes, so a new
+  write is covered without extra code. The app's invitation call also applies the
+  invitation rate per user before calling Better Auth.
 - Better Auth limits `/api/auth/*` per IP address and path, in production only, with
   stricter rules for creating organizations and inviting members. Its per-IP rules stay
   loose because an office may share one address.
@@ -269,6 +299,14 @@ are `rateLimits` in `src/server/limits.server.ts`.
 - Upstash was chosen over Better Auth's `storage: 'database'`, which would cost a Turso
   write per counted request, and over Vercel Firewall rules, which limit only per IP.
   Upstash is Redis over HTTP, so it doesn't tie the app to Vercel.
+- Snowhound's Vercel deployment runs without Upstash, decided on 2026-10-03. Each counted
+  write would wait for one round trip to Upstash, which offers no region nearer than
+  Frankfurt to the Stockholm functions. Users are few, production has no password
+  sign-in, and the caps above bound the database whatever the rates do. Each warm
+  instance still stops a sustained flood from one user or address; a client spread over
+  many instances gets the rate times the instance count. Add Upstash once abuse shows in
+  the logs or the app opens to the public at scale. Self-hosted, one process counts
+  exactly in memory.
 
 ## Content security policy
 

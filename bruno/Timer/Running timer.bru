@@ -11,7 +11,7 @@ get {
 }
 
 script:post-response {
-  const timer = res.getBody()?.timer
+  const timer = res.getBody()
   if (timer) bru.setVar('entryId', timer.id)
 }
 
@@ -22,7 +22,7 @@ assert {
 docs {
   # GET /api/v1/timer
 
-  `{ "timer": null }` without a running timer, or the running entry with its project.
+  `null` without a running timer, or the running entry with its project.
   Needs a `read` key.
 
   Saves the running entry's id as `entryId`.

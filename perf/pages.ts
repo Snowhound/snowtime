@@ -193,7 +193,7 @@ function collectSizes(page: Page, origin: string, audit: boolean) {
     const url = response.url()
     if (!url.startsWith(origin) || seen.has(url) || !response.ok()) return
     const type = response.request().resourceType()
-    const kind = url.includes('/_serverFn/')
+    const kind = url.includes('/api/v1/')
       ? 'data'
       : type === 'document'
         ? 'html'

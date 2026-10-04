@@ -2,16 +2,18 @@ import { render, screen, waitFor, within } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
+import type { ApiKey } from '~/server/auth/auth.schemas'
 import { AppError } from '~/server/errors'
 import { ApiKeysCard, relativeTime } from './api-keys-card'
-import type { ApiKey } from './queries'
 
 const fn = vi.hoisted(() => ({
   listApiKeys: vi.fn(),
   createApiKey: vi.fn(),
   revokeApiKey: vi.fn(),
 }))
-vi.mock('~/server/auth/auth.functions', () => fn)
+setTransport(mockTransport(fn))
 
 const NOW = Date.now()
 const DAY = 24 * 60 * 60 * 1000
@@ -105,7 +107,9 @@ describe('ApiKeysCard', () => {
     await user.click(dialog.getByRole('button', { name: 'Create key' }))
     await waitFor(() =>
       expect(fn.createApiKey).toHaveBeenCalledWith({
-        data: { name: 'Raycast', lifetime: '90d', access: 'read' },
+        name: 'Raycast',
+        lifetime: '90d',
+        access: 'read',
       }),
     )
     const shown = within(await screen.findByRole('dialog'))
@@ -129,7 +133,9 @@ describe('ApiKeysCard', () => {
     await user.click(dialog.getByRole('button', { name: 'Create key' }))
     await waitFor(() =>
       expect(fn.createApiKey).toHaveBeenCalledWith({
-        data: { name: 'Raycast', lifetime: 'none', access: 'write' },
+        name: 'Raycast',
+        lifetime: 'none',
+        access: 'write',
       }),
     )
   })
@@ -152,13 +158,13 @@ describe('ApiKeysCard', () => {
     const user = userEvent.setup()
     const key = apiKey()
     fn.listApiKeys.mockResolvedValueOnce([key]).mockResolvedValue([])
-    fn.revokeApiKey.mockResolvedValue(undefined)
+    fn.revokeApiKey.mockResolvedValue({ id: key.id })
     renderCard()
     await user.click(await screen.findByRole('button', { name: 'Revoke Raycast on MacBook' }))
     const dialog = within(await screen.findByRole('dialog'))
     expect(dialog.getByText('Revoke “Raycast on MacBook”?')).toBeInTheDocument()
     await user.click(dialog.getByRole('button', { name: 'Revoke key' }))
-    expect(fn.revokeApiKey).toHaveBeenCalledWith({ data: { id: key.id } })
+    expect(fn.revokeApiKey).toHaveBeenCalledWith({ id: key.id })
     expect(await screen.findByText('Revoked “Raycast on MacBook”.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Revoke Raycast on MacBook' })).toBeNull()
   })

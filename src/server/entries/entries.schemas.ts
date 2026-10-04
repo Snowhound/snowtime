@@ -73,3 +73,17 @@ export type ListEntriesInput = v.InferOutput<typeof ListEntriesInput>
 // The start of one user's earliest entry, for telling the timer whether earlier time exists.
 export const GetFirstEntryStartInput = v.object({ userId: Uuidv7 })
 export type GetFirstEntryStartInput = v.InferOutput<typeof GetFirstEntryStartInput>
+
+// An entry as the contract returns it. IDs are plain strings: seeded and imported rows
+// predate uuid v7.
+export const Entry = v.object({
+  id: v.string(),
+  organizationId: v.string(),
+  userId: v.string(),
+  projectId: v.nullable(v.string()),
+  description: v.string(),
+  ticket: v.nullable(v.string()),
+  startedAt: Timestamp,
+  stoppedAt: v.nullable(Timestamp),
+})
+export type Entry = v.InferOutput<typeof Entry>

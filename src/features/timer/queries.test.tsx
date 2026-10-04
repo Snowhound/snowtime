@@ -2,6 +2,8 @@ import { renderHook } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import type { JSX } from 'solid-js'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import { newId } from '~/lib/queries/query'
 import { MAX_ENTRY_MS } from '~/server/entries/entries.schemas'
 import { type Entry, entriesQuery, useCreateEntry, useStopTimer } from './queries'
@@ -12,19 +14,7 @@ const fn = vi.hoisted(() => ({
   stopTimer: vi.fn(),
   listEntries: vi.fn(),
 }))
-vi.mock('~/server/entries/entries.functions', () => ({
-  createEntry: fn.createEntry,
-  listEntries: fn.listEntries,
-  deleteEntry: vi.fn(),
-  getFirstEntryStart: vi.fn(),
-  updateEntry: vi.fn(),
-}))
-vi.mock('~/server/timer/timer.functions', () => ({
-  getRunningTimer: vi.fn(),
-  startTimer: vi.fn(),
-  stopTimer: fn.stopTimer,
-}))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
+setTransport(mockTransport(fn))
 
 const HOUR = 3_600_000
 const organizationId = newId()

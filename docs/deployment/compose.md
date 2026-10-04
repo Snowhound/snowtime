@@ -8,7 +8,7 @@ app pattern used by minupatsient. Backups are deferred for this demo deployment.
 The commands below assume Debian 13, an SSH user with sudo, and an x64 machine. On
 Ubuntu, install Docker from its
 [Ubuntu instructions](https://docs.docker.com/engine/install/ubuntu/), then continue
-at step 2. The manual **Compose deploy** workflow builds the images on GitHub Actions,
+at step 2. The **Compose deploy** workflow builds the images on GitHub Actions,
 pushes them to GHCR, and deploys them over SSH, so the server needs no Bun, Node, or
 checkout of the repository. A 1 vCPU, 2 GB server runs the demo; other runtime
 requirements are in [Hosting](../hosting.md#self-hosted-one-linux-server).
@@ -70,7 +70,7 @@ In the Cloudflare zone for `snowhound.eu`:
 
 Caddy serves hashed `/assets/` files with a one-year immutable cache lifetime and
 backgrounds and brand images for one week. It marks proxied responses
-`private, no-store`, including HTML, authentication, and server functions. Static
+`private, no-store`, including HTML, authentication, and the JSON API. Static
 files stay on the same hostname, so the app needs no asset-domain setting or CSP change.
 Cloudflare's [default cache behavior](https://developers.cloudflare.com/cache/concepts/default-cache-behavior/)
 and [cache rules](https://developers.cloudflare.com/cache/how-to/cache-rules/settings/)
@@ -175,7 +175,9 @@ amounts to access to the server.
 ## 4. Deploy, seed, and start
 
 In the repository's **Actions** tab, open **Compose deploy**, choose **Run workflow**,
-pick the branch, and keep **restart**. From a terminal:
+pick the branch, and keep **restart**. To deploy `main` after every push once its checks
+pass, set the repository variable `COMPOSE_AUTO_DEPLOY` to `true` (**Settings > Secrets and
+variables > Actions > Variables**). A fork without the variable builds nothing. From a terminal:
 
 ```bash
 gh workflow run compose-deploy.yml --ref feat/compose-demo-deployment -f server=restart

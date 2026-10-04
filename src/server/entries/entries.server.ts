@@ -18,6 +18,18 @@ import type {
   UpdateEntryInput,
 } from './entries.schemas'
 
+// The columns the contract returns for an entry (Entry in entries.schemas.ts).
+export const entryColumns = {
+  id: timeEntry.id,
+  organizationId: timeEntry.organizationId,
+  userId: timeEntry.userId,
+  projectId: timeEntry.projectId,
+  description: timeEntry.description,
+  ticket: timeEntry.ticket,
+  startedAt: timeEntry.startedAt,
+  stoppedAt: timeEntry.stoppedAt,
+}
+
 function assertCanWrite(scope: Scope, userId: string) {
   if (userId !== scope.userId && !isAdmin(scope)) {
     throw new AppError('FORBIDDEN', 'entry_forbidden')
@@ -94,7 +106,7 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
         startedAt: input.startedAt,
         stoppedAt: input.stoppedAt,
       })
-      .returning()
+      .returning(entryColumns)
     return entry
   } catch (error) {
     if (failedConstraint(error) === 'time_entry.id') {
@@ -150,7 +162,7 @@ export async function updateEntry(db: Database, scope: Scope, input: UpdateEntry
         stoppedAt: input.stoppedAt,
       })
       .where(and(eq(timeEntry.id, entry.id), live(timeEntry, scope)))
-      .returning()
+      .returning(entryColumns)
     if (!updated) throw new AppError('NOT_FOUND', 'entry_not_found')
     return updated
   } catch (error) {
@@ -209,7 +221,7 @@ export async function listEntries(db: Database, scope: Scope, input: ListEntries
   const users = input.userId ? [input.userId] : readable
 
   return db
-    .select()
+    .select(entryColumns)
     .from(timeEntry)
     .where(
       and(

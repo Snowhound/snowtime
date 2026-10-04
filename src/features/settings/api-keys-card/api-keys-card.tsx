@@ -23,8 +23,9 @@ import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { getLocale } from '~/paraglide/runtime.js'
+import type { ApiKey } from '~/server/auth/auth.schemas'
 import { CreateKeyDialog } from './create-key-dialog'
-import { type ApiKey, apiKeysQuery, useRevokeApiKey } from './queries'
+import { apiKeysQuery, useRevokeApiKey } from './queries'
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE

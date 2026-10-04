@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/orgs/{{orgId}}/timer
+  url: {{baseUrl}}/organizations/{{orgId}}/timer/start
   body: json
   auth: inherit
 }
@@ -40,7 +40,7 @@ assert {
 }
 
 docs {
-  # POST /api/v1/orgs/:orgId/timer
+  # POST /api/v1/organizations/:orgId/timer/start
 
   Starts a timer in `orgId` and answers `{ started, stopped }`; `stopped` is the timer it
   stopped, or null. Needs a `write` key.

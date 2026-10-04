@@ -4,7 +4,8 @@
 import * as v from 'valibot'
 import { SLUG_PATTERN, isReservedSlug } from '~/lib/app-paths'
 import { m } from '~/paraglide/messages.js'
-import { Uuidv7 } from '../schemas'
+import { OrgRole, Timestamp, Uuidv7 } from '../schemas'
+import { Settings } from '../settings/settings.schemas'
 
 export const GetInvitationInput = v.object({ id: Uuidv7 })
 export type GetInvitationInput = v.InferOutput<typeof GetInvitationInput>
@@ -109,7 +110,7 @@ export function slugify(name: string) {
 export const API_KEY_NAME_MAX_LENGTH = 32
 export const API_KEY_LIFETIMES = ['30d', '90d', '1y', 'none'] as const
 export type ApiKeyLifetime = (typeof API_KEY_LIFETIMES)[number]
-// `read` reaches the API's GET routes; `write` adds starting and stopping the timer.
+// `read` reaches the API's reads; `write` adds its writes.
 const API_KEY_ACCESS = ['read', 'write'] as const
 export type ApiKeyAccess = (typeof API_KEY_ACCESS)[number]
 
@@ -133,9 +134,124 @@ export type CreateApiKeyInput = v.InferOutput<typeof CreateApiKeyInput>
 export const RevokeApiKeyInput = v.object({ id: Uuidv7 })
 export type RevokeApiKeyInput = v.InferOutput<typeof RevokeApiKeyInput>
 
+// A listed key: its name and settings, never any part of the key.
+export const ApiKey = v.object({
+  id: v.string(),
+  name: v.string(),
+  access: v.picklist(API_KEY_ACCESS),
+  createdAt: Timestamp,
+  expiresAt: v.nullable(Timestamp),
+  lastUsedAt: v.nullable(Timestamp),
+})
+export type ApiKey = v.InferOutput<typeof ApiKey>
+
+// The key itself appears only here, once.
+export const CreatedApiKey = v.object({ id: v.string(), key: v.string() })
+
+// The signed-in user and their organizations, for a client that signs in with a key and
+// has no session to read.
+export const Me = v.object({
+  user: v.object({ id: v.string(), name: v.string(), email: v.string() }),
+  organizations: v.array(
+    v.object({ id: v.string(), name: v.string(), slug: v.string(), role: OrgRole }),
+  ),
+})
+
 export const InviteMemberInput = v.object({
   email: InvitationEmail,
   role: v.picklist(['member', 'admin', 'owner']),
   teamId: v.nullable(Uuidv7),
 })
 export type InviteMemberInput = v.InferOutput<typeof InviteMemberInput>
+
+// An invitation link's details, shown before sign-in; null when the id is unknown. Once
+// the invitation can't be accepted, the link shows less.
+export const InvitationPreview = v.nullable(
+  v.variant('state', [
+    v.object({ id: v.string(), state: v.literal('closed') }),
+    v.object({
+      id: v.string(),
+      state: v.literal('expired'),
+      organizationName: v.string(),
+      inviterName: v.string(),
+    }),
+    v.object({
+      id: v.string(),
+      state: v.literal('pending'),
+      email: v.string(),
+      role: OrgRole,
+      organizationId: v.string(),
+      organizationName: v.string(),
+      teamName: v.nullable(v.string()),
+      inviterName: v.string(),
+    }),
+  ]),
+)
+
+// An open invitation, expired ones included so they can get a new link.
+export const Invitation = v.object({
+  id: v.string(),
+  email: v.string(),
+  role: OrgRole,
+  teamId: v.nullable(v.string()),
+  inviterId: v.string(),
+  expiresAt: Timestamp,
+})
+export type Invitation = v.InferOutput<typeof Invitation>
+
+export const CreatedInvitation = v.object({
+  id: v.string(),
+  email: v.string(),
+  expiresAt: Timestamp,
+})
+
+// The sign-in methods an environment offers, in display order.
+export const SignInMethod = v.picklist(['google', 'github', 'microsoft', 'password', 'passkey'])
+export type SignInMethod = v.InferOutput<typeof SignInMethod>
+
+// Whether this is a demo deployment, and which email domains may sign in (empty allows all).
+export const Deployment = v.object({ demoMode: v.boolean(), allowedDomains: v.array(v.string()) })
+
+// The seeded users and their shared password, for one-click sign-in in development and demos.
+export const DevUser = v.object({ name: v.string(), email: v.string(), password: v.string() })
+
+// How filled the user's recent days are, for the taglines (src/lib/taglines/fill.ts).
+const FillSummary = v.object({
+  date: v.string(),
+  timerStartedAt: v.nullable(v.number()),
+  today: v.picklist(['filled', 'open', 'off']),
+  lastWorkingDay: v.nullable(v.object({ date: v.string(), filled: v.boolean() })),
+  lastWeek: v.nullable(v.boolean()),
+  lastMonth: v.nullable(v.boolean()),
+  caughtUp: v.boolean(),
+  emptyDays: v.number(),
+  streak: v.number(),
+})
+
+// The app frame's view of the session. `activeOrganizationId` is the session's active
+// organization, or the first by name when it has none or one the user has left. `appUrl` is
+// the app's public origin, for the links admins copy.
+export const AppSession = v.object({
+  user: v.object({
+    id: v.string(),
+    name: v.string(),
+    email: v.string(),
+    image: v.nullable(v.string()),
+  }),
+  signedInAt: Timestamp,
+  organizations: v.array(
+    v.object({
+      id: v.string(),
+      name: v.string(),
+      slug: v.string(),
+      issueLinks: v.nullable(v.string()),
+      role: OrgRole,
+    }),
+  ),
+  activeOrganizationId: v.nullable(v.string()),
+  settings: v.nullable(Settings),
+  fill: v.nullable(FillSummary),
+  invitationId: v.nullable(v.string()),
+  appUrl: v.string(),
+})
+export type AppSession = v.InferOutput<typeof AppSession>

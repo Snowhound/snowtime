@@ -1,0 +1,44 @@
+perry 0.5.1520
+  [OK] perry version: 0.5.1520
+  [OK] runtime library: ~/Library/Caches/perry/libs/7392b5-6abfc86b/libperry_runtime.a (v0.5.1520 (commit 381045a8735f), matches this Perry)
+== compile render bundle
+Error compiling module 'dist/render.mjs' (temp/ssr-spike/dist/render.mjs) with --backend llvm: lowering function 'getNodeMatch': lowering body of 'getNodeMatch': ArrayPush(12121): local not in scope
+✗ 1 module(s) failed to compile — REFUSING TO LINK
+Error: 1 module(s) failed to compile (see errors above); set PERRY_ALLOW_PARTIAL_CODEGEN=1 to link empty stubs anyway
+compile seconds: 5
+no executable: the bundle did not compile
+== compile the Start server (30 min cap)
+exit 1
+seconds 680
+  Compile package wildcard: left 1 Node native-addon package(s) out of whole-package AOT routing (static pure-source subpaths can still compile; list explicitly for a hard error)
+  Warning: unknown identifier 'ResizeObserver' — assuming global; `new ResizeObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'Image' — assuming global; `new Image()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'IntersectionObserver' — assuming global; `new IntersectionObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'MutationObserver' — assuming global; `new MutationObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'MutationObserver' — assuming global; `new MutationObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'DOMRect' — assuming global; `new DOMRect()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'IntersectionObserver' — assuming global; `new IntersectionObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'IntersectionObserver' — assuming global; `new IntersectionObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'ResizeObserver' — assuming global; `new ResizeObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'Image' — assuming global; `new Image()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'MutationObserver' — assuming global; `new MutationObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'ResizeObserver' — assuming global; `new ResizeObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'ResizeObserver' — assuming global; `new ResizeObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'IntersectionObserver' — assuming global; `new IntersectionObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'PointerEvent' — assuming global; `new PointerEvent()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'ResizeObserver' — assuming global; `new ResizeObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'Image' — assuming global; `new Image()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'IntersectionObserver' — assuming global; `new IntersectionObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'MutationObserver' — assuming global; `new MutationObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'MutationObserver' — assuming global; `new MutationObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'DOMRect' — assuming global; `new DOMRect()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'IntersectionObserver' — assuming global; `new IntersectionObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'IntersectionObserver' — assuming global; `new IntersectionObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'ResizeObserver' — assuming global; `new ResizeObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'Image' — assuming global; `new Image()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'MutationObserver' — assuming global; `new MutationObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'ResizeObserver' — assuming global; `new ResizeObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'ResizeObserver' — assuming global; `new ResizeObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+  Warning: unknown identifier 'IntersectionObserver' — assuming global; `new IntersectionObserver()` resolves it by name on globalThis at runtime (ReferenceError on a miss)
+modules lines: [perry] codegen: modules finished 110/113 (97%; 11.2 min elapsed; ETA ~0.3 min)
+[perry] codegen: modules finished 113/113 (100%; 11.2 min elapsed; ETA ~0.0 min)

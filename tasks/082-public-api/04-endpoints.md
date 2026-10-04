@@ -2,6 +2,9 @@
 
 Status: done
 
+Since the merge with task 084, these endpoints are the operations marked `apiKeys: true`
+in `src/lib/api/operations.ts`, at task 084's paths (README, and `docs/api.md`).
+
 The first six endpoints: what the Raycast extension needs. Each is a server route in
 `src/routes/api/v1/` that goes through the helper from subtask 03 and calls an existing
 rule in `src/server/<domain>/*.server.ts`. The endpoints themselves are in

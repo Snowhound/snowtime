@@ -2,6 +2,9 @@
 
 Status: done
 
+Since the merge with task 084, `keyUser` in `src/server/auth/api-keys.server.ts` makes
+these checks for task 084's JSON API, and `createApiRoute` is gone (README).
+
 The helper every `/api/v1` route goes through, and the documented contract. With one
 helper, a new route gets every check without writing any of them.
 

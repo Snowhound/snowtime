@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event'
 import { type JSX, createSignal } from 'solid-js'
 import * as v from 'valibot'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { setTransport } from '~/lib/api/client'
+import { mockTransport } from '~/lib/api/testing'
 import { addDays, datesBetween, startOfWeek } from '~/lib/calendar'
 import { writeCookie } from '~/lib/cookies'
 import { newId } from '~/lib/queries/query'
@@ -15,7 +17,7 @@ import type {
 import { ReportSearch } from './filters'
 import { ReportsPage } from './reports-page'
 
-// The server functions stay out of the DOM tests; getReport answers from `server.rows`,
+// The backend stays out of the DOM tests; getReport answers from `server.rows`,
 // spread over the buckets of the range it is asked for.
 const fn = vi.hoisted(() => ({
   getReport: vi.fn(),
@@ -28,18 +30,7 @@ const fn = vi.hoisted(() => ({
   getAppSession: vi.fn(),
   navigate: vi.fn(),
 }))
-vi.mock('~/server/reports/reports.functions', () => ({
-  getReport: fn.getReport,
-  getReportBreakdown: fn.getReportBreakdown,
-  getReportEntries: fn.getReportEntries,
-  getReportEntryTotals: fn.getReportEntryTotals,
-}))
-vi.mock('~/server/teams/teams.functions', () => ({
-  listTeams: fn.listTeams,
-  listMembers: fn.listMembers,
-}))
-vi.mock('~/server/projects/projects.functions', () => ({ listProjects: fn.listProjects }))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
+setTransport(mockTransport(fn))
 // The view renders without a router: navigating sets the search params the page reads.
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; hash?: string; class?: string; children: JSX.Element }) => (
@@ -138,8 +129,8 @@ function totals(buckets: string[], ms: number[]) {
   return { total: perBucket.reduce((a, b) => a + b, 0), perBucket }
 }
 
-function report({ data }: { data: ReportInput }) {
-  const buckets = bucketsOf(data)
+function report(input: ReportInput) {
+  const buckets = bucketsOf(input)
   function rows(kind: Row['kind']) {
     return server.rows.filter((r) => r.kind === kind)
   }
@@ -150,10 +141,10 @@ function report({ data }: { data: ReportInput }) {
   )
   return {
     ...all,
-    unit: data.unit,
+    unit: input.unit,
     buckets,
     trackedDays: all.perBucket.filter((ms) => ms > 0).length,
-    entries: server.entries.filter((e) => e.date >= data.from && e.date < data.to).length,
+    entries: server.entries.filter((e) => e.date >= input.from && e.date < input.to).length,
     projects,
     tickets: rows('ticket').map((r) => ({ ticket: r.id, ...totals(buckets, r.ms) })),
     members: rows('member').map((r) => ({ userId: r.id!, ...totals(buckets, r.ms) })),
@@ -263,7 +254,7 @@ function renderView(initial: ReportSearch = { range: 'this-week' }) {
 
 // The report's filters, without the organization every call names.
 function lastInput(): ReportInput {
-  const { organizationId: _, ...input } = fn.getReport.mock.lastCall![0].data
+  const { organizationId: _, ...input } = fn.getReport.mock.lastCall![0]
   return input
 }
 
@@ -309,8 +300,8 @@ beforeEach(() => {
   server.former = []
   fn.getAppSession.mockImplementation(async () => session())
   fn.getReport.mockImplementation(async (input) => report(input))
-  fn.getReportEntries.mockImplementation(async ({ data }) => entries(data))
-  fn.getReportEntryTotals.mockImplementation(async ({ data }) => entryTotals(data))
+  fn.getReportEntries.mockImplementation(async (data) => entries(data))
+  fn.getReportEntryTotals.mockImplementation(async (data) => entryTotals(data))
   fn.listTeams.mockImplementation(async () => teams())
   fn.listMembers.mockImplementation(async () => [
     person(kadri, 'Kadri Tamm'),
@@ -644,7 +635,7 @@ describe('ReportsView', () => {
     await screen.findByRole('table')
     expect(screen.getByRole('status')).toHaveTextContent('Loading entries…')
     expect(screen.getByText(summary('3 entries · 7:15'))).toBeInTheDocument()
-    answer(entries(fn.getReportEntries.mock.lastCall![0].data))
+    answer(entries(fn.getReportEntries.mock.lastCall![0]))
     expect(await screen.findAllByRole('heading', { level: 4 })).toHaveLength(2)
     expect(fn.getReportEntryTotals).not.toHaveBeenCalled()
   })
@@ -657,7 +648,7 @@ describe('ReportsView', () => {
       'aria-pressed',
       'true',
     )
-    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({ view: 'description' })
+    expect(fn.getReportEntries.mock.lastCall![0]).toMatchObject({ view: 'description' })
 
     await userEvent.click(within(card).getByRole('button', { name: 'By day' }))
     await waitFor(() => expect(search()).toEqual({ entries: 'day' }))
@@ -673,7 +664,7 @@ describe('ReportsView', () => {
       hour: 9,
     }))
     // The server's first page has the top two rows here.
-    fn.getReportEntries.mockImplementation(async ({ data }) => {
+    fn.getReportEntries.mockImplementation(async (data) => {
       const all = entries(data) as { rows: unknown[] }
       const offset = data.offset ?? 0
       const end = offset === 0 ? 2 : all.rows.length
@@ -686,7 +677,7 @@ describe('ReportsView', () => {
     await userEvent.click(within(card).getByRole('button', { name: 'Show all 3' }))
     expect(await within(card).findByText('Gamma')).toBeInTheDocument()
     expect(within(card).getByText('Alpha')).toBeInTheDocument()
-    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({ offset: 2 })
+    expect(fn.getReportEntries.mock.lastCall![0]).toMatchObject({ offset: 2 })
     expect(within(card).queryByRole('button', { name: 'Show all 3' })).not.toBeInTheDocument()
   })
 
@@ -701,7 +692,7 @@ describe('ReportsView', () => {
       expect(search()).toEqual({ range: 'this-week', row: snowtime.id, bucket: '2026-09-23' }),
     )
     expect(wednesday).toHaveAttribute('aria-pressed', 'true')
-    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({
+    expect(fn.getReportEntries.mock.lastCall![0]).toMatchObject({
       report: { from: '2026-09-23', to: '2026-09-24' },
       row: { group: 'project', id: snowtime.id },
     })
@@ -780,10 +771,10 @@ describe('ReportsView', () => {
     renderView({ range: 'this-week', row: team(), bucket: '2026-10-01', group: 'member' })
     await screen.findByRole('table')
     await waitFor(() => expect(fn.getReportEntries).toHaveBeenCalled())
-    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({
+    expect(fn.getReportEntries.mock.lastCall![0]).toMatchObject({
       report: { from: '2026-09-21', to: '2026-09-28' },
     })
-    expect(fn.getReportEntries.mock.lastCall![0].data).not.toHaveProperty('row')
+    expect(fn.getReportEntries.mock.lastCall![0]).not.toHaveProperty('row')
   })
 
   test('team leads see who tracked each entry, grouped by person within a day', async () => {
@@ -859,10 +850,10 @@ describe('ReportsView', () => {
       expect(search()).toEqual({ range: 'this-week', view: 'summary', bucket: '2026-09-23' }),
     )
     expect(wednesday).toHaveAttribute('aria-pressed', 'true')
-    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({
+    expect(fn.getReportEntries.mock.lastCall![0]).toMatchObject({
       report: { from: '2026-09-23', to: '2026-09-24' },
     })
-    expect(fn.getReportEntries.mock.lastCall![0].data).not.toHaveProperty('row')
+    expect(fn.getReportEntries.mock.lastCall![0]).not.toHaveProperty('row')
 
     const snowtimeRow = screen.getByTitle('Snowtime').closest('li')!
     await userEvent.click(within(snowtimeRow).getByRole('button', { name: '6:30' }))
@@ -896,7 +887,7 @@ describe('ReportsView', () => {
     const { search } = renderView({ range: 'this-week', view: 'breakdown' })
     expect(await screen.findByText('By project, then member')).toBeInTheDocument()
     // It totals the range, so the unit stays out of its input.
-    expect(fn.getReportBreakdown.mock.lastCall![0].data).toEqual({
+    expect(fn.getReportBreakdown.mock.lastCall![0]).toEqual({
       organizationId,
       from: '2026-09-21',
       to: '2026-09-28',
@@ -914,7 +905,7 @@ describe('ReportsView', () => {
     await waitFor(() =>
       expect(search()).toEqual({ range: 'this-week', view: 'breakdown', row: snowtime.id }),
     )
-    expect(fn.getReportEntries.mock.lastCall![0].data).toMatchObject({
+    expect(fn.getReportEntries.mock.lastCall![0]).toMatchObject({
       row: { group: 'project', id: snowtime.id },
     })
   })

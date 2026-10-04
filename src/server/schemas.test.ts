@@ -5,9 +5,9 @@ import * as v from 'valibot'
 import { CreateProjectInput, ListProjectsInput } from './projects/projects.schemas'
 import { parseOrganizationInput } from './schemas'
 
-// scopeMiddleware's input: it runs on the call's whole data, before the function's schema.
+// runOperation's first check: it runs on the call's whole input, before the call's own schema.
 describe('parseOrganizationInput', () => {
-  test('passes the whole input on, for the function to parse', () => {
+  test('passes the whole input on, for the call to parse', () => {
     const input = { organizationId: 'org-a', id: 'x', name: 'Design' }
     expect(parseOrganizationInput(input)).toBe(input)
   })

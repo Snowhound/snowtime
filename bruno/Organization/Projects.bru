@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/orgs/{{orgId}}/projects
+  url: {{baseUrl}}/organizations/{{orgId}}/projects
   body: none
   auth: inherit
+}
+
+params:query {
+  ~includeArchived: true
 }
 
 assert {
@@ -15,8 +19,10 @@ assert {
 }
 
 docs {
-  # GET /api/v1/orgs/:orgId/projects
+  # GET /api/v1/organizations/:orgId/projects
 
-  The organization's active projects the user can see, sorted by name, each with `id`,
-  `name`, and `color`. Needs a `read` key.
+  The organization's projects the user can see, sorted by name, as an array. Needs a
+  `read` key.
+
+  Archived projects are left out; turn `includeArchived` on to list them too.
 }
