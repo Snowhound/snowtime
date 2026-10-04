@@ -15,11 +15,12 @@
 
 import { spawn } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { table } from '../checks/baseline'
 import { CACHE, ROOT } from '../lib/database'
 import { type BenchUser, DATASETS, type DatasetName, dataset } from './dataset'
+import { checkOtherSessions, reserveStack } from './lock'
 import { type Recording, record } from './record'
 import {
   type App,
@@ -76,6 +77,9 @@ const { values } = parseArgs({
     app: { type: 'string', default: 'ts' },
     recording: { type: 'string' },
     'caddy-cpuset': { type: 'string' },
+    'caddy-config': { type: 'string' },
+    encoding: { type: 'string' },
+    'connection-reuse': { type: 'boolean', default: true },
   },
   allowNegative: true,
 })
@@ -229,6 +233,8 @@ async function runK6(
     ORIGIN: target.origin,
     SECRET: target.secret,
     PLAN: JSON.stringify(plan),
+    ...(values.encoding && { ENCODING: values.encoding }),
+    ...(!values['connection-reuse'] && { NO_CONNECTION_REUSE: '1' }),
     ...(target.address && { HOST_IP: target.address }),
     ...(target.insecure && { INSECURE: '1' }),
   }
@@ -345,7 +351,7 @@ function heapStats(heaps: NonNullable<Sample['heap']>[]) {
 function misses(result: StepResult): string[] {
   const found: string[] = []
   const { requests } = result
-  if (requests.length === 0) return ['no requests reached the server']
+  if (requests.length === 0) return ['no access-log samples; server-window validation unavailable']
   const start = Math.min(...requests.map((r) => r.t))
   const windows = new Map<string, number[]>()
   for (const r of requests) {
@@ -399,9 +405,16 @@ function report(result: StepResult): string {
   const completed = requests.filter((r) => r.status > 0 && r.status < 400).length
   lines.push(
     `\n${step.name}: ${step.users} active users, ${step.seconds} s${result.aborted ? ' (aborted)' : ''}. ` +
-      `Offered ${(sent / step.seconds).toFixed(1)} req/s, completed ${(completed / seconds).toFixed(1)} req/s`,
+      `Offered ${(sent / step.seconds).toFixed(1)} req/s, ` +
+      (requests.length
+        ? `completed ${(completed / seconds).toFixed(1)} req/s`
+        : 'logged completions unavailable'),
   )
-  const kinds = [...new Set(requests.map((r) => r.kind))].sort()
+  const prefix = `http_reqs{step:${step.name},kind:`
+  const kinds = Object.keys(summary.metrics)
+    .filter((key) => key.startsWith(prefix) && metric(summary, key, 'count') > 0)
+    .map((key) => key.slice(prefix.length, -1))
+    .sort()
   const rows = kinds.map((kind) => {
     const server = requests.filter((r) => r.kind === kind).map((r) => r.duration * 1000)
     function client(stat: string) {
@@ -432,7 +445,7 @@ function report(result: StepResult): string {
   lines.push(`Errors: ${errors.join(', ') || 'none'}`)
   if (result.samples.length > 1) {
     const r = rates(result.samples)
-    const serverRequests = requests.length || 1
+    const serverRequests = sent || 1
     lines.push(
       table(
         [
@@ -539,6 +552,7 @@ async function runPlan(plan: Step[], files: { recording: string; users: string; 
     const text = report(result)
     console.log(text)
     writeFileSync(join(files.out, `${step.name}.txt`), text)
+    writeFileSync(join(files.out, `${step.name}.samples.json`), JSON.stringify(result.samples))
   }
   if (aborted) console.log(`[stress] Stopped early: ${aborted}`)
   return { results, aborted }
@@ -569,6 +583,7 @@ async function main() {
       ...(values['max-requests'] && { BENCH_MAX_REQUESTS: values['max-requests'] }),
       ...(values['try-duration'] && { BENCH_TRY_DURATION: values['try-duration'] }),
       ...(values['caddy-cpuset'] && { BENCH_CADDY_CPUSET: values['caddy-cpuset'] }),
+      ...(values['caddy-config'] && { BENCH_CADDY_CONFIG: resolve(values['caddy-config']) }),
     }
     if (values.load) {
       compose(['up', '-d', '--no-start'], settings)
@@ -709,21 +724,32 @@ async function main() {
       files,
     )
     const rows = results.map((r) => {
-      const { app } = rates(r.samples)
+      const { app, caddy } = rates(r.samples)
+      const sent = metric(r.summary, `http_reqs{step:${r.step.name}}`, 'count')
       const actionsRun = metric(r.summary, `bench_action_duration{step:${r.step.name}}`, 'count')
       const server = r.requests.map((q) => q.duration * 1000)
       return [
         r.step.name,
         `${actionsRun}`,
-        (r.requests.length / Math.max(1, actionsRun)).toFixed(1),
+        (sent / Math.max(1, actionsRun)).toFixed(1),
         (app.cpuUsec / Math.max(1, actionsRun) / 1000).toFixed(1),
-        (app.cpuUsec / Math.max(1, r.requests.length) / 1000).toFixed(1),
+        (app.cpuUsec / Math.max(1, sent) / 1000).toFixed(1),
+        (caddy.cpuUsec / Math.max(1, sent) / 1000).toFixed(2),
         ms(percentile(server, 50)),
         ms(percentile(server, 95)),
       ]
     })
     const text = table(
-      ['Action', 'actions', 'req/action', 'CPU ms/action', 'CPU ms/req', 'srv p50', 'srv p95'],
+      [
+        'Action',
+        'actions',
+        'req/action',
+        'CPU ms/action',
+        'CPU ms/req',
+        'Caddy ms/req',
+        'srv p50',
+        'srv p95',
+      ],
       rows,
     )
     console.log(`\n${text}`)
@@ -734,4 +760,12 @@ async function main() {
   console.log(`\n[stress] Results in ${relative(ROOT, out)}`)
 }
 
-await main()
+const releaseStack = target.remote ? () => {} : reserveStack()
+process.once('exit', releaseStack)
+try {
+  if (!target.remote) checkOtherSessions()
+  await main()
+} finally {
+  releaseStack()
+  process.removeListener('exit', releaseStack)
+}

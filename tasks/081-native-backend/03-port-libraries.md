@@ -262,12 +262,13 @@ p95 is 84–126 ms at 80,000 users, against TypeScript's 39 ms at half that load
 113 ms of scrypt on the one core, at 2.2 sign-ins a second, is the likely cause; that
 isn't confirmed.
 
-Subtask 08 repeats this fixed load with AWS-LC scrypt: app CPU is 35.2% and 35.9%,
-against a new RustCrypto control's 45.3%. Median sign-in time halves (93–97 ms against
-195 ms). Return p95 does not improve in these runs: 491 and 821 ms, with the control at
-525 ms. All current runs have worse tails than the table above. See
-[the run conditions and results](08-fast-scrypt.md#fixed-load); the cause was not
-isolated, so the faster hash does not establish a latency or capacity improvement.
+Subtask 08 repeats this fixed load with AWS-LC scrypt. Its first runs overlap linting
+and tests in another session and have worse tails than this table. An idle-machine
+rerun reproduces the RustCrypto control, then reduces app CPU from 38.2% to 28.5–30.8%
+and return p95 from 86 ms to 24–29 ms with AWS-LC. See
+[the fixed-load controls](08-fast-scrypt.md#fixed-load-rerun-on-an-idle-machine).
+[Subtask 07](07-edge-in-process.md) repeats the baseline before tuning Caddy and
+separates its RSS from the benchmark log's page cache.
 
 ### Server-Timing
 

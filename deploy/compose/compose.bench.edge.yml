@@ -1,0 +1,6 @@
+# A Caddy JSON configuration for a measured edge variant (--caddy-config).
+services:
+  caddy:
+    command: ['caddy', 'run', '--config', '/etc/caddy/edge.json']
+    volumes:
+      - ${BENCH_CADDY_CONFIG:?Set BENCH_CADDY_CONFIG}:/etc/caddy/edge.json:ro

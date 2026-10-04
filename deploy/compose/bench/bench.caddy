@@ -3,6 +3,7 @@
 # sampler reads; the sampler's routes need the password whose bcrypt hash is in
 # BENCH_SAMPLER_HASH.
 log bench {
+	no_hostname
 	output file /var/log/caddy/access.log {
 		roll_disabled
 		# The sampler runs as nobody.
@@ -29,6 +30,9 @@ log bench {
 		}
 	}
 }
+
+@bench header X-Bench-Kind *
+log_name @bench bench
 
 handle /_bench/* {
 	log_skip

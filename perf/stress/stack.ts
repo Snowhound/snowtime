@@ -48,6 +48,7 @@ export function compose(args: string[], env: Record<string, string> = {}) {
       '-f',
       'compose.bench.local.yml',
       ...(app === 'native' ? ['-f', 'compose.bench.native.yml'] : []),
+      ...(env.BENCH_CADDY_CONFIG ? ['-f', 'compose.bench.edge.yml'] : []),
       ...args,
     ],
     {

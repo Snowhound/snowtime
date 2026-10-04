@@ -194,6 +194,25 @@ load, which it doesn't judge. `--recording=<file>` replays a recording from an e
 (its `recording.json`) instead of recording again; `kinds` then skips actions the file has no
 requests for. `--caddy-cpuset=<cores>` moves Caddy off the app's core, such as to `0`.
 
+Local worktrees share the Docker stack. A run reserves `/tmp/snowtime-perf-stress.lock`
+before touching it and releases the reservation on normal exit. If a run stops abruptly,
+verify that its owner and k6 have stopped before removing the stale directory. Sessions
+using an older checkout must also check for a running `perf:stress` or k6 process.
+
+For edge comparisons, `--caddy-config=<absolute-or-relative.json>` mounts an effective
+Caddy JSON configuration in place of the Caddyfile. Capture the running configuration
+with `docker exec snowtime-bench-caddy-1 wget -qO- http://127.0.0.1:2019/config/`.
+`bun perf/stress/edge-config.ts <source.json> <output.json> <variants...>` derives
+`single-log`, `sampled`, `no-log`, `h1`, and `no-encode` variants. `no-log` is diagnostic:
+it cannot validate the server's 30-second latency windows. CPU per request uses k6's
+request count, so disabling logging does not inflate the CPU result.
+
+`--encoding=gzip` or `--encoding=identity` sets the client's `Accept-Encoding` explicitly.
+k6 otherwise sends none for recordings that omit it. `--no-connection-reuse` measures
+fresh TLS connections. The summary records HTTP protocol counts and TLS handshake
+counts. Each step also saves its cgroup samples as `<step>.samples.json` so memory
+comparisons can distinguish RSS, anonymous memory, and the log's page cache.
+
 Before the first step, a run waits 10 seconds and prints the app's idle memory, which it
 also saves as `idle.txt` in the results folder.
 

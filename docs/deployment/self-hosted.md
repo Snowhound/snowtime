@@ -335,6 +335,8 @@ Everything in [Check the deployment](README.md#check-the-deployment) applies, pl
 
 Logs go to the journal, Caddy's as JSON: `journalctl -u caddy -o cat | jq`. Limit the
 journal's size with `SystemMaxUse=` in `/etc/systemd/journald.conf` if the disk is small.
+The Caddyfile samples access logs as the [Compose setup](compose.md) does. Remove its
+`sampling` block when diagnosis needs every request.
 
 ## Startup migrations
 

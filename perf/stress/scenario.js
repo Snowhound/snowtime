@@ -17,6 +17,9 @@ import exec from 'k6/execution'
 import http from 'k6/http'
 import { Counter, Trend } from 'k6/metrics'
 
+const handshakes = new Counter('bench_tls_handshakes')
+const protocols = new Counter('bench_protocols')
+
 const ORIGIN = __ENV.ORIGIN
 const HOST = ORIGIN.replace(/^https:\/\//, '')
 const SECRET = __ENV.SECRET
@@ -106,11 +109,16 @@ for (const step of PLAN) {
 
 export const options = {
   scenarios,
-  thresholds,
+  thresholds: {
+    ...thresholds,
+    'bench_protocols{protocol:HTTP/1.1}': [],
+    'bench_protocols{protocol:HTTP/2.0}': [],
+  },
   hosts: __ENV.HOST_IP ? { [HOST]: __ENV.HOST_IP } : {},
   insecureSkipTLSVerify: __ENV.INSECURE === '1',
   summaryTrendStats: ['avg', 'med', 'p(95)', 'p(99)', 'max', 'count'],
   discardResponseBodies: true,
+  noConnectionReuse: __ENV.NO_CONNECTION_REUSE === '1',
   userAgent: 'snowtime-bench (k6)',
 }
 
@@ -199,6 +207,7 @@ export function act() {
       redirects: 0,
       headers: {
         ...request.headers,
+        ...(__ENV.ENCODING && { 'Accept-Encoding': __ENV.ENCODING }),
         Origin: ORIGIN,
         'CF-Connecting-IP': ip,
         'X-Bench-Kind': kind,
@@ -212,6 +221,8 @@ export function act() {
   }
 
   function check(response, request) {
+    protocols.add(1, { protocol: response.proto })
+    if (response.timings.tls_handshaking > 0) handshakes.add(1)
     if (action === 'stop' && request.method === 'POST' && response.status === 404) return
     const type = classify(response)
     if (type) errors.add(1, { type, kind: kindOf(action, request) })
