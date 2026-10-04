@@ -15,10 +15,9 @@ them up.
 - Accounts: Vercel, Turso, GitHub (the repository or your fork), and optionally Upstash.
   Vercel's Hobby plan is for non-commercial use only (`../hosting.md`).
 - Pick one region for everything. The functions must run beside the database, because a
-  page makes several database round trips. For users in Europe, use Turso
-  `aws-eu-west-1` (Ireland) with Vercel `dub1` (Dublin). Run `turso db locations` to see
-  whether Turso offers a region closer to your users, and pick the Vercel region in the
-  same AWS region (the [Vercel region list](https://vercel.com/docs/regions) names each
+  page makes several database round trips. Snowhound uses Turso `aws-eu-north-1` with
+  Vercel `arn1`, both in Stockholm. Run `turso db locations` to see which Turso region is
+  closest to your users, and pick the Vercel region in the same AWS region (the [Vercel region list](https://vercel.com/docs/regions) names each
   one's AWS region).
 
 ## 1. Create the Turso database
@@ -26,7 +25,7 @@ them up.
 ```bash
 brew install tursodatabase/tap/turso   # or see docs.turso.tech for other platforms
 turso auth signup                      # or: turso auth login
-turso db create <app>-prod --location aws-eu-west-1
+turso db create <app>-prod --location aws-eu-north-1
 turso db show <app>-prod --url         # TURSO_DATABASE_URL
 turso db tokens create <app>-prod      # TURSO_AUTH_TOKEN
 ```
@@ -41,8 +40,8 @@ counts. Without it the app runs, but each instance limits on its own
 (`../architecture/auth.md`, "Abuse limits").
 
 1. In the [Upstash console](https://console.upstash.com), create a Redis database with
-   its primary region in the functions' AWS region (`eu-west-1` for Dublin) and no read
-   replicas.
+   its primary region nearest the functions and no read replicas. Upstash has no
+   Stockholm region; for `arn1`, Frankfurt is nearest.
 2. Copy the REST URL and REST token: `UPSTASH_REDIS_REST_URL` and
    `UPSTASH_REDIS_REST_TOKEN`.
 
@@ -57,7 +56,7 @@ doesn't read.
    Vercel from deploying `main` by itself; CI deploys it from step 5 on. Until step 6
    sets the environment variables, a production deployment fails or shows an error page.
 2. Under **Settings > Functions**, set the function region to the one from
-   [Before you start](#before-you-start), for example `dub1`. Vercel's default is
+   [Before you start](#before-you-start), for example `arn1`. Vercel's default is
    `iad1` (Washington, D.C.).
 3. Under **Settings > Domains**, note the production host. Vercel generates
    `<project>.vercel.app`, with a suffix if that name is taken. To use your own domain

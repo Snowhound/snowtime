@@ -3,10 +3,11 @@
 import { db } from '~/db'
 import { env } from '~/env'
 import { keyChecker } from './auth/api-keys.server'
-import { auth, rateLimitStore } from './auth/better-auth.server'
+import { auth, rateLimitStore, sessionOf } from './auth/better-auth.server'
 import { databaseAvailable } from './availability/availability.server'
 import { AppError } from './errors'
 import { rateLimits } from './limits.server'
+import { time } from './timing.server'
 
 // The error to throw for `error`: UNAVAILABLE when it was unexpected and the database is
 // unreachable, else the error itself.
@@ -19,7 +20,7 @@ export async function unavailableOr(error: unknown) {
 
 // The signed-in user of a request, counting a write against their rate.
 export async function signedInUser(headers: Headers, write: boolean) {
-  const session = await auth.api.getSession({ headers })
+  const session = await sessionOf(headers)
   if (!session) {
     throw new AppError('UNAUTHENTICATED', 'sign_in_required')
   }
@@ -34,7 +35,8 @@ export async function signedInUser(headers: Headers, write: boolean) {
 // The user of a request's API key (docs/architecture/auth.md, "API keys").
 export const keyUser = keyChecker({
   db,
-  verifyKey: (key) => auth.api.verifyApiKey({ body: { key } }),
+  // Timed as `session`, since it stands in for the session lookup.
+  verifyKey: (key) => time('session', () => auth.api.verifyApiKey({ body: { key } })),
   rateLimitStore,
   loginDomains: env.ALLOWED_LOGIN_DOMAINS ?? [],
 })

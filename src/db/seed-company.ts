@@ -43,7 +43,7 @@ const T = companyIds.teams
 
 type Settings = Partial<typeof userSettings.$inferInsert>
 
-interface Person {
+export interface Person {
   key: string
   name: string
   timeZone: string
@@ -157,7 +157,7 @@ const teams = [
   { id: T.data, name: 'Data' },
 ]
 
-interface ProjectSpec {
+export interface ProjectSpec {
   name: string
   color: string
   teams: string[]
@@ -214,7 +214,7 @@ const projectIds = projectSpecs.map((_, i) => id(0x3000 + i))
 
 // Work per team. Client work mostly starts with a ticket key; the ticket repeats through its
 // week.
-const teamWork: Record<string, string[]> = {
+export const teamWork: Record<string, string[]> = {
   [T.design]: [
     'Wireframes for the onboarding flow, second round after the client workshop',
     'Visual design for the account overview, dark mode variants',
@@ -441,8 +441,68 @@ export async function seedCompany(
 
 type NewEntry = typeof timeEntry.$inferInsert
 
+// A company's people and projects, whose entries workEntries makes.
+export interface WorkingCompany {
+  organizationId: string
+  people: (Person & { id: string })[]
+  projects: { spec: ProjectSpec; id: string }[]
+  // What each team works on, by team ID.
+  teamWork: Record<string, string[]>
+  // Teams whose members now and then work late on a store release.
+  releaseTeams: string[]
+}
+
+export interface WorkOptions {
+  rand: () => number
+  // The entries run from yearStart to end, both in epoch milliseconds, over days days.
+  yearStart: number
+  end: number
+  days: number
+  // An entry's ID, from its start.
+  newId?: (startedAt: number) => string
+}
+
 function entries(now: Date, yearStart: number, days: number): NewEntry[] {
-  const rand = random(7)
+  const end = now.getTime()
+  const rows = workEntries(
+    {
+      organizationId: O,
+      people: people.map((p) => ({ ...p, id: userId(p.key) })),
+      projects: projectSpecs.map((spec, i) => ({ spec, id: projectIds[i] })),
+      teamWork,
+      releaseTeams: [T.mobile],
+    },
+    { rand: random(7), yearStart, end, days },
+  )
+
+  // Running timers, started after the person's last entry ends.
+  const running = [
+    { userId: userId('erik'), startedAt: end - 25 * MINUTE },
+    { userId: userId('daniel'), startedAt: end - 70 * MINUTE },
+    { userId: userId('liis'), startedAt: end - 115 * MINUTE },
+  ]
+  const kept = rows.filter(
+    (r) => !running.some((t) => t.userId === r.userId && r.stoppedAt!.getTime() > t.startedAt),
+  )
+  return kept.concat(
+    running.map((t) => ({
+      id: uuidv7(),
+      organizationId: O,
+      userId: t.userId,
+      projectId: projectIds[0],
+      description: 'Team meeting',
+      startedAt: new Date(t.startedAt),
+      stoppedAt: null,
+    })),
+  )
+}
+
+// Finished entries for each of the company's people over the year, shaped like real use
+// (the file header lists how).
+export function workEntries(
+  company: WorkingCompany,
+  { rand, yearStart, end, days, newId = () => uuidv7() }: WorkOptions,
+): NewEntry[] {
   function pick<T>(list: T[]): T {
     return list[Math.floor(rand() * list.length)]
   }
@@ -454,29 +514,27 @@ function entries(now: Date, yearStart: number, days: number): NewEntry[] {
     return rand() < 0.6 ? Math.round(ms / 1000) * 1000 : Math.round(ms / (5 * MINUTE)) * 5 * MINUTE
   }
 
-  const end = now.getTime()
   const rows: NewEntry[] = []
 
-  for (const p of people) {
-    const uid = userId(p.key)
+  for (const p of company.people) {
+    const uid = p.id
     const from = yearStart + (p.joins ?? 0) * days * DAY
     const until = p.leaves === undefined ? end : yearStart + p.leaves * days * DAY
     const dates = datesBetween(localDate(from, p.timeZone), localDate(until, p.timeZone))
     const off = daysOff(dates, rand)
     const personTeams = [...(p.leads ?? []), ...(p.teams ?? [])]
-    const work = personTeams.map((t) => teamWork[t])
+    const work = personTeams.map((t) => company.teamWork[t])
 
     // Projects the person can log to on the date: open to everyone or to one of their
     // teams, and running then.
     function open(date: IsoDate) {
       const ms = startOfDay(date, p.timeZone)
-      return projectSpecs.flatMap((s, i) => {
-        if (s.deleted) return []
-        if (s.teams.length > 0 && !s.teams.some((t) => personTeams.includes(t))) return []
-        if (ms < yearStart + (s.from ?? 0) * days * DAY) return []
+      return company.projects.filter(({ spec: s }) => {
+        if (s.deleted) return false
+        if (s.teams.length > 0 && !s.teams.some((t) => personTeams.includes(t))) return false
+        if (ms < yearStart + (s.from ?? 0) * days * DAY) return false
         // A day's work, evenings included, ends before the project is archived.
-        if (s.to !== undefined && ms + 2 * DAY > yearStart + s.to * days * DAY) return []
-        return [{ spec: s, id: projectIds[i] }]
+        return s.to === undefined || ms + 2 * DAY <= yearStart + s.to * days * DAY
       })
     }
 
@@ -510,8 +568,8 @@ function entries(now: Date, yearStart: number, days: number): NewEntry[] {
       if (stop - start < MINUTE) return
       const { description, ticket } = detectTicket(text, new Set(), null)
       rows.push({
-        id: uuidv7(),
-        organizationId: O,
+        id: newId(start),
+        organizationId: company.organizationId,
         userId: uid,
         projectId,
         description,
@@ -597,32 +655,12 @@ function entries(now: Date, yearStart: number, days: number): NewEntry[] {
       if (p.evenings && rand() < 0.3) {
         late(describe(main.spec, weekNumber), between(20, 22), between(1, 3.5))
       }
-      if (personTeams.includes(T.mobile) && rand() < 0.015) {
+      if (personTeams.some((t) => company.releaseTeams.includes(t)) && rand() < 0.015) {
         late('Store release', between(21, 22), between(2.5, 4.5))
       }
     }
   }
-
-  // Running timers, started after the person's last entry ends.
-  const running = [
-    { userId: userId('erik'), startedAt: end - 25 * MINUTE },
-    { userId: userId('daniel'), startedAt: end - 70 * MINUTE },
-    { userId: userId('liis'), startedAt: end - 115 * MINUTE },
-  ]
-  const kept = rows.filter(
-    (r) => !running.some((t) => t.userId === r.userId && r.stoppedAt!.getTime() > t.startedAt),
-  )
-  return kept.concat(
-    running.map((t) => ({
-      id: uuidv7(),
-      organizationId: O,
-      userId: t.userId,
-      projectId: projectIds[0],
-      description: 'Team meeting',
-      startedAt: new Date(t.startedAt),
-      stoppedAt: null,
-    })),
-  )
+  return rows
 }
 
 // The company's public holidays, Estonia's for everyone, a summer vacation of two to three

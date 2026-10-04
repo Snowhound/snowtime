@@ -15,7 +15,7 @@ import {
 } from '~/lib/api/operations'
 import { decode, type WireError, type WireResponse } from '~/lib/api/wire'
 import * as apiKeys from './auth/api-keys.server'
-import { auth, rateLimitStore } from './auth/better-auth.server'
+import { auth, rateLimitStore, sessionOf } from './auth/better-auth.server'
 import * as invitations from './auth/invitations.server'
 import * as organizations from './auth/organization.server'
 import { appSession, me } from './auth/session.server'
@@ -56,7 +56,7 @@ const handlers: {
   // The session read keeps the account's state as it is: it returns the fallback
   // organization without saving it, and the browser stores the account's language.
   getAppSession: async ({ db, headers }) => {
-    const session = await auth.api.getSession({ headers })
+    const session = await sessionOf(headers)
     if (!session) return null
     const { user } = session
     const state = await appSession(db, user, session.session.activeOrganizationId ?? null)

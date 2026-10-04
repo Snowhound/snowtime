@@ -1,6 +1,6 @@
 # 081: Native backend
 
-Status: todo (waits on task 078's baseline; builds on task 080; subtask 01 in progress)
+Status: in-progress (subtasks 01 and 03 under way; builds on task 080)
 
 A second backend for self-hosting that serves many companies on a fraction of today's
 memory and CPU, without a garbage collector in its own code. The TypeScript backend stays
@@ -92,6 +92,11 @@ rejected, as in task 069.
 3. The frontend adapter. The data layer calls one client module, which calls the contract
    on both backends; the TypeScript app drops server functions (task 084, Kait,
    2026-10-03).
+
+   Task 078 found that behind Caddy the app sees its own URL as `http`, so an `https`
+   `Origin` never matches the request's URL. Both backends compare `Origin` with the
+   public URL instead, as the JSON API's write check does (`src/server/api.server.ts`).
+
 4. A mechanical port. What the TypeScript side must keep for that (rules that take
    `(db, scope, input)`, SQL both sides share, the contract), and a conformance suite of
    HTTP-level tests on seeded databases that both backends pass. A port is complete when
@@ -130,6 +135,14 @@ rejected, as in task 069.
 
 ## Proof of concept
 
+Kait, 2026-10-04: the proof of concept starts without task 078's final baseline. It
+measures the TypeScript and Rust servers side by side with task 078's harness
+(`perf:stress`), each limited to one CPU. The Rust code lives in a `native/` Cargo
+workspace in this repository until it needs its own release cadence. For the slice, the
+Rust server owns email sign-in: it verifies Better Auth's scrypt hash, writes the session
+row, and sets the same signed cookie, because two processes must not write one SQLite file
+(task 043). The better-auth-rs spike (question 5) stays separate.
+
 The hot path in the native backend: session check, running timer, start and stop, entry
 list, and the week report, on the same database file, measured with task 078's harness.
 The frontend reaches it through the adapter for those calls. The isolate server-renders
@@ -156,9 +169,10 @@ changes to the Vercel deployment beyond the adapter.
 - [01](01-server-rendering.md): server rendering in the native backend
 - [02](02-api-contract.md): the API contract and the frontend adapter
 - [03](03-port-libraries.md): the Rust libraries, chosen on a small port of the timer
+- [04](04-perry.md): Perry, a native TypeScript compiler, in place of the isolate or the
+  Rust port
+- [05](05-porting-recipes.md): a general repository of porting recipes, once the port
+  works
 
-Task 083 checks whether Perry, a native TypeScript compiler, could replace the isolate or
-the Rust port. Task 084 moves the TypeScript app from server functions to the same API,
-through one client module.
-Task 085 turns what this task learns into a general repository of porting recipes, once
-the port works.
+Task 084 moved the TypeScript app from server functions to the same API, through one
+client module.

@@ -1,0 +1,58 @@
+# The load benchmark (task 078, perf/README.md): with compose.yml, it serves a bench dataset
+# from a volume of its own, adds the sampler, and trusts the load generator's address as a
+# proxy, so each virtual user has an address of its own. The demo is offline while this runs;
+# `docker compose up -d` without this file brings it back.
+#
+#   docker compose -f compose.yml -f compose.bench.yml up -d --wait
+#
+# .env adds BENCH_GENERATOR_IP (the generator's address), BENCH_AUTH_SECRET (the session
+# secret the generator signs its cookies with), and BENCH_SAMPLER_HASH (`caddy hash-password`,
+# with each $ doubled).
+services:
+  app:
+    environment:
+      # Password sign-in for the seeded users, as the demo has it.
+      DEMO_MODE: 'true'
+      BETTER_AUTH_SECRET: ${BENCH_AUTH_SECRET:?Set BENCH_AUTH_SECRET in .env}
+      # The JS heap, which the sampler reads.
+      BENCH_HEAP: 'true'
+  caddy:
+    environment:
+      BENCH_TRUSTED_PROXIES: ${BENCH_GENERATOR_IP:?Set BENCH_GENERATOR_IP in .env}
+      BENCH_SAMPLER_HASH: ${BENCH_SAMPLER_HASH:?Set BENCH_SAMPLER_HASH in .env}
+      # An optional cap on requests in flight to the app, and how long a request waits for
+      # a free slot before a 503 (perf:stress --max-requests and --try-duration locally).
+      BENCH_MAX_REQUESTS: ${BENCH_MAX_REQUESTS:-0}
+      BENCH_TRY_DURATION: ${BENCH_TRY_DURATION:-30s}
+    volumes:
+      - ./bench/bench.caddy:/etc/caddy/bench/bench.caddy:ro
+      - bench_log:/var/log/caddy
+  sampler:
+    image: ghcr.io/snowhound/snowtime-sampler:${RELEASE:?Set RELEASE in .env}
+    build:
+      context: ../..
+      target: sampler
+    restart: unless-stopped
+    environment:
+      APP_URL: http://app:3000
+    # The host's processes and cgroups, read only, in place of the Docker socket.
+    pid: host
+    cgroup: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - app_data:/data:ro
+      - bench_log:/var/log/caddy:ro
+    expose:
+      - '9100'
+    deploy:
+      resources:
+        limits:
+          memory: 40M
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+volumes:
+  app_data:
+    name: snowtime_bench_data
+  bench_log:

@@ -20,16 +20,16 @@ variables, and changing the host. The reasons behind the choices are in
 
 ## Choose a target
 
-|                   | Vercel and Turso                                           | Self-hosted                                                      |
-| ----------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |
-| Cost              | Free tiers; Vercel Hobby is non-commercial only            | A fixed monthly price for the server and the backup storage      |
-| Where the data is | Turso's `aws-eu-west-1` (Ireland) at the closest in the EU | On your server, with backups in S3-compatible storage you choose |
-| Page speed        | Every query is a network round trip to Turso               | Queries run in the app's process, with no network hop            |
-| Scaling           | Vercel adds function instances                             | One process on one server; a bigger server is the only way up    |
-| Rate-limit counts | Upstash Redis, shared by the instances                     | The process's memory                                             |
-| Deploys           | CI migrates and deploys on every push to `main`            | A manual deploy: copy the release, migrate, restart (no CI job)  |
-| Backups           | Turso's, as its plan provides                              | Litestream, with point-in-time restore from the bucket           |
-| Operations        | None beyond the vendors' dashboards                        | OS updates, Caddy, Litestream, and watching the disk are yours   |
+|                   | Vercel and Turso                                                 | Self-hosted                                                      |
+| ----------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Cost              | Free tiers; Vercel Hobby is non-commercial only                  | A fixed monthly price for the server and the backup storage      |
+| Where the data is | The Turso region you pick, such as `aws-eu-north-1` (Stockholm)  | On your server, with backups in S3-compatible storage you choose |
+| Page speed        | Every query is a network round trip to Turso                     | Queries run in the app's process, with no network hop            |
+| Scaling           | Vercel adds function instances                                   | One process on one server; a bigger server is the only way up    |
+| Rate-limit counts | Upstash Redis shared by the instances, or each instance's memory | The process's memory                                             |
+| Deploys           | CI migrates and deploys on every push to `main`                  | A manual deploy: copy the release, migrate, restart (no CI job)  |
+| Backups           | Turso's, as its plan provides                                    | Litestream, with point-in-time restore from the bucket           |
+| Operations        | None beyond the vendors' dashboards                              | OS updates, Caddy, Litestream, and watching the disk are yours   |
 
 Pick Vercel and Turso to start at no cost for non-commercial use with nothing to operate.
 Pick self-hosted for commercial use without paying for Vercel Pro, to keep data with a

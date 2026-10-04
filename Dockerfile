@@ -26,3 +26,14 @@ CMD ["./snowtime"]
 FROM caddy:2.11.4 AS caddy
 COPY --from=build /release/public/ /srv/snowtime/
 COPY deploy/compose/Caddyfile /etc/caddy/Caddyfile
+
+# The load benchmark's sampler (perf/stress/sampler, task 078), which only compose.bench.yml runs.
+FROM golang:1.27-alpine AS sampler-build
+WORKDIR /src
+COPY perf/stress/sampler/ ./
+RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /sampler .
+
+FROM scratch AS sampler
+COPY --from=sampler-build /sampler /sampler
+USER 65534
+ENTRYPOINT ["/sampler"]

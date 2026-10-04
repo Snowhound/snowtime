@@ -17,6 +17,11 @@ export const env = createEnv({
       v.optional(v.picklist(['true', 'false']), 'false'),
       v.transform((value) => value === 'true'),
     ),
+    // Serves /api/bench/heap for the load benchmark (compose.bench.yml).
+    BENCH_HEAP: v.pipe(
+      v.optional(v.picklist(['true', 'false']), 'false'),
+      v.transform((value) => value === 'true'),
+    ),
     MIGRATE_ON_START: v.pipe(
       v.optional(v.picklist(['true', 'false']), 'false'),
       v.transform((value) => value === 'true'),

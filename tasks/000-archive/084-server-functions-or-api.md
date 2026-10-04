@@ -150,7 +150,7 @@ machine. Each cell is the two runs' values.
 
 Speed is not a reason to stay on server functions, so the move is only work:
 
-- **Transferability first.** Each of the 41 server functions is checked as task 085
+- **Transferability first.** Each of the 41 server functions is checked as task 081.05
   describes and gets a verdict: transferable, transferable with changes, or not as is.
   The report is the first commit.
 - **Every call on the contract:** its output schema, its operation, its handler, its
@@ -177,7 +177,7 @@ Speed is not a reason to stay on server functions, so the move is only work:
 
 ## Transferability
 
-Checked on 2026-10-03 as task 085 describes. The app has 41 server functions in 9
+Checked on 2026-10-03 as task 081.05 describes. The app has 41 server functions in 9
 `*.functions.ts` files (tasks 081.02 and 085 counted 50). Of them, 32 are
 transferable, 9 are transferable with changes, and none is not transferable as is:
 nothing streams, returns a raw `Response`, or takes `FormData`, and the export already

@@ -42,13 +42,9 @@ works; one that lacks it gets a notice at the top of each page.
 | Preview     | any other | `snowtime-staging` Turso database, seeded and shared       |
 | Production  | `main`    | `prod` Turso database, same region as the Vercel functions |
 
-Production runs in Vercel's `dub1` (Dublin) with Turso's `aws-eu-west-1` (Ireland), the
-only EU region Turso offers. A page makes several database round trips, so the functions
-sit beside the database rather than nearer to users in Estonia. Postgres nearer to
-Estonia was rejected for now: Supabase in Stockholm (with Vercel `arn1`) or Neon in
-Frankfurt (`fra1`) would save roughly 20–30 ms per request, but both mean porting the
-schema, migrations, and tooling from SQLite, and the free tiers pause idle databases. If
-this changes, switch before production holds real data.
+Production runs in Vercel's `arn1` (Stockholm) with Turso's `aws-eu-north-1` (Stockholm),
+the Turso region nearest users in Estonia. A page makes several database round trips, so
+the functions sit beside the database.
 
 **Migrations and deploys:** CI runs `db:migrate` after the checks pass on a push to the
 environment's branch, and then deploys that commit to Vercel. Migrations never run in the
@@ -207,3 +203,33 @@ to update a baseline on purpose:
 They gate only counts that don't depend on the machine (bytes, rows, plans, nodes, pixels)
 and print timings, since no machine here gives stable ones. Data comes from the company
 seed at a fixed date, with the server's and browser's clocks moved to it.
+
+## Server-Timing
+
+Page and JSON API responses send a `Server-Timing` header (task 088), so the browser's
+network tab shows where any deployment spends a request's server time:
+
+```
+server-timing: session;dur=8.4, db;dur=31.2, render;dur=52.7
+```
+
+| Name      | Covers                                                                    |
+| --------- | ------------------------------------------------------------------------- |
+| `session` | Better Auth's session lookups (`sessionOf`), its database reads included  |
+| `db`      | Every statement, batch, and transaction step on the app's database client |
+| `render`  | Pages only: from the request's start to the first byte, the two above too |
+
+Each value counts the time at least one call of its kind was open, in milliseconds. Queries
+sent in parallel count once, so no value exceeds the request's time, and the values overlap
+rather than add up: `render` minus `db` is roughly the time spent outside the database.
+
+`src/server/timing.server.ts` holds the timer, in an `AsyncLocalStorage` for each request,
+and the wrapped libSQL client that `src/db/index.ts` uses. `src/server-entry.ts` starts the
+timer and sets the header on HTML responses; `handleApiRequest` (`api.server.ts`) does the
+same for `/api/v1`. A page's loaders call the API in process, so their queries count toward
+the page's header.
+
+Start resolves a page's response once its loaders finish and streams the HTML after it, so
+`render` stops at the first byte; streaming the rest isn't timed, and pages aren't buffered
+to time it. The header holds names and durations only, never tables, queries, or user
+data, so it stays on in production.
