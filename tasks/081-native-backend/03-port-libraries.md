@@ -203,7 +203,8 @@ CPU flags nor keeping glibc from returning scrypt's 32 MB buffer changed it; the
 isn't found.
 
 The ramp, one minute a step, until a 30-second window's p95 passes a target. Requests a
-second are those offered; CPU is a share of the one core:
+second are those offered; CPU is a share of the one core; RSS is the step's peak and
+anonymous memory its last sample:
 
 |   Users | Req/s | TS app CPU | TS anon / RSS MB | Native app CPU | Native anon / RSS MB | Caddy CPU, TS / native |
 | ------: | ----: | ---------: | ---------------: | -------------: | -------------------: | ---------------------: |
@@ -332,6 +333,8 @@ For Kait to decide; not yet in 081's decision record.
   users of M. The scenario should treat that 404 as expected, or give each person one
   virtual user. The datasets' REAL timestamps should become integers.
 - The measurements ran on this Mac in Docker, not on Hetzner, and on M, not L.
+- The whole TypeScript app's capacity wasn't measured again. Task 078's 8,000 users on M
+  predate task 084 and the scenario's fix, so they don't compare with the slice's.
 
 ### Found on the TypeScript side
 
