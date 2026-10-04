@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
+# The render crate needs its JavaScript bundle built first (crates/render/README.md).
+default-members = ["crates/server", "crates/host"]
 
 [workspace.package]
 version = "0.1.0"

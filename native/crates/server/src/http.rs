@@ -9,7 +9,7 @@ use crate::{AppError, Code, Config, Error, Key, Result, WireResponse, clock};
 use axum::{
     Router,
     body::to_bytes,
-    extract::{FromRequest, Path, Request as HttpRequest},
+    extract::{FromRequest, FromRequestParts, Path, Request as HttpRequest},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response as HttpResponse},
 };
@@ -172,7 +172,6 @@ async fn extract(
         params,
     })
 }
-use axum::extract::FromRequestParts;
 fn input(request: &Request) -> Result<Value> {
     let mut fields = if request.method == "GET" {
         form_urlencoded::parse(request.query.as_deref().unwrap_or("").as_bytes())
@@ -245,35 +244,55 @@ impl Validate for Empty {
     }
 }
 
+impl Request {
+    fn param(&self, name: &str) -> &str {
+        self.params
+            .iter()
+            .find(|(k, _)| k == name)
+            .map_or("", |(_, v)| v.as_str())
+    }
+}
+
+// Runs a call off the async runtime, holding the one connection from the session check
+// through the rule, and answers with its result and Server-Timing.
+async fn answer(
+    app: Arc<App>,
+    request: Request,
+    call: impl FnOnce(&App, &Connection, &Request, &mut Timer) -> Result<WireResponse> + Send + 'static,
+) -> Response {
+    run_blocking(move || {
+        let db = app.db();
+        let mut timer = Timer::start();
+        let result = call(&app, &db, &request, &mut timer);
+        let mut response = respond(&db, result);
+        response.server_timing = Some(timer.header());
+        response
+    })
+    .await
+}
+impl App {
+    // The signed-in user, with a write counted against their rate.
+    fn caller(
+        &self,
+        db: &Connection,
+        request: &Request,
+        read: bool,
+        timer: &mut Timer,
+    ) -> Result<String> {
+        let write = !read && request.method != "GET";
+        timer.session(|| self.user(db, request.cookie.as_deref(), write))
+    }
+}
+
 impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> InOrganization<T, READ> {
     pub async fn run<O: Serialize + 'static>(
         self,
         rule: fn(&Connection, &Scope, T) -> Result<O>,
     ) -> Response {
-        run_blocking(move || {
-            let db = self.0.db();
-            let mut timer = Timer::start();
-            let result = (|| {
-                let user = timer.session(|| {
-                    self.0.user(
-                        &db,
-                        self.1.cookie.as_deref(),
-                        !READ && self.1.method != "GET",
-                    )
-                })?;
-                let organization = self
-                    .1
-                    .params
-                    .iter()
-                    .find(|(k, _)| k == "organizationId")
-                    .map(|(_, v)| v.as_str())
-                    .unwrap_or("");
-                let scope = resolve_scope(&db, &user, organization)?;
-                Ok(ok(&rule(&db, &scope, decode(input(&self.1)?)?)?))
-            })();
-            let mut response = respond(&db, result);
-            response.server_timing = Some(timer.header());
-            response
+        answer(self.0, self.1, move |app, db, request, timer| {
+            let user = app.caller(db, request, READ, timer)?;
+            let scope = resolve_scope(db, &user, request.param("organizationId"))?;
+            Ok(ok(&rule(db, &scope, decode(input(request)?)?)?))
         })
         .await
     }
@@ -283,22 +302,9 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> AsUser<T
         self,
         rule: fn(&Connection, &str, T) -> Result<O>,
     ) -> Response {
-        run_blocking(move || {
-            let db = self.0.db();
-            let mut timer = Timer::start();
-            let result = (|| {
-                let user = timer.session(|| {
-                    self.0.user(
-                        &db,
-                        self.1.cookie.as_deref(),
-                        !READ && self.1.method != "GET",
-                    )
-                })?;
-                Ok(ok(&rule(&db, &user, decode(input(&self.1)?)?)?))
-            })();
-            let mut response = respond(&db, result);
-            response.server_timing = Some(timer.header());
-            response
+        answer(self.0, self.1, move |app, db, request, timer| {
+            let user = app.caller(db, request, READ, timer)?;
+            Ok(ok(&rule(db, &user, decode(input(request)?)?)?))
         })
         .await
     }
@@ -308,13 +314,8 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> Public<T
         self,
         rule: fn(&Connection, T) -> Result<O>,
     ) -> Response {
-        run_blocking(move || {
-            let db = self.0.db();
-            let timer = Timer::start();
-            let result = (|| Ok(ok(&rule(&db, decode(input(&self.1)?)?)?)))();
-            let mut response = respond(&db, result);
-            response.server_timing = Some(timer.header());
-            response
+        answer(self.0, self.1, move |_, db, request, _| {
+            Ok(ok(&rule(db, decode(input(request)?)?)?))
         })
         .await
     }

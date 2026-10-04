@@ -54,8 +54,8 @@ bounded; more than 256 distinct statements can still evict older ones.
 ## Server rendering
 
 The independent [render crate](crates/render/README.md) embeds V8 and keeps the rerunnable
-server-rendering harness. Build its JavaScript bundle before building every workspace
-crate. Its HTTP examples demonstrate Axum and Actix. Wiring rendering into the native
+server-rendering harness. Cargo leaves it out unless asked (`-p snowtime-render` or
+`--workspace`), since it needs its JavaScript bundle built first. Its HTTP examples demonstrate Axum and Actix. Wiring rendering into the native
 host is the next integration step.
 
 ## Password hashing

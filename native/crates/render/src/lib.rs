@@ -139,30 +139,24 @@ impl Renderer {
             policy,
         }
     }
+    // Taken only in reset(), which puts a fresh runtime back before returning.
+    fn js(&mut self) -> &mut JsRuntime {
+        self.runtime.as_mut().expect("the renderer has a runtime")
+    }
     fn reset(&mut self) {
-        self.runtime
-            .as_mut()
-            .unwrap()
-            .v8_isolate()
-            .cancel_terminate_execution();
+        self.js().v8_isolate().cancel_terminate_execution();
         // Dispose this isolate before entering its replacement on the same thread.
         drop(self.runtime.take());
         *self = Self::new(self.send.clone(), self.policy.clone());
     }
     pub fn heap_bytes(&mut self) -> usize {
-        self.runtime
-            .as_mut()
-            .unwrap()
+        self.js()
             .v8_isolate()
             .get_heap_statistics()
             .used_heap_size()
     }
     pub fn collect(&mut self) {
-        self.runtime
-            .as_mut()
-            .unwrap()
-            .v8_isolate()
-            .low_memory_notification();
+        self.js().v8_isolate().low_memory_notification();
         if self.heap_bytes() > self.policy.replace_heap_bytes {
             self.reset();
         }
@@ -173,32 +167,19 @@ impl Renderer {
         head: oneshot::Sender<Result<PageHead, String>>,
         body: mpsc::Sender<Result<Vec<u8>, String>>,
     ) {
-        self.runtime
-            .as_mut()
-            .unwrap()
-            .op_state()
-            .borrow_mut()
-            .put(Output {
-                head: Some(head),
-                body: body.clone(),
-            });
-        self.deadline.arm(
-            self.policy.deadline,
-            self.runtime
-                .as_mut()
-                .unwrap()
-                .v8_isolate()
-                .thread_safe_handle(),
-        );
+        self.js().op_state().borrow_mut().put(Output {
+            head: Some(head),
+            body: body.clone(),
+        });
+        let isolate = self.js().v8_isolate().thread_safe_handle();
+        self.deadline.arm(self.policy.deadline, isolate);
         let result = tokio::time::timeout(self.policy.deadline, async {
-            let value = self.runtime.as_mut().unwrap().execute_script(
+            let value = self.js().execute_script(
                 "page.js",
                 format!("renderPage({})", serde_json::to_string(&request)?),
             )?;
-            let promise = self.runtime.as_mut().unwrap().resolve(value);
-            self.runtime
-                .as_mut()
-                .unwrap()
+            let promise = self.js().resolve(value);
+            self.js()
                 .with_event_loop_promise(promise, Default::default())
                 .await?;
             Ok::<(), anyhow::Error>(())
@@ -206,13 +187,7 @@ impl Renderer {
         .await
         .unwrap_or_else(|_| Err(anyhow::anyhow!("Render deadline exceeded")));
         self.deadline.disarm();
-        let output = self
-            .runtime
-            .as_mut()
-            .unwrap()
-            .op_state()
-            .borrow_mut()
-            .take::<Output>();
+        let output = self.js().op_state().borrow_mut().take::<Output>();
         if let Err(error) = result {
             let message = error.to_string();
             if let Some(head) = output.head {
@@ -389,7 +364,7 @@ mod tests {
             ..Default::default()
         };
         let mut renderer = Renderer::new(send, policy);
-        renderer.runtime.as_mut().unwrap().execute_script("test.js", r#"
+        renderer.js().execute_script("test.js", r#"
             renderPage = async function () {
               const encoded = new TextEncoder().encode('õ');
               const into = new Uint8Array(2);
@@ -411,17 +386,9 @@ mod tests {
         assert_eq!(chunks.len(), 2);
         assert_eq!(chunks[0].as_ref().unwrap(), "õ".as_bytes());
         let pending: SendApi = Arc::new(|_| Box::pin(std::future::pending()));
+        renderer.js().op_state().borrow_mut().put(pending);
         renderer
-            .runtime
-            .as_mut()
-            .unwrap()
-            .op_state()
-            .borrow_mut()
-            .put(pending);
-        renderer
-            .runtime
-            .as_mut()
-            .unwrap()
+            .js()
             .execute_script(
                 "pending.js",
                 r#"
@@ -440,17 +407,13 @@ mod tests {
         );
 
         renderer
-            .runtime
-            .as_mut()
-            .unwrap()
+            .js()
             .execute_script("hang.js", "renderPage = async () => { for (;;) {} }")
             .unwrap();
         let (head, _) = collect(&mut renderer).await;
         assert!(head.is_err());
         renderer
-            .runtime
-            .as_mut()
-            .unwrap()
+            .js()
             .execute_script(
                 "recovered.js",
                 "renderPage = async () => Deno.core.ops.op_head({status:204,headers:[]})",
@@ -458,9 +421,7 @@ mod tests {
             .unwrap();
         assert_eq!(collect(&mut renderer).await.0.unwrap().status, 204);
         renderer
-            .runtime
-            .as_mut()
-            .unwrap()
+            .js()
             .execute_script(
                 "throws.js",
                 "renderPage = async () => { throw Error('test failure') }",
@@ -474,9 +435,7 @@ mod tests {
                 .contains("test failure")
         );
         renderer
-            .runtime
-            .as_mut()
-            .unwrap()
+            .js()
             .execute_script(
                 "recovered.js",
                 "renderPage = async () => Deno.core.ops.op_head({status:204,headers:[]})",
@@ -486,12 +445,10 @@ mod tests {
         renderer.policy.collect_heap_bytes = 0;
         renderer.policy.replace_heap_bytes = 0;
         renderer
-            .runtime
-            .as_mut()
-            .unwrap()
+            .js()
             .execute_script("marker.js", "globalThis.renderMarker = 'discard me'")
             .unwrap();
         assert_eq!(collect(&mut renderer).await.0.unwrap().status, 204);
-        renderer.runtime.as_mut().unwrap().execute_script("fresh.js", "if (globalThis.renderMarker !== undefined) throw Error('Isolate was not replaced')").unwrap();
+        renderer.js().execute_script("fresh.js", "if (globalThis.renderMarker !== undefined) throw Error('Isolate was not replaced')").unwrap();
     }
 }

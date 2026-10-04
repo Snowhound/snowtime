@@ -69,14 +69,11 @@ pub fn readable_user_ids(db: &Connection, scope: &Scope) -> Result<Option<Vec<St
     if scope.led_team_ids.is_empty() {
         return Ok(Some(vec![scope.user_id.clone()]));
     }
-    let query = crate::sql!(
+    let rows: Vec<String> = crate::sql!(
         "select distinct user_id from team_member where team_id in ",
         list(&scope.led_team_ids)
-    );
-    let rows = query
-        .prepare(db)?
-        .query_map(query.params(), |row| row.get::<_, String>(0))?
-        .collect::<rusqlite::Result<Vec<_>>>()?;
+    )
+    .query(db, |row| row.get(0))?;
     let mut users = vec![scope.user_id.clone()];
     users.extend(rows.into_iter().filter(|id| *id != scope.user_id));
     Ok(Some(users))

@@ -8,7 +8,7 @@ use self::schemas::{
     CreateEntryInput, DeleteEntryInput, DeletedEntry, Entry, GetFirstEntryStartInput,
     ListEntriesInput, UpdateEntryInput,
 };
-use crate::{Code, Error, Key, Result, Timestamp, clock, refuse};
+use crate::{Code, Key, Result, Timestamp, clock, refuse};
 use rusqlite::{Connection, OptionalExtension, Row};
 
 use crate::projects::assert_usable_project;
@@ -199,10 +199,7 @@ pub fn update_entry(db: &Connection, scope: &Scope, input: UpdateEntryInput) -> 
         " and sys_deleted = 0 returning ",
         entry_columns()
     );
-    let updated = query
-        .prepare(db)?
-        .query_row(query.params(), entry_of)
-        .optional();
+    let updated = query.query_row(db, entry_of).optional();
     match updated {
         Ok(Some(entry)) => Ok(entry),
         Ok(None) => refuse(Code::NotFound, Key::EntryNotFound),
@@ -295,10 +292,5 @@ pub fn list_entries(db: &Connection, scope: &Scope, input: ListEntriesInput) -> 
         input.from,
         ") order by started_at desc"
     );
-    let entries = query
-        .prepare(db)?
-        .query_map(query.params(), entry_of)?
-        .collect::<rusqlite::Result<Vec<_>>>()
-        .map_err(Error::from)?;
-    Ok(entries)
+    Ok(query.query(db, entry_of)?)
 }
