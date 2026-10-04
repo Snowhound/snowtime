@@ -496,11 +496,7 @@ async function samplesBetween(from: number, to: number): Promise<Sample[]> {
 }
 
 // Runs one plan and reports each of its steps.
-async function runPlan(
-  plan: Step[],
-  files: { recording: string; users: string; out: string },
-  live = false,
-) {
+async function runPlan(plan: Step[], files: { recording: string; users: string; out: string }) {
   await readLog()
   const began = Date.now() / 1000
   async function watch(): Promise<string | null> {
@@ -520,7 +516,9 @@ async function runPlan(
     }
     return null
   }
-  const { summary, aborted } = await runK6(plan, files, live || target.remote ? watch : undefined)
+  // The log is read as the run goes, so no read is larger than the sampler's memory: a
+  // fast step writes tens of MB of it a minute.
+  const { summary, aborted } = await runK6(plan, files, watch)
   // Caddy writes its log as requests end; the last ones may take a moment.
   await Bun.sleep(2000)
   await readLog()
@@ -680,7 +678,6 @@ async function main() {
         { name: 'recover', users: knee, seconds: 300 },
       ],
       files,
-      true,
     )
   } else if (values.run === 'kinds') {
     // Each action alone at a low rate, for the CPU and server time each costs.
