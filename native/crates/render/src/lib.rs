@@ -273,6 +273,8 @@ struct Shared {
     manifest: Arc<str>,
     policy: Policy,
     renderers: AtomicUsize,
+    // Renderers in the middle of a page.
+    busy: AtomicUsize,
     spawning: AtomicBool,
     pressure: AtomicBool,
 }
@@ -301,6 +303,7 @@ impl Pool {
                 send,
                 manifest: manifest.into(),
                 renderers: AtomicUsize::new(0),
+                busy: AtomicUsize::new(0),
                 spawning: AtomicBool::new(false),
                 pressure: AtomicBool::new(false),
                 policy,
@@ -327,10 +330,13 @@ impl Pool {
             .map_err(|_| RenderError::Failed("The renderer stopped".into()))?
     }
 
-    // Adds a renderer while pages wait and memory allows, one at a time.
+    // Adds a renderer while more pages wait than renderers are free, and memory allows, one
+    // at a time. A free renderer may not have taken the page just sent yet.
     fn grow(&self) {
         let shared = &self.shared;
-        if self.stats().queued == 0
+        let renderers = shared.renderers.load(Ordering::SeqCst);
+        let free = renderers.saturating_sub(shared.busy.load(Ordering::SeqCst));
+        if self.stats().queued <= free
             || shared.pressure.load(Ordering::Relaxed)
             || shared.renderers.load(Ordering::SeqCst) >= shared.policy.max_renderers
             || shared.spawning.swap(true, Ordering::SeqCst)
@@ -408,7 +414,9 @@ async fn run_renderer(shared: Arc<Shared>) {
             let _ = job.reply.send(Err(RenderError::Busy));
             continue;
         }
+        shared.busy.fetch_add(1, Ordering::SeqCst);
         let page = renderer.render(&job.request).await;
+        shared.busy.fetch_sub(1, Ordering::SeqCst);
         let _ = job.reply.send(page.map_err(RenderError::Failed));
         dirty = true;
         idle_since = Instant::now();
@@ -571,5 +579,45 @@ mod tests {
         assert!(matches!(first.await.unwrap(), Err(RenderError::Failed(_))));
         assert!(matches!(second.await.unwrap(), Err(RenderError::Busy)));
         assert_eq!(pool.stats().renderers, 1);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn grows_only_while_pages_wait() {
+        // Each API call fails at once, so a page finishes quickly unless the gate holds it.
+        let gate = Arc::new(tokio::sync::Semaphore::new(0));
+        let held = gate.clone();
+        let send: SendApi = Arc::new(move |_| {
+            let held = held.clone();
+            Box::pin(async move {
+                drop(held.acquire().await);
+                Err("no API".into())
+            })
+        });
+        let policy = Policy {
+            max_renderers: 2,
+            ..Default::default()
+        };
+        let pool = Pool::start(send, r#"{"routes":{}}"#, policy).unwrap();
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        gate.add_permits(1_000);
+        for _ in 0..5 {
+            let _ = pool.render(page()).await;
+        }
+        assert_eq!(pool.stats().renderers, 1, "a free renderer takes each page");
+
+        gate.forget_permits(1_000);
+        let first = tokio::spawn({
+            let pool = pool.clone();
+            async move { pool.render(page()).await }
+        });
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        let second = tokio::spawn({
+            let pool = pool.clone();
+            async move { pool.render(page()).await }
+        });
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        assert_eq!(pool.stats().renderers, 2, "a page waits behind a busy one");
+        gate.add_permits(1_000);
+        let _ = (first.await, second.await);
     }
 }

@@ -32,7 +32,7 @@ export async function startNative(
       TURSO_DATABASE_URL: `file:${copy}`,
       BETTER_AUTH_SECRET: 'perf-harness-secret-perf-harness-secret',
       BETTER_AUTH_URL: url,
-      EDGE_ACCESS_LOG: 'false',
+      EDGE_ACCESS_LOG: 'off',
       ...env,
     },
   })
