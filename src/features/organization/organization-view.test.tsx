@@ -2,8 +2,6 @@ import { render, screen, waitFor, within } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { setTransport } from '~/lib/api/client'
-import { mockTransport } from '~/lib/api/testing'
 import type { Member } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
@@ -31,7 +29,9 @@ const fn = vi.hoisted(() => ({
   updateIssueLinks: vi.fn(),
   navigate: vi.fn(),
 }))
-setTransport(mockTransport(fn))
+vi.mock('~/lib/api/auth', () => fn)
+vi.mock('~/lib/api/projects', () => fn)
+vi.mock('~/lib/api/teams', () => fn)
 const org = vi.hoisted(() => ({
   updateMemberRole: vi.fn(),
   removeMember: vi.fn(),

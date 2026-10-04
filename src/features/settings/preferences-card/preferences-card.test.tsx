@@ -2,13 +2,11 @@ import { render, screen } from '@solidjs/testing-library'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { setTransport } from '~/lib/api/client'
-import { mockTransport } from '~/lib/api/testing'
 import type { Settings } from '~/lib/queries/settings'
 import { PreferencesCard } from './preferences-card'
 
 const fn = vi.hoisted(() => ({ updateSettings: vi.fn() }))
-setTransport(mockTransport(fn))
+vi.mock('~/lib/api/settings', () => fn)
 
 const SETTINGS: Settings = {
   timeZone: 'Europe/Tallinn',

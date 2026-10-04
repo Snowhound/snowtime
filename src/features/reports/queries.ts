@@ -1,7 +1,12 @@
 // The Reports view's queries. Projects, teams and members come from the shared caches in
 // src/lib/.
 import { infiniteQueryOptions, keepPreviousData, queryOptions } from '@tanstack/solid-query'
-import { call } from '~/lib/api/client'
+import {
+  getReport,
+  getReportBreakdown,
+  getReportEntries,
+  getReportEntryTotals,
+} from '~/lib/api/reports'
 import { reportsKey } from '~/lib/queries/query'
 import type {
   Report,
@@ -19,7 +24,7 @@ export type { Report, ReportBreakdown, ReportEntries }
 export function reportQuery(organizationId: string, input: ReportInput) {
   return queryOptions({
     queryKey: [...reportsKey, organizationId, input],
-    queryFn: () => call('getReport', { ...input, organizationId }),
+    queryFn: () => getReport({ ...input, organizationId }),
     placeholderData: keepPreviousData,
   })
 }
@@ -36,8 +41,7 @@ export function reportEntriesQuery(
 ) {
   return infiniteQueryOptions({
     queryKey: [...reportsKey, organizationId, 'entries', input],
-    queryFn: ({ pageParam }) =>
-      call('getReportEntries', { ...input, ...pageParam, organizationId }),
+    queryFn: ({ pageParam }) => getReportEntries({ ...input, ...pageParam, organizationId }),
     initialPageParam: FIRST_PAGE,
     getNextPageParam: (page): EntriesPage | undefined => {
       if (page.next === null) return undefined
@@ -52,7 +56,7 @@ export function reportEntriesQuery(
 export function reportEntryTotalsQuery(organizationId: string, input: ReportEntryTotalsInput) {
   return queryOptions({
     queryKey: [...reportsKey, organizationId, 'entry-totals', input],
-    queryFn: () => call('getReportEntryTotals', { ...input, organizationId }),
+    queryFn: () => getReportEntryTotals({ ...input, organizationId }),
     placeholderData: keepPreviousData,
   })
 }
@@ -63,7 +67,7 @@ export function reportBreakdownQuery(organizationId: string, input: ReportInput)
   const { unit: _, ...range } = input
   return queryOptions({
     queryKey: [...reportsKey, organizationId, 'breakdown', range],
-    queryFn: () => call('getReportBreakdown', { ...range, organizationId }),
+    queryFn: () => getReportBreakdown({ ...range, organizationId }),
     placeholderData: keepPreviousData,
   })
 }

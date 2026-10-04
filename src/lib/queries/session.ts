@@ -1,6 +1,6 @@
 import { type Query, type QueryClient, queryOptions } from '@tanstack/solid-query'
 import { redirect } from '@tanstack/solid-router'
-import { call } from '~/lib/api/client'
+import { getAppSession } from '~/lib/api/auth'
 import { isAppPage } from '~/lib/app-paths'
 import type { AppSession } from '~/server/auth/auth.schemas'
 
@@ -10,7 +10,7 @@ import type { AppSession } from '~/server/auth/auth.schemas'
 // only the default for `/` and old links: each tab shows the organization in its URL.
 export const sessionQuery = queryOptions({
   queryKey: ['session'],
-  queryFn: () => call('getAppSession'),
+  queryFn: () => getAppSession(),
 })
 
 function isSession(query: Query) {

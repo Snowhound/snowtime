@@ -1,6 +1,6 @@
 # 089: API routes and client per domain
 
-Status: todo
+Status: done
 
 Replace the central call table with per-domain routes on the server and per-domain
 functions on the client. Today `src/lib/api/operations.ts` (396 lines, 41 calls) gives each
@@ -129,18 +129,69 @@ doesn't, stop and record why in this task.
 
 ## Acceptance criteria
 
-- [ ] Entries moved first, and the diff reviewed
-- [ ] Every call served by a per-domain Hono router and reached through a per-domain client
+- [x] Entries moved first, and the diff reviewed
+- [x] Every call served by a per-domain Hono router and reached through a per-domain client
       function; `operations.ts` and `operations.server.ts` removed
-- [ ] Server rendering calls the API in process by URL
-- [ ] The answer decoding decided with measurements, and recorded
-- [ ] Better Auth imported only inside `src/server/auth/`; every route handler is one call
-- [ ] `ListedProject`'s schema in the order the API sends
-- [ ] `bun run test` and the conformance tests pass, with unchanged conformance assertions
-- [ ] `AGENTS.md` ("Code conventions": how a new call is added, which today names
+- [x] Server rendering calls the API in process by URL
+- [x] The answer decoding decided with measurements, and recorded
+- [x] Better Auth imported only inside `src/server/auth/`; every route handler is one call
+- [x] `ListedProject`'s schema in the order the API sends
+- [x] `bun run test` and the conformance tests pass, with unchanged conformance assertions
+- [x] `AGENTS.md` ("Code conventions": how a new call is added, which today names
       `operations.ts` and `operations.server.ts`) and `docs/architecture/README.md`
       ("Application rules") describe the new layout: routes per domain, one-call
       handlers, client modules per domain, Better Auth only in `auth/`
+
+## Decisions
+
+- **Entries first, reviewed.** `entries.routes.ts` came to five route lines, each with its
+  method, path, input schema, and rule, where a call used to take a 7-line table row and a
+  handler in a second table. Go to definition from `updateEntry({...})` lands on a function
+  that shows its path and body. The costs: each path is written in the client module and
+  in the route, and only the conformance and `request` tests catch a mismatch. It read
+  better, so the other domains followed.
+- **Shared steps.** Hono runs middleware in the order it is added, so the public routes
+  go before `signedIn` and the organization middleware before the organization routers
+  (`api.server.ts`). `known`, the first middleware, finds the matched routes with
+  `matchedRoutes` from `hono/route`: no matched route means 404 before any other check,
+  as before, and a route marked with the `reads` middleware passes the checks a GET does.
+  `run(c, rule)` calls the rule with the scope or the user and the input only. The report
+  rules take an optional `now` as a fourth argument, so passing the headers there would
+  have been wrong; the two calls that hand headers to Better Auth (`inviteMember`,
+  `acceptInvitation`) and the public routes call their function directly.
+- **Refusal order.** A request that fails more than one check may now get another of its
+  refusals. `input()` reads the JSON body after the session and the scope, so a body that
+  isn't JSON from a signed-out caller is a 401 now, where it was a 400.
+- **No separate `organizationId` check.** The id comes from the path, which Hono never
+  matches with an empty segment, so `parseOrganizationInput` and its test went.
+- **Content type.** Hono answers with `application/json`, where `Response.json` sent
+  `application/json;charset=utf-8`. The bodies are byte-identical: a diff of 40 answers
+  from `main`'s build and this branch's, on the same seeded data, for two users, differed
+  only in the server's port in `appUrl` and in this header.
+- **Client modules all in `src/lib/api/`,** including those only one feature uses, such as
+  `entries.ts`, so one folder lists the API as the client sees it and the conformance tests
+  call the same functions by name (`conformance/server.ts`).
+- **Server render.** `src/server-entry.ts` sets `request`'s sender to `api.request()` with
+  the page request's cookie, so `api.server.ts` doesn't import Start. The calls count
+  toward the page's `Server-Timing`, since only `handleApiRequest` starts a timer.
+- **Decoding: full `v.parse`.** Measured on 2026-10-04 on the seeded company, median of 15
+  runs, decode time after `JSON.parse`:
+
+  | Answer                                     | `JSON.parse` | `v.parse` | Dates only |
+  | ------------------------------------------ | -----------: | --------: | ---------: |
+  | 92-day `listEntries`, 1.67 MB, Chrome      |       1.0 ms |    4.9 ms |     2.8 ms |
+  | Same, Bun                                  |       1.6 ms |    4.7 ms |     2.7 ms |
+  | A year's export, 12 pieces, 6.5 MB, Chrome |       5.4 ms |   24.6 ms |    14.1 ms |
+  | Same, Bun                                  |       8.5 ms |   19.8 ms |    14.2 ms |
+
+  Reviving dates only would save about 2 ms on the largest list and 10 ms over a year's
+  export, spread across 12 requests. Validating keeps an answer off the contract from
+  reaching a view, which matters while two backends serve the API ("Application rules" in
+  `docs/architecture/README.md`).
+
+- **Not done:** splitting `reports.server.ts` (optional). Its queries and its aggregation
+  are already separate functions; moving them to two files is a pure move, better made in
+  a commit of its own that `.git-blame-ignore-revs` can list.
 
 ## Out of scope
 

@@ -1,18 +1,16 @@
 // The user's settings on the contract (task 084), over HTTP, as timer.conformance.ts runs.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import type { Transport } from '~/lib/api/client'
-import { httpTransport } from '~/lib/api/transports'
 import { COLLECTION_IMAGES } from '~/lib/scene/images'
-import { refused, send, type ServerUnderTest, serverUnderTest } from './server'
+import { type Caller, caller, refused, send, type ServerUnderTest, serverUnderTest } from './server'
 
 let server: ServerUnderTest
 let headers: Record<string, string>
-let member: Transport
+let member: Caller
 
 beforeAll(async () => {
   server = await serverUnderTest()
   headers = await server.as('member')
-  member = httpTransport(server.url, headers)
+  member = caller(server.url, headers)
 }, 120_000)
 afterAll(() => server?.stop())
 

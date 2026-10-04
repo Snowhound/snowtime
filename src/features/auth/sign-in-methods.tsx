@@ -17,7 +17,7 @@ import {
   TextFieldInput,
   TextFieldLabel,
 } from '~/components/ui/text-field'
-import { call } from '~/lib/api/client'
+import { getDevUsers } from '~/lib/api/auth'
 import { authClient } from '~/lib/auth-client'
 import { fieldError } from '~/lib/form'
 import { useQuery } from '~/lib/queries/use-query'
@@ -162,7 +162,7 @@ export function PasswordSignIn(props: {
   const [revealed, setRevealed] = createSignal(false)
   const devUsers = useQuery(() => ({
     queryKey: ['dev-users'],
-    queryFn: () => call('getDevUsers'),
+    queryFn: () => getDevUsers(),
     staleTime: Infinity,
   }))
   let formRef!: HTMLFormElement

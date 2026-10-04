@@ -223,9 +223,9 @@ with the same `Name` schema and returns translated `AppError`s.
 Rate limits bound how fast one user or address can write, which the caps don't. The rates
 are `rateLimits` in `src/server/limits.server.ts`.
 
-- The API's session check (`signedInUser` in `src/server/guards.server.ts`) counts every
+- The API's session check (`signedInUser` in `src/server/auth/auth.server.ts`) counts every
   write against the user's write rate, across all their organizations, and refuses with
-  `AppError` code `RATE_LIMITED` past it. Every call but a GET or a POST marked `read` writes, so a new
+  `AppError` code `RATE_LIMITED` past it. Every call but a GET or a POST marked `reads` writes, so a new
   write is covered without extra code. The app's invitation call also applies the
   invitation rate per user before calling Better Auth.
 - Better Auth limits `/api/auth/*` per IP address and path, in production only, with

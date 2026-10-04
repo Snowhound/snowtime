@@ -8,7 +8,7 @@ import { AuthHeading, AuthIcon, AuthLayout } from '~/components/auth-layout/auth
 import { ErrorAlert } from '~/components/error-alert'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
-import { call } from '~/lib/api/client'
+import { acceptInvitation } from '~/lib/api/auth'
 import { authClient } from '~/lib/auth-client'
 import { errorMessage } from '~/lib/errors'
 import { sessionQuery } from '~/lib/queries/session'
@@ -65,7 +65,7 @@ export function InvitationPage(props: { id: string; initialError?: string }) {
     setError(null)
     setAccepting(true)
     try {
-      await call('acceptInvitation', { id: data.id })
+      await acceptInvitation({ id: data.id })
     } catch (error) {
       setAccepting(false)
       setError(errorMessage(error))

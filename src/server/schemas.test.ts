@@ -3,23 +3,11 @@
 import { describe, expect, test } from 'bun:test'
 import * as v from 'valibot'
 import { CreateProjectInput, ListProjectsInput } from './projects/projects.schemas'
-import { parseOrganizationInput } from './schemas'
 
-// runOperation's first check: it runs on the call's whole input, before the call's own schema.
-describe('parseOrganizationInput', () => {
-  test('passes the whole input on, for the call to parse', () => {
-    const input = { organizationId: 'org-a', id: 'x', name: 'Design' }
-    expect(parseOrganizationInput(input)).toBe(input)
-  })
-
-  test('refuses a call that names no organization', () => {
-    expect(() => parseOrganizationInput({} as never)).toThrow(v.ValiError)
-    expect(() => parseOrganizationInput({ organizationId: '' })).toThrow(v.ValiError)
-    expect(() => parseOrganizationInput({ organizationId: 1 } as never)).toThrow(v.ValiError)
-    expect(() => parseOrganizationInput(undefined as never)).toThrow(v.ValiError)
-  })
-
-  test("the functions' own schemas drop the organization again", () => {
+// An organization's routes take its id from the path, and input() merges the path into the
+// input the call's own schema parses.
+describe('the organization in the input', () => {
+  test("the calls' own schemas drop it again", () => {
     const id = '01900000-0000-7000-8000-000000000000'
     expect(v.parse(CreateProjectInput, { organizationId: 'org-a', id, name: 'Design' })).toEqual({
       id,

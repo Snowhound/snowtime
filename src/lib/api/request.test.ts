@@ -1,7 +1,9 @@
-import { afterEach, describe, expect, mock, test } from 'bun:test'
+import { describe, expect, mock, test } from 'bun:test'
 import { AppError } from '~/server/errors'
-import { call, setTransport } from './client'
-import { httpTransport } from './transports'
+import { inviteMember } from './auth'
+import { listEntries, updateEntry } from './entries'
+import { setSend } from './request'
+import { getRunningTimer } from './timer'
 
 const organizationId = '01900000-0000-7000-8000-000000000201'
 const userId = '01900000-0000-7000-8000-000000000104'
@@ -16,71 +18,67 @@ const entry = {
   stoppedAt: null,
 }
 
-const realFetch = globalThis.fetch
-afterEach(() => {
-  globalThis.fetch = realFetch
-})
-
 // Answers every request with `body` and records what was asked.
 function answer(status: number, body: unknown) {
-  const requests: { url: string; init: RequestInit }[] = []
-  globalThis.fetch = mock(async (url: string, init?: RequestInit) => {
-    requests.push({ url, init: init ?? {} })
-    return Response.json(body, { status })
-  }) as unknown as typeof fetch
-  setTransport(httpTransport('https://snowtime.example'))
+  const requests: { path: string; init: RequestInit }[] = []
+  setSend(
+    mock(async (path: string, init: RequestInit) => {
+      requests.push({ path, init })
+      return Response.json(body, { status })
+    }),
+  )
   return requests
 }
 
-describe('the HTTP transport', () => {
+describe('a request', () => {
   test('a read sends its input as the query string and decodes dates', async () => {
     const requests = answer(200, [entry])
-    const entries = await call('listEntries', {
+    const entries = await listEntries({
       organizationId,
       from: new Date('2026-09-30T00:00:00Z'),
       to: new Date('2026-10-01T00:00:00Z'),
       userId,
     })
-    expect(requests[0].url).toBe(
-      `https://snowtime.example/api/v1/organizations/${organizationId}/entries?from=2026-09-30T00%3A00%3A00.000Z&to=2026-10-01T00%3A00%3A00.000Z&userId=${userId}`,
+    expect(requests[0].path).toBe(
+      `/api/v1/organizations/${organizationId}/entries?from=2026-09-30T00%3A00%3A00.000Z&to=2026-10-01T00%3A00%3A00.000Z&userId=${userId}`,
     )
     expect(requests[0].init.method).toBe('GET')
+    expect(requests[0].init.body).toBeUndefined()
     expect(entries[0].startedAt).toEqual(new Date(entry.startedAt))
     expect(entries[0].stoppedAt).toBeNull()
   })
 
   test('a write sends the rest of its input as JSON, its ids in the path', async () => {
     const requests = answer(200, { ...entry, description: 'Renamed' })
-    await call('updateEntry', { organizationId, id: entry.id, description: 'Renamed' })
-    expect(requests[0].url).toBe(
-      `https://snowtime.example/api/v1/organizations/${organizationId}/entries/${entry.id}`,
-    )
+    await updateEntry({ organizationId, id: entry.id, description: 'Renamed' })
+    expect(requests[0].path).toBe(`/api/v1/organizations/${organizationId}/entries/${entry.id}`)
     expect(requests[0].init.method).toBe('PATCH')
     expect(JSON.parse(requests[0].init.body as string)).toEqual({ description: 'Renamed' })
   })
 
-  test('a call without input sends nothing', async () => {
-    const requests = answer(200, null)
-    expect(await call('getRunningTimer')).toBeNull()
-    expect(requests[0].url).toBe('https://snowtime.example/api/v1/timer')
-    expect(requests[0].init.body).toBeUndefined()
+  test('a refusal throws the AppError, and an answer off the contract throws', async () => {
+    answer(403, { error: { code: 'FORBIDDEN', key: 'entries_forbidden' } })
+    const range = { organizationId, from: new Date(0), to: new Date(1) }
+    const list = listEntries(range)
+    await expect(list).rejects.toBeInstanceOf(AppError)
+    await expect(list).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
+
+    answer(200, [{ ...entry, startedAt: 'yesterday' }])
+    await expect(listEntries(range)).rejects.toThrow()
   })
 
-  test('a refusal throws the AppError, and an answer off the contract throws', async () => {
-    answer(404, { error: { code: 'NOT_FOUND', key: 'timer_not_running' } })
-    const stop = call('stopTimer', { id: entry.id })
-    await expect(stop).rejects.toBeInstanceOf(AppError)
-    await expect(stop).rejects.toMatchObject({ code: 'NOT_FOUND', key: 'timer_not_running' })
-
-    answer(200, { ...entry, startedAt: 'yesterday' })
-    await expect(call('stopTimer', { id: entry.id })).rejects.toThrow()
+  test('a call without input sends nothing', async () => {
+    const requests = answer(200, null)
+    expect(await getRunningTimer()).toBeNull()
+    expect(requests[0].path).toBe('/api/v1/timer')
+    expect(requests[0].init.body).toBeUndefined()
   })
 
   test("Better Auth's refusal throws with its status and code, as its client reports it", async () => {
     answer(400, {
       error: { code: 'USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION', message: 'Taken' },
     })
-    const invite = call('inviteMember', {
+    const invite = inviteMember({
       organizationId,
       email: 'member@example.com',
       role: 'member',
