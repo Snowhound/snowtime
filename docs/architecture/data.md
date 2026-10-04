@@ -191,8 +191,9 @@ production.
 - Reports: day/week boundaries are computed in TypeScript on the server using
   the user's zone, then queried as UTC ranges. Aggregation happens in
   TypeScript; entries crossing midnight are split there.
-- This lives in one tested reports module: `src/lib/calendar.ts` holds the pure zone math
-  (Intl offsets, no library), and `src/server/reports/reports.server.ts` queries and sums.
+- This lives in one tested reports domain: `src/lib/calendar.ts` holds the pure zone math
+  (Intl offsets, no library), `src/server/reports/reports.server.ts` queries, and
+  `aggregation.server.ts` beside it sums.
   The client uses the same calendar functions for its own dates.
   - A day starts at its first instant in the zone: local midnight, its first occurrence
     when clocks fall back, or the moment clocks spring forward past it.
