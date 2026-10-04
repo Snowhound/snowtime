@@ -141,6 +141,7 @@ pub async fn serve(
     match config.tls {
         Tls::Plain => {
             axum_server::bind(address)
+                .acceptor(axum_server::accept::NoDelayAcceptor::new())
                 .handle(handle)
                 .serve(router.into_make_service())
                 .await
@@ -148,7 +149,10 @@ pub async fn serve(
         Tls::Files { certificate, key } => {
             let tls =
                 axum_server::tls_rustls::RustlsConfig::from_pem_file(certificate, key).await?;
-            axum_server::bind_rustls(address, tls)
+            let acceptor = axum_server::tls_rustls::RustlsAcceptor::new(tls)
+                .acceptor(axum_server::accept::NoDelayAcceptor::new());
+            axum_server::bind(address)
+                .acceptor(acceptor)
                 .handle(handle)
                 .serve(router.into_make_service())
                 .await

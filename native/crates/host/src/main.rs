@@ -41,6 +41,7 @@ async fn main() {
         tokio::spawn(async move {
             axum_server::from_tcp(listener)
                 .expect("the redirect listener initializes")
+                .acceptor(axum_server::accept::NoDelayAcceptor::new())
                 .handle(handle)
                 .serve(edge::redirects(origin).into_make_service())
                 .await

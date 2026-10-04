@@ -202,7 +202,7 @@ using an older checkout must also check for a running `perf:stress` or k6 proces
 For native-host TLS comparisons, `--direct` requires `--app=native` and a recording.
 It reuses the local Caddy certificate and sends load straight to the host on port 3000.
 Run the normal stack first to create the certificate. Both modes share the same database,
-CPU limits, sampler, and complete access-log format. In direct mode, Caddy receives only
+CPU limits, sampler, and complete access records. In direct mode, Caddy receives only
 sampler requests; its idle overhead is instrumentation, not an application proxy cost.
 
 For edge comparisons, `--caddy-config=<absolute-or-relative.json>` mounts an effective

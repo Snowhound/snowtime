@@ -136,6 +136,16 @@ fn text(headers: &HeaderMap, name: &str) -> Option<String> {
         .and_then(|v| v.to_str().ok())
         .map(str::to_owned)
 }
+// HTTP/2 can split Cookie fields for compression (RFC 9113 section 8.2.3).
+fn cookies(headers: &HeaderMap) -> Option<String> {
+    let mut values = headers.get_all(header::COOKIE).iter();
+    let mut joined = values.next()?.to_str().ok()?.to_owned();
+    for value in values {
+        joined.push_str("; ");
+        joined.push_str(value.to_str().ok()?);
+    }
+    Some(joined)
+}
 async fn extract(
     request: HttpRequest,
     app: &Arc<App>,
@@ -160,7 +170,7 @@ async fn extract(
     Ok(Request {
         method: parts.method.to_string(),
         query: parts.uri.query().map(str::to_owned),
-        cookie: text(&parts.headers, "cookie"),
+        cookie: cookies(&parts.headers),
         origin: text(&parts.headers, "origin"),
         user_agent: text(&parts.headers, "user-agent"),
         client_ip: app

@@ -266,3 +266,11 @@ Configuration and proxy trust constraints are documented in `native/README.md`.
 The native API still trusts `CLIENT_IP_HEADER` when configured: deployments must restrict
 that listener to the trusted proxy. The isolated benchmark permits its generator's
 simulated client addresses in both modes.
+
+Direct TLS exposes two adapter details that Caddy had hidden. HTTP/2 can split cookies
+across fields, so the API now concatenates them before parsing
+([RFC 9113, section 8.2.3](https://www.rfc-editor.org/rfc/rfc9113.html#section-8.2.3)).
+The locale cookie previously hid the session cookie and every signed-in call returned 401. A regression test sends separate locale and session fields through the API router.
+The listeners also enable `TCP_NODELAY`: without it, small direct responses show a
+roughly 40 ms delay at low request rates. Both proxy and direct measurements below use
+the rebuilt binary with these fixes; the initial smoke and proxy control are excluded.

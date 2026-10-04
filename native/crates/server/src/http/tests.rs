@@ -196,3 +196,32 @@ async fn post_reads_skip_origin_and_write_rate() {
 async fn read(call: AsUser<Empty, true>) -> Response {
     call.run(|_, user, _| Ok(user.to_owned())).await
 }
+
+#[tokio::test]
+async fn authenticates_cookies_split_across_http2_fields() {
+    let app = app();
+    let cookie = app
+        .session
+        .session_cookie("token")
+        .split(';')
+        .next()
+        .unwrap()
+        .to_owned();
+    let response = router(app)
+        .oneshot(
+            HttpRequest::builder()
+                .uri("/api/v1/timer")
+                .version(axum::http::Version::HTTP_2)
+                .header("cookie", "PARAGLIDE_LOCALE=en")
+                .header("cookie", cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        to_bytes(response.into_body(), 1024).await.unwrap().as_ref(),
+        b"null"
+    );
+}
