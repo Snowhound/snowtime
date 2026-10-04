@@ -26,7 +26,10 @@ pub fn from_env() -> Result<Config, String> {
             password_enabled: var("NODE_ENV").as_deref() == Some("development")
                 || var("DEMO_MODE").as_deref() == Some("true"),
             client_ip_header: var("CLIENT_IP_HEADER").map(|h| h.to_lowercase()),
-            app_url: app_url.trim_end_matches('/').to_owned(),
+            app_url: url::Url::parse(&app_url)
+                .expect("validated app origin")
+                .origin()
+                .ascii_serialization(),
         },
     })
 }
