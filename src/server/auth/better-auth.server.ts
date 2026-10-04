@@ -10,6 +10,7 @@ import * as schema from '~/db/schema'
 import { appUrl as appUrlString, env, trustedOrigins } from '~/env'
 import { limits, rateLimits } from '../limits.server'
 import { createRateLimitStore } from '../rate-limit.server'
+import { time } from '../timing.server'
 import {
   loginDomainHooks,
   loginDomainMiddleware,
@@ -114,3 +115,8 @@ export const auth = betterAuth({
     tanstackStartCookies(),
   ],
 })
+
+// The request's session, if it has one, timed for Server-Timing.
+export function sessionOf(headers: Headers) {
+  return time('session', () => auth.api.getSession({ headers }))
+}
