@@ -58,4 +58,5 @@ pub enum ProjectTeam {
     Table,
     ProjectId,
     TeamId,
+    OrganizationId,
 }

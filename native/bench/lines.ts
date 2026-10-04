@@ -88,6 +88,13 @@ const PAIRS: [string, string, string[], string, string[]][] = [
       'stop_at',
     ],
   ],
+  [
+    'listProjects',
+    'src/server/projects/projects.server.ts',
+    ['projectColumns', 'listProjects'],
+    'projects.rs',
+    ['PROJECT_COLUMNS', 'list_projects'],
+  ],
   ['startTimer', 'src/server/timer/timer.server.ts', ['startTimer'], 'timer.rs', ['start_timer']],
   ['stopTimer', 'src/server/timer/timer.server.ts', ['stopTimer'], 'timer.rs', ['stop_timer']],
   [

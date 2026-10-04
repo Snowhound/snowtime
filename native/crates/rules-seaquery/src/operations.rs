@@ -10,7 +10,7 @@ use snowtime_core::wire::{ok, refusal};
 use snowtime_core::{Access, Error, OperationName, Result, Rules, WireResponse};
 
 use crate::scope::{Scope, resolve_scope};
-use crate::{entries, timer};
+use crate::{entries, projects, timer};
 
 // Who a call runs for: the user anywhere, or the user in the organization it names.
 enum Context {
@@ -54,6 +54,9 @@ fn handle(
         }
         (DeleteEntry, Context::Organization(scope)) => {
             output(entries::delete_entry(db, &scope, decode(input)?)?)
+        }
+        (ListProjects, Context::Organization(scope)) => {
+            output(projects::list_projects(db, &scope, decode(input)?)?)
         }
         _ => unreachable!("{name:?} has no handler for its scope"),
     }

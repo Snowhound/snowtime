@@ -8,7 +8,7 @@ COPY . .
 ARG BIN=snowtime-axum
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
-    cargo build --release --locked --bin ${BIN} && cp target/release/${BIN} /server
+    cargo build --release --locked --all-features --bin ${BIN} && cp target/release/${BIN} /server
 
 FROM debian:trixie-slim AS app
 RUN apt-get update \
