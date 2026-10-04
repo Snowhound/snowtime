@@ -26,8 +26,9 @@ task.
   how.
 - The same SQLite schema and migrations as the TypeScript backend, so a self-hoster can
   switch either way on one file. Turso's engine comes later.
-- One process with Caddy in front for TLS and static files. Folding the
-  proxy into the binary comes later.
+- One process with Caddy in front for TLS and static files. Subtask 07 tunes Caddy, then
+  measures doing its essentials in the binary, with TLS optional for setups behind
+  Cloudflare or another proxy.
 
 ## Port approach
 
@@ -163,8 +164,8 @@ the timer page and the week report, and the browser hydrates them (subtask 01).
 
 ## Out of scope
 
-TLS, certificates, and static files in the binary (Caddy stays), Turso's engine, and
-changes to the Vercel deployment beyond the adapter.
+TLS, certificates, and static files in the binary until subtask 07 measures them, Turso's
+engine, and changes to the Vercel deployment beyond the adapter.
 
 ## Subtasks
 
@@ -175,6 +176,16 @@ changes to the Vercel deployment beyond the adapter.
   Rust port
 - [05](05-porting-recipes.md): a general repository of porting recipes, once the port
   works
+- [06](06-server-layout.md): the Rust server's layout and routing, mirroring task 089's
+  routes per domain
+- [07](07-edge-in-process.md): tuning Caddy, then TLS, certificates, compression, and logs
+  in the Rust binary
+- [08](08-fast-scrypt.md): a faster scrypt for the native sign-in
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
-client module.
+client module. Task 089 replaces that module's call table with routes and client functions
+per domain (Kait, 2026-10-04). On `main`, task 090 fixes `perf:stress`, and task 091 looks
+at server-side caching for both backends.
+
+Libraries (Kait, 2026-10-04, subtask 03): Axum with `rusqlite` and SQL strings, with Actix
+Web kept as an option until subtask 01's isolate runs in the host.

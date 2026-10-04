@@ -1,6 +1,6 @@
 # 081.03: The Rust libraries, chosen on a small port of the timer
 
-Status: in-progress (proof of concept measured 2026-10-04; libraries not chosen)
+Status: in-progress (libraries chosen 2026-10-04; the decision record follows subtask 01)
 
 Port a cut-down timer that has every building block of the real app, once per candidate
 library, and choose the libraries by how closely the Rust code follows the TypeScript and
@@ -295,43 +295,73 @@ The Linux image of a candidate is 166 MB, most of it Debian and `curl` for the h
 check, with a 4.9 MB binary; the TypeScript release image is 784 MB. A Docker build of a
 candidate with Cargo's caches mounted takes 44 s from nothing and 2–13 s after a change.
 
-### Recommendation
+### Decision
 
-For Kait to decide; not yet in 081's decision record.
+Kait, 2026-10-04:
 
 - **Axum with `rusqlite` and SQL strings.** Axum and Actix cost the same CPU and memory
-  within the noise of these runs, so ease of porting decides between them, and with the
-  contract table either only carries requests. Axum is what better-auth-rs runs on
-  (question 5), and it runs on Tokio, as the Deno extension crates subtask 01 plans to
-  start from do. Actix Web would serve as well. SQL strings took 12% fewer lines than
-  SeaQuery and about 10% less CPU, need no binder and no wait for SeaQuery to catch up
-  with `rusqlite`, and keep the statement text a reader can compare with Drizzle's and
-  with `EXPLAIN QUERY PLAN`. The agents ported a handler as well with either.
-- **What SQL strings need.** A helper for a `SET` of the fields present, as `updateEntry`
-  needs, and the `in (...)` helper the crate has; a helper for GET booleans and numbers in
-  `core`; and each rules crate declaring its calls, so an unported call answers 404.
-- **Rejected for now.** SeaQuery, for more lines and more CPU with no measured gain.
-  Rocket, Diesel, and sqlx weren't tried. With the contract table, Rocket's attribute
-  routes would have nothing to declare.
+  within the noise of these runs. Axum is what better-auth-rs runs on (question 5). Its
+  router can be called in process (`oneshot`), which server rendering needs (subtask 06).
+  **Actix Web stays an option** until subtask 01's render isolate runs in the host: Actix
+  runs handlers on single-threaded workers, so each worker could keep its own isolate.
+  deno_core's `JsRuntime` can't be sent between threads, and Axum handlers must be `Send`.
+- **SQL strings** took 12% fewer lines than SeaQuery and about 10% less CPU. They need no
+  binder and no wait for SeaQuery to catch up with `rusqlite`. A reader can compare the
+  statement text with Drizzle's and with `EXPLAIN QUERY PLAN`. In complex queries,
+  SeaQuery falls back to `Expr::cust` SQL text anyway: the report's day window would need
+  it for three of its five parts, where Drizzle uses ``sql`...` ``. The agents ported a
+  handler equally well with either.
+- **What SQL strings need:** `sql!` fragments, `Assignments` for a `SET` of the fields
+  present, and `list`, all in `queries.rs` (subtask 06).
+- **Rejected:** SeaQuery, for more lines and more CPU with no measured gain. Rocket,
+  Diesel, and sqlx weren't tried. sqlx's compile-time checked SQL is async, and its SQLite
+  driver works through a background thread, which doesn't fit one blocking connection.
+- **Routing:** framework routes per domain, mirroring task 089's Hono routers on `main`,
+  instead of the proof of concept's catch-all and call table (subtask 06). The routing
+  style costs nothing measurable: a route lookup takes a microsecond or two, against about
+  400 µs of CPU per request.
+
+### Better Auth's cookie cache
+
+Measured on 2026-10-04 with `bun native/bench/timings.ts`: medians of 100 calls each, on
+the TypeScript build, with the cache on (as configured) and off.
+
+| Call                   | Session ms, on | Session ms, off | Total ms, on → off |
+| ---------------------- | -------------: | --------------: | -----------------: |
+| `getRunningTimer`      |            0.3 |             0.5 |        1.12 → 1.25 |
+| `listEntries`, a week  |            0.3 |             0.5 |        2.52 → 2.76 |
+| `listEntries`, 92 days |            0.4 |             0.7 |      23.74 → 23.94 |
+| `startTimer`           |            0.2 |             0.4 |        2.00 → 1.97 |
+
+The cache stores the session in a signed cookie, so it uses no server memory. On a local
+file it saves about 0.2 ms per call. On Turso it saves a remote read on every call, so it
+stays in the TypeScript app (task 091). The native server leaves it out: its row read takes
+under 0.05 ms, and without the cache a revoked session stops working at once instead of up
+to 5 minutes later.
+
+### Axum on Vercel
+
+Not planned; noted as a possible future option. Vercel can run a Rust container as an
+autoscaling function, but its file system isn't persistent
+([guide](https://vercel.com/kb/guide/deploy-rust-on-vercel-with-docker)). The server would
+then need Turso through the async `libsql` crate instead of `rusqlite` with one local
+connection, and the cookie cache would matter again. The TypeScript app stays the Vercel
+deployment.
 
 ### Open
 
 - Server rendering in the Axum server (subtask 01) and RSS with the isolate: not started.
 - The rest of the hot path: `getAppSession`, which every action calls, and the week
   report.
-- Scrypt on Linux takes twice Bun's time; a binding to OpenSSL's or aws-lc's scrypt would
-  show whether the crate or the VM is the cause. Each sign-in also holds a 32 MB buffer,
-  so sign-ins running at once raise RSS by that much each.
+- Scrypt on Linux takes twice Bun's time (subtask 08). Each sign-in also holds a 32 MB
+  buffer, so sign-ins running at once raise RSS by that much each.
 - RSS grows with Tokio's blocking threads under overload. A fixed number of database
   workers, or one thread that owns the connection, would cap it.
 - The one connection serializes every call, as the TypeScript server does. A pool on WAL
   would let reads run beside a write, at the cost of changing the file's journal mode.
-- Better Auth's cookie cache isn't ported; the native session check reads the row on every
-  call, which costs it under 0.05 ms.
 - `perf:stress`: a virtual user's `stopTimer` 404s when another virtual user started a
   timer for the same person, which fails the ramp's holds on error share above 25,000
-  users of M. The scenario should treat that 404 as expected, or give each person one
-  virtual user. The datasets' REAL timestamps should become integers.
+  users of M. Task 090 on `main` fixes this and the datasets' REAL timestamps.
 - The measurements ran on this Mac in Docker, not on Hetzner, and on M, not L.
 - The whole TypeScript app's capacity wasn't measured again. Task 078's 8,000 users on M
   predate task 084 and the scenario's fix, so they don't compare with the slice's.
@@ -345,7 +375,9 @@ For Kait to decide; not yet in 081's decision record.
   with fractions of a millisecond, so SQLite stores them as REAL: 170 entries and 97 users
   in M. JavaScript reads them as numbers; `rusqlite` refused them, failing 15% of users,
   until `Timestamp` read a REAL as `new Date` does. The generator should round them.
-- `ListedProject`'s schema lists `teamIds` before `hasEntries`; the API sends the reverse.
+- `ListedProject`'s schema lists `teamIds` before `hasEntries`; the API sends the reverse
+  (task 089).
+- Caddy took about as much CPU per request as the native app (subtask 07).
 
 ## Acceptance criteria
 
@@ -353,4 +385,5 @@ For Kait to decide; not yet in 081's decision record.
       same conformance tests (met on 2026-10-04 except the page render and the in-process
       path for the isolate)
 - [x] The measurements above, recorded in this task
-- [ ] The chosen libraries, with what was rejected, in 081's decision record
+- [ ] The chosen libraries, with what was rejected, in 081's decision record (chosen above
+      on 2026-10-04; recorded once subtask 01 confirms Axum)

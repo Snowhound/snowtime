@@ -9,6 +9,14 @@ hash of the build (`/_serverFn/<sha256>`), encodes its bodies in its own format,
 accepts calls by `Sec-Fetch-Site`, so a Rust server would have to track Start's internals
 release by release. The app had 41 server functions in 9 `*.functions.ts` files until task 084 moved them to the API.
 
+Kait, 2026-10-04: the call table task 084 added (`src/lib/api/operations.ts` with
+`operations.server.ts`) gives way to per-domain routes and client functions (task 089 on
+`main`). The HTTP API, its paths and JSON, is the contract. The TypeScript server routes it
+with Hono and the native server with Axum (subtask 06), one routes file per domain on each
+side. The client calls one function per call from a module per domain, and a server render
+calls the API in process by URL, not by name. OpenAPI generated from the server is a later
+option. The design below predates this, where it speaks of one client module.
+
 ## Design to confirm
 
 - **One contract.** It starts from the public `/api/v1` that issue #2 settled on
