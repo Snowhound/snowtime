@@ -214,8 +214,9 @@ function insertCompanies(
   { now, rand }: { now: number; rand: () => number },
 ) {
   const yearStart = now - DAYS * DAY
+  // Whole milliseconds, as the app writes them; a fraction would make SQLite store a REAL.
   function at(share: number) {
-    return yearStart + share * DAYS * DAY
+    return Math.round(yearStart + share * DAYS * DAY)
   }
   const statements = {
     organization: file.prepare(
@@ -312,7 +313,7 @@ function insertCompanies(
       const running = new Map(
         current
           .filter(() => rand() < RUNNING_SHARE)
-          .map((p) => [p.id, now - (10 + rand() * 170) * MINUTE]),
+          .map((p) => [p.id, Math.round(now - (10 + rand() * 170) * MINUTE)]),
       )
       for (const r of rows) {
         const startedAt = r.startedAt.getTime()

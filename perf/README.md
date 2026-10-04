@@ -177,19 +177,25 @@ bun run perf:stress --dataset=M --run=fixed --users=500 --seconds=300
 bun run perf:stress --dataset=M --run=overload --users=<capacity>
 bun run perf:stress --dataset=M --run=ramp --memory=512m # the app limited to 512 MB
 bun run perf:stress --remote --dataset=M --run=ramp      # a server, see below
+bun run perf:stress --recording=<file> --dataset=M --run=kinds
 ```
 
-| Run        | What it does                                                                                                                    |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `kinds`    | Each action alone at 2 per second for 60 s; CPU and server time per action                                                      |
-| `fixed`    | One rate for `--seconds`; `calibration` is the same at 100 users                                                                |
-| `ramp`     | Steps of 2 minutes up to the first that misses a target, then 10 minutes at the last good one, or the step below if that misses |
-| `overload` | 2 minutes at `--users`, 5 at twice and four times that, 5 back at `--users`                                                     |
+| Run        | What it does                                                                                                                                               |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kinds`    | Each action alone at 2 per second for 60 s; CPU and server time per action                                                                                 |
+| `fixed`    | One rate for `--seconds`; `calibration` is the same at 100 users                                                                                           |
+| `ramp`     | Steps of 2 minutes, from 50 to 200,000 users, up to the first that misses a target, then 10 minutes at the last good one, or the step below if that misses |
+| `overload` | 2 minutes at `--users`, 5 at twice and four times that, 5 back at `--users`                                                                                |
 
 `--no-build` skips the image builds and `--no-load` keeps the database in the bench
 volume. `--step-seconds`, `--hold-seconds`, and `--from` adjust a ramp, and `--label` names its
 results folder. A ramp `--from` a higher step first warms the app up for 30 s at half that
-load, which it doesn't judge.
+load, which it doesn't judge. `--recording=<file>` replays a recording from an earlier run
+(its `recording.json`) instead of recording again; `kinds` then skips actions the file has no
+requests for. `--caddy-cpuset=<cores>` moves Caddy off the app's core, such as to `0`.
+
+Before the first step, a run waits 10 seconds and prints the app's idle memory, which it
+also saves as `idle.txt` in the results folder.
 
 ### The local stack
 
@@ -222,12 +228,19 @@ locale, an entry to edit, and projects to log to.
 
 ### Recording and replay
 
-Start addresses server functions by a hash from the build and encodes their bodies
-itself, so `perf/stress/record.ts` first runs every action in Chrome against the stack
-under test and records its requests, with the user's IDs as placeholders. The scenario
+`perf/stress/record.ts` first runs every action in Chrome against the stack under test and
+records its requests, with the user's IDs as placeholders. The scenario
 (`scenario.js`) replays them as a random dataset user per action, with a session cookie
 it signs with the server's secret, the user's locale cookie, and a client address of its
-own in `CF-Connecting-IP`, which the bench Caddyfile trusts from the generator.
+own in `CF-Connecting-IP`, which the bench Caddyfile trusts from the generator. A
+mutation or page load goes alone, and the API reads that follow it go at once, as the
+browser's refetches do.
+
+Each action picks its person at random, so several virtual users act for the same person,
+and above 25,000 users of M each person stands for many. A virtual user stops the timer it
+started, but another one's start may have stopped it already. The scenario doesn't count
+that stop's 404 as an error: a person who stops a timer in one tab after starting another
+in a second tab gets the same answer.
 
 Requests keep `Sec-Fetch-Site` from the recording: behind Caddy the app sees its own URL
 as `http`, so Start's CSRF check accepts a server function call by that header and would
@@ -235,11 +248,11 @@ refuse one that carries only `Origin`.
 
 ### What a step reports
 
-Per request kind (the action, and `page`, `fn`, or `auth`): the rate, latency in the
+Per request kind (the action, and `page`, `api`, or `auth`): the rate, latency in the
 client and in Caddy's access log, and the target. Per container, from cgroup v2: CPU,
 throttling, memory split into anonymous and page cache, disk traffic, and pressure (PSI).
 The host's steal time, memory, and the database size follow, then whether the step held
-its targets: server p95 under 300 ms for server functions, 1 s for pages and password
+its targets: server p95 under 300 ms for API calls, 1 s for pages and password
 sign-in, and 3 s for the year report and export, in every 30-second window, with under 0.1% errors and no dropped
 iterations. Results go to `perf/.cache/stress/runs/`.
 

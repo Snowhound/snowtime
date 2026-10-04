@@ -26,7 +26,9 @@ const LOCALE_COOKIE = 'PARAGLIDE_LOCALE'
 const PASSWORD = 'snowtime-local'
 
 // What an active user does in the peak hour (task 078, "Usage model"). The timer action
-// starts a timer, or stops the one this load generator started for the user.
+// starts a timer, or stops the one this virtual user started for the person. Other virtual
+// users act for the same person, and a start of theirs may already have stopped that timer,
+// so the stop's 404 is expected.
 const MIX = [
   ['open', 1],
   ['return', 10],
@@ -48,9 +50,14 @@ const actionDuration = new Trend('bench_action_duration', true)
 
 // A request's kind: the action and what it asks for, as the result tables group them.
 function kindOf(action, request) {
-  if (request.path.startsWith('/_serverFn/')) return `${action} fn`
+  if (isCall(request)) return `${action} api`
   if (request.path.startsWith('/api/auth/')) return `${action} auth`
   return `${action} page`
+}
+
+// A call of the JSON API (task 084), or a server function in a recording from before it.
+function isCall(request) {
+  return request.path.startsWith('/api/v1/') || request.path.startsWith('/_serverFn/')
 }
 
 const KINDS = [
@@ -205,6 +212,7 @@ export function act() {
   }
 
   function check(response, request) {
+    if (action === 'stop' && request.method === 'POST' && response.status === 404) return
     const type = classify(response)
     if (type) errors.add(1, { type, kind: kindOf(action, request) })
   }
@@ -219,7 +227,7 @@ export function act() {
   const began = Date.now()
   for (let i = 0; i < requests.length;) {
     const request = requests[i]
-    if (request.method !== 'GET' || !request.path.startsWith('/_serverFn/')) {
+    if (request.method !== 'GET' || !isCall(request)) {
       const response = http.request(
         request.method,
         ORIGIN + request.path,
@@ -231,11 +239,7 @@ export function act() {
       continue
     }
     const batch = []
-    while (
-      i < requests.length &&
-      requests[i].method === 'GET' &&
-      requests[i].path.startsWith('/_serverFn/')
-    ) {
+    while (i < requests.length && requests[i].method === 'GET' && isCall(requests[i])) {
       batch.push(requests[i++])
     }
     const responses = http.batch(batch.map((r) => ['GET', ORIGIN + r.path, null, params(r)]))
