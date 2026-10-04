@@ -1,5 +1,5 @@
-//! The proof of concept on Axum with the rules on rusqlite and SQL strings (task 081.03).
-//! Every route goes to the framework-free API (snowtime-api); Axum only carries requests.
+//! The proof of concept on Axum (task 081.03), with any query layer's rules. Every route goes
+//! to the framework-free API (snowtime-api); Axum only carries requests.
 use std::sync::Arc;
 
 use axum::Router;
@@ -8,9 +8,7 @@ use axum::extract::State;
 use axum::http::{HeaderMap, HeaderValue, Method, StatusCode, Uri, header};
 use axum::response::{IntoResponse, Response};
 use snowtime_api::{Api, Config, Request};
-use snowtime_rules_sql::SqlRules;
-
-type AppState = Arc<Api<SqlRules>>;
+use snowtime_core::Rules;
 
 fn text(headers: &HeaderMap, name: &str) -> Option<String> {
     headers
@@ -19,8 +17,8 @@ fn text(headers: &HeaderMap, name: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
-async fn call(
-    State(api): State<AppState>,
+async fn call<R: Rules>(
+    State(api): State<Arc<Api<R>>>,
     method: Method,
     uri: Uri,
     headers: HeaderMap,
@@ -67,20 +65,16 @@ async fn shutdown() {
     }
 }
 
-#[tokio::main]
-async fn main() {
+pub async fn serve<R: Rules>(name: &str, rules: R) {
     snowtime_core::clock::init_from_env();
     let config = Config::from_env().unwrap_or_else(|message| panic!("{message}"));
     let address = (config.host.clone(), config.port);
-    let api = Api::open(config, SqlRules).expect("the database opens");
-    let app = Router::new().fallback(call).with_state(api);
+    let api = Api::open(config, rules).expect("the database opens");
+    let app = Router::new().fallback(call::<R>).with_state(api);
     let listener = tokio::net::TcpListener::bind(address)
         .await
         .expect("the port is free");
-    eprintln!(
-        "[snowtime-axum] Listening on {}",
-        listener.local_addr().unwrap()
-    );
+    eprintln!("[{name}] Listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown())
         .await

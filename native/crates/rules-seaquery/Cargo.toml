@@ -1,0 +1,13 @@
+[package]
+name = "snowtime-rules-seaquery"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+rusqlite.workspace = true
+sea-query = { version = "1", default-features = false, features = ["backend-sqlite", "derive"] }
+serde.workspace = true
+serde_json.workspace = true
+snowtime-core.workspace = true

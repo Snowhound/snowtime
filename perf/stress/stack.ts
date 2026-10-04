@@ -27,6 +27,15 @@ function run(command: string, args: string[], options: { env?: Record<string, st
   if (result.status !== 0) throw new Error(`[stress] ${command} ${args.join(' ')} failed`)
 }
 
+// Which backend runs as the app: the TypeScript release image, or the native backend of task
+// 081 (native/Dockerfile), which compose.bench.native.yml puts in its place.
+export type App = 'ts' | 'native'
+let app: App = 'ts'
+
+export function useApp(next: App) {
+  app = next
+}
+
 export function compose(args: string[], env: Record<string, string> = {}) {
   run(
     'docker',
@@ -38,6 +47,7 @@ export function compose(args: string[], env: Record<string, string> = {}) {
       'compose.bench.yml',
       '-f',
       'compose.bench.local.yml',
+      ...(app === 'native' ? ['-f', 'compose.bench.native.yml'] : []),
       ...args,
     ],
     {
@@ -55,9 +65,24 @@ export function compose(args: string[], env: Record<string, string> = {}) {
 }
 
 // Builds the three images natively; Docker's cache makes a rebuild of unchanged code quick.
+// NATIVE_BIN picks the native candidate's binary.
 export function buildImages() {
-  for (const target of ['app', 'caddy', 'sampler']) {
+  for (const target of app === 'native' ? ['caddy', 'sampler'] : ['app', 'caddy', 'sampler']) {
     run('docker', ['build', '--target', target, '-t', `snowtime-${target}:bench`, ROOT])
+  }
+  if (app === 'native') {
+    const bin = process.env.NATIVE_BIN ?? 'snowtime-axum'
+    const native = join(ROOT, 'native')
+    run('docker', [
+      'build',
+      '-f',
+      join(native, 'Dockerfile'),
+      '--build-arg',
+      `BIN=${bin}`,
+      '-t',
+      'snowtime-native:bench',
+      native,
+    ])
   }
 }
 

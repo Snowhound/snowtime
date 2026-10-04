@@ -7,6 +7,7 @@
 //   bun run perf:stress --dataset=M --run=kinds
 //   bun run perf:stress --dataset=M --run=overload --users=<knee>
 //   bun run perf:stress --remote --dataset=M --run=ramp
+//   bun run perf:stress --app=native --recording=<file> --dataset=M --run=kinds
 //
 // Locally it builds the images, loads the dataset into the bench volume, and starts the stack
 // (stack.ts). With --remote it sends load to a server that runs compose.bench.yml, which
@@ -21,6 +22,7 @@ import { CACHE, ROOT } from '../lib/database'
 import { type BenchUser, DATASETS, type DatasetName, dataset } from './dataset'
 import { type Recording, record } from './record'
 import {
+  type App,
   K6_IMAGE,
   LOCAL_HOST,
   LOCAL_PORT,
@@ -31,6 +33,7 @@ import {
   compose,
   loadDataset,
   startStack,
+  useApp,
 } from './stack'
 
 // Server-side p95 targets in milliseconds (task 078, "Runs"), by request kind. Signing in
@@ -45,7 +48,7 @@ const WINDOW_S = 30
 // The ramp's steps in active users; it stops at the first one that misses a target.
 const RAMP = [
   50, 100, 200, 300, 400, 500, 650, 800, 1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 6500, 8000,
-  10000, 12500, 15000, 20000,
+  10000, 12500, 15000, 20000, 25000, 30000, 40000, 50000,
 ]
 // On a server, the ramp ends when memory or disk passes these shares.
 const MAX_MEMORY_SHARE = 0.85
@@ -69,9 +72,19 @@ const { values } = parseArgs({
     'max-requests': { type: 'string' },
     'try-duration': { type: 'string' },
     label: { type: 'string' },
+    app: { type: 'string', default: 'ts' },
+    recording: { type: 'string' },
+    'caddy-cpuset': { type: 'string' },
   },
   allowNegative: true,
 })
+
+const app = values.app as App
+if (app !== 'ts' && app !== 'native') throw new Error('[stress] --app is ts or native')
+if (app === 'native' && !values.recording) {
+  throw new Error('[stress] The native backend serves no pages to record; pass --recording')
+}
+useApp(app)
 
 const name = values.dataset as DatasetName
 if (!DATASETS.includes(name)) throw new Error(`[stress] --dataset is one of ${DATASETS.join(', ')}`)
@@ -532,6 +545,20 @@ async function runPlan(
   return { results, aborted }
 }
 
+// The app's memory before any load, from the sampler's last seconds of samples.
+async function idleMemory(): Promise<string> {
+  await Bun.sleep(10_000)
+  const now = Date.now() / 1000
+  const samples = await samplesBetween(now - 5, now)
+  const app = samples.at(-1)?.containers.app
+  if (!app) return 'Idle: no samples'
+  const text =
+    `Idle app (${values.app}): memory ${mb(app.memory)} MB (anon ${mb(app.anon)}, cache ` +
+    `${mb(app.file)}), RSS ${mb(app.rss)} MB`
+  console.log(`[stress] ${text}`)
+  return text
+}
+
 async function main() {
   const paths = await dataset(name)
   if (!target.remote) {
@@ -542,6 +569,7 @@ async function main() {
       ...(values.smol && { BENCH_BUN_OPTIONS: '--smol' }),
       ...(values['max-requests'] && { BENCH_MAX_REQUESTS: values['max-requests'] }),
       ...(values['try-duration'] && { BENCH_TRY_DURATION: values['try-duration'] }),
+      ...(values['caddy-cpuset'] && { BENCH_CADDY_CPUSET: values['caddy-cpuset'] }),
     }
     if (values.load) {
       compose(['up', '-d', '--no-start'], settings)
@@ -551,6 +579,7 @@ async function main() {
   }
   // The log keeps earlier runs' requests; this one reads only its own.
   logOffset = (await sampler<{ offset: number }>('/_bench/log?offset=end')).offset
+  const idle = await idleMemory()
   const users = JSON.parse(readFileSync(paths.users, 'utf8')) as BenchUser[]
   // A member of a mid-sized company records, so its pages are typical.
   const recorder =
@@ -564,14 +593,22 @@ async function main() {
     `${stamp}-${name}-${values.run}${values.label ? `-${values.label}` : ''}`,
   )
   mkdirSync(out, { recursive: true })
-  console.log(`[stress] Recording the actions as ${recorder.email} ...`)
-  const recording: Recording = await record({
-    origin: target.origin,
-    user: recorder,
-    secret: target.secret,
-    resolve: target.chromeAddress,
-    ignoreHTTPSErrors: target.insecure,
-  })
+  writeFileSync(join(out, 'idle.txt'), idle)
+  // A given recording replays as it is, such as one cut down to the calls the native backend
+  // serves (native/bench/api-recording.ts).
+  let recording: Recording
+  if (values.recording) {
+    recording = JSON.parse(readFileSync(values.recording, 'utf8')) as Recording
+  } else {
+    console.log(`[stress] Recording the actions as ${recorder.email} ...`)
+    recording = await record({
+      origin: target.origin,
+      user: recorder,
+      secret: target.secret,
+      resolve: target.chromeAddress,
+      ignoreHTTPSErrors: target.insecure,
+    })
+  }
   const recordingFile = join(out, 'recording.json')
   writeFileSync(recordingFile, JSON.stringify(recording, null, 1))
   const files = { recording: recordingFile, users: paths.users, out }
@@ -657,7 +694,12 @@ async function main() {
       'reports-year',
       'export',
       'sign-in',
-    ]
+    ].filter((action) =>
+      // A cut-down recording may leave an action without requests.
+      (action === 'timer' ? ['start', 'stop'] : [action]).some(
+        (a) => (recording.actions[a as keyof Recording['actions']] ?? []).length > 0,
+      ),
+    )
     const { results } = await runPlan(
       actions.map((action) => ({
         name: action,

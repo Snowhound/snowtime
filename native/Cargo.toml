@@ -15,6 +15,7 @@ snowtime-core = { path = "crates/core" }
 snowtime-auth = { path = "crates/auth" }
 snowtime-api = { path = "crates/api" }
 snowtime-rules-sql = { path = "crates/rules-sql" }
+snowtime-rules-seaquery = { path = "crates/rules-seaquery" }
 
 axum = "0.8"
 base64 = "0.23"
