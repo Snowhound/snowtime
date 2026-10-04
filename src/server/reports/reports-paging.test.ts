@@ -4,8 +4,9 @@ import { timeEntry, userSettings } from '~/db/schema'
 import { seedIds } from '~/db/seed'
 import { countedSpan, daySplitter, startOfDay } from '~/lib/calendar'
 import { as, createSeededDatabase, scopeOf } from '../testing'
+import { dayPage } from './aggregation.server'
 import type { ReportEntriesInput, ReportEntryPiece } from './reports.schemas'
-import { dayPage, getReportEntries } from './reports.server'
+import { getReportEntries } from './reports.server'
 
 test('SQL day windows match every reference page across busy days, cursors, and DST', async () => {
   const now = new Date('2026-10-26T09:00:00Z')
