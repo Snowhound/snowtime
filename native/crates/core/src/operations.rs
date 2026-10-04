@@ -12,6 +12,7 @@ pub enum OperationName {
     CreateEntry,
     UpdateEntry,
     DeleteEntry,
+    ListProjects,
 }
 
 /// Who a call acts for: the signed-in user in the organization its path names, the
@@ -124,6 +125,12 @@ pub const OPERATIONS: &[Operation] = &[
         OperationName::DeleteEntry,
         Method::Delete,
         "/api/v1/organizations/:organizationId/entries/:id",
+        Access::Organization,
+    ),
+    op(
+        OperationName::ListProjects,
+        Method::Get,
+        "/api/v1/organizations/:organizationId/projects",
         Access::Organization,
     ),
 ];

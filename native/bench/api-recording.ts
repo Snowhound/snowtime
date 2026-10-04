@@ -20,6 +20,7 @@ const PORTED: OperationName[] = [
   'createEntry',
   'updateEntry',
   'deleteEntry',
+  'listProjects',
 ]
 
 const [source, out, ...names] = process.argv.slice(2)

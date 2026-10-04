@@ -115,6 +115,33 @@ try {
       { organizationId, id: '0192f3a4-5b6c-7d8e-9f01-23456789abcd' },
       'member',
     ],
+    ['projects, admin', 'listProjects', { organizationId }, 'admin'],
+    [
+      'projects with archived, admin',
+      'listProjects',
+      { organizationId, includeArchived: true },
+      'admin',
+    ],
+    ['projects, member', 'listProjects', { organizationId }, 'member'],
+    [
+      'projects with archived, member',
+      'listProjects',
+      { organizationId, includeArchived: true },
+      'member',
+    ],
+    [
+      'projects without archived, member',
+      'listProjects',
+      { organizationId, includeArchived: false },
+      'member',
+    ],
+    [
+      'projects, flag not a boolean',
+      'listProjects',
+      { organizationId, includeArchived: 'yes' },
+      'member',
+    ],
+    ['projects, another organization', 'listProjects', { organizationId: 'nope' }, 'member'],
   ]
   let differences = 0
   for (const [label, name, input, who] of cases) {
