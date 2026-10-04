@@ -23,7 +23,7 @@ import {
   ENTRY_PAGE_SIZE,
   type ReportEntriesInput,
   ReportExportInput,
-  type ReportInput,
+  ReportInput,
   type Report,
   type ReportEntryPiece,
 } from './reports.schemas'
@@ -640,6 +640,18 @@ describe('getReportExport', () => {
     expect(ok('2025-12-01', '2026-01-01')).toBe(false)
     expect(ok('2026-11-15', '2026-12-15')).toBe(false)
     expect(ok('2026-03-01', '2026-04-02')).toBe(false)
+  })
+})
+
+describe('ReportInput', () => {
+  test('refuses a day that is no ISO date, or one the month lacks, without throwing', () => {
+    function message(from: unknown) {
+      return v.safeParse(ReportInput, { from, to: '2026-10-05' }).issues?.[0].message
+    }
+    expect(message('bad')).toBe('Use a date such as 2026-09-24.')
+    expect(message('2026-13-01')).toBe('Use a date such as 2026-09-24.')
+    expect(message('2026-02-30')).toBe('Unknown date.')
+    expect(message('2026-09-28')).toBeUndefined()
   })
 })
 

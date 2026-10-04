@@ -1,15 +1,26 @@
 // A native server on a copy of the benchmark database, with its clock at SEED_NOW and
-// password sign-in on, as conformance/server.ts expects a server under test to run.
+// password sign-in on, as conformance/server.ts expects a server under test to run. As
+// perf/lib/app.ts's startApp does, it turns every user's scene off.
+import { createClient } from '@libsql/client'
 import { spawn } from 'node:child_process'
 import { cpSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { CACHE, SEED_NOW } from '../../perf/lib/database'
 
-export async function startNative(binary: string, database: string) {
+export async function startNative(
+  binary: string,
+  database: string,
+  env: Record<string, string> = {},
+) {
   const port = 3390 + Math.floor(Math.random() * 100)
   const url = `http://127.0.0.1:${port}`
   const copy = join(CACHE, `native-${port}.db`)
   cpSync(database, copy)
+  const client = createClient({ url: `file:${copy}` })
+  await client.execute(
+    'update user_settings set scene_intro = 0, scene_background = 0, scene_weather = 0',
+  )
+  client.close()
   const server = spawn(binary, [], {
     stdio: ['ignore', 'inherit', 'inherit'],
     env: {
@@ -21,6 +32,7 @@ export async function startNative(binary: string, database: string) {
       TURSO_DATABASE_URL: `file:${copy}`,
       BETTER_AUTH_SECRET: 'perf-harness-secret-perf-harness-secret',
       BETTER_AUTH_URL: url,
+      ...env,
     },
   })
   for (let waited = 0; ; waited += 100) {

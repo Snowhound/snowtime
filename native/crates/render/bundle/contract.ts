@@ -6,8 +6,8 @@ export interface PageInput {
   headers: [string, string][]
   cookie: string
   nonce: string
-  locale: 'en' | 'et'
-  manifest: ServerManifest
+  // Absent in the host, which leaves it to the request's cookie and Accept-Language.
+  locale?: 'en' | 'et'
   now?: number | null
 }
 export interface ApiInput {
@@ -21,10 +21,6 @@ export interface ApiAnswer {
   headers: [string, string][]
   body: number[] | Uint8Array<ArrayBuffer>
 }
-export interface Head {
-  status: number
-  headers: [string, string][]
-}
 export interface StartServerProps {
   router: AnyRouter
 }
@@ -32,12 +28,14 @@ export interface StartServerProps {
 declare global {
   var renderContext: PageInput | undefined
   var renderPage: (input: PageInput) => Promise<void>
+  // The client manifest of the build whose assets the host serves, set once per isolate.
+  var renderManifest: ServerManifest
   var Deno: {
     core: {
       ops: {
         op_send: (input: ApiInput) => Promise<ApiAnswer>
-        op_head: (head: Head) => void
-        op_chunk: (chunk: Uint8Array) => Promise<void>
+        op_head: (status: number, headers: [string, string][]) => void
+        op_chunk: (chunk: Uint8Array) => void
       }
     }
   }

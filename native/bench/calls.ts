@@ -3,6 +3,7 @@
 // rest as a GET's query string or a JSON body, as src/lib/api/request.ts sends them.
 
 export const CALLS = {
+  getAppSession: { method: 'GET', path: '/api/v1/session' },
   checkAvailability: { method: 'GET', path: '/api/v1/availability' },
   getRunningTimer: { method: 'GET', path: '/api/v1/timer' },
   startTimer: { method: 'POST', path: '/api/v1/organizations/:organizationId/timer/start' },
@@ -16,6 +17,9 @@ export const CALLS = {
   updateEntry: { method: 'PATCH', path: '/api/v1/organizations/:organizationId/entries/:id' },
   deleteEntry: { method: 'DELETE', path: '/api/v1/organizations/:organizationId/entries/:id' },
   listProjects: { method: 'GET', path: '/api/v1/organizations/:organizationId/projects' },
+  getReport: { method: 'POST', path: '/api/v1/organizations/:organizationId/report' },
+  listTeams: { method: 'GET', path: '/api/v1/organizations/:organizationId/teams' },
+  listMembers: { method: 'GET', path: '/api/v1/organizations/:organizationId/members' },
 } as const
 
 export type CallName = keyof typeof CALLS

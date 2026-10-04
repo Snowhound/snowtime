@@ -1,7 +1,7 @@
 import { RouterProvider } from '@tanstack/solid-router'
 import { createRequestHandler, renderRouterToStream } from '@tanstack/solid-router/ssr/server'
 import { setSend } from '~/lib/api/request'
-import { overwriteGetLocale } from '~/paraglide/runtime.js'
+import { extractLocaleFromRequest, overwriteGetLocale } from '~/paraglide/runtime.js'
 import { getRouter } from '~/router'
 import { contentSecurityPolicy } from '~/server/csp.server'
 import { startInstance } from '~/start'
@@ -9,6 +9,7 @@ import { installClock } from './clock'
 import type { PageInput, StartServerProps } from './contract'
 
 let context: PageInput | undefined
+let locale: string | undefined
 setSend(async (path, init) => {
   const headers = new Headers(init.headers)
   if (context?.cookie) headers.set('cookie', context.cookie)
@@ -23,13 +24,15 @@ setSend(async (path, init) => {
     { status: answer.status, headers: answer.headers },
   )
 })
-overwriteGetLocale(() => context?.locale ?? 'en')
+overwriteGetLocale(() => locale ?? 'en')
 
 globalThis.renderPage = async function (input: PageInput) {
   installClock(input.now)
   context = input
   globalThis.renderContext = input
   const request = new Request(input.url, { method: input.method ?? 'GET', headers: input.headers })
+  // The cookie, then Accept-Language, as Start's paraglideMiddleware reads them.
+  locale = input.locale ?? extractLocaleFromRequest(request)
   const startOptions = await startInstance.getOptions()
   const response = await createRequestHandler({
     request,
@@ -38,7 +41,7 @@ globalThis.renderPage = async function (input: PageInput) {
       router.options.serializationAdapters = startOptions.serializationAdapters
       return router
     },
-    getRouterManifest: () => input.manifest,
+    getRouterManifest: () => globalThis.renderManifest,
   })(({ request, router, responseHeaders }) => {
     for (const match of router.state.matches) if (match.error) console.error(match.error)
     responseHeaders.set('content-security-policy', contentSecurityPolicy(input.nonce))
@@ -50,20 +53,21 @@ globalThis.renderPage = async function (input: PageInput) {
       children: () => <StartServer router={router} />,
     })
   })
-  Deno.core.ops.op_head({ status: response.status, headers: [...response.headers] })
+  Deno.core.ops.op_head(response.status, [...response.headers])
   if (response.body) {
     const reader = response.body.getReader()
     try {
       for (;;) {
         const { value, done } = await reader.read()
         if (done) break
-        await Deno.core.ops.op_chunk(value)
+        Deno.core.ops.op_chunk(value)
       }
     } finally {
       reader.releaseLock()
     }
   }
   context = undefined
+  locale = undefined
   globalThis.renderContext = undefined
 }
 

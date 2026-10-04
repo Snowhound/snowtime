@@ -15,7 +15,7 @@ fn app() -> Arc<App> {
     app.db()
         .execute_batch(
             "create table user (id text); insert into user values ('alice');
-        create table session (user_id text, token text, expires_at integer, updated_at integer);
+        create table session (user_id text, token text, expires_at integer, created_at integer, updated_at integer, active_organization_id text);
         create table member (organization_id text, user_id text, role text);
         create table team (id text, organization_id text);
         create table team_member (team_id text, user_id text, role text);
@@ -25,9 +25,10 @@ fn app() -> Arc<App> {
         .unwrap();
     app.db()
         .execute(
-            "insert into session values ('alice', 'token', ?, ?)",
+            "insert into session values ('alice', 'token', ?, ?, ?, null)",
             [
                 clock::now() + crate::auth::session::EXPIRES_IN_S * 1000,
+                clock::now(),
                 clock::now(),
             ],
         )
@@ -101,7 +102,7 @@ async fn checks_known_origin_session_scope_then_input() {
         .to_owned();
     let router = router(app.clone());
     for (method, path) in [
-        ("GET", "/api/v1/session"),
+        ("PUT", "/api/v1/session"),
         ("POST", "/api/v1/organizations/o/projects"),
         ("POST", "/api/v1/timer"),
     ] {

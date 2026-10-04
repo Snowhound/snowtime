@@ -20,10 +20,8 @@ impl Validate for StartTimerInput {
         ("projectId", Field::NullableId),
     ];
     fn validate(&mut self) -> Result<()> {
-        uuid_v7(&self.id)?;
-        description(&mut self.description)?;
-        optional(&self.ticket, |t| ticket_key(t))?;
-        optional(&self.project_id, |id| uuid_v7(id))
+        trim(&mut self.description);
+        Ok(())
     }
 }
 
@@ -34,9 +32,6 @@ pub struct StopTimerInput {
 
 impl Validate for StopTimerInput {
     const FIELDS: &'static [(&'static str, Field)] = &[("id", Field::RequiredId)];
-    fn validate(&mut self) -> Result<()> {
-        uuid_v7(&self.id)
-    }
 }
 
 #[derive(Serialize)]

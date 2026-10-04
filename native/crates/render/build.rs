@@ -4,6 +4,7 @@ fn main() {
     let bundle = std::fs::read_to_string("bundle/dist/render.js")
         .expect("Build the render bundle first: bun native/crates/render/bundle/build.ts");
     println!("cargo:rerun-if-changed=bundle/dist/render.js");
+    println!("cargo:rerun-if-changed=bundle/dist/manifest.json");
     println!("cargo:rerun-if-changed=bundle/bootstrap.js");
     println!("cargo:rerun-if-changed=src/extensions.rs");
     let snapshot = deno_core::snapshot::create_snapshot(
@@ -23,9 +24,7 @@ fn main() {
         None,
     )
     .unwrap();
-    std::fs::write(
-        std::path::Path::new(&std::env::var("OUT_DIR").unwrap()).join("render.bin"),
-        snapshot.output,
-    )
-    .unwrap();
+    let out = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    std::fs::write(out.join("render.bin"), snapshot.output).unwrap();
+    std::fs::copy("bundle/dist/manifest.json", out.join("manifest.json")).unwrap();
 }

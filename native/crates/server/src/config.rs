@@ -16,7 +16,7 @@ impl Config {
     }
 
     // The app URL's origin: scheme, host, and port, without a path.
-    fn app_origin(&self) -> &str {
+    pub fn app_origin(&self) -> &str {
         let after_scheme = self.app_url.find("://").map_or(0, |i| i + 3);
         let end = self.app_url[after_scheme..]
             .find('/')

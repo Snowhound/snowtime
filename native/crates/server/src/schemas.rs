@@ -4,6 +4,7 @@ use serde::de::DeserializeOwned;
 pub(crate) use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
+pub(crate) use crate::calendar::Day;
 pub(crate) use crate::errors::{Error, Result};
 pub(crate) use crate::timestamp::Timestamp;
 
@@ -13,31 +14,49 @@ pub const MAX_ENTRY_MS: i64 = MAX_ENTRY_HOURS * 3_600_000;
 // Longest range listEntries returns.
 pub(crate) const MAX_LIST_DAYS: i64 = 93;
 
+/// An input's schema. The wire fields come first, in valibot's order and with its messages;
+/// `validate` then trims and checks the rules that span fields, once the fields pass.
 pub trait Validate {
     const FIELDS: &'static [(&'static str, Field)] = &[];
-    fn validate(&mut self) -> Result<()>;
+    fn validate(&mut self) -> Result<()> {
+        Ok(())
+    }
 }
 
 /// A JSON value, decoded and validated against the input's schema.
 pub fn decode<T: DeserializeOwned + Validate>(value: Value) -> Result<T> {
-    check_fields(&value, T::FIELDS)?;
+    for &(name, field) in T::FIELDS {
+        check_field(name, field, value.get(name))?;
+    }
     let mut input: T = serde_json::from_value(value).map_err(|e| Error::Invalid(e.to_string()))?;
     input.validate()?;
     Ok(input)
 }
 
+/// What a wire field holds. Unless named required, a field may be absent.
 #[derive(Clone, Copy)]
 pub enum Field {
     RequiredId,
     Id,
     NullableId,
+    // Uuidv7 or 'none'.
+    IdOrNone,
     Description,
     Ticket,
     RequiredDate,
     Date,
+    // An ISO calendar day (IsoDate).
+    RequiredDay,
     Bool,
+    True,
+    Picklist(&'static [&'static str]),
 }
 
+#[derive(serde::Deserialize)]
+pub struct Empty {}
+impl Validate for Empty {}
+
+// valibot's _stringify of the received value.
 fn received(value: &Value) -> String {
     match value {
         Value::Object(_) => "Object".into(),
@@ -46,57 +65,62 @@ fn received(value: &Value) -> String {
         _ => value.to_string(),
     }
 }
-fn check_fields(value: &Value, fields: &[(&str, Field)]) -> Result<()> {
-    for &(name, field) in fields {
-        let Some(value) = value.get(name) else {
-            if matches!(field, Field::RequiredId | Field::RequiredDate) {
-                return invalid(format!(
-                    "Invalid key: Expected \"{name}\" but received undefined"
-                ));
-            }
-            continue;
-        };
-        if value.is_null() && matches!(field, Field::NullableId | Field::Ticket) {
-            continue;
+
+fn expected(field: Field) -> String {
+    match field {
+        Field::RequiredDate | Field::Date => "Date".into(),
+        Field::Bool => "boolean".into(),
+        Field::True => "true".into(),
+        Field::IdOrNone => "(string | \"none\")".into(),
+        Field::Picklist([one]) => format!("\"{one}\""),
+        Field::Picklist(options) => {
+            let quoted: Vec<_> = options.iter().map(|o| format!("\"{o}\"")).collect();
+            format!("({})", quoted.join(" | "))
         }
-        let expected = match field {
-            Field::RequiredDate | Field::Date => "Date",
-            Field::Bool => "boolean",
-            _ => "string",
-        };
-        match field {
-            Field::Bool
-                if value.is_boolean() || matches!(value.as_str(), Some("true" | "false")) =>
-            {
-                continue;
-            }
-            Field::RequiredDate | Field::Date if value.is_string() => {
-                if serde_json::from_value::<Timestamp>(value.clone()).is_ok() {
-                    continue;
-                }
+        _ => "string".into(),
+    }
+}
+
+fn check_field(name: &str, field: Field, value: Option<&Value>) -> Result<()> {
+    let Some(value) = value else {
+        if matches!(
+            field,
+            Field::RequiredId | Field::RequiredDate | Field::RequiredDay
+        ) {
+            return invalid(format!(
+                "Invalid key: Expected \"{name}\" but received undefined"
+            ));
+        }
+        return Ok(());
+    };
+    let text = value.as_str();
+    let typed = match (field, text) {
+        (Field::NullableId | Field::Ticket, _) if value.is_null() => return Ok(()),
+        (Field::Bool, _) => value.is_boolean() || matches!(text, Some("true" | "false")),
+        (Field::True, _) => value == &Value::Bool(true),
+        (Field::Picklist(options), Some(text)) => options.contains(&text),
+        (Field::RequiredDate | Field::Date, Some(text)) => {
+            if Timestamp::parse(text).is_none() {
                 return invalid("Invalid type: Expected Date but received \"Invalid Date\"");
             }
-            Field::RequiredId | Field::Id | Field::NullableId if value.is_string() => {
-                uuid_v7(value.as_str().unwrap())?;
-                continue;
-            }
-            Field::Description if value.is_string() => {
-                description(&mut value.as_str().unwrap().to_owned())?;
-                continue;
-            }
-            Field::Ticket if value.is_string() => {
-                ticket_key(value.as_str().unwrap())?;
-                continue;
-            }
-            _ => {
-                return invalid(format!(
-                    "Invalid type: Expected {expected} but received {}",
-                    received(value)
-                ));
-            }
+            true
         }
+        (Field::RequiredId | Field::Id | Field::NullableId, Some(id)) => return uuid_v7(id),
+        (Field::IdOrNone, Some("none")) => true,
+        (Field::IdOrNone, Some(id)) => return uuid_v7(id),
+        (Field::Description, Some(text)) => return description_length(text),
+        (Field::Ticket, Some(key)) => return ticket_key(key),
+        (Field::RequiredDay, Some(day)) => return iso_date(day),
+        _ => false,
+    };
+    if typed {
+        return Ok(());
     }
-    Ok(())
+    invalid(format!(
+        "Invalid type: Expected {} but received {}",
+        expected(field),
+        received(value)
+    ))
 }
 
 pub(crate) fn invalid<T>(message: impl Into<String>) -> Result<T> {
@@ -120,22 +144,6 @@ impl<T> Patch<T> {
             _ => None,
         }
     }
-
-    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Patch<U> {
-        match self {
-            Patch::Absent => Patch::Absent,
-            Patch::Null => Patch::Null,
-            Patch::Value(v) => Patch::Value(f(v)),
-        }
-    }
-
-    // v.optional(...): absent is fine, null isn't.
-    pub(crate) fn optional(&self, field: &str) -> Result<()> {
-        match self {
-            Patch::Null => invalid(format!("Invalid type: Expected {field} but received null")),
-            _ => Ok(()),
-        }
-    }
 }
 
 impl<'de, T: Deserialize<'de>> Deserialize<'de> for Patch<T> {
@@ -145,7 +153,7 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for Patch<T> {
 }
 
 // Uuidv7: app-owned rows get their id on the client.
-pub(crate) fn uuid_v7(id: &str) -> Result<()> {
+fn uuid_v7(id: &str) -> Result<()> {
     let b = id.as_bytes();
     let hex = |range: std::ops::Range<usize>| b[range].iter().all(u8::is_ascii_hexdigit);
     let valid = b.len() == 36
@@ -165,20 +173,36 @@ pub(crate) fn uuid_v7(id: &str) -> Result<()> {
 }
 
 // Description: trimmed, at most 500 characters as JavaScript counts them.
-pub(crate) fn description(text: &mut String) -> Result<()> {
-    let trimmed = text.trim_matches(|c: char| c.is_whitespace() || c == '\u{feff}');
+fn trimmed(text: &str) -> &str {
+    text.trim_matches(|c: char| c.is_whitespace() || c == '\u{feff}')
+}
+fn description_length(text: &str) -> Result<()> {
+    if trimmed(text).encode_utf16().count() > 500 {
+        return invalid("Use at most 500 characters.");
+    }
+    Ok(())
+}
+pub(crate) fn trim(text: &mut String) {
+    let trimmed = trimmed(text);
     if trimmed.len() != text.len() {
         *text = trimmed.to_owned();
     }
-    if text.encode_utf16().count() > 500 {
-        return invalid("Use at most 500 characters.");
+}
+
+// IsoDate: the form valibot's isoDate checks, then a day the month has.
+fn iso_date(text: &str) -> Result<()> {
+    if !Day::is_iso_form(text) {
+        return invalid("Use a date such as 2026-09-24.");
+    }
+    if Day::parse(text).is_none() {
+        return invalid("Unknown date.");
     }
     Ok(())
 }
 
 // TicketKey: a key as Jira, Linear, and YouTrack write them (TICKET_PATTERN in
 // src/lib/tickets.ts).
-pub(crate) fn ticket_key(key: &str) -> Result<()> {
+fn ticket_key(key: &str) -> Result<()> {
     let b = key.as_bytes();
     let dash = b.iter().position(|&c| c == b'-');
     let valid = dash.is_some_and(|dash| {
@@ -199,25 +223,16 @@ pub(crate) fn ticket_key(key: &str) -> Result<()> {
     }
 }
 
-pub(crate) fn optional<T>(value: &Option<T>, check: impl Fn(&T) -> Result<()>) -> Result<()> {
-    value.as_ref().map_or(Ok(()), check)
-}
-
 // A boolean, which a GET's query string carries as "true" or "false" (revive in
-// src/lib/api/wire.ts); anything else fails with v.boolean()'s message.
+// src/lib/api/wire.ts). The field pass has refused anything else.
 pub(crate) fn query_bool<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> std::result::Result<bool, D::Error> {
-    let received = match Value::deserialize(deserializer)? {
-        Value::Bool(value) => return Ok(value),
-        Value::String(text) if text == "true" => return Ok(true),
-        Value::String(text) if text == "false" => return Ok(false),
-        Value::String(text) => format!("\"{text}\""),
-        other => other.to_string(),
-    };
-    Err(serde::de::Error::custom(format!(
-        "Invalid type: Expected boolean but received {received}"
-    )))
+    match Value::deserialize(deserializer)? {
+        Value::Bool(value) => Ok(value),
+        Value::String(text) => Ok(text == "true"),
+        _ => Err(serde::de::Error::custom("Expected a boolean")),
+    }
 }
 
 #[cfg(test)]

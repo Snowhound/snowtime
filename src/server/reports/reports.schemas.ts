@@ -7,8 +7,9 @@ import { WeekStart } from '../settings/settings.schemas'
 export const IsoDate = v.pipe(
   v.string(),
   v.isoDate(() => m.validation_date_format()),
+  // Valibot runs this check after isoDate fails too, where the date is invalid.
   v.check(
-    (d) => new Date(`${d}T00:00:00Z`).toISOString().startsWith(d),
+    (d) => new Date(`${d}T00:00:00Z`).toJSON()?.startsWith(d) ?? false,
     () => m.validation_date_unknown(),
   ),
 )

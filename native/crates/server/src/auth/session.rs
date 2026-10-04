@@ -32,14 +32,21 @@ impl SessionConfig {
     }
 }
 
-/// The signed-in user of a request's Cookie header, or None. An expired session is deleted;
-/// one used a day or more after it was last renewed is renewed for 30 days.
-pub fn signed_in_user(
+/// A request's live session (Better Auth's session row).
+pub struct Session {
+    pub user_id: String,
+    pub created_at: Timestamp,
+    pub active_organization_id: Option<String>,
+}
+
+/// The session of a request's Cookie header, or None. An expired session is deleted; one
+/// used a day or more after it was last renewed is renewed for 30 days.
+pub fn find_session(
     db: &Connection,
     config: &SessionConfig,
     cookie_header: Option<&str>,
     now: i64,
-) -> rusqlite::Result<Option<String>> {
+) -> rusqlite::Result<Option<Session>> {
     let Some(cookie) = cookie_header.and_then(|h| cookie::find(h, config.cookie_name())) else {
         return Ok(None);
     };
@@ -48,14 +55,22 @@ pub fn signed_in_user(
     };
     let session = db
         .prepare_cached(
-            "select session.user_id, session.expires_at from session
-             join user on user.id = session.user_id where session.token = ?1",
+            "select session.user_id, session.expires_at, session.created_at,
+                    session.active_organization_id
+             from session join user on user.id = session.user_id where session.token = ?1",
         )?
         .query_row([token], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+            Ok((
+                Session {
+                    user_id: row.get(0)?,
+                    created_at: row.get(2)?,
+                    active_organization_id: row.get(3)?,
+                },
+                row.get::<_, i64>(1)?,
+            ))
         })
         .optional()?;
-    let Some((user_id, expires_at)) = session else {
+    let Some((session, expires_at)) = session else {
         return Ok(None);
     };
     if expires_at < now {
@@ -68,7 +83,17 @@ pub fn signed_in_user(
             params![now + EXPIRES_IN_S * 1000, now, token],
         )?;
     }
-    Ok(Some(user_id))
+    Ok(Some(session))
+}
+
+/// The signed-in user of a request's Cookie header, or None.
+pub fn signed_in_user(
+    db: &Connection,
+    config: &SessionConfig,
+    cookie_header: Option<&str>,
+    now: i64,
+) -> rusqlite::Result<Option<String>> {
+    Ok(find_session(db, config, cookie_header, now)?.map(|s| s.user_id))
 }
 
 /// The user as Better Auth's sign-in returns it.

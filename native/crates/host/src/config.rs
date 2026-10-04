@@ -4,6 +4,10 @@ pub struct Config {
     pub server: ServerConfig,
     pub host: String,
     pub port: u16,
+    // The build's public files (vite's .output/public), or None where a proxy serves them.
+    pub public_dir: Option<String>,
+    // At most this many renderers, below what memory allows.
+    pub renderers: Option<usize>,
 }
 pub fn from_env() -> Result<Config, String> {
     let var = |name: &str| env::var(name).ok().filter(|v| !v.is_empty());
@@ -17,6 +21,10 @@ pub fn from_env() -> Result<Config, String> {
     Ok(Config {
         host: var("HOST").unwrap_or_else(|| "0.0.0.0".into()),
         port: var("PORT").map_or(Ok(3000), |p| p.parse().map_err(|_| "PORT is a number."))?,
+        public_dir: var("PUBLIC_DIR"),
+        renderers: var("RENDERERS")
+            .map(|n| n.parse().map_err(|_| "RENDERERS is a number."))
+            .transpose()?,
         server: ServerConfig {
             database_path,
             secret: required("BETTER_AUTH_SECRET")?,

@@ -1,6 +1,6 @@
 # 081.06: The Rust server's layout and routing
 
-Status: done (the final HTTP library decision awaits subtask 01)
+Status: done (Axum confirmed by subtask 01 on 2026-10-04)
 
 How the full port is laid out. The proof of concept (subtask 03) split its code into crates
 so its candidates could share it. It routed every request through one catch-all handler and
@@ -12,8 +12,8 @@ server the same shape, so a change on one side maps file for file onto the other
 
 Kait, 2026-10-04:
 
-- **Axum for now.** Actix Web stays an option until subtask 01's render isolate (deno_core
-  with V8) runs in the host. Axum and Actix measured the same CPU and memory in subtask 03.
+- **Axum.** Actix Web stayed an option until subtask 01's render isolate (deno_core
+  with V8) ran in the host; subtask 01 confirmed Axum on 2026-10-04. Axum and Actix measured the same CPU and memory in subtask 03.
   If keeping one isolate per worker turns out much simpler than running isolates on threads
   of their own, that favors Actix. deno_core's `JsRuntime` can't be sent between threads.
   Actix runs handlers on single-threaded workers, while Axum handlers must be `Send`.
@@ -122,8 +122,9 @@ evict each other. Raise the capacity
 - [x] `sql!`, `Assignments`, and `list` written, and the ported rules using them
 - [x] An unported call answers 404
 - [x] Server rendering through `oneshot` proven with subtask 01, or the reason it can't be
-- [ ] The Axum or Actix decision confirmed once subtask 01's isolate runs, and recorded in
-      task 081's decision record
+- [x] The Axum or Actix decision confirmed once subtask 01's isolate runs, and recorded in
+      task 081's decision record: Axum, with renderers on threads of their own
+      ([081.01](01-server-rendering.md), `docs/architecture/native-rendering.md`)
 
 ## Implementation
 
