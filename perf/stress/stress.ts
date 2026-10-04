@@ -48,7 +48,8 @@ const WINDOW_S = 30
 // The ramp's steps in active users; it stops at the first one that misses a target.
 const RAMP = [
   50, 100, 200, 300, 400, 500, 650, 800, 1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 6500, 8000,
-  10000, 12500, 15000, 20000, 25000, 30000, 40000, 50000,
+  10000, 12500, 15000, 20000, 25000, 30000, 40000, 50000, 65000, 80000, 100000, 125000, 150000,
+  200000,
 ]
 // On a server, the ramp ends when memory or disk passes these shares.
 const MAX_MEMORY_SHARE = 0.85

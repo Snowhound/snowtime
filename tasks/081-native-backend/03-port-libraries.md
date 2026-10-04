@@ -158,6 +158,78 @@ Code lines (not blank or only a comment) of each rule and its helpers
   a GET's query string, and both noted that the shared call table routes a call to a rules
   crate that hasn't ported it, which panics into a 500 instead of a 404.
 
+### Load: `perf:stress` on M
+
+Task 078's harness on dataset M (1,049 users with sessions, 1.19 million entries, 944 MB),
+on this Mac in Docker: the app, Caddy, and the sampler share one core, the app has
+1,792 MB, and k6 runs on eight other cores. Both backends replay the same recording, cut
+down to the calls the native backend serves (`native/bench/api-recording.ts`): the
+returns, timer starts and stops, edits, and sign-ins of the usage model, with their
+`/api/v1` calls but without the pages, `getAppSession`, `listProjects`, and the reports.
+So a user here sends a fraction of a real user's requests, and the capacities below
+count users of this slice, not of the app. The TypeScript image predates the merge of
+task 088, so it sends no Server-Timing.
+
+```sh
+bun native/bench/api-recording.ts <recording.json> <slice.json>
+bun run perf:stress --dataset=M --run=kinds --recording=<slice.json>
+bun run perf:stress --app=native --dataset=M --run=kinds --recording=<slice.json>
+bun run perf:stress --dataset=M --run=ramp --recording=<slice.json> --step-seconds=60 --hold-seconds=180
+bun run perf:stress --app=native --dataset=M --run=ramp --recording=<slice.json> --step-seconds=60 --hold-seconds=180 --from=5000
+```
+
+Each action alone at 2 a second for 60 seconds (`--run=kinds`), app CPU per action, Axum
+with SQL strings against TypeScript:
+
+| Action  | Requests | TypeScript ms | Native ms | Ratio |
+| ------- | -------: | ------------: | --------: | ----: |
+| Return  |        3 |          23.1 |       2.4 |  9.6× |
+| Timer   |        3 |          22.8 |       3.2 |  7.1× |
+| Edit    |        4 |          19.3 |       5.6 |  3.4× |
+| Sign-in |        4 |          81.1 |     137.3 |  0.6× |
+
+Sign-in is slower natively. In Docker on Linux, the `scrypt` crate takes 113 ms a hash
+against 52 ms for Bun's `node:crypto`; on macOS the two take 59 and 53 ms. Neither target
+CPU flags nor keeping glibc from returning scrypt's 32 MB buffer changed it; the cause
+isn't found.
+
+The ramp, one minute a step, until a 30-second window's p95 passes a target. Requests a
+second are those offered; CPU is a share of the one core:
+
+|   Users | Req/s | TS app CPU | TS anon / RSS MB | Native app CPU | Native anon / RSS MB | Caddy CPU, TS / native |
+| ------: | ----: | ---------: | ---------------: | -------------: | -------------------: | ---------------------: |
+|   5,000 |    66 |        15% |        127 / 187 |           3.7% |               4 / 42 |             4.2 / 4.6% |
+|  10,000 |   133 |        21% |        140 / 236 |           8.4% |               4 / 42 |             5.6 / 7.2% |
+|  20,000 |   261 |        33% |        148 / 246 |            15% |               5 / 43 |                9 / 10% |
+|  40,000 |   526 |        61% |        169 / 268 |            22% |              12 / 68 |               17 / 15% |
+|  50,000 |   641 |  70%, miss |        280 / 399 |            28% |              29 / 79 |               21 / 17% |
+|  80,000 | 1,047 |          — |                — |            41% |             46 / 153 |                — / 27% |
+| 100,000 | 1,215 |          — |                — |      45%, miss |             97 / 186 |                — / 43% |
+
+- **Capacity.** TypeScript held its targets up to 40,000 users of the slice (526 requests a
+  second) and missed at 50,000; the native server held 80,000 (1,046 a second) and missed
+  at 100,000. Both stopped when the shared core filled: at its miss, TypeScript's app took
+  70% and Caddy 21%; the native app took 45% and Caddy 43%, with Caddy at its 512 MB
+  limit. With Caddy on the same core, Caddy is what limits the native server.
+- **CPU per request** at load: TypeScript 1.2 ms, native 0.4 ms, Caddy 0.26–0.35 ms for
+  either. TypeScript's cost falls from 7 ms at 200 users to 1.2 ms as its JIT warms and
+  requests overlap; the native cost stays at 0.4–0.6 ms. Sign-in's scrypt, at 0.1 a user an
+  hour and about 113 ms each, is much of the native app's CPU: about 37% of it at 10,000
+  users and 60% at 80,000.
+- **Memory.** At idle the TypeScript app holds 97 MB RSS (44 MB anonymous) and the native
+  one 5 MB (1 MB anonymous). Under load the native server's anonymous memory stays at
+  4–12 MB up to 40,000 users, and its RSS peaks include scrypt's 32 MB buffer, one per
+  sign-in running. Beyond that it grows with load, to 97 MB anonymous and 186 MB RSS at
+  100,000 users. The likely cause is Tokio's blocking threads waiting for the connection,
+  each with its stack; that isn't confirmed. The app's cgroup also counts the database's page cache, 60–95 MB natively.
+- **Holds.** The ramp's holds failed for TypeScript at 40,000, 30,000, and 25,000 users on
+  error share alone (0.12–0.24%, the limit is 0.1%), with latency within targets; the
+  native hold at 80,000 stopped when the sampler's log read failed. Every error was a 404
+  from `stopTimer`: the scenario remembers a started timer per virtual user, so when two
+  virtual users act for the same person, the later start stops the earlier timer and the
+  earlier user's stop finds none. At 40,000 users each of M's 1,049 people stands for 38.
+  The capacities above therefore come from the one-minute steps.
+
 ### Found on the TypeScript side
 
 - `perf:stress`'s scenario still told calls apart by `/_serverFn/`, so after task 084
