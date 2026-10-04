@@ -54,7 +54,8 @@ carry a `message` in English instead, with a `code` where one applies:
 ```
 
 Clients branch on the HTTP status and `code`. A `key` is stable snake_case, and new ones may
-appear; a `message` is for people and may change. Messages are always in English, whatever
+appear; the API sends no text for it, so a client shows its own text for each key it knows,
+and a general one for the rest. A `message` is for people and may change. Messages are always in English, whatever
 the request's `Accept-Language` or cookies.
 
 | Status | `code`            | Meaning                                                                                          |

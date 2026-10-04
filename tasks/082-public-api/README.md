@@ -72,9 +72,8 @@ records how the settled ones are built.
    `FORBIDDEN`, so a client can tell a wrong key from a read-only one.
 
 Task 084's error body carries an `AppError`'s `code` and `key`, without its English
-message. The key's own refusals and validation errors carry an English `message`. Adding
-the message to every refusal would change task 084's contract, which the native backend
-also serves, so it waits for a client to need it.
+message. The key's own refusals and validation errors carry an English `message`. The API
+doesn't translate keys: a client maps them to its own text, as the Raycast extension does.
 
 ## Subtasks
 

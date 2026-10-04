@@ -7,14 +7,13 @@ A Raycast extension for the timer, in its own repository. It uses only the calls
 task tracks it here until it has an issue tracker of its own.
 
 The extension is at [LordzShadow/snowtime-raycast](https://github.com/LordzShadow/snowtime-raycast),
-unpublished. It was built against subtask 04's paths (`/api/v1/orgs/:orgId/...`, answers
-wrapped in `{ timer }`, `{ projects }`, and so on), and moves to task 084's paths and
-answers, which `docs/api.md` now documents.
+unpublished. It uses task 084's paths and answers, which `docs/api.md` documents, and
+turns each refusal's `key` into its own text.
 
 ## Acceptance criteria
 
 - [ ] A repository under the Snowhound organization, linked from `docs/api.md`
-- [ ] Uses the paths and answers `docs/api.md` documents since the merge with task 084
+- [x] Uses the paths and answers `docs/api.md` documents since the merge with task 084
 - [ ] Preferences: the instance URL (default: production), and the API key as a `password`
       preference, which Raycast stores encrypted
 - [ ] Organization picker from `GET /api/v1/me`, remembered between runs
