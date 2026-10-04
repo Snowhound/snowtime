@@ -26,9 +26,9 @@ task.
   how.
 - The same SQLite schema and migrations as the TypeScript backend, so a self-hoster can
   switch either way on one file. Turso's engine comes later.
-- One process with Caddy in front for TLS and static files. Subtask 07 tunes Caddy, then
-  measures doing its essentials in the binary, with TLS optional for setups behind
-  Cloudflare or another proxy.
+- One app process per database. The native host can serve TLS, certificates, static
+  files, compression, and headers itself, or run behind Caddy, nginx, or Cloudflare.
+  Subtask 07 records the edge comparison. The TypeScript app keeps Caddy in front.
 
 ## Port approach
 
@@ -164,8 +164,9 @@ the timer page and the week report, and the browser hydrates them (subtask 01).
 
 ## Out of scope
 
-TLS, certificates, and static files in the binary until subtask 07 measures them, Turso's
-engine, and changes to the Vercel deployment beyond the adapter.
+HTTP/3 in the native host, Turso's engine, and changes to the Vercel deployment beyond
+the adapter. Optional TLS, certificates, and static files are implemented in subtask 07,
+which records the edge measurements.
 
 ## Subtasks
 

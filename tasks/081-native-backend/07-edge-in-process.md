@@ -1,6 +1,6 @@
 # 081.07: Caddy's essentials in process
 
-Status: in-progress
+Status: done
 
 In subtask 03's load runs, Caddy spent 0.26–0.35 ms of CPU per request. The native app
 spent about 0.4 ms. With Caddy on the same core, Caddy limited the native server: at
@@ -49,10 +49,10 @@ try it until the rest is measured (Kait, 2026-10-04).
 ## Acceptance criteria
 
 - [x] Caddy's tuning measured, and the safe changes applied to the Caddyfiles
-- [ ] The Rust host serving TLS with automatic certificates, compression, access logs,
+- [x] The Rust host serving TLS with automatic certificates, compression, access logs,
       static files, and security headers, each switchable by configuration
-- [ ] Measured with and without Caddy in front, and recorded here
-- [ ] Task 081's README updated: "Out of scope" and "Targets" both say Caddy stays in
+- [x] Measured with and without Caddy in front, and recorded here
+- [x] Task 081's README updated: "Out of scope" and "Targets" both say Caddy stays in
       front, which this subtask may change
 
 ## Part 1 measurements (2026-10-04)
@@ -274,3 +274,124 @@ The locale cookie previously hid the session cookie and every signed-in call ret
 The listeners also enable `TCP_NODELAY`: without it, small direct responses show a
 roughly 40 ms delay at low request rates. Both proxy and direct measurements below use
 the rebuilt binary with these fixes; the initial smoke and proxy control are excluded.
+
+### Fixed-load edge comparison
+
+Both modes use the rebuilt API-only host, the original M database and slice recording,
+80,000 users, and 120 seconds. The app, sampler, and Caddy share core 1; k6 uses cores
+2–9. The proxy mode disables the host's compression, access log, and security headers;
+Caddy supplies them. The direct mode enables those concerns in the host and uses the
+same Caddy certificate and key. Both use a complete benchmark file log. All requests
+use HTTP/2. No other load test or build overlaps these runs.
+
+```sh
+bun run perf:stress --app=native --dataset=M --run=fixed --users=80000 --seconds=120 \
+  --recording=perf/.cache/stress/slice.json --label=081-host-proxy-fixed-v2 --no-build
+# Repeat with --direct, then repeat both modes with --encoding=gzip.
+```
+
+| Mode         | Encoding | Sent req/s | App CPU | Caddy CPU | Application path ms/req | Peak path RSS MB | Return p95 ms | Received MB |
+| ------------ | -------- | ---------: | ------: | --------: | ----------------------: | ---------------: | ------------: | ----------: |
+| Behind Caddy | none     |    1,053.8 |   33.5% |     30.4% |                   0.612 |              251 |            56 |         751 |
+| Direct host  | none     |    1,051.3 |   39.5% |      0.1% |                   0.379 |               77 |            22 |         745 |
+| Behind Caddy | gzip     |    1,054.3 |   32.2% |     31.5% |                   0.609 |              185 |            38 |         115 |
+| Direct host  | gzip     |    1,054.7 |   43.4% |      0.1% |                   0.415 |              109 |            20 |         109 |
+
+All four runs pass the server latency windows, with no counted errors or dropped
+iterations. Sent request rates come from k6's request count divided by 120 seconds.
+CPU per request uses that count and the saved cgroup samples, rather than the rounded
+CPU columns. "Application path" includes the app and Caddy in proxy mode, and the app
+alone in direct mode. Peak path RSS is the maximum simultaneous sum of those processes'
+RSS, rather than the sum of their separate peaks. The direct mode's idle Caddy serves
+only the sampler and is excluded from the application path; its RSS is about 51 MB.
+
+Direct serving reduces CPU per request by 38% without compression and 32% with gzip.
+Gzip cuts received bytes by about 85% in both modes. The direct gzip output is slightly
+smaller, so these are comparisons of the configured implementations, not an isolated
+cipher or compression-library benchmark. Password sign-ins vary between 2.10 and
+2.19 per second. The host still uses the same scrypt parameters. RSS includes transient
+sign-in allocations; these peaks do not measure TLS's idle memory alone.
+
+The observed combined cgroup peaks are 390/220 MB for proxy/direct without compression,
+and 328/242 MB with gzip. Those include the database and access log's file cache and
+are distinct from process RSS. The fixed runs make 50–86 TLS handshakes over roughly
+126,000 requests each, consistent with the persistent-connection model from part 1.
+
+### Per-action checks
+
+Each action runs at two actions per second for 30 seconds, with gzip accepted. All
+stages pass in both modes. The complete-response server p95 is 4/6/7/82 ms for
+return/timer/edit/sign-in behind Caddy and 4/6/8/83 ms directly. The low-rate CPU table
+still includes startup and background work, so the fixed-load comparison above carries
+more weight for CPU cost. Sign-in remains dominated by hashing in both modes.
+
+### Capacity and limits
+
+The gzip ramps warm at 40,000 users for 30 seconds, start at 80,000, use 30-second
+steps, and hold the last passing step for 120 seconds. The proxy's first ramp holds
+80,000 and misses at 100,000, where sign-in runs at 3.37 per second. A 120-second
+fixed confirmation at 100,000, with 2.69 sign-ins per second, passes. This distinguishes
+the short ramp's random sign-in burst from the load it can sustain. A separate
+60-second proxy check at 125,000 fails. The direct ramp passes through 125,000,
+fails at 150,000, and holds 125,000 for 120 seconds.
+
+| Mode                             | Proven 120 s load | Sent req/s | Path CPU | Path ms/req | Peak path RSS MB | Return p95 ms | Next tested failure |
+| -------------------------------- | ----------------: | ---------: | -------: | ----------: | ---------------: | ------------: | ------------------: |
+| Behind Caddy, fixed confirmation |           100,000 |    1,312.3 |    77.4% |       0.594 |              284 |           162 |             125,000 |
+| Direct host, ramp hold           |           125,000 |    1,639.1 |    68.9% |       0.424 |              233 |           162 |             150,000 |
+
+Both passing holds have no counted errors or dropped iterations. The proven direct
+load is 25% higher at these tested steps; this does not locate the exact maximum
+between steps or establish a production peak-hour capacity. The holds also follow
+different cache and overload histories, so use the 80,000-user fixed pairs to compare
+memory at equal load. The application has a 1792 MiB memory limit in both modes;
+Caddy retains its 512 MiB limit. Direct mode's Caddy is instrumentation only.
+
+At the proxy's 125,000-user failure, Caddy reaches 503 MB RSS and 537 MB cgroup memory,
+with 399 MB anonymous memory and only 2 MB file cache left at the final sample. Its
+CPU averages 59.9% over the completion window. Requests queue for seconds and some
+connections fail or time out; no OOM kill is recorded. The direct host's failed
+150,000-user step also queues for seconds, so removing Caddy moves the latency
+boundary rather than removing overload. At the passing 125,000-user hold the host
+peaks at 233 MB RSS and 472 MB cgroup memory, including the database and log cache.
+This comparison includes the configured memory limits and logging implementations;
+the capacity gain is not an isolated TLS-library result.
+
+Run artifacts are in this worktree's `perf/.cache/stress/runs/`, under the labels
+`081-host-{proxy,direct}-{fixed,kinds,ramp}`, `081-host-{proxy,direct}-gzip-fixed`,
+`081-host-proxy-fixed-v2`, and `081-host-proxy-confirm-{100k,125k}`. The image identities,
+fixed-load aggregates, hold aggregates, and competing-process monitor are in
+`perf/.cache/stress/edge/`. The monitor records no competing builds or tests during
+the main measurement sequence; each run checks for another load test and reserves
+the shared stack before touching it.
+
+### Validation and outcome
+
+`cargo test --manifest-path native/Cargo.toml` passes all 23 tests. Host tests cover
+PEM TLS, cached ACME TLS with negotiated ALPN, a stalled handshake deadline,
+configuration conflicts and switches, nonce CSP preservation, redirects, compression,
+static precompression and cache rules, encoded hidden/API paths, timeouts, and body
+limits. The API regression checks split HTTP/2 Cookie fields. Clippy passes for the
+host and all its targets with warnings denied. The sampler's two-format parser test,
+13 API conformance tests, and all 22 TypeScript/native status-and-byte comparisons pass.
+
+A separate release-image container with its own temporary database passes live HTTPS,
+HTTP-to-HTTPS redirects with a hostile Host header, static gzip and cache headers,
+API/dotfile refusal behavior, and configured body limits. The validated app origin is
+canonicalized before deriving security settings; the smoke uses an uppercase HTTPS
+scheme to check HSTS and the canonical redirect. A TLS 1.2 reconnect produces one new
+session and five resumed sessions. The smoke container is removed afterward.
+
+ACME's cached-certificate path is tested with a locally generated certificate. No
+public-domain issuance or live renewal is exercised: this checkout has no domain
+configured for the host's TLS-ALPN-01 challenge. The ACME state stream handles issuance,
+renewal, and caching through `rustls-acme`; deployments must make TCP 443 reachable
+and persist its cache as documented in `native/README.md`.
+
+The final origin normalization affects startup configuration, not the measured request
+path. The performance image identities remain saved separately from the final release
+smoke image. The host's render wiring is still unmerged at completion, so the measured
+and merged implementation wraps the API router alone. The TypeScript deployment keeps
+Caddy; the native proof of concept can use either edge. These results justify retaining
+the optional in-process edge for the API slice, with full rendered-page capacity left
+to its integration measurement. HTTP/3 remains deferred.

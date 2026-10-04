@@ -159,7 +159,8 @@ the certificate-file mode. Wildcard certificates are unsupported.
 | `EDGE_BENCH_LOG`                | unset        | Complete JSON benchmark log for the sampler                                  |
 
 Boolean switches accept `true` or `false`. `BETTER_AUTH_URL` must be an HTTP(S) origin,
-with no credentials, path, query, or fragment. TLS requires an HTTPS origin. Redirects
+with no credentials, path, query, or fragment. The host normalizes its scheme, hostname,
+and default port. TLS requires an HTTPS origin. Redirects
 use that origin rather than the request's Host header.
 
 Access logs contain the method, path, status, duration, and transferred body bytes.
