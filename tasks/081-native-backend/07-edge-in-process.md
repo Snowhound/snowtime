@@ -43,8 +43,8 @@ Measure the binary without Caddy against the binary behind Caddy, on the same
 `perf:stress` run with the same CPU limit. Compare CPU per request, capacity, p95, and
 RSS.
 
-**Stretch, later:** HTTP/3 with `quinn` and `h3`. It's less mature than Caddy's, so don't
-try it until the rest is measured (Kait, 2026-10-04).
+**Stretch, later:** HTTP/3 with `quinn` and `h3`, in [subtask 09](09-http3.md). It's less
+mature than Caddy's, so don't try it until the rest is measured (Kait, 2026-10-04).
 
 ## Acceptance criteria
 

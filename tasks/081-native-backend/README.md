@@ -182,6 +182,7 @@ which records the edge measurements.
 - [07](07-edge-in-process.md): tuning Caddy, then TLS, certificates, compression, and logs
   in the Rust binary
 - [08](08-fast-scrypt.md): a faster scrypt for the native sign-in
+- [09](09-http3.md): HTTP/3 in the native host, measured against HTTP/2
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
