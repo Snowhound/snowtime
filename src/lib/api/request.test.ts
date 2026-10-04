@@ -1,7 +1,9 @@
 import { describe, expect, mock, test } from 'bun:test'
 import { AppError } from '~/server/errors'
+import { inviteMember } from './auth'
 import { listEntries, updateEntry } from './entries'
 import { setSend } from './request'
+import { getRunningTimer } from './timer'
 
 const organizationId = '01900000-0000-7000-8000-000000000201'
 const userId = '01900000-0000-7000-8000-000000000104'
@@ -63,5 +65,28 @@ describe('a request', () => {
 
     answer(200, [{ ...entry, startedAt: 'yesterday' }])
     await expect(listEntries(range)).rejects.toThrow()
+  })
+
+  test('a call without input sends nothing', async () => {
+    const requests = answer(200, null)
+    expect(await getRunningTimer()).toBeNull()
+    expect(requests[0].path).toBe('/api/v1/timer')
+    expect(requests[0].init.body).toBeUndefined()
+  })
+
+  test("Better Auth's refusal throws with its status and code, as its client reports it", async () => {
+    answer(400, {
+      error: { code: 'USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION', message: 'Taken' },
+    })
+    const invite = inviteMember({
+      organizationId,
+      email: 'member@example.com',
+      role: 'member',
+      teamId: null,
+    })
+    await expect(invite).rejects.toMatchObject({
+      status: 400,
+      code: 'USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION',
+    })
   })
 })

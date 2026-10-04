@@ -1,14 +1,11 @@
 import { getRequest } from '@tanstack/solid-start/server'
 import handler from '@tanstack/solid-start/server-entry'
-import { setTransport } from '~/lib/api/client'
 import { setSend } from '~/lib/api/request'
 import { paraglideMiddleware } from '~/paraglide/server.js'
-import { api, renderTransport } from '~/server/api.server'
+import { api } from '~/server/api.server'
 import { contentSecurityPolicy, newNonce } from '~/server/csp.server'
 import { serverTiming, time, withTiming } from '~/server/timing.server'
 
-// The route loaders' calls during a server render go to the API in process.
-setTransport(renderTransport)
 // The route loaders' calls during a server render go to the API in process, by URL and with
 // the page request's cookie, as the native backend's render isolate hands a call to its
 // router. They count toward the page's own Server-Timing.

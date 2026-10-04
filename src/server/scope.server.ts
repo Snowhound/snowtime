@@ -1,6 +1,6 @@
 // The tenancy helper: who is acting, in which organization, with which rights. Every
-// call that touches tenant data gets its scope from here (through runOperation) and
-// filters by scope.organizationId.
+// call that touches tenant data gets its scope from here (the API's `organization`
+// middleware) and filters by scope.organizationId.
 import { and, eq, inArray } from 'drizzle-orm'
 import type { Database } from '~/db'
 import { member, team, teamMember } from '~/db/schema'

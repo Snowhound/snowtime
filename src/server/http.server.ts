@@ -13,7 +13,6 @@ import { decode, type WireError } from '~/lib/api/wire'
 import { authRefusal, signedInUser } from './auth/auth.server'
 import { databaseAvailable } from './availability/availability.server'
 import { AppError, type AppErrorCode } from './errors'
-import { parseOrganizationInput } from './schemas'
 import { resolveScope, type Scope } from './scope.server'
 
 // What the routes behind signedIn() and organization() know about the caller.
@@ -30,7 +29,7 @@ function failure(c: Context, status: number, error: WireError) {
 
 // Marks a POST that only reads, such as a report's, whose filters travel as a JSON body: it
 // passes the checks a GET does.
-const reads = createMiddleware((_, next) => next())
+export const reads = createMiddleware((_, next) => next())
 
 // A GET reads, and so does a route marked `reads`; every other route writes.
 function writes(c: Context) {
@@ -65,10 +64,7 @@ export const signedIn = createMiddleware<UserEnv>(async (c, next) => {
 // The tenancy scope of the organization in the path ("Tenancy" in docs/architecture/data.md).
 // It is resolved before the route's own input is checked.
 export const organization = createMiddleware<OrganizationEnv>(async (c, next) => {
-  const { organizationId } = parseOrganizationInput({
-    organizationId: c.req.param('organizationId') ?? '',
-  })
-  c.set('scope', await resolveScope(db, c.var.userId, organizationId))
+  c.set('scope', await resolveScope(db, c.var.userId, c.req.param('organizationId')!))
   await next()
 })
 
@@ -96,27 +92,25 @@ export function input<S extends v.GenericSchema>(schema: S) {
 // variables and path, so it is matched by shape.
 interface RouteContext<V> {
   var: V
-  req: { raw: Request }
   json: (object: unknown) => Response
 }
 
 // Runs the route's rule for the caller, the organization's scope or the signed-in user, with
-// the route's input and the request's headers, which Better Auth's own calls read. A rule
-// that needs neither input nor headers leaves them off.
+// the route's input. A rule without input leaves it off.
 export function run<I, O>(
   c: RouteContext<{ scope: Scope; input?: I }>,
-  rule: (db: Database, scope: Scope, input: I, headers: Headers) => Promise<O>,
+  rule: (db: Database, scope: Scope, input: I) => Promise<O>,
 ): Promise<Response>
 export function run<I, O>(
   c: RouteContext<{ userId: string; input?: I }>,
-  rule: (db: Database, userId: string, input: I, headers: Headers) => Promise<O>,
+  rule: (db: Database, userId: string, input: I) => Promise<O>,
 ): Promise<Response>
 export async function run(
   c: RouteContext<{ userId?: string; scope?: Scope; input?: unknown }>,
   // oxlint-disable-next-line typescript/no-explicit-any -- each overload types its rule
-  rule: (db: Database, actor: any, input: any, headers: Headers) => Promise<unknown>,
+  rule: (db: Database, actor: any, input: any) => Promise<unknown>,
 ) {
-  return c.json(await rule(db, c.var.scope ?? c.var.userId, c.var.input, c.req.raw.headers))
+  return c.json(await rule(db, c.var.scope ?? c.var.userId, c.var.input))
 }
 
 const statusOf: Record<AppErrorCode, number> = {
@@ -132,7 +126,7 @@ const statusOf: Record<AppErrorCode, number> = {
 
 // A refusal's status and body: an AppError's code and key, input that fails its schema, or
 // Better Auth's refusal. Null for anything unexpected.
-export function refusalOf(error: unknown): { status: number; error: WireError } | null {
+function refusalOf(error: unknown): { status: number; error: WireError } | null {
   if (error instanceof AppError) {
     return { status: statusOf[error.code], error: { code: error.code, key: error.key } }
   }
@@ -141,7 +135,7 @@ export function refusalOf(error: unknown): { status: number; error: WireError } 
 }
 
 // An unexpected error while the database is unreachable is UNAVAILABLE.
-export async function unavailableOr(error: unknown) {
+async function unavailableOr(error: unknown) {
   if (error instanceof Error && !(error instanceof AppError) && !(await databaseAvailable(db))) {
     return new AppError('UNAVAILABLE', 'database_unavailable')
   }

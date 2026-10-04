@@ -2,11 +2,15 @@
 // as the native backend, which must serve the benchmark database (perf/lib/database.ts)
 // with its clock at SEED_NOW and password sign-in on. Without it, the tests build the
 // TypeScript app and serve it as the perf harnesses do (perf/lib/app.ts).
-import { call, setTransport } from '~/lib/api/client'
+import * as auth from '~/lib/api/auth'
+import * as availability from '~/lib/api/availability'
 import * as entries from '~/lib/api/entries'
-import { type InputOf, type OperationName, operations, type OutputOf } from '~/lib/api/operations'
+import * as projects from '~/lib/api/projects'
+import * as reports from '~/lib/api/reports'
 import { setSend } from '~/lib/api/request'
-import { httpTransport } from '~/lib/api/transports'
+import * as settings from '~/lib/api/settings'
+import * as teams from '~/lib/api/teams'
+import * as timer from '~/lib/api/timer'
 import { buildApp, signInHeaders, startApp } from '../perf/lib/app'
 import { seededDatabase, type USERS } from '../perf/lib/database'
 
@@ -35,41 +39,44 @@ export async function serverUnderTest(): Promise<ServerUnderTest> {
   }
 }
 
-// The client modules' functions by name, as the app calls the API.
-const calls = { ...entries }
+// The client modules' functions by name: the tests call the API as the app does, so its
+// paths and bodies are under test too.
+const calls = {
+  ...auth,
+  ...availability,
+  ...entries,
+  ...projects,
+  ...reports,
+  ...settings,
+  ...teams,
+  ...timer,
+}
+type Calls = typeof calls
 
-export type CallName = OperationName | keyof typeof calls
-type CallInput<K extends CallName> = K extends keyof typeof calls
-  ? Parameters<(typeof calls)[K]>[0]
-  : K extends OperationName
-    ? InputOf<K>
-    : never
-type CallOutput<K extends CallName> = K extends keyof typeof calls
-  ? Awaited<ReturnType<(typeof calls)[K]>>
-  : K extends OperationName
-    ? OutputOf<K>
-    : never
+export type CallName = keyof Calls
 
 // Calls the API as the app does, decoding answers, but on the server under test and with
 // `headers` for the session and Origin.
-export type Caller = <K extends CallName>(name: K, input: CallInput<K>) => Promise<CallOutput<K>>
+export type Caller = <K extends CallName>(
+  name: K,
+  input: Parameters<Calls[K]>[0],
+) => ReturnType<Calls[K]>
 
-function sendTo(url: string, headers: Record<string, string>, onAnswer?: (r: Response) => void) {
+// Points the client at the server under test, with `headers` on every request. A call
+// uses the one set when it starts.
+function sendTo(url: string, headers: Record<string, string>, seen?: (r: Response) => void) {
   setSend(async (path, init) => {
     const response = await fetch(`${url}${path}`, {
       ...init,
       headers: { ...headers, ...(init.headers as Record<string, string>) },
     })
-    onAnswer?.(response.clone())
+    seen?.(response.clone())
     return response
   })
-  setTransport(httpTransport(url, headers))
 }
 
-function callByName(name: CallName, input: unknown): Promise<unknown> {
-  if (name in calls)
-    return (calls as Record<string, (input: unknown) => Promise<unknown>>)[name](input)
-  return (call as (name: string, input: unknown) => Promise<unknown>)(name, input)
+function callByName(name: CallName, input: unknown) {
+  return (calls[name] as (input: unknown) => Promise<unknown>)(input)
 }
 
 export function caller(url: string, headers: Record<string, string>): Caller {
@@ -90,18 +97,7 @@ export async function send(
   sendTo(url, headers, (response) => {
     answer = response
   })
-  if (!(name in calls)) {
-    const operation = operations[name as OperationName]
-    const { requestOf } = await import('~/lib/api/wire')
-    const { path, body } = requestOf(operation, input)
-    answer = await fetch(`${url}${path}`, {
-      method: operation.method,
-      headers: body ? { ...headers, 'content-type': 'application/json' } : headers,
-      body,
-    })
-  } else {
-    await callByName(name, input).catch(() => {})
-  }
+  await callByName(name, input).catch(() => {})
   return { status: answer!.status, body: (await answer!.json()) as unknown }
 }
 

@@ -18,10 +18,6 @@ afterAll(() => cleanup())
 // session is the user a test names in its own header.
 await mock.module('~/env', () => ({ env: {}, appUrl: 'http://localhost:3000', trustedOrigins: [] }))
 await mock.module('~/db', () => ({ db }))
-// Only the old name transport (renderTransport) reads the page's request.
-await mock.module('@tanstack/solid-start/server', () => ({
-  getRequest: () => new Request('http://x'),
-}))
 await mock.module('./auth/better-auth.server', () => ({
   auth: {},
   rateLimitStore: {},
@@ -33,6 +29,8 @@ await mock.module('./auth/better-auth.server', () => ({
 const { api } = await import('./api.server')
 const { setSend } = await import('~/lib/api/request')
 const entries = await import('~/lib/api/entries')
+const reports = await import('~/lib/api/reports')
+const timer = await import('~/lib/api/timer')
 
 // The API in process for one user, as a server render calls it.
 function as(userId: string) {
@@ -51,6 +49,13 @@ async function bothWays<T>(userId: string, call: () => Promise<T>) {
 }
 
 describe('a server render fills the cache as the browser does later', () => {
+  test('the running timer, with its project', async () => {
+    const { hydrated, fetched } = await bothWays(U.member, () => timer.getRunningTimer())
+    expect(fetched).not.toBeNull()
+    expect(fetched!.startedAt).toBeInstanceOf(Date)
+    expect(fetched).toStrictEqual(hydrated)
+  })
+
   test('a range of entries, a running one included', async () => {
     const { hydrated, fetched } = await bothWays(U.member, () =>
       entries.listEntries({
@@ -71,6 +76,19 @@ describe('a server render fills the cache as the browser does later', () => {
     )
     expect(fetched).toBeInstanceOf(Date)
     expect(fetched).toStrictEqual(hydrated)
+  })
+
+  test("a report's entries, one of two shapes, with their dates", async () => {
+    const { hydrated, fetched } = await bothWays(U.admin, () =>
+      reports.getReportEntries({
+        organizationId: O.northwind,
+        report: { from: '2026-09-21', to: '2026-09-28' },
+        view: 'day',
+      }),
+    )
+    expect(fetched).toStrictEqual(hydrated)
+    if (fetched.view !== 'day') throw new Error('Not By day')
+    expect(fetched.pieces[0].from).toBeInstanceOf(Date)
   })
 
   test('a refusal arrives as the AppError the rule threw', async () => {

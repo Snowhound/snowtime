@@ -2,7 +2,6 @@
 // lists are separate caches, since the running timer spans organizations; each mutation
 // updates both before the server answers and rolls both back on error.
 import { type QueryKey, queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
-import { call } from '~/lib/api/client'
 import {
   createEntry,
   deleteEntry,
@@ -10,6 +9,7 @@ import {
   listEntries,
   updateEntry,
 } from '~/lib/api/entries'
+import { getRunningTimer, startTimer, stopTimer } from '~/lib/api/timer'
 import type { Range } from '~/lib/calendar'
 import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
@@ -29,7 +29,7 @@ export type StoppedEntry = Entry & { stoppedAt: Date }
 
 export const runningTimerQuery = queryOptions({
   queryKey: ['timer'],
-  queryFn: () => call('getRunningTimer'),
+  queryFn: () => getRunningTimer(),
 })
 
 // The user's own entries overlapping the range, newest first, a running one included.
@@ -113,7 +113,7 @@ type Keys = { organizationId: string }
 export function useStartTimer({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: StartTimerInput) => call('startTimer', { ...input, organizationId }),
+    mutationFn: (input: StartTimerInput) => startTimer({ ...input, organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -146,7 +146,7 @@ export function useStartTimer({ organizationId }: Keys) {
 export function useStopTimer() {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: StopTimerInput) => call('stopTimer', input),
+    mutationFn: (input: StopTimerInput) => stopTimer(input),
     ...optimistic(
       queryClient,
       [

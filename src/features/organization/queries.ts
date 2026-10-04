@@ -4,7 +4,15 @@
 // each change shows there as well.
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import { isServer } from 'solid-js/web'
-import { call } from '~/lib/api/client'
+import { inviteMember, listInvitations, updateIssueLinks } from '~/lib/api/auth'
+import {
+  addTeamMember,
+  createTeam,
+  deleteTeam,
+  removeTeamMember,
+  renameTeam,
+  setTeamRole,
+} from '~/lib/api/teams'
 import { authClient, unwrap } from '~/lib/auth-client'
 import { type Member, membersQuery } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
@@ -32,7 +40,7 @@ export function invitationLink(appUrl: string, id: string) {
 export function invitationsQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['invitations', organizationId],
-    queryFn: () => call('listInvitations', { organizationId }),
+    queryFn: () => listInvitations({ organizationId }),
     enabled: !isServer,
   })
 }
@@ -127,7 +135,7 @@ export function useInviteMember(keys: Keys & { userId: string }) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: async (input: InviteInput) => {
-      const created = await call('inviteMember', {
+      const created = await inviteMember({
         email: input.email,
         role: input.role,
         organizationId: keys.organizationId,
@@ -184,7 +192,7 @@ export function useCreateTeam(keys: Keys) {
   return useMutation(() => ({
     mutationKey: ['create-team'],
     mutationFn: ({ name }: CreateTeamInput) =>
-      call('createTeam', { name, organizationId: keys.organizationId }),
+      createTeam({ name, organizationId: keys.organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], CreateTeamInput>(teamsKey(keys.organizationId), (teams, { id, name }) => [
         ...teams,
@@ -203,7 +211,7 @@ export function useRenameTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: ({ teamId, name }: RenameTeamInput) =>
-      call('renameTeam', { teamId, name, organizationId: keys.organizationId }),
+      renameTeam({ teamId, name, organizationId: keys.organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], RenameTeamInput>(teamsKey(keys.organizationId), (teams, input) =>
         teams.map((t) => (t.id === input.teamId ? { ...t, name: input.name } : t)),
@@ -217,8 +225,7 @@ export function useRenameTeam(keys: Keys) {
 export function useDeleteTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (teamId: string) =>
-      call('deleteTeam', { teamId, organizationId: keys.organizationId }),
+    mutationFn: (teamId: string) => deleteTeam({ teamId, organizationId: keys.organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -275,7 +282,7 @@ export function useAddTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(true)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) =>
-      call('addTeamMember', { ...input, organizationId: keys.organizationId }),
+      addTeamMember({ ...input, organizationId: keys.organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -292,7 +299,7 @@ export function useRemoveTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(false)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) =>
-      call('removeTeamMember', { ...input, organizationId: keys.organizationId }),
+      removeTeamMember({ ...input, organizationId: keys.organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -308,7 +315,7 @@ export function useSetTeamRole(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (input: SetTeamRoleInput) =>
-      call('setTeamRole', { ...input, organizationId: keys.organizationId }),
+      setTeamRole({ ...input, organizationId: keys.organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], SetTeamRoleInput>(teamsKey(keys.organizationId), (teams, input) =>
         teams.map((t) =>
@@ -368,7 +375,7 @@ export function useUpdateIssueLinks(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (issueLinks: string | null) =>
-      call('updateIssueLinks', {
+      updateIssueLinks({
         organizationId: keys.organizationId,
         issueLinks: issueLinks ?? '',
       }),

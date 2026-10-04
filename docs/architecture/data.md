@@ -68,8 +68,8 @@
   (e.g. project assignments) also reference `team_id`.
 - Each tab's organization comes from its URL: the app's pages live under the
   organization's slug (`/<slug>/timer`, `/<slug>/reports`, and so on). Every
-  organization-scoped API call names `organizationId` in its path, and `runOperation`
-  checks that the user is a member (`resolveScope`) before the call touches data; queries
+  organization-scoped API call names `organizationId` in its path, and the API's
+  `organization` middleware checks that the user is a member (`resolveScope`) before the call touches data; queries
   always filter by `organization_id`. Tabs never disagree with the server, and two
   organizations can stay open side by side (task 052).
   - Rejected: the session's active organization as the one every call acts in. Tabs share
