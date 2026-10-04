@@ -199,6 +199,12 @@ before touching it and releases the reservation on normal exit. If a run stops a
 verify that its owner and k6 have stopped before removing the stale directory. Sessions
 using an older checkout must also check for a running `perf:stress` or k6 process.
 
+For native-host TLS comparisons, `--direct` requires `--app=native` and a recording.
+It reuses the local Caddy certificate and sends load straight to the host on port 3000.
+Run the normal stack first to create the certificate. Both modes share the same database,
+CPU limits, sampler, and complete access-log format. In direct mode, Caddy receives only
+sampler requests; its idle overhead is instrumentation, not an application proxy cost.
+
 For edge comparisons, `--caddy-config=<absolute-or-relative.json>` mounts an effective
 Caddy JSON configuration in place of the Caddyfile. Capture the running configuration
 with `docker exec snowtime-bench-caddy-1 wget -qO- http://127.0.0.1:2019/config/`.

@@ -1,0 +1,21 @@
+# Native TLS without reverse proxying. Caddy still exposes the sampler; k6 maps its
+# requests straight to app:3000. The private bench network trusts the generator's fake IPs.
+services:
+  app:
+    environment:
+      BETTER_AUTH_URL: https://snowtime-bench.test:3000
+      TLS_CERT_FILE: /tls/cert.pem
+      TLS_KEY_FILE: /tls/key.pem
+      EDGE_COMPRESSION: 'true'
+      EDGE_ACCESS_LOG: 'false'
+      EDGE_HEADERS: 'true'
+      EDGE_BENCH_LOG: /var/log/caddy/access.log
+    volumes:
+      - ${BENCH_DIRECT_TLS:?Set BENCH_DIRECT_TLS}:/tls:ro
+      - bench_log:/var/log/caddy
+    healthcheck:
+      test:
+        ['CMD', 'curl', '-kfsS', '-o', '/dev/null', 'https://localhost:3000/api/v1/availability']
+  sampler:
+    environment:
+      APP_URL: ''

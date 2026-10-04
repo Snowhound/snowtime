@@ -3,6 +3,7 @@
 // (perf/README.md, "Load benchmark").
 
 import { spawnSync } from 'node:child_process'
+import { mkdirSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { ROOT } from '../lib/database'
 
@@ -48,6 +49,7 @@ export function compose(args: string[], env: Record<string, string> = {}) {
       '-f',
       'compose.bench.local.yml',
       ...(app === 'native' ? ['-f', 'compose.bench.native.yml'] : []),
+      ...(env.BENCH_DIRECT_TLS ? ['-f', 'compose.bench.direct.yml'] : []),
       ...(env.BENCH_CADDY_CONFIG ? ['-f', 'compose.bench.edge.yml'] : []),
       ...args,
     ],
@@ -122,4 +124,47 @@ function dropCaches() {
 // limit, and waits until the app is healthy.
 export function startStack(env: Record<string, string> = {}) {
   compose(['up', '-d', '--wait', '--force-recreate'], env)
+}
+
+// Reuse the benchmark's certificate so both edges serve the same hostname and key.
+export function directTls(directory: string) {
+  mkdirSync(directory, { recursive: true })
+  run('docker', [
+    'run',
+    '--rm',
+    '-v',
+    'snowtime_bench_caddy_data:/source:ro',
+    '-v',
+    `${directory}:/target`,
+    'alpine',
+    'sh',
+    '-c',
+    'cp /source/caddy/certificates/local/snowtime-bench.test/snowtime-bench.test.crt /target/cert.pem && cp /source/caddy/certificates/local/snowtime-bench.test/snowtime-bench.test.key /target/key.pem && chown -R 10001:10001 /target && chmod 700 /target && chmod 600 /target/*',
+  ])
+  run('docker', [
+    'run',
+    '--rm',
+    '-v',
+    'snowtime-bench_bench_log:/logs',
+    'alpine',
+    'sh',
+    '-c',
+    'touch /logs/access.log && chown -R 10001:10001 /logs',
+  ])
+}
+
+export function directAddress(): string {
+  const result = spawnSync(
+    'docker',
+    [
+      'inspect',
+      '-f',
+      '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
+      'snowtime-bench-app-1',
+    ],
+    { encoding: 'utf8' },
+  )
+  if (result.status !== 0 || !result.stdout.trim())
+    throw new Error('[stress] No native container address')
+  return `${result.stdout.trim()}:3000`
 }

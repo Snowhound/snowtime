@@ -32,6 +32,8 @@ import {
   NETWORK,
   buildImages,
   compose,
+  directTls,
+  directAddress,
   loadDataset,
   startStack,
   useApp,
@@ -78,6 +80,7 @@ const { values } = parseArgs({
     recording: { type: 'string' },
     'caddy-cpuset': { type: 'string' },
     'caddy-config': { type: 'string' },
+    direct: { type: 'boolean', default: false },
     encoding: { type: 'string' },
     'connection-reuse': { type: 'boolean', default: true },
   },
@@ -89,6 +92,8 @@ if (app !== 'ts' && app !== 'native') throw new Error('[stress] --app is ts or n
 if (app === 'native' && !values.recording) {
   throw new Error('[stress] The native backend serves no pages to record; pass --recording')
 }
+if (values.direct && (app !== 'native' || values.remote))
+  throw new Error('[stress] --direct requires local --app=native')
 useApp(app)
 
 const name = values.dataset as DatasetName
@@ -123,7 +128,7 @@ const target: Target = values.remote
       remote: true,
     }
   : {
-      origin: `https://${LOCAL_HOST}`,
+      origin: `https://${LOCAL_HOST}${values.direct ? ':3000' : ''}`,
       chromeAddress: `127.0.0.1:${LOCAL_PORT}`,
       secret: LOCAL_SECRET,
       samplerPassword: LOCAL_SAMPLER_PASSWORD,
@@ -576,7 +581,10 @@ async function main() {
   const paths = await dataset(name)
   if (!target.remote) {
     if (values.build) buildImages()
+    const tls = join(CACHE, 'stress', 'edge', 'tls')
+    if (values.direct) directTls(tls)
     const settings = {
+      ...(values.direct && { BENCH_DIRECT_TLS: tls }),
       ...(values.memory && { BENCH_APP_MEMORY: values.memory }),
       ...(values['caddy-memory'] && { BENCH_CADDY_MEMORY: values['caddy-memory'] }),
       ...(values.smol && { BENCH_BUN_OPTIONS: '--smol' }),
@@ -590,6 +598,7 @@ async function main() {
       loadDataset(paths.database)
     }
     startStack(settings)
+    if (values.direct) target.address = directAddress()
   }
   // The log keeps earlier runs' requests; this one reads only its own.
   logOffset = (await sampler<{ offset: number }>('/_bench/log?offset=end')).offset

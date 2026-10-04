@@ -239,3 +239,30 @@ in this worktree's `perf/.cache/stress/edge/` alongside the variant JSON.
 Part 1 is recorded before part 2 starts. The chosen tuning lowers log overhead but
 neither removes overload queueing nor establishes a capacity increase. The TypeScript
 app keeps Caddy in front.
+
+## Part 2 implementation (2026-10-04)
+
+The host gains an optional edge around the API router. The render-host wiring is not
+merged when this work starts, so this comparison uses the same API-only slice as part 1.
+The application router remains callable in process, without TLS or middleware.
+
+- `axum-server` serves plain HTTP or rustls HTTPS with PEM files. `rustls-acme` obtains
+  and renews Let's Encrypt certificates through TLS-ALPN-01, persists account and
+  certificate keys, and loads cached certificates at startup. Staging is the default.
+  Both TLS modes advertise HTTP/2 and HTTP/1.1; HTTP/3 remains deferred.
+- `tower-http` supplies gzip/zstd compression, tracing, response-header timeouts,
+  request-body limits, and static files with precompressed variants. Defaults match
+  Caddy's compression threshold and security/cache policies. Configuration can disable
+  each middleware concern independently. The API's own body limit remains in place.
+- Access events include complete body duration and transferred size, with no query,
+  credentials, or body. A separate buffered benchmark log feeds the sampler; its parser
+  accepts either Caddy or native events. Caddy receives no application requests in the
+  direct benchmark, but still exposes the sampler.
+- HTTP redirects use the configured app origin. Security headers preserve a renderer's
+  nonce CSP. Static-file fallback protects API refusal responses and rejects hidden or
+  archive paths, including encoded paths. Static assets require a public build mount.
+
+Configuration and proxy trust constraints are documented in `native/README.md`.
+The native API still trusts `CLIENT_IP_HEADER` when configured: deployments must restrict
+that listener to the trusted proxy. The isolated benchmark permits its generator's
+simulated client addresses in both modes.

@@ -348,6 +348,12 @@ type Request struct {
 }
 
 type logLine struct {
+	Fields RequestFields `json:"fields"`
+	Span   struct {
+		Kind string `json:"kind"`
+		Step string `json:"step"`
+	} `json:"span"`
+	Target  string  `json:"target"`
 	Time    float64 `json:"ts"`
 	Request struct {
 		Headers map[string][]string `json:"headers"`
@@ -355,6 +361,33 @@ type logLine struct {
 	Duration float64 `json:"duration"`
 	Size     int64   `json:"size"`
 	Status   int     `json:"status"`
+}
+
+type RequestFields struct {
+	Time     float64 `json:"ts"`
+	Duration float64 `json:"duration"`
+	Size     int64   `json:"size"`
+	Status   int     `json:"status"`
+}
+
+func requestFromLine(line []byte) (Request, bool) {
+	var entry logLine
+	if json.Unmarshal(line, &entry) != nil {
+		return Request{}, false
+	}
+	if entry.Target == "snowtime_bench" {
+		f := entry.Fields
+		return Request{f.Time, entry.Span.Kind, entry.Span.Step, f.Status, f.Duration, f.Size}, entry.Span.Kind != ""
+	}
+	kind := entry.Request.Headers["X-Bench-Kind"]
+	if len(kind) == 0 {
+		return Request{}, false
+	}
+	request := Request{entry.Time, kind[0], "", entry.Status, entry.Duration, entry.Size}
+	if step := entry.Request.Headers["X-Bench-Step"]; len(step) > 0 {
+		request.Step = step[0]
+	}
+	return request, true
 }
 
 // Whole lines from offset on, at most 64 MB at a time; the response says where to go on and
@@ -390,18 +423,9 @@ func serveLog(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		offset += int64(len(line))
-		var entry logLine
-		if json.Unmarshal(line, &entry) != nil {
+		request, ok := requestFromLine(line)
+		if !ok {
 			continue
-		}
-		kind := entry.Request.Headers["X-Bench-Kind"]
-		if len(kind) == 0 {
-			continue
-		}
-		step := entry.Request.Headers["X-Bench-Step"]
-		request := Request{entry.Time, kind[0], "", entry.Status, entry.Duration, entry.Size}
-		if len(step) > 0 {
-			request.Step = step[0]
 		}
 		requests = append(requests, request)
 	}

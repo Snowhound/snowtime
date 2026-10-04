@@ -23,6 +23,7 @@ crates/server/src/
   errors.rs · wire.rs · timestamp.rs · clock.rs · rate_limit.rs · timing.rs · config.rs
 crates/host/src/
   main.rs · config.rs
+  edge/          TLS, ACME, middleware, logging
 ```
 
 Each domain's `routes.rs` mirrors the ported paths in its TypeScript routes file. Unported
@@ -110,3 +111,75 @@ lines of each ported handler in TypeScript and in the server crate (or a histori
 `api-recording.ts` cuts a `perf:stress` recording down to the calls the native backend
 serves, for `perf:stress --app=native --recording=<file>`; `native/Dockerfile` builds the
 image that run uses.
+
+## Optional edge
+
+The host wraps the application router with `tower-http` middleware and serves HTTP/1.1
+and HTTP/2. The application library still binds no socket. The edge can wrap a rendered
+page router as well: it preserves an existing CSP, including the renderer's nonce.
+HTTP/3 remains outside this proof of concept. TLS handshakes expire after 10 seconds.
+
+Without certificate configuration, `snowtime-axum` serves plain HTTP. Configure a
+certificate pair to serve HTTPS, or use ACME to obtain and renew certificates:
+
+```sh
+TLS_CERT_FILE=/certs/fullchain.pem TLS_KEY_FILE=/certs/key.pem PORT=443 \
+  BETTER_AUTH_URL=https://snowtime.example snowtime-axum
+
+ACME_DOMAINS=snowtime.example ACME_EMAIL=ops@snowtime.example \
+  ACME_CACHE_DIR=/data/acme ACME_PRODUCTION=true PORT=443 HTTP_REDIRECT_PORT=80 \
+  BETTER_AUTH_URL=https://snowtime.example snowtime-axum
+```
+
+Supply the database URL and authentication secret as in "Run it". Certificate files
+and ACME are mutually exclusive. ACME defaults to Let's Encrypt's staging service;
+set `ACME_PRODUCTION=true` for trusted certificates. Persist `/data/acme` across
+restarts and allow the host user to write it. The host sets this directory to mode
+0700 because the cache contains account and certificate private keys.
+
+ACME uses TLS-ALPN-01. DNS must reach this listener on public TCP port 443; a proxy
+that terminates TLS prevents the challenge from reaching it. Behind such a proxy,
+use plain HTTP on a private connection or provision an origin certificate through
+the certificate-file mode. Wildcard certificates are unsupported.
+
+| Variable                        | Default      | Behavior                                                                     |
+| ------------------------------- | ------------ | ---------------------------------------------------------------------------- |
+| `TLS_CERT_FILE`, `TLS_KEY_FILE` | unset        | PEM certificate chain and private key; both required                         |
+| `ACME_DOMAINS`                  | unset        | Comma-separated DNS names, including the app URL's hostname                  |
+| `ACME_EMAIL`                    | unset        | ACME account contact email                                                   |
+| `ACME_CACHE_DIR`                | `/data/acme` | Persistent account and certificate cache                                     |
+| `ACME_PRODUCTION`               | `false`      | Use production instead of staging                                            |
+| `HTTP_REDIRECT_PORT`            | unset        | Separate HTTP listener issuing 308 redirects to the configured app origin    |
+| `EDGE_COMPRESSION`              | `true`       | Gzip and zstd for compressible responses of at least 1024 bytes              |
+| `EDGE_ACCESS_LOG`               | `true`       | JSON access events on stdout, after the response body drains                 |
+| `EDGE_HEADERS`                  | `true`       | Security headers, CSP fallback, and private no-store fallback                |
+| `EDGE_STATIC_DIR`               | unset        | Serve this public build directory, with `.br`, `.zst`, and `.gz` variants    |
+| `EDGE_TIMEOUT_SECONDS`          | `30`         | Response-header timeout; zero disables this host layer                       |
+| `EDGE_BODY_LIMIT_BYTES`         | `2097152`    | Request-body limit; zero disables this host layer, leaving API limits intact |
+| `EDGE_BENCH_LOG`                | unset        | Complete JSON benchmark log for the sampler                                  |
+
+Boolean switches accept `true` or `false`. `BETTER_AUTH_URL` must be an HTTP(S) origin,
+with no credentials, path, query, or fragment. TLS requires an HTTPS origin. Redirects
+use that origin rather than the request's Host header.
+
+Access logs contain the method, path, status, duration, and transferred body bytes.
+They omit query strings, cookies, authorization, and request bodies. General server
+and ACME events also go to stdout. `EDGE_BENCH_LOG` writes a separate buffered file;
+disable `EDGE_ACCESS_LOG` when only that file is needed. The benchmark file has no
+rotation and belongs only in the benchmark stack.
+
+Static files get the Caddy cache policy: one year and immutable under `/assets/`,
+one week under `/backgrounds/` and `/brand/`, and revalidation elsewhere. Unknown API
+paths stay on the API router even if the directory contains a matching file. Dotfiles
+and archive or backup probes are refused. Directory indexes are disabled. Mount only
+the public build output; the native API image does not include frontend assets.
+
+When a proxy supplies the client address, set `CLIENT_IP_HEADER` only on a listener
+whose network access is restricted to that trusted proxy. The native API reads that
+header as configured; the host does not authenticate arbitrary forwarded headers.
+The direct benchmark trusts its isolated generator network for simulated user IPs.
+
+For a local edge comparison, first run the normal benchmark once to create its Caddy
+certificate, then add `--direct` to `perf:stress --app=native --recording=<file>`.
+The direct run copies that certificate and sends k6 traffic straight to the host's TLS
+listener. Caddy remains as the sampler's access point but receives no app requests.
