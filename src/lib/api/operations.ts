@@ -14,14 +14,7 @@ import {
   SignInMethod,
   UpdateIssueLinksInput,
 } from '~/server/auth/auth.schemas'
-import {
-  CreateEntryInput,
-  DeleteEntryInput,
-  Entry,
-  GetFirstEntryStartInput,
-  ListEntriesInput,
-  UpdateEntryInput,
-} from '~/server/entries/entries.schemas'
+import { Entry } from '~/server/entries/entries.schemas'
 import {
   CreateProjectInput,
   ListedProject,
@@ -42,7 +35,7 @@ import {
   ReportExportInput,
   ReportInput,
 } from '~/server/reports/reports.schemas'
-import { type Operation, Timestamp } from '~/server/schemas'
+import type { Operation } from '~/server/schemas'
 import {
   CreateSettingsInput,
   Settings,
@@ -62,7 +55,6 @@ import {
 import { RunningTimer, StartTimerInput, StopTimerInput } from '~/server/timer/timer.schemas'
 
 const organizationPath = '/api/v1/organizations/:organizationId'
-const entriesPath = `${organizationPath}/entries`
 const reportPath = `${organizationPath}/report`
 const projectPath = `${organizationPath}/projects/:id`
 const projectTeamPath = `${organizationPath}/projects/:projectId/teams/:teamId`
@@ -155,41 +147,6 @@ export const operations = {
     scope: 'user',
     input: UpdateSettingsInput,
     output: Settings,
-  },
-  listEntries: {
-    method: 'GET',
-    path: entriesPath,
-    scope: 'organization',
-    input: ListEntriesInput,
-    output: v.array(Entry),
-  },
-  getFirstEntryStart: {
-    method: 'GET',
-    path: `${entriesPath}/first-start`,
-    scope: 'organization',
-    input: GetFirstEntryStartInput,
-    output: v.nullable(Timestamp),
-  },
-  createEntry: {
-    method: 'POST',
-    path: entriesPath,
-    scope: 'organization',
-    input: CreateEntryInput,
-    output: Entry,
-  },
-  updateEntry: {
-    method: 'PATCH',
-    path: `${entriesPath}/:id`,
-    scope: 'organization',
-    input: UpdateEntryInput,
-    output: Entry,
-  },
-  deleteEntry: {
-    method: 'DELETE',
-    path: `${entriesPath}/:id`,
-    scope: 'organization',
-    input: DeleteEntryInput,
-    output: v.object({ id: v.string() }),
   },
   listProjects: {
     method: 'GET',

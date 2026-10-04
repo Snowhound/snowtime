@@ -3,6 +3,13 @@
 // updates both before the server answers and rolls both back on error.
 import { type QueryKey, queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import { call } from '~/lib/api/client'
+import {
+  createEntry,
+  deleteEntry,
+  getFirstEntryStart,
+  listEntries,
+  updateEntry,
+} from '~/lib/api/entries'
 import type { Range } from '~/lib/calendar'
 import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
@@ -30,7 +37,7 @@ export function entriesQuery(organizationId: string, userId: string, range: Rang
   return queryOptions({
     queryKey: ['entries', organizationId, userId, range.from, range.to],
     queryFn: () =>
-      call('listEntries', {
+      listEntries({
         organizationId,
         from: new Date(range.from),
         to: new Date(range.to),
@@ -44,7 +51,7 @@ export function entriesQuery(organizationId: string, userId: string, range: Rang
 export function firstEntryQuery(organizationId: string, userId: string) {
   return queryOptions({
     queryKey: ['first-entry', organizationId, userId],
-    queryFn: () => call('getFirstEntryStart', { organizationId, userId }),
+    queryFn: () => getFirstEntryStart({ organizationId, userId }),
   })
 }
 
@@ -160,7 +167,7 @@ export function useStopTimer() {
 export function useUpdateEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: UpdateEntryInput) => call('updateEntry', { ...input, organizationId }),
+    mutationFn: (input: UpdateEntryInput) => updateEntry({ ...input, organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -202,7 +209,7 @@ export function useUpdateEntry({ organizationId }: Keys) {
 export function useDeleteEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: DeleteEntryInput) => call('deleteEntry', { ...input, organizationId }),
+    mutationFn: (input: DeleteEntryInput) => deleteEntry({ ...input, organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -220,7 +227,7 @@ export function useDeleteEntry({ organizationId }: Keys) {
 export function useCreateEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: CreateEntryInput) => call('createEntry', { ...input, organizationId }),
+    mutationFn: (input: CreateEntryInput) => createEntry({ ...input, organizationId }),
     ...optimistic(
       queryClient,
       [

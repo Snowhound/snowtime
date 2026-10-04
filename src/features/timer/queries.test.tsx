@@ -15,6 +15,7 @@ const fn = vi.hoisted(() => ({
   listEntries: vi.fn(),
 }))
 setTransport(mockTransport(fn))
+vi.mock('~/lib/api/entries', () => fn)
 
 const HOUR = 3_600_000
 const organizationId = newId()

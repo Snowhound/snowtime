@@ -11,7 +11,6 @@ import type { Transport } from '~/lib/api/client'
 import { type InputOf, type OperationName, operations } from '~/lib/api/operations'
 import { type Host, hostTransport, httpTransport } from '~/lib/api/transports'
 import { matchPath } from '~/lib/api/wire'
-import { AppError } from './errors'
 import { createSeededDatabase } from './testing'
 
 // Better Auth and the environment need the server's settings, which tests don't have; these
@@ -81,27 +80,6 @@ describe('a server render fills the cache as the browser does later', () => {
     expect(fetched).toStrictEqual(hydrated)
   })
 
-  test('a range of entries, a running one included', async () => {
-    const { hydrated, fetched } = await bothWays(U.member, 'listEntries', {
-      organizationId: O.northwind,
-      from: new Date('2026-09-01T00:00:00Z'),
-      to: new Date('2026-10-01T00:00:00Z'),
-      userId: U.member,
-    })
-    expect(fetched.length).toBeGreaterThan(0)
-    expect(fetched.some((e) => e.stoppedAt === null)).toBe(true)
-    expect(fetched).toStrictEqual(hydrated)
-  })
-
-  test('a date alone', async () => {
-    const { hydrated, fetched } = await bothWays(U.member, 'getFirstEntryStart', {
-      organizationId: O.northwind,
-      userId: U.member,
-    })
-    expect(fetched).toBeInstanceOf(Date)
-    expect(fetched).toStrictEqual(hydrated)
-  })
-
   test("a report's entries, one of two shapes, with their dates", async () => {
     const { hydrated, fetched } = await bothWays(U.admin, 'getReportEntries', {
       organizationId: O.northwind,
@@ -111,15 +89,5 @@ describe('a server render fills the cache as the browser does later', () => {
     expect(fetched).toStrictEqual(hydrated)
     if (fetched.view !== 'day') throw new Error('Not By day')
     expect(fetched.pieces[0].from).toBeInstanceOf(Date)
-  })
-
-  test('a refusal arrives as the same AppError both ways', async () => {
-    const host = hostFor(U.member)
-    const input = { organizationId: O.northwind, userId: U.owner }
-    for (const transport of [hostTransport(host), overHttp('getFirstEntryStart', host)]) {
-      const call = transport('getFirstEntryStart', input)
-      await expect(call).rejects.toBeInstanceOf(AppError)
-      await expect(call).rejects.toMatchObject({ code: 'FORBIDDEN', key: 'entries_forbidden' })
-    }
   })
 })

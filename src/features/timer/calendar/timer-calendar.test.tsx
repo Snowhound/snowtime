@@ -27,6 +27,7 @@ const fn = vi.hoisted(() => ({
   updateSettings: vi.fn(),
 }))
 setTransport(mockTransport(fn))
+vi.mock('~/lib/api/entries', () => fn)
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; class?: string; children: JSX.Element }) => (
     <a href={props.to} class={props.class}>

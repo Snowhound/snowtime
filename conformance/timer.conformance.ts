@@ -4,27 +4,32 @@
 // writes before it.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { v7 as uuidv7 } from 'uuid'
-import type { Transport } from '~/lib/api/client'
-import type { OperationName } from '~/lib/api/operations'
-import { httpTransport } from '~/lib/api/transports'
 import { COMPANY, SEED_NOW } from '../perf/lib/database'
-import { refused, send as sendTo, type ServerUnderTest, serverUnderTest } from './server'
+import {
+  type Caller,
+  type CallName,
+  caller,
+  refused,
+  send as sendTo,
+  type ServerUnderTest,
+  serverUnderTest,
+} from './server'
 
 const HOUR = 3_600_000
 
 let server: ServerUnderTest
 let headers: { admin: Record<string, string>; member: Record<string, string> }
 // The admin's calls, decoded as the client decodes them.
-let admin: Transport
+let admin: Caller
 
 beforeAll(async () => {
   server = await serverUnderTest()
   headers = { admin: await server.as('admin'), member: await server.as('member') }
-  admin = httpTransport(server.url, headers.admin)
+  admin = caller(server.url, headers.admin)
 }, 120_000)
 afterAll(() => server?.stop())
 
-function send(name: OperationName, input: unknown, as = headers.admin) {
+function send(name: CallName, input: unknown, as = headers.admin) {
   return sendTo(server.url, name, input, as)
 }
 

@@ -1,8 +1,6 @@
 // Each call of the contract run against its rule (task 084), with its input and result as
 // JSON. The JSON API runs these for a request (api.server.ts), and the native backend's
 // host runs its port of them for the render isolate.
-import { APIError } from 'better-auth/api'
-import * as v from 'valibot'
 import type { Database } from '~/db'
 import { SEED_PASSWORD, seedUsers } from '~/db/seed'
 import { companyUsers } from '~/db/seed-company'
@@ -20,8 +18,8 @@ import * as organizations from './auth/organization.server'
 import { appSession } from './auth/session.server'
 import { passwordEnabled, signInMethods } from './auth/sign-in.server'
 import { databaseAvailable } from './availability/availability.server'
-import * as entries from './entries/entries.server'
-import { AppError, type AppErrorCode } from './errors'
+import { AppError } from './errors'
+import { refusalOf } from './http.server'
 import { rateLimits } from './limits.server'
 import * as projects from './projects/projects.server'
 import * as reports from './reports/reports.server'
@@ -93,11 +91,6 @@ const handlers: {
   stopTimer: ({ db, userId }, input) => timer.stopTimer(db, userId, input),
   createSettings: ({ db, userId }, input) => settings.createSettings(db, userId, input),
   updateSettings: ({ db, userId }, input) => settings.updateSettings(db, userId, input),
-  listEntries: ({ db, scope }, input) => entries.listEntries(db, scope, input),
-  getFirstEntryStart: ({ db, scope }, input) => entries.getFirstEntryStart(db, scope, input),
-  createEntry: ({ db, scope }, input) => entries.createEntry(db, scope, input),
-  updateEntry: ({ db, scope }, input) => entries.updateEntry(db, scope, input),
-  deleteEntry: ({ db, scope }, input) => entries.deleteEntry(db, scope, input),
   listProjects: ({ db, scope }, input) => projects.listProjects(db, scope, input),
   createProject: ({ db, scope }, input) => projects.createProject(db, scope, input),
   updateProject: ({ db, scope }, input) => projects.updateProject(db, scope, input),
@@ -142,32 +135,15 @@ const handlers: {
   listMembers: ({ db, scope }) => teams.listMembers(db, scope),
 }
 
-const statusOf: Record<AppErrorCode, number> = {
-  UNAUTHENTICATED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  CONFLICT: 409,
-  INVALID: 422,
-  LIMIT_REACHED: 422,
-  RATE_LIMITED: 429,
-  UNAVAILABLE: 503,
-}
-
 export function failure(status: number, error: WireError): WireResponse {
   return { status, body: { error } }
 }
 
 // A refusal as the contract sends it. Anything else is unexpected and propagates.
-export function refusal(error: unknown): WireResponse {
-  if (error instanceof AppError) {
-    return failure(statusOf[error.code], { code: error.code, key: error.key })
-  }
-  if (error instanceof v.ValiError) return failure(400, { message: error.message })
-  // Better Auth's own refusal, as its HTTP API sends it.
-  if (error instanceof APIError) {
-    return failure(error.statusCode, { code: error.body?.code, message: error.message })
-  }
-  throw error
+function refusal(error: unknown): WireResponse {
+  const refused = refusalOf(error)
+  if (!refused) throw error
+  return failure(refused.status, refused.error)
 }
 
 // Runs one call, with its input as JSON, after the session check. It resolves the scope

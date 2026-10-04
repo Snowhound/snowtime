@@ -33,32 +33,6 @@ function answer(status: number, body: unknown) {
 }
 
 describe('the HTTP transport', () => {
-  test('a read sends its input as the query string and decodes dates', async () => {
-    const requests = answer(200, [entry])
-    const entries = await call('listEntries', {
-      organizationId,
-      from: new Date('2026-09-30T00:00:00Z'),
-      to: new Date('2026-10-01T00:00:00Z'),
-      userId,
-    })
-    expect(requests[0].url).toBe(
-      `https://snowtime.example/api/v1/organizations/${organizationId}/entries?from=2026-09-30T00%3A00%3A00.000Z&to=2026-10-01T00%3A00%3A00.000Z&userId=${userId}`,
-    )
-    expect(requests[0].init.method).toBe('GET')
-    expect(entries[0].startedAt).toEqual(new Date(entry.startedAt))
-    expect(entries[0].stoppedAt).toBeNull()
-  })
-
-  test('a write sends the rest of its input as JSON, its ids in the path', async () => {
-    const requests = answer(200, { ...entry, description: 'Renamed' })
-    await call('updateEntry', { organizationId, id: entry.id, description: 'Renamed' })
-    expect(requests[0].url).toBe(
-      `https://snowtime.example/api/v1/organizations/${organizationId}/entries/${entry.id}`,
-    )
-    expect(requests[0].init.method).toBe('PATCH')
-    expect(JSON.parse(requests[0].init.body as string)).toEqual({ description: 'Renamed' })
-  })
-
   test('a call without input sends nothing', async () => {
     const requests = answer(200, null)
     expect(await call('getRunningTimer')).toBeNull()

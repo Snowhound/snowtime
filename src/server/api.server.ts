@@ -1,18 +1,27 @@
-// The JSON API (task 084): the contract's calls over HTTP, and in process for Start's server
-// render, running the rules through operations.server.ts. The native backend serves the
-// same API, and the conformance tests (conformance/) check both.
+// The JSON API (task 084): each domain's routes behind the checks in http.server.ts, over
+// HTTP, and in process for Start's server render. The native backend serves the same API,
+// and the conformance tests (conformance/) check both.
 import { getRequest } from '@tanstack/solid-start/server'
+import { Hono } from 'hono'
 import { db } from '~/db'
 import { withActor } from '~/db/actor'
 import { appUrl, trustedOrigins } from '~/env'
 import { type OperationName, operations } from '~/lib/api/operations'
 import { hostTransport } from '~/lib/api/transports'
 import { matchPath, type WireResponse } from '~/lib/api/wire'
-import { AppError } from './errors'
-import { signedInUser, unavailableOr } from './guards.server'
-import { failure, refusal, runOperation } from './operations.server'
+import { signedInUser } from './auth/auth.server'
+import { entryRoutes } from './entries/entries.routes'
+import { known, organization, refused, refusalOf, signedIn, unavailableOr } from './http.server'
+import { failure, runOperation } from './operations.server'
 import type { Operation } from './schemas'
 import { serverTiming, withTiming } from './timing.server'
+
+export const api = new Hono()
+  .basePath('/api/v1')
+  .use(known, signedIn)
+  .use('/organizations/:organizationId/*', organization)
+  .route('/organizations/:organizationId', entryRoutes)
+  .onError(refused)
 
 function matchOperation(method: string, pathname: string) {
   for (const [name, operation] of Object.entries(operations)) {
@@ -41,9 +50,10 @@ function writes(name: OperationName) {
   return operation.method !== 'GET' && !operation.read
 }
 
-async function respond(request: Request): Promise<WireResponse> {
-  const match = matchOperation(request.method, new URL(request.url).pathname)
-  if (!match) return failure(404, { message: 'No such call.' })
+async function respond(
+  request: Request,
+  match: { name: OperationName; params: Record<string, string> },
+): Promise<WireResponse> {
   // Writes come only from the app's own pages: the public URL, not the request's own,
   // since a proxy in front may change the host.
   if (writes(match.name) && !appOrigins.has(request.headers.get('origin') ?? '')) {
@@ -67,9 +77,9 @@ async function answer(headers: Headers, name: OperationName, input: unknown) {
     const userId = await signedInUser(headers, writes(name))
     return await withActor(userId, () => runOperation(db, name, { userId, headers }, input))
   } catch (error) {
-    const mapped = await unavailableOr(error)
-    if (mapped instanceof AppError) return refusal(mapped)
-    throw mapped
+    const refusal = refusalOf(await unavailableOr(error))
+    if (!refusal) throw error
+    return failure(refusal.status, refusal.error)
   }
 }
 
@@ -81,11 +91,16 @@ export const renderTransport = hostTransport({
 
 export function handleApiRequest(request: Request): Promise<Response> {
   return withTiming(async () => {
-    const { status, body } = await respond(request)
-    const headers = {
-      'cache-control': 'no-store',
-      'server-timing': serverTiming(['session', 'db']),
+    const match = matchOperation(request.method, new URL(request.url).pathname)
+    let response: Response
+    if (match) {
+      const { status, body } = await respond(request, match)
+      response = Response.json(body, { status })
+    } else {
+      response = await api.fetch(request)
     }
-    return Response.json(body, { status, headers })
+    response.headers.set('cache-control', 'no-store')
+    response.headers.set('server-timing', serverTiming(['session', 'db']))
+    return response
   })
 }
