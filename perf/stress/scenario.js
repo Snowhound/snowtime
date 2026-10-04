@@ -48,9 +48,14 @@ const actionDuration = new Trend('bench_action_duration', true)
 
 // A request's kind: the action and what it asks for, as the result tables group them.
 function kindOf(action, request) {
-  if (request.path.startsWith('/_serverFn/')) return `${action} fn`
+  if (isCall(request)) return `${action} api`
   if (request.path.startsWith('/api/auth/')) return `${action} auth`
   return `${action} page`
+}
+
+// A call of the JSON API (task 084), or a server function in a recording from before it.
+function isCall(request) {
+  return request.path.startsWith('/api/v1/') || request.path.startsWith('/_serverFn/')
 }
 
 const KINDS = [
@@ -219,7 +224,7 @@ export function act() {
   const began = Date.now()
   for (let i = 0; i < requests.length;) {
     const request = requests[i]
-    if (request.method !== 'GET' || !request.path.startsWith('/_serverFn/')) {
+    if (request.method !== 'GET' || !isCall(request)) {
       const response = http.request(
         request.method,
         ORIGIN + request.path,
@@ -231,11 +236,7 @@ export function act() {
       continue
     }
     const batch = []
-    while (
-      i < requests.length &&
-      requests[i].method === 'GET' &&
-      requests[i].path.startsWith('/_serverFn/')
-    ) {
+    while (i < requests.length && requests[i].method === 'GET' && isCall(requests[i])) {
       batch.push(requests[i++])
     }
     const responses = http.batch(batch.map((r) => ['GET', ORIGIN + r.path, null, params(r)]))

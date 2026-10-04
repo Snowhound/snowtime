@@ -19,7 +19,8 @@ services:
       - ./bench/local-tls.caddy:/etc/caddy/bench/local-tls.caddy:ro
     ports: !override
       - '127.0.0.1:${BENCH_PORT:-8443}:443'
-    cpuset: '1'
+    # Another core, such as 0, leaves the app's core to the app (perf:stress --caddy-cpuset).
+    cpuset: '${BENCH_CADDY_CPUSET:-1}'
     # Writing the bench log fills its page cache, and an overload's thousands of
     # connections need more still (perf:stress --caddy-memory).
     mem_limit: ${BENCH_CADDY_MEMORY:-512m}

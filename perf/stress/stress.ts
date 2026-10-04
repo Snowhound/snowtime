@@ -7,6 +7,7 @@
 //   bun run perf:stress --dataset=M --run=kinds
 //   bun run perf:stress --dataset=M --run=overload --users=<knee>
 //   bun run perf:stress --remote --dataset=M --run=ramp
+//   bun run perf:stress --recording=<file> --dataset=M --run=kinds
 //
 // Locally it builds the images, loads the dataset into the bench volume, and starts the stack
 // (stack.ts). With --remote it sends load to a server that runs compose.bench.yml, which
@@ -45,7 +46,8 @@ const WINDOW_S = 30
 // The ramp's steps in active users; it stops at the first one that misses a target.
 const RAMP = [
   50, 100, 200, 300, 400, 500, 650, 800, 1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 6500, 8000,
-  10000, 12500, 15000, 20000,
+  10000, 12500, 15000, 20000, 25000, 30000, 40000, 50000, 65000, 80000, 100000, 125000, 150000,
+  200000,
 ]
 // On a server, the ramp ends when memory or disk passes these shares.
 const MAX_MEMORY_SHARE = 0.85
@@ -69,6 +71,8 @@ const { values } = parseArgs({
     'max-requests': { type: 'string' },
     'try-duration': { type: 'string' },
     label: { type: 'string' },
+    recording: { type: 'string' },
+    'caddy-cpuset': { type: 'string' },
   },
   allowNegative: true,
 })
@@ -482,11 +486,7 @@ async function samplesBetween(from: number, to: number): Promise<Sample[]> {
 }
 
 // Runs one plan and reports each of its steps.
-async function runPlan(
-  plan: Step[],
-  files: { recording: string; users: string; out: string },
-  live = false,
-) {
+async function runPlan(plan: Step[], files: { recording: string; users: string; out: string }) {
   await readLog()
   const began = Date.now() / 1000
   async function watch(): Promise<string | null> {
@@ -506,7 +506,9 @@ async function runPlan(
     }
     return null
   }
-  const { summary, aborted } = await runK6(plan, files, live || target.remote ? watch : undefined)
+  // The log is read as the run goes, so no read is larger than the sampler's memory: a
+  // fast step writes tens of MB of it a minute.
+  const { summary, aborted } = await runK6(plan, files, watch)
   // Caddy writes its log as requests end; the last ones may take a moment.
   await Bun.sleep(2000)
   await readLog()
@@ -532,6 +534,20 @@ async function runPlan(
   return { results, aborted }
 }
 
+// The app's memory before any load, from the sampler's last seconds of samples.
+async function idleMemory(): Promise<string> {
+  await Bun.sleep(10_000)
+  const now = Date.now() / 1000
+  const samples = await samplesBetween(now - 5, now)
+  const app = samples.at(-1)?.containers.app
+  if (!app) return 'Idle: no samples'
+  const text =
+    `Idle app: memory ${mb(app.memory)} MB (anon ${mb(app.anon)}, cache ` +
+    `${mb(app.file)}), RSS ${mb(app.rss)} MB`
+  console.log(`[stress] ${text}`)
+  return text
+}
+
 async function main() {
   const paths = await dataset(name)
   if (!target.remote) {
@@ -542,6 +558,7 @@ async function main() {
       ...(values.smol && { BENCH_BUN_OPTIONS: '--smol' }),
       ...(values['max-requests'] && { BENCH_MAX_REQUESTS: values['max-requests'] }),
       ...(values['try-duration'] && { BENCH_TRY_DURATION: values['try-duration'] }),
+      ...(values['caddy-cpuset'] && { BENCH_CADDY_CPUSET: values['caddy-cpuset'] }),
     }
     if (values.load) {
       compose(['up', '-d', '--no-start'], settings)
@@ -551,6 +568,7 @@ async function main() {
   }
   // The log keeps earlier runs' requests; this one reads only its own.
   logOffset = (await sampler<{ offset: number }>('/_bench/log?offset=end')).offset
+  const idle = await idleMemory()
   const users = JSON.parse(readFileSync(paths.users, 'utf8')) as BenchUser[]
   // A member of a mid-sized company records, so its pages are typical.
   const recorder =
@@ -564,14 +582,21 @@ async function main() {
     `${stamp}-${name}-${values.run}${values.label ? `-${values.label}` : ''}`,
   )
   mkdirSync(out, { recursive: true })
-  console.log(`[stress] Recording the actions as ${recorder.email} ...`)
-  const recording: Recording = await record({
-    origin: target.origin,
-    user: recorder,
-    secret: target.secret,
-    resolve: target.chromeAddress,
-    ignoreHTTPSErrors: target.insecure,
-  })
+  writeFileSync(join(out, 'idle.txt'), idle)
+  // A given recording replays as it is, such as one cut down to some of the calls.
+  let recording: Recording
+  if (values.recording) {
+    recording = JSON.parse(readFileSync(values.recording, 'utf8')) as Recording
+  } else {
+    console.log(`[stress] Recording the actions as ${recorder.email} ...`)
+    recording = await record({
+      origin: target.origin,
+      user: recorder,
+      secret: target.secret,
+      resolve: target.chromeAddress,
+      ignoreHTTPSErrors: target.insecure,
+    })
+  }
   const recordingFile = join(out, 'recording.json')
   writeFileSync(recordingFile, JSON.stringify(recording, null, 1))
   const files = { recording: recordingFile, users: paths.users, out }
@@ -642,7 +667,6 @@ async function main() {
         { name: 'recover', users: knee, seconds: 300 },
       ],
       files,
-      true,
     )
   } else if (values.run === 'kinds') {
     // Each action alone at a low rate, for the CPU and server time each costs.
@@ -657,7 +681,12 @@ async function main() {
       'reports-year',
       'export',
       'sign-in',
-    ]
+    ].filter((action) =>
+      // A cut-down recording may leave an action without requests.
+      (action === 'timer' ? ['start', 'stop'] : [action]).some(
+        (a) => (recording.actions[a as keyof Recording['actions']] ?? []).length > 0,
+      ),
+    )
     const { results } = await runPlan(
       actions.map((action) => ({
         name: action,
