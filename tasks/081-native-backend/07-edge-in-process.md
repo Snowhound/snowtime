@@ -216,8 +216,8 @@ holds more pending traffic, reproducing the memory pattern with the other backen
 The saved native heap profile attributes 30.7% of sampled live heap to HTTP/2 DATA
 frame buffers and 19.2% to HPACK header-table entries. This snapshot is after the
 absolute peak, so those percentages describe the sampled live heap, not peak RSS.
-They support the connection-state diagnosis. Profiles and counter snapshots are kept
-in this worktree's `perf/.cache/stress/edge/` alongside the variant JSON.
+They support the connection-state diagnosis. Profiles and counter snapshots are kept alongside the variant JSON in the measurement
+worktree at `/private/tmp/snowtime-081-edge/perf/.cache/stress/edge/`.
 
 ### Applied changes and checks
 
@@ -357,11 +357,12 @@ peaks at 233 MB RSS and 472 MB cgroup memory, including the database and log cac
 This comparison includes the configured memory limits and logging implementations;
 the capacity gain is not an isolated TLS-library result.
 
-Run artifacts are in this worktree's `perf/.cache/stress/runs/`, under the labels
+Run artifacts are retained in the measurement worktree at
+`/private/tmp/snowtime-081-edge/perf/.cache/stress/runs/`, under the labels
 `081-host-{proxy,direct}-{fixed,kinds,ramp}`, `081-host-{proxy,direct}-gzip-fixed`,
 `081-host-proxy-fixed-v2`, and `081-host-proxy-confirm-{100k,125k}`. The image identities,
 fixed-load aggregates, hold aggregates, and competing-process monitor are in
-`perf/.cache/stress/edge/`. The monitor records no competing builds or tests during
+that worktree's `perf/.cache/stress/edge/`. The monitor records no competing builds or tests during
 the main measurement sequence; each run checks for another load test and reserves
 the shared stack before touching it.
 
