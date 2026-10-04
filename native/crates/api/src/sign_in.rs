@@ -31,6 +31,7 @@ fn refusal(status: u16, code: &str, message: &str) -> Response {
         status,
         body,
         set_cookie: None,
+        server_timing: None,
     }
 }
 
@@ -110,6 +111,7 @@ impl<R: Rules> Api<R> {
             })
             .expect("the answer serializes"),
             set_cookie: Some(self.session.session_cookie(&token)),
+            server_timing: None,
         }
     }
 }

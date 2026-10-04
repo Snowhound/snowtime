@@ -16,8 +16,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 10001 --create-home snowtime \
     && mkdir /data && chown snowtime:snowtime /data
-COPY --from=build /server /app/server
+# Named snowtime, as the release image names it, so the bench sampler finds the process.
+COPY --from=build /server /app/snowtime
 ENV HOST=0.0.0.0 PORT=3000
 USER snowtime
 EXPOSE 3000
-CMD ["/app/server"]
+CMD ["/app/snowtime"]

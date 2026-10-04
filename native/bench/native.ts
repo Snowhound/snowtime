@@ -1,0 +1,47 @@
+// A native server on a copy of the benchmark database, with its clock at SEED_NOW and
+// password sign-in on, as conformance/server.ts expects a server under test to run.
+import { spawn } from 'node:child_process'
+import { cpSync, rmSync } from 'node:fs'
+import { join } from 'node:path'
+import { CACHE, SEED_NOW } from '../../perf/lib/database'
+
+export async function startNative(binary: string, database: string) {
+  const port = 3390 + Math.floor(Math.random() * 100)
+  const url = `http://127.0.0.1:${port}`
+  const copy = join(CACHE, `native-${port}.db`)
+  cpSync(database, copy)
+  const server = spawn(binary, [], {
+    stdio: ['ignore', 'inherit', 'inherit'],
+    env: {
+      PATH: process.env.PATH,
+      NODE_ENV: 'development',
+      HOST: '127.0.0.1',
+      PORT: String(port),
+      PERF_NOW: String(SEED_NOW.getTime()),
+      TURSO_DATABASE_URL: `file:${copy}`,
+      BETTER_AUTH_SECRET: 'perf-harness-secret-perf-harness-secret',
+      BETTER_AUTH_URL: url,
+    },
+  })
+  for (let waited = 0; ; waited += 100) {
+    if (server.exitCode !== null) throw new Error(`[native] ${binary} exited ${server.exitCode}`)
+    if (
+      await fetch(`${url}/api/v1/availability`).then(
+        (r) => r.ok,
+        () => false,
+      )
+    )
+      break
+    if (waited > 10_000) throw new Error(`[native] ${binary} didn't answer in 10 s`)
+    await Bun.sleep(100)
+  }
+  return {
+    url,
+    pid: server.pid!,
+    stop: async () => {
+      server.kill()
+      rmSync(copy, { force: true })
+      rmSync(`${copy}-journal`, { force: true })
+    },
+  }
+}

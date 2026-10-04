@@ -140,9 +140,14 @@ impl ToSql for Timestamp {
     }
 }
 
+// The app writes integers, but a REAL in the column reads as Drizzle reads it: `new Date`
+// truncates it toward zero. perf/stress/dataset.ts writes some.
 impl FromSql for Timestamp {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        i64::column_result(value).map(Timestamp)
+        match value {
+            ValueRef::Real(ms) => Ok(Timestamp(ms.trunc() as i64)),
+            _ => i64::column_result(value).map(Timestamp),
+        }
     }
 }
 

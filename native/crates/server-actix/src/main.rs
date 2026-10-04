@@ -39,6 +39,9 @@ async fn call(api: web::Data<AppState>, request: HttpRequest, body: web::Bytes) 
     if let Some(cookie) = answer.set_cookie {
         response.insert_header((SET_COOKIE, cookie));
     }
+    if let Some(timing) = answer.server_timing {
+        response.insert_header(("server-timing", timing));
+    }
     response.body(answer.body)
 }
 

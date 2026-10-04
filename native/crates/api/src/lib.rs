@@ -4,6 +4,7 @@
 //! while it runs, as the TypeScript server's oneAtATime does (src/db/connection.ts).
 mod config;
 mod sign_in;
+mod timing;
 
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -18,6 +19,7 @@ use snowtime_core::{
 };
 
 pub use config::Config;
+use timing::Timer;
 
 pub struct Request {
     pub method: String,
@@ -35,6 +37,7 @@ pub struct Response {
     pub status: u16,
     pub body: Vec<u8>,
     pub set_cookie: Option<String>,
+    pub server_timing: Option<String>,
 }
 
 impl From<WireResponse> for Response {
@@ -43,6 +46,7 @@ impl From<WireResponse> for Response {
             status: response.status,
             body: response.body,
             set_cookie: None,
+            server_timing: None,
         }
     }
 }
@@ -61,6 +65,7 @@ impl<R: Rules> Api<R> {
         // libSQL's defaults, which the TypeScript server runs with.
         db.pragma_update(None, "foreign_keys", "ON")?;
         db.busy_timeout(std::time::Duration::from_secs(5))?;
+        timing::install(&db);
         let session = SessionConfig {
             secret: config.secret.clone(),
             secure: config.secure(),
@@ -94,6 +99,13 @@ impl<R: Rules> Api<R> {
         if request.method == "POST" && request.path == "/api/auth/sign-in/email" {
             return self.sign_in(request);
         }
+        let mut timer = Timer::start();
+        let mut response = self.call(request, &mut timer);
+        response.server_timing = Some(timer.header());
+        response
+    }
+
+    fn call(&self, request: &Request, timer: &mut Timer) -> Response {
         let matched =
             Method::parse(&request.method).and_then(|m| match_operation(m, &request.path));
         let Some((operation, params)) = matched else {
@@ -107,18 +119,24 @@ impl<R: Rules> Api<R> {
         let Some(input) = input_of(request, params) else {
             return failure(400, "The body is not JSON.").into();
         };
-        self.answer(request.cookie.as_deref(), operation, input)
+        self.answer(request.cookie.as_deref(), operation, input, timer)
             .into()
     }
 
     // Runs one call for the session in the cookie, under the checks every call passes.
-    fn answer(&self, cookie: Option<&str>, operation: &Operation, input: Value) -> WireResponse {
+    fn answer(
+        &self,
+        cookie: Option<&str>,
+        operation: &Operation,
+        input: Value,
+        timer: &mut Timer,
+    ) -> WireResponse {
         let db = self.db();
         let result = (|| {
             if operation.scope == Access::Public {
                 return Ok(public_call(&db, operation.name));
             }
-            let user_id = self.signed_in_user(&db, cookie, operation.writes())?;
+            let user_id = timer.session(|| self.signed_in_user(&db, cookie, operation.writes()))?;
             self.rules
                 .run_operation(&db, operation.name, &user_id, input)
         })();

@@ -53,6 +53,12 @@ async fn call<R: Rules>(
     {
         headers.insert(header::SET_COOKIE, cookie);
     }
+    if let Some(timing) = answer
+        .server_timing
+        .and_then(|t| HeaderValue::from_str(&t).ok())
+    {
+        headers.insert("server-timing", timing);
+    }
     response
 }
 
