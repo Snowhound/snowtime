@@ -200,7 +200,8 @@ SeaQuery candidates spend the same within noise at this rate: 2.4–2.8 ms on a 
 Sign-in is slower natively. In Docker on Linux, the `scrypt` crate takes 113 ms a hash
 against 52 ms for Bun's `node:crypto`; on macOS the two take 59 and 53 ms. Neither target
 CPU flags nor keeping glibc from returning scrypt's 32 MB buffer changed it; the cause
-isn't found.
+isn't found. [Subtask 08](08-fast-scrypt.md) replaces RustCrypto with AWS-LC and records
+the new hash timings, profile, and build costs.
 
 The ramp, one minute a step, until a 30-second window's p95 passes a target. Requests a
 second are those offered; CPU is a share of the one core; RSS is the step's peak and
@@ -260,6 +261,13 @@ Every server spent 0.26–0.31 ms of Caddy's CPU a request. The native p50 is 1 
 p95 is 84–126 ms at 80,000 users, against TypeScript's 39 ms at half that load. Sign-in's
 113 ms of scrypt on the one core, at 2.2 sign-ins a second, is the likely cause; that
 isn't confirmed.
+
+Subtask 08 repeats this fixed load with AWS-LC scrypt: app CPU is 35.2% and 35.9%,
+against a new RustCrypto control's 45.3%. Median sign-in time halves (93–97 ms against
+195 ms). Return p95 does not improve in these runs: 491 and 821 ms, with the control at
+525 ms. All current runs have worse tails than the table above. See
+[the run conditions and results](08-fast-scrypt.md#fixed-load); the cause was not
+isolated, so the faster hash does not establish a latency or capacity improvement.
 
 ### Server-Timing
 
@@ -353,8 +361,8 @@ deployment.
 - Server rendering in the Axum server (subtask 01) and RSS with the isolate: not started.
 - The rest of the hot path: `getAppSession`, which every action calls, and the week
   report.
-- Scrypt on Linux takes twice Bun's time (subtask 08). Each sign-in also holds a 32 MB
-  buffer, so sign-ins running at once raise RSS by that much each.
+- Each running sign-in holds a 32 MiB scrypt buffer. AWS-LC frees it per hash; concurrent
+  sign-ins still raise RSS by that much each ([subtask 08](08-fast-scrypt.md)).
 - RSS grows with Tokio's blocking threads under overload. A fixed number of database
   workers, or one thread that owns the connection, would cap it.
 - The one connection serializes every call, as the TypeScript server does. A pool on WAL

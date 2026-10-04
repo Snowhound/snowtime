@@ -8,7 +8,19 @@ COPY . .
 ARG BIN=snowtime-axum
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
-    cargo build --release --locked --all-features --bin ${BIN} && cp target/release/${BIN} /server
+    cargo build --release --locked --features snowtime-axum/seaquery --bin ${BIN} \
+    && cp target/release/${BIN} /server && strip /server
+
+# Optional measurement image: OpenSSL is vendored, so its build also needs Perl and make.
+FROM build AS scrypt-bench
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends perl make linux-perf \
+    && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/src/target \
+    cargo build --release --locked -p snowtime-auth --example scrypt-bench --features scrypt-bench \
+    && cp target/release/examples/scrypt-bench /scrypt-bench
+ENTRYPOINT ["/scrypt-bench"]
 
 FROM debian:trixie-slim AS app
 RUN apt-get update \

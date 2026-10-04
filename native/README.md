@@ -20,6 +20,36 @@ Each rules crate mirrors one file of `src/server/` per module, and each function
 `(db, scope, input)` as its TypeScript counterpart does. An HTTP crate only turns its
 library's request into an `api::Request` and back.
 
+## Password hashing
+
+Sign-in uses AWS-LC's `EVP_PBE_scrypt` through `aws-lc-sys`, with Better Auth's
+parameters and stored hash format unchanged. Subtask 08 records the hash timings, build
+costs, memory lifetime, and fixed-load run. AWS-LC builds from bundled C sources with the
+C compiler already needed by SQLite. Cross-compiling also needs that target's C compiler
+and linker. The tested macOS ARM64 and Linux ARM64 targets use pregenerated bindings and
+the `cc` builder, without CMake, Go, or bindgen.
+
+The optional `scrypt-bench` feature adds RustCrypto and vendored OpenSSL for measurement.
+It is excluded from the release Docker image. Run each candidate sequentially:
+
+```sh
+cargo build --release --manifest-path native/Cargo.toml -p snowtime-auth --example scrypt-bench --features scrypt-bench
+native/target/release/examples/scrypt-bench aws-lc 30
+native/target/release/examples/scrypt-bench openssl 30
+native/target/release/examples/scrypt-bench rust 30
+bun native/bench/scrypt.ts 30
+
+docker build --target scrypt-bench -f native/Dockerfile -t snowtime-scrypt:bench native
+docker run --rm --cpuset-cpus=1 snowtime-scrypt:bench aws-lc 30
+docker run --rm --cpuset-cpus=1 snowtime-scrypt:bench openssl 30
+docker run --rm --cpuset-cpus=1 snowtime-scrypt:bench rust 30
+docker run --rm --cpuset-cpus=1 -v "$PWD/native/bench:/bench:ro" oven/bun:1.4.2 bun /bench/scrypt.ts 30
+```
+
+Each command checks every hash against the Better Auth fixture, discards three warmups,
+and reports the median of at least 20 measured hashes. On macOS, vendored OpenSSL needs
+Perl and make. The optional Docker stage installs those and `linux-perf` for profiling.
+
 ## Run it
 
 The server reads the TypeScript server's environment variables: `TURSO_DATABASE_URL` (a
