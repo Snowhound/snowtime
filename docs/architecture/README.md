@@ -3,6 +3,7 @@
 The decisions the code follows, and why. This file holds the stack and the rules every part
 of the code keeps; the rest is by area:
 
+- [native-rendering.md](native-rendering.md): planned rendering in the native backend
 - [data.md](data.md): data conventions, tenancy, schema and migrations, time zones, and
   working days
 - [auth.md](auth.md): sign-in methods, cookies and consent, abuse limits, and the content

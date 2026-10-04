@@ -20,6 +20,13 @@ Each rules crate mirrors one file of `src/server/` per module, and each function
 `(db, scope, input)` as its TypeScript counterpart does. An HTTP crate only turns its
 library's request into an `api::Request` and back.
 
+## Server rendering
+
+The independent [render crate](crates/render/README.md) embeds V8 and keeps the rerunnable
+server-rendering harness. Build its JavaScript bundle before building every workspace
+crate. Its HTTP examples demonstrate Axum and Actix; the existing native hosts are wired
+after subtask 06 merges.
+
 ## Password hashing
 
 Sign-in uses AWS-LC's `EVP_PBE_scrypt` through `aws-lc-sys`, with Better Auth's

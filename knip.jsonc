@@ -15,6 +15,7 @@
     "perf/weather/vite.config.ts",
     "perf/stress/scenario.js",
     "native/bench/*.ts",
+    "native/crates/render/bundle/*.{ts,tsx,js}",
   ],
   "drizzle": false,
   // Static prototypes and design files load their scripts from HTML.

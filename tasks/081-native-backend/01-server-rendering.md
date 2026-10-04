@@ -1,6 +1,7 @@
 # 081.01: Server rendering in the native backend
 
-Status: in-progress (spike measured 2026-10-02; Linux numbers and the render API open)
+Status: in-progress (render crate and Linux measurements verified 2026-10-04; host wiring
+and the whole-server memory target open)
 
 The native backend renders pages and the browser hydrates them, as it does with today's
 Start server. Rust embeds a V8 isolate that runs the app's Solid server render. Kait chose
@@ -9,6 +10,82 @@ later than a server-rendered page (task 079, "Measured"), and the spike below fo
 rendering cheap and hydration compatible. Task 079 is cancelled.
 
 ## Findings
+
+### Render crate and Linux measurements, 2026-10-04
+
+The rerunnable harness is now in
+[`native/crates/render`](../../native/crates/render/README.md). The crate loads the app's
+2.38 MB server bundle from a V8 snapshot (`deno_core` 0.405.0, V8 14.9.207.2-rusty).
+It returns status, headers, and HTML chunks through bounded channels. The native HTTP
+crates are unchanged; their integration follows subtask 06.
+
+- **Timer and week report render and hydrate.** V8 emits 256,567 and 141,458 bytes on the
+  Lumen Works seed, at `SEED_NOW`. All hydration keys match Start's build. The timer's
+  body markup matches; the week differs in the already-recorded ICU text, `28 Mon`
+  against macOS Bun's `Mon 28`. Chrome hydrates with no errors, keeps the original
+  tracked nodes, and navigates between the pages without a reload. After hydration there
+  are 610 and 434 keyed elements, matching Start's reference
+  ([browser results](server-rendering/render-isolate-hydration.json)).
+- **API reads go through the host.** The bundle installs `setSend(path, init)` as a host
+  op carrying method, path, headers, and body. Rust response bytes become a V8
+  `Uint8Array`; the app's usual decoder fills a new query cache per page. The live harness
+  made 255 calls to a running native server's timer, entries, first-start, and project
+  rules, and 255 to recorded responses for the unported session, team, member, and report
+  reads. Neither harness pre-seeds the query cache. The standalone Axum example also
+  verifies the same callback with `Router::oneshot`.
+- **Deno supplies the web APIs.** `deno_web`, `deno_webidl`, `deno_fetch`, and `deno_net`
+  supply URL parsing, encoding, streams, structured cloning, Request, and Response.
+  Deno's streams use JavaScript backed by native ops; this is not an all-native stream
+  implementation. The isolate's `fetch` throws so app reads must use the host callback.
+- **Collection follows idle time and used heap.** Defaults: collect after one second
+  idle or after a completed render with more than 48 MiB used heap; replace if collection
+  leaves more than 80 MiB live. At the 128 MiB heap limit, terminate work and grant 16 MiB
+  to unwind. A five-second watchdog stops synchronous JavaScript; an async deadline also
+  covers API futures and body backpressure. Thrown, timed-out, and cancelled renders
+  replace the isolate. Tests verify host fields, Unicode encoding, streamed chunks,
+  synchronous interruption, and rendering again after failure.
+
+Linux ARM64 in Docker on this Mac, `debian:trixie-slim`, `--cpus=1 --memory=2g`, wrapped
+in `caffeinate -i`. Each row is the median of three runs of 500 renders after 50 warmups.
+RSS uses MiB throughout this section. These runs include rendering, decoding recorded
+Rust API answers, and streaming; they exclude SQLite and the API server's CPU. The
+process also holds those fixture answers. Idle RSS is after 1.5 seconds and collection.
+Sample ranges span all three runs; peaks are medians of process high-water marks.
+[Raw renderer runs](server-rendering/render-isolate-linux.jsonl):
+
+| Ownership      | Page  | p50 / p95 ms | CPU ms/render | Loaded / idle MiB | Loop samples MiB | Peak MiB |
+| -------------- | ----- | -----------: | ------------: | ----------------: | ---------------: | -------: |
+| Local isolate  | Timer |  16.3 / 38.8 |          20.0 |      36.8 / 127.6 |      102.8–168.5 |    169.5 |
+| Channel thread | Timer |  17.0 / 37.8 |          20.6 |      37.2 / 124.5 |      103.2–169.0 |    168.6 |
+| Local isolate  | Week  |  12.4 / 25.9 |          14.0 |      36.8 / 123.8 |       92.6–155.3 |    156.1 |
+| Channel thread | Week  |  12.4 / 27.3 |          14.2 |      37.2 / 124.1 |       94.1–162.1 |    161.9 |
+
+The channel adds 0.59 ms CPU per timer render (3.0%) and 0.20 ms per week render (1.4%).
+Its loaded RSS adds 0.38 MiB. Warm RSS differs in both directions. Startup includes V8
+platform initialization in each fresh process: the channel-thread median is 11.9 ms for
+both pages.
+
+The standalone HTTP hosts repeat the same workload and callback: Axum's handler awaits
+one process-wide render thread; Actix's one worker owns its isolate. Both collect on idle
+and memory. Both API callbacks call the fixture router with `oneshot`. Three runs per
+row, alternating host order; 500 measured requests after 50 warmups. The HTTP client runs
+in the same one-CPU container; its CPU is excluded using the server's `/proc` counters.
+[Raw HTTP runs](server-rendering/render-isolate-frameworks.jsonl):
+
+| Host                 | Page  | p50 / p95 ms | CPU ms/render | Idle / loop-end MiB | Peak MiB |
+| -------------------- | ----- | -----------: | ------------: | ------------------: | -------: |
+| Axum, channel thread | Timer |  17.8 / 40.8 |         21.34 |       131.0 / 162.7 |    170.2 |
+| Actix, local worker  | Timer |  17.4 / 39.8 |         20.42 |       128.7 / 163.8 |    170.3 |
+| Axum, channel thread | Week  |  12.8 / 29.7 |         14.30 |       126.5 / 159.6 |    159.9 |
+| Actix, local worker  | Week  |  12.6 / 29.1 |         14.12 |       127.9 / 158.1 |    158.5 |
+
+**Keep Axum.** It takes 0.92 ms more CPU on the timer (4.5%) and 0.18 ms on the week
+(1.3%); memory is comparable. This penalty does not outweigh the chosen router's fit
+with the API and better-auth-rs. A shared render thread also keeps isolate count separate
+from HTTP worker count. This closes the threading question in
+[081.03's decision](03-port-libraries.md#decision); mixed API/render load is still open.
+
+### Earlier engine spike
 
 All numbers are from one Apple M-series Mac, on the Lumen Works seed, on three pages: the
 timer, the week report, and the year report (384 KB of HTML). Render times are medians of
@@ -187,43 +264,47 @@ means creating a new isolate.
 
 ## Planned
 
-Kait agreed to both on 2026-10-03:
+Kait agreed to both on 2026-10-03. The render crate implements them on 2026-10-04
+with Deno extensions and the policy measured above:
 
-- **Native web APIs in the host.** Bun renders faster than the embedded engines because
-  its `URL`, `TextEncoder`/`TextDecoder`, and streams are native. With the same JS
-  polyfills, Bun, Bun's JavaScriptCore, and V8 render at the same speed (see
-  [Bun's WebKit](#buns-webkit)), and the polyfills cost 30–45% of render time. The host
-  implements those APIs natively, or the render bundle stops needing them. Candidates
-  to start from: Deno's extension crates for V8 (`deno_url`, `deno_web`, `deno_webidl`,
-  MIT), the `ada-url` crate (the URL parser Node and Bun use), and Bun's implementations,
-  which are tied to JavaScriptCore but show what the bundle needs.
-- **A GC policy driven by idle time and memory, not a fixed count.** A full GC every 10
-  renders adds 50% CPU on V8 on Linux (20% on macOS, 8% on JavaScriptCore). The host
-  collects when the isolate is idle, or when its memory crosses a threshold, and
-  replaces the isolate from the snapshot if memory still grows.
+- [x] **Native web APIs in the host.** Bun renders faster than the embedded engines because
+      its `URL`, `TextEncoder`/`TextDecoder`, and streams are native. With the same JS
+      polyfills, Bun, Bun's JavaScriptCore, and V8 render at the same speed (see
+      [Bun's WebKit](#buns-webkit)), and the polyfills cost 30–45% of render time. The host
+      implements those APIs natively, or the render bundle stops needing them. Candidates
+      to start from: Deno's extension crates for V8 (`deno_url`, `deno_web`, `deno_webidl`,
+      MIT), the `ada-url` crate (the URL parser Node and Bun use), and Bun's implementations,
+      which are tied to JavaScriptCore but show what the bundle needs.
+- [x] **A GC policy driven by idle time and memory, not a fixed count.** A full GC every 10
+      renders adds 50% CPU on V8 on Linux (20% on macOS, 8% on JavaScriptCore). The host
+      collects when the isolate is idle, or when its memory crosses a threshold, and
+      replaces the isolate from the snapshot if memory still grows.
 
 ## Open
 
-- Most numbers are from macOS. Linux, on one core, in task 078's Docker limits, is what
-  counts, and its allocator returns memory differently. The render loop has been run in
-  Docker on the Mac ([Bun's WebKit](#buns-webkit)), not on a Linux host or under load.
-- The render API: one isolate per worker thread or one for the process, GC after idle
-  time or every N renders, and what the server does when a render throws or exceeds a
-  time limit.
-- The memory target. 081's 64 MB was set for an API-only server. V8 from a snapshot adds
-  28.5 MB before the first render and runs at 66–118 MB with frequent GC on macOS, with
-  an unexplained 219 MB peak.
-- The peak. V8 peaked at 237 MB on Linux and 219 MB on macOS in runs whose samples stayed
-  at 103–126 MB and 66–118 MB. Its cause is unknown.
+- Wire the render crate into the native HTTP host after subtask 06. The standalone Rust
+  hosts serve both pages, and their HTML hydrates, but the native API still lacks the
+  session, team, member, and report reads. Static asset serving, response-abort handling,
+  and queue-wait/overload policy belong in that integration.
+- Agree the whole-server memory target with Kait. One renderer uses about 124 MiB after
+  idle collection and peaks near 169 MiB on the timer before SQLite, native API state,
+  and concurrent sign-in buffers are added. The API-only 64 MB target cannot carry over.
+- Run mixed API/render load and longer loops, then confirm on the Linux deployment host.
+  These measurements are Docker on this Mac, on the small Lumen Works seed, with recorded
+  Rust API answers; they do not establish whole-server capacity or a multi-isolate pool's
+  cost.
+- Explain the peak and late-loop growth. RSS rises near the end of 500 renders even with
+  used-heap collection and drops by roughly 30–40 MiB on idle. The policy bounds the heap,
+  not RSS. The earlier 219 MB macOS and 237 MB Linux spike peaks remain unexplained.
 
 ## Acceptance criteria
 
-- [ ] V8 measured on Linux in task 078's container limits: RSS at idle and under load,
+- [x] V8 measured on Linux in task 078's container limits: RSS at idle and under load,
       CPU per render, with the GC policy chosen
-- [ ] A render API in the proof of concept: Rust serves the timer and week report
+- [x] A render API in the proof of concept: Rust serves the timer and week report
       server-rendered, and Start's client hydrates them
 - [ ] A memory target for the native backend with a renderer, agreed with Kait
-- [ ] The decision recorded in `docs/architecture/` with what was rejected: shells
+- [x] The decision recorded in `docs/architecture/` with what was rejected: shells
       (task 079), a separate Bun render process, and the other engines
-- [ ] The spike's harness kept where it can be re-run (it's in the gitignored
-      `temp/ssr-spike/` of the `snowtime-ssr-spike` worktree)
+- [x] The renderer's harness kept where it can be re-run: `native/crates/render/`,
+      rebuilt from the recorded spike because its gitignored harness was deleted

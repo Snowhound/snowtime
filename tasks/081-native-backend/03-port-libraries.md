@@ -310,9 +310,15 @@ Kait, 2026-10-04:
 - **Axum with `rusqlite` and SQL strings.** Axum and Actix cost the same CPU and memory
   within the noise of these runs. Axum is what better-auth-rs runs on (question 5). Its
   router can be called in process (`oneshot`), which server rendering needs (subtask 06).
-  **Actix Web stays an option** until subtask 01's render isolate runs in the host: Actix
-  runs handlers on single-threaded workers, so each worker could keep its own isolate.
-  deno_core's `JsRuntime` can't be sent between threads, and Axum handlers must be `Send`.
+  Subtask 01's standalone hosts confirm this choice on 2026-10-04. Axum handlers use
+  a bounded channel to a dedicated isolate thread; Actix's one worker keeps an isolate
+  locally. In one-CPU Linux Docker runs, Axum costs 21.34 / 14.30 ms CPU per timer / week
+  render, against Actix's 20.42 / 14.12 ms: 4.5% / 1.3% more. Idle RSS is 131 / 126 MiB
+  against 129 / 128 MiB. The bare channel adds 0.59 / 0.20 ms CPU and 0.38 MiB loaded
+  RSS. This cost does not justify switching to Actix, and the dedicated thread keeps
+  isolate count separate from HTTP worker count. See
+  [081.01's measurements](01-server-rendering.md#render-crate-and-linux-measurements-2026-10-04).
+  Native host wiring follows subtask 06; mixed API/render load remains unmeasured.
 - **SQL strings** took 12% fewer lines than SeaQuery and about 10% less CPU. They need no
   binder and no wait for SeaQuery to catch up with `rusqlite`. A reader can compare the
   statement text with Drizzle's and with `EXPLAIN QUERY PLAN`. In complex queries,
@@ -358,7 +364,9 @@ deployment.
 
 ### Open
 
-- Server rendering in the Axum server (subtask 01) and RSS with the isolate: not started.
+- Wire the tested render crate into the native Axum host after subtask 06, then measure
+  combined API/render load. Subtask 01's standalone hosts settle isolate threading and
+  record renderer RSS; they use fixture answers for the unported reads.
 - The rest of the hot path: `getAppSession`, which every action calls, and the week
   report.
 - Each running sign-in holds a 32 MiB scrypt buffer. AWS-LC frees it per hash; concurrent
