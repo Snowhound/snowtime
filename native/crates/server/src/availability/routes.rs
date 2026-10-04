@@ -1,4 +1,5 @@
-use crate::http::{App, Empty, Public, Response};
+use crate::http::{App, Public, Response};
+use crate::schemas::Empty;
 use axum::{Router, routing::get};
 use std::sync::Arc;
 pub fn routes() -> Router<Arc<App>> {

@@ -53,7 +53,7 @@ async fn headers_preserve_the_renderers_nonce_and_redirects_ignore_host() {
             )
         }),
     );
-    let answer = router(api, &config(&[]), "https://snowtime.test")
+    let answer = router(api.clone(), api, &config(&[]), "https://snowtime.test")
         .oneshot(HttpRequest::builder().uri("/").body(Body::empty()).unwrap())
         .await
         .unwrap();
@@ -82,6 +82,7 @@ async fn headers_preserve_the_renderers_nonce_and_redirects_ignore_host() {
 async fn body_limit_rejects_oversized_requests() {
     let api = Router::new().route("/", axum::routing::post(|| async { "ok" }));
     let answer = router(
+        api.clone(),
         api,
         &config(&[("EDGE_BODY_LIMIT_BYTES", "4")]),
         "http://snowtime.test",
@@ -109,6 +110,7 @@ async fn timeout_covers_the_handler_and_errors_keep_security_headers() {
         }),
     );
     let answer = router(
+        api.clone(),
         api,
         &config(&[("EDGE_TIMEOUT_SECONDS", "1")]),
         "https://snowtime.test",
@@ -121,7 +123,7 @@ async fn timeout_covers_the_handler_and_errors_keep_security_headers() {
 }
 
 #[tokio::test]
-async fn static_files_keep_cache_and_precompression_without_exposing_api_or_dotfiles() {
+async fn static_files_keep_cache_and_precompression_and_pages_without_exposing_api_or_dotfiles() {
     let directory = tempfile::tempdir().unwrap();
     std::fs::create_dir(directory.path().join("assets")).unwrap();
     std::fs::create_dir_all(directory.path().join("api/v1")).unwrap();
@@ -134,8 +136,25 @@ async fn static_files_keep_cache_and_precompression_without_exposing_api_or_dotf
     std::fs::write(directory.path().join(".env"), "secret").unwrap();
     std::fs::write(directory.path().join("api/v1/hidden"), "secret").unwrap();
     let api = Router::new().fallback(|| async { (StatusCode::NOT_FOUND, "API refusal") });
+    let pages =
+        Router::new().fallback(|| async { ([(header::CACHE_CONTROL, "no-store")], "page") });
     let config = config(&[("EDGE_STATIC_DIR", directory.path().to_str().unwrap())]);
-    let app = router(api, &config, "https://snowtime.test");
+    let app = router(api, pages, &config, "https://snowtime.test");
+    let page = app
+        .clone()
+        .oneshot(
+            HttpRequest::builder()
+                .uri("/lumen/timer")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(page.headers()[header::CACHE_CONTROL], "no-store");
+    assert_eq!(
+        axum::body::to_bytes(page.into_body(), 1024).await.unwrap(),
+        "page"
+    );
     let answer = app
         .clone()
         .oneshot(
@@ -188,7 +207,7 @@ async fn compression_and_headers_can_be_disabled() {
     );
     for enabled in ["true", "false"] {
         let config = config(&[("EDGE_COMPRESSION", enabled), ("EDGE_HEADERS", enabled)]);
-        let answer = router(api.clone(), &config, "https://snowtime.test")
+        let answer = router(api.clone(), api.clone(), &config, "https://snowtime.test")
             .oneshot(
                 HttpRequest::builder()
                     .uri("/")

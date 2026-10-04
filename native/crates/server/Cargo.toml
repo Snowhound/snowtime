@@ -13,6 +13,7 @@ libc = "0.2"
 aws-lc-sys = "0.45"
 base64.workspace = true
 hmac.workspace = true
+jiff.workspace = true
 openssl = { version = "0.10", features = ["vendored"], optional = true }
 rand.workspace = true
 rusqlite.workspace = true

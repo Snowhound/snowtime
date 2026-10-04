@@ -3,7 +3,7 @@
 use serde::Serialize;
 use serde_json::json;
 
-use crate::errors::{AppError, Error};
+use crate::errors::AppError;
 
 /// A response as a backend sends it: the status and the JSON body.
 pub struct WireResponse {
@@ -31,14 +31,5 @@ pub fn app_failure(error: AppError) -> WireResponse {
     WireResponse {
         status: error.code.status(),
         body: json!({ "error": error }).to_string().into(),
-    }
-}
-
-/// A refusal as the contract sends it. Anything else is unexpected and propagates.
-pub fn refusal(error: Error) -> Result<WireResponse, rusqlite::Error> {
-    match error {
-        Error::App(error) => Ok(app_failure(error)),
-        Error::Invalid(message) => Ok(failure(400, &message)),
-        Error::Database(error) => Err(error),
     }
 }

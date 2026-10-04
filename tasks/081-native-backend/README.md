@@ -188,5 +188,6 @@ client module. Task 089 replaces that module's call table with routes and client
 per domain (Kait, 2026-10-04). On `main`, task 090 fixes `perf:stress`, and task 091 looks
 at server-side caching for both backends.
 
-Libraries (Kait, 2026-10-04, subtask 03): Axum with `rusqlite` and SQL strings, with Actix
-Web kept as an option until subtask 01's isolate runs in the host.
+Libraries (Kait, 2026-10-04, subtask 03): Axum with `rusqlite` and SQL strings. Actix Web
+was kept as an option until subtask 01's isolate ran in the host; with renderers on
+threads of their own behind Axum (subtask 01, 2026-10-04), Axum is final.

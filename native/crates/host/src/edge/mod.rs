@@ -23,22 +23,23 @@ use tower_http::{
     timeout::TimeoutLayer,
 };
 
-pub fn router(api: Router, config: &Config, app_url: &str) -> Router {
-    let mut router = api;
-    if let Some(directory) = &config.static_dir {
-        // Keep unknown API paths on the API's refusal contract, even if a file exists.
-        let original = router.clone();
-        let files = ServeDir::new(directory)
-            .fallback(original.clone())
-            .append_index_html_on_directories(false)
-            .precompressed_br()
-            .precompressed_zstd()
-            .precompressed_gzip();
-        let fallback = Router::new()
-            .fallback_service(files)
-            .layer(middleware::from_fn_with_state(original, static_cache));
-        router = router.fallback_service(fallback);
-    }
+// The API's routes, then a public file, then a page. Unknown API paths, dotfiles, and
+// archives keep the API's refusal even if a file exists.
+pub fn router(api: Router, pages: Router, config: &Config, app_url: &str) -> Router {
+    let site = match &config.static_dir {
+        Some(directory) => Router::new().fallback_service(
+            ServeDir::new(directory)
+                .fallback(pages)
+                .append_index_html_on_directories(false)
+                .precompressed_br()
+                .precompressed_zstd()
+                .precompressed_gzip(),
+        ),
+        None => pages,
+    };
+    let mut router = api
+        .clone()
+        .fallback_service(site.layer(middleware::from_fn_with_state(api, static_cache)));
     if config.compression {
         router = router.layer(
             CompressionLayer::new()
@@ -110,10 +111,12 @@ async fn static_cache(State(api_router): State<Router>, request: Request, next: 
         return api_router.oneshot(request).await.unwrap();
     }
     let mut response = next.run(request).await;
+    // Pages set their own.
     if response.status().is_success() {
         response
             .headers_mut()
-            .insert(header::CACHE_CONTROL, HeaderValue::from_static(cache));
+            .entry(header::CACHE_CONTROL)
+            .or_insert(HeaderValue::from_static(cache));
     }
     response
 }

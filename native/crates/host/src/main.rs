@@ -1,5 +1,10 @@
 mod config;
 mod edge;
+mod memory;
+mod pages;
+
+use axum::Router;
+use std::sync::Arc;
 
 async fn shutdown() {
     let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
@@ -22,7 +27,34 @@ async fn main() {
         .expect("HOST has an address");
     let origin = config.server.app_url.clone();
     let app = snowtime_server::App::open(config.server).expect("the database opens");
-    let router = edge::router(snowtime_server::router(app), &config.edge, &origin);
+    let api = snowtime_server::router(app);
+
+    let limit = memory::limit();
+    let cpus = std::thread::available_parallelism().map_or(1, |n| n.get());
+    let policy = memory::policy(&limit, cpus, config.renderers);
+    tracing::info!(
+        limit_mib = limit.bytes >> 20,
+        source = limit.source,
+        cpus,
+        renderers = policy.max_renderers,
+        heap_mib = policy.heap_limit_bytes >> 20,
+        "sized the renderers"
+    );
+    let pool = snowtime_render::Pool::start(
+        pages::in_process(api.clone()),
+        snowtime_render::MANIFEST,
+        policy,
+    )
+    .expect("the renderer starts");
+    memory::watch(pool.clone(), limit.bytes);
+    let pages = Router::new()
+        .fallback(pages::page)
+        .with_state(Arc::new(pages::Pages {
+            pool,
+            app_url: origin.clone(),
+        }));
+
+    let router = edge::router(api, pages, &config.edge, &origin);
     let handle = axum_server::Handle::new();
     let shutdown_handle = handle.clone();
     tokio::spawn(async move {

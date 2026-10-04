@@ -1,7 +1,8 @@
 //! Shared request checks, with one connection held from session lookup through the rule.
+use crate::auth::session::{Session, find_session};
 use crate::auth::{SessionConfig, signed_in_user};
 use crate::rate_limit::{MemoryStore, WRITES_PER_USER};
-use crate::schemas::{Validate, decode};
+use crate::schemas::{Empty, Validate, decode};
 use crate::scope::{Scope, resolve_scope};
 use crate::timing::Timer;
 use crate::wire::{app_failure, failure, ok};
@@ -23,7 +24,6 @@ pub struct Request {
     pub method: String,
     pub query: Option<String>,
     pub cookie: Option<String>,
-    pub origin: Option<String>,
     pub user_agent: Option<String>,
     pub client_ip: Option<String>,
     pub body: Vec<u8>,
@@ -112,16 +112,19 @@ impl App {
 
 pub fn router(app: Arc<App>) -> Router {
     let organization = Router::new()
+        .merge(crate::timer::routes::organization_routes())
         .merge(crate::entries::routes::routes())
         .merge(crate::projects::routes::routes())
-        .merge(crate::timer::routes::organization_routes());
+        .merge(crate::reports::routes::routes())
+        .merge(crate::teams::routes::routes());
     let api = Router::new()
+        .merge(crate::auth::routes::routes())
         .merge(crate::availability::routes::routes())
         .merge(crate::timer::routes::routes())
         .nest("/organizations/{organizationId}", organization);
     Router::new()
         .nest("/api/v1", api)
-        .merge(crate::auth::routes::routes())
+        .merge(crate::auth::routes::better_auth_routes())
         .fallback(unknown)
         .method_not_allowed_fallback(unknown)
         .with_state(app)
@@ -137,7 +140,7 @@ fn text(headers: &HeaderMap, name: &str) -> Option<String> {
         .map(str::to_owned)
 }
 // HTTP/2 can split Cookie fields for compression (RFC 9113 section 8.2.3).
-fn cookies(headers: &HeaderMap) -> Option<String> {
+pub fn cookies(headers: &HeaderMap) -> Option<String> {
     let mut values = headers.get_all(header::COOKIE).iter();
     let mut joined = values.next()?.to_str().ok()?.to_owned();
     for value in values {
@@ -171,7 +174,6 @@ async fn extract(
         method: parts.method.to_string(),
         query: parts.uri.query().map(str::to_owned),
         cookie: cookies(&parts.headers),
-        origin: text(&parts.headers, "origin"),
         user_agent: text(&parts.headers, "user-agent"),
         client_ip: app
             .config
@@ -245,14 +247,6 @@ macro_rules! extractor {
 extractor!(InOrganization);
 extractor!(AsUser);
 extractor!(Public);
-
-#[derive(serde::Deserialize)]
-pub struct Empty {}
-impl Validate for Empty {
-    fn validate(&mut self) -> Result<()> {
-        Ok(())
-    }
-}
 
 impl Request {
     fn param(&self, name: &str) -> &str {
@@ -329,8 +323,38 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> Public<T
         })
         .await
     }
+}
+impl Public<Empty> {
+    // The session read, which answers signed-out callers too.
+    pub async fn with_session<O: Serialize + 'static>(
+        self,
+        rule: fn(&Connection, Option<Session>, &str) -> Result<O>,
+    ) -> Response {
+        answer(self.0, self.1, move |app, db, request, timer| {
+            let cookie = request.cookie.as_deref();
+            let session = timer.session(|| find_session(db, &app.session, cookie, clock::now()))?;
+            Ok(ok(&rule(db, session, app.config.app_origin())?))
+        })
+        .await
+    }
+}
+
+/// A call of Better Auth's own routes. Better Auth checks the origin itself, by its own
+/// rules, and refuses in its own format, so the API's origin rule doesn't apply.
+pub struct AuthCall(Arc<App>, Request, crate::auth::FetchHeaders);
+impl FromRequest<Arc<App>> for AuthCall {
+    type Rejection = Response;
+    async fn from_request(
+        request: HttpRequest,
+        app: &Arc<App>,
+    ) -> std::result::Result<Self, Response> {
+        let fetch = crate::auth::FetchHeaders::of(request.headers());
+        Ok(Self(app.clone(), extract(request, app, true).await?, fetch))
+    }
+}
+impl AuthCall {
     pub(crate) async fn sign_in(self) -> Response {
-        run_blocking(move || self.0.sign_in(&self.1)).await
+        run_blocking(move || self.0.sign_in(&self.1, &self.2)).await
     }
 }
 async fn run_blocking(call: impl FnOnce() -> Response + Send + 'static) -> Response {

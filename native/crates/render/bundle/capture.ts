@@ -1,10 +1,10 @@
-import { readdirSync, mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { signInHeaders, startApp } from '../../../../perf/lib/app'
 import { seededDatabase, SEED_NOW } from '../../../../perf/lib/database'
 import { installClock } from './clock'
-// Capture the current build's API answers and manifest, without query-cache seeding.
-import type { ApiAnswer, Head, PageInput } from './contract'
+// Capture the current build's API answers and reference HTML, without query-cache seeding.
+import type { ApiAnswer, PageInput } from './contract'
 
 const root = resolve(import.meta.dir, '../../../..')
 const out = resolve(import.meta.dir, '../results')
@@ -12,13 +12,9 @@ mkdirSync(out, { recursive: true })
 const app = await startApp({ database: await seededDatabase(), build: resolve(root, '.output') })
 try {
   const headers = await signInHeaders(app)
-  const file = readdirSync(resolve(root, '.output/server')).find((name) =>
-    name.startsWith('_tanstack-start-manifest_'),
-  )!
-  const { tsrStartManifest } = await import(resolve(root, '.output/server', file))
-  const manifest = tsrStartManifest()
+  const manifest = JSON.parse(readFileSync(resolve(import.meta.dir, 'dist/manifest.json'), 'utf8'))
   const answers: Record<string, ApiAnswer> = {}
-  let head: Head | undefined
+  let head: { status: number; headers: [string, string][] } | undefined
   let chunks: Uint8Array[] = []
   globalThis.Deno = {
     core: {
@@ -40,15 +36,16 @@ try {
           if (!response.ok) throw new Error(`${input.path}: ${response.status}`)
           return answer
         },
-        op_head(input) {
-          head = input
+        op_head(status, headers) {
+          head = { status, headers }
         },
-        async op_chunk(input) {
+        op_chunk(input) {
           chunks.push(input)
         },
       },
     },
   }
+  globalThis.renderManifest = manifest
   installClock(SEED_NOW.getTime())
   await import(resolve(import.meta.dir, 'dist/render.js'))
   for (const [name, path] of [
@@ -63,7 +60,6 @@ try {
       cookie: headers.cookie,
       nonce: 'render-harness-nonce',
       locale: 'en',
-      manifest,
     }
     await globalThis.renderPage(input)
     const html = Buffer.concat(chunks).toString()
@@ -87,7 +83,6 @@ try {
     )
   }
   writeFileSync(resolve(out, 'answers.json'), JSON.stringify(answers))
-  writeFileSync(resolve(out, 'manifest.json'), JSON.stringify(manifest))
   console.log(`Captured ${Object.keys(answers).length} API requests`)
 } finally {
   await app.stop()

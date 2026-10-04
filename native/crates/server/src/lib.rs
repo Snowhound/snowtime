@@ -1,16 +1,22 @@
 //! Application rules and their in-process JSON router.
 pub mod auth;
 pub mod availability;
+pub mod calendar;
 pub mod clock;
 mod config;
 pub mod entries;
 pub mod errors;
+pub mod fill;
+pub mod holidays;
 pub mod http;
 pub mod projects;
 pub mod queries;
 pub mod rate_limit;
+pub mod reports;
 pub mod schemas;
 pub mod scope;
+pub mod settings;
+pub mod teams;
 pub mod timer;
 pub mod timestamp;
 mod timing;

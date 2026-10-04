@@ -23,3 +23,8 @@ pub fn init_from_env() {
 pub fn now() -> i64 {
     real_now() + OFFSET.get().copied().unwrap_or(0)
 }
+
+/// Whether PERF_NOW moved the clock, so pages render at the same moment as the API.
+pub fn is_shifted() -> bool {
+    OFFSET.get().is_some_and(|&offset| offset != 0)
+}

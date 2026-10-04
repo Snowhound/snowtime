@@ -26,11 +26,7 @@ impl Validate for CreateEntryInput {
         ("stoppedAt", Field::RequiredDate),
     ];
     fn validate(&mut self) -> Result<()> {
-        uuid_v7(&self.id)?;
-        optional(&self.user_id, |id| uuid_v7(id))?;
-        optional(&self.project_id, |id| uuid_v7(id))?;
-        description(&mut self.description)?;
-        optional(&self.ticket, |t| ticket_key(t))?;
+        trim(&mut self.description);
         if self.stopped_at <= self.started_at {
             return invalid("The end must be after the start.");
         }
@@ -69,15 +65,10 @@ impl Validate for UpdateEntryInput {
         ("stoppedAt", Field::Date),
     ];
     fn validate(&mut self) -> Result<()> {
-        uuid_v7(&self.id)?;
-        optional(&self.project_id.value(), |id| uuid_v7(id))?;
-        self.description.optional("string")?;
         if let Patch::Value(text) = &mut self.description {
-            description(text)?;
+            trim(text);
         }
-        optional(&self.ticket.value(), |t| ticket_key(t))?;
-        self.started_at.optional("Date")?;
-        self.stopped_at.optional("Date")
+        Ok(())
     }
 }
 
@@ -88,9 +79,6 @@ pub struct DeleteEntryInput {
 
 impl Validate for DeleteEntryInput {
     const FIELDS: &'static [(&'static str, Field)] = &[("id", Field::RequiredId)];
-    fn validate(&mut self) -> Result<()> {
-        uuid_v7(&self.id)
-    }
 }
 
 #[derive(Deserialize)]
@@ -109,7 +97,6 @@ impl Validate for ListEntriesInput {
         ("userId", Field::Id),
     ];
     fn validate(&mut self) -> Result<()> {
-        optional(&self.user_id, |id| uuid_v7(id))?;
         if self.to <= self.from {
             return invalid("The range must end after it starts.");
         }
@@ -128,9 +115,6 @@ pub struct GetFirstEntryStartInput {
 
 impl Validate for GetFirstEntryStartInput {
     const FIELDS: &'static [(&'static str, Field)] = &[("userId", Field::RequiredId)];
-    fn validate(&mut self) -> Result<()> {
-        uuid_v7(&self.user_id)
-    }
 }
 
 #[derive(Clone, Debug, Serialize)]

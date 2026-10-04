@@ -1,12 +1,18 @@
-//! A thread-owned V8 renderer. The host supplies the app's JSON API by path.
+//! A pool of V8 renderers, each on a thread of its own. The host supplies the app's JSON API
+//! by path; a page comes back whole, so a slow client never holds a renderer.
 mod deadline;
 mod extensions;
 
 use deno_core::{JsRuntime, OpState, RuntimeOptions, op2};
 use deno_error::JsErrorBox;
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::time::Instant;
 use std::{cell::RefCell, future::Future, pin::Pin, rc::Rc, sync::Arc, time::Duration};
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{Mutex, mpsc, oneshot};
+
+/// The client manifest of the app build the bundle was built beside (bundle/build.ts).
+pub const MANIFEST: &str = include_str!(concat!(env!("OUT_DIR"), "/manifest.json"));
 
 pub type Headers = Vec<(String, String)>;
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -24,6 +30,9 @@ pub struct ApiResponse {
 }
 pub type HostFuture = Pin<Box<dyn Future<Output = Result<ApiResponse, String>> + Send>>;
 pub type SendApi = Arc<dyn Fn(ApiRequest) -> HostFuture + Send + Sync>;
+
+/// A page to render. The bundle reads the locale from the request when it is absent; `now`
+/// is only for reproducible measurements.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PageRequest {
     pub url: String,
@@ -31,42 +40,70 @@ pub struct PageRequest {
     pub headers: Headers,
     pub cookie: String,
     pub nonce: String,
-    pub locale: String,
-    pub manifest: serde_json::Value,
+    #[serde(default)]
+    pub locale: Option<String>,
     #[serde(default)]
     pub now: Option<i64>,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PageHead {
+
+#[derive(Debug)]
+pub struct Page {
     pub status: u16,
     pub headers: Headers,
+    pub body: Vec<u8>,
 }
-pub struct PageResponse {
-    pub head: PageHead,
-    pub body: mpsc::Receiver<Result<Vec<u8>, String>>,
+
+#[derive(Debug)]
+pub enum RenderError {
+    /// The queue was full, or the page waited in it longer than the policy allows.
+    Busy,
+    /// The render threw, ran past its deadline, or outgrew the page limit.
+    Failed(String),
 }
+
 #[derive(Clone, Debug)]
 pub struct Policy {
+    /// Collect after this long without a page.
     pub idle: Duration,
+    /// V8's heap limit; past it, the page fails and the isolate is replaced.
+    pub heap_limit_bytes: usize,
+    /// Collect after a page that leaves more than this in use.
     pub collect_heap_bytes: usize,
+    /// Replace the isolate when a collection leaves more than this live.
     pub replace_heap_bytes: usize,
     pub deadline: Duration,
     pub queue_capacity: usize,
+    /// A page that waited longer than this is refused as Busy instead of rendered.
+    pub max_queue_wait: Duration,
+    pub max_page_bytes: usize,
+    pub min_renderers: usize,
+    pub max_renderers: usize,
+    /// An extra renderer idle this long stops.
+    pub retire_after: Duration,
 }
 impl Default for Policy {
     fn default() -> Self {
         Self {
             idle: Duration::from_secs(1),
-            collect_heap_bytes: 48 * 1024 * 1024,
-            replace_heap_bytes: 80 * 1024 * 1024,
+            heap_limit_bytes: 128 << 20,
+            collect_heap_bytes: 48 << 20,
+            replace_heap_bytes: 80 << 20,
             deadline: Duration::from_secs(5),
-            queue_capacity: 8,
+            queue_capacity: 64,
+            max_queue_wait: Duration::from_secs(1),
+            max_page_bytes: 8 << 20,
+            min_renderers: 1,
+            max_renderers: 1,
+            retire_after: Duration::from_secs(30),
         }
     }
 }
+
+#[derive(Default)]
 struct Output {
-    head: Option<oneshot::Sender<Result<PageHead, String>>>,
-    body: mpsc::Sender<Result<Vec<u8>, String>>,
+    head: Option<(u16, Headers)>,
+    body: Vec<u8>,
+    limit: usize,
 }
 #[derive(Serialize)]
 struct JsApiResponse {
@@ -89,40 +126,38 @@ async fn op_send(
     })
 }
 #[op2]
-fn op_head(state: &mut OpState, #[serde] head: PageHead) {
-    if let Some(tx) = state.borrow_mut::<Output>().head.take() {
-        let _ = tx.send(Ok(head));
-    }
+fn op_head(state: &mut OpState, #[smi] status: u16, #[serde] headers: Headers) {
+    state.borrow_mut::<Output>().head = Some((status, headers));
 }
-#[op2]
-async fn op_chunk(
-    state: Rc<RefCell<OpState>>,
-    #[buffer(copy)] bytes: Vec<u8>,
-) -> Result<(), JsErrorBox> {
-    let tx = state.borrow().borrow::<Output>().body.clone();
-    tx.send(Ok(bytes))
-        .await
-        .map_err(|_| JsErrorBox::generic("Page body cancelled"))
+#[op2(fast)]
+fn op_chunk(state: &mut OpState, #[buffer] bytes: &[u8]) -> Result<(), JsErrorBox> {
+    let output = state.borrow_mut::<Output>();
+    if output.body.len() + bytes.len() > output.limit {
+        return Err(JsErrorBox::generic("The page is larger than the limit"));
+    }
+    output.body.extend_from_slice(bytes);
+    Ok(())
 }
 deno_core::extension!(host, ops = [op_send, op_head, op_chunk]);
 
-/// Used directly on an Actix worker, or by `RenderThread` on its own thread.
-/// Only one render runs at a time, through the end of its HTML stream.
-pub struct Renderer {
+/// One isolate. Only one page renders at a time, so cookies, locale, and query caches
+/// cannot overlap.
+struct Renderer {
     runtime: Option<JsRuntime>,
     deadline: deadline::Deadline,
     send: SendApi,
+    manifest: Arc<str>,
     policy: Policy,
 }
 impl Renderer {
-    pub fn new(send: SendApi, policy: Policy) -> Self {
+    fn new(send: SendApi, manifest: Arc<str>, policy: Policy) -> Self {
         let mut exts = extensions::extensions();
         exts.push(host::init());
         let mut runtime = JsRuntime::new(RuntimeOptions {
             startup_snapshot: Some(include_bytes!(concat!(env!("OUT_DIR"), "/render.bin"))),
             extensions: exts,
             create_params: Some(
-                deno_core::v8::CreateParams::default().heap_limits(0, 128 * 1024 * 1024),
+                deno_core::v8::CreateParams::default().heap_limits(0, policy.heap_limit_bytes),
             ),
             ..Default::default()
         });
@@ -132,10 +167,17 @@ impl Renderer {
             limit + 16 * 1024 * 1024
         });
         runtime.op_state().borrow_mut().put(send.clone());
+        runtime
+            .execute_script(
+                "manifest.js",
+                format!("globalThis.renderManifest = {manifest}"),
+            )
+            .expect("the manifest is JSON");
         Self {
             runtime: Some(runtime),
             deadline: deadline::Deadline::new(),
             send,
+            manifest,
             policy,
         }
     }
@@ -147,36 +189,37 @@ impl Renderer {
         self.js().v8_isolate().cancel_terminate_execution();
         // Dispose this isolate before entering its replacement on the same thread.
         drop(self.runtime.take());
-        *self = Self::new(self.send.clone(), self.policy.clone());
+        *self = Self::new(
+            self.send.clone(),
+            self.manifest.clone(),
+            self.policy.clone(),
+        );
     }
-    pub fn heap_bytes(&mut self) -> usize {
+    fn heap_bytes(&mut self) -> usize {
         self.js()
             .v8_isolate()
             .get_heap_statistics()
             .used_heap_size()
     }
-    pub fn collect(&mut self) {
+    fn collect(&mut self) {
         self.js().v8_isolate().low_memory_notification();
+        trim();
         if self.heap_bytes() > self.policy.replace_heap_bytes {
             self.reset();
         }
     }
-    pub async fn render(
-        &mut self,
-        request: PageRequest,
-        head: oneshot::Sender<Result<PageHead, String>>,
-        body: mpsc::Sender<Result<Vec<u8>, String>>,
-    ) {
+    async fn render(&mut self, request: &PageRequest) -> Result<Page, String> {
+        let limit = self.policy.max_page_bytes;
         self.js().op_state().borrow_mut().put(Output {
-            head: Some(head),
-            body: body.clone(),
+            limit,
+            ..Default::default()
         });
         let isolate = self.js().v8_isolate().thread_safe_handle();
         self.deadline.arm(self.policy.deadline, isolate);
         let result = tokio::time::timeout(self.policy.deadline, async {
             let value = self.js().execute_script(
                 "page.js",
-                format!("renderPage({})", serde_json::to_string(&request)?),
+                format!("renderPage({})", serde_json::to_string(request)?),
             )?;
             let promise = self.js().resolve(value);
             self.js()
@@ -188,161 +231,235 @@ impl Renderer {
         .unwrap_or_else(|_| Err(anyhow::anyhow!("Render deadline exceeded")));
         self.deadline.disarm();
         let output = self.js().op_state().borrow_mut().take::<Output>();
-        if let Err(error) = result {
-            let message = error.to_string();
-            if let Some(head) = output.head {
-                let _ = head.send(Err(message.clone()));
+        match (result, output.head) {
+            (Ok(()), Some((status, headers))) => Ok(Page {
+                status,
+                headers,
+                body: output.body,
+            }),
+            (result, _) => {
+                // A failed render may leave locale, timers, or query work behind.
+                self.reset();
+                Err(result
+                    .err()
+                    .map_or("The page sent no head".into(), |e| e.to_string()))
             }
-            let _ = tokio::time::timeout(Duration::from_millis(100), body.send(Err(message))).await;
-            // A failed render may leave locale, timers, or query work behind.
-            self.reset();
-        } else if self.heap_bytes() > self.policy.collect_heap_bytes {
-            self.collect();
         }
     }
 }
+
+// glibc keeps what V8's compiler and the page buffers freed, 55-60 MiB; return it to the
+// system. A no-op elsewhere.
+fn trim() {
+    #[cfg(all(target_os = "linux", target_env = "gnu"))]
+    // malloc_trim only releases free memory.
+    unsafe {
+        libc::malloc_trim(0);
+    }
+}
+
+// Under steady load a renderer may not collect for a long time; it trims this often anyway.
+const TRIM_EVERY_PAGES: u32 = 64;
+
 struct Job {
     request: PageRequest,
-    head: oneshot::Sender<Result<PageHead, String>>,
-    body: mpsc::Sender<Result<Vec<u8>, String>>,
+    queued: Instant,
+    reply: oneshot::Sender<Result<Page, RenderError>>,
 }
+
+struct Shared {
+    jobs: Mutex<mpsc::Receiver<Job>>,
+    send: SendApi,
+    manifest: Arc<str>,
+    policy: Policy,
+    renderers: AtomicUsize,
+    spawning: AtomicBool,
+    pressure: AtomicBool,
+}
+
+/// The renderers and their shared queue. Clones share them.
 #[derive(Clone)]
-pub struct RenderThread {
+pub struct Pool {
     jobs: mpsc::Sender<Job>,
+    shared: Arc<Shared>,
 }
-impl RenderThread {
-    pub fn start(send: SendApi, policy: Policy) -> Result<Self, String> {
-        let (tx, mut rx) = mpsc::channel::<Job>(policy.queue_capacity);
-        let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
-        std::thread::Builder::new()
-            .name("snowtime-render".into())
-            .spawn(move || {
-                let runtime = tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap();
-                runtime.block_on(async move {
-                    let mut renderer = Renderer::new(send, policy.clone());
-                    let _ = ready_tx.send(());
-                    let mut dirty = false;
-                    loop {
-                        let job = if dirty {
-                            match tokio::time::timeout(policy.idle, rx.recv()).await {
-                                Ok(job) => job,
-                                Err(_) => {
-                                    renderer.collect();
-                                    dirty = false;
-                                    continue;
-                                }
-                            }
-                        } else {
-                            rx.recv().await
-                        };
-                        let Some(job) = job else { break };
-                        if job.head.is_closed() {
-                            continue;
-                        }
-                        renderer.render(job.request, job.head, job.body).await;
-                        dirty = true;
-                    }
-                });
-            })
-            .map_err(|e| e.to_string())?;
-        ready_rx.recv().map_err(|e| e.to_string())?;
-        Ok(Self { jobs: tx })
+
+pub struct Stats {
+    pub renderers: usize,
+    pub queued: usize,
+}
+
+impl Pool {
+    /// Starts `min_renderers` renderers. `manifest` is the client manifest of the build whose
+    /// assets the host serves.
+    pub fn start(send: SendApi, manifest: &str, policy: Policy) -> Result<Self, String> {
+        let (tx, rx) = mpsc::channel(policy.queue_capacity);
+        let pool = Pool {
+            jobs: tx,
+            shared: Arc::new(Shared {
+                jobs: Mutex::new(rx),
+                send,
+                manifest: manifest.into(),
+                renderers: AtomicUsize::new(0),
+                spawning: AtomicBool::new(false),
+                pressure: AtomicBool::new(false),
+                policy,
+            }),
+        };
+        for _ in 0..pool.shared.policy.min_renderers.max(1) {
+            pool.shared.renderers.fetch_add(1, Ordering::SeqCst);
+            spawn_renderer(pool.shared.clone())?;
+        }
+        Ok(pool)
     }
-    pub async fn render(&self, request: PageRequest) -> Result<PageResponse, String> {
-        let (head_tx, head_rx) = oneshot::channel();
-        let (body_tx, body_rx) = mpsc::channel(4);
-        self.jobs
-            .send(Job {
-                request,
-                head: head_tx,
-                body: body_tx,
-            })
+
+    pub async fn render(&self, request: PageRequest) -> Result<Page, RenderError> {
+        let (reply, answer) = oneshot::channel();
+        let job = Job {
+            request,
+            queued: Instant::now(),
+            reply,
+        };
+        self.jobs.try_send(job).map_err(|_| RenderError::Busy)?;
+        self.grow();
+        answer
             .await
-            .map_err(|_| "Render thread stopped")?;
-        let head = head_rx.await.map_err(|_| "Render thread stopped")??;
-        Ok(PageResponse {
-            head,
-            body: body_rx,
-        })
+            .map_err(|_| RenderError::Failed("The renderer stopped".into()))?
+    }
+
+    // Adds a renderer while pages wait and memory allows, one at a time.
+    fn grow(&self) {
+        let shared = &self.shared;
+        if self.stats().queued == 0
+            || shared.pressure.load(Ordering::Relaxed)
+            || shared.renderers.load(Ordering::SeqCst) >= shared.policy.max_renderers
+            || shared.spawning.swap(true, Ordering::SeqCst)
+        {
+            return;
+        }
+        shared.renderers.fetch_add(1, Ordering::SeqCst);
+        if spawn_renderer(shared.clone()).is_err() {
+            shared.renderers.fetch_sub(1, Ordering::SeqCst);
+            shared.spawning.store(false, Ordering::SeqCst);
+        }
+    }
+
+    /// Under memory pressure, renderers collect after every page, extra ones stop, and none
+    /// are added.
+    pub fn set_pressure(&self, pressure: bool) {
+        self.shared.pressure.store(pressure, Ordering::Relaxed);
+    }
+
+    pub fn stats(&self) -> Stats {
+        Stats {
+            renderers: self.shared.renderers.load(Ordering::SeqCst),
+            queued: self.jobs.max_capacity() - self.jobs.capacity(),
+        }
     }
 }
-/// Measurement adapter. Production hosts pass their router instead.
-pub fn forward_http(base: String) -> SendApi {
-    let client = reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .unwrap();
-    Arc::new(move |request| {
-        let client = client.clone();
-        let base = base.clone();
-        Box::pin(async move {
-            let method = request
-                .method
-                .parse::<reqwest::Method>()
-                .map_err(|e| e.to_string())?;
-            let mut call = client.request(method, format!("{base}{}", request.path));
-            for (name, value) in request.headers {
-                call = call.header(name, value);
-            }
-            let response = call
-                .body(request.body)
-                .send()
-                .await
-                .map_err(|e| e.to_string())?;
-            let status = response.status().as_u16();
-            let headers = response
-                .headers()
-                .iter()
-                .map(|(n, v)| {
-                    Ok((
-                        n.to_string(),
-                        v.to_str().map_err(|e| e.to_string())?.to_owned(),
-                    ))
-                })
-                .collect::<Result<Headers, String>>()?;
-            let body = response.bytes().await.map_err(|e| e.to_string())?.to_vec();
-            Ok(ApiResponse {
-                status,
-                headers,
-                body,
-            })
+
+fn spawn_renderer(shared: Arc<Shared>) -> Result<(), String> {
+    std::thread::Builder::new()
+        .name("snowtime-render".into())
+        .spawn(move || {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("a current-thread runtime builds");
+            runtime.block_on(run_renderer(shared));
         })
-    })
+        .map(drop)
+        .map_err(|e| e.to_string())
+}
+
+async fn run_renderer(shared: Arc<Shared>) {
+    let policy = &shared.policy;
+    let mut renderer = Renderer::new(shared.send.clone(), shared.manifest.clone(), policy.clone());
+    shared.spawning.store(false, Ordering::SeqCst);
+    let mut dirty = false;
+    let mut idle_since = Instant::now();
+    let mut untrimmed = 0;
+    loop {
+        let wait = if dirty {
+            policy.idle
+        } else {
+            policy.retire_after
+        };
+        let job = {
+            let mut jobs = shared.jobs.lock().await;
+            tokio::time::timeout(wait, jobs.recv()).await
+        };
+        let job = match job {
+            Ok(Some(job)) => job,
+            Ok(None) => break,
+            Err(_) if dirty => {
+                renderer.collect();
+                dirty = false;
+                continue;
+            }
+            Err(_) if retire(&shared, idle_since) => break,
+            Err(_) => continue,
+        };
+        // The client is gone, or waited too long: keep the renderer for pages still wanted.
+        if job.reply.is_closed() {
+            continue;
+        }
+        if job.queued.elapsed() > policy.max_queue_wait {
+            let _ = job.reply.send(Err(RenderError::Busy));
+            continue;
+        }
+        let page = renderer.render(&job.request).await;
+        let _ = job.reply.send(page.map_err(RenderError::Failed));
+        dirty = true;
+        idle_since = Instant::now();
+        let pressure = shared.pressure.load(Ordering::Relaxed);
+        untrimmed += 1;
+        if pressure || renderer.heap_bytes() > policy.collect_heap_bytes {
+            renderer.collect();
+            dirty = false;
+            untrimmed = 0;
+        } else if untrimmed >= TRIM_EVERY_PAGES {
+            trim();
+            untrimmed = 0;
+        }
+        if pressure && retire(&shared, idle_since) {
+            break;
+        }
+    }
+}
+
+// Stops this renderer if another remains and it is idle past retire_after or under pressure.
+fn retire(shared: &Shared, idle_since: Instant) -> bool {
+    let pressure = shared.pressure.load(Ordering::Relaxed);
+    if !pressure && idle_since.elapsed() < shared.policy.retire_after {
+        return false;
+    }
+    shared
+        .renderers
+        .try_update(Ordering::SeqCst, Ordering::SeqCst, |n| {
+            (n > shared.policy.min_renderers.max(1)).then(|| n - 1)
+        })
+        .is_ok()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    async fn collect(
-        renderer: &mut Renderer,
-    ) -> (Result<PageHead, String>, Vec<Result<Vec<u8>, String>>) {
-        let request = PageRequest {
+    fn page() -> PageRequest {
+        PageRequest {
             url: "http://localhost/lumen/timer".into(),
             method: "GET".into(),
             headers: vec![],
             cookie: "session=test".into(),
             nonce: "test-nonce".into(),
-            locale: "en".into(),
-            manifest: serde_json::json!({"routes":{}}),
+            locale: Some("en".into()),
             now: None,
-        };
-        let (head_tx, head_rx) = oneshot::channel();
-        let (body_tx, mut body_rx) = mpsc::channel(1);
-        let (_, chunks) = tokio::join!(renderer.render(request, head_tx, body_tx), async {
-            let mut chunks = vec![];
-            while let Some(chunk) = body_rx.recv().await {
-                chunks.push(chunk);
-            }
-            chunks
-        });
-        (head_rx.await.unwrap(), chunks)
+        }
     }
+
     #[tokio::test(flavor = "current_thread")]
-    async fn web_apis_host_contract_streaming_and_recovery() {
+    async fn web_apis_host_contract_and_recovery() {
         let send: SendApi = Arc::new(|request| {
             Box::pin(async move {
                 assert_eq!(request.method, "POST");
@@ -361,11 +478,13 @@ mod tests {
         });
         let policy = Policy {
             deadline: Duration::from_millis(200),
+            max_page_bytes: 16,
             ..Default::default()
         };
-        let mut renderer = Renderer::new(send, policy);
+        let mut renderer = Renderer::new(send, r#"{"routes":{}}"#.into(), policy);
         renderer.js().execute_script("test.js", r#"
             renderPage = async function () {
+              if (!globalThis.renderManifest.routes) throw Error('manifest');
               const encoded = new TextEncoder().encode('õ');
               const into = new Uint8Array(2);
               if (new TextEncoder().encodeInto('õ', into).written !== 2) throw Error('encodeInto');
@@ -376,79 +495,81 @@ mod tests {
               const answer = await Deno.core.ops.op_send({method:'POST', path, headers:[['cookie','session=test']], body:[...encoded]});
               const response = new Response(new Uint8Array(answer.body), {status:answer.status, headers:answer.headers});
               if (response.headers.get('x-answer') !== 'yes' || await response.text() !== 'õ') throw Error('response');
-              Deno.core.ops.op_head({status:201, headers:[['x-test','stream']]});
+              Deno.core.ops.op_head(201, [['x-test','stream']]);
               const stream = new ReadableStream({ start(c) { c.enqueue(encoded); c.enqueue(encoded); c.close(); } });
-              for await (const chunk of stream) await Deno.core.ops.op_chunk(chunk);
+              for await (const chunk of stream) Deno.core.ops.op_chunk(chunk);
             }
         "#).unwrap();
-        let (head, chunks) = collect(&mut renderer).await;
-        assert_eq!(head.unwrap().status, 201);
-        assert_eq!(chunks.len(), 2);
-        assert_eq!(chunks[0].as_ref().unwrap(), "õ".as_bytes());
+        let rendered = renderer.render(&page()).await.unwrap();
+        assert_eq!(rendered.status, 201);
+        assert_eq!(rendered.body, "õõ".as_bytes());
+
         let pending: SendApi = Arc::new(|_| Box::pin(std::future::pending()));
         renderer.js().op_state().borrow_mut().put(pending);
         renderer
             .js()
             .execute_script(
                 "pending.js",
-                r#"
-          renderPage = async () => {
-            await Deno.core.ops.op_send({method:'GET',path:'/pending',headers:[],body:[]});
-          }
-        "#,
+                "renderPage = async () => { await Deno.core.ops.op_send({method:'GET',path:'/pending',headers:[],body:[]}) }",
             )
             .unwrap();
         assert!(
-            collect(&mut renderer)
+            renderer
+                .render(&page())
                 .await
-                .0
                 .unwrap_err()
                 .contains("deadline")
         );
 
-        renderer
-            .js()
-            .execute_script("hang.js", "renderPage = async () => { for (;;) {} }")
-            .unwrap();
-        let (head, _) = collect(&mut renderer).await;
-        assert!(head.is_err());
-        renderer
-            .js()
-            .execute_script(
-                "recovered.js",
-                "renderPage = async () => Deno.core.ops.op_head({status:204,headers:[]})",
-            )
-            .unwrap();
-        assert_eq!(collect(&mut renderer).await.0.unwrap().status, 204);
-        renderer
-            .js()
-            .execute_script(
-                "throws.js",
-                "renderPage = async () => { throw Error('test failure') }",
-            )
-            .unwrap();
-        assert!(
-            collect(&mut renderer)
-                .await
-                .0
-                .unwrap_err()
-                .contains("test failure")
-        );
-        renderer
-            .js()
-            .execute_script(
-                "recovered.js",
-                "renderPage = async () => Deno.core.ops.op_head({status:204,headers:[]})",
-            )
-            .unwrap();
-        assert_eq!(collect(&mut renderer).await.0.unwrap().status, 204);
-        renderer.policy.collect_heap_bytes = 0;
+        let recovered = "renderPage = async () => Deno.core.ops.op_head(204, [])";
+        for failing in [
+            "renderPage = async () => { for (;;) {} }",
+            "renderPage = async () => { throw Error('test failure') }",
+            "renderPage = async () => { Deno.core.ops.op_head(200, []); Deno.core.ops.op_chunk(new Uint8Array(17)) }",
+        ] {
+            renderer.js().execute_script("failing.js", failing).unwrap();
+            assert!(renderer.render(&page()).await.is_err(), "{failing}");
+            renderer
+                .js()
+                .execute_script("recovered.js", recovered)
+                .unwrap();
+            assert_eq!(renderer.render(&page()).await.unwrap().status, 204);
+        }
+
         renderer.policy.replace_heap_bytes = 0;
         renderer
             .js()
             .execute_script("marker.js", "globalThis.renderMarker = 'discard me'")
             .unwrap();
-        assert_eq!(collect(&mut renderer).await.0.unwrap().status, 204);
+        renderer.collect();
         renderer.js().execute_script("fresh.js", "if (globalThis.renderMarker !== undefined) throw Error('Isolate was not replaced')").unwrap();
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn refuses_when_full_or_waited_too_long() {
+        // The bundle's first API call never answers, so each page holds its renderer until
+        // the deadline.
+        let send: SendApi = Arc::new(|_| Box::pin(std::future::pending()));
+        let policy = Policy {
+            queue_capacity: 1,
+            deadline: Duration::from_millis(600),
+            max_queue_wait: Duration::from_millis(200),
+            ..Default::default()
+        };
+        let pool = Pool::start(send, r#"{"routes":{}}"#, policy).unwrap();
+        // Let the renderer create its isolate, so the first page doesn't wait in the queue.
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        let spawn = |pool: &Pool| {
+            let pool = pool.clone();
+            tokio::spawn(async move { pool.render(page()).await })
+        };
+        let first = spawn(&pool);
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        let second = spawn(&pool);
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        assert!(matches!(pool.render(page()).await, Err(RenderError::Busy)));
+        assert!(matches!(first.await.unwrap(), Err(RenderError::Failed(_))));
+        assert!(matches!(second.await.unwrap(), Err(RenderError::Busy)));
+        assert_eq!(pool.stats().renderers, 1);
     }
 }

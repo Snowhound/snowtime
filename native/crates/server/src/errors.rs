@@ -50,6 +50,9 @@ pub enum Key {
     TimerRunningInLeftOrganization,
     ProjectNotFound,
     ProjectArchived,
+    TeamNotFound,
+    TeamReportForbidden,
+    SettingsNotFound,
     RateLimited,
     DatabaseUnavailable,
 }

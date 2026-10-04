@@ -14,8 +14,7 @@ deno_fetch = "0.276"
 deno_net = "0.244"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["rt", "sync", "time", "macros", "net"] }
-reqwest = { version = "0.12", default-features = false }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "time", "macros"] }
 anyhow = "1"
 libc = "0.2"
 
@@ -26,10 +25,3 @@ deno_webidl = "0.252"
 deno_fetch = "0.276"
 deno_net = "0.244"
 tokio = { version = "1", features = ["rt", "time"] }
-
-[dev-dependencies]
-axum = "0.8"
-actix-web = "4"
-tokio-stream = "0.1"
-tower = { version = "0.5", features = ["util"] }
-http-body-util = "0.1"

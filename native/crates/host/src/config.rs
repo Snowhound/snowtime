@@ -5,6 +5,8 @@ pub struct Config {
     pub host: String,
     pub port: u16,
     pub edge: crate::edge::Config,
+    // At most this many renderers, below what memory allows.
+    pub renderers: Option<usize>,
 }
 pub fn from_env() -> Result<Config, String> {
     let var = |name: &str| env::var(name).ok().filter(|v| !v.is_empty());
@@ -20,6 +22,9 @@ pub fn from_env() -> Result<Config, String> {
         edge,
         host: var("HOST").unwrap_or_else(|| "0.0.0.0".into()),
         port: var("PORT").map_or(Ok(3000), |p| p.parse().map_err(|_| "PORT is a number."))?,
+        renderers: var("RENDERERS")
+            .map(|n| n.parse().map_err(|_| "RENDERERS is a number."))
+            .transpose()?,
         server: ServerConfig {
             database_path,
             secret: required("BETTER_AUTH_SECRET")?,

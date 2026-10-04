@@ -1,0 +1,22 @@
+[stress] Idle app (native): memory 111 MB (anon 15, cache 93), RSS 47 MB
+fixed: 20000 active users, 120 s. Offered 356.6 req/s, completed 356.4 req/s
+Kind                 req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+edit api             55.75    2   20   44        1       19       44     300
+open page             5.71   44  215  301       44      216      325    1000
+reports-month page    0.15   40  198  304       42      330      330    1000
+reports-week api      3.48    1   15   51        1       15       51     300
+reports-year page     0.12   53  184  214       53      222      222    3000
+return api          220.67    2   30  111        1       29      110     300
+sign-in api           3.17    8   54   96        8       54      115     300
+sign-in auth          0.63   95  171  209       95      177      242    1000
+start api            65.83    2   22   48        1       21       47     300
+stop api              1.07    2   22   36        1       22       35     300
+Errors: none
+Container    CPU  throttled  mem MB  peak  anon  cache  RSS  read MB/s  write  PSI cpu  mem  io
+app        34.8%       0.0%     124   168    51     65  124      14.83   1.89      30%   1%  9%
+caddy      10.9%       0.0%      69    70    30     32   68       0.00   0.11      14%   0%  0%
+sampler     0.2%       0.0%      16    16    10      0   16       0.00   0.00       0%   0%  0%
+App CPU per request 1.0 ms, Caddy 0.31 ms; steal 0.0%; host memory 1623 of 8320 MB; database 945 MB; disk 5%; OOM kills 0
+JS heap at its peak 0 of 0 MB, external 0 MB, RSS then 0 MB; slowest heap answer 8 ms, 0 at the timeout
+Within targets
+[stress] Results in perf/.cache/stress/runs/2026-10-04T19-55-59-M-fixed-081-render-pressure160
