@@ -3,8 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import type { JSX } from 'solid-js'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { setTransport } from '~/lib/api/client'
-import { mockTransport } from '~/lib/api/testing'
 import { atLocalTime } from '~/lib/calendar'
 import { newId } from '~/lib/queries/query'
 import type { Settings } from '~/lib/queries/settings'
@@ -26,7 +24,11 @@ const fn = vi.hoisted(() => ({
   getAppSession: vi.fn(),
   updateSettings: vi.fn(),
 }))
-setTransport(mockTransport(fn))
+vi.mock('~/lib/api/auth', () => fn)
+vi.mock('~/lib/api/entries', () => fn)
+vi.mock('~/lib/api/projects', () => fn)
+vi.mock('~/lib/api/settings', () => fn)
+vi.mock('~/lib/api/timer', () => fn)
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; class?: string; children: JSX.Element }) => (
     <a href={props.to} class={props.class}>

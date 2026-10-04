@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/solid-query'
-import { call } from '~/lib/api/client'
+import { updateSettings } from '~/lib/api/settings'
 import type { AppSession } from '~/server/auth/auth.schemas'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
 import { cacheUpdate, optimistic } from './query'
@@ -14,7 +14,7 @@ export type Settings = NonNullable<AppSession['settings']>
 export function useUpdateSettings() {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (patch: UpdateSettingsInput) => call('updateSettings', patch),
+    mutationFn: (patch: UpdateSettingsInput) => updateSettings(patch),
     ...optimistic(queryClient, [
       cacheUpdate<AppSession | null, UpdateSettingsInput>(
         sessionQuery.queryKey,

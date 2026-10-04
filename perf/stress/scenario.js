@@ -26,7 +26,9 @@ const LOCALE_COOKIE = 'PARAGLIDE_LOCALE'
 const PASSWORD = 'snowtime-local'
 
 // What an active user does in the peak hour (task 078, "Usage model"). The timer action
-// starts a timer, or stops the one this load generator started for the user.
+// starts a timer, or stops the one this virtual user started for the person. Other virtual
+// users act for the same person, and a start of theirs may already have stopped that timer,
+// so the stop's 404 is expected.
 const MIX = [
   ['open', 1],
   ['return', 10],
@@ -210,6 +212,7 @@ export function act() {
   }
 
   function check(response, request) {
+    if (action === 'stop' && request.method === 'POST' && response.status === 404) return
     const type = classify(response)
     if (type) errors.add(1, { type, kind: kindOf(action, request) })
   }

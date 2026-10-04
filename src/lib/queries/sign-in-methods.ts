@@ -1,9 +1,9 @@
 import { queryOptions } from '@tanstack/solid-query'
-import { call } from '~/lib/api/client'
+import { getSignInMethods } from '~/lib/api/auth'
 
 // The environment's sign-in methods, for the sign-in screens and the settings list.
 export const signInMethodsQuery = queryOptions({
   queryKey: ['sign-in-methods'],
-  queryFn: () => call('getSignInMethods'),
+  queryFn: () => getSignInMethods(),
   staleTime: Infinity,
 })

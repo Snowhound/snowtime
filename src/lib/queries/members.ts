@@ -1,7 +1,7 @@
 // The organization's members with their roles and teams, as Reports and Organization read
 // them.
 import { queryOptions } from '@tanstack/solid-query'
-import { call } from '~/lib/api/client'
+import { listMembers } from '~/lib/api/teams'
 import type { Member } from '~/server/teams/teams.schemas'
 import { ORGANIZATION_STALE_TIME } from './query'
 
@@ -12,7 +12,7 @@ export type { Member }
 export function membersQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['members', organizationId],
-    queryFn: () => call('listMembers', { organizationId }),
+    queryFn: () => listMembers({ organizationId }),
     reconcile: 'userId',
     staleTime: ORGANIZATION_STALE_TIME,
   })

@@ -1,12 +1,20 @@
+import { getRequest } from '@tanstack/solid-start/server'
 import handler from '@tanstack/solid-start/server-entry'
-import { setTransport } from '~/lib/api/client'
+import { setSend } from '~/lib/api/request'
 import { paraglideMiddleware } from '~/paraglide/server.js'
-import { renderTransport } from '~/server/api.server'
+import { api } from '~/server/api.server'
 import { contentSecurityPolicy, newNonce } from '~/server/csp.server'
 import { serverTiming, time, withTiming } from '~/server/timing.server'
 
-// The route loaders' calls during a server render go to the API in process.
-setTransport(renderTransport)
+// The route loaders' calls during a server render go to the API in process, by URL and with
+// the page request's cookie, as the native backend's render isolate hands a call to its
+// router. They count toward the page's own Server-Timing.
+setSend((path, init) => {
+  const headers = new Headers(init.headers)
+  const cookie = getRequest().headers.get('cookie')
+  if (cookie) headers.set('cookie', cookie)
+  return api.request(path, { ...init, headers })
+})
 
 // Scopes the locale to each request, so messages rendered on the server use the request's
 // cookie or Accept-Language even while requests run concurrently. Pages get a fresh CSP

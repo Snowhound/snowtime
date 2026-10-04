@@ -8,10 +8,9 @@ import { spawn } from 'node:child_process'
 import { cpSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
-import { type OperationName, operations } from '~/lib/api/operations'
-import { requestOf } from '~/lib/api/wire'
 import { buildApp, signInHeaders, startApp } from '../../perf/lib/app'
 import { CACHE, COMPANY, SEED_NOW, seededDatabase } from '../../perf/lib/database'
+import { CALLS, type CallName, requestOf } from './calls'
 
 const [binary] = process.argv.slice(2)
 if (!binary) throw new Error('Usage: bun native/bench/compare.ts <binary>')
@@ -71,7 +70,7 @@ try {
   }
   const memberEntries = (await (
     await fetch(
-      `${ts.url}${requestOf(operations.listEntries, { organizationId, from: new Date(SEED_NOW.getTime() - 30 * DAY), to: SEED_NOW }).path}`,
+      `${ts.url}${requestOf(CALLS.listEntries, { organizationId, from: new Date(SEED_NOW.getTime() - 30 * DAY), to: SEED_NOW }).path}`,
       { headers: sessions.ts.member },
     )
   ).json()) as { userId: string }[]
@@ -79,7 +78,7 @@ try {
 
   const week = { from: new Date('2026-09-27T21:00:00Z'), to: new Date('2026-10-04T21:00:00Z') }
   const quarter = { from: new Date(SEED_NOW.getTime() - 92 * DAY), to: SEED_NOW }
-  const cases: [string, OperationName, unknown, 'admin' | 'member' | null][] = [
+  const cases: [string, CallName, unknown, 'admin' | 'member' | null][] = [
     ['running timer, none', 'getRunningTimer', undefined, 'admin'],
     ['signed out', 'getRunningTimer', undefined, null],
     ['week, admin', 'listEntries', { organizationId, ...week }, 'admin'],
@@ -145,7 +144,7 @@ try {
   ]
   let differences = 0
   for (const [label, name, input, who] of cases) {
-    const operation = operations[name]
+    const operation = CALLS[name]
     const { path, body } = requestOf(operation, input)
     async function call(server: { url: string }, session: Record<string, string>) {
       const headers: Record<string, string> = { ...session, origin: server.url }

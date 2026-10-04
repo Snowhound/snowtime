@@ -1,7 +1,7 @@
 // The organization's teams with their members' team roles, as Projects and Reports read
 // them.
 import { queryOptions } from '@tanstack/solid-query'
-import { call } from '~/lib/api/client'
+import { listTeams } from '~/lib/api/teams'
 import type { Team } from '~/server/teams/teams.schemas'
 import { ORGANIZATION_STALE_TIME } from './query'
 
@@ -11,7 +11,7 @@ export type { Team }
 export function teamsQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['teams', organizationId],
-    queryFn: () => call('listTeams', { organizationId }),
+    queryFn: () => listTeams({ organizationId }),
     reconcile: 'id',
     staleTime: ORGANIZATION_STALE_TIME,
   })

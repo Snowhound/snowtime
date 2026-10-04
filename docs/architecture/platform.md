@@ -158,7 +158,7 @@ only seeded data, so a reseed costs nothing.
   reloads the routes, and a link home.
 - While the database is unreachable, for example while production moves to another
   database, the error page is a maintenance page instead. When an API call fails with an
-  unexpected error, `unavailableOr` (`src/server/guards.server.ts`) runs `select 1`, and
+  unexpected error, `unavailableOr` (`src/server/http.server.ts`) runs `select 1`, and
   if that fails or takes over 3 seconds, the call fails with an `UNAVAILABLE` `AppError`. The maintenance page stays at the
   requested URL, so a reload opens that page once the database is back. It calls
   `checkAvailability` every 15 seconds while the tab is visible, and again on focus,

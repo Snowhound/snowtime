@@ -2,24 +2,29 @@
 // the report's filters as a JSON body, so they are POSTs marked as reads. The admin is the Lumen
 // Works owner and sees everyone's time; the member sees their own.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import type { Transport } from '~/lib/api/client'
-import type { OperationName } from '~/lib/api/operations'
-import { httpTransport } from '~/lib/api/transports'
 import { COMPANY } from '../perf/lib/database'
-import { refused, send as sendTo, type ServerUnderTest, serverUnderTest } from './server'
+import {
+  type Caller,
+  type CallName,
+  caller,
+  refused,
+  send as sendTo,
+  type ServerUnderTest,
+  serverUnderTest,
+} from './server'
 
 let server: ServerUnderTest
 let headers: { admin: Record<string, string>; member: Record<string, string> }
-let admin: Transport
+let admin: Caller
 
 beforeAll(async () => {
   server = await serverUnderTest()
   headers = { admin: await server.as('admin'), member: await server.as('member') }
-  admin = httpTransport(server.url, headers.admin)
+  admin = caller(server.url, headers.admin)
 }, 120_000)
 afterAll(() => server?.stop())
 
-function send(name: OperationName, input: unknown, as = headers.admin) {
+function send(name: CallName, input: unknown, as = headers.admin) {
   return sendTo(server.url, name, input, as)
 }
 

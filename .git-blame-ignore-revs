@@ -33,3 +33,6 @@ e907445204813de8e79197f75973b745c23f1fc5
 
 # Move the OAuth and host-change sections to docs/deployment/README.md (task 075).
 6831f90fb438c213653738aff1ede73ad8886acc
+
+# Move the reports' aggregation and paging into aggregation.server.ts (task 089).
+7add2aca19ef80bd89f40dc6604145c11d95c3d4

@@ -1,6 +1,6 @@
 import WrenchIcon from 'lucide-solid/icons/wrench'
 import { onCleanup, onMount } from 'solid-js'
-import { call } from '~/lib/api/client'
+import { checkAvailability } from '~/lib/api/availability'
 import { m } from '~/paraglide/messages.js'
 import { StatusPage } from './status-page'
 
@@ -15,7 +15,7 @@ export function MaintenancePage(props: { onAvailable: () => Promise<void> }) {
     if (checking || document.visibilityState === 'hidden') return
     checking = true
     try {
-      if (await call('checkAvailability')) await props.onAvailable()
+      if (await checkAvailability()) await props.onAvailable()
     } catch {
       // The app itself is unreachable; the next check tries again.
     } finally {

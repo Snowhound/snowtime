@@ -3,7 +3,7 @@ import { useMatches } from '@tanstack/solid-router'
 import { type ParentProps, createContext, onMount } from 'solid-js'
 import { Intro, IntroPage } from '~/components/scene/intro'
 import { SceneLayer } from '~/components/scene/scene-layer'
-import { call } from '~/lib/api/client'
+import { createSettings } from '~/lib/api/settings'
 import { LAYERS_ID } from '~/lib/layers'
 import { sessionQuery } from '~/lib/queries/session'
 import { useQuery } from '~/lib/queries/use-query'
@@ -49,7 +49,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
   // (docs/architecture/timer.md, "User settings"); the server can't know the zone.
   onMount(async () => {
     if (props.session.settings) return
-    await call('createSettings', {
+    await createSettings({
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       locale: getLocale(),
     })

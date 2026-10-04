@@ -14,7 +14,7 @@ export type AppErrorCode =
   | 'LIMIT_REACHED'
   // A rate in rateLimits (src/server/limits.server.ts).
   | 'RATE_LIMITED'
-  // The database is unreachable (unavailableOr in src/server/guards.server.ts).
+  // The database is unreachable (unavailableOr in src/server/http.server.ts).
   | 'UNAVAILABLE'
 
 // Every message an AppError can carry, by key. Keys are stable and snake_case, so they

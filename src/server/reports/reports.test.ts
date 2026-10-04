@@ -12,6 +12,13 @@ import { listEntries } from '../entries/entries.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
 import {
+  aggregate,
+  type Aggregation,
+  breakdownOf,
+  dayPage,
+  mergeByDescription,
+} from './aggregation.server'
+import {
   DESCRIPTION_PAGE_SIZE,
   ENTRY_PAGE_SIZE,
   type ReportEntriesInput,
@@ -21,16 +28,11 @@ import {
   type ReportEntryPiece,
 } from './reports.schemas'
 import {
-  aggregate,
-  breakdownOf,
-  dayPage,
   getReport,
   getReportBreakdown,
   getReportEntries,
   getReportEntryTotals,
   getReportExport,
-  mergeByDescription,
-  type Aggregation,
 } from './reports.server'
 
 const { users: U, orgs: O, projects: P, teams: T } = seedIds

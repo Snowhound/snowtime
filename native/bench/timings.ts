@@ -6,10 +6,9 @@
 //   bun native/bench/timings.ts native/target/release/snowtime-axum [repeats]
 
 import { v7 as uuidv7 } from 'uuid'
-import { type OperationName, operations } from '~/lib/api/operations'
-import { requestOf } from '~/lib/api/wire'
 import { buildApp, signInHeaders, startApp } from '../../perf/lib/app'
 import { COMPANY, SEED_NOW, seededDatabase } from '../../perf/lib/database'
+import { CALLS, type CallName, requestOf } from './calls'
 import { startNative } from './native'
 
 const [binary, repeatArg] = process.argv.slice(2)
@@ -22,7 +21,7 @@ const week = { from: new Date('2026-09-27T21:00:00Z'), to: new Date('2026-10-04T
 const quarter = { from: new Date(SEED_NOW.getTime() - 92 * DAY), to: SEED_NOW }
 
 // Each case's input, made fresh per call for the writes.
-const CASES: [string, OperationName, () => unknown][] = [
+const CASES: [string, CallName, () => unknown][] = [
   ['getRunningTimer', 'getRunningTimer', () => undefined],
   ['listEntries, week', 'listEntries', () => ({ organizationId, ...week })],
   ['listEntries, 92 days', 'listEntries', () => ({ organizationId, ...quarter })],
@@ -60,7 +59,7 @@ try {
       const timings: Record<string, number>[] = []
       const totals: number[] = []
       for (let i = 0; i < repeats + 5; i++) {
-        const operation = operations[name]
+        const operation = CALLS[name]
         const { path, body } = requestOf(operation, input())
         const started = performance.now()
         const response = await fetch(`${server.url}${path}`, {
