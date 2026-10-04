@@ -1,6 +1,7 @@
-//! The calls' inputs and outputs (src/server/schemas.ts, entries.schemas.ts, and
-//! timer.schemas.ts). serde reads the JSON and `validate` applies the checks of valibot's
-//! pipes; a failure is `Error::Invalid` with the message the client shows.
+//! The calls' inputs and outputs (src/server/schemas.ts, entries.schemas.ts,
+//! projects.schemas.ts, and timer.schemas.ts). serde reads the JSON and `validate` applies
+//! the checks of valibot's pipes; a failure is `Error::Invalid` with the message the client
+//! shows.
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
@@ -127,6 +128,21 @@ fn ticket_key(key: &str) -> Result<()> {
 
 fn optional<T>(value: &Option<T>, check: impl Fn(&T) -> Result<()>) -> Result<()> {
     value.as_ref().map_or(Ok(()), check)
+}
+
+// A boolean, which a GET's query string carries as "true" or "false" (revive in
+// src/lib/api/wire.ts); anything else fails with v.boolean()'s message.
+fn query_bool<'de, D: Deserializer<'de>>(deserializer: D) -> std::result::Result<bool, D::Error> {
+    let received = match Value::deserialize(deserializer)? {
+        Value::Bool(value) => return Ok(value),
+        Value::String(text) if text == "true" => return Ok(true),
+        Value::String(text) if text == "false" => return Ok(false),
+        Value::String(text) => format!("\"{text}\""),
+        other => other.to_string(),
+    };
+    Err(serde::de::Error::custom(format!(
+        "Invalid type: Expected boolean but received {received}"
+    )))
 }
 
 #[derive(Deserialize)]
@@ -271,6 +287,19 @@ impl Validate for GetFirstEntryStartInput {
     }
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListProjectsInput {
+    #[serde(default, deserialize_with = "query_bool")]
+    pub include_archived: bool,
+}
+
+impl Validate for ListProjectsInput {
+    fn validate(&mut self) -> Result<()> {
+        Ok(())
+    }
+}
+
 /// An entry as the contract returns it (Entry in entries.schemas.ts).
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -311,6 +340,19 @@ pub struct DeletedEntry {
     pub id: String,
 }
 
+/// A listed project (ListedProject in projects.schemas.ts), in the field order listProjects
+/// sends, which puts hasEntries before teamIds.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListedProject {
+    pub id: String,
+    pub name: String,
+    pub color: Option<String>,
+    pub archived_at: Option<Timestamp>,
+    pub has_entries: bool,
+    pub team_ids: Vec<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -347,5 +389,26 @@ mod tests {
         assert_eq!(update.project_id, Patch::Null);
         assert_eq!(update.ticket, Patch::Absent);
         assert!(decode::<StopTimerInput>(json!({ "id": 3 })).is_err());
+    }
+
+    #[test]
+    fn reads_query_booleans() {
+        let archived = |input| decode::<ListProjectsInput>(input).map(|i| i.include_archived);
+        assert_eq!(
+            archived(json!({ "includeArchived": "true" })).ok(),
+            Some(true)
+        );
+        assert_eq!(
+            archived(json!({ "includeArchived": "false" })).ok(),
+            Some(false)
+        );
+        assert_eq!(archived(json!({ "organizationId": "o" })).ok(), Some(false));
+        let Err(Error::Invalid(message)) = archived(json!({ "includeArchived": "yes" })) else {
+            panic!("a flag that isn't true or false fails");
+        };
+        assert_eq!(
+            message,
+            r#"Invalid type: Expected boolean but received "yes""#
+        );
     }
 }
