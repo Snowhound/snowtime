@@ -98,7 +98,7 @@ export const tables: Record<string, TableNotes> = {
     },
   },
   api_key: {
-    note: 'API key plugin (@better-auth/api-key). A personal key for the /api/v1 routes (task 082); it reaches no other route.',
+    note: 'API key plugin (@better-auth/api-key). A personal key for the /api/v1 routes (task 089); it reaches no other route.',
     columns: {
       reference_id: 'The user who owns the key.',
       key: 'Hash of the key. The key itself is shown once, at creation, and never stored.',

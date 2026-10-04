@@ -23,7 +23,7 @@ companies can use it too.
 | Projects | Org-level projects, optionally assigned to teams; CRUD                                                                             |
 | Reports  | Totals per day / week / project / team / member, user's zone; their entries, read-only; CSV and XLSX export of a report as shown   |
 | Settings | Time zone, week start, and country, whose public holidays the taglines don't count as missing hours                                |
-| API      | Personal API keys and a small `/api/v1` for the timer, projects, and entries, for a Raycast extension and other clients (task 082) |
+| API      | Personal API keys and a small `/api/v1` for the timer, projects, and entries, for a Raycast extension and other clients (task 089) |
 
 ## Not in MVP
 

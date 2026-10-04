@@ -80,7 +80,7 @@ Table passkey [note: 'Passkey plugin (@better-auth/passkey). A WebAuthn credenti
   }
 }
 
-Table api_key [note: 'API key plugin (@better-auth/api-key). A personal key for the /api/v1 routes (task 082); it reaches no other route.'] {
+Table api_key [note: 'API key plugin (@better-auth/api-key). A personal key for the /api/v1 routes (task 089); it reaches no other route.'] {
   id text [pk]
   config_id text [not null, default: 'default']
   name text

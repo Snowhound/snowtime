@@ -137,7 +137,7 @@ already does what previews need, and its shared-accounts box is true of staging.
 ## API keys
 
 Clients outside the browser, such as the Raycast extension, sign in with a personal API key.
-Task 082 records why keys came before device sign-in. `@better-auth/api-key` issues and
+Task 089 records why keys came before device sign-in. `@better-auth/api-key` issues and
 stores the keys, pinned to the `better-auth` version as `@better-auth/passkey` is. Its
 options are `apiKeyOptions` in `src/server/auth/api-keys.server.ts`.
 
@@ -185,7 +185,7 @@ options are `apiKeyOptions` in `src/server/auth/api-keys.server.ts`.
 - In 1.7.6, the plugin verifies a key with a read and two writes before the response: it
   records `last_request` and touches `updated_at`. `deferUpdates` moves only the deletion
   of expired keys after the response. Whether the API accepts that cost for keys is open in
-  task 082.
+  task 089.
 
 ## Cookies and consent
 

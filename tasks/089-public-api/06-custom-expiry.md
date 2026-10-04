@@ -1,6 +1,6 @@
 # 06: Custom expiry date
 
-Status: todo (optional; nothing else in task 082 depends on it)
+Status: todo (optional; nothing else in task 089 depends on it)
 
 Besides the fixed lifetimes (30 days, 90 days, 1 year, none), a user can pick the date a key
 stops working, for example the end of a contract. The key expires at the end of that day in

@@ -171,7 +171,7 @@ type VerifiedKey = {
 export type KeyCheckDeps = {
   db: Database
   // auth.api.verifyApiKey without permissions, so a key that lacks the call's scope is told
-  // apart from an unknown one (task 082, README point 5).
+  // apart from an unknown one (task 089, README point 5).
   verifyKey: (key: string) => Promise<VerifiedKey>
   rateLimitStore: RateLimitStore
   loginDomains: readonly string[]

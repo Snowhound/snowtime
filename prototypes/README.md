@@ -699,7 +699,7 @@ Three cards, with section links beside them from 1024 px:
 | ----------- | ----------------- | -------------------------------------------------------------- |
 | Preferences | `user_settings`   | Language, time zone, week start, theme, timer layout, show summary, wide page, scenery; each saves on change |
 | Profile     | `user`, `account` | Name with "Save profile"; email read-only; sign-in methods      |
-| API keys    | `api_key`         | Personal API keys for `/api/v1` (task 082): list, create, revoke |
+| API keys    | `api_key`         | Personal API keys for `/api/v1` (task 089): list, create, revoke |
 
 Preferences come first because they change most often. Theme and timer layout moved from
 per-device `localStorage` into `user_settings` so they follow the user and the server can render
