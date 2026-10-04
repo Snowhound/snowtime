@@ -318,7 +318,7 @@ Kait, 2026-10-04:
   RSS. This cost does not justify switching to Actix, and the dedicated thread keeps
   isolate count separate from HTTP worker count. See
   [081.01's measurements](01-server-rendering.md#render-crate-and-linux-measurements-2026-10-04).
-  Native host wiring follows subtask 06; mixed API/render load remains unmeasured.
+  Subtask 06 is merged; native host wiring and mixed API/render load are next.
 - **SQL strings** took 12% fewer lines than SeaQuery and about 10% less CPU. They need no
   binder and no wait for SeaQuery to catch up with `rusqlite`. A reader can compare the
   statement text with Drizzle's and with `EXPLAIN QUERY PLAN`. In complex queries,
@@ -364,7 +364,7 @@ deployment.
 
 ### Open
 
-- Wire the tested render crate into the native Axum host after subtask 06, then measure
+- Wire the tested render crate into the native Axum host on the merged layout, then measure
   combined API/render load. Subtask 01's standalone hosts settle isolate threading and
   record renderer RSS; they use fixture answers for the unported reads.
 - The rest of the hot path: `getAppSession`, which every action calls, and the week
@@ -402,4 +402,4 @@ deployment.
       path for the isolate)
 - [x] The measurements above, recorded in this task
 - [ ] The chosen libraries, with what was rejected, in 081's decision record (chosen above
-      on 2026-10-04; recorded once subtask 01 confirms Axum)
+      on 2026-10-04; subtask 01 confirms Axum, but the full library record is still open)

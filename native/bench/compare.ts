@@ -60,6 +60,7 @@ const database = await seededDatabase()
 await buildApp()
 const [ts, native] = await Promise.all([startApp({ database }), startNative(database)])
 
+let differences = 0
 try {
   const sessions = {
     ts: { admin: await signInHeaders(ts, 'admin'), member: await signInHeaders(ts, 'member') },
@@ -78,7 +79,13 @@ try {
 
   const week = { from: new Date('2026-09-27T21:00:00Z'), to: new Date('2026-10-04T21:00:00Z') }
   const quarter = { from: new Date(SEED_NOW.getTime() - 92 * DAY), to: SEED_NOW }
-  const cases: [string, CallName, unknown, 'admin' | 'member' | null][] = [
+  const cases: [
+    string,
+    CallName,
+    unknown,
+    'admin' | 'member' | null,
+    { body?: string; origin?: false }?,
+  ][] = [
     ['running timer, none', 'getRunningTimer', undefined, 'admin'],
     ['signed out', 'getRunningTimer', undefined, null],
     ['week, admin', 'listEntries', { organizationId, ...week }, 'admin'],
@@ -142,12 +149,55 @@ try {
     ],
     ['projects, another organization', 'listProjects', { organizationId: 'nope' }, 'member'],
   ]
-  let differences = 0
-  for (const [label, name, input, who] of cases) {
+  const id = '0192f3a4-5b6c-7d8e-9f01-23456789abcd'
+  for (const value of [undefined, null, 3, true, [], {}, 'bad']) {
+    const label = JSON.stringify(value) ?? 'absent'
+    cases.push(
+      [`stop id ${label}`, 'stopTimer', { id: value }, 'admin'],
+      [
+        `start description ${label}`,
+        'startTimer',
+        { organizationId, id: 'bad', description: value },
+        'admin',
+      ],
+      [`entry user ${label}`, 'createEntry', { organizationId, id, userId: value }, 'admin'],
+      [`entry start ${label}`, 'createEntry', { organizationId, id, startedAt: value }, 'admin'],
+      [
+        `range from ${label}`,
+        'listEntries',
+        { organizationId, from: value, to: SEED_NOW },
+        'admin',
+      ],
+      [
+        `update description ${label}`,
+        'updateEntry',
+        { organizationId, id, description: value },
+        'admin',
+      ],
+      [`update start ${label}`, 'updateEntry', { organizationId, id, startedAt: value }, 'admin'],
+    )
+  }
+  cases.push(
+    ['malformed JSON', 'stopTimer', {}, 'admin', { body: '{' }],
+    ['session before JSON', 'stopTimer', {}, null, { body: '{' }],
+    ['origin before JSON', 'stopTimer', {}, 'admin', { body: '{', origin: false }],
+    ['scope before JSON', 'createEntry', { organizationId: 'nope' }, 'admin', { body: '{' }],
+    [
+      'path over body',
+      'deleteEntry',
+      { organizationId, id },
+      'admin',
+      { body: '{"id":"bad","organizationId":"nope"}' },
+    ],
+  )
+  for (const [label, name, input, who, options] of cases) {
     const operation = CALLS[name]
-    const { path, body } = requestOf(operation, input)
+    const request = requestOf(operation, input)
+    const { path } = request
+    const body = options?.body ?? request.body
     async function call(server: { url: string }, session: Record<string, string>) {
       const headers: Record<string, string> = { ...session, origin: server.url }
+      if (options?.origin === false) delete headers.origin
       if (body) headers['content-type'] = 'application/json'
       const response = await fetch(`${server.url}${path}`, {
         method: operation.method,
@@ -161,9 +211,9 @@ try {
     const same = a.status === b.status && a.text === b.text
     const equal = a.status === b.status && isDeepStrictEqual(JSON.parse(a.text), JSON.parse(b.text))
     const verdict = same ? 'same bytes' : equal ? 'same content, other bytes' : 'DIFFERENT'
-    if (!equal) differences++
+    if (!same) differences++
     console.log(`${verdict.padEnd(26)} ${label} (${a.status}, ${a.text.length} bytes)`)
-    if (!equal)
+    if (!same)
       console.log(
         `  ts:     ${a.status} ${a.text.slice(0, 300)}\n  native: ${b.status} ${b.text.slice(0, 300)}`,
       )
@@ -172,4 +222,4 @@ try {
 } finally {
   await Promise.all([ts.stop(), native.stop()])
 }
-process.exit(0)
+process.exit(differences ? 1 : 0)

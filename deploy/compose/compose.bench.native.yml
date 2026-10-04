@@ -1,5 +1,6 @@
 # The native backend (task 081) in the app's place on the local bench stack, with the same
-# database, limits, and environment: perf:stress --app=native adds this file.
+# database, limits, and environment. The host binary defaults to snowtime-axum;
+# NATIVE_BIN overrides it when building: perf:stress --app=native adds this file.
 services:
   app:
     image: snowtime-native:bench

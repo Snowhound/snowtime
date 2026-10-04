@@ -65,7 +65,7 @@ export function compose(args: string[], env: Record<string, string> = {}) {
 }
 
 // Builds the three images natively; Docker's cache makes a rebuild of unchanged code quick.
-// NATIVE_BIN picks the native candidate's binary.
+// NATIVE_BIN picks the host binary (snowtime-axum by default).
 export function buildImages() {
   for (const target of app === 'native' ? ['caddy', 'sampler'] : ['app', 'caddy', 'sampler']) {
     run('docker', ['build', '--target', target, '-t', `snowtime-${target}:bench`, ROOT])

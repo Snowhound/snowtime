@@ -6,26 +6,57 @@ SQLite schema as the TypeScript backend, with its own email sign-in. Subtask 03
 
 ## Crates
 
-| Crate            | Holds                                                                        |
-| ---------------- | ---------------------------------------------------------------------------- |
-| `core`           | The calls, errors, inputs and outputs with validation, clock, and rate limit |
-| `auth`           | Better Auth's scrypt hashes, signed session cookie, and session rows         |
-| `api`            | The request flow of `src/server/api.server.ts`, free of any HTTP library     |
-| `rules-sql`      | The rules with `rusqlite` and SQL strings                                    |
-| `rules-seaquery` | The rules with SeaQuery's query builder, run on `rusqlite`                   |
-| `server-axum`    | Axum: `snowtime-axum` (SQL strings) and `snowtime-axum-seaquery`             |
-| `server-actix`   | Actix Web: `snowtime-actix` (SQL strings)                                    |
+`server` is the library of application rules and their Axum router. `host` reads the
+configuration and serves it as `snowtime-axum`. The library binds no listening socket.
 
-Each rules crate mirrors one file of `src/server/` per module, and each function takes
-`(db, scope, input)` as its TypeScript counterpart does. An HTTP crate only turns its
-library's request into an `api::Request` and back.
+```text
+crates/server/src/
+  auth/          cookie, password, session, sign_in, routes
+  availability/  mod, routes
+  entries/       mod (rules), schemas, routes
+  projects/      mod (rules), schemas, routes
+  timer/         mod (rules), schemas, routes
+  http.rs        InOrganization, AsUser, Public, router
+  scope.rs       tenancy
+  schemas.rs     shared validation and Patch
+  queries.rs     shared SQL helpers
+  errors.rs · wire.rs · timestamp.rs · clock.rs · rate_limit.rs · timing.rs · config.rs
+crates/host/src/
+  main.rs · config.rs
+```
+
+Each domain's `routes.rs` mirrors the ported paths in its TypeScript routes file. Unported
+routes answer 404. The former Actix adapter is in git at
+`61467c1:native/crates/server-actix/`; subtask 01 confirms Axum with a dedicated render
+thread.
+
+The host can call `snowtime_server::router(app).oneshot(request)` through tower's
+`ServiceExt` (re-exported by `snowtime_server`), forwarding the page request's cookie and the method, path, and body that
+`src/lib/api/request.ts` sends. Rendering itself belongs to subtask 01.
+
+## SQL helpers
+
+`queries.rs` holds `sql!`, `Sql`, `Assignments`, and `list`. Only a string literal becomes
+SQL text in `sql!`; a fragment carries its parameters along, and other expressions bind
+as `?`. The timer, entries, projects, and scope rules use them.
+
+```rust
+let users = list(&user_ids);
+let query = sql!("select id from time_entry where user_id in ", users);
+let ids = query.query(db, |row| row.get::<_, String>(0))?;
+```
+
+`Assignments` omits absent patches, binds null for removals, and binds present values.
+The connection caches 256 prepared statements instead of rusqlite's default 16, so patch
+combinations and user-list lengths have room alongside the fixed queries. The cache stays
+bounded; more than 256 distinct statements can still evict older ones.
 
 ## Server rendering
 
 The independent [render crate](crates/render/README.md) embeds V8 and keeps the rerunnable
 server-rendering harness. Build its JavaScript bundle before building every workspace
-crate. Its HTTP examples demonstrate Axum and Actix; the existing native hosts are wired
-after subtask 06 merges.
+crate. Its HTTP examples demonstrate Axum and Actix. Wiring rendering into the native
+host is the next integration step.
 
 ## Password hashing
 
@@ -40,7 +71,7 @@ The optional `scrypt-bench` feature adds RustCrypto and vendored OpenSSL for mea
 It is excluded from the release Docker image. Run each candidate sequentially:
 
 ```sh
-cargo build --release --manifest-path native/Cargo.toml -p snowtime-auth --example scrypt-bench --features scrypt-bench
+cargo build --release --manifest-path native/Cargo.toml -p snowtime-server --example scrypt-bench --features scrypt-bench
 native/target/release/examples/scrypt-bench aws-lc 30
 native/target/release/examples/scrypt-bench openssl 30
 native/target/release/examples/scrypt-bench rust 30
@@ -65,7 +96,7 @@ The server reads the TypeScript server's environment variables: `TURSO_DATABASE_
 sign-in. `PERF_NOW`, in milliseconds, moves its clock as `perf/lib/clock.ts` does.
 
 ```sh
-cargo build --release --manifest-path native/Cargo.toml --all-features
+cargo build --release --manifest-path native/Cargo.toml --bin snowtime-axum
 bun native/bench/conformance.ts native/target/release/snowtime-axum
 bun native/bench/compare.ts native/target/release/snowtime-axum
 ```
@@ -73,8 +104,9 @@ bun native/bench/compare.ts native/target/release/snowtime-axum
 `conformance.ts` serves the binary a copy of the benchmark database at `SEED_NOW` and
 runs `conformance/timer.conformance.ts` against it (or the test files given after the
 binary). `compare.ts` sends the same reads to the TypeScript build and the binary and
-reports any answer that differs in status, content, or bytes. `lines.ts` counts the code
-lines of each ported handler in TypeScript and in the rules crates it's given.
+fails on any answer that differs in status or bytes. It also compares malformed inputs
+and the order of request checks. `lines.ts` counts the code
+lines of each ported handler in TypeScript and in the server crate (or a historical rules crate it's given).
 `api-recording.ts` cuts a `perf:stress` recording down to the calls the native backend
 serves, for `perf:stress --app=native --recording=<file>`; `native/Dockerfile` builds the
 image that run uses.

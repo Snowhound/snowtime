@@ -2,8 +2,8 @@
 
 `snowtime-render` embeds the app's Solid server bundle in a deno_core startup snapshot.
 It renders the timer and week report without Start's request runtime. Start's production
-client hydrates the result. The current native HTTP hosts remain unchanged; subtask 06
-must merge before the chosen host wires this crate in.
+client hydrates the result. Subtask 06's server layout is merged; wiring the render crate
+into its HTTP host is the next integration step.
 
 ## Host contract
 
@@ -79,7 +79,7 @@ kept in task 081.01.
 For live native forwarding, build `snowtime-axum` and run:
 
 ```sh
-caffeinate -i cargo build --release --manifest-path native/Cargo.toml -p snowtime-axum --bin snowtime-axum
+caffeinate -i cargo build --release --manifest-path native/Cargo.toml --bin snowtime-axum
 caffeinate -i bun native/crates/render/bundle/live.ts
 ```
 

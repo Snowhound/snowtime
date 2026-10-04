@@ -1,5 +1,5 @@
 # The native backend's release image (task 081), from native/ as the build context. BIN
-# picks the candidate; perf:stress --app=native builds it as snowtime-native:bench.
+# picks the host binary; perf:stress --app=native builds it as snowtime-native:bench.
 #
 #   docker build -f native/Dockerfile --build-arg BIN=snowtime-axum -t snowtime-native:bench native
 FROM rust:1.99-slim-trixie AS build
@@ -8,7 +8,7 @@ COPY . .
 ARG BIN=snowtime-axum
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
-    cargo build --release --locked --features snowtime-axum/seaquery --bin ${BIN} \
+    cargo build --release --locked --bin ${BIN} \
     && cp target/release/${BIN} /server && strip /server
 
 # Optional measurement image: OpenSSL is vendored, so its build also needs Perl and make.
@@ -18,7 +18,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
-    cargo build --release --locked -p snowtime-auth --example scrypt-bench --features scrypt-bench \
+    cargo build --release --locked -p snowtime-server --example scrypt-bench --features scrypt-bench \
     && cp target/release/examples/scrypt-bench /scrypt-bench
 ENTRYPOINT ["/scrypt-bench"]
 

@@ -1,6 +1,6 @@
 # 081.06: The Rust server's layout and routing
 
-Status: todo (after task 089 is on `main`)
+Status: done (the final HTTP library decision awaits subtask 01)
 
 How the full port is laid out. The proof of concept (subtask 03) split its code into crates
 so its candidates could share it. It routed every request through one catch-all handler and
@@ -115,12 +115,54 @@ evict each other. Raise the capacity
 
 ## Acceptance criteria
 
-- [ ] The workspace restructured as above, with the proof of concept's slice moved into
+- [x] The workspace restructured as above, with the proof of concept's slice moved into
       `server` and `host`, and the conformance and `compare.ts` checks passing
-- [ ] Routes per domain, matching task 089's Hono routers path for path
-- [ ] The extractors written, with error bodies byte-equal to the TypeScript server's
-- [ ] `sql!`, `Assignments`, and `list` written, and the ported rules using them
-- [ ] An unported call answers 404
-- [ ] Server rendering through `oneshot` proven with subtask 01, or the reason it can't be
+- [x] Routes per domain, matching task 089's Hono routers path for path
+- [x] The extractors written, with error bodies byte-equal to the TypeScript server's
+- [x] `sql!`, `Assignments`, and `list` written, and the ported rules using them
+- [x] An unported call answers 404
+- [x] Server rendering through `oneshot` proven with subtask 01, or the reason it can't be
 - [ ] The Axum or Actix decision confirmed once subtask 01's isolate runs, and recorded in
       task 081's decision record
+
+## Implementation
+
+2026-10-04: Step 1 moves the ported slice into `server` and `host`, splits domain schemas,
+and replaces the trait and call table with domain routers and typed extractors. The
+extractors preserve task 089's check order: origin, session and rate, organization, input,
+rule. One blocking call holds the connection across those checks and the rule. The
+TypeScript byte comparator now fails on byte differences, including key order.
+
+The Actix adapter remains at `61467c1:native/crates/server-actix/` in git history.
+The binary name remains `snowtime-axum`, including Docker's `BIN` and stress's `NATIVE_BIN`.
+
+Step 1 checks: `cargo test` (12 tests), `cargo clippy --all-targets -- -D warnings`,
+conformance (13/13), comparison (22/22 byte-equal), and `bun run test` (445 Bun tests and
+179 component tests) pass. A test calls the real timer route with a page cookie through
+`Router::oneshot`; subtask 01's isolate is still unimplemented.
+
+Step 2 adds `sql!`, `Sql`, `Assignments`, and `list`, and moves the timer, entries,
+projects, and scope queries onto them. `Sql` also exposes query-row, row-list, and execute
+methods so the fragment keeps its parameters beside its SQL. Tests execute nested
+fragments, hostile string values, empty lists, and absent/null/value assignments against
+SQLite. The connection's prepared-statement cache is 256 entries rather than 16. This
+chooses the spec's capacity option; no JSON-list query or query-plan change is needed.
+
+The host owns environment parsing and the bind address. The library exports the router
+and `ServiceExt` for in-process calls with the page cookie, matching `Send`'s method,
+path, and body. Subtask 01 must still connect its render isolate to that router: the
+isolate does not exist yet, so this task proves the route call, not the page render.
+Axum versus Actix stays open.
+
+One order differs from the spec's numbered extractor steps: session and scope precede
+input validation, following task 089's middleware. Otherwise signed-out callers and
+nonmembers would receive different errors from the TypeScript server. Domain schemas
+also check wire fields in Valibot's order before serde, preserving missing-key and type
+messages. Expanded comparison exposed V8's short numeric date strings in GET queries;
+`Timestamp` now reads those with the host's local time through libc, matching V8.
+
+Step 2 checks: `cargo test` (14 tests), `cargo clippy --all-targets -- -D warnings`,
+conformance (13/13), comparison (76/76 byte-equal), and `bun run test` (445 Bun tests and
+179 component tests) pass. Comparison includes malformed JSON, wrong field types,
+missing keys, session/scope/origin precedence, and path parameters overriding the body.
+Both steps pass the required checks before their commits.

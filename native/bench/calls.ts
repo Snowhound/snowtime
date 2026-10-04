@@ -1,4 +1,4 @@
-// The calls the native backend ports, by method and path as the API serves them, and how a
+// The calls registered by server/src/*/routes.rs, by method and path as the API serves them, and how a
 // bench script turns a call's input into a request: path parameters from the input, the
 // rest as a GET's query string or a JSON body, as src/lib/api/request.ts sends them.
 

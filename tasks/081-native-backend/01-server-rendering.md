@@ -17,7 +17,7 @@ The rerunnable harness is now in
 [`native/crates/render`](../../native/crates/render/README.md). The crate loads the app's
 2.38 MB server bundle from a V8 snapshot (`deno_core` 0.405.0, V8 14.9.207.2-rusty).
 It returns status, headers, and HTML chunks through bounded channels. The native HTTP
-crates are unchanged; their integration follows subtask 06.
+crates are unchanged by this work. Subtask 06 is merged; host integration is next.
 
 - **Timer and week report render and hydrate.** V8 emits 256,567 and 141,458 bytes on the
   Lumen Works seed, at `SEED_NOW`. All hydration keys match Start's build. The timer's
@@ -282,7 +282,7 @@ with Deno extensions and the policy measured above:
 
 ## Open
 
-- Wire the render crate into the native HTTP host after subtask 06. The standalone Rust
+- Wire the render crate into the native HTTP host on subtask 06's merged layout. The standalone Rust
   hosts serve both pages, and their HTML hydrates, but the native API still lacks the
   session, team, member, and report reads. Static asset serving, response-abort handling,
   and queue-wait/overload policy belong in that integration.
