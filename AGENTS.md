@@ -50,13 +50,20 @@ Edit their source files at the paths above so both agents use the same instructi
 - A component gets its own folder, `<name>/<name>.tsx`, once it has subcomponents,
   helpers, or tests that nothing else in the feature uses.
 - Backend code is grouped by domain in `src/server/<domain>/` ("Application rules" in
-  `docs/architecture/README.md`). The client reaches it only through the JSON API: queries
-  and mutations call `call` (`src/lib/api/client.ts`), and each call is listed in
-  `src/lib/api/operations.ts` with its handler in `src/server/operations.server.ts`. A new
-  call adds both, its output schema, and conformance tests in `conformance/`. A GET only
-  reads; a read with a filter object for input is a POST marked `read`. Client code imports a domain's
+  `docs/architecture/README.md`). The client reaches it only through the JSON API. A new
+  call adds:
+  - a route in the domain's `<domain>.routes.ts`, whose handler is one call of its rule:
+    `.patch('/entries/:id', input(UpdateEntryInput), (c) => run(c, entries.updateEntry))`;
+  - a function in the domain's client module, `src/lib/api/<domain>.ts`, that sends it with
+    `request(method, path, input, OutputSchema)`, and which queries and mutations import;
+  - its input and output schemas in `<domain>.schemas.ts`, and conformance tests in
+    `conformance/`.
+
+  A GET only reads; a read with a filter object for input is a POST marked `reads` on its
+  route. Only `src/server/auth/` imports Better Auth. Client code imports a domain's
   `*.schemas.ts`, plus `src/server/errors.ts` and `src/server/schemas.ts`. It never imports
-  `*.server.ts`, not even for a type.
+  `*.server.ts` or `*.routes.ts`, not even for a type.
+
 - Import with a relative path inside the importer's area: one feature folder,
   `src/server/`, or another top-level folder of `src/`. Import anything else through the
   `~/` alias for `src/` (`~/lib/format`, `~/server/timer/timer.schemas`), as
