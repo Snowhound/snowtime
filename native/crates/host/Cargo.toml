@@ -1,0 +1,15 @@
+[package]
+name = "snowtime-host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "snowtime-axum"
+path = "src/main.rs"
+
+[dependencies]
+axum.workspace = true
+snowtime-server.workspace = true
+tokio.workspace = true

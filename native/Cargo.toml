@@ -1,5 +1,3 @@
-# The native backend's proof of concept (task 081): one crate per candidate library and the
-# crates they share. native/README.md says how to build, run, and measure them.
 [workspace]
 resolver = "3"
 members = ["crates/*"]
@@ -11,11 +9,7 @@ license = "MIT"
 publish = false
 
 [workspace.dependencies]
-snowtime-core = { path = "crates/core" }
-snowtime-auth = { path = "crates/auth" }
-snowtime-api = { path = "crates/api" }
-snowtime-rules-sql = { path = "crates/rules-sql" }
-snowtime-rules-seaquery = { path = "crates/rules-seaquery" }
+snowtime-server = { path = "crates/server" }
 
 axum = "0.8"
 base64 = "0.23"

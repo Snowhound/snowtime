@@ -1,0 +1,32 @@
+[package]
+name = "snowtime-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+scrypt-bench = ["dep:scrypt", "dep:openssl"]
+
+[dependencies]
+aws-lc-sys = "0.45"
+base64.workspace = true
+hmac.workspace = true
+openssl = { version = "0.10", features = ["vendored"], optional = true }
+rand.workspace = true
+rusqlite.workspace = true
+scrypt = { workspace = true, optional = true }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+axum.workspace = true
+form_urlencoded.workspace = true
+rustc-hash.workspace = true
+tokio.workspace = true
+tower = { version = "0.5", features = ["util"] }
+unicode-normalization.workspace = true
+uuid.workspace = true
+
+[[example]]
+name = "scrypt-bench"
+required-features = ["scrypt-bench"]

@@ -60,6 +60,7 @@ const database = await seededDatabase()
 await buildApp()
 const [ts, native] = await Promise.all([startApp({ database }), startNative(database)])
 
+let differences = 0
 try {
   const sessions = {
     ts: { admin: await signInHeaders(ts, 'admin'), member: await signInHeaders(ts, 'member') },
@@ -142,7 +143,6 @@ try {
     ],
     ['projects, another organization', 'listProjects', { organizationId: 'nope' }, 'member'],
   ]
-  let differences = 0
   for (const [label, name, input, who] of cases) {
     const operation = CALLS[name]
     const { path, body } = requestOf(operation, input)
@@ -161,9 +161,9 @@ try {
     const same = a.status === b.status && a.text === b.text
     const equal = a.status === b.status && isDeepStrictEqual(JSON.parse(a.text), JSON.parse(b.text))
     const verdict = same ? 'same bytes' : equal ? 'same content, other bytes' : 'DIFFERENT'
-    if (!equal) differences++
+    if (!same) differences++
     console.log(`${verdict.padEnd(26)} ${label} (${a.status}, ${a.text.length} bytes)`)
-    if (!equal)
+    if (!same)
       console.log(
         `  ts:     ${a.status} ${a.text.slice(0, 300)}\n  native: ${b.status} ${b.text.slice(0, 300)}`,
       )
@@ -172,4 +172,4 @@ try {
 } finally {
   await Promise.all([ts.stop(), native.stop()])
 }
-process.exit(0)
+process.exit(differences ? 1 : 0)

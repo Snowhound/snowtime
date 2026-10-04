@@ -1,6 +1,6 @@
 # 081.06: The Rust server's layout and routing
 
-Status: todo (after task 089 is on `main`)
+Status: in-progress
 
 How the full port is laid out. The proof of concept (subtask 03) split its code into crates
 so its candidates could share it. It routed every request through one catch-all handler and
@@ -124,3 +124,19 @@ evict each other. Raise the capacity
 - [ ] Server rendering through `oneshot` proven with subtask 01, or the reason it can't be
 - [ ] The Axum or Actix decision confirmed once subtask 01's isolate runs, and recorded in
       task 081's decision record
+
+## Implementation
+
+2026-10-04: Step 1 moves the ported slice into `server` and `host`, splits domain schemas,
+and replaces the trait and call table with domain routers and typed extractors. The
+extractors preserve task 089's check order: origin, session and rate, organization, input,
+rule. One blocking call holds the connection across those checks and the rule. The
+TypeScript byte comparator now fails on byte differences, including key order.
+
+The Actix adapter remains at `61467c1:native/crates/server-actix/` in git history.
+The binary name remains `snowtime-axum`, including Docker's `BIN` and stress's `NATIVE_BIN`.
+
+Step 1 checks: `cargo test` (12 tests), `cargo clippy --all-targets -- -D warnings`,
+conformance (13/13), comparison (22/22 byte-equal), and `bun run test` (445 Bun tests and
+179 component tests) pass. A test calls the real timer route with a page cookie through
+`Router::oneshot`; subtask 01's isolate is still unimplemented.

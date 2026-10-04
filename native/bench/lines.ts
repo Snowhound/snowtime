@@ -20,63 +20,63 @@ const PAIRS: [string, string, string[], string, string[]][] = [
     'assertUsableProject',
     'src/server/projects/projects.server.ts',
     ['visibleProjects', 'assertUsableProject'],
-    'projects.rs',
+    'projects/mod.rs',
     ['VISIBLE_PROJECTS', 'visible_projects', 'assert_usable_project'],
   ],
   [
     'entry columns',
     'src/server/entries/entries.server.ts',
     ['entryColumns'],
-    'entries.rs',
+    'entries/mod.rs',
     ['ENTRY_COLUMNS', 'entry_of', 'entry_columns'],
   ],
   [
     'entry checks',
     'src/server/entries/entries.server.ts',
     ['assertCanWrite', 'assertMember', 'findEntry', 'assertEntryRoom', 'assertReadable'],
-    'entries.rs',
+    'entries/mod.rs',
     ['assert_can_write', 'assert_member', 'find_entry', 'assert_entry_room', 'assert_readable'],
   ],
   [
     'createEntry',
     'src/server/entries/entries.server.ts',
     ['createEntry'],
-    'entries.rs',
+    'entries/mod.rs',
     ['create_entry'],
   ],
   [
     'updateEntry',
     'src/server/entries/entries.server.ts',
     ['updateEntry'],
-    'entries.rs',
+    'entries/mod.rs',
     ['update_entry'],
   ],
   [
     'deleteEntry',
     'src/server/entries/entries.server.ts',
     ['deleteEntry'],
-    'entries.rs',
+    'entries/mod.rs',
     ['delete_entry'],
   ],
   [
     'getFirstEntryStart',
     'src/server/entries/entries.server.ts',
     ['getFirstEntryStart'],
-    'entries.rs',
+    'entries/mod.rs',
     ['get_first_entry_start'],
   ],
   [
     'listEntries',
     'src/server/entries/entries.server.ts',
     ['listEntries'],
-    'entries.rs',
+    'entries/mod.rs',
     ['list_entries'],
   ],
   [
     'timer helpers',
     'src/server/timer/timer.server.ts',
     ['runningOf', 'isMemberOfEntryOrganization', 'stopAt', 'stopRunning', 'assertStillMember'],
-    'timer.rs',
+    'timer/mod.rs',
     [
       'RUNNING_OF',
       'IS_MEMBER_OF_ENTRY_ORGANIZATION',
@@ -92,16 +92,22 @@ const PAIRS: [string, string, string[], string, string[]][] = [
     'listProjects',
     'src/server/projects/projects.server.ts',
     ['projectColumns', 'listProjects'],
-    'projects.rs',
+    'projects/mod.rs',
     ['PROJECT_COLUMNS', 'list_projects'],
   ],
-  ['startTimer', 'src/server/timer/timer.server.ts', ['startTimer'], 'timer.rs', ['start_timer']],
-  ['stopTimer', 'src/server/timer/timer.server.ts', ['stopTimer'], 'timer.rs', ['stop_timer']],
+  [
+    'startTimer',
+    'src/server/timer/timer.server.ts',
+    ['startTimer'],
+    'timer/mod.rs',
+    ['start_timer'],
+  ],
+  ['stopTimer', 'src/server/timer/timer.server.ts', ['stopTimer'], 'timer/mod.rs', ['stop_timer']],
   [
     'getRunningTimer',
     'src/server/timer/timer.server.ts',
     ['getRunningTimer'],
-    'timer.rs',
+    'timer/mod.rs',
     ['get_running_timer'],
   ],
 ]
@@ -140,7 +146,7 @@ function count(file: string, names: string[]) {
 }
 
 const crates = process.argv.slice(2)
-const rules = crates.length > 0 ? crates : ['rules-sql']
+const rules = crates.length > 0 ? crates : ['server']
 const header = ['Handler', 'TypeScript', ...rules]
 const rows = PAIRS.map(([label, tsFile, tsNames, module, rustNames]) => [
   label,
