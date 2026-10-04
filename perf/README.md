@@ -236,6 +236,12 @@ own in `CF-Connecting-IP`, which the bench Caddyfile trusts from the generator. 
 mutation or page load goes alone, and the API reads that follow it go at once, as the
 browser's refetches do.
 
+Each action picks its person at random, so several virtual users act for the same person,
+and above 25,000 users of M each person stands for many. A virtual user stops the timer it
+started, but another one's start may have stopped it already. The scenario doesn't count
+that stop's 404 as an error: a person who stops a timer in one tab after starting another
+in a second tab gets the same answer.
+
 Requests keep `Sec-Fetch-Site` from the recording: behind Caddy the app sees its own URL
 as `http`, so Start's CSRF check accepts a server function call by that header and would
 refuse one that carries only `Origin`.
