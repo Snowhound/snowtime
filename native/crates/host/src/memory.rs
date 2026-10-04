@@ -4,10 +4,11 @@ use snowtime_render::{Policy, Pool};
 use std::time::Duration;
 
 const MIB: u64 = 1 << 20;
-// Peak RSS of the server with one renderer at a 128 MiB heap limit, and what each further
-// renderer adds at its peak (task 081.01, "Renderers").
-const FIRST_RENDERER_PEAK: u64 = 192 * MIB;
-const EXTRA_RENDERER_PEAK: u64 = 96 * MIB;
+// The server's peak RSS with one renderer at a 128 MiB heap limit, its target (219 MiB
+// measured at capacity), and what each further renderer adds at its peak, 40-75 MiB
+// measured (task 081.01, "Memory").
+const FIRST_RENDERER_PEAK: u64 = 256 * MIB;
+const EXTRA_RENDERER_PEAK: u64 = 80 * MIB;
 // The share of the limit the server plans to use; the rest is headroom for SQLite's cache,
 // request buffers, and sign-in's scrypt, 32 MiB each.
 const PLANNED_SHARE: f64 = 0.75;
@@ -71,7 +72,8 @@ pub fn policy(limit: &Limit, cpus: usize, at_most: Option<usize>) -> Policy {
         .min(cpus)
         .min(at_most.unwrap_or(usize::MAX))
         .max(1);
-    // Below the first renderer's peak, a smaller heap keeps one renderer within the limit.
+    // Below the first renderer's peak, a 64 MiB heap lowers its peak by about 60 MiB for 26-46%
+    // more CPU a page.
     let heap = if planned < FIRST_RENDERER_PEAK {
         64 * MIB
     } else {
@@ -146,10 +148,11 @@ mod tests {
             );
             (p.max_renderers, p.heap_limit_bytes as u64 / MIB)
         };
-        assert_eq!(sized(200, 4), (1, 64));
-        assert_eq!(sized(256, 4), (1, 128));
-        assert_eq!(sized(512, 4), (3, 128));
+        assert_eq!(sized(256, 4), (1, 64));
+        assert_eq!(sized(384, 4), (1, 128));
+        assert_eq!(sized(512, 4), (2, 128));
+        assert_eq!(sized(1024, 4), (4, 128));
         assert_eq!(sized(2048, 1), (1, 128));
-        assert_eq!(sized(2048, 16), (15, 128));
+        assert_eq!(sized(2048, 32), (17, 128));
     }
 }

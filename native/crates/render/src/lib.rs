@@ -203,11 +203,7 @@ impl Renderer {
     }
     fn collect(&mut self) {
         self.js().v8_isolate().low_memory_notification();
-        // glibc keeps what V8's compiler and the page buffers freed; return it to the system.
-        #[cfg(all(target_os = "linux", target_env = "gnu"))]
-        unsafe {
-            libc::malloc_trim(0);
-        }
+        trim();
         if self.heap_bytes() > self.policy.replace_heap_bytes {
             self.reset();
         }
@@ -251,6 +247,19 @@ impl Renderer {
         }
     }
 }
+
+// glibc keeps what V8's compiler and the page buffers freed, 55-60 MiB; return it to the
+// system. A no-op elsewhere.
+fn trim() {
+    #[cfg(all(target_os = "linux", target_env = "gnu"))]
+    // malloc_trim only releases free memory.
+    unsafe {
+        libc::malloc_trim(0);
+    }
+}
+
+// Under steady load a renderer may not collect for a long time; it trims this often anyway.
+const TRIM_EVERY_PAGES: u32 = 64;
 
 struct Job {
     request: PageRequest,
@@ -369,6 +378,7 @@ async fn run_renderer(shared: Arc<Shared>) {
     shared.spawning.store(false, Ordering::SeqCst);
     let mut dirty = false;
     let mut idle_since = Instant::now();
+    let mut untrimmed = 0;
     loop {
         let wait = if dirty {
             policy.idle
@@ -403,9 +413,14 @@ async fn run_renderer(shared: Arc<Shared>) {
         dirty = true;
         idle_since = Instant::now();
         let pressure = shared.pressure.load(Ordering::Relaxed);
+        untrimmed += 1;
         if pressure || renderer.heap_bytes() > policy.collect_heap_bytes {
             renderer.collect();
             dirty = false;
+            untrimmed = 0;
+        } else if untrimmed >= TRIM_EVERY_PAGES {
+            trim();
+            untrimmed = 0;
         }
         if pressure && retire(&shared, idle_since) {
             break;

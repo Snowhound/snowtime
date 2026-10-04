@@ -2,6 +2,8 @@
 //! JSON line: latency, throughput, CPU per render, and memory. `capture.ts` writes its inputs.
 //!
 //!   render-bench <page.json> <answers.json> [count] [renderers] [concurrency] [output.html]
+//!
+//! RENDER_HEAP_MB sets each isolate's heap limit.
 use snowtime_render::{ApiResponse, MANIFEST, PageRequest, Policy, Pool, SendApi};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::{collections::HashMap, sync::Arc, time::Duration, time::Instant};
@@ -76,6 +78,23 @@ async fn run(
     Ok(times)
 }
 
+// RENDER_HEAP_MB sets the heap limit, with the host's thresholds for it (crates/host).
+fn heap_limits() -> Policy {
+    let Some(mb) = std::env::var("RENDER_HEAP_MB")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+    else {
+        return Policy::default();
+    };
+    let heap = mb << 20;
+    Policy {
+        heap_limit_bytes: heap,
+        collect_heap_bytes: heap * 3 / 8,
+        replace_heap_bytes: heap * 5 / 8,
+        ..Policy::default()
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
@@ -111,7 +130,7 @@ async fn main() -> anyhow::Result<()> {
             max_renderers: renderers,
             queue_capacity: concurrency.max(64),
             max_queue_wait: Duration::from_secs(60),
-            ..Default::default()
+            ..heap_limits()
         },
     )
     .map_err(anyhow::Error::msg)?;

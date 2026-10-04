@@ -1,7 +1,7 @@
 # 081.01: Server rendering in the native backend
 
-Status: in-progress (render crate and Linux measurements verified 2026-10-04; host wiring
-and the whole-server memory target open)
+Status: in-progress (the native host serves pages, measured 2026-10-04; the whole-server
+memory target awaits Kait's agreement)
 
 The native backend renders pages and the browser hydrates them, as it does with today's
 Start server. Rust embeds a V8 isolate that runs the app's Solid server render. Kait chose
@@ -11,13 +11,185 @@ rendering cheap and hydration compatible. Task 079 is cancelled.
 
 ## Findings
 
+### The native host serves pages, 2026-10-04
+
+`snowtime-axum` now renders pages through the render crate
+([`native/README.md`](../../native/README.md), "Server rendering"). It serves `/api/` from
+the API router, public files from `PUBLIC_DIR`, and every other path as a page. The
+renderer's API calls go through `router.oneshot` with the page's cookie. A renderer writes
+the whole page into a buffer and takes the next one; the handler sends the buffer, so a
+slow client never holds an isolate. A full queue, or a page that waited longer than one
+second in it, answers 503 with `Retry-After: 1`. A queued page whose client has gone is
+skipped. The host renders at `PERF_NOW` when that moves its clock, so pages and API agree
+on the day.
+
+- **Ported reads.** The session (`GET /session`, with the fill summary in the user's zone
+  and region), teams, members, and the report (`POST /report`) join the timer, entries,
+  and projects. With them, the timer and every report page render with no recorded
+  answers. Time zones come from `jiff` with its bundled zone database. The report's
+  breakdown, entry lists, and export remain unported.
+- **Same answers.** `compare.ts` finds every one of its 191 calls byte-equal to the
+  TypeScript server, masking only each server's clock, sign-in time, and URL. They include
+  the new reads as owner and member, report filters and refusals, malformed report input,
+  and Better Auth's origin and CSRF checks on sign-in. The comparison found that the
+  TypeScript `IsoDate` check threw on a non-date (`"bad"`, `2026-13-01`) and answered 500;
+  it now refuses with the date-format message.
+- **Same pages.** The timer, the week, the month, and a year report render with the same
+  status and markup as Start's, apart from the recorded ICU text (`28 Mon`) and the
+  whitespace of one function seroval prints from source. Redirects match Start's (signed
+  out to `/sign-in?redirect=…`, `/` to the timer). Chrome hydrates the timer and week with
+  no errors, keeps all 610 and 434 keyed nodes, and navigates between them without a
+  reload. The signed-out `/sign-in` page needs unported reads and answers 500.
+
+The manifest the renderer embeds must come from the build whose assets the host serves.
+`bundle/build.ts` now strips it as Start's `getStartManifest` does, which drops the build
+paths it carried, and copies that build's public files beside it.
+
+#### Load on dataset M
+
+Task 078's `perf:stress` on dataset M, set up as in [081.03](03-port-libraries.md#load-perfstress-on-m):
+app, Caddy, and sampler on one shared core, the app limited to 1,792 MB, so the host sizes
+one renderer. The recording is task 090's full one, cut by `api-recording.ts` to the calls
+the native host serves plus the timer and report pages: every action of the usage model
+but the export and the sign-in page. The TypeScript column is 081.03's run of the whole
+recording, so its return carries one call more. Raw output:
+[kinds](server-rendering/render-host-stress-kinds.txt),
+[ramp](server-rendering/render-host-stress-ramp.txt),
+[fixed 40,000](server-rendering/render-host-stress-fixed40k.txt).
+
+Each action alone at 2 a second for 60 seconds, app CPU per action:
+
+| Action       | Requests | Native ms | TypeScript ms (081.03) |
+| ------------ | -------: | --------: | ---------------------: |
+| Open (timer) |        1 |      36.8 |                     56 |
+| Return       |        4 |       3.2 |                     29 |
+| Timer        |        4 |       2.8 |                     31 |
+| Edit         |        5 |       3.0 |                     29 |
+| Week report  |        3 |       3.1 |                     26 |
+| Month report |        1 |      29.0 |                     60 |
+| Year report  |        1 |      46.3 |                     93 |
+| Sign-in      |        6 |      81.5 |                    103 |
+
+A page costs 1.5–2× less than Start's render, and an API action 8–10× less. The timer page's
+36.8 ms includes its five API reads against dataset M and the HTTP handling, which
+`render-bench`'s 17.5 ms leaves out.
+
+The ramp, one minute a step (`--step-seconds=60 --hold-seconds=180`), before the trim
+described below. CPU is a share of the one core; RSS is the step's peak and anonymous memory
+its last sample; page columns are the server's p95 in ms:
+
+|         Users | Req/s | App CPU | Caddy CPU | RSS / anon MB | Timer page | Month page | Year page |
+| ------------: | ----: | ------: | --------: | ------------: | ---------: | ---------: | --------: |
+|         5,000 |    89 |    9.3% |      5.2% |      142 / 56 |         52 |         54 |       225 |
+|        10,000 |   179 |     16% |      8.0% |     194 / 113 |         57 |         57 |       408 |
+|        20,000 |   355 |     28% |       12% |     206 / 116 |         64 |         84 |       455 |
+|        30,000 |   535 |     39% |       16% |     204 / 132 |        143 |         93 |       166 |
+|        40,000 |   714 |     51% |       21% |     254 / 137 |        233 |        310 |       388 |
+|        50,000 |   891 |     65% |       27% |     260 / 157 |  872, miss |        934 |       849 |
+| 40,000, 3 min |   712 |     53% |       21% |     303 / 176 |        319 |        332 |       216 |
+
+- **Capacity.** The native host held its targets up to 40,000 users of this slice (714
+  requests and 11 pages a second) and held them for three minutes; at 50,000 a 30-second
+  window's month-page p95 reached 1,029 ms. The shared core limited it, with the app at
+  65% and Caddy at 27%. The ramp saw five 5xx answers, all in the 50,000 step, and no
+  others. The TypeScript server hasn't run this slice; 081.03's API-only slice isn't
+  comparable, since this one adds pages, the session, and reports.
+- **Memory.** Idle, the server holds 47 MB RSS (15 MB anonymous): the renderer's isolate
+  exists, but the snapshot's pages are touched as pages render. Under load RSS grew to
+  254 MB at 40,000 users and 303 MB in the hold. With the trim below, a five-minute run at
+  40,000 users peaked at **219 MB RSS** with 114 MB anonymous at its end, within targets
+  and without errors. RSS counts the binary's mapped code, about 33 MB at idle, and more as
+  more of V8 runs.
+- **Pressure.** With the app limited to 240 MB, the host sized one renderer with a 64 MiB
+  heap and held targets at 20,000 users with 134 MB peak RSS. At 160 MB the RSS check
+  fired at 137 MiB; renderers collected and trimmed after every page, RSS fell to 74 MiB,
+  and pressure cleared. Targets held and nothing was killed, while the database's page
+  cache shrank and disk reads rose from 4.7 to 14.8 MB/s.
+
+#### Renderers
+
+`render-bench` in Docker on this Mac (`debian:trixie-slim`, `--memory=2g`), against
+`capture.ts`'s recorded answers, so without SQLite. Medians of three runs, after 50 warmup
+pages and idle collection; RSS samples every quarter second
+([pages](server-rendering/render-pool-pages.jsonl),
+[renderers](server-rendering/render-pool-renderers.jsonl),
+[long](server-rendering/render-pool-long.jsonl),
+[heap](server-rendering/render-pool-heap.jsonl)).
+
+One renderer on one CPU, 500 pages:
+
+| Page  | p50 / p95 ms | CPU ms/page | Loaded / idle MiB | Peak MiB |
+| ----- | -----------: | ----------: | ----------------: | -------: |
+| Timer |  14.7 / 34.4 |        17.5 |       64.5 / 66.5 |      161 |
+| Week  |  10.6 / 18.2 |        11.4 |       64.9 / 66.6 |      145 |
+
+Against the channel thread above, a timer page costs 3.1 ms less CPU and a week page 2.8 ms
+less. The likely causes: the body goes into a buffer instead of an awaited channel send
+per chunk, and the manifest is set once per isolate instead of parsed with every page.
+
+The timer page with 1 to 4 renderers and as many clients, on four CPUs, 1,000 pages:
+
+| Renderers | Pages/s | p50 / p95 ms | CPU ms/page | Loaded / idle MiB | Peak MiB (range) |
+| --------: | ------: | -----------: | ----------: | ----------------: | ---------------: |
+|         1 |      67 |  14.6 / 18.1 |        19.1 |       66.0 / 70.5 |    156 (154–156) |
+|         2 |     128 |  15.3 / 18.9 |        20.5 |       112.5 / 124 |    232 (213–267) |
+|         3 |     180 |  16.1 / 20.5 |        21.3 |       158.3 / 167 |    223 (213–226) |
+|         4 |     180 |  17.1 / 44.6 |        22.4 |       203.4 / 220 |    272 (268–279) |
+
+Each renderer adds about 46 MiB loaded and 50 MiB idle, and 40–75 MiB at its peak; glibc's
+retained free memory, 25–128 MiB across runs, makes peaks vary. A second renderer adds
+90% throughput and a third 41%; a fourth adds nothing with the bench's clients on the same
+four CPUs. CPU per page rises 4–7% a renderer as they share caches and memory bandwidth.
+The host's sizing uses 256 MiB for the server with one renderer and 80 MiB for each further
+one, and caps the count at the CPUs.
+
+A 64 MiB heap limit, which the host picks below about 340 MiB, against 128 MiB, 1,000
+pages each:
+
+| Page  | Heap MiB | p50 / p95 ms | CPU ms/page | Loop / peak MiB |
+| ----- | -------: | -----------: | ----------: | --------------: |
+| Timer |       64 |  18.7 / 54.1 |        26.0 |        72 / 104 |
+| Timer |      128 |  15.0 / 34.6 |        17.8 |       102 / 163 |
+| Week  |       64 |  12.0 / 29.7 |        14.9 |        77 / 107 |
+| Week  |      128 |  11.1 / 19.9 |        11.8 |        98 / 147 |
+
+#### Late growth
+
+The growth after the first pages is glibc's, not V8's. Before the fix, a timer loop held
+152–155 MiB and 121–124 MiB after idle collection, against 65–73 MiB once warm; glibc
+reported 6 MiB in use and 57–62 MiB free but kept. Over 5,000 pages RSS climbed for the
+first eighth and then stayed at 150–160 MiB, so it is a plateau, not a leak.
+`MALLOC_ARENA_MAX=2`, `MALLOC_MMAP_THRESHOLD_=131072`, and `MALLOC_TRIM_THRESHOLD_=131072`
+changed none of it: the freed memory is many small blocks from V8's compiler and the
+page's buffers, spread over thread arenas glibc doesn't trim by itself.
+
+The renderer now calls `malloc_trim(0)` after each collection and every 64 pages. Over
+5,000 pages RSS holds at 99–107 MiB and returns to 67–69 MiB idle, at the same CPU (17.4–
+17.9 ms against 17.7–17.9). Trimming only after collections left one of two runs at 155 MiB,
+because a run that never crossed the 48 MiB used-heap threshold never collected. glibc's
+statistics still count about 55 MiB free after a trim, since released pages stay in its
+lists. The 161 MiB peak remains: it comes in the first pages, while V8 optimizes on its
+background threads, before the first trim. The earlier spike's 219 MB macOS and 237 MB
+Linux peaks probably had the same cause; they weren't re-measured.
+
+#### Proposed memory target
+
+For Kait to agree: **the whole server with one renderer stays under 256 MiB RSS at its
+peak**, at the 128 MiB heap limit, on the load it can carry on one core. Measured: 219 MB
+at 40,000 users of the slice, 114 MB of it anonymous. Each further renderer may add 80 MiB.
+With the host planning on 75% of its limit, one renderer needs a 384 MiB container
+limit and each further one 107 MiB more; the cgroup's page cache uses the rest. Below 340
+MiB the host takes a 64 MiB heap, which held targets at 20,000 users under a 160 MB limit
+at 26–46% more CPU a page. The API-only 64 MB target stays for a server without a
+renderer.
+
 ### Render crate and Linux measurements, 2026-10-04
 
 The rerunnable harness is now in
 [`native/crates/render`](../../native/crates/render/README.md). The crate loads the app's
 2.38 MB server bundle from a V8 snapshot (`deno_core` 0.405.0, V8 14.9.207.2-rusty).
-It returns status, headers, and HTML chunks through bounded channels. The native HTTP
-crates are unchanged by this work. Subtask 06 is merged; host integration is next.
+This section measured its first version, which returned HTML chunks through bounded
+channels and offered an Actix worker; the host integration above replaced both.
 
 - **Timer and week report render and hydrate.** V8 emits 256,567 and 141,458 bytes on the
   Lumen Works seed, at `SEED_NOW`. All hydration keys match Start's build. The timer's
@@ -282,20 +454,15 @@ with Deno extensions and the policy measured above:
 
 ## Open
 
-- Wire the render crate into the native HTTP host on subtask 06's merged layout. The standalone Rust
-  hosts serve both pages, and their HTML hydrates, but the native API still lacks the
-  session, team, member, and report reads. Static asset serving, response-abort handling,
-  and queue-wait/overload policy belong in that integration.
-- Agree the whole-server memory target with Kait. One renderer uses about 124 MiB after
-  idle collection and peaks near 169 MiB on the timer before SQLite, native API state,
-  and concurrent sign-in buffers are added. The API-only 64 MB target cannot carry over.
-- Run mixed API/render load and longer loops, then confirm on the Linux deployment host.
-  These measurements are Docker on this Mac, on the small Lumen Works seed, with recorded
-  Rust API answers; they do not establish whole-server capacity or a multi-isolate pool's
-  cost.
-- Explain the peak and late-loop growth. RSS rises near the end of 500 renders even with
-  used-heap collection and drops by roughly 30–40 MiB on idle. The policy bounds the heap,
-  not RSS. The earlier 219 MB macOS and 237 MB Linux spike peaks remain unexplained.
+- Agree the whole-server memory target with Kait (proposed above: under 256 MiB RSS at
+  peak with one renderer, 80 MiB for each further one).
+- Confirm on the Linux deployment host. These measurements are Docker on this Mac: the
+  stress runs on dataset M with Caddy on the app's core, the renderer runs on the Lumen
+  Works seed with recorded answers.
+- Port the sign-in page's reads (sign-in methods, deployment, seeded users), so `/sign-in`
+  renders signed out, and the report's breakdown, entry lists, and export.
+- Bring the 161 MiB warmup peak down if the target needs it: it comes before the first
+  trim, while V8 optimizes the bundle.
 
 ## Acceptance criteria
 

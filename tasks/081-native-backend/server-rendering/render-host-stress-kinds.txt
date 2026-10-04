@@ -1,0 +1,100 @@
+[stress] Idle app (native): memory 110 MB (anon 15, cache 93), RSS 47 MB
+open: 0 active users, 60 s. Offered 2.0 req/s, completed 2.0 req/s
+Kind       req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+open page   2.02   40  108  529       39      106      578    1000
+Errors: none
+Container   CPU  throttled  mem MB  peak  anon  cache  RSS  read MB/s  write  PSI cpu  mem  io
+app        7.4%       0.0%     209   209    55    148  107       0.91   0.00       4%   0%  3%
+caddy      0.5%       0.0%      78    78    20     54   56       0.00   0.00       1%   0%  0%
+sampler    0.1%       0.0%      14    14     8      0   15       0.00   0.00       0%   0%  0%
+App CPU per request 36.8 ms, Caddy 2.67 ms; steal 0.0%; host memory 1267 of 8320 MB; database 944 MB; disk 5%; OOM kills 0
+JS heap at its peak 0 of 0 MB, external 0 MB, RSS then 0 MB; slowest heap answer 2 ms, 0 at the timeout
+Within targets
+return: 0 active users, 60 s. Offered 8.1 req/s, completed 8.1 req/s
+Kind        req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+return api   8.07    6    8   11        4        7        9     300
+Errors: none
+Container   CPU  throttled  mem MB  peak  anon  cache  RSS  read MB/s  write  PSI cpu  mem  io
+app        0.6%       0.0%     194   209    36    153  105       0.16   0.00       1%   0%  1%
+caddy      0.8%       0.0%      87    87    29     54   65       0.00   0.00       1%   0%  0%
+sampler    0.3%       0.0%      14    14     8      0   14       0.00   0.00       0%   0%  0%
+App CPU per request 0.8 ms, Caddy 1.00 ms; steal 0.0%; host memory 1283 of 8320 MB; database 944 MB; disk 5%; OOM kills 0
+JS heap at its peak 0 of 0 MB, external 0 MB, RSS then 0 MB; slowest heap answer 1 ms, 0 at the timeout
+Within targets
+timer: 0 active users, 60 s. Offered 8.1 req/s, completed 8.1 req/s
+Kind       req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+start api   8.07    2    8   10        2        7        9     300
+Errors: none
+Container   CPU  throttled  mem MB  peak  anon  cache  RSS  read MB/s  write  PSI cpu  mem  io
+app        0.6%       0.0%     200   200    37    159   86       0.10   0.18       0%   0%  1%
+caddy      0.5%       0.0%      89    90    32     54   68       0.00   0.00       1%   0%  0%
+sampler    0.3%       0.0%      14    14     8      0   14       0.00   0.00       0%   0%  0%
+App CPU per request 0.7 ms, Caddy 0.65 ms; steal 0.0%; host memory 1282 of 8320 MB; database 944 MB; disk 5%; OOM kills 0
+JS heap at its peak 0 of 0 MB, external 0 MB, RSS then 0 MB; slowest heap answer 1 ms, 0 at the timeout
+Within targets
+edit: 0 active users, 60 s. Offered 10.1 req/s, completed 10.1 req/s
+Kind      req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+edit api  10.08    3    8   10        2        7        8     300
+Errors: none
+Container   CPU  throttled  mem MB  peak  anon  cache  RSS  read MB/s  write  PSI cpu  mem  io
+app        0.6%       0.0%     204   204    37    163   86       0.07   0.05       0%   0%  0%
+caddy      0.6%       0.0%      90    90    32     54   68       0.00   0.00       1%   0%  0%
+sampler    0.3%       0.0%      14    14     8      0   14       0.00   0.00       0%   0%  0%
+App CPU per request 0.6 ms, Caddy 0.65 ms; steal 0.0%; host memory 1270 of 8320 MB; database 944 MB; disk 5%; OOM kills 0
+JS heap at its peak 0 of 0 MB, external 0 MB, RSS then 0 MB; slowest heap answer 1 ms, 0 at the timeout
+Within targets
+reports-week: 0 active users, 60 s. Offered 6.0 req/s, completed 6.0 req/s
+Kind              req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+reports-week api   6.05    4    6   11        2        5       12     300
+Errors: none
+Container   CPU  throttled  mem MB  peak  anon  cache  RSS  read MB/s  write  PSI cpu  mem  io
+app        0.6%       0.0%     218   218    45    167   94       0.07   0.00       1%   0%  0%
+caddy      0.6%       0.0%      92    92    34     54   70       0.00   0.00       1%   0%  0%
+sampler    0.3%       0.0%      13    14    10      0   16       0.00   0.00       0%   0%  0%
+App CPU per request 1.0 ms, Caddy 1.03 ms; steal 0.0%; host memory 1252 of 8320 MB; database 944 MB; disk 5%; OOM kills 0
+JS heap at its peak 0 of 0 MB, external 0 MB, RSS then 0 MB; slowest heap answer 1 ms, 0 at the timeout
+Within targets
+reports-month: 0 active users, 60 s. Offered 2.0 req/s, completed 2.0 req/s
+Kind                req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+reports-month page   2.02   30   58   85       30       57       86    1000
+Errors: none
+Container   CPU  throttled  mem MB  peak  anon  cache  RSS  read MB/s  write  PSI cpu  mem  io
+app        5.7%       0.0%     247   254    64    177  115       0.17   0.00       3%   0%  0%
+caddy      0.3%       0.0%      92    93    34     54   70       0.00   0.00       0%   0%  0%
+sampler    0.2%       0.0%      13    13    10      0   16       0.00   0.00       0%   0%  0%
+App CPU per request 29.0 ms, Caddy 1.75 ms; steal 0.0%; host memory 1262 of 8320 MB; database 944 MB; disk 5%; OOM kills 0
+JS heap at its peak 0 of 0 MB, external 0 MB, RSS then 0 MB; slowest heap answer 1 ms, 0 at the timeout
+Within targets
+reports-year: 0 active users, 60 s. Offered 2.0 req/s, completed 2.0 req/s
+Kind               req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+reports-year page   2.02   41   92  826       40       89      921    3000
+Errors: none
+Container   CPU  throttled  mem MB  peak  anon  cache  RSS  read MB/s  write  PSI cpu  mem  io
+app        9.0%       0.0%     475   508   149    319  232       2.29   0.00       4%   0%  3%
+caddy      0.4%       0.0%      93    94    35     54   71       0.00   0.00       1%   0%  0%
+sampler    0.1%       0.0%      13    13    10      0   16       0.00   0.00       0%   0%  0%
+App CPU per request 46.3 ms, Caddy 2.08 ms; steal 0.0%; host memory 1354 of 8320 MB; database 944 MB; disk 5%; OOM kills 0
+JS heap at its peak 0 of 0 MB, external 0 MB, RSS then 0 MB; slowest heap answer 2 ms, 0 at the timeout
+Within targets
+sign-in: 0 active users, 60 s. Offered 12.0 req/s, completed 12.1 req/s
+Kind          req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+sign-in api   10.00    4   17   31        3       15       29     300
+sign-in auth   2.00   81   90   97       80       90       92    1000
+Errors: none
+Container    CPU  throttled  mem MB  peak  anon  cache  RSS  read MB/s  write  PSI cpu  mem  io
+app        16.3%       0.0%     456   508   122    328  232       0.15   0.11       1%   0%  0%
+caddy       0.6%       0.0%      94    96    37     55   73       0.00   0.01       1%   0%  0%
+sampler     0.1%       0.0%      13    14    10      0   16       0.00   0.00       0%   0%  0%
+App CPU per request 13.6 ms, Caddy 0.50 ms; steal 0.0%; host memory 1354 of 8320 MB; database 944 MB; disk 5%; OOM kills 0
+JS heap at its peak 0 of 0 MB, external 0 MB, RSS then 0 MB; slowest heap answer 2 ms, 0 at the timeout
+Within targets
+Action         actions  req/action  CPU ms/action  CPU ms/req  srv p50  srv p95
+open               121         1.0           36.8        36.8       39      106
+return             121         4.0            3.2         0.8        4        7
+timer              121         4.0            2.8         0.7        2        7
+edit               121         5.0            3.0         0.6        2        7
+reports-week       121         3.0            3.1         1.0        2        5
+reports-month      121         1.0           29.0        29.0       30       57
+reports-year       121         1.0           46.3        46.3       40       89
+sign-in            120         6.0           81.5        13.6        3       83
+[stress] Results in perf/.cache/stress/runs/2026-10-04T17-55-56-M-kinds-081-render-kinds

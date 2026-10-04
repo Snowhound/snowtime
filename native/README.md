@@ -81,7 +81,9 @@ or a page waited past its limit, the host answers 503 with `Retry-After: 1`.
 
 At startup the host reads the memory it may use (the cgroup's `memory.max`, else physical
 memory) and the CPUs, and sizes the pool: at least one renderer, more while memory allows,
-and no more than CPUs. Below 256 MiB a renderer gets a 64 MiB heap instead of 128.
+and no more than CPUs: 256 MiB for the server with one renderer and 80 MiB for each
+further one, within 75% of the limit. Below about 340 MiB a renderer gets a 64 MiB heap
+instead of 128.
 `RENDERERS` lowers the count. On Linux it checks its RSS each second: above 80% of the
 limit, renderers collect after every page and extra ones stop, until it falls below 70%.
 
