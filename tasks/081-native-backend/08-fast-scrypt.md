@@ -177,7 +177,7 @@ current dataset, recording, Caddy image, and CPU placement as the AWS-LC runs.
 | AWS-LC, second run               |       1,022.5 |       35.9% |     105 |         144 |           821 |             97 |
 
 AWS-LC reduces app CPU by 9.4–10.1 percentage points (21–22%) against today's control
-and halves median sign-in time. It does **not** show an improvement in return p95: both
+and halves median sign-in time. In these first runs it did **not** show an improvement in return p95 (the idle rerun below does): both
 current candidates have much worse tails than subtask 03. All three runs miss latency
 targets. Today's runs report 7–9% app I/O pressure, 38–42% Caddy CPU, and 361–397 MB
 Caddy RSS, versus 4% I/O pressure, 26.9% Caddy CPU, and 91 MB Caddy RSS in subtask 03's
@@ -194,6 +194,34 @@ building each native image separately. Both the recording bytes and Caddy's actu
 - `2026-10-04T12-34-13-M-fixed-081-fast-scrypt`
 - `2026-10-04T12-39-40-M-fixed-081-scrypt-baseline`
 - `2026-10-04T12-42-04-M-fixed-081-fast-scrypt-2`
+
+### Fixed load, rerun on an idle machine
+
+The runs above overlapped task 089's session on `main`, which was committing, linting, and
+testing on the same Mac between 15:23 and 15:45 local time. That skewed all three,
+including the control. They were rerun at 16:00–16:07 with nothing else running, using
+the same worktree, dataset, recording, CPU placement, and command. The order was AWS-LC,
+then RustCrypto (the image built from `a19041f`), then AWS-LC again. The control's sign-in
+p50 of 156 ms confirms it ran the old password code.
+
+| Axum, SQL strings      | App CPU | App RSS MB | Caddy CPU | Return p95 ms | Sign-in p50 / p95 ms | App ms a request |
+| ---------------------- | ------: | ---------: | --------: | ------------: | -------------------: | ---------------: |
+| Subtask 03, RustCrypto |   40.5% |        100 |     26.9% |            88 |            151 / 356 |              0.4 |
+| RustCrypto, rerun      |   38.2% |        114 |     27.4% |            86 |            156 / 443 |                — |
+| AWS-LC, rerun 1        |   30.8% |         97 |     28.6% |            29 |             82 / 150 |              0.3 |
+| AWS-LC, rerun 2        |   28.5% |         64 |     25.7% |            24 |             78 / 153 |                — |
+
+- **The setup hadn't changed.** The RustCrypto rerun matches subtask 03's run within
+  noise, so the bad tails of the first runs came from the concurrent work, not the bench.
+- **AWS-LC improves the tail as well as CPU.** Return p95 fell from 86–88 ms to 24–29 ms,
+  and app CPU fell by 20–25% (38–40% to 28.5–31%). This confirms subtask 03's guess that
+  scrypt on the one core caused the native p95.
+- The 4xx counts (157–413) are the shared-user `stopTimer` 404s. This worktree's harness
+  predates task 090's fix.
+
+Raw results, in `/private/tmp/snowtime-081-fast-scrypt/perf/.cache/stress/runs/`:
+`2026-10-04T13-00-02-M-fixed-081-scrypt-rerun-awslc-1`, `...13-02-26-...-rustcrypto`, and
+`...13-04-49-...-awslc-2`.
 
 ## Acceptance criteria
 
