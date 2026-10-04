@@ -14,14 +14,89 @@ pub const MAX_ENTRY_MS: i64 = MAX_ENTRY_HOURS * 3_600_000;
 pub(crate) const MAX_LIST_DAYS: i64 = 93;
 
 pub trait Validate {
+    const FIELDS: &'static [(&'static str, Field)] = &[];
     fn validate(&mut self) -> Result<()>;
 }
 
 /// A JSON value, decoded and validated against the input's schema.
 pub fn decode<T: DeserializeOwned + Validate>(value: Value) -> Result<T> {
+    check_fields(&value, T::FIELDS)?;
     let mut input: T = serde_json::from_value(value).map_err(|e| Error::Invalid(e.to_string()))?;
     input.validate()?;
     Ok(input)
+}
+
+#[derive(Clone, Copy)]
+pub enum Field {
+    RequiredId,
+    Id,
+    NullableId,
+    Description,
+    Ticket,
+    RequiredDate,
+    Date,
+    Bool,
+}
+
+fn received(value: &Value) -> String {
+    match value {
+        Value::Object(_) => "Object".into(),
+        Value::Array(_) => "Array".into(),
+        Value::String(v) => format!("\"{v}\""),
+        _ => value.to_string(),
+    }
+}
+fn check_fields(value: &Value, fields: &[(&str, Field)]) -> Result<()> {
+    for &(name, field) in fields {
+        let Some(value) = value.get(name) else {
+            if matches!(field, Field::RequiredId | Field::RequiredDate) {
+                return invalid(format!(
+                    "Invalid key: Expected \"{name}\" but received undefined"
+                ));
+            }
+            continue;
+        };
+        if value.is_null() && matches!(field, Field::NullableId | Field::Ticket) {
+            continue;
+        }
+        let expected = match field {
+            Field::RequiredDate | Field::Date => "Date",
+            Field::Bool => "boolean",
+            _ => "string",
+        };
+        match field {
+            Field::Bool
+                if value.is_boolean() || matches!(value.as_str(), Some("true" | "false")) =>
+            {
+                continue;
+            }
+            Field::RequiredDate | Field::Date if value.is_string() => {
+                if serde_json::from_value::<Timestamp>(value.clone()).is_ok() {
+                    continue;
+                }
+                return invalid("Invalid type: Expected Date but received \"Invalid Date\"");
+            }
+            Field::RequiredId | Field::Id | Field::NullableId if value.is_string() => {
+                uuid_v7(value.as_str().unwrap())?;
+                continue;
+            }
+            Field::Description if value.is_string() => {
+                description(&mut value.as_str().unwrap().to_owned())?;
+                continue;
+            }
+            Field::Ticket if value.is_string() => {
+                ticket_key(value.as_str().unwrap())?;
+                continue;
+            }
+            _ => {
+                return invalid(format!(
+                    "Invalid type: Expected {expected} but received {}",
+                    received(value)
+                ));
+            }
+        }
+    }
+    Ok(())
 }
 
 pub(crate) fn invalid<T>(message: impl Into<String>) -> Result<T> {

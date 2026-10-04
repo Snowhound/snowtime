@@ -30,8 +30,25 @@ routes answer 404. The former Actix adapter is in git at
 `61467c1:native/crates/server-actix/`; Axum remains provisional until subtask 01.
 
 The host can call `snowtime_server::router(app).oneshot(request)` through tower's
-`ServiceExt`, forwarding the page request's cookie and the method, path, and body that
+`ServiceExt` (re-exported by `snowtime_server`), forwarding the page request's cookie and the method, path, and body that
 `src/lib/api/request.ts` sends. Rendering itself belongs to subtask 01.
+
+## SQL helpers
+
+`queries.rs` holds `sql!`, `Sql`, `Assignments`, and `list`. Only a string literal becomes
+SQL text in `sql!`; a fragment carries its parameters along, and other expressions bind
+as `?`. The timer, entries, projects, and scope rules use them.
+
+```rust
+let users = list(&user_ids);
+let query = sql!("select id from time_entry where user_id in ", users);
+let ids = query.query(db, |row| row.get::<_, String>(0))?;
+```
+
+`Assignments` omits absent patches, binds null for removals, and binds present values.
+The connection caches 256 prepared statements instead of rusqlite's default 16, so patch
+combinations and user-list lengths have room alongside the fixed queries. The cache stays
+bounded; more than 256 distinct statements can still evict older ones.
 
 ## Password hashing
 
@@ -79,7 +96,8 @@ bun native/bench/compare.ts native/target/release/snowtime-axum
 `conformance.ts` serves the binary a copy of the benchmark database at `SEED_NOW` and
 runs `conformance/timer.conformance.ts` against it (or the test files given after the
 binary). `compare.ts` sends the same reads to the TypeScript build and the binary and
-reports any answer that differs in status, content, or bytes. `lines.ts` counts the code
+fails on any answer that differs in status or bytes. It also compares malformed inputs
+and the order of request checks. `lines.ts` counts the code
 lines of each ported handler in TypeScript and in the server crate (or a historical rules crate it's given).
 `api-recording.ts` cuts a `perf:stress` recording down to the calls the native backend
 serves, for `perf:stress --app=native --recording=<file>`; `native/Dockerfile` builds the

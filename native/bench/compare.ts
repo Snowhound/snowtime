@@ -79,7 +79,13 @@ try {
 
   const week = { from: new Date('2026-09-27T21:00:00Z'), to: new Date('2026-10-04T21:00:00Z') }
   const quarter = { from: new Date(SEED_NOW.getTime() - 92 * DAY), to: SEED_NOW }
-  const cases: [string, CallName, unknown, 'admin' | 'member' | null][] = [
+  const cases: [
+    string,
+    CallName,
+    unknown,
+    'admin' | 'member' | null,
+    { body?: string; origin?: false }?,
+  ][] = [
     ['running timer, none', 'getRunningTimer', undefined, 'admin'],
     ['signed out', 'getRunningTimer', undefined, null],
     ['week, admin', 'listEntries', { organizationId, ...week }, 'admin'],
@@ -143,11 +149,55 @@ try {
     ],
     ['projects, another organization', 'listProjects', { organizationId: 'nope' }, 'member'],
   ]
-  for (const [label, name, input, who] of cases) {
+  const id = '0192f3a4-5b6c-7d8e-9f01-23456789abcd'
+  for (const value of [undefined, null, 3, true, [], {}, 'bad']) {
+    const label = JSON.stringify(value) ?? 'absent'
+    cases.push(
+      [`stop id ${label}`, 'stopTimer', { id: value }, 'admin'],
+      [
+        `start description ${label}`,
+        'startTimer',
+        { organizationId, id: 'bad', description: value },
+        'admin',
+      ],
+      [`entry user ${label}`, 'createEntry', { organizationId, id, userId: value }, 'admin'],
+      [`entry start ${label}`, 'createEntry', { organizationId, id, startedAt: value }, 'admin'],
+      [
+        `range from ${label}`,
+        'listEntries',
+        { organizationId, from: value, to: SEED_NOW },
+        'admin',
+      ],
+      [
+        `update description ${label}`,
+        'updateEntry',
+        { organizationId, id, description: value },
+        'admin',
+      ],
+      [`update start ${label}`, 'updateEntry', { organizationId, id, startedAt: value }, 'admin'],
+    )
+  }
+  cases.push(
+    ['malformed JSON', 'stopTimer', {}, 'admin', { body: '{' }],
+    ['session before JSON', 'stopTimer', {}, null, { body: '{' }],
+    ['origin before JSON', 'stopTimer', {}, 'admin', { body: '{', origin: false }],
+    ['scope before JSON', 'createEntry', { organizationId: 'nope' }, 'admin', { body: '{' }],
+    [
+      'path over body',
+      'deleteEntry',
+      { organizationId, id },
+      'admin',
+      { body: '{"id":"bad","organizationId":"nope"}' },
+    ],
+  )
+  for (const [label, name, input, who, options] of cases) {
     const operation = CALLS[name]
-    const { path, body } = requestOf(operation, input)
+    const request = requestOf(operation, input)
+    const { path } = request
+    const body = options?.body ?? request.body
     async function call(server: { url: string }, session: Record<string, string>) {
       const headers: Record<string, string> = { ...session, origin: server.url }
+      if (options?.origin === false) delete headers.origin
       if (body) headers['content-type'] = 'application/json'
       const response = await fetch(`${server.url}${path}`, {
         method: operation.method,

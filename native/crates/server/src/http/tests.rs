@@ -10,8 +10,6 @@ fn app() -> Arc<App> {
         secret: "test-secret".into(),
         password_enabled: false,
         client_ip_header: None,
-        host: "127.0.0.1".into(),
-        port: 0,
     })
     .unwrap();
     app.db()
@@ -180,6 +178,12 @@ async fn post_reads_skip_origin_and_write_rate() {
     let router = Router::new()
         .route("/read", axum::routing::post(read))
         .with_state(app.clone());
+    for _ in 0..WRITES_PER_USER.max {
+        assert!(
+            app.rate_limits
+                .consume("write:alice", WRITES_PER_USER, clock::now())
+        );
+    }
     for _ in 0..100 {
         assert_eq!(
             answer(router.clone(), "POST", "/read", Some(&cookie), None, "{}")

@@ -1,9 +1,9 @@
 //! The tenancy helper (src/server/scope.server.ts): who is acting, in which organization,
 //! with which rights.
 use crate::{Code, Key, Result, refuse};
-use rusqlite::{Connection, OptionalExtension, params, params_from_iter};
+use rusqlite::{Connection, OptionalExtension};
 
-use crate::queries::in_list;
+use crate::queries::list;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OrgRole {
@@ -34,19 +34,17 @@ pub fn strongest_role(role: &str) -> OrgRole {
 }
 
 pub fn resolve_scope(db: &Connection, user_id: &str, organization_id: &str) -> Result<Scope> {
-    let membership: Option<String> = db
-        .prepare_cached("select role from member where organization_id = ?1 and user_id = ?2")?
-        .query_row(params![organization_id, user_id], |row| row.get(0))
-        .optional()?;
-    let led = db
-        .prepare_cached(
-            "select team_member.team_id from team_member
-             inner join team on team.id = team_member.team_id
-             where team_member.user_id = ?1 and team_member.role = 'lead'
-               and team.organization_id = ?2",
-        )?
-        .query_map(params![user_id, organization_id], |row| row.get(0))?
-        .collect::<rusqlite::Result<Vec<String>>>()?;
+    let membership: Option<String> = crate::sql!(
+        "select role from member where organization_id = ",
+        organization_id,
+        " and user_id = ",
+        user_id
+    )
+    .query_row(db, |row| row.get(0))
+    .optional()?;
+    let led = crate::sql!("select team_member.team_id from team_member inner join team on team.id = team_member.team_id where team_member.user_id = ",
+        user_id, " and team_member.role = 'lead' and team.organization_id = ", organization_id)
+        .query(db, |row| row.get(0))?;
     let Some(role) = membership else {
         return refuse(Code::Forbidden, Key::NotOrganizationMember);
     };
@@ -71,12 +69,13 @@ pub fn readable_user_ids(db: &Connection, scope: &Scope) -> Result<Option<Vec<St
     if scope.led_team_ids.is_empty() {
         return Ok(Some(vec![scope.user_id.clone()]));
     }
-    let (team_ids, values) = in_list(&scope.led_team_ids);
-    let rows = db
-        .prepare(&format!(
-            "select distinct user_id from team_member where team_id {team_ids}"
-        ))?
-        .query_map(params_from_iter(values), |row| row.get::<_, String>(0))?
+    let query = crate::sql!(
+        "select distinct user_id from team_member where team_id in ",
+        list(&scope.led_team_ids)
+    );
+    let rows = query
+        .prepare(db)?
+        .query_map(query.params(), |row| row.get::<_, String>(0))?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     let mut users = vec![scope.user_id.clone()];
     users.extend(rows.into_iter().filter(|id| *id != scope.user_id));

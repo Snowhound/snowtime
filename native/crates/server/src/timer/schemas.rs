@@ -13,6 +13,12 @@ pub struct StartTimerInput {
 }
 
 impl Validate for StartTimerInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[
+        ("id", Field::RequiredId),
+        ("description", Field::Description),
+        ("ticket", Field::Ticket),
+        ("projectId", Field::NullableId),
+    ];
     fn validate(&mut self) -> Result<()> {
         uuid_v7(&self.id)?;
         description(&mut self.description)?;
@@ -27,6 +33,7 @@ pub struct StopTimerInput {
 }
 
 impl Validate for StopTimerInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[("id", Field::RequiredId)];
     fn validate(&mut self) -> Result<()> {
         uuid_v7(&self.id)
     }

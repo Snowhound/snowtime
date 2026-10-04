@@ -9,6 +9,7 @@ publish.workspace = true
 scrypt-bench = ["dep:scrypt", "dep:openssl"]
 
 [dependencies]
+libc = "0.2"
 aws-lc-sys = "0.45"
 base64.workspace = true
 hmac.workspace = true

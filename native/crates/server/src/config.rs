@@ -8,8 +8,6 @@ pub struct Config {
     // Password sign-in is for local development and demo deployments (passwordEnabled).
     pub password_enabled: bool,
     pub client_ip_header: Option<String>,
-    pub host: String,
-    pub port: u16,
 }
 
 impl Config {

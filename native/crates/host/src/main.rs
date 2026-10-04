@@ -11,7 +11,7 @@ async fn main() {
     snowtime_server::clock::init_from_env();
     let config = config::from_env().unwrap_or_else(|message| panic!("{message}"));
     let address = (config.host.clone(), config.port);
-    let app = snowtime_server::App::open(config).expect("the database opens");
+    let app = snowtime_server::App::open(config.server).expect("the database opens");
     let router = snowtime_server::router(app);
     let listener = tokio::net::TcpListener::bind(address)
         .await

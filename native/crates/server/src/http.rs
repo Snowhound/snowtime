@@ -76,6 +76,8 @@ impl App {
         let db = Connection::open(&config.database_path)?;
         db.pragma_update(None, "foreign_keys", "ON")?;
         db.busy_timeout(std::time::Duration::from_secs(5))?;
+        // Patch combinations and list lengths otherwise churn rusqlite's 16-entry cache.
+        db.set_prepared_statement_cache_capacity(256);
         crate::timing::install(&db);
         let session = SessionConfig {
             secret: config.secret.clone(),

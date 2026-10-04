@@ -7,6 +7,7 @@ pub struct ListProjectsInput {
 }
 
 impl Validate for ListProjectsInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[("includeArchived", Field::Bool)];
     fn validate(&mut self) -> Result<()> {
         Ok(())
     }

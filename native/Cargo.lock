@@ -844,6 +844,7 @@ dependencies = [
  "base64",
  "form_urlencoded",
  "hmac",
+ "libc",
  "openssl",
  "rand",
  "rusqlite",

@@ -60,6 +60,27 @@ impl Timestamp {
     /// optional seconds and fraction and a `Z` or `±hh:mm` offset. A time without an offset
     /// is read as UTC, where `Date` would read local time.
     pub fn parse(text: &str) -> Option<Timestamp> {
+        // V8 accepts short numeric strings as a local month (1–12) or a year.
+        // GET query values are strings even when the client input was numeric.
+        if !text.is_empty() && text.len() < 4 && text.bytes().all(|b| b.is_ascii_digit()) {
+            let n: i32 = text.parse().ok()?;
+            let (year, month) = match n {
+                0 => (2000, 1),
+                1..=12 => (2001, n),
+                13..=31 => return None,
+                32..=49 => (2000 + n, 1),
+                50..=99 => (1900 + n, 1),
+                _ => (n, 1),
+            };
+            // tm is a C record whose zeroed fields are valid, and mktime borrows it.
+            let mut date: libc::tm = unsafe { std::mem::zeroed() };
+            date.tm_year = year - 1900;
+            date.tm_mon = month - 1;
+            date.tm_mday = 1;
+            date.tm_isdst = -1;
+            let seconds = unsafe { libc::mktime(&mut date) };
+            return Some(Timestamp(seconds as i64 * 1000));
+        }
         let b = text.as_bytes();
         let digits = |from: usize, len: usize| -> Option<i64> {
             let part = b.get(from..from + len)?;

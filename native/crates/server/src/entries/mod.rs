@@ -9,16 +9,18 @@ use self::schemas::{
     ListEntriesInput, UpdateEntryInput,
 };
 use crate::{Code, Error, Key, Result, Timestamp, clock, refuse};
-use rusqlite::types::Value;
-use rusqlite::{Connection, OptionalExtension, Row, params, params_from_iter};
+use rusqlite::{Connection, OptionalExtension, Row};
 
 use crate::projects::assert_usable_project;
-use crate::queries::{failed_constraint, in_list};
+use crate::queries::{Assignments, failed_constraint, list};
 use crate::scope::{Scope, is_admin, readable_user_ids};
 
 // The columns the contract returns for an entry, in Entry's order.
-pub const ENTRY_COLUMNS: &str =
-    "id, organization_id, user_id, project_id, description, ticket, started_at, stopped_at";
+pub fn entry_columns() -> crate::queries::Sql {
+    crate::sql!(
+        "id, organization_id, user_id, project_id, description, ticket, started_at, stopped_at"
+    )
+}
 
 pub fn entry_of(row: &Row) -> rusqlite::Result<Entry> {
     Ok(Entry {
@@ -47,10 +49,14 @@ fn assert_can_write(scope: &Scope, user_id: &str) -> Result<()> {
 
 // An admin writing another user's entry: that user must be in the organization.
 fn assert_member(db: &Connection, scope: &Scope, user_id: &str) -> Result<()> {
-    let membership: Option<String> = db
-        .prepare_cached("select id from member where organization_id = ?1 and user_id = ?2")?
-        .query_row(params![scope.organization_id, user_id], |row| row.get(0))
-        .optional()?;
+    let membership: Option<String> = crate::sql!(
+        "select id from member where organization_id = ",
+        &scope.organization_id,
+        " and user_id = ",
+        user_id
+    )
+    .query_row(db, |row| row.get(0))
+    .optional()?;
     if membership.is_none() {
         return refuse(Code::NotFound, Key::MemberNotFound);
     }
@@ -58,13 +64,17 @@ fn assert_member(db: &Connection, scope: &Scope, user_id: &str) -> Result<()> {
 }
 
 fn find_entry(db: &Connection, scope: &Scope, id: &str) -> Result<Entry> {
-    let entry = db
-        .prepare_cached(&format!(
-            "select {ENTRY_COLUMNS} from time_entry
-             where id = ?1 and organization_id = ?2 and sys_deleted = 0"
-        ))?
-        .query_row(params![id, scope.organization_id], entry_of)
-        .optional()?;
+    let entry = crate::sql!(
+        "select ",
+        entry_columns(),
+        " from time_entry where id = ",
+        id,
+        " and organization_id = ",
+        &scope.organization_id,
+        " and sys_deleted = 0"
+    )
+    .query_row(db, entry_of)
+    .optional()?;
     entry.map_or_else(|| refuse(Code::NotFound, Key::EntryNotFound), Ok)
 }
 
@@ -78,22 +88,22 @@ pub fn assert_entry_room(
     started_at: Timestamp,
     moving_id: Option<&str>,
 ) -> Result<()> {
-    let total: i64 = db
-        .prepare_cached(
-            "select count(*) from time_entry
-             where organization_id = ?1 and sys_deleted = 0 and user_id = ?2
-               and started_at > ?3 and started_at < ?4 and (?5 is null or id <> ?5)",
-        )?
-        .query_row(
-            params![
-                organization_id,
-                user_id,
-                started_at.0 - DAY,
-                started_at.0 + DAY,
-                moving_id
-            ],
-            |row| row.get(0),
-        )?;
+    let total: i64 = crate::sql!(
+        "select count(*) from time_entry where organization_id = ",
+        organization_id,
+        " and sys_deleted = 0 and user_id = ",
+        user_id,
+        " and started_at > ",
+        started_at.0 - DAY,
+        " and started_at < ",
+        started_at.0 + DAY,
+        " and (",
+        moving_id,
+        " is null or id <> ",
+        moving_id,
+        ")"
+    )
+    .query_row(db, |row| row.get(0))?;
     if total >= ENTRIES_PER_MEMBER_PER_DAY {
         return refuse(Code::LimitReached, Key::EntryLimit);
     }
@@ -111,26 +121,11 @@ pub fn create_entry(db: &Connection, scope: &Scope, input: CreateEntryInput) -> 
     }
     assert_entry_room(db, &scope.organization_id, user_id, input.started_at, None)?;
 
-    let inserted = db
-        .prepare_cached(&format!(
-            "insert into time_entry (id, organization_id, user_id, project_id, description,
-                                     ticket, started_at, stopped_at, created_by, updated_by)
-             values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9) returning {ENTRY_COLUMNS}"
-        ))?
-        .query_row(
-            params![
-                input.id,
-                scope.organization_id,
-                user_id,
-                input.project_id,
-                input.description,
-                input.ticket,
-                input.started_at,
-                input.stopped_at,
-                scope.user_id
-            ],
-            entry_of,
-        );
+    let inserted = crate::sql!(
+        "insert into time_entry (id, organization_id, user_id, project_id, description, ticket, started_at, stopped_at, created_by, updated_by) values (",
+        input.id, ", ", &scope.organization_id, ", ", user_id, ", ", input.project_id, ", ", input.description,
+        ", ", input.ticket, ", ", input.started_at, ", ", input.stopped_at, ", ", &scope.user_id, ", ", &scope.user_id,
+        ") returning ", entry_columns()).query_row(db, entry_of);
     match inserted {
         Ok(entry) => Ok(entry),
         Err(error) => match failed_constraint(&error) {
@@ -186,63 +181,27 @@ pub fn update_entry(db: &Connection, scope: &Scope, input: UpdateEntryInput) -> 
     // The checks above read the entry before the update, so a concurrent edit can still
     // break them; the database refuses all three (time_entry_stopped_after_started,
     // time_entry_max_length, time_entry_live_project).
-    let mut sets = Vec::new();
-    let mut values: Vec<Value> = Vec::new();
-    fn set<T: Into<Value>>(
-        sets: &mut Vec<&str>,
-        values: &mut Vec<Value>,
-        column: &'static str,
-        patch: Patch<T>,
-    ) {
-        match patch {
-            Patch::Absent => {}
-            Patch::Null => {
-                sets.push(column);
-                values.push(Value::Null);
-            }
-            Patch::Value(v) => {
-                sets.push(column);
-                values.push(v.into());
-            }
-        }
-    }
-    set(&mut sets, &mut values, "project_id", input.project_id);
-    set(&mut sets, &mut values, "description", input.description);
-    set(&mut sets, &mut values, "ticket", input.ticket);
-    set(
-        &mut sets,
-        &mut values,
-        "started_at",
-        input.started_at.map(|t| t.0),
+    let mut assignments = Assignments::default();
+    assignments.set("project_id", input.project_id);
+    assignments.set("description", input.description);
+    assignments.set("ticket", input.ticket);
+    assignments.set("started_at", input.started_at);
+    assignments.set("stopped_at", input.stopped_at);
+    assignments.set("updated_at", Patch::Value(clock::now()));
+    assignments.set("updated_by", Patch::Value(&scope.user_id));
+    let query = crate::sql!(
+        "update time_entry set ",
+        assignments.finish(),
+        " where id = ",
+        &entry.id,
+        " and organization_id = ",
+        &scope.organization_id,
+        " and sys_deleted = 0 returning ",
+        entry_columns()
     );
-    set(
-        &mut sets,
-        &mut values,
-        "stopped_at",
-        input.stopped_at.map(|t| t.0),
-    );
-    set(
-        &mut sets,
-        &mut values,
-        "updated_at",
-        Patch::Value(clock::now()),
-    );
-    set(
-        &mut sets,
-        &mut values,
-        "updated_by",
-        Patch::Value(scope.user_id.clone()),
-    );
-    let assignments: Vec<String> = sets.iter().map(|c| format!("{c} = ?")).collect();
-    values.push(Value::Text(entry.id.clone()));
-    values.push(Value::Text(scope.organization_id.clone()));
-    let updated = db
-        .prepare(&format!(
-            "update time_entry set {} where id = ? and organization_id = ? and sys_deleted = 0
-             returning {ENTRY_COLUMNS}",
-            assignments.join(", ")
-        ))?
-        .query_row(params_from_iter(values), entry_of)
+    let updated = query
+        .prepare(db)?
+        .query_row(query.params(), entry_of)
         .optional();
     match updated {
         Ok(Some(entry)) => Ok(entry),
@@ -266,16 +225,18 @@ pub fn delete_entry(
 ) -> Result<DeletedEntry> {
     let entry = find_entry(db, scope, &input.id)?;
     assert_can_write(scope, &entry.user_id)?;
-    db.prepare_cached(
-        "update time_entry set sys_deleted = 1, updated_at = ?1, updated_by = ?2
-         where id = ?3 and organization_id = ?4 and sys_deleted = 0",
-    )?
-    .execute(params![
+    crate::sql!(
+        "update time_entry set sys_deleted = 1, updated_at = ",
         clock::now(),
-        scope.user_id,
-        entry.id,
-        scope.organization_id
-    ])?;
+        ", updated_by = ",
+        &scope.user_id,
+        " where id = ",
+        &entry.id,
+        " and organization_id = ",
+        &scope.organization_id,
+        " and sys_deleted = 0"
+    )
+    .execute(db)?;
     Ok(DeletedEntry { id: entry.id })
 }
 
@@ -295,14 +256,13 @@ pub fn get_first_entry_start(
     input: GetFirstEntryStartInput,
 ) -> Result<Option<Timestamp>> {
     assert_readable(db, scope, &input.user_id)?;
-    let first = db
-        .prepare_cached(
-            "select min(started_at) from time_entry
-             where organization_id = ?1 and sys_deleted = 0 and user_id = ?2",
-        )?
-        .query_row(params![scope.organization_id, input.user_id], |row| {
-            row.get(0)
-        })?;
+    let first = crate::sql!(
+        "select min(started_at) from time_entry where organization_id = ",
+        &scope.organization_id,
+        " and sys_deleted = 0 and user_id = ",
+        input.user_id
+    )
+    .query_row(db, |row| row.get(0))?;
     Ok(first)
 }
 
@@ -317,28 +277,27 @@ pub fn list_entries(db: &Connection, scope: &Scope, input: ListEntriesInput) -> 
     }
     let users = input.user_id.map(|id| vec![id]).or(readable);
 
-    let mut values = vec![Value::Text(scope.organization_id.clone())];
-    let users_filter = match &users {
-        Some(users) => {
-            let (list, ids) = in_list(users);
-            values.extend(ids);
-            format!("and user_id {list}")
-        }
-        None => String::new(),
-    };
-    values.extend([
-        Value::Integer(input.from.0 - MAX_ENTRY_MS),
-        Value::Integer(input.to.0),
-        Value::Integer(input.from.0),
-    ]);
-    let entries = db
-        .prepare_cached(&format!(
-            "select {ENTRY_COLUMNS} from time_entry
-             where organization_id = ? and sys_deleted = 0 {users_filter}
-               and started_at > ? and started_at < ? and (stopped_at is null or stopped_at > ?)
-             order by started_at desc"
-        ))?
-        .query_map(params_from_iter(values), entry_of)?
+    let users_filter = users.as_ref().map_or_else(Default::default, |users| {
+        crate::sql!(" and user_id in ", list(users))
+    });
+    let query = crate::sql!(
+        "select ",
+        entry_columns(),
+        " from time_entry where organization_id = ",
+        &scope.organization_id,
+        " and sys_deleted = 0",
+        users_filter,
+        " and started_at > ",
+        input.from.0 - MAX_ENTRY_MS,
+        " and started_at < ",
+        input.to,
+        " and (stopped_at is null or stopped_at > ",
+        input.from,
+        ") order by started_at desc"
+    );
+    let entries = query
+        .prepare(db)?
+        .query_map(query.params(), entry_of)?
         .collect::<rusqlite::Result<Vec<_>>>()
         .map_err(Error::from)?;
     Ok(entries)

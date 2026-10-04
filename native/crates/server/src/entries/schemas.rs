@@ -16,6 +16,15 @@ pub struct CreateEntryInput {
 }
 
 impl Validate for CreateEntryInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[
+        ("id", Field::RequiredId),
+        ("userId", Field::Id),
+        ("projectId", Field::NullableId),
+        ("description", Field::Description),
+        ("ticket", Field::Ticket),
+        ("startedAt", Field::RequiredDate),
+        ("stoppedAt", Field::RequiredDate),
+    ];
     fn validate(&mut self) -> Result<()> {
         uuid_v7(&self.id)?;
         optional(&self.user_id, |id| uuid_v7(id))?;
@@ -51,6 +60,14 @@ pub struct UpdateEntryInput {
 }
 
 impl Validate for UpdateEntryInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[
+        ("id", Field::RequiredId),
+        ("projectId", Field::NullableId),
+        ("description", Field::Description),
+        ("ticket", Field::Ticket),
+        ("startedAt", Field::Date),
+        ("stoppedAt", Field::Date),
+    ];
     fn validate(&mut self) -> Result<()> {
         uuid_v7(&self.id)?;
         optional(&self.project_id.value(), |id| uuid_v7(id))?;
@@ -70,6 +87,7 @@ pub struct DeleteEntryInput {
 }
 
 impl Validate for DeleteEntryInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[("id", Field::RequiredId)];
     fn validate(&mut self) -> Result<()> {
         uuid_v7(&self.id)
     }
@@ -85,6 +103,11 @@ pub struct ListEntriesInput {
 }
 
 impl Validate for ListEntriesInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[
+        ("from", Field::RequiredDate),
+        ("to", Field::RequiredDate),
+        ("userId", Field::Id),
+    ];
     fn validate(&mut self) -> Result<()> {
         optional(&self.user_id, |id| uuid_v7(id))?;
         if self.to <= self.from {
@@ -104,6 +127,7 @@ pub struct GetFirstEntryStartInput {
 }
 
 impl Validate for GetFirstEntryStartInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[("userId", Field::RequiredId)];
     fn validate(&mut self) -> Result<()> {
         uuid_v7(&self.user_id)
     }

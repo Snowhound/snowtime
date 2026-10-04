@@ -20,3 +20,6 @@ pub use errors::{AppError, Code, Error, Key, Result, refuse};
 pub use http::{App, router};
 pub use timestamp::Timestamp;
 pub use wire::WireResponse;
+
+// The host can call the router during rendering without depending on tower itself.
+pub use tower::ServiceExt;
