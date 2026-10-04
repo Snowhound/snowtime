@@ -9,6 +9,7 @@ pub mod errors;
 pub mod fill;
 pub mod holidays;
 pub mod http;
+pub mod migrations;
 pub mod projects;
 pub mod queries;
 pub mod rate_limit;

@@ -3649,6 +3649,7 @@ dependencies = [
  "percent-encoding",
  "rand 0.10.3",
  "rcgen 0.14.10",
+ "rusqlite",
  "rustls",
  "rustls-acme",
  "snowtime-render",

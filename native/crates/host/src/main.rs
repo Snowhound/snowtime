@@ -26,6 +26,17 @@ async fn main() {
         .next()
         .expect("HOST has an address");
     let origin = config.server.app_url.clone();
+    // Before the listener starts, so no request writes during a migration.
+    if let Some(folder) = &config.migrations {
+        let mut db =
+            rusqlite::Connection::open(&config.server.database_path).expect("the database opens");
+        db.busy_timeout(std::time::Duration::from_secs(5))
+            .expect("busy timeout");
+        match snowtime_server::migrations::migrate(&mut db, folder) {
+            Ok(applied) => tracing::info!(applied, "migrations applied"),
+            Err(error) => panic!("Migrations failed: {error}"),
+        }
+    }
     let app = snowtime_server::App::open(config.server).expect("the database opens");
     let api = snowtime_server::router(app);
 

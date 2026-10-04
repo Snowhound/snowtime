@@ -16,6 +16,7 @@ libc = "0.2"
 rand.workspace = true
 snowtime-render = { path = "../render" }
 snowtime-server.workspace = true
+rusqlite.workspace = true
 tokio.workspace = true
 axum-server = { version = "0.8", features = ["tls-rustls-no-provider"] }
 rustls = { version = "0.23", features = ["aws_lc_rs"] }

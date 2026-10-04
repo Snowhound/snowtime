@@ -126,6 +126,13 @@ The server reads the TypeScript server's environment variables: `TURSO_DATABASE_
 sign-in. `PERF_NOW`, in milliseconds, moves its clock as `perf/lib/clock.ts` does, the
 renderer's included. `RENDERERS` is described above, and the edge's variables below.
 
+With `MIGRATE_ON_START=true`, the server migrates the database before it listens, from
+`MIGRATIONS_DIR` (default `drizzle/` in the working directory), as the TypeScript
+server's standalone entry does. It refuses to start if an applied migration was edited
+or deleted (`scripts/db-verify.ts`), applies the pending ones in one transaction, and
+records them in `__drizzle_migrations` as drizzle-orm does, so either backend can migrate
+the database the other runs. The image doesn't include `drizzle/`; mount it.
+
 ```sh
 cargo build --release --manifest-path native/Cargo.toml --bin snowtime-axum
 bun native/bench/conformance.ts native/target/release/snowtime-axum
