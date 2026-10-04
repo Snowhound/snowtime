@@ -189,9 +189,11 @@ doesn't, stop and record why in this task.
   reaching a view, which matters while two backends serve the API ("Application rules" in
   `docs/architecture/README.md`).
 
-- **Not done:** splitting `reports.server.ts` (optional). Its queries and its aggregation
-  are already separate functions; moving them to two files is a pure move, better made in
-  a commit of its own that `.git-blame-ignore-revs` can list.
+- **`reports.server.ts` split.** Its pure part, `aggregate` and `breakdownOf` and the
+  Entries card's paging (`dayPage`, `mergeByDescription`), moved to
+  `aggregation.server.ts` in a commit of its own, which `.git-blame-ignore-revs` lists.
+  `reports.server.ts` keeps the queries and the rules, 516 lines of the 756.
+  `piecesOf` stays with them, since it reads the report's query context.
 
 ## Out of scope
 
