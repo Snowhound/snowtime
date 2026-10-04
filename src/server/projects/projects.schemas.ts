@@ -53,11 +53,11 @@ export const Project = v.object({
   archivedAt: v.nullable(Timestamp),
 })
 
-// A listed project also has the ids of the teams it is assigned to, and whether it has
-// entries, which deleteProject refuses.
+// A listed project also has whether it has entries, which deleteProject refuses, and the ids
+// of the teams it is assigned to, in the order the API sends them.
 export const ListedProject = v.object({
   ...Project.entries,
-  teamIds: v.array(v.string()),
   hasEntries: v.boolean(),
+  teamIds: v.array(v.string()),
 })
 export type ListedProject = v.InferOutput<typeof ListedProject>
