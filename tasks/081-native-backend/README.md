@@ -145,6 +145,8 @@ row, and sets the same signed cookie, because two processes must not write one S
 
 The hot path in the native backend: session check, running timer, start and stop, entry
 list, and the week report, on the same database file, measured with task 078's harness.
+The first slice, without the week report and the render, was measured on 2026-10-04
+(subtask 03, "Proof of concept").
 The frontend reaches it through the adapter for those calls. The isolate server-renders
 the timer page and the week report, and the browser hydrates them (subtask 01).
 

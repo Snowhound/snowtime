@@ -309,9 +309,9 @@ For Kait to decide; not yet in 081's decision record.
 - **What SQL strings need.** A helper for a `SET` of the fields present, as `updateEntry`
   needs, and the `in (...)` helper the crate has; a helper for GET booleans and numbers in
   `core`; and each rules crate declaring its calls, so an unported call answers 404.
-- **Rejected for now.** SeaQuery, for more lines and more CPU with no measured gain. Rocket, Diesel,
-  and sqlx weren't tried. With the contract table, Rocket's attribute routes would have
-  nothing to declare.
+- **Rejected for now.** SeaQuery, for more lines and more CPU with no measured gain.
+  Rocket, Diesel, and sqlx weren't tried. With the contract table, Rocket's attribute
+  routes would have nothing to declare.
 
 ### Open
 
@@ -349,5 +349,5 @@ For Kait to decide; not yet in 081's decision record.
 - [ ] The small app working with at least two HTTP and two query candidates, passing the
       same conformance tests (met on 2026-10-04 except the page render and the in-process
       path for the isolate)
-- [ ] The measurements above, recorded in this task
+- [x] The measurements above, recorded in this task
 - [ ] The chosen libraries, with what was rejected, in 081's decision record
