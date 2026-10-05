@@ -94,7 +94,7 @@ bun run db:seed
 bun --bun run dev
 ```
 
-The app runs on http://localhost:3000 against a local SQLite file, and every seeded user
+The app runs on http://localhost:3100 against a local SQLite file, and every seeded user
 signs in with the password `snowtime-local`. The seeded users, the larger company seed,
 the scripts, and the database workflow are in [docs/development.md](docs/development.md).
 

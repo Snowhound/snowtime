@@ -36,7 +36,7 @@ membership or other permissions.
   and returns method ids (`google`, `github`, `microsoft`, `password`, `passkey`), never
   secrets or display text.
 - Each provider's OAuth app redirects to `<BETTER_AUTH_URL>/api/auth/callback/<id>`, for
-  example `http://localhost:3000/api/auth/callback/github` locally. Providers match the
+  example `http://localhost:3100/api/auth/callback/github` locally. Providers match the
   redirect URL exactly and allow no wildcards, so OAuth sign-in works only on hosts
   registered in advance: local and production. A preview deployment on its own
   generated URL cannot use OAuth.
