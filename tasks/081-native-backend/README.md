@@ -207,7 +207,7 @@ which records the edge measurements.
 - [03](03-port-libraries.md): the Rust libraries, chosen on a small port of the timer
 - [04](04-perry.md): Perry, a native TypeScript compiler, in place of the isolate or the
   Rust port
-- [05](05-porting-recipes.md): a general repository of porting recipes, once the port
+- [05](05-porting-recipes.md): the porting kit: recipes, crates, and codemods, once the port
   works
 - [06](06-server-layout.md): the Rust server's layout and routing, mirroring task 089's
   routes per domain

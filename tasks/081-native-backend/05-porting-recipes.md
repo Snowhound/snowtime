@@ -1,13 +1,17 @@
-# 081.05: A general repository of porting recipes
+# 081.05: The porting kit
 
 Status: todo (the last step: waits on task 081's port working and measured)
 
 Kait's goal (2026-10-03): what task 081 learns becomes a separate repository of recipes,
-skills, and codemods for porting a modern cloud app to one Rust server with a local SQLite
-database, first on one instance and later with Turso. AI sessions do the porting; the
-repository gives them guidelines, because each port differs. It starts from this app's
-stack (SolidJS, TanStack Start, Drizzle, Better Auth) and may later cover others, such as
-SvelteKit or Postgres.
+skills, crates, and codemods for porting a modern cloud app to one Rust server with a
+local SQLite database, first on one instance and later with Turso. AI sessions do the
+porting; the repository gives them guidelines, because each port differs. It starts from
+this app's stack (SolidJS, TanStack Start, Drizzle, Better Auth) and may later cover
+others, such as SvelteKit or Postgres.
+
+Kait, 2026-10-05: where an app's stack matches closely enough, the kit should hold enough
+crates, patterns, and codemods that porting an app of this one's size, from its server
+functions, takes one session. The kit is also honest about when a port isn't worth doing.
 
 ## What goes in
 
@@ -19,15 +23,29 @@ rest:
 - Findings that took measurement or failure to learn, such as Start addressing server
   functions by a build hash (task 081.02), the V8 isolate's memory floor (task 081.01),
   and better-auth-rs hashing passwords with Argon2 where Better Auth uses scrypt.
+- The decisions task 081 made, as a catalogue (below), so a session reuses them instead of
+  deciding again.
 - Mapping tables from each layer to its port: Drizzle to the chosen query crate, a server
   function to a handler, Better Auth to better-auth-rs (task 081.03).
-- Codemods, as small scripts in whatever language a session handles best, for conversions
-  that recur across apps, such as a Drizzle schema to the Rust schema and models.
+- **Crates** for what every port of this stack repeats, extracted from task 081's port with
+  their tests and versioned:
+  - the request extractors (`InOrganization`, `AsUser`, `Public`) with the API's error body;
+  - `sql!`, `Assignments`, and `list` (subtask 06);
+  - `Timestamp`, the wire format, and valibot-compatible validation messages;
+  - the Drizzle-compatible migrator (`MIGRATE_ON_START`);
+  - Better Auth-compatible email sign-in, session cookie, origin checks, and scrypt;
+  - the in-process edge (subtask 07);
+  - the V8 render host: the renderer pool, memory sizing, and the in-process API transport
+    (subtask 01);
+  - the conformance and byte-comparison harness (`conformance.ts`, `compare.ts`).
+- **Codemods**, as small scripts in whatever language a session handles best, for
+  conversions that recur across apps: valibot or zod schemas to Rust input structs and
+  their field tables, Hono routes to Axum routes, client functions from routes, and a
+  Drizzle schema to the Rust models. With these, a session writes the rules and little else.
 - The V8 host recipe: rendering in an embedded isolate, with native code for the hot
   paths. Other code that is costly to port and rarely run can stay in the isolate too,
   such as Paraglide's message formatting or the export. Drizzle's migrations are SQL
   files with a journal table, so Rust applies them without the isolate.
-
 - Where the port lives. A port that lags its app on purpose records the app commit it
   implements and builds the app's bundle and assets from that commit. Two layouts, with
   when each fits (task 081, "Repository"):
@@ -38,7 +56,72 @@ rest:
     build the port, and the app keeps only the contract: conformance tests and a load
     harness that takes a server image or address.
 
-Code templates stay out; AI sessions write those well.
+App-specific code stays out: the rules, pages, and schemas are the app's. The crates hold
+only what every port of the stack repeats.
+
+## The decisions catalogue
+
+Each entry gives the decision, the evidence, what was rejected, and when it applies to
+another app and when it doesn't, so a session reuses it rather than copying it blindly.
+It starts with task 081's:
+
+- Rendering in an embedded V8 isolate, against page shells (01, task 079)
+- A JSON API for both backends, not server functions (02, task 084)
+- JSON with dates revived by the schemas; columns only where measured (02, task 089)
+- Routes and modules per domain, mirrored file for file (06, task 089)
+- Axum, and `rusqlite` with SQL strings over SeaQuery and the other candidates (03, 06)
+- One writer and a pool of readers on WAL; bounded database work that refuses with 503
+  past a deadline (10)
+- AWS-LC for scrypt (08)
+- The optional in-process edge, and Caddy's tuning where Caddy stays (07)
+- Drizzle's migrations applied by the binary, recorded as drizzle-orm records them
+- Litestream for backups; Turso's engine as researched in 11
+- Renderers sized from memory and pressure, and a page buffered whole (01)
+- Conformance tests and byte comparison as the definition of done (03)
+- The repository layout (task 081, "Repository")
+- HTTP/3 deferred (09)
+
+## Kinds of port
+
+The survey decides which of these the port is, since each changes the recipe:
+
+- **A second backend:** the TypeScript app keeps running, for example on Vercel, and the
+  native backend serves self-hosting. Both serve one API, the conformance suite runs
+  against both for as long as both exist, and contract changes land on both sides. This
+  is task 081's case.
+- **A replacement:** the native backend takes over and the TypeScript backend goes. The
+  conformance tests and byte comparison are the acceptance check at cutover, not a
+  standing constraint. After cutover the contract can change freely, and the TypeScript
+  server tests are ported to Rust or retired. The recipe adds cutover, data, and rollback.
+  Not written yet.
+- **With or without server rendering:** an app that doesn't need server-rendered pages
+  serves its built client as static files and the API alone. It needs no V8, has no
+  isolate memory floor, and gains the most: every request is native. The cost is what
+  task 079 measured: a shell shows content about 450 ms later on a warm load. The survey
+  asks the user whether rendering on the server matters to the product.
+
+## Is the port worth it
+
+The survey ends in a verdict on the whole app, with an estimated gain, and not only a list
+of what to port. Task 081's numbers set expectations: an API call costs 8–10× less CPU
+natively, a rendered page only 1.5–2× less, and each renderer adds a memory floor of about
+124 MiB.
+
+A port fits well when the server's work is auth, validation, and database reads: backends
+for a frontend, CRUD apps, small and stable domains, hot paths that are API calls, and
+teams that want to self-host on small machines.
+
+The survey says plainly where a port is doubtful:
+
+- the server leans on npm packages with no Rust equivalent, such as payment or cloud SDKs,
+  PDF or image generation, or AI SDKs that stream. Each one is ported, or stays in the
+  isolate and gives up the gain;
+- the app mostly renders pages, so the gain is small against the isolate's memory;
+- the business logic changes often, and the app is to keep two backends;
+- the app depends on realtime connections, queues, or background jobs, which have no
+  recipe yet;
+- the load is low, where tuning the TypeScript server is the cheaper answer;
+- the client reaches the server in ways that don't map to an API (below).
 
 ## The workflow
 
@@ -50,24 +133,48 @@ user has checked what it found.
    functions, an API, or both), serialization, middleware, ORM and database, migrations,
    auth and its plugins, background work, i18n, and anything else the server runs. Each
    item names where the app uses it and how much: for example 41 server functions in 9
-   files.
+   files. It ends with the kind of port, whether server rendering is needed, and the
+   verdict on whether the port is worth it.
 2. **Check with the user.** The session presents the list. The user confirms it, corrects
-   it, and adds what code can't show, such as which features may be dropped and which
-   deployments must keep working.
+   it, and adds what code can't show, such as which features may be dropped, which
+   deployments must keep working, and whether the old backend stays.
 3. **Propose.** Only then does the session propose a port for each item, from the
    recipes, or marks the item as having no recipe yet.
 
 ## Starting from server functions
 
 An app whose client calls server functions, as this one does, is a supported starting
-point. A Rust server can't serve server functions (task 081.02), so the port goes through
-a middle step: the app keeps its server functions and gains the JSON API beside them, as
-task 084 did for the timer. Each server function gets an operation (method, path, input
+point. Server functions come in four kinds, which the survey counts:
+
+1. **Calls:** input in, JSON out. Mechanical to move; all 41 of this app's were these.
+2. **HTTP semantics:** cookies, redirects, files, or streams. These map onto HTTP, with
+   care.
+3. **Rich serialization:** `Date`, `Map`, promises, or streams in Start's serializer
+   (seroval). These need explicit wire types and revivers, as `src/lib/api/wire.ts` has.
+4. **Bound to the framework:** React Server Components, server actions with arguments
+   captured in closures, functions that return JSX or rely on forms working without
+   JavaScript. These don't map to an API without redesigning the feature.
+
+### The default recipe: move to an API
+
+A Rust server can't serve Start's server functions as they are (task 081.02), so the port
+goes through a middle step: the app keeps its server functions and gains the JSON API
+beside them, as task 084 did. Each server function gets an operation (method, path, input
 and output schemas), its logic sits in a rule shaped `(db, scope, input)` that both the
 server function and the API call, and conformance tests over HTTP define what the Rust
-port must pass.
+port must pass. Once every call has moved, the server functions go, for both backends
+(task 084, Kait, 2026-10-03).
 
-Before that step, the session checks that each server function can move to the API, and
+The client keeps one frontend for both backends through one client module, whose
+transports reach the API over HTTP or, during a server render, in process (tasks 084 and
+089). A service layer that offers server functions and the API side by side is possible,
+but the kit advises against keeping both: two wire formats drift (dates, `undefined`
+against `null`, `Map`), every test would have to run both ways, and the conformance suite
+covers only the API. It buys nothing measurable either: task 084 measured the JSON API at
+or below the server functions' CPU on Bun. Server functions stay only as a bridge while
+calls move.
+
+Before the middle step, the session checks that each server function can move, and
 reports one of three verdicts for each:
 
 - **Transferable:** its input and output are JSON, with dates decoded by the schemas; its
@@ -88,25 +195,45 @@ saves it, so a read that repairs state (an active organization, a cookie, a miss
 becomes a derived value plus an idempotent write. The auth library's sliding session is
 the one accepted exception.
 
+### The alternative: server functions in Rust
+
+For apps where moving to an API costs too much, such as hundreds of server functions of
+kinds 1 to 3, the kit also has a recipe for serving Start's server functions from Rust
+(Kait, 2026-10-05). The Rust host answers `/_serverFn/<id>`, decodes and encodes Start's
+serialization format, and repeats Start's checks (`Sec-Fetch-Site`), redirects, and
+headers. Start is open source, so the protocol can be read; the cost is that it can change
+with any Start release, which is why task 081.02 chose the API. The recipe pins Start's
+version and lets the conformance tests catch a change.
+
+- First check whether Start can generate stable function IDs, rather than ones from the
+  build's hash. If it can, the ID half of the problem goes away.
+- A cheaper hybrid: the host decodes each call in the V8 isolate it already runs, then
+  dispatches to a Rust rule.
+- Code too costly to port runs as TypeScript in the isolate, and later possibly compiled
+  by Perry (subtask 04).
+- Kind 4 has no Rust path: it stays in the isolate, or the feature is redesigned.
+
 ## Shape
 
 - An index skill routes a session to recipes by layer: frontend framework, server
   framework, ORM, auth, and database.
 - Each recipe says when it applies, its steps, its pitfalls, and how to verify the
   result.
-- Each recipe has the date it was checked and the library versions, so a session can tell
-  when to check again.
+- Each recipe and crate has the date it was checked and the library versions, so a
+  session can tell when to check again.
 - A stack nobody has ported yet is marked as not written, not filled with guesses.
 
 ## Acceptance criteria
 
 - [ ] Recipes written only for steps proven in task 081's port
+- [ ] The decisions catalogue written, one entry per decision above, with its evidence
+- [ ] The crates above extracted from task 081's port, with their tests, and the port
+      using them
 - [ ] Codemods only for conversions done by hand at least once, with their tests
-- [ ] The V8 host moved to its own crate once a second app needs it; until then it keeps a
-      clean boundary in the port (isolate pool, host functions, bundle loading)
-- [ ] A fresh AI session ports a further handler or a small app using only the
-      repository, and the gaps it hits are fixed
-- [ ] The workflow above written as the repository's entry point: the survey, the user's
-      check, then proposals
+- [ ] The workflow above written as the repository's entry point: the survey with the
+      kind of port and the verdict, the user's check, then proposals
 - [ ] The transferability check for server functions, run on this app's 41 and checked by
       hand, and the middle step to the API written as a recipe from task 084
+- [ ] A fresh AI session ports this app from its server-function baseline (before task 084) in one session using only the repository, and the gaps it hits are fixed
+- [ ] Recipes marked as not written yet: a replacement port, an app without server
+      rendering, and server functions in Rust
