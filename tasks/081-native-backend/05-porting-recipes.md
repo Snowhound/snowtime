@@ -94,11 +94,33 @@ The survey decides which of these the port is, since each changes the recipe:
   standing constraint. After cutover the contract can change freely, and the TypeScript
   server tests are ported to Rust or retired. The recipe adds cutover, data, and rollback.
   Not written yet.
-- **With or without server rendering:** an app that doesn't need server-rendered pages
-  serves its built client as static files and the API alone. It needs no V8, has no
-  isolate memory floor, and gains the most: every request is native. The cost is what
-  task 079 measured: a shell shows content about 450 ms later on a warm load. The survey
-  asks the user whether rendering on the server matters to the product.
+
+Either kind also decides how pages are rendered, below.
+
+## Does the app need server rendering
+
+The survey answers this with the user, and is honest about what each choice costs.
+
+- **Server rendering in the V8 isolate**, as task 081 does. Content arrives with the
+  first response, and the client hydrates it. The cost: each renderer adds a memory floor
+  of about 124 MiB, and a page saves only 1.5–2× CPU against the TypeScript server
+  (task 081.01). It fits apps whose pages carry the content that matters on first load,
+  or need it for search engines or link previews.
+- **A static frame from Rust, with the content rendered in the browser.** Many apps are
+  SPA-like inside a frame: navigation, layout, the user's name, theme, and locale. Rust
+  writes that frame from the session, as HTML from the app's build with a few values put
+  in, and the client renders the content from the API. No V8 runs, every request is
+  native, and memory falls to tens of MB. The costs: content shows later than with server
+  rendering (about 450 ms on a warm load in task 079), search engines see only the frame,
+  and the frame's dynamic parts must be kept in step between the app and Rust. Where the
+  content is SPA-like anyway and the frame is mostly static, this is the clear choice
+  (Kait, 2026-10-05).
+- **The built client as static files, and the API alone.** The simplest: no frame from
+  the server at all. The content waits for the bundle and the first API calls, which the
+  frame option at least shortens by showing the app's shell at once.
+
+The survey reports which pages need which, since an app can mix them: a public page
+server-rendered, the signed-in app as a frame.
 
 ## Is the port worth it
 
@@ -195,23 +217,33 @@ saves it, so a read that repairs state (an active organization, a cookie, a miss
 becomes a derived value plus an idempotent write. The auth library's sliding session is
 the one accepted exception.
 
-### The alternative: server functions in Rust
+### Clean first, hybrid only as a tradeoff
 
-For apps where moving to an API costs too much, such as hundreds of server functions of
-kinds 1 to 3, the kit also has a recipe for serving Start's server functions from Rust
-(Kait, 2026-10-05). The Rust host answers `/_serverFn/<id>`, decodes and encodes Start's
-serialization format, and repeats Start's checks (`Sec-Fetch-Site`), redirects, and
-headers. Start is open source, so the protocol can be read; the cost is that it can change
-with any Start release, which is why task 081.02 chose the API. The recipe pins Start's
-version and lets the conformance tests catch a change.
+The kit prefers a clean design: every call ported natively, behind one API. A hybrid,
+where some code keeps running as TypeScript, is a tradeoff the session proposes only when
+the clean design isn't straightforward, and it says what the hybrid costs and how the app
+would leave it later (Kait, 2026-10-05).
 
-- First check whether Start can generate stable function IDs, rather than ones from the
-  build's hash. If it can, the ID half of the problem goes away.
-- A cheaper hybrid: the host decodes each call in the V8 isolate it already runs, then
-  dispatches to a Rust rule.
-- Code too costly to port runs as TypeScript in the isolate, and later possibly compiled
-  by Perry (subtask 04).
-- Kind 4 has no Rust path: it stays in the isolate, or the feature is redesigned.
+Usage and profiles decide where the line goes, not guesses: the app's access logs or
+analytics show which calls are used and how often, and a profile under the load model
+shows where the CPU goes (task 081.12). The hot, central calls are ported natively. A long
+tail of rarely used calls can be left behind, for example:
+
+- **The core ported, the long tail in the isolate.** The app's central calls run in Rust,
+  and rarely used server functions run as their TypeScript code in the V8 isolate the
+  host already has, later possibly compiled by Perry (subtask 04). This fits an app with
+  many server functions for features few people use, where the core ports easily.
+- **Server functions served from Rust**, for apps where moving to an API costs too much,
+  such as hundreds of server functions of kinds 1 to 3 (Kait, 2026-10-05). The host
+  answers `/_serverFn/<id>`, decodes and encodes Start's serialization format, and
+  repeats Start's checks (`Sec-Fetch-Site`), redirects, and headers. Start is open
+  source, so the protocol can be read; the cost is that it can change with any Start
+  release, which is why task 081.02 chose the API. The recipe pins Start's version and
+  lets the conformance tests catch a change. First check whether Start can generate
+  stable function IDs rather than ones from the build's hash; if it can, half of the
+  problem goes away. A cheaper variant decodes each call in the isolate and dispatches to
+  a Rust rule.
+- **Kind 4** has no Rust path: it stays in the isolate, or the feature is redesigned.
 
 ## Shape
 
@@ -235,5 +267,7 @@ version and lets the conformance tests catch a change.
 - [ ] The transferability check for server functions, run on this app's 41 and checked by
       hand, and the middle step to the API written as a recipe from task 084
 - [ ] A fresh AI session ports this app from its server-function baseline (before task 084) in one session using only the repository, and the gaps it hits are fixed
-- [ ] Recipes marked as not written yet: a replacement port, an app without server
-      rendering, and server functions in Rust
+- [ ] Recipes marked as not written yet: a replacement port, a static frame from Rust,
+      the long tail in the isolate, and server functions in Rust
+- [ ] The survey's split between native and hybrid based on usage and a profile, not on
+      guesses
