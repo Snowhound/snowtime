@@ -139,7 +139,7 @@ rejected, as in task 069.
 Kait, 2026-10-04: the proof of concept starts without task 078's final baseline. It
 measures the TypeScript and Rust servers side by side with task 078's harness
 (`perf:stress`), each limited to one CPU. The Rust code lives in a `native/` Cargo
-workspace in this repository until it needs its own release cadence. For the slice, the
+workspace in this repository ("Repository" below). For the slice, the
 Rust server owns email sign-in: it verifies Better Auth's scrypt hash, writes the session
 row, and sets the same signed cookie, because two processes must not write one SQLite file
 (task 043). The better-auth-rs spike (question 5) stays separate.
@@ -151,6 +151,36 @@ The first slice, without the week report and the render, was measured on 2026-10
 The frontend reaches it through the adapter for those calls. The isolate server-renders
 the timer page and the week report, and the browser hydrates them (subtask 01).
 
+## Repository
+
+Kait, 2026-10-05: the native code stays in this repository while the API contract still
+changes. A change to the contract then lands on both sides in one commit, and one CI
+checks both.
+
+**Pin when the port starts to lag.** Once the port tracks an older app commit on purpose,
+`native/UPSTREAM` records that commit. The native build makes the render bundle and the
+client assets from it in a temporary `git worktree`, so the manifest's asset hashes
+match the API the port implements. A CI job checks the port against `main`'s latest
+commit without blocking merges, and bumping the pin is a reviewed change. Until then,
+the port follows `main`.
+
+**Split into its own repository** when one of these holds:
+
+- most changes to `main` no longer touch the contract;
+- building Rust and V8 is a real cost to `main`'s CI, beyond what path filters avoid;
+- the native backend has users and releases of its own.
+
+The split repository pins `main` as a git submodule, builds the bundle and assets from
+it, and runs the conformance suite and `compare.ts` from the pinned commit. This
+repository keeps the contract: the conformance tests and a load harness that takes a
+server image or address. The harness's native-specific parts move with the port. Move
+`native/` with `git filter-repo`, so its history and measurements stay traceable.
+
+Rejected for now: a separate repository from the start. Every contract change would
+take two PRs and a pin bump, and fixes to the shared harness would flow back to this
+repository anyway, as task 090's did. Submodules also complicate the git worktrees and
+agent sessions this project uses.
+
 ## Acceptance criteria
 
 - [ ] Each question above answered with numbers, recorded in this task
@@ -161,6 +191,8 @@ the timer page and the week report, and the browser hydrates them (subtask 01).
       at idle and peak, and capacity
 - [ ] A follow-up task for parity and the generation workflow, if the numbers justify a
       second backend
+- [ ] The repository decision reviewed against "Repository" above, and `native/UPSTREAM`
+      added if the port is to lag `main`
 
 ## Out of scope
 
@@ -184,6 +216,7 @@ which records the edge measurements.
 - [08](08-fast-scrypt.md): a faster scrypt for the native sign-in
 - [09](09-http3.md): HTTP/3 in the native host, measured against HTTP/2
 - [11](11-turso-engine.md): Turso's engine, its speed against SQLite, and its backups
+- [12](12-profiling.md): profiles of both servers under load, once features and tests are done
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

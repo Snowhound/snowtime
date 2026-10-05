@@ -28,6 +28,16 @@ rest:
   such as Paraglide's message formatting or the export. Drizzle's migrations are SQL
   files with a journal table, so Rust applies them without the isolate.
 
+- Where the port lives. A port that lags its app on purpose records the app commit it
+  implements and builds the app's bundle and assets from that commit. Two layouts, with
+  when each fits (task 081, "Repository"):
+  - **One repository with a pin** (`native/UPSTREAM`): for small apps, or while the API
+    contract still changes. Contract changes stay atomic and need no submodule.
+  - **A separate repository** with the app as a pinned git submodule: for large apps,
+    once the contract is stable or the port has its own releases. The app's CI doesn't
+    build the port, and the app keeps only the contract: conformance tests and a load
+    harness that takes a server image or address.
+
 Code templates stay out; AI sessions write those well.
 
 ## The workflow
