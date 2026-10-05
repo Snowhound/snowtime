@@ -1,0 +1,1934 @@
+[
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "255953",
+    "candidate": "Deno",
+    "median_us": 324.09702500000003
+  },
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "255953",
+    "candidate": "core.encode",
+    "median_us": 258.98263499999985
+  },
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "255953",
+    "candidate": "Rust op",
+    "median_us": 67.84402
+  },
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "255953",
+    "candidate": "simdutf op",
+    "median_us": 41.47353500000008
+  },
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "255953",
+    "candidate": "JS fallback",
+    "median_us": 4203.867514999998
+  },
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 0.5545749999987493
+  },
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "core.encode",
+    "median_us": 0.4583750000006148
+  },
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "Rust op",
+    "median_us": 0.407514999999421
+  },
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "simdutf op",
+    "median_us": 0.43932000000040716
+  },
+  {
+    "page": "timer",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "JS fallback",
+    "median_us": 3.4077599999977792
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "Deno",
+    "median_us": 0.8046180000001186
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "core.decode",
+    "median_us": 0.5252040000004854
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "Rust op",
+    "median_us": 0.4782019999993281
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "encoding_rs op",
+    "median_us": 0.2590119999995295
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "simdutf op",
+    "median_us": 0.38311800000064977
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "JS fallback",
+    "median_us": 49.969976000000315
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "1129",
+    "candidate": "Deno Response",
+    "median_us": 5.009572000000844
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "1129",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 2.9666180000003806
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4",
+    "candidate": "Deno",
+    "median_us": 0.17814799999996467
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4",
+    "candidate": "core.decode",
+    "median_us": 0.10534400000051392
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4",
+    "candidate": "Rust op",
+    "median_us": 0.12358599999970465
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4",
+    "candidate": "encoding_rs op",
+    "median_us": 0.12366600000041217
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4",
+    "candidate": "simdutf op",
+    "median_us": 0.12006599999949685
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4",
+    "candidate": "JS fallback",
+    "median_us": 0.5693080000000919
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "4",
+    "candidate": "Deno Response",
+    "median_us": 1.016247999999905
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "4",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 0.2608119999995324
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "Deno",
+    "median_us": 0.30463400000007823
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "core.decode",
+    "median_us": 0.41191799999978684
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "Rust op",
+    "median_us": 1.4556879999990997
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "encoding_rs op",
+    "median_us": 0.594028000000435
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "simdutf op",
+    "median_us": 1.05800999999974
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "JS fallback",
+    "median_us": 189.52148399999987
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "4215",
+    "candidate": "Deno Response",
+    "median_us": 8.937023999999838
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "4215",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 7.896328000000722
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "26",
+    "candidate": "Deno",
+    "median_us": 0.17904599999928905
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "26",
+    "candidate": "core.decode",
+    "median_us": 0.10356400000000576
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "26",
+    "candidate": "Rust op",
+    "median_us": 0.13442399999894405
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "26",
+    "candidate": "encoding_rs op",
+    "median_us": 0.12054400000033638
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "26",
+    "candidate": "simdutf op",
+    "median_us": 0.1414839999997639
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "26",
+    "candidate": "JS fallback",
+    "median_us": 1.5661780000000363
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "26",
+    "candidate": "Deno Response",
+    "median_us": 0.9583540000003268
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "26",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 0.268130000000383
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "5780",
+    "candidate": "Deno",
+    "median_us": 0.5222979999998643
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "5780",
+    "candidate": "core.decode",
+    "median_us": 0.3822940000000017
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "5780",
+    "candidate": "Rust op",
+    "median_us": 2.043913999999859
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "5780",
+    "candidate": "encoding_rs op",
+    "median_us": 0.8297099999999773
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "5780",
+    "candidate": "simdutf op",
+    "median_us": 1.3687500000005457
+  },
+  {
+    "page": "timer",
+    "api": "TextDecoder.decode",
+    "argument_size": "5780",
+    "candidate": "JS fallback",
+    "median_us": 261.5860080000002
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "5780",
+    "candidate": "Deno Response",
+    "median_us": 8.615633999999773
+  },
+  {
+    "page": "timer",
+    "api": "Response.json",
+    "argument_size": "5780",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 7.518733999999313
+  },
+  {
+    "page": "timer",
+    "api": "URL",
+    "argument_size": "34",
+    "candidate": "Deno",
+    "median_us": 0.7932823333333848
+  },
+  {
+    "page": "timer",
+    "api": "URL",
+    "argument_size": "34",
+    "candidate": "Ada thin op",
+    "median_us": 0.37426366666674465
+  },
+  {
+    "page": "timer",
+    "api": "URL",
+    "argument_size": "12",
+    "candidate": "Deno",
+    "median_us": 1.0178540000000187
+  },
+  {
+    "page": "timer",
+    "api": "URL",
+    "argument_size": "12",
+    "candidate": "Ada thin op",
+    "median_us": 0.5034150000001318
+  },
+  {
+    "page": "timer",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "0",
+    "candidate": "Deno",
+    "median_us": 0.2121343333334759
+  },
+  {
+    "page": "timer",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "0",
+    "candidate": "minimal JS",
+    "median_us": 0.07163933333337506
+  },
+  {
+    "page": "timer",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "1",
+    "candidate": "Deno",
+    "median_us": 0.9520830000002812
+  },
+  {
+    "page": "timer",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "1",
+    "candidate": "minimal JS",
+    "median_us": 0.8332871666666506
+  },
+  {
+    "page": "timer",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "2",
+    "candidate": "Deno",
+    "median_us": 1.343575666666614
+  },
+  {
+    "page": "timer",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "2",
+    "candidate": "minimal JS",
+    "median_us": 1.0855126666665456
+  },
+  {
+    "page": "timer",
+    "api": "Headers",
+    "argument_size": "1",
+    "candidate": "Deno construct + cookie",
+    "median_us": 31.204160000000225
+  },
+  {
+    "page": "timer",
+    "api": "Headers",
+    "argument_size": "1",
+    "candidate": "JS Map construct + cookie",
+    "median_us": 0.2684596666667858
+  },
+  {
+    "page": "timer",
+    "api": "Request",
+    "argument_size": "34",
+    "candidate": "Deno",
+    "median_us": 13.462210000000596
+  },
+  {
+    "page": "timer",
+    "api": "AbortController",
+    "argument_size": "0",
+    "candidate": "Deno",
+    "median_us": 0.2733963333336457
+  },
+  {
+    "page": "timer",
+    "api": "structuredClone",
+    "argument_size": "2",
+    "candidate": "Deno",
+    "median_us": 2.882851666666587
+  },
+  {
+    "page": "timer",
+    "api": "ReadableStream",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 5.073414999999841
+  },
+  {
+    "page": "timer",
+    "api": "TransformStream",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 13.806061999997837
+  },
+  {
+    "page": "timer",
+    "api": "Intl.DateTimeFormat.formatToParts",
+    "argument_size": "43",
+    "candidate": "V8 ICU",
+    "median_us": 2.8261696666668286
+  },
+  {
+    "page": "timer",
+    "api": "Intl.DateTimeFormat.formatToParts",
+    "argument_size": "43",
+    "candidate": "bounded JS cache + fresh parts",
+    "median_us": 0.3126580000001316
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "140782",
+    "candidate": "Deno",
+    "median_us": 194.13412
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "140782",
+    "candidate": "core.encode",
+    "median_us": 178.50379999999987
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "140782",
+    "candidate": "Rust op",
+    "median_us": 37.26435500000022
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "140782",
+    "candidate": "simdutf op",
+    "median_us": 52.97173000000015
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "140782",
+    "candidate": "JS fallback",
+    "median_us": 2266.279555000001
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 0.5545199999994566
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "core.encode",
+    "median_us": 0.455815000000257
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "Rust op",
+    "median_us": 0.4182149999996909
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "simdutf op",
+    "median_us": 0.5510700000002089
+  },
+  {
+    "page": "week",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "JS fallback",
+    "median_us": 2.3482850000004873
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "Deno",
+    "median_us": 0.33903200000031575
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "core.decode",
+    "median_us": 0.6967660000000251
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "Rust op",
+    "median_us": 0.4693959999995059
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "encoding_rs op",
+    "median_us": 0.26117000000022017
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "simdutf op",
+    "median_us": 0.38119400000005044
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "JS fallback",
+    "median_us": 50.288432000000284
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "1129",
+    "candidate": "Deno Response",
+    "median_us": 5.040223999999853
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "1129",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 3.0881319999998595
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "Deno",
+    "median_us": 0.27317000000039116
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "core.decode",
+    "median_us": 0.3647139999998217
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "Rust op",
+    "median_us": 1.4669139999996332
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "encoding_rs op",
+    "median_us": 0.7319259999999304
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "simdutf op",
+    "median_us": 1.0683600000002116
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "JS fallback",
+    "median_us": 190.61030199999917
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "4215",
+    "candidate": "Deno Response",
+    "median_us": 9.026608000000124
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "4215",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 7.852886000000581
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "Deno",
+    "median_us": 0.22014800000033574
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "core.decode",
+    "median_us": 0.15242600000055972
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "Rust op",
+    "median_us": 0.6329420000001846
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "encoding_rs op",
+    "median_us": 0.3103099999989354
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "simdutf op",
+    "median_us": 0.48977800000011484
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "JS fallback",
+    "median_us": 73.29695000000082
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "1604",
+    "candidate": "Deno Response",
+    "median_us": 5.157908000000134
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "1604",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 3.9433640000006562
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "Deno",
+    "median_us": 1.653120000000854
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "core.decode",
+    "median_us": 1.547335999999632
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "Rust op",
+    "median_us": 2.880005999999412
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "encoding_rs op",
+    "median_us": 1.8222660000010364
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "simdutf op",
+    "median_us": 1.3621699999994235
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "JS fallback",
+    "median_us": 254.2761219999993
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "5545",
+    "candidate": "Deno Response",
+    "median_us": 13.545372000000498
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "5545",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 11.742605999999796
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4522",
+    "candidate": "Deno",
+    "median_us": 0.2810300000001007
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4522",
+    "candidate": "core.decode",
+    "median_us": 0.3459320000001753
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4522",
+    "candidate": "Rust op",
+    "median_us": 1.6052200000003722
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4522",
+    "candidate": "encoding_rs op",
+    "median_us": 0.6036020000001372
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4522",
+    "candidate": "simdutf op",
+    "median_us": 1.1138600000003862
+  },
+  {
+    "page": "week",
+    "api": "TextDecoder.decode",
+    "argument_size": "4522",
+    "candidate": "JS fallback",
+    "median_us": 206.56982599999992
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "4522",
+    "candidate": "Deno Response",
+    "median_us": 10.698827999999594
+  },
+  {
+    "page": "week",
+    "api": "Response.json",
+    "argument_size": "4522",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 9.501665999999204
+  },
+  {
+    "page": "week",
+    "api": "URL",
+    "argument_size": "52",
+    "candidate": "Deno",
+    "median_us": 1.0835263333333387
+  },
+  {
+    "page": "week",
+    "api": "URL",
+    "argument_size": "52",
+    "candidate": "Ada thin op",
+    "median_us": 0.37460366666679573
+  },
+  {
+    "page": "week",
+    "api": "URL",
+    "argument_size": "30",
+    "candidate": "Deno",
+    "median_us": 1.069319000000026
+  },
+  {
+    "page": "week",
+    "api": "URL",
+    "argument_size": "30",
+    "candidate": "Ada thin op",
+    "median_us": 0.5043083333333319
+  },
+  {
+    "page": "week",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "0",
+    "candidate": "Deno",
+    "median_us": 0.19894733333330805
+  },
+  {
+    "page": "week",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "0",
+    "candidate": "minimal JS",
+    "median_us": 0.08674299999984214
+  },
+  {
+    "page": "week",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "1",
+    "candidate": "Deno",
+    "median_us": 0.9829291666667359
+  },
+  {
+    "page": "week",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "1",
+    "candidate": "minimal JS",
+    "median_us": 0.8352021666666285
+  },
+  {
+    "page": "week",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "2",
+    "candidate": "Deno",
+    "median_us": 1.2150139999998828
+  },
+  {
+    "page": "week",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "2",
+    "candidate": "minimal JS",
+    "median_us": 1.0448313333333015
+  },
+  {
+    "page": "week",
+    "api": "Headers",
+    "argument_size": "1",
+    "candidate": "Deno construct + cookie",
+    "median_us": 30.259468666666635
+  },
+  {
+    "page": "week",
+    "api": "Headers",
+    "argument_size": "1",
+    "candidate": "JS Map construct + cookie",
+    "median_us": 0.27138666666663386
+  },
+  {
+    "page": "week",
+    "api": "Request",
+    "argument_size": "52",
+    "candidate": "Deno",
+    "median_us": 15.851538000000346
+  },
+  {
+    "page": "week",
+    "api": "AbortController",
+    "argument_size": "0",
+    "candidate": "Deno",
+    "median_us": 0.2828736666668495
+  },
+  {
+    "page": "week",
+    "api": "structuredClone",
+    "argument_size": "2",
+    "candidate": "Deno",
+    "median_us": 2.677654000000075
+  },
+  {
+    "page": "week",
+    "api": "ReadableStream",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 5.581584000000021
+  },
+  {
+    "page": "week",
+    "api": "TransformStream",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 23.01351800000066
+  },
+  {
+    "page": "week",
+    "api": "Intl.DateTimeFormat.formatToParts",
+    "argument_size": "15",
+    "candidate": "V8 ICU",
+    "median_us": 2.743643000000096
+  },
+  {
+    "page": "week",
+    "api": "Intl.DateTimeFormat.formatToParts",
+    "argument_size": "15",
+    "candidate": "bounded JS cache + fresh parts",
+    "median_us": 0.29779400000006717
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "255732",
+    "candidate": "Deno",
+    "median_us": 337.89666000000005
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "255732",
+    "candidate": "core.encode",
+    "median_us": 258.0018949999999
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "255732",
+    "candidate": "Rust op",
+    "median_us": 67.22679499999998
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "255732",
+    "candidate": "simdutf op",
+    "median_us": 44.098909999999876
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "255732",
+    "candidate": "JS fallback",
+    "median_us": 4249.566035
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 0.5556649999994079
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "core.encode",
+    "median_us": 0.4521650000015143
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "Rust op",
+    "median_us": 0.40536499999916487
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "simdutf op",
+    "median_us": 0.43251000000282147
+  },
+  {
+    "page": "month",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "JS fallback",
+    "median_us": 2.052760000001399
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "Deno",
+    "median_us": 0.5365760000004229
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "core.decode",
+    "median_us": 0.8088839999991251
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "Rust op",
+    "median_us": 0.5115940000005139
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "encoding_rs op",
+    "median_us": 0.25728799999978946
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "simdutf op",
+    "median_us": 0.377451999999721
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "JS fallback",
+    "median_us": 53.849653999999646
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "1129",
+    "candidate": "Deno Response",
+    "median_us": 4.714504000000488
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "1129",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 2.984451999999692
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "Deno",
+    "median_us": 0.2930100000003222
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "core.decode",
+    "median_us": 0.402632000000267
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "Rust op",
+    "median_us": 1.5167460000002393
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "encoding_rs op",
+    "median_us": 0.5770179999990432
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "simdutf op",
+    "median_us": 1.07893200000035
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "JS fallback",
+    "median_us": 192.91347999999925
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "4215",
+    "candidate": "Deno Response",
+    "median_us": 9.2207640000006
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "4215",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 7.940724000000955
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "Deno",
+    "median_us": 0.3329699999994773
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "core.decode",
+    "median_us": 0.14612400000078196
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "Rust op",
+    "median_us": 0.6308600000002116
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "encoding_rs op",
+    "median_us": 0.2964079999992464
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "simdutf op",
+    "median_us": 0.4570139999996172
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "JS fallback",
+    "median_us": 72.08335199999965
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "1604",
+    "candidate": "Deno Response",
+    "median_us": 5.238940000000184
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "1604",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 3.9266600000000835
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "Deno",
+    "median_us": 1.63119000000097
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "core.decode",
+    "median_us": 1.5093659999993179
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "Rust op",
+    "median_us": 2.888608000000204
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "encoding_rs op",
+    "median_us": 1.796875999999429
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "simdutf op",
+    "median_us": 1.3381820000004154
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "JS fallback",
+    "median_us": 252.70511800000168
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "5545",
+    "candidate": "Deno Response",
+    "median_us": 14.33541999999943
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "5545",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 12.116352000000916
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "11161",
+    "candidate": "Deno",
+    "median_us": 0.6352400000014313
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "11161",
+    "candidate": "core.decode",
+    "median_us": 0.5450959999998304
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "11161",
+    "candidate": "Rust op",
+    "median_us": 3.6125100000008388
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "11161",
+    "candidate": "encoding_rs op",
+    "median_us": 1.4742059999989579
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "11161",
+    "candidate": "simdutf op",
+    "median_us": 2.5343379999994795
+  },
+  {
+    "page": "month",
+    "api": "TextDecoder.decode",
+    "argument_size": "11161",
+    "candidate": "JS fallback",
+    "median_us": 549.4833900000014
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "11161",
+    "candidate": "Deno Response",
+    "median_us": 18.507590000001073
+  },
+  {
+    "page": "month",
+    "api": "Response.json",
+    "argument_size": "11161",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 17.58480000000054
+  },
+  {
+    "page": "month",
+    "api": "URL",
+    "argument_size": "53",
+    "candidate": "Deno",
+    "median_us": 1.0726629999999204
+  },
+  {
+    "page": "month",
+    "api": "URL",
+    "argument_size": "53",
+    "candidate": "Ada thin op",
+    "median_us": 0.350624000000001
+  },
+  {
+    "page": "month",
+    "api": "URL",
+    "argument_size": "31",
+    "candidate": "Deno",
+    "median_us": 1.0839433333333848
+  },
+  {
+    "page": "month",
+    "api": "URL",
+    "argument_size": "31",
+    "candidate": "Ada thin op",
+    "median_us": 0.4986453333334187
+  },
+  {
+    "page": "month",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "0",
+    "candidate": "Deno",
+    "median_us": 0.23420733333326402
+  },
+  {
+    "page": "month",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "0",
+    "candidate": "minimal JS",
+    "median_us": 0.048968333333201976
+  },
+  {
+    "page": "month",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "1",
+    "candidate": "Deno",
+    "median_us": 0.9703698333334311
+  },
+  {
+    "page": "month",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "1",
+    "candidate": "minimal JS",
+    "median_us": 0.8451875000000655
+  },
+  {
+    "page": "month",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "2",
+    "candidate": "Deno",
+    "median_us": 1.2117869999998827
+  },
+  {
+    "page": "month",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "2",
+    "candidate": "minimal JS",
+    "median_us": 1.0691960000000715
+  },
+  {
+    "page": "month",
+    "api": "Headers",
+    "argument_size": "1",
+    "candidate": "Deno construct + cookie",
+    "median_us": 31.193667666666443
+  },
+  {
+    "page": "month",
+    "api": "Headers",
+    "argument_size": "1",
+    "candidate": "JS Map construct + cookie",
+    "median_us": 0.2652179999998528
+  },
+  {
+    "page": "month",
+    "api": "Request",
+    "argument_size": "53",
+    "candidate": "Deno",
+    "median_us": 14.723062000000027
+  },
+  {
+    "page": "month",
+    "api": "AbortController",
+    "argument_size": "0",
+    "candidate": "Deno",
+    "median_us": 0.283638999999918
+  },
+  {
+    "page": "month",
+    "api": "structuredClone",
+    "argument_size": "2",
+    "candidate": "Deno",
+    "median_us": 2.6641920000001846
+  },
+  {
+    "page": "month",
+    "api": "ReadableStream",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 5.537645999998858
+  },
+  {
+    "page": "month",
+    "api": "TransformStream",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 14.103673999999955
+  },
+  {
+    "page": "month",
+    "api": "Intl.DateTimeFormat.formatToParts",
+    "argument_size": "15",
+    "candidate": "V8 ICU",
+    "median_us": 2.8958543333334696
+  },
+  {
+    "page": "month",
+    "api": "Intl.DateTimeFormat.formatToParts",
+    "argument_size": "15",
+    "candidate": "bounded JS cache + fresh parts",
+    "median_us": 0.3113896666667036
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "378457",
+    "candidate": "Deno",
+    "median_us": 481.55313499999994
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "378457",
+    "candidate": "core.encode",
+    "median_us": 385.9557999999999
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "378457",
+    "candidate": "Rust op",
+    "median_us": 97.92155999999977
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "378457",
+    "candidate": "simdutf op",
+    "median_us": 102.19329000000016
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "378457",
+    "candidate": "JS fallback",
+    "median_us": 7222.796715000001
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 0.5694200000016281
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "core.encode",
+    "median_us": 0.45561499999621446
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "Rust op",
+    "median_us": 0.4193650000024718
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "simdutf op",
+    "median_us": 0.3959100000020044
+  },
+  {
+    "page": "year",
+    "api": "TextEncoder.encode",
+    "argument_size": "127",
+    "candidate": "JS fallback",
+    "median_us": 4.925815000001421
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "Deno",
+    "median_us": 0.9064299999990908
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "core.decode",
+    "median_us": 0.4835159999984171
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "Rust op",
+    "median_us": 0.4738759999981994
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "encoding_rs op",
+    "median_us": 0.2707700000009936
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "simdutf op",
+    "median_us": 0.3791719999990164
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1129",
+    "candidate": "JS fallback",
+    "median_us": 50.35673400000087
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "1129",
+    "candidate": "Deno Response",
+    "median_us": 4.849802000000636
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "1129",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 3.034161999999924
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "Deno",
+    "median_us": 0.32855000000017753
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "core.decode",
+    "median_us": 0.27630999999928463
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "Rust op",
+    "median_us": 1.526131999999052
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "encoding_rs op",
+    "median_us": 0.5802399999993213
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "simdutf op",
+    "median_us": 1.1070760000002338
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "4215",
+    "candidate": "JS fallback",
+    "median_us": 195.78426399999992
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "4215",
+    "candidate": "Deno Response",
+    "median_us": 9.19092599999749
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "4215",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 7.9576040000010835
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "Deno",
+    "median_us": 0.21004599999832863
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "core.decode",
+    "median_us": 0.1477439999998751
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "Rust op",
+    "median_us": 0.5920580000019982
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "encoding_rs op",
+    "median_us": 0.29095000000052096
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "simdutf op",
+    "median_us": 0.45783599999958824
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "1604",
+    "candidate": "JS fallback",
+    "median_us": 73.04782599999999
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "1604",
+    "candidate": "Deno Response",
+    "median_us": 5.199973999999202
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "1604",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 4.09347600000001
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "Deno",
+    "median_us": 1.594812000001184
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "core.decode",
+    "median_us": 1.5724719999998342
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "Rust op",
+    "median_us": 2.8205940000007104
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "encoding_rs op",
+    "median_us": 1.782258000001093
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "simdutf op",
+    "median_us": 1.3851860000013403
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "5545",
+    "candidate": "JS fallback",
+    "median_us": 253.6623500000005
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "5545",
+    "candidate": "Deno Response",
+    "median_us": 13.482309999999416
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "5545",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 12.06325999999899
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "19487",
+    "candidate": "Deno",
+    "median_us": 1.020994000000428
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "19487",
+    "candidate": "core.decode",
+    "median_us": 1.0379739999989397
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "19487",
+    "candidate": "Rust op",
+    "median_us": 6.198605999999927
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "19487",
+    "candidate": "encoding_rs op",
+    "median_us": 2.270096000000194
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "19487",
+    "candidate": "simdutf op",
+    "median_us": 4.327864000000773
+  },
+  {
+    "page": "year",
+    "api": "TextDecoder.decode",
+    "argument_size": "19487",
+    "candidate": "JS fallback",
+    "median_us": 1122.1744360000012
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "19487",
+    "candidate": "Deno Response",
+    "median_us": 31.121110000000044
+  },
+  {
+    "page": "year",
+    "api": "Response.json",
+    "argument_size": "19487",
+    "candidate": "direct decode + JSON.parse",
+    "median_us": 28.78625800000009
+  },
+  {
+    "page": "year",
+    "api": "URL",
+    "argument_size": "79",
+    "candidate": "Deno",
+    "median_us": 0.9217236666663666
+  },
+  {
+    "page": "year",
+    "api": "URL",
+    "argument_size": "79",
+    "candidate": "Ada thin op",
+    "median_us": 0.3773826666668659
+  },
+  {
+    "page": "year",
+    "api": "URL",
+    "argument_size": "57",
+    "candidate": "Deno",
+    "median_us": 1.140764666666655
+  },
+  {
+    "page": "year",
+    "api": "URL",
+    "argument_size": "57",
+    "candidate": "Ada thin op",
+    "median_us": 0.5318276666663829
+  },
+  {
+    "page": "year",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "0",
+    "candidate": "Deno",
+    "median_us": 0.22363399999994726
+  },
+  {
+    "page": "year",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "0",
+    "candidate": "minimal JS",
+    "median_us": 0.05090833333269984
+  },
+  {
+    "page": "year",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "1",
+    "candidate": "Deno",
+    "median_us": 0.9398911666667118
+  },
+  {
+    "page": "year",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "1",
+    "candidate": "minimal JS",
+    "median_us": 0.8436729999997018
+  },
+  {
+    "page": "year",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "2",
+    "candidate": "Deno",
+    "median_us": 1.2376076666672209
+  },
+  {
+    "page": "year",
+    "api": "URLSearchParams(object).toString",
+    "argument_size": "2",
+    "candidate": "minimal JS",
+    "median_us": 1.0525379999999132
+  },
+  {
+    "page": "year",
+    "api": "Headers",
+    "argument_size": "1",
+    "candidate": "Deno construct + cookie",
+    "median_us": 29.517044333333008
+  },
+  {
+    "page": "year",
+    "api": "Headers",
+    "argument_size": "1",
+    "candidate": "JS Map construct + cookie",
+    "median_us": 0.2553149999997307
+  },
+  {
+    "page": "year",
+    "api": "Request",
+    "argument_size": "79",
+    "candidate": "Deno",
+    "median_us": 15.501824999999371
+  },
+  {
+    "page": "year",
+    "api": "AbortController",
+    "argument_size": "0",
+    "candidate": "Deno",
+    "median_us": 0.26868899999984325
+  },
+  {
+    "page": "year",
+    "api": "structuredClone",
+    "argument_size": "2",
+    "candidate": "Deno",
+    "median_us": 2.6418310000002143
+  },
+  {
+    "page": "year",
+    "api": "ReadableStream",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 8.338287000000491
+  },
+  {
+    "page": "year",
+    "api": "TransformStream",
+    "argument_size": "127",
+    "candidate": "Deno",
+    "median_us": 13.936863999995694
+  },
+  {
+    "page": "year",
+    "api": "Intl.DateTimeFormat.formatToParts",
+    "argument_size": "15",
+    "candidate": "V8 ICU",
+    "median_us": 2.7773790000004133
+  },
+  {
+    "page": "year",
+    "api": "Intl.DateTimeFormat.formatToParts",
+    "argument_size": "15",
+    "candidate": "bounded JS cache + fresh parts",
+    "median_us": 0.29253966666692577
+  }
+]

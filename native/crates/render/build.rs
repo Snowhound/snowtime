@@ -7,6 +7,7 @@ fn main() {
     println!("cargo:rerun-if-changed=bundle/dist/manifest.json");
     println!("cargo:rerun-if-changed=bundle/bootstrap.js");
     println!("cargo:rerun-if-changed=src/extensions.rs");
+    println!("cargo:rerun-if-changed=src/encoding.rs");
     let snapshot = deno_core::snapshot::create_snapshot(
         deno_core::snapshot::CreateSnapshotOptions {
             cargo_manifest_dir: env!("CARGO_MANIFEST_DIR"),

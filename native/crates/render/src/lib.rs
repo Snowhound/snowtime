@@ -2,6 +2,9 @@
 //! by path; a page comes back whole, so a slow client never holds a renderer.
 mod deadline;
 mod extensions;
+mod profile;
+#[cfg(test)]
+mod web_api_tests;
 
 use deno_core::{JsRuntime, OpState, RuntimeOptions, op2};
 use deno_error::JsErrorBox;
@@ -143,6 +146,7 @@ deno_core::extension!(host, ops = [op_send, op_head, op_chunk]);
 /// One isolate. Only one page renders at a time, so cookies, locale, and query caches
 /// cannot overlap.
 struct Renderer {
+    profile: Option<profile::Profile>,
     runtime: Option<JsRuntime>,
     deadline: deadline::Deadline,
     send: SendApi,
@@ -154,6 +158,7 @@ impl Renderer {
         let mut exts = extensions::extensions();
         exts.push(host::init());
         let mut runtime = JsRuntime::new(RuntimeOptions {
+            inspector: profile::Profile::enabled(),
             startup_snapshot: Some(include_bytes!(concat!(env!("OUT_DIR"), "/render.bin"))),
             extensions: exts,
             create_params: Some(
@@ -173,7 +178,9 @@ impl Renderer {
                 format!("globalThis.renderManifest = {manifest}"),
             )
             .expect("the manifest is JSON");
+        let profile = profile::Profile::new(&mut runtime);
         Self {
+            profile,
             runtime: Some(runtime),
             deadline: deadline::Deadline::new(),
             send,
@@ -188,6 +195,7 @@ impl Renderer {
     fn reset(&mut self) {
         self.js().v8_isolate().cancel_terminate_execution();
         // Dispose this isolate before entering its replacement on the same thread.
+        drop(self.profile.take());
         drop(self.runtime.take());
         *self = Self::new(
             self.send.clone(),
@@ -209,6 +217,9 @@ impl Renderer {
         }
     }
     async fn render(&mut self, request: &PageRequest) -> Result<Page, String> {
+        if let Some(profile) = &mut self.profile {
+            profile.before();
+        }
         let limit = self.policy.max_page_bytes;
         self.js().op_state().borrow_mut().put(Output {
             limit,
@@ -230,6 +241,9 @@ impl Renderer {
         .await
         .unwrap_or_else(|_| Err(anyhow::anyhow!("Render deadline exceeded")));
         self.deadline.disarm();
+        if let Some(profile) = &mut self.profile {
+            profile.after();
+        }
         let output = self.js().op_state().borrow_mut().take::<Output>();
         match (result, output.head) {
             (Ok(()), Some((status, headers))) => Ok(Page {

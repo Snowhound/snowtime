@@ -51,7 +51,9 @@ the counts and heap limits from the memory it may use and reports pressure from 
 Deno's MIT extension crates supply URL parsing, text encoding, structured cloning,
 Request/Response, and streams. Their stream machinery is JavaScript backed by native
 ops, as Deno implements it. The isolate's `fetch` throws; app reads go through the host
-callback.
+callback. Numeric Intl parts use a bounded per-formatter cache that returns fresh
+parts objects; string encoding uses a thin V8/simdutf op. Receiver checks and non-string
+conversion remain with Deno. Task 081.12 records the measured selection and its limits.
 
 The default policy collects after one second idle, or after a page that leaves more than
 48 MiB of used V8 heap. It replaces the isolate if a collection leaves more than 80 MiB
@@ -95,4 +97,57 @@ check serves V8 HTML in place of Start's document, checks errors and original DO
 and navigates to the other page without reloading.
 
 `results/` and the generated bundle are ignored. Raw measurements and findings are kept
-in task 081.01.
+in tasks 081.01 and 081.12.
+
+## Render profiling and API benchmarks
+
+The profiling harness covers timer, week, month, and year reports. Run it from the
+Linux filesystem in WSL; Docker runs use one CPU and 2 GiB. Stop other busy services
+during measurements and restore them afterward.
+
+Install the isolated benchmark dependencies without changing the app's lockfile:
+
+```sh
+(cd native/crates/render/bundle/bench && bun install --frozen-lockfile && bun run build)
+bun native/crates/render/bundle/build.ts
+docker build -f native/crates/render/bundle/bench/Dockerfile -t snowtime-render:api-bench .
+```
+
+Set `RENDER_CPU_PROFILE=/results/timer.cpuprofile` on a render-bench container to
+record V8's inspector profile after its initial render and 50 warm-ups.
+`RENDER_PROFILE_COUNT` defaults to 500. Use one renderer and client; this instrumentation
+does not aggregate multiple isolates. `RENDER_API_TRACE=1` also writes a sibling
+`.apis.json` file with one page's API call counts and argument sizes. Trace runs add
+wrappers and must be separate from timing runs.
+
+`RENDER_PERF_PROF=1` enables V8 JIT names for Linux perf. Record with `perf record -k 1`
+and inject the JIT dump with `perf inject --jit` inside the same container before it exits.
+Use a known working directory (for example `/tmp`) and save its `jit-*.dump` files;
+V8 writes them to the working directory by default.
+The benchmark image includes perf; recording requires PERFMON and SYS_PTRACE capabilities
+and an unrestricted seccomp profile. Keep these privileges confined to measurement runs.
+
+For Bun's matching harness:
+
+```sh
+bun native/crates/render/bundle/bun-bench.ts native/crates/render/results/timer.json native/crates/render/results/answers.json 500
+bun native/crates/render/bundle/bun-bench.ts --polyfills native/crates/render/results/timer.json native/crates/render/results/answers.json 500
+```
+
+Set `BUN_RENDER_PROFILE=<path>.jsc.json` to sample only the measured loop with
+`bun:jsc.profile`, after warm-up. Bun's `--cpu-prof` flag instead includes startup
+and warm-ups; keep those profiles separate. The forced-polyfill mode
+uses MIT JS URL, streams, and fetch implementations and an Apache-2.0 text-encoding
+fallback. It redirects the fetch package's internal encoding import too.
+
+`bundle/bench/profile-summary.ts <profile> <render.js.map>` attributes self samples
+to source files. Save the matching bundle and source map with each profile. Percentages
+include idle samples, omit other process threads, and are not whole-process CPU shares.
+Measure profiling overhead separately.
+
+`web-api-bench <page> <results-directory>` runs API microbenchmarks inside the isolate.
+It needs that page's HTML, request, captured answers, and `profiles/<page>-trace.apis.json`.
+The `api-bench` Cargo feature adds MIT/Apache-2.0 Ada and encoding_rs only to this binary.
+Microbenchmarks report three repetitions in one isolate. Their reduced URL, Headers,
+query-string, and JSON candidates are comparisons of observed operations, not complete
+replacement classes; a microbenchmark win alone does not select a production API.

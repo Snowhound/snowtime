@@ -38,3 +38,36 @@ globalThis.fetch = () => {
 }
 Deno.env = { toObject: () => ({ NODE_ENV: 'production' }) }
 globalThis.structuredClone = core.loadExtScript('ext:deno_web/13_message_port.js').structuredClone
+
+// Preserve fresh parts objects while reusing numeric-instant formatting in repeated renders.
+// oxlint-disable-next-line typescript/unbound-method -- The wrapper supplies the receiver explicitly.
+const nativeFormatToParts = Intl.DateTimeFormat.prototype.formatToParts
+const partsCaches = new WeakMap()
+Intl.DateTimeFormat.prototype.formatToParts = function formatToParts(value) {
+  if (typeof value !== 'number') return nativeFormatToParts.call(this, value)
+  let cache = partsCaches.get(this)
+  const found = cache?.get(value)
+  if (found) return found.map((part) => ({ ...part }))
+  const parts = nativeFormatToParts.call(this, value)
+  if (!cache) {
+    cache = new Map()
+    partsCaches.set(this, cache)
+  }
+  if (cache.size === 256) cache.delete(cache.keys().next().value)
+  cache.set(
+    value,
+    parts.map((part) => ({ ...part })),
+  )
+  return parts
+}
+
+// Keep Deno branding and non-string conversion; use the thin op for UTF-8 strings.
+// oxlint-disable-next-line typescript/unbound-method -- The wrapper supplies the receiver explicitly.
+const denoEncode = TextEncoder.prototype.encode
+// oxlint-disable-next-line typescript/unbound-method -- The wrapper supplies the receiver explicitly.
+const encoderBrand = Object.getOwnPropertyDescriptor(TextEncoder.prototype, 'encoding').get
+TextEncoder.prototype.encode = function encode(input = '') {
+  encoderBrand.call(this)
+  if (typeof input !== 'string') return denoEncode.call(this, input)
+  return core.ops.op_render_encode(input)
+}

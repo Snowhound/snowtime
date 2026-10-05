@@ -16,7 +16,7 @@ case "${1:-pages}" in
 pages)
   : > "$results/linux.jsonl"
   for run in 1 2 3; do
-    for page in timer week; do
+    for page in timer week month year; do
       bench 1 snowtime-render:bench "/results/$page.json" /results/answers.json 500 1 1 \
         "/results/$page-v8.html" >> "$results/linux.jsonl"
     done

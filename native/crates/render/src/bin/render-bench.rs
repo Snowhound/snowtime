@@ -97,6 +97,9 @@ fn heap_limits() -> Policy {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    if std::env::var_os("RENDER_PERF_PROF").is_some() {
+        deno_core::v8::V8::set_flags_from_string("--perf-prof --perf-prof-unwinding-info");
+    }
     let args: Vec<String> = std::env::args().collect();
     anyhow::ensure!(
         args.len() >= 3,

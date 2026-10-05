@@ -1,0 +1,550 @@
+[
+  {
+    "profile": "timer-bun-bounded.jsc.json",
+    "sampled_ms": 4911,
+    "buckets_percent": {
+      "Solid": 39.52,
+      "native/unattributed": 29.59,
+      "app": 12.48,
+      "other dependencies": 6.88,
+      "TanStack": 5.86,
+      "Intl": 4.93,
+      "native ops": 0.35,
+      "API decoding": 0.26,
+      "bundle/other": 0.12
+    },
+    "top_frames": [
+      {
+        "frame": "getOwnPropertyDescriptors :0",
+        "percent": 7.27
+      },
+      {
+        "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:662",
+        "percent": 6.6
+      },
+      {
+        "frame": "formatToParts :0",
+        "percent": 4.93
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:417",
+        "percent": 4.28
+      },
+      {
+        "frame": "encode :0",
+        "percent": 3.87
+      },
+      {
+        "frame": "get ../../../../../node_modules/solid-js/dist/server.js:424",
+        "percent": 2.99
+      },
+      {
+        "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:562",
+        "percent": 2.89
+      },
+      {
+        "frame": "split ../../../../../node_modules/solid-js/dist/server.js:441",
+        "percent": 2.67
+      },
+      {
+        "frame": "split ../../../../../node_modules/solid-js/dist/server.js:442",
+        "percent": 1.87
+      },
+      {
+        "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:525",
+        "percent": 1.71
+      },
+      {
+        "frame": "cloneObject :0",
+        "percent": 1.71
+      },
+      {
+        "frame": "wallClock ../../../../../src/lib/calendar.ts:39",
+        "percent": 1.53
+      },
+      {
+        "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:205",
+        "percent": 1.53
+      },
+      {
+        "frame": "entries :0",
+        "percent": 1.49
+      },
+      {
+        "frame": "split ../../../../../node_modules/solid-js/dist/server.js:440",
+        "percent": 1.36
+      },
+      {
+        "frame": "copyDataProperties :0",
+        "percent": 1.18
+      },
+      {
+        "frame": "map :1",
+        "percent": 1.08
+      },
+      {
+        "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:517",
+        "percent": 1.04
+      },
+      {
+        "frame": "indexOf :0",
+        "percent": 0.9
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:414",
+        "percent": 0.9
+      },
+      {
+        "frame": "(host) :0",
+        "percent": 0.86
+      },
+      {
+        "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:563",
+        "percent": 0.81
+      },
+      {
+        "frame": "getContextId ../../../../../node_modules/solid-js/dist/server.js:383",
+        "percent": 0.79
+      },
+      {
+        "frame": "concat :0",
+        "percent": 0.77
+      },
+      {
+        "frame": "createComponent ../../../../../node_modules/solid-js/dist/server.js:402",
+        "percent": 0.77
+      },
+      {
+        "frame": "Date :0",
+        "percent": 0.71
+      },
+      {
+        "frame": "r ../../../../../node_modules/clsx/dist/clsx.mjs:1",
+        "percent": 0.61
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:415",
+        "percent": 0.59
+      },
+      {
+        "frame": "format :0",
+        "percent": 0.57
+      },
+      {
+        "frame": "toISOString :0",
+        "percent": 0.57
+      }
+    ]
+  },
+  {
+    "profile": "week-bun-bounded.jsc.json",
+    "sampled_ms": 2904,
+    "buckets_percent": {
+      "Solid": 37.95,
+      "native/unattributed": 34.06,
+      "TanStack": 10.88,
+      "other dependencies": 7.75,
+      "app": 6.82,
+      "Intl": 1.41,
+      "API decoding": 0.59,
+      "native ops": 0.31,
+      "bundle/other": 0.24
+    },
+    "top_frames": [
+      {
+        "frame": "getOwnPropertyDescriptors :0",
+        "percent": 8.06
+      },
+      {
+        "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:662",
+        "percent": 5.89
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:417",
+        "percent": 3.86
+      },
+      {
+        "frame": "split ../../../../../node_modules/solid-js/dist/server.js:441",
+        "percent": 3.82
+      },
+      {
+        "frame": "get ../../../../../node_modules/solid-js/dist/server.js:424",
+        "percent": 3.2
+      },
+      {
+        "frame": "split ../../../../../node_modules/solid-js/dist/server.js:442",
+        "percent": 3.13
+      },
+      {
+        "frame": "encode :0",
+        "percent": 2.51
+      },
+      {
+        "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:562",
+        "percent": 2.03
+      },
+      {
+        "frame": "entries :0",
+        "percent": 2.03
+      },
+      {
+        "frame": "copyDataProperties :0",
+        "percent": 1.55
+      },
+      {
+        "frame": "cloneObject :0",
+        "percent": 1.52
+      },
+      {
+        "frame": "json :0",
+        "percent": 1.31
+      },
+      {
+        "frame": "structuredClone :0",
+        "percent": 1.24
+      },
+      {
+        "frame": "indexOf :0",
+        "percent": 1.17
+      },
+      {
+        "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:507",
+        "percent": 1.17
+      },
+      {
+        "frame": "concat :0",
+        "percent": 1.17
+      },
+      {
+        "frame": "map :1",
+        "percent": 1.14
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:414",
+        "percent": 1.14
+      },
+      {
+        "frame": "formatRange :0",
+        "percent": 1.14
+      },
+      {
+        "frame": "DateTimeFormat :0",
+        "percent": 1.03
+      },
+      {
+        "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:205",
+        "percent": 0.93
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:415",
+        "percent": 0.86
+      },
+      {
+        "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:525",
+        "percent": 0.86
+      },
+      {
+        "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:563",
+        "percent": 0.69
+      },
+      {
+        "frame": "parseProperties ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2450",
+        "percent": 0.65
+      },
+      {
+        "frame": "stringify :0",
+        "percent": 0.62
+      },
+      {
+        "frame": "startsWith :0",
+        "percent": 0.59
+      },
+      {
+        "frame": "createIndexForValue ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:835",
+        "percent": 0.59
+      },
+      {
+        "frame": "createSerovalNode ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:121",
+        "percent": 0.59
+      },
+      {
+        "frame": "createMemo ../../../../../node_modules/solid-js/dist/server.js:88",
+        "percent": 0.55
+      }
+    ]
+  },
+  {
+    "profile": "month-bun-bounded.jsc.json",
+    "sampled_ms": 3934,
+    "buckets_percent": {
+      "Solid": 37.52,
+      "native/unattributed": 33.81,
+      "TanStack": 9.66,
+      "app": 9.23,
+      "other dependencies": 7.3,
+      "Intl": 1.37,
+      "native ops": 0.46,
+      "API decoding": 0.36,
+      "bundle/other": 0.31
+    },
+    "top_frames": [
+      {
+        "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:662",
+        "percent": 8.59
+      },
+      {
+        "frame": "getOwnPropertyDescriptors :0",
+        "percent": 7.07
+      },
+      {
+        "frame": "encode :0",
+        "percent": 4.32
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:417",
+        "percent": 3.08
+      },
+      {
+        "frame": "split ../../../../../node_modules/solid-js/dist/server.js:441",
+        "percent": 2.97
+      },
+      {
+        "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:562",
+        "percent": 2.72
+      },
+      {
+        "frame": "cloneObject :0",
+        "percent": 2.34
+      },
+      {
+        "frame": "split ../../../../../node_modules/solid-js/dist/server.js:442",
+        "percent": 2.34
+      },
+      {
+        "frame": "get ../../../../../node_modules/solid-js/dist/server.js:424",
+        "percent": 1.98
+      },
+      {
+        "frame": "indexOf :0",
+        "percent": 1.63
+      },
+      {
+        "frame": "entries :0",
+        "percent": 1.42
+      },
+      {
+        "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:205",
+        "percent": 1.27
+      },
+      {
+        "frame": "getContextId ../../../../../node_modules/solid-js/dist/server.js:383",
+        "percent": 1.14
+      },
+      {
+        "frame": "concat :0",
+        "percent": 1.12
+      },
+      {
+        "frame": "structuredClone :0",
+        "percent": 1.07
+      },
+      {
+        "frame": "DateTimeFormat :0",
+        "percent": 1.02
+      },
+      {
+        "frame": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:453",
+        "percent": 0.99
+      },
+      {
+        "frame": "Cell ../../../../../src/features/reports/timesheet.tsx:99",
+        "percent": 0.99
+      },
+      {
+        "frame": "map :1",
+        "percent": 0.97
+      },
+      {
+        "frame": "json :0",
+        "percent": 0.89
+      },
+      {
+        "frame": "createComponent ../../../../../node_modules/solid-js/dist/server.js:402",
+        "percent": 0.79
+      },
+      {
+        "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:507",
+        "percent": 0.76
+      },
+      {
+        "frame": "serialize$1 ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2324",
+        "percent": 0.74
+      },
+      {
+        "frame": "stringify :0",
+        "percent": 0.74
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:415",
+        "percent": 0.71
+      },
+      {
+        "frame": "formatRange :0",
+        "percent": 0.71
+      },
+      {
+        "frame": "copyDataProperties :0",
+        "percent": 0.69
+      },
+      {
+        "frame": "nextHydrateContext ../../../../../node_modules/solid-js/dist/server.js:389",
+        "percent": 0.69
+      },
+      {
+        "frame": "Duration ../../../../../src/components/duration.tsx:14",
+        "percent": 0.66
+      },
+      {
+        "frame": "createSerovalNode ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:121",
+        "percent": 0.66
+      }
+    ]
+  },
+  {
+    "profile": "year-bun-bounded.jsc.json",
+    "sampled_ms": 6937,
+    "buckets_percent": {
+      "Solid": 37.31,
+      "native/unattributed": 31.25,
+      "app": 10.85,
+      "TanStack": 10.83,
+      "other dependencies": 7.83,
+      "Intl": 0.95,
+      "native ops": 0.58,
+      "API decoding": 0.22,
+      "bundle/other": 0.19
+    },
+    "top_frames": [
+      {
+        "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:662",
+        "percent": 7.54
+      },
+      {
+        "frame": "getOwnPropertyDescriptors :0",
+        "percent": 5.94
+      },
+      {
+        "frame": "cloneObject :0",
+        "percent": 5.46
+      },
+      {
+        "frame": "encode :0",
+        "percent": 4.12
+      },
+      {
+        "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:562",
+        "percent": 3.27
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:417",
+        "percent": 2.94
+      },
+      {
+        "frame": "getContextId ../../../../../node_modules/solid-js/dist/server.js:383",
+        "percent": 2.54
+      },
+      {
+        "frame": "split ../../../../../node_modules/solid-js/dist/server.js:441",
+        "percent": 1.99
+      },
+      {
+        "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:205",
+        "percent": 1.85
+      },
+      {
+        "frame": "split ../../../../../node_modules/solid-js/dist/server.js:442",
+        "percent": 1.67
+      },
+      {
+        "frame": "createSerovalNode ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:121",
+        "percent": 1.5
+      },
+      {
+        "frame": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:453",
+        "percent": 1.46
+      },
+      {
+        "frame": "indexOf :0",
+        "percent": 1.4
+      },
+      {
+        "frame": "children ../../../../../src/features/reports/timesheet.tsx:206",
+        "percent": 1.25
+      },
+      {
+        "frame": "Cell ../../../../../src/features/reports/timesheet.tsx:99",
+        "percent": 1.21
+      },
+      {
+        "frame": "ssrAttribute ../../../../../node_modules/solid-js/web/dist/server.js:538",
+        "percent": 1.21
+      },
+      {
+        "frame": "concat :0",
+        "percent": 1.2
+      },
+      {
+        "frame": "entries :0",
+        "percent": 1.18
+      },
+      {
+        "frame": "get ../../../../../node_modules/solid-js/dist/server.js:424",
+        "percent": 1.18
+      },
+      {
+        "frame": "parse :0",
+        "percent": 1.14
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:415",
+        "percent": 1.1
+      },
+      {
+        "frame": "Duration ../../../../../src/components/duration.tsx:14",
+        "percent": 1.08
+      },
+      {
+        "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:408",
+        "percent": 1.08
+      },
+      {
+        "frame": "json :0",
+        "percent": 1.01
+      },
+      {
+        "frame": "structuredClone :0",
+        "percent": 0.76
+      },
+      {
+        "frame": "DateTimeFormat :0",
+        "percent": 0.71
+      },
+      {
+        "frame": "Response :0",
+        "percent": 0.68
+      },
+      {
+        "frame": "map :1",
+        "percent": 0.68
+      },
+      {
+        "frame": "serialize$1 ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2324",
+        "percent": 0.68
+      },
+      {
+        "frame": "getQueryDefaults ../../../../../node_modules/@tanstack/query-core/build/modern/queryClient.js:556",
+        "percent": 0.68
+      }
+    ]
+  }
+]

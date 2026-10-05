@@ -14,6 +14,8 @@ try {
   for (const [name, path] of [
     ['timer', '/lumen/timer'],
     ['week', '/lumen/reports?range=this-week'],
+    ['month', '/lumen/reports?range=this-month'],
+    ['year', '/lumen/reports?range=custom&from=2026-01-01&to=2026-09-30'],
   ]) {
     for (const source of ['start', 'v8']) {
       const context = await signedInContext(browser, app)

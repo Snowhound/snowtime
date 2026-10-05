@@ -20,7 +20,8 @@
   ],
   "drizzle": false,
   // Static prototypes and design files load their scripts from HTML.
-  "ignore": ["prototypes/**", "design/**"],
+  // The isolated render benchmark has its own manifest and Knip check (bun run knip).
+  "ignore": ["prototypes/**", "design/**", "native/crates/render/bundle/bench/**"],
   // k6's built-in modules, which the load benchmark's scenario imports inside k6.
   "ignoreDependencies": ["k6"],
   // macOS's GPU counters, which the weather bench reads (perf/weather/gpu-usage.ts).

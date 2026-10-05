@@ -30,7 +30,7 @@
     "i18n:compile": "paraglide-js compile --project ./project.inlang --silent",
     "icons:check": "bun scripts/icon-names.ts",
     "icons:fix": "bun scripts/icon-names.ts --fix",
-    "knip": "knip",
+    "knip": "knip && knip --directory native/crates/render/bundle/bench",
     "perf": "bun perf/check.ts",
     "perf:load": "bun perf/load.ts",
     "perf:stress": "bun perf/stress/stress.ts",

@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build ./js-encoding.ts --target browser --format iife --outfile dist/js-encoding.js"
+  },
+  "dependencies": {
+    "@jridgewell/trace-mapping": "0.3.31",
+    "@remix-run/web-fetch": "4.4.2",
+    "core-js": "3.49.0",
+    "text-encoding": "0.7.0",
+    "web-streams-polyfill": "4.2.0"
+  }
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "page": "timer",
+    "control_cpu_ms": 18.990554,
+    "candidate_cpu_ms": 17.961346000000002,
+    "change_percent": -5.4195785968118475,
+    "p50_ms": 14.926508,
+    "p95_ms": 34.204252999999994,
+    "bun_cpu_ms": 10.552888000000001,
+    "gap_to_bun_percent": 70.20313301913184
+  },
+  {
+    "page": "week",
+    "control_cpu_ms": 11.864942,
+    "candidate_cpu_ms": 11.714986,
+    "change_percent": -1.2638578427100589,
+    "p50_ms": 10.587755000000001,
+    "p95_ms": 21.577749,
+    "bun_cpu_ms": 6.9218280000000005,
+    "gap_to_bun_percent": 69.24699660263154
+  },
+  {
+    "page": "month",
+    "control_cpu_ms": 15.679366000000002,
+    "candidate_cpu_ms": 15.778306,
+    "change_percent": 0.6310204124324814,
+    "p50_ms": 12.469082,
+    "p95_ms": 34.969129,
+    "bun_cpu_ms": 8.592471999999999,
+    "gap_to_bun_percent": 83.62941421281329
+  },
+  {
+    "page": "year",
+    "control_cpu_ms": 19.371539999999996,
+    "candidate_cpu_ms": 18.986055999999998,
+    "change_percent": -1.989950205301172,
+    "p50_ms": 15.197365,
+    "p95_ms": 37.486299,
+    "bun_cpu_ms": 10.339994,
+    "gap_to_bun_percent": 83.61766941063986
+  }
+]

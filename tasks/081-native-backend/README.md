@@ -217,6 +217,7 @@ which records the edge measurements.
 - [09](09-http3.md): HTTP/3 in the native host, measured against HTTP/2
 - [11](11-turso-engine.md): Turso's engine, its speed against SQLite, and its backups
 - [12](12-profiling.md): profiles of both servers under load, once features and tests are done
+- [13](13-render-allocations.md): render allocations and the remaining engine gap
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

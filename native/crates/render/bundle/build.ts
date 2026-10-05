@@ -46,6 +46,7 @@ try {
       outDir: resolve(import.meta.dir, 'dist'),
       emptyOutDir: true,
       minify: false,
+      sourcemap: true,
       rolldownOptions: { output: { format: 'iife', entryFileNames: 'render.js' } },
     },
     ssr: { noExternal: true },

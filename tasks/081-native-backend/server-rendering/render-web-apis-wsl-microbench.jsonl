@@ -1,0 +1,852 @@
+{"page":"timer","api":"TextEncoder.encode","candidate":"Deno","run":1,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":324.09702500000003}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Deno","run":2,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":323.769615}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Deno","run":3,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":345.244665}
+{"page":"timer","api":"TextEncoder.encode","candidate":"core.encode","run":1,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":258.98263499999985}
+{"page":"timer","api":"TextEncoder.encode","candidate":"core.encode","run":2,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":252.509685}
+{"page":"timer","api":"TextEncoder.encode","candidate":"core.encode","run":3,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":309.905325}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Rust op","run":1,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":67.84402}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Rust op","run":2,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":82.88086499999991}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Rust op","run":3,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":67.50464999999963}
+{"page":"timer","api":"TextEncoder.encode","candidate":"simdutf op","run":1,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":73.90540500000014}
+{"page":"timer","api":"TextEncoder.encode","candidate":"simdutf op","run":2,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":40.4432349999999}
+{"page":"timer","api":"TextEncoder.encode","candidate":"simdutf op","run":3,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":41.47353500000008}
+{"page":"timer","api":"TextEncoder.encode","candidate":"JS fallback","run":1,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":4189.76936}
+{"page":"timer","api":"TextEncoder.encode","candidate":"JS fallback","run":2,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":4203.867514999998}
+{"page":"timer","api":"TextEncoder.encode","candidate":"JS fallback","run":3,"count":200,"calls_per_page":1,"argument_size":255953,"us_per_call":4324.475349999998}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Deno","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.7270850000008977}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Deno","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.5367249999994783}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Deno","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.5545749999987493}
+{"page":"timer","api":"TextEncoder.encode","candidate":"core.encode","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4583750000006148}
+{"page":"timer","api":"TextEncoder.encode","candidate":"core.encode","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4672200000004523}
+{"page":"timer","api":"TextEncoder.encode","candidate":"core.encode","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4575699999986682}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Rust op","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4066200000011122}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Rust op","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.407514999999421}
+{"page":"timer","api":"TextEncoder.encode","candidate":"Rust op","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4287200000021585}
+{"page":"timer","api":"TextEncoder.encode","candidate":"simdutf op","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.43932000000040716}
+{"page":"timer","api":"TextEncoder.encode","candidate":"simdutf op","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.44472000000268963}
+{"page":"timer","api":"TextEncoder.encode","candidate":"simdutf op","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4378699999983837}
+{"page":"timer","api":"TextEncoder.encode","candidate":"JS fallback","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":3.4077599999977792}
+{"page":"timer","api":"TextEncoder.encode","candidate":"JS fallback","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":4.210395000000062}
+{"page":"timer","api":"TextEncoder.encode","candidate":"JS fallback","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":1.987445000002026}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.800916000000143}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.8046180000001186}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.8476599999994505}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.8067580000006274}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.5252040000004854}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.155467999999928}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.5351840000002994}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.47770200000013574}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.4782019999993281}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.2590119999995295}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.2572520000003351}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.47558200000003126}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.38311800000064977}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.3822380000001431}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.4359199999998964}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":85.26905999999961}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":49.90008800000032}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":49.969976000000315}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":5.009572000000844}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":5.15928200000053}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":3.628327999999783}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":2.90539600000011}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":3.1968299999998635}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":2.9666180000003806}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.23419000000012602}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.17814799999996467}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.1779900000001362}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.10534400000051392}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.1055659999992713}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.10516399999960413}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.12462599999980739}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.12358599999970465}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.12358599999970465}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.1235660000002099}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.12366600000041217}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.12366600000041217}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.12036600000010367}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.12006599999949685}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.11962399999993067}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.5989479999989271}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.5609460000005129}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.5693080000000919}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":1.016247999999905}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":1.065747999999985}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.9035219999996116}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.2730520000004617}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.24661199999991368}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":4,"us_per_call":0.2608119999995324}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.28539199999977427}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.47854199999983393}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.30463400000007823}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.41191799999978684}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.21158999999988737}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.4121800000011717}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.4556879999990997}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.6108760000006441}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.417105999999876}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.5821060000007492}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.7324340000004668}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.594028000000435}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.05800999999974}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.9472239999995509}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.0828700000001845}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":195.56858800000012}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":188.67678199999955}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":189.52148399999987}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":10.001964000000044}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":8.772219999999834}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":8.937023999999838}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.896328000000722}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":8.020891999999549}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.855665999999474}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.17970799999966403}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.17810600000029808}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.17904599999928905}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.10674399999970774}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.10356400000000576}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.10352400000010675}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.15060600000015256}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.13442399999894405}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.13410599999951955}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.12054400000033638}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.12046400000053836}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.12074400000074093}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.1414839999997639}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.14104600000064238}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.14222399999925983}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":1.5184939999999187}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":1.690201999999772}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":1.5661780000000363}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.9583540000003268}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.9600760000002992}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.9325140000000829}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.2688899999993737}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.268130000000383}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":26,"us_per_call":0.26810999999997875}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":0.5222979999998643}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":0.7646480000012161}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":0.48999800000092364}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":0.25082800000018324}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":0.3822940000000017}
+{"page":"timer","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":0.39207399999941117}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":2.278464000000895}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":2.043913999999859}
+{"page":"timer","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":1.9309499999999389}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":0.8297099999999773}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":0.7300659999991694}
+{"page":"timer","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":0.8474120000009862}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":1.3687500000005457}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":1.374390000000858}
+{"page":"timer","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":1.2114639999999781}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":261.5860080000002}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":258.72864200000004}
+{"page":"timer","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":267.7354919999998}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":9.536428000000342}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":8.615633999999773}
+{"page":"timer","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":8.498508000001493}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":7.348185999999259}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":7.521753999998509}
+{"page":"timer","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":5780,"us_per_call":7.518733999999313}
+{"page":"timer","api":"URL","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":34,"us_per_call":1.0835460000002968}
+{"page":"timer","api":"URL","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":34,"us_per_call":0.7932823333333848}
+{"page":"timer","api":"URL","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":34,"us_per_call":0.6751179999999598}
+{"page":"timer","api":"URL","candidate":"Ada thin op","run":1,"count":3000,"calls_per_page":1,"argument_size":34,"us_per_call":0.3757736666667976}
+{"page":"timer","api":"URL","candidate":"Ada thin op","run":2,"count":3000,"calls_per_page":1,"argument_size":34,"us_per_call":0.369873333333544}
+{"page":"timer","api":"URL","candidate":"Ada thin op","run":3,"count":3000,"calls_per_page":1,"argument_size":34,"us_per_call":0.37426366666674465}
+{"page":"timer","api":"URL","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":12,"us_per_call":1.0588716666666187}
+{"page":"timer","api":"URL","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":12,"us_per_call":1.0178540000000187}
+{"page":"timer","api":"URL","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":12,"us_per_call":0.9951226666667026}
+{"page":"timer","api":"URL","candidate":"Ada thin op","run":1,"count":3000,"calls_per_page":1,"argument_size":12,"us_per_call":0.5081686666667338}
+{"page":"timer","api":"URL","candidate":"Ada thin op","run":2,"count":3000,"calls_per_page":1,"argument_size":12,"us_per_call":0.5034150000001318}
+{"page":"timer","api":"URL","candidate":"Ada thin op","run":3,"count":3000,"calls_per_page":1,"argument_size":12,"us_per_call":0.5019913333332321}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.3601663333335334}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.2121343333334759}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.20258433333325834}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.07911266666663626}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.05153199999995195}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.07163933333337506}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.8924390000000434}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9537246666665548}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.8539779999999458}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.6832649999999679}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.5422130000001744}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.6247759999998076}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.343575666666614}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.2227876666667423}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":6.893294666666558}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.0691423333334267}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.0855126666665456}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.1064803333335174}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.1643856666663244}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9522480000002057}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9519180000003568}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.023357333333479}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9833093333333333}
+{"page":"timer","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.010983333333267}
+{"page":"timer","api":"Headers","candidate":"Deno construct + cookie","run":1,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":39.395065000000315}
+{"page":"timer","api":"Headers","candidate":"Deno construct + cookie","run":2,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":31.204160000000225}
+{"page":"timer","api":"Headers","candidate":"Deno construct + cookie","run":3,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":24.256433666666755}
+{"page":"timer","api":"Headers","candidate":"JS Map construct + cookie","run":1,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.361419666666734}
+{"page":"timer","api":"Headers","candidate":"JS Map construct + cookie","run":2,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.26800666666683054}
+{"page":"timer","api":"Headers","candidate":"JS Map construct + cookie","run":3,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.2684596666667858}
+{"page":"timer","api":"Request","candidate":"Deno","run":1,"count":1000,"calls_per_page":1,"argument_size":34,"us_per_call":13.994238999999652}
+{"page":"timer","api":"Request","candidate":"Deno","run":2,"count":1000,"calls_per_page":1,"argument_size":34,"us_per_call":13.462210000000596}
+{"page":"timer","api":"Request","candidate":"Deno","run":3,"count":1000,"calls_per_page":1,"argument_size":34,"us_per_call":13.433298999999352}
+{"page":"timer","api":"AbortController","candidate":"Deno","run":1,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.2733963333336457}
+{"page":"timer","api":"AbortController","candidate":"Deno","run":2,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.25867633333321766}
+{"page":"timer","api":"AbortController","candidate":"Deno","run":3,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.2974540000001677}
+{"page":"timer","api":"structuredClone","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.882851666666587}
+{"page":"timer","api":"structuredClone","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.7207993333331615}
+{"page":"timer","api":"structuredClone","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":6.4712056666667195}
+{"page":"timer","api":"ReadableStream","candidate":"Deno","run":1,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":8.400815999999395}
+{"page":"timer","api":"ReadableStream","candidate":"Deno","run":2,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":5.073414999999841}
+{"page":"timer","api":"ReadableStream","candidate":"Deno","run":3,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":4.866966999999931}
+{"page":"timer","api":"TransformStream","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":21.26627599999847}
+{"page":"timer","api":"TransformStream","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":13.806061999997837}
+{"page":"timer","api":"TransformStream","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":10.266293999999107}
+{"page":"timer","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":1,"count":3000,"calls_per_page":43,"argument_size":43,"us_per_call":2.8261696666668286}
+{"page":"timer","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":2,"count":3000,"calls_per_page":43,"argument_size":43,"us_per_call":2.7193623333332653}
+{"page":"timer","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":3,"count":3000,"calls_per_page":43,"argument_size":43,"us_per_call":9.212312333333102}
+{"page":"timer","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":1,"count":3000,"calls_per_page":43,"argument_size":43,"us_per_call":0.3510593333336753}
+{"page":"timer","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":2,"count":3000,"calls_per_page":43,"argument_size":43,"us_per_call":0.27026000000023487}
+{"page":"timer","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":3,"count":3000,"calls_per_page":43,"argument_size":43,"us_per_call":0.3126580000001316}
+{"page":"week","api":"TextEncoder.encode","candidate":"Deno","run":1,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":194.13412}
+{"page":"week","api":"TextEncoder.encode","candidate":"Deno","run":2,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":190.94235500000002}
+{"page":"week","api":"TextEncoder.encode","candidate":"Deno","run":3,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":201.05392000000003}
+{"page":"week","api":"TextEncoder.encode","candidate":"core.encode","run":1,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":177.81072499999993}
+{"page":"week","api":"TextEncoder.encode","candidate":"core.encode","run":2,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":178.50379999999987}
+{"page":"week","api":"TextEncoder.encode","candidate":"core.encode","run":3,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":211.208745}
+{"page":"week","api":"TextEncoder.encode","candidate":"Rust op","run":1,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":38.64356000000001}
+{"page":"week","api":"TextEncoder.encode","candidate":"Rust op","run":2,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":37.26435500000022}
+{"page":"week","api":"TextEncoder.encode","candidate":"Rust op","run":3,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":37.13800000000006}
+{"page":"week","api":"TextEncoder.encode","candidate":"simdutf op","run":1,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":52.97173000000015}
+{"page":"week","api":"TextEncoder.encode","candidate":"simdutf op","run":2,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":96.72207000000014}
+{"page":"week","api":"TextEncoder.encode","candidate":"simdutf op","run":3,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":29.8210899999998}
+{"page":"week","api":"TextEncoder.encode","candidate":"JS fallback","run":1,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":2393.6147849999998}
+{"page":"week","api":"TextEncoder.encode","candidate":"JS fallback","run":2,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":2262.6753200000007}
+{"page":"week","api":"TextEncoder.encode","candidate":"JS fallback","run":3,"count":200,"calls_per_page":1,"argument_size":140782,"us_per_call":2266.279555000001}
+{"page":"week","api":"TextEncoder.encode","candidate":"Deno","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.7386299999996027}
+{"page":"week","api":"TextEncoder.encode","candidate":"Deno","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.5473199999994449}
+{"page":"week","api":"TextEncoder.encode","candidate":"Deno","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.5545199999994566}
+{"page":"week","api":"TextEncoder.encode","candidate":"core.encode","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4530200000010609}
+{"page":"week","api":"TextEncoder.encode","candidate":"core.encode","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.455815000000257}
+{"page":"week","api":"TextEncoder.encode","candidate":"core.encode","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.45641499999874213}
+{"page":"week","api":"TextEncoder.encode","candidate":"Rust op","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4182149999996909}
+{"page":"week","api":"TextEncoder.encode","candidate":"Rust op","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.46686500000078013}
+{"page":"week","api":"TextEncoder.encode","candidate":"Rust op","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.41606500000057167}
+{"page":"week","api":"TextEncoder.encode","candidate":"simdutf op","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.43961500000136766}
+{"page":"week","api":"TextEncoder.encode","candidate":"simdutf op","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":47.14246499999831}
+{"page":"week","api":"TextEncoder.encode","candidate":"simdutf op","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.5510700000002089}
+{"page":"week","api":"TextEncoder.encode","candidate":"JS fallback","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":2.3482850000004873}
+{"page":"week","api":"TextEncoder.encode","candidate":"JS fallback","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":2.1190800000010768}
+{"page":"week","api":"TextEncoder.encode","candidate":"JS fallback","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":3.268870000000561}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.49619799999982206}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.3144919999999729}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.33903200000031575}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.6967660000000251}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.7170859999996537}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.5905619999998635}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.4693959999995059}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.4705979999998817}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.4690780000000814}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.2595099999998638}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.26508800000010524}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.26117000000022017}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.5592019999999138}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.3807339999998476}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.38119400000005044}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":53.50091000000066}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":50.288432000000284}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":50.132706000000326}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":5.040223999999853}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":4.055767999999716}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":23.666282000000137}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":3.0881319999998595}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":2.8788259999996626}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":3.1520739999996295}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.27224999999998545}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.4579759999996895}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.27317000000039116}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.3647139999998217}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.21526799999946888}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.3855740000003607}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.4669139999996332}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.6125379999998586}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.4473919999995815}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.7320260000001326}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.6183439999995244}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.7319259999999304}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.0791180000005625}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.9342540000002373}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.0683600000002116}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":201.11438400000043}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":190.32723400000032}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":190.61030199999917}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":9.544268000000557}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":8.785659999999552}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":9.026608000000124}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.852886000000581}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.864325999999892}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.704942000000301}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.22014800000033574}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.2567300000009709}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.21390799999971932}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.29460999999992055}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.15242600000055972}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.1505059999990408}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.6329420000001846}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.6216839999988224}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.7748480000009295}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.30643200000031356}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.3103099999989354}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.3155320000005304}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.6087820000011561}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.48977800000011484}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.48519800000030955}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":72.26941199999965}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":74.12922000000071}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":73.29695000000082}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":5.081644000000779}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":5.371496000000661}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":5.157908000000134}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":3.8629399999999805}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":4.093250000000808}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":3.9433640000006562}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.653120000000854}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":2.4351479999995718}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.539455999999518}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.5854579999995622}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.547335999999632}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.4273519999987911}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":2.880005999999412}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":2.8854240000000573}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":2.7691619999995964}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.8090060000004087}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.8222660000010364}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.864267999999356}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.2249259999998685}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.3953900000005888}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.3621699999994235}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":258.2632059999996}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":250.3992420000004}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":254.2761219999993}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":13.545372000000498}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":12.59498000000076}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":13.798141999999643}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":11.724807999999939}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":11.844492000000173}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":11.742605999999796}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":0.274810000000798}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":0.4098940000003495}
+{"page":"week","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":0.2810300000001007}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":0.3459320000001753}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":0.22142799999983254}
+{"page":"week","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":0.36699399999997695}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":1.6113180000002103}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":1.4766939999990427}
+{"page":"week","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":1.6052200000003722}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":0.6036020000001372}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":0.7355879999995523}
+{"page":"week","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":0.586659999999938}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":1.1138600000003862}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":1.124242000000777}
+{"page":"week","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":1.030797999999777}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":206.56982599999992}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":207.71940600000107}
+{"page":"week","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":205.5579479999997}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":11.152946000000156}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":10.630988000000798}
+{"page":"week","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":10.698827999999594}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":9.405882000000929}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":9.6927340000002}
+{"page":"week","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":4522,"us_per_call":9.501665999999204}
+{"page":"week","api":"URL","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":52,"us_per_call":1.4253916666668072}
+{"page":"week","api":"URL","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":52,"us_per_call":1.0835263333333387}
+{"page":"week","api":"URL","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":52,"us_per_call":0.45219299999992774}
+{"page":"week","api":"URL","candidate":"Ada thin op","run":1,"count":3000,"calls_per_page":1,"argument_size":52,"us_per_call":0.392197666666713}
+{"page":"week","api":"URL","candidate":"Ada thin op","run":2,"count":3000,"calls_per_page":1,"argument_size":52,"us_per_call":0.37460366666679573}
+{"page":"week","api":"URL","candidate":"Ada thin op","run":3,"count":3000,"calls_per_page":1,"argument_size":52,"us_per_call":0.3663499999999355}
+{"page":"week","api":"URL","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":30,"us_per_call":1.1313143333331936}
+{"page":"week","api":"URL","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":30,"us_per_call":1.0394213333333937}
+{"page":"week","api":"URL","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":30,"us_per_call":1.069319000000026}
+{"page":"week","api":"URL","candidate":"Ada thin op","run":1,"count":3000,"calls_per_page":1,"argument_size":30,"us_per_call":0.5046183333333829}
+{"page":"week","api":"URL","candidate":"Ada thin op","run":2,"count":3000,"calls_per_page":1,"argument_size":30,"us_per_call":0.4990349999999732}
+{"page":"week","api":"URL","candidate":"Ada thin op","run":3,"count":3000,"calls_per_page":1,"argument_size":30,"us_per_call":0.5043083333333319}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.36376366666657606}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.19894733333330805}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.19874733333350983}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.08674299999984214}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.09172666666669708}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.06569566666667015}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.920750000000074}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":5.564086000000164}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.8622449999999541}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.6861216666666223}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.5425563333334745}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.5909749999999198}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.2707563333333383}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.2032806666667664}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.2150139999998828}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.004796666666607}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.0495583333334555}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.0448313333333015}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.2835236666668}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9556080000000596}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.0102503333334123}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.077799000000141}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9842826666666346}
+{"page":"week","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.0336310000000897}
+{"page":"week","api":"Headers","candidate":"Deno construct + cookie","run":1,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":41.35348966666667}
+{"page":"week","api":"Headers","candidate":"Deno construct + cookie","run":2,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":30.259468666666635}
+{"page":"week","api":"Headers","candidate":"Deno construct + cookie","run":3,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":24.694463000000116}
+{"page":"week","api":"Headers","candidate":"JS Map construct + cookie","run":1,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.3347990000000512}
+{"page":"week","api":"Headers","candidate":"JS Map construct + cookie","run":2,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.2659296666668827}
+{"page":"week","api":"Headers","candidate":"JS Map construct + cookie","run":3,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.27138666666663386}
+{"page":"week","api":"Request","candidate":"Deno","run":1,"count":1000,"calls_per_page":1,"argument_size":52,"us_per_call":15.531256000000212}
+{"page":"week","api":"Request","candidate":"Deno","run":2,"count":1000,"calls_per_page":1,"argument_size":52,"us_per_call":16.314104000000043}
+{"page":"week","api":"Request","candidate":"Deno","run":3,"count":1000,"calls_per_page":1,"argument_size":52,"us_per_call":15.851538000000346}
+{"page":"week","api":"AbortController","candidate":"Deno","run":1,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.2828736666668495}
+{"page":"week","api":"AbortController","candidate":"Deno","run":2,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.27749033333323797}
+{"page":"week","api":"AbortController","candidate":"Deno","run":3,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":2.5337923333333188}
+{"page":"week","api":"structuredClone","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.8587510000000598}
+{"page":"week","api":"structuredClone","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.677654000000075}
+{"page":"week","api":"structuredClone","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.6443296666666356}
+{"page":"week","api":"ReadableStream","candidate":"Deno","run":1,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":8.297751999999946}
+{"page":"week","api":"ReadableStream","candidate":"Deno","run":2,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":5.581584000000021}
+{"page":"week","api":"ReadableStream","candidate":"Deno","run":3,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":5.258231000000251}
+{"page":"week","api":"TransformStream","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":23.01351800000066}
+{"page":"week","api":"TransformStream","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":13.904725999999755}
+{"page":"week","api":"TransformStream","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":66.03082600000016}
+{"page":"week","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":1,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":2.8338600000000347}
+{"page":"week","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":2,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":2.698341666666541}
+{"page":"week","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":3,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":2.743643000000096}
+{"page":"week","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":1,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":0.3466760000001159}
+{"page":"week","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":2,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":0.26421633333332767}
+{"page":"week","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":3,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":0.29779400000006717}
+{"page":"month","api":"TextEncoder.encode","candidate":"Deno","run":1,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":326.46599000000003}
+{"page":"month","api":"TextEncoder.encode","candidate":"Deno","run":2,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":337.89666000000005}
+{"page":"month","api":"TextEncoder.encode","candidate":"Deno","run":3,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":391.1490000000001}
+{"page":"month","api":"TextEncoder.encode","candidate":"core.encode","run":1,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":258.0018949999999}
+{"page":"month","api":"TextEncoder.encode","candidate":"core.encode","run":2,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":243.80098000000007}
+{"page":"month","api":"TextEncoder.encode","candidate":"core.encode","run":3,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":347.65806499999997}
+{"page":"month","api":"TextEncoder.encode","candidate":"Rust op","run":1,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":71.57655500000004}
+{"page":"month","api":"TextEncoder.encode","candidate":"Rust op","run":2,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":67.22679499999998}
+{"page":"month","api":"TextEncoder.encode","candidate":"Rust op","run":3,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":67.1532449999998}
+{"page":"month","api":"TextEncoder.encode","candidate":"simdutf op","run":1,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":85.02924499999978}
+{"page":"month","api":"TextEncoder.encode","candidate":"simdutf op","run":2,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":41.237899999999854}
+{"page":"month","api":"TextEncoder.encode","candidate":"simdutf op","run":3,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":44.098909999999876}
+{"page":"month","api":"TextEncoder.encode","candidate":"JS fallback","run":1,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":4531.1903999999995}
+{"page":"month","api":"TextEncoder.encode","candidate":"JS fallback","run":2,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":4249.566035}
+{"page":"month","api":"TextEncoder.encode","candidate":"JS fallback","run":3,"count":200,"calls_per_page":1,"argument_size":255732,"us_per_call":4096.541155}
+{"page":"month","api":"TextEncoder.encode","candidate":"Deno","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.7430199999998877}
+{"page":"month","api":"TextEncoder.encode","candidate":"Deno","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.5515150000019275}
+{"page":"month","api":"TextEncoder.encode","candidate":"Deno","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.5556649999994079}
+{"page":"month","api":"TextEncoder.encode","candidate":"core.encode","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4521650000015143}
+{"page":"month","api":"TextEncoder.encode","candidate":"core.encode","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4504149999979745}
+{"page":"month","api":"TextEncoder.encode","candidate":"core.encode","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.5134149999980764}
+{"page":"month","api":"TextEncoder.encode","candidate":"Rust op","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4071650000014415}
+{"page":"month","api":"TextEncoder.encode","candidate":"Rust op","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4038600000012593}
+{"page":"month","api":"TextEncoder.encode","candidate":"Rust op","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.40536499999916487}
+{"page":"month","api":"TextEncoder.encode","candidate":"simdutf op","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4213149999986854}
+{"page":"month","api":"TextEncoder.encode","candidate":"simdutf op","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4797650000023168}
+{"page":"month","api":"TextEncoder.encode","candidate":"simdutf op","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.43251000000282147}
+{"page":"month","api":"TextEncoder.encode","candidate":"JS fallback","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":2.0293599999990874}
+{"page":"month","api":"TextEncoder.encode","candidate":"JS fallback","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":3.968325000000732}
+{"page":"month","api":"TextEncoder.encode","candidate":"JS fallback","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":2.052760000001399}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.45625400000062655}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.5365760000004229}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.8856080000014117}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.8265660000006392}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.8088839999991251}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.15070399999967776}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":1.0925740000002406}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.5115940000005139}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.4812560000009398}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.2567479999997886}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.25728799999978946}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.412572000000182}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.37655200000062905}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.377451999999721}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.3781299999991461}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":53.849653999999646}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":71.43095200000062}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":50.14897999999903}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":4.881650000000263}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":4.714504000000488}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":3.6491339999993215}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":2.984451999999692}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":3.1590980000000854}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":2.842765999999756}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.28766799999903014}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.4107320000011896}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.2930100000003222}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.4200940000000628}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.22390599999926053}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.402632000000267}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.5451480000001538}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.425904000000628}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.5167460000002393}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.5599759999995513}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.6892820000002757}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.5770179999990432}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.07893200000035}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.925228000000061}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.0844140000008338}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":202.14918600000058}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":188.56940999999915}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":192.91347999999925}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":9.2207640000006}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":8.764149999999972}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":9.275204000000485}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.862341999999444}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.981283999999505}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.940724000000955}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.20914599999923666}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.3329699999994773}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.3417699999999968}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.1639660000000731}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.14612400000078196}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.14608400000088295}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.6308600000002116}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.7737420000003112}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.6087999999999738}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.29545000000052823}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.2964079999992464}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.31213000000025204}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.6022400000001653}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.4564140000002226}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.4570139999996172}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":72.72417599999972}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":71.87796599999912}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":72.08335199999965}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":4.700045999999929}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":5.238940000000184}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":5.549089999999524}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":3.906520000000455}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":4.144828000000416}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":3.9266600000000835}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.63119000000097}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.6537920000000668}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.526065999999446}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.5093659999993179}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.5238680000002205}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.4060819999995147}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":2.6727040000005218}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":8.011763999999857}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":2.888608000000204}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.6574119999995673}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.796875999999429}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.806153999998969}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.2264579999991838}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.3381820000004154}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.3726620000006733}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":251.35867599999892}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":257.34184000000005}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":252.70511800000168}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":14.33541999999943}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":20.34188399999948}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":13.046121999999741}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":11.902643999999782}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":12.207595999998375}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":12.116352000000916}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":0.6104579999991984}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":0.734602000002269}
+{"page":"month","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":0.6352400000014313}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":0.5363780000006955}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":0.717741999998907}
+{"page":"month","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":0.5450959999998304}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":3.7407560000010562}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":3.6125100000008388}
+{"page":"month","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":3.5347080000010465}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":1.4891260000003967}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":1.368242000000464}
+{"page":"month","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":1.4742059999989579}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":2.3806340000010096}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":2.5343379999994795}
+{"page":"month","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":2.5425780000005034}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":562.790962000001}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":549.4833900000014}
+{"page":"month","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":545.5034059999998}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":20.771858000000066}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":18.49486799999795}
+{"page":"month","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":18.507590000001073}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":17.594820000000254}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":17.58480000000054}
+{"page":"month","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":11161,"us_per_call":17.350711999999476}
+{"page":"month","api":"URL","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":53,"us_per_call":1.3658553333331536}
+{"page":"month","api":"URL","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":53,"us_per_call":1.0726629999999204}
+{"page":"month","api":"URL","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":53,"us_per_call":0.47444433333324315}
+{"page":"month","api":"URL","candidate":"Ada thin op","run":1,"count":3000,"calls_per_page":1,"argument_size":53,"us_per_call":0.7622033333330668}
+{"page":"month","api":"URL","candidate":"Ada thin op","run":2,"count":3000,"calls_per_page":1,"argument_size":53,"us_per_call":0.350624000000001}
+{"page":"month","api":"URL","candidate":"Ada thin op","run":3,"count":3000,"calls_per_page":1,"argument_size":53,"us_per_call":0.34299066666668904}
+{"page":"month","api":"URL","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":31,"us_per_call":1.08760666666664}
+{"page":"month","api":"URL","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":31,"us_per_call":1.0211413333333137}
+{"page":"month","api":"URL","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":31,"us_per_call":1.0839433333333848}
+{"page":"month","api":"URL","candidate":"Ada thin op","run":1,"count":3000,"calls_per_page":1,"argument_size":31,"us_per_call":0.49950200000027206}
+{"page":"month","api":"URL","candidate":"Ada thin op","run":2,"count":3000,"calls_per_page":1,"argument_size":31,"us_per_call":0.4986453333334187}
+{"page":"month","api":"URL","candidate":"Ada thin op","run":3,"count":3000,"calls_per_page":1,"argument_size":31,"us_per_call":0.4930420000000595}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.33044999999977637}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.23420733333326402}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.20047266666673144}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.08328933333329284}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.04884133333325735}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.048968333333201976}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9154883333330872}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.8423823333332621}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":6.329121000000062}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.6534666666666453}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.5840080000001157}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.5929949999999735}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.3204206666669052}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.2117869999998827}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.205786999999873}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.0635726666666112}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.084396666666483}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.0691960000000715}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.1433616666666542}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9614363333336465}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9793033333332156}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.070716333333318}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.0369083333334856}
+{"page":"month","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.048985666666643}
+{"page":"month","api":"Headers","candidate":"Deno construct + cookie","run":1,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":41.03710000000016}
+{"page":"month","api":"Headers","candidate":"Deno construct + cookie","run":2,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":31.193667666666443}
+{"page":"month","api":"Headers","candidate":"Deno construct + cookie","run":3,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":25.175419333332986}
+{"page":"month","api":"Headers","candidate":"JS Map construct + cookie","run":1,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.3456069999998969}
+{"page":"month","api":"Headers","candidate":"JS Map construct + cookie","run":2,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.23285399999986112}
+{"page":"month","api":"Headers","candidate":"JS Map construct + cookie","run":3,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.2652179999998528}
+{"page":"month","api":"Request","candidate":"Deno","run":1,"count":1000,"calls_per_page":1,"argument_size":53,"us_per_call":14.39990300000045}
+{"page":"month","api":"Request","candidate":"Deno","run":2,"count":1000,"calls_per_page":1,"argument_size":53,"us_per_call":14.723062000000027}
+{"page":"month","api":"Request","candidate":"Deno","run":3,"count":1000,"calls_per_page":1,"argument_size":53,"us_per_call":15.176585999999588}
+{"page":"month","api":"AbortController","candidate":"Deno","run":1,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.28006166666667315}
+{"page":"month","api":"AbortController","candidate":"Deno","run":2,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.283638999999918}
+{"page":"month","api":"AbortController","candidate":"Deno","run":3,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.4070923333332151}
+{"page":"month","api":"structuredClone","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":5.24081400000038}
+{"page":"month","api":"structuredClone","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.6641920000001846}
+{"page":"month","api":"structuredClone","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.6130000000002838}
+{"page":"month","api":"ReadableStream","candidate":"Deno","run":1,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":8.270002999999633}
+{"page":"month","api":"ReadableStream","candidate":"Deno","run":2,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":5.537645999998858}
+{"page":"month","api":"ReadableStream","candidate":"Deno","run":3,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":5.169973000000027}
+{"page":"month","api":"TransformStream","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":21.6854459999995}
+{"page":"month","api":"TransformStream","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":14.103673999999955}
+{"page":"month","api":"TransformStream","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":11.071818000000349}
+{"page":"month","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":1,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":2.8958543333334696}
+{"page":"month","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":2,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":2.8885096666666263}
+{"page":"month","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":3,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":2.935993666666642}
+{"page":"month","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":1,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":0.32447999999991833}
+{"page":"month","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":2,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":0.2999156666667962}
+{"page":"month","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":3,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":0.3113896666667036}
+{"page":"year","api":"TextEncoder.encode","candidate":"Deno","run":1,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":490.07399499999997}
+{"page":"year","api":"TextEncoder.encode","candidate":"Deno","run":2,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":481.55313499999994}
+{"page":"year","api":"TextEncoder.encode","candidate":"Deno","run":3,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":375.0702099999998}
+{"page":"year","api":"TextEncoder.encode","candidate":"core.encode","run":1,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":423.85830999999996}
+{"page":"year","api":"TextEncoder.encode","candidate":"core.encode","run":2,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":385.9557999999999}
+{"page":"year","api":"TextEncoder.encode","candidate":"core.encode","run":3,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":341.62663500000036}
+{"page":"year","api":"TextEncoder.encode","candidate":"Rust op","run":1,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":127.30170999999956}
+{"page":"year","api":"TextEncoder.encode","candidate":"Rust op","run":2,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":97.48808999999937}
+{"page":"year","api":"TextEncoder.encode","candidate":"Rust op","run":3,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":97.92155999999977}
+{"page":"year","api":"TextEncoder.encode","candidate":"simdutf op","run":1,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":102.19329000000016}
+{"page":"year","api":"TextEncoder.encode","candidate":"simdutf op","run":2,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":112.38440000000026}
+{"page":"year","api":"TextEncoder.encode","candidate":"simdutf op","run":3,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":67.57642000000033}
+{"page":"year","api":"TextEncoder.encode","candidate":"JS fallback","run":1,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":8455.30982}
+{"page":"year","api":"TextEncoder.encode","candidate":"JS fallback","run":2,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":7222.796715000001}
+{"page":"year","api":"TextEncoder.encode","candidate":"JS fallback","run":3,"count":200,"calls_per_page":1,"argument_size":378457,"us_per_call":6954.077825000002}
+{"page":"year","api":"TextEncoder.encode","candidate":"Deno","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.6998750000002474}
+{"page":"year","api":"TextEncoder.encode","candidate":"Deno","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.527765000006184}
+{"page":"year","api":"TextEncoder.encode","candidate":"Deno","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.5694200000016281}
+{"page":"year","api":"TextEncoder.encode","candidate":"core.encode","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4583649999995032}
+{"page":"year","api":"TextEncoder.encode","candidate":"core.encode","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.45561499999621446}
+{"page":"year","api":"TextEncoder.encode","candidate":"core.encode","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.45336499999848456}
+{"page":"year","api":"TextEncoder.encode","candidate":"Rust op","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4506649999984802}
+{"page":"year","api":"TextEncoder.encode","candidate":"Rust op","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.4193650000024718}
+{"page":"year","api":"TextEncoder.encode","candidate":"Rust op","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.41591000000153144}
+{"page":"year","api":"TextEncoder.encode","candidate":"simdutf op","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.3959100000020044}
+{"page":"year","api":"TextEncoder.encode","candidate":"simdutf op","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.39351499999611406}
+{"page":"year","api":"TextEncoder.encode","candidate":"simdutf op","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":0.6365699999969365}
+{"page":"year","api":"TextEncoder.encode","candidate":"JS fallback","run":1,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":4.925815000001421}
+{"page":"year","api":"TextEncoder.encode","candidate":"JS fallback","run":2,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":5.0319649999983085}
+{"page":"year","api":"TextEncoder.encode","candidate":"JS fallback","run":3,"count":200,"calls_per_page":1,"argument_size":127,"us_per_call":2.51808500000152}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.9471299999986513}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.7962479999987409}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.9064299999990908}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.7704060000014579}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.4835159999984171}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.16112600000087696}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.5169980000009673}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.47341599999890605}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.4738759999981994}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.2707700000009936}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.4369539999988774}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.23370799999975134}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.37821399999847927}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.3793920000007347}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":0.3791719999990164}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":79.5342639999999}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":50.2782700000007}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":50.35673400000087}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":4.91072400000121}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":4.849802000000636}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":3.6878820000001724}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":3.034161999999924}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":3.3184300000011717}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":1129,"us_per_call":2.9362359999995533}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.32855000000017753}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.4725959999996121}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.29364999999961583}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.21364599999833445}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.4289340000013908}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.27630999999928463}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.5270920000002661}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.409905999998955}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.526131999999052}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.5802399999993213}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.6947839999993448}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.5643979999986186}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.1070760000002338}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":0.9703119999994669}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":1.1085179999990942}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":188.20995600000242}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":195.78426399999992}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":196.1986219999999}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":9.19092599999749}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":13.946704000001773}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":8.843533999999636}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":8.08244999999988}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.9576040000010835}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":4215,"us_per_call":7.901161999998294}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.21004599999832863}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.458016000000498}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.20226600000205508}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.16596600000048056}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.14314599999852362}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.1477439999998751}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.7836660000011761}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.5920580000019982}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.5906999999988329}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.27000999999836495}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.29095000000052096}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.40841400000135764}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.4563159999997879}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.47667399999954796}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":0.45783599999958824}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":71.21680800000104}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":73.04782599999999}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":73.39129999999932}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":5.199973999999202}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":4.789300000000367}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":5.3940980000006675}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":3.9711519999982556}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":4.09347600000001}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":1604,"us_per_call":4.120496000001367}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.45220800000061}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.594812000001184}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.6003140000011626}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.4932899999985239}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.5809140000001207}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.5724719999998342}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":2.736430000000837}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":2.8205940000007104}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":2.883936000000176}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.6638359999997192}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.782258000001093}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.8465819999983069}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.3925259999996342}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.2598419999994803}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":1.3851860000013403}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":253.6623500000005}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":253.88644000000025}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":252.59333200000037}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":13.482309999999416}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":13.527608000000328}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":13.07659600000079}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":11.84323399999812}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":12.938192000001436}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":5545,"us_per_call":12.06325999999899}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":0.9890320000013162}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":1.1198980000008305}
+{"page":"year","api":"TextDecoder.decode","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":1.020994000000428}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":1,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":1.0847759999996924}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":2,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":0.9142300000003161}
+{"page":"year","api":"TextDecoder.decode","candidate":"core.decode","run":3,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":1.0379739999989397}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":1,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":6.198605999999927}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":2,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":6.204365999999936}
+{"page":"year","api":"TextDecoder.decode","candidate":"Rust op","run":3,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":6.060622000000876}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":1,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":3.8902079999988928}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":2,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":2.264574000000721}
+{"page":"year","api":"TextDecoder.decode","candidate":"encoding_rs op","run":3,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":2.270096000000194}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":1,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":4.327864000000773}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":2,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":4.313141999999061}
+{"page":"year","api":"TextDecoder.decode","candidate":"simdutf op","run":3,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":4.452186000000438}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":1,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":1122.1744360000012}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":2,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":1137.9747019999995}
+{"page":"year","api":"TextDecoder.decode","candidate":"JS fallback","run":3,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":1108.3247580000007}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":1,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":36.91711000000214}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":2,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":31.121110000000044}
+{"page":"year","api":"Response.json","candidate":"Deno Response","run":3,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":30.466953999997713}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":1,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":28.78625800000009}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":2,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":28.764913999999408}
+{"page":"year","api":"Response.json","candidate":"direct decode + JSON.parse","run":3,"count":500,"calls_per_page":1,"argument_size":19487,"us_per_call":38.83294999999998}
+{"page":"year","api":"URL","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":79,"us_per_call":1.7776693333338092}
+{"page":"year","api":"URL","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":79,"us_per_call":0.9217236666663666}
+{"page":"year","api":"URL","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":79,"us_per_call":0.5786426666672924}
+{"page":"year","api":"URL","candidate":"Ada thin op","run":1,"count":3000,"calls_per_page":1,"argument_size":79,"us_per_call":0.45053500000055163}
+{"page":"year","api":"URL","candidate":"Ada thin op","run":2,"count":3000,"calls_per_page":1,"argument_size":79,"us_per_call":0.3773826666668659}
+{"page":"year","api":"URL","candidate":"Ada thin op","run":3,"count":3000,"calls_per_page":1,"argument_size":79,"us_per_call":0.367471999999907}
+{"page":"year","api":"URL","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":57,"us_per_call":1.1481550000001637}
+{"page":"year","api":"URL","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":57,"us_per_call":1.1037100000000162}
+{"page":"year","api":"URL","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":57,"us_per_call":1.140764666666655}
+{"page":"year","api":"URL","candidate":"Ada thin op","run":1,"count":3000,"calls_per_page":1,"argument_size":57,"us_per_call":0.5514449999997547}
+{"page":"year","api":"URL","candidate":"Ada thin op","run":2,"count":3000,"calls_per_page":1,"argument_size":57,"us_per_call":0.5318276666663829}
+{"page":"year","api":"URL","candidate":"Ada thin op","run":3,"count":3000,"calls_per_page":1,"argument_size":57,"us_per_call":0.529087666667086}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.32629433333325625}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.22363399999994726}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.19644666666681587}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.08439933333344622}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.05090833333269984}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":0,"us_per_call":0.05084500000036011}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.938657999999729}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.8423713333334794}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.8936296666670387}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.6609619999999268}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.5592520000003182}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.5726556666662267}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.259211666666791}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.1845396666667511}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.2376076666672209}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.0404780000001967}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":1.0525379999999132}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":7.9548579999997555}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.155528333332768}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9411243333336946}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":0.9593519999998534}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":1,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.0463213333332533}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":2,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.0263839999994768}
+{"page":"year","api":"URLSearchParams(object).toString","candidate":"minimal JS","run":3,"count":3000,"calls_per_page":1,"argument_size":1,"us_per_call":1.031274333332476}
+{"page":"year","api":"Headers","candidate":"Deno construct + cookie","run":1,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":38.71525033333334}
+{"page":"year","api":"Headers","candidate":"Deno construct + cookie","run":2,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":29.517044333333008}
+{"page":"year","api":"Headers","candidate":"Deno construct + cookie","run":3,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":22.83818233333356}
+{"page":"year","api":"Headers","candidate":"JS Map construct + cookie","run":1,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":2.1267873333332923}
+{"page":"year","api":"Headers","candidate":"JS Map construct + cookie","run":2,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.21711066666648549}
+{"page":"year","api":"Headers","candidate":"JS Map construct + cookie","run":3,"count":3000,"calls_per_page":5,"argument_size":1,"us_per_call":0.2553149999997307}
+{"page":"year","api":"Request","candidate":"Deno","run":1,"count":1000,"calls_per_page":1,"argument_size":79,"us_per_call":15.405432000001383}
+{"page":"year","api":"Request","candidate":"Deno","run":2,"count":1000,"calls_per_page":1,"argument_size":79,"us_per_call":15.501824999999371}
+{"page":"year","api":"Request","candidate":"Deno","run":3,"count":1000,"calls_per_page":1,"argument_size":79,"us_per_call":16.575872000001254}
+{"page":"year","api":"AbortController","candidate":"Deno","run":1,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.2674256666662889}
+{"page":"year","api":"AbortController","candidate":"Deno","run":2,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.26868899999984325}
+{"page":"year","api":"AbortController","candidate":"Deno","run":3,"count":3000,"calls_per_page":11,"argument_size":0,"us_per_call":0.361331999999796}
+{"page":"year","api":"structuredClone","candidate":"Deno","run":1,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.829897333333065}
+{"page":"year","api":"structuredClone","candidate":"Deno","run":2,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.583326000000549}
+{"page":"year","api":"structuredClone","candidate":"Deno","run":3,"count":3000,"calls_per_page":1,"argument_size":2,"us_per_call":2.6418310000002143}
+{"page":"year","api":"ReadableStream","candidate":"Deno","run":1,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":8.338287000000491}
+{"page":"year","api":"ReadableStream","candidate":"Deno","run":2,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":19.192408000000796}
+{"page":"year","api":"ReadableStream","candidate":"Deno","run":3,"count":1000,"calls_per_page":1,"argument_size":127,"us_per_call":5.115700000000288}
+{"page":"year","api":"TransformStream","candidate":"Deno","run":1,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":22.85874000000331}
+{"page":"year","api":"TransformStream","candidate":"Deno","run":2,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":13.936863999995694}
+{"page":"year","api":"TransformStream","candidate":"Deno","run":3,"count":500,"calls_per_page":1,"argument_size":127,"us_per_call":10.789138000000094}
+{"page":"year","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":1,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":2.9050766666665973}
+{"page":"year","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":2,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":2.764905333334051}
+{"page":"year","api":"Intl.DateTimeFormat.formatToParts","candidate":"V8 ICU","run":3,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":2.7773790000004133}
+{"page":"year","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":1,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":0.3157136666668521}
+{"page":"year","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":2,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":0.2879230000004706}
+{"page":"year","api":"Intl.DateTimeFormat.formatToParts","candidate":"bounded JS cache + fresh parts","run":3,"count":3000,"calls_per_page":15,"argument_size":15,"us_per_call":0.29253966666692577}
