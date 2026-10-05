@@ -255,6 +255,26 @@ tail of rarely used calls can be left behind, for example:
   session can tell when to check again.
 - A stack nobody has ported yet is marked as not written, not filled with guesses.
 
+### Layers that swap independently
+
+Kait, 2026-10-05: the kit works layer by layer, so swapping one layer of the stack leaves
+the rest usable. An app on SvelteKit with the same Drizzle, Better Auth, and SQLite should
+reuse every backend recipe and crate, and the survey should name exactly what is missing
+for SvelteKit, rather than fail or guess. Those recipes don't have to exist yet; the
+layering does.
+
+- The crates know nothing about the frontend framework. The rules, extractors, SQL
+  helpers, migrator, auth, and edge depend only on the API contract and the database.
+- What a framework changes sits in an adapter with a small, documented interface:
+  - the render bundle's entry, which renders a URL into a head and HTML chunks
+    (`renderPage` today, from Solid and Start);
+  - the client transport, which the frontend's data layer calls;
+  - the client manifest and asset layout the host serves;
+  - how the framework's server calls (Start's server functions, SvelteKit's load
+    functions, form actions, and remote functions) map to the API.
+- The render host (the isolate pool, host functions, and memory policy) takes any bundle
+  that implements that entry.
+
 ## Acceptance criteria
 
 - [ ] Recipes written only for steps proven in task 081's port
@@ -267,6 +287,14 @@ tail of rarely used calls can be left behind, for example:
 - [ ] The transferability check for server functions, run on this app's 41 and checked by
       hand, and the middle step to the API written as a recipe from task 084
 - [ ] A fresh AI session ports this app from its server-function baseline (before task 084) in one session using only the repository, and the gaps it hits are fixed
+- [ ] The same run reaches task 081's conclusions on its own: its survey, verdict, kind of
+      port, rendering choice, and the decisions in the catalogue. Its result passes the
+      conformance tests and byte comparison and is laid out much like task 081's port.
+      Each difference is reviewed: a gap in the kit, which gets fixed, or a better
+      decision, which goes into the catalogue
+- [ ] The layering checked: no crate depends on Solid or Start, and a survey of an app
+      with the same backend stack on another frontend framework (SvelteKit) reuses the
+      backend recipes and lists only the framework's recipes as missing
 - [ ] Recipes marked as not written yet: a replacement port, a static frame from Rust,
       the long tail in the isolate, and server functions in Rust
 - [ ] The survey's split between native and hybrid based on usage and a profile, not on
