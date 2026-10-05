@@ -23,13 +23,14 @@ import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
 import { Button } from '~/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
-import { addDays, localDate, runningMs, startOfDay } from '~/lib/calendar'
+import { addDays, localDate, startOfDay } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
-import { formatClock, formatIsoDate } from '~/lib/format'
+import { formatIsoDate } from '~/lib/format'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
+import { runningTimerQuery } from '~/lib/queries/timer'
 import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
@@ -44,7 +45,6 @@ import {
   type StoppedEntry,
   entriesQuery,
   firstEntryQuery,
-  runningTimerQuery,
   useCreateEntry,
   useDeleteEntry,
   useStartTimer,
@@ -176,15 +176,6 @@ export function TimerView(props: {
   function toggleEditor(target: EntryPopoverTarget, anchor: HTMLElement) {
     setEditor((current) => (current?.target.kind === target.kind ? null : { target, anchor }))
   }
-
-  const title = `${m.nav_timer()} · ${m.app_name()}`
-  createEffect(() => {
-    const timer = running.data
-    document.title = timer ? `${formatClock(runningMs(timer.startedAt, now()))} · ${title}` : title
-  })
-  onCleanup(() => {
-    if (typeof document !== 'undefined') document.title = title
-  })
 
   function elsewhere() {
     const timer = running.data
