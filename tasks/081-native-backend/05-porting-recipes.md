@@ -9,9 +9,11 @@ porting; the repository gives them guidelines, because each port differs. It sta
 this app's stack (SolidJS, TanStack Start, Drizzle, Better Auth) and may later cover
 others, such as SvelteKit or Postgres.
 
-Kait, 2026-10-05: where an app's stack matches closely enough, the kit should hold enough
-crates, patterns, and codemods that porting an app of this one's size, from its server
-functions, takes one session. The kit is also honest about when a port isn't worth doing.
+Kait, 2026-10-05: the stretch goal is that, where an app's stack matches closely enough,
+a session ports an app of this one's size from its server functions in one run, with the
+kit's crates, patterns, and codemods. The kit aims at that goal but isn't bounded by it: a
+better designed, more capable kit is worth a few more runs. The kit is also honest about
+when a port isn't worth doing.
 
 ## What goes in
 
@@ -21,12 +23,12 @@ rest:
 - The method: port from a given commit, the conformance tests define done, make it work
   and then make it fast, measure against a load model (task 078).
 - Findings that took measurement or failure to learn, such as Start addressing server
-  functions by a build hash (task 081.02), the V8 isolate's memory floor (task 081.01),
-  and better-auth-rs hashing passwords with Argon2 where Better Auth uses scrypt.
+  functions by a build hash (task 081.02), what each renderer costs in memory (task
+  081.01), and better-auth-rs hashing passwords with Argon2 where Better Auth uses scrypt.
 - The decisions task 081 made, as a catalogue (below), so a session reuses them instead of
   deciding again.
-- Mapping tables from each layer to its port: Drizzle to the chosen query crate, a server
-  function to a handler, Better Auth to better-auth-rs (task 081.03).
+- Mapping tables from each layer to its port: Drizzle to `rusqlite` with SQL strings, a
+  server function to a handler, Better Auth to better-auth-rs (task 081.03).
 - **Crates** for what every port of this stack repeats, extracted from task 081's port with
   their tests and versioned:
   - the request extractors (`InOrganization`, `AsUser`, `Public`) with the API's error body;
@@ -37,9 +39,15 @@ rest:
   - the in-process edge (subtask 07);
   - the V8 render host: the renderer pool, memory sizing, and the in-process API transport
     (subtask 01);
-  - the conformance and byte-comparison harness (`conformance.ts`, `compare.ts`).
+  - the conformance and byte-comparison harness (`native/bench/conformance.ts` and
+    `compare.ts`); the tests themselves (`conformance/`) stay with the app.
+
+  Extraction separates what the app supplies (its scope, session lookup, error keys, and
+  rate rules) from the generic parts, and moves the render bundle into the framework
+  adapter (below). In task 081's port these still live in one crate with the domains.
+
 - **Codemods**, as small scripts in whatever language a session handles best, for
-  conversions that recur across apps: valibot or zod schemas to Rust input structs and
+  conversions that recur across apps: valibot schemas to Rust input structs and
   their field tables, Hono routes to Axum routes, client functions from routes, and a
   Drizzle schema to the Rust models. With these, a session writes the rules and little else.
 - The V8 host recipe: rendering in an embedded isolate, with native code for the hot
@@ -63,23 +71,27 @@ only what every port of the stack repeats.
 
 Each entry gives the decision, the evidence, what was rejected, and when it applies to
 another app and when it doesn't, so a session reuses it rather than copying it blindly.
-It starts with task 081's:
+It starts with task 081's. An entry still open says so and names the subtask that settles
+it:
 
 - Rendering in an embedded V8 isolate, against page shells (01, task 079)
 - A JSON API for both backends, not server functions (02, task 084)
-- JSON with dates revived by the schemas; columns only where measured (02, task 089)
+- JSON with dates revived by the schemas, and answers validated in full (task 089).
+  Open: columns for the large responses (081 question 2, 02)
 - Routes and modules per domain, mirrored file for file (06, task 089)
-- Axum, and `rusqlite` with SQL strings over SeaQuery and the other candidates (03, 06)
+- Axum, and `rusqlite` with SQL strings over SeaQuery; Rocket, Diesel, and sqlx not
+  tried (03, 06)
 - One writer and a pool of readers on WAL; bounded database work that refuses with 503
-  past a deadline (10)
+  past a deadline. Open: built in 10, not yet measured
 - AWS-LC for scrypt (08)
 - The optional in-process edge, and Caddy's tuning where Caddy stays (07)
 - Drizzle's migrations applied by the binary, recorded as drizzle-orm records them
-- Litestream for backups; Turso's engine as researched in 11
-- Renderers sized from memory and pressure, and a page buffered whole (01)
-- Conformance tests and byte comparison as the definition of done (03)
+- Litestream for backups (`docs/hosting.md`). Open: Turso's engine (11)
+- Renderers sized from memory and pressure, and a page buffered whole (01). Open: the
+  memory target, which awaits Kait's agreement (01)
+- Conformance tests and byte comparison as the definition of done (081 question 4, 03)
 - The repository layout (task 081, "Repository")
-- HTTP/3 deferred (09)
+- HTTP/3 deferred. Open: measured in 09
 
 ## Kinds of port
 
@@ -95,15 +107,14 @@ The survey decides which of these the port is, since each changes the recipe:
   server tests are ported to Rust or retired. The recipe adds cutover, data, and rollback.
   Not written yet.
 
-Either kind also decides how pages are rendered, below.
-
 ## Does the app need server rendering
 
 The survey answers this with the user, and is honest about what each choice costs.
 
 - **Server rendering in the V8 isolate**, as task 081 does. Content arrives with the
-  first response, and the client hydrates it. The cost: each renderer adds a memory floor
-  of about 124 MiB, and a page saves only 1.5–2× CPU against the TypeScript server
+  first response, and the client hydrates it. The costs: with one renderer the server
+  peaked at 219 MB RSS under load, each further renderer adds about 50 MiB idle (the host
+  plans 80 MiB), and a page costs only 1.5–2× less CPU than on the TypeScript server
   (task 081.01). It fits apps whose pages carry the content that matters on first load,
   or need it for search engines or link previews.
 - **A static frame from Rust, with the content rendered in the browser.** Many apps are
@@ -111,7 +122,8 @@ The survey answers this with the user, and is honest about what each choice cost
   writes that frame from the session, as HTML from the app's build with a few values put
   in, and the client renders the content from the API. No V8 runs, every request is
   native, and memory falls to tens of MB. The costs: content shows later than with server
-  rendering (about 450 ms on a warm load in task 079), search engines see only the frame,
+  rendering (430–480 ms on a warm load for task 079's shells, which are close to such a
+  frame; 081.01), search engines see only the frame,
   and the frame's dynamic parts must be kept in step between the app and Rust. Where the
   content is SPA-like anyway and the frame is mostly static, this is the clear choice
   (Kait, 2026-10-05).
@@ -125,9 +137,10 @@ server-rendered, the signed-in app as a frame.
 ## Is the port worth it
 
 The survey ends in a verdict on the whole app, with an estimated gain, and not only a list
-of what to port. Task 081's numbers set expectations: an API call costs 8–10× less CPU
-natively, a rendered page only 1.5–2× less, and each renderer adds a memory floor of about
-124 MiB.
+of what to port. Task 081's numbers set expectations: an API action costs 8–11× less
+app CPU natively, a rendered page only 1.5–2× less, and a sign-in 1.3× less; one
+renderer brings the server to about 220 MB RSS at peak, and each further one adds about
+50 MiB (081.01, on dataset M in Docker on a Mac, for the part of the app ported so far).
 
 A port fits well when the server's work is auth, validation, and database reads: backends
 for a frontend, CRUD apps, small and stable domains, hot paths that are API calls, and
@@ -168,7 +181,9 @@ user has checked what it found.
 An app whose client calls server functions, as this one does, is a supported starting
 point. Server functions come in four kinds, which the survey counts:
 
-1. **Calls:** input in, JSON out. Mechanical to move; all 41 of this app's were these.
+1. **Calls:** input in, JSON out. Mechanical to move. Of this app's 41, 32 were these and
+   9 needed changes, such as a cookie, the request's headers, or a GET that wrote; none
+   was kind 4 (task 084, "Transferability").
 2. **HTTP semantics:** cookies, redirects, files, or streams. These map onto HTTP, with
    care.
 3. **Rich serialization:** `Date`, `Map`, promises, or streams in Start's serializer
@@ -179,13 +194,13 @@ point. Server functions come in four kinds, which the survey counts:
 
 ### The default recipe: move to an API
 
-A Rust server can't serve Start's server functions as they are (task 081.02), so the port
-goes through a middle step: the app keeps its server functions and gains the JSON API
-beside them, as task 084 did. Each server function gets an operation (method, path, input
-and output schemas), its logic sits in a rule shaped `(db, scope, input)` that both the
-server function and the API call, and conformance tests over HTTP define what the Rust
-port must pass. Once every call has moved, the server functions go, for both backends
-(task 084, Kait, 2026-10-03).
+A Rust server can serve Start's server functions only by following Start's private,
+unversioned protocol (task 081.02), so the default port goes through a middle step: the
+app keeps its server functions and gains the JSON API beside them, as task 084 did. Each
+server function gets an operation (method, path, input and output schemas), its logic
+sits in a rule shaped `(db, scope, input)` that both the server function and the API
+call, and conformance tests over HTTP define what the Rust port must pass. Once every
+call has moved, the server functions go, for both backends (task 084, Kait, 2026-10-03).
 
 The client keeps one frontend for both backends through one client module, whose
 transports reach the API over HTTP or, during a server render, in process (tasks 084 and
@@ -227,7 +242,8 @@ would leave it later (Kait, 2026-10-05).
 Usage and profiles decide where the line goes, not guesses: the app's access logs or
 analytics show which calls are used and how often, and a profile under the load model
 shows where the CPU goes (task 081.12). The hot, central calls are ported natively. A long
-tail of rarely used calls can be left behind, for example:
+tail of rarely used calls can be left behind. These hybrids are sketches, not yet written
+as recipes:
 
 - **The core ported, the long tail in the isolate.** The app's central calls run in Rust,
   and rarely used server functions run as their TypeScript code in the V8 isolate the
@@ -237,11 +253,12 @@ tail of rarely used calls can be left behind, for example:
   such as hundreds of server functions of kinds 1 to 3 (Kait, 2026-10-05). The host
   answers `/_serverFn/<id>`, decodes and encodes Start's serialization format, and
   repeats Start's checks (`Sec-Fetch-Site`), redirects, and headers. Start is open
-  source, so the protocol can be read; the cost is that it can change with any Start
-  release, which is why task 081.02 chose the API. The recipe pins Start's version and
-  lets the conformance tests catch a change. First check whether Start can generate
-  stable function IDs rather than ones from the build's hash; if it can, half of the
-  problem goes away. A cheaper variant decodes each call in the isolate and dispatches to
+  source, so the protocol can be read; the cost, which this hybrid accepts, is that it
+  can change with any Start release, which is why task 081.02 chose the API. The recipe
+  pins Start's version and lets the conformance tests catch a change. First check whether
+  Start can generate stable function IDs rather than ones from the build's hash; if it
+  can, the IDs no longer change with every build, and only the serialization format is
+  left to track. A cheaper variant decodes each call in the isolate and dispatches to
   a Rust rule.
 - **Kind 4** has no Rust path: it stays in the isolate, or the feature is redesigned.
 
@@ -284,14 +301,18 @@ layering does.
 - [ ] Codemods only for conversions done by hand at least once, with their tests
 - [ ] The workflow above written as the repository's entry point: the survey with the
       kind of port and the verdict, the user's check, then proposals
-- [ ] The transferability check for server functions, run on this app's 41 and checked by
-      hand, and the middle step to the API written as a recipe from task 084
-- [ ] A fresh AI session ports this app from its server-function baseline (before task 084) in one session using only the repository, and the gaps it hits are fixed
-- [ ] The same run reaches task 081's conclusions on its own: its survey, verdict, kind of
-      port, rendering choice, and the decisions in the catalogue. Its result passes the
-      conformance tests and byte comparison and is laid out much like task 081's port.
-      Each difference is reviewed: a gap in the kit, which gets fixed, or a better
-      decision, which goes into the catalogue
+- [ ] The transferability check for server functions written as a recipe, which on this
+      app's 41 gives task 084's table, and the middle step to the API written as a recipe
+      from task 084
+- [ ] A fresh AI session, with only the repository, ports this app from its
+      server-function baseline (before task 084: the first parent of `2f13db0`), and its
+      result passes the conformance tests and byte comparison. The replay records its
+      runs, what the user did between them, and each gap it hit
+- [ ] Each gap fixed in the kit or recorded as a known limit. Kait reviews each difference
+      from task 081's port: its survey, verdict, kind of port, rendering choice, and
+      decisions. A better decision goes into the catalogue
+- [ ] The number of runs recorded, with what stood between the replay and the one-run
+      goal; meeting the goal isn't required
 - [ ] The layering checked: no crate depends on Solid or Start, and a survey of an app
       with the same backend stack on another frontend framework (SvelteKit) reuses the
       backend recipes and lists only the framework's recipes as missing
