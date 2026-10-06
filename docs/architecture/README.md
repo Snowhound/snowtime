@@ -3,6 +3,8 @@
 The decisions the code follows, and why. This file holds the stack and the rules every part
 of the code keeps; the rest is by area:
 
+- [native-host.md](native-host.md): how the native backend schedules work: Tokio at
+  the edge and bounded lanes behind it
 - [native-rendering.md](native-rendering.md): planned rendering in the native backend
 - [data.md](data.md): data conventions, tenancy, schema and migrations, time zones, and
   working days

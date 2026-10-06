@@ -199,6 +199,11 @@ brings its improvements, with no fork or bindings of ours to keep up.
   restarts a renderer that exits, times out a stuck render, and recycles a renderer whose
   RSS (`/proc/<pid>/status`) passes its limit, starting the replacement first. The health
   check fails only when no renderer is up.
+- **Lanes.** Kait, 2026-10-06: the sidecar follows the host's lane contract
+  ([native-host.md](../../docs/architecture/native-host.md)). The rules it adds, one page
+  in flight per renderer, the page buffered whole, deadlines enforced by SIGKILL, a restart
+  budget, recycling one renderer at a time, and `socketpair()` with `PR_SET_PDEATHSIG`,
+  are recorded in [native-rendering.md](../../docs/architecture/native-rendering.md#bun-sidecar-planned).
 - **Settings.** `RENDERERS` (a count, or sized from the memory budget and CPUs), Bun's
   `--smol`, and `BUN_JSC_*` options, passed through to each renderer at start.
 - **Image.** `native/Dockerfile`'s `app` stage copies `bun` from a pinned `oven/bun` image
@@ -266,6 +271,16 @@ Parts of JavaScriptCore are LGPL-2.1.
       gate's limits, so the IPC cost is a number
 - [ ] Sidecar: one process per renderer against one process with Workers, CPU, p95, and RSS
       at one renderer and at the host's renderer count
+- [ ] Sidecar: `op_send` round trips per page counted for all four pages, with the time a
+      renderer spends waiting on them, so the IPC cost per page is known beside the bytes
+- [ ] Sidecar: one page in flight per renderer, the page buffered whole up to a maximum
+      size, and a render past its deadline killed and replaced, each covered by a test
+- [ ] Sidecar: the restart budget tested with a bundle that crashes on start, showing the
+      host stops respawning and falls back to V8 or answers 503 within the budget's window
+- [ ] Sidecar: a recycle under steady load measured, with no 503 while the replacement
+      warms, and renderers shown to exit when the host is killed with SIGKILL
+- [ ] Sidecar: a sweep of `RENDERERS` at 1, 2, and 3 on one core and on two, with CPU,
+      p95, and RSS, and the default chosen from it
 - [ ] Sidecar: idle RSS, `--smol`, renderer start, and the time a recycled renderer takes to
       serve again
 - [ ] Sidecar: the whole server on 1 vCPU and 2 GB under `perf:stress`, peak and idle RSS

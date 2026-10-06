@@ -37,8 +37,11 @@ rest:
   - the Drizzle-compatible migrator (`MIGRATE_ON_START`);
   - Better Auth-compatible email sign-in, session cookie, origin checks, and scrypt;
   - the in-process edge (subtask 07);
-  - the V8 render host: the renderer pool, memory sizing, and the in-process API transport
-    (subtask 01);
+  - the render host: the renderer pool with its V8 and Bun sidecar engines, memory
+    sizing, and the API transport, in process for V8 and over the socket for Bun
+    (subtasks 01 and 16);
+  - the lane: admission with waiting bounded by count and time, refusal, and a restart
+    budget for workers that outlive a job (subtasks 10 and 17);
   - the conformance and byte-comparison harness (`native/bench/conformance.ts` and
     `compare.ts`); the tests themselves (`conformance/`) stay with the app.
 
@@ -75,6 +78,12 @@ It starts with task 081's. An entry still open says so and names the subtask tha
 it:
 
 - Rendering in an embedded V8 isolate, against page shells (01, task 079)
+- The render engine chosen by memory budget: the Bun sidecar where memory allows, V8 in
+  the host for the smallest budgets and as the fallback; embedded JSC paused. Open: the
+  sidecar's measurements and the budget that switches engines (16)
+- Tokio only at the edge, and lanes with a fixed number of workers, waiting bounded by
+  count and time, and refusal for the database, password hashing, and rendering
+  (`docs/architecture/native-host.md`). Open: admission built in 10, the rest in 17
 - A JSON API for both backends, not server functions (02, task 084)
 - JSON with dates revived by the schemas, and answers validated in full (task 089).
   Open: columns for the large responses (081 question 2, 02)

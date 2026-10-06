@@ -223,11 +223,19 @@ which records the edge measurements.
 - [15](15-framework-benchmarks.md): render benchmarks on Nuxt, SvelteKit, and Next.js apps
 - [16](16-javascriptcore.md): JavaScriptCore as the render engine: the gate failed on plain
   JSC, so Bun as a render sidecar is next
+- [17](17-bounded-lanes.md): the lane contract for the database and password hashing,
+  on subtask 10's admission gates
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
 per domain (Kait, 2026-10-04). On `main`, task 090 fixes `perf:stress`, and task 091 looks
 at server-side caching for both backends.
+
+Concurrency (Kait, 2026-10-06): Tokio's async workers run only the edge; blocking and CPU
+work runs in lanes, each a fixed number of workers behind admission that refuses when full
+([native-host.md](../../docs/architecture/native-host.md), subtask 17). Rendering is
+the Bun sidecar where memory allows and V8 in the host otherwise
+([native-rendering.md](../../docs/architecture/native-rendering.md), subtask 16).
 
 Libraries (Kait, 2026-10-04, subtask 03): Axum with `rusqlite` and SQL strings. Actix Web
 was kept as an option until subtask 01's isolate ran in the host; with renderers on
