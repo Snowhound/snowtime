@@ -1,0 +1,118 @@
+{
+  "status": {
+    "bun-timer": {
+      "VmHWM": 180.0,
+      "VmRSS": 180.0,
+      "RssAnon": 139.7,
+      "RssFile": 40.4
+    },
+    "bun-year": {
+      "VmHWM": 177.9,
+      "VmRSS": 171.2,
+      "RssAnon": 130.3,
+      "RssFile": 40.9
+    },
+    "jsc-timer": {
+      "VmHWM": 228.7,
+      "VmRSS": 228.7,
+      "RssAnon": 198.7,
+      "RssFile": 30.0
+    },
+    "jsc-year": {
+      "VmHWM": 244.8,
+      "VmRSS": 244.8,
+      "RssAnon": 214.6,
+      "RssFile": 30.2
+    },
+    "jsc-noftl-timer": {
+      "VmHWM": 206.4,
+      "VmRSS": 195.6,
+      "RssAnon": 169.2,
+      "RssFile": 26.4
+    },
+    "jsc-noftl-year": {
+      "VmHWM": 233.8,
+      "VmRSS": 233.8,
+      "RssAnon": 206.9,
+      "RssFile": 26.9
+    }
+  },
+  "gc": {
+    "bun-timer": {
+      "eden": 137,
+      "full": 33,
+      "pause_sum_ms": 555.0,
+      "heap_after_full_max_mb": 43,
+      "heap_after_median_mb": 27,
+      "eden_budget_mb": "[8, 11, 14, 15]"
+    },
+    "bun-year": {
+      "eden": 155,
+      "full": 51,
+      "pause_sum_ms": 759.3,
+      "heap_after_full_max_mb": 51,
+      "heap_after_median_mb": 28,
+      "eden_budget_mb": "[8, 11, 13, 14]"
+    },
+    "jsc-timer": {
+      "eden": 110,
+      "full": 16,
+      "pause_sum_ms": 487.5,
+      "heap_after_full_max_mb": 64,
+      "heap_after_median_mb": 37,
+      "eden_budget_mb": "[20, 21, 22, 23]"
+    },
+    "jsc-year": {
+      "eden": 144,
+      "full": 32,
+      "pause_sum_ms": 743.4,
+      "heap_after_full_max_mb": 65,
+      "heap_after_median_mb": 36,
+      "eden_budget_mb": "[19, 20, 21, 22]"
+    },
+    "jsc-noftl-timer": {
+      "eden": 119,
+      "full": 20,
+      "pause_sum_ms": 523.8,
+      "heap_after_full_max_mb": 59,
+      "heap_after_median_mb": 36,
+      "eden_budget_mb": "[21, 23, 24, 25]"
+    },
+    "jsc-noftl-year": {
+      "eden": 167,
+      "full": 33,
+      "pause_sum_ms": 954.7,
+      "heap_after_full_max_mb": 68,
+      "heap_after_median_mb": 35,
+      "eden_budget_mb": "[19, 20, 22, 24]"
+    }
+  },
+  "smaps_timer_mb": {
+    "bun": {
+      "anon >= 64 MB mappings (GC heap, allocator)": 130.3,
+      "file": 40.4,
+      "[anon:JSJITCode]": 7.6,
+      "[anon:JSStructureHeap]": 1.1,
+      "anon < 64 MB (malloc, stacks, misc)": 0.6,
+      "[stack]": 0.2
+    },
+    "jsc": {
+      "anon >= 64 MB mappings (GC heap, allocator)": 185.2,
+      "file": 30.4,
+      "[anon:JSJITCode]": 8.7,
+      "[anon:JSStructureHeap]": 1.7,
+      "[heap]": 0.8,
+      "anon < 64 MB (malloc, stacks, misc)": 0.6,
+      "[stack]": 0.2
+    },
+    "jsc-noftl": {
+      "anon >= 64 MB mappings (GC heap, allocator)": 160.4,
+      "file": 27.4,
+      "[anon:JSJITCode]": 8.0,
+      "[anon:JSStructureHeap]": 1.7,
+      "[heap]": 0.8,
+      "anon < 64 MB (malloc, stacks, misc)": 0.6,
+      "[stack]": 0.2
+    }
+  }
+}
