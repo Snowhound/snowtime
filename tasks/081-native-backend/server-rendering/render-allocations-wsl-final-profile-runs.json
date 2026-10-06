@@ -1,0 +1,715 @@
+{
+  "timer": {
+    "plain": {
+      "page": "/results/timer.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 256107,
+      "startup_ms": 108.488422,
+      "pages_per_s": 56.794247999239055,
+      "p50_ms": 14.661261999999999,
+      "p95_ms": 33.932342999999996,
+      "cpu_ms": 17.638066,
+      "cgroup_cpu_ms": 17.63846,
+      "loaded_rss_mb": 68.265625,
+      "loop_rss_mb": 157.75390625,
+      "idle_rss_mb": 70.39453125,
+      "peak_rss_mb": 159.24609375,
+      "loop_malloc_mb": {
+        "in_use": 6.1317596435546875,
+        "free": 57.88777160644531
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.6274566650390625,
+        "free": 59.39598083496094
+      },
+      "rss_samples_mb": [
+        68.3, 99.7, 100.0, 99.2, 101.9, 101.5, 101.3, 100.4, 101.5, 105.3, 104.7, 103.3, 102.8,
+        102.6, 103.3, 114.8, 114.9, 114.3, 114.7, 113.6, 101.9, 101.5, 102.3, 101.7, 100.5, 105.5,
+        108.1, 107.4, 101.8, 103.4, 103.6, 103.3, 103.3, 158.5, 158.5, 158.1
+      ],
+      "profile_finish_cpu_ms": 0.0010000000002037268,
+      "profile_finish_ms": 0.0009299999999999999
+    },
+    "cpu": {
+      "page": "/results/timer.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 256107,
+      "startup_ms": 107.935801,
+      "pages_per_s": 52.54595565003704,
+      "p50_ms": 15.097915,
+      "p95_ms": 37.814417000000006,
+      "cpu_ms": 19.066656000000002,
+      "cgroup_cpu_ms": 19.067068,
+      "loaded_rss_mb": 69.6953125,
+      "loop_rss_mb": 229.01953125,
+      "idle_rss_mb": 114.83984375,
+      "peak_rss_mb": 255.4375,
+      "loop_malloc_mb": {
+        "in_use": 6.2814788818359375,
+        "free": 131.57398986816406
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.8949737548828125,
+        "free": 132.9604949951172
+      },
+      "rss_samples_mb": [
+        69.7, 110.9, 112.6, 116.1, 116.8, 117.6, 120.4, 120.1, 123.7, 123.0, 125.2, 127.5, 125.4,
+        127.5, 127.7, 127.1, 126.7, 142.1, 142.2, 144.3, 143.6, 127.9, 129.1, 131.4, 131.9, 131.1,
+        129.1, 134.5, 137.7, 137.0, 138.6, 132.7, 135.1, 134.6, 135.1, 161.9, 193.2, 192.7, 188.8
+      ],
+      "profile_finish_cpu_ms": 193.78600000000006,
+      "profile_finish_ms": 213.29809799999998
+    },
+    "allocation": {
+      "page": "/results/timer.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 256107,
+      "startup_ms": 107.317884,
+      "pages_per_s": 50.3463135824435,
+      "p50_ms": 16.840798,
+      "p95_ms": 33.185548000000004,
+      "cpu_ms": 19.910304,
+      "cgroup_cpu_ms": 19.910777999999997,
+      "loaded_rss_mb": 68.92578125,
+      "loop_rss_mb": 253.75390625,
+      "idle_rss_mb": 96.5,
+      "peak_rss_mb": 319.95703125,
+      "loop_malloc_mb": {
+        "in_use": 5.516937255859375,
+        "free": 157.08071899414062
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.7076416015625,
+        "free": 157.8900146484375
+      },
+      "rss_samples_mb": [
+        68.9, 103.2, 106.7, 107.9, 109.5, 109.7, 111.1, 111.6, 114.4, 118.0, 117.9, 117.3, 119.5,
+        121.1, 120.8, 119.8, 121.6, 132.4, 133.6, 132.9, 134.4, 133.6, 122.1, 122.0, 120.5, 123.1,
+        122.2, 122.5, 123.8, 127.4, 126.0, 125.2, 123.6, 125.1, 125.7, 129.1, 128.0, 186.5, 179.5,
+        179.3, 193.4, 275.6
+      ],
+      "profile_finish_cpu_ms": 405.9220000000005,
+      "profile_finish_ms": 417.411695
+    },
+    "bun-plain": {
+      "engine": "bun-native",
+      "page": "native/crates/render/results/timer.json",
+      "count": 500,
+      "bytes": 256540,
+      "startup_ms": 191.36564,
+      "pages_per_s": 97.4894174832741,
+      "p50_ms": 8.4194379999999,
+      "p95_ms": 20.07794599999943,
+      "cgroup_cpu_ms": 10.183971999999999,
+      "cpu_ms": 10.183196,
+      "profile_total_cpu_ms": 5092.046,
+      "profile_serialization_cpu_ms": 0.001,
+      "profile_outside_loop_cpu_ms": 0.448,
+      "peak_rss_mb": 172.37109375
+    },
+    "bun-profile": {
+      "engine": "bun-native",
+      "page": "native/crates/render/results/timer.json",
+      "count": 500,
+      "bytes": 256540,
+      "startup_ms": 197.153163,
+      "pages_per_s": 71.89588485090779,
+      "p50_ms": 9.86233700000048,
+      "p95_ms": 35.35496299999977,
+      "cgroup_cpu_ms": 13.935138,
+      "cpu_ms": 13.934654,
+      "profile_total_cpu_ms": 11581.034,
+      "profile_serialization_cpu_ms": 398.311,
+      "profile_outside_loop_cpu_ms": 4613.707,
+      "peak_rss_mb": 2087.99609375
+    },
+    "v8-perf": {
+      "page": "/work/native/crates/render/results/timer.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 256107,
+      "startup_ms": 127.50107899999999,
+      "pages_per_s": 55.3008297889178,
+      "p50_ms": 14.855506,
+      "p95_ms": 33.967335,
+      "cpu_ms": 18.073558,
+      "cgroup_cpu_ms": 18.08268,
+      "loaded_rss_mb": 70.35546875,
+      "loop_rss_mb": 110.5234375,
+      "idle_rss_mb": 74.66015625,
+      "peak_rss_mb": 167.73046875,
+      "loop_malloc_mb": {
+        "in_use": 6.3209075927734375,
+        "free": 62.94081115722656
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.9902191162109375,
+        "free": 64.27149963378906
+      },
+      "rss_samples_mb": [
+        70.4, 103.0, 102.0, 102.1, 104.3, 104.2, 102.8, 106.0, 105.7, 107.4, 107.0, 106.0, 106.9,
+        107.0, 106.8, 117.7, 119.9, 119.3, 119.1, 119.0, 104.4, 105.2, 104.5, 107.6, 108.2, 109.7,
+        112.5, 112.3, 111.8, 105.0, 106.3, 106.6, 106.4, 149.4, 103.1, 109.6, 111.4
+      ],
+      "profile_finish_cpu_ms": 0.0020000000004074536,
+      "profile_finish_ms": 0.0014399999999999999
+    },
+    "bun-perf": {
+      "engine": "bun-native",
+      "page": "/work/native/crates/render/results/timer.json",
+      "count": 500,
+      "bytes": 256540,
+      "startup_ms": 215.33146599999998,
+      "pages_per_s": 96.40298396333642,
+      "p50_ms": 8.670393000000331,
+      "p95_ms": 20.15301499999987,
+      "cgroup_cpu_ms": 10.35093,
+      "cpu_ms": 10.34577,
+      "profile_total_cpu_ms": 5176.933,
+      "profile_serialization_cpu_ms": 0.001,
+      "profile_outside_loop_cpu_ms": 4.048,
+      "peak_rss_mb": 178.98046875
+    }
+  },
+  "week": {
+    "plain": {
+      "page": "/results/week.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 140996,
+      "startup_ms": 97.55557400000001,
+      "pages_per_s": 88.18431916158107,
+      "p50_ms": 10.124953000000001,
+      "p95_ms": 20.521939999999997,
+      "cpu_ms": 11.337396,
+      "cgroup_cpu_ms": 11.337842,
+      "loaded_rss_mb": 67.03125,
+      "loop_rss_mb": 145.98046875,
+      "idle_rss_mb": 70.4765625,
+      "peak_rss_mb": 146.46484375,
+      "loop_malloc_mb": {
+        "in_use": 6.02972412109375,
+        "free": 51.98980712890625
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.539764404296875,
+        "free": 53.608673095703125
+      },
+      "rss_samples_mb": [
+        67.1, 93.8, 93.9, 94.1, 93.9, 96.2, 104.2, 95.2, 96.8, 97.0, 105.8, 104.4, 105.4, 96.5,
+        95.4, 95.9, 97.7, 107.8, 99.0, 97.9, 97.1, 135.2, 145.3
+      ],
+      "profile_finish_cpu_ms": 0.0010000000002037268,
+      "profile_finish_ms": 0.0009599999999999999
+    },
+    "cpu": {
+      "page": "/results/week.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 140996,
+      "startup_ms": 93.251292,
+      "pages_per_s": 79.09470961787939,
+      "p50_ms": 10.762869,
+      "p95_ms": 26.585757,
+      "cpu_ms": 12.687147999999999,
+      "cgroup_cpu_ms": 12.687526,
+      "loaded_rss_mb": 67.6015625,
+      "loop_rss_mb": 181.359375,
+      "idle_rss_mb": 121.90625,
+      "peak_rss_mb": 208.09765625,
+      "loop_malloc_mb": {
+        "in_use": 5.781463623046875,
+        "free": 123.13259887695312
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.7611236572265625,
+        "free": 124.15293884277344
+      },
+      "rss_samples_mb": [
+        67.6, 100.7, 106.9, 110.6, 112.6, 113.7, 117.3, 126.2, 118.7, 122.4, 123.4, 133.0, 133.3,
+        134.0, 128.6, 129.9, 130.3, 130.3, 136.9, 139.8, 131.7, 134.1, 134.9, 167.5, 127.2, 133.5,
+        181.7
+      ],
+      "profile_finish_cpu_ms": 194.9989999999998,
+      "profile_finish_ms": 203.033229
+    },
+    "allocation": {
+      "page": "/results/week.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 140996,
+      "startup_ms": 91.758489,
+      "pages_per_s": 79.17319766638127,
+      "p50_ms": 11.373216000000001,
+      "p95_ms": 22.216963999999997,
+      "cpu_ms": 12.644766,
+      "cgroup_cpu_ms": 12.645116,
+      "loaded_rss_mb": 66.8828125,
+      "loop_rss_mb": 252.6015625,
+      "idle_rss_mb": 95.27734375,
+      "peak_rss_mb": 323.2578125,
+      "loop_malloc_mb": {
+        "in_use": 5.3439483642578125,
+        "free": 157.6833953857422
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.6019287109375,
+        "free": 158.4254150390625
+      },
+      "rss_samples_mb": [
+        66.9, 95.5, 99.0, 100.0, 101.7, 106.2, 108.6, 115.7, 109.0, 111.6, 114.2, 120.9, 121.0,
+        121.0, 115.1, 115.6, 116.0, 116.2, 118.0, 131.8, 133.5, 126.9, 128.0, 135.4, 174.0, 173.9,
+        246.0
+      ],
+      "profile_finish_cpu_ms": 402.7570000000005,
+      "profile_finish_ms": 407.404382
+    },
+    "bun-plain": {
+      "engine": "bun-native",
+      "page": "native/crates/render/results/week.json",
+      "count": 500,
+      "bytes": 141429,
+      "startup_ms": 188.102641,
+      "pages_per_s": 127.53831349269359,
+      "p50_ms": 6.053652000000511,
+      "p95_ms": 18.093455000000176,
+      "cgroup_cpu_ms": 7.760396,
+      "cpu_ms": 7.759732,
+      "profile_total_cpu_ms": 3880.262,
+      "profile_serialization_cpu_ms": 0.001,
+      "profile_outside_loop_cpu_ms": 0.396,
+      "peak_rss_mb": 162.05859375
+    },
+    "bun-profile": {
+      "engine": "bun-native",
+      "page": "native/crates/render/results/week.json",
+      "count": 500,
+      "bytes": 141429,
+      "startup_ms": 191.360738,
+      "pages_per_s": 105.11303583315394,
+      "p50_ms": 6.698574999999437,
+      "p95_ms": 25.34736299999986,
+      "cgroup_cpu_ms": 9.417843999999999,
+      "cpu_ms": 9.417674000000002,
+      "profile_total_cpu_ms": 6123.419,
+      "profile_serialization_cpu_ms": 228.725,
+      "profile_outside_loop_cpu_ms": 1414.582,
+      "peak_rss_mb": 1609.66015625
+    },
+    "v8-perf": {
+      "page": "/work/native/crates/render/results/week.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 140996,
+      "startup_ms": 116.66808200000001,
+      "pages_per_s": 84.23413972360535,
+      "p50_ms": 10.443966000000001,
+      "p95_ms": 22.89603,
+      "cpu_ms": 11.879029999999998,
+      "cgroup_cpu_ms": 11.886714,
+      "loaded_rss_mb": 68.7890625,
+      "loop_rss_mb": 150.5078125,
+      "idle_rss_mb": 73.6953125,
+      "peak_rss_mb": 151.984375,
+      "loop_malloc_mb": {
+        "in_use": 5.889495849609375,
+        "free": 57.227691650390625
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.70269775390625,
+        "free": 58.41058349609375
+      },
+      "rss_samples_mb": [
+        68.8, 97.0, 97.7, 98.0, 96.9, 98.5, 108.1, 97.0, 99.4, 99.7, 109.3, 109.8, 108.6, 98.3,
+        99.2, 99.7, 100.0, 109.7, 111.3, 101.7, 101.3, 101.6, 150.0, 151.5
+      ],
+      "profile_finish_cpu_ms": 0.001999999999497959,
+      "profile_finish_ms": 0.0014399999999999999
+    },
+    "bun-perf": {
+      "engine": "bun-native",
+      "page": "/work/native/crates/render/results/week.json",
+      "count": 500,
+      "bytes": 141429,
+      "startup_ms": 185.346714,
+      "pages_per_s": 139.87436330266857,
+      "p50_ms": 5.855144999999538,
+      "p95_ms": 14.586580999999569,
+      "cgroup_cpu_ms": 7.0213659999999996,
+      "cpu_ms": 7.018015999999999,
+      "profile_total_cpu_ms": 3517.014,
+      "profile_serialization_cpu_ms": 0.001,
+      "profile_outside_loop_cpu_ms": 8.006,
+      "peak_rss_mb": 160.23828125
+    }
+  },
+  "month": {
+    "plain": {
+      "page": "/results/month.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 256020,
+      "startup_ms": 114.39036499999999,
+      "pages_per_s": 66.72251528018661,
+      "p50_ms": 12.174156,
+      "p95_ms": 32.198589999999996,
+      "cpu_ms": 14.999466,
+      "cgroup_cpu_ms": 14.99997,
+      "loaded_rss_mb": 67.80078125,
+      "loop_rss_mb": 150.2421875,
+      "idle_rss_mb": 70.33984375,
+      "peak_rss_mb": 152.19140625,
+      "loop_malloc_mb": {
+        "in_use": 6.3529052734375,
+        "free": 51.8814697265625
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.783843994140625,
+        "free": 53.450531005859375
+      },
+      "rss_samples_mb": [
+        67.8, 97.1, 99.3, 99.2, 100.6, 99.7, 98.9, 101.1, 108.2, 101.1, 100.6, 101.4, 100.7, 106.3,
+        107.9, 106.3, 108.0, 99.9, 101.7, 99.6, 101.1, 100.9, 107.7, 109.1, 100.9, 102.1, 101.2,
+        102.5, 151.9, 151.0
+      ],
+      "profile_finish_cpu_ms": 0.0010000000002037268,
+      "profile_finish_ms": 0.00094
+    },
+    "cpu": {
+      "page": "/results/month.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 256020,
+      "startup_ms": 99.749108,
+      "pages_per_s": 61.117033109867634,
+      "p50_ms": 12.908375,
+      "p95_ms": 37.700737999999994,
+      "cpu_ms": 16.399462,
+      "cgroup_cpu_ms": 16.399856,
+      "loaded_rss_mb": 68.70703125,
+      "loop_rss_mb": 235.49609375,
+      "idle_rss_mb": 128.7890625,
+      "peak_rss_mb": 263.2109375,
+      "loop_malloc_mb": {
+        "in_use": 6.621551513671875,
+        "free": 132.29641723632812
+      },
+      "idle_malloc_mb": {
+        "in_use": 5.0332183837890625,
+        "free": 134.01365661621094
+      },
+      "rss_samples_mb": [
+        68.7, 107.5, 110.9, 112.7, 115.2, 116.7, 117.6, 120.4, 123.1, 133.2, 123.7, 125.6, 127.4,
+        128.6, 137.3, 138.0, 136.5, 137.8, 129.8, 130.9, 130.0, 130.7, 130.8, 133.3, 138.6, 139.7,
+        133.4, 133.2, 135.4, 136.5, 167.8, 190.6, 189.4, 215.6
+      ],
+      "profile_finish_cpu_ms": 208.96700000000055,
+      "profile_finish_ms": 221.367032
+    },
+    "allocation": {
+      "page": "/results/month.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 256020,
+      "startup_ms": 99.41075500000001,
+      "pages_per_s": 59.76475438259016,
+      "p50_ms": 13.980021,
+      "p95_ms": 32.115038,
+      "cpu_ms": 16.747207999999997,
+      "cgroup_cpu_ms": 16.747644,
+      "loaded_rss_mb": 69.01953125,
+      "loop_rss_mb": 257.44140625,
+      "idle_rss_mb": 96.99609375,
+      "peak_rss_mb": 328.08984375,
+      "loop_malloc_mb": {
+        "in_use": 6.3790283203125,
+        "free": 156.9178466796875
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.8683624267578125,
+        "free": 158.4285125732422
+      },
+      "rss_samples_mb": [
+        69.0, 102.9, 105.1, 107.4, 108.6, 109.0, 110.8, 113.0, 115.6, 122.8, 115.4, 116.9, 119.1,
+        120.6, 126.2, 126.5, 126.7, 126.4, 126.8, 121.6, 122.7, 123.0, 123.7, 124.6, 126.2, 127.8,
+        126.2, 126.1, 128.6, 129.1, 130.1, 176.8, 179.4, 180.1, 232.8, 256.8
+      ],
+      "profile_finish_cpu_ms": 418.7960000000003,
+      "profile_finish_ms": 410.963429
+    },
+    "bun-plain": {
+      "engine": "bun-native",
+      "page": "native/crates/render/results/month.json",
+      "count": 500,
+      "bytes": 256453,
+      "startup_ms": 202.728379,
+      "pages_per_s": 116.92160073210505,
+      "p50_ms": 7.176737000000685,
+      "p95_ms": 16.1399779999997,
+      "cgroup_cpu_ms": 8.42199,
+      "cpu_ms": 8.421202,
+      "profile_total_cpu_ms": 4211.056,
+      "profile_serialization_cpu_ms": 0.001,
+      "profile_outside_loop_cpu_ms": 0.455,
+      "peak_rss_mb": 169.22265625
+    },
+    "bun-profile": {
+      "engine": "bun-native",
+      "page": "native/crates/render/results/month.json",
+      "count": 500,
+      "bytes": 256453,
+      "startup_ms": 193.980659,
+      "pages_per_s": 82.84168078453071,
+      "p50_ms": 8.3152340000006,
+      "p95_ms": 27.02632199999971,
+      "cgroup_cpu_ms": 12.033082,
+      "cpu_ms": 12.032536,
+      "profile_total_cpu_ms": 8882.611,
+      "profile_serialization_cpu_ms": 282.832,
+      "profile_outside_loop_cpu_ms": 2866.343,
+      "peak_rss_mb": 2088.375
+    },
+    "v8-perf": {
+      "page": "/work/native/crates/render/results/month.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 256020,
+      "startup_ms": 123.28560800000001,
+      "pages_per_s": 64.74188442600249,
+      "p50_ms": 12.343576,
+      "p95_ms": 34.895655999999995,
+      "cpu_ms": 15.466596,
+      "cgroup_cpu_ms": 15.475245999999999,
+      "loaded_rss_mb": 69.3984375,
+      "loop_rss_mb": 158.3125,
+      "idle_rss_mb": 74.1484375,
+      "peak_rss_mb": 160.09765625,
+      "loop_malloc_mb": {
+        "in_use": 6.7462921142578125,
+        "free": 56.10917663574219
+      },
+      "idle_malloc_mb": {
+        "in_use": 5.083099365234375,
+        "free": 57.768463134765625
+      },
+      "rss_samples_mb": [
+        69.4, 101.1, 100.5, 100.8, 101.3, 102.0, 103.1, 105.0, 110.2, 110.8, 103.7, 104.7, 102.6,
+        107.7, 103.7, 104.4, 103.3, 103.4, 102.8, 104.0, 102.4, 103.3, 105.1, 106.3, 105.6, 103.3,
+        105.0, 103.6, 105.1, 159.6, 157.7
+      ],
+      "profile_finish_cpu_ms": 0.0020000000004074536,
+      "profile_finish_ms": 0.0014399999999999999
+    },
+    "bun-perf": {
+      "engine": "bun-native",
+      "page": "/work/native/crates/render/results/month.json",
+      "count": 500,
+      "bytes": 256453,
+      "startup_ms": 201.774918,
+      "pages_per_s": 116.6846596200966,
+      "p50_ms": 7.189199000000372,
+      "p95_ms": 15.969454000000042,
+      "cgroup_cpu_ms": 8.495608,
+      "cpu_ms": 8.490422,
+      "profile_total_cpu_ms": 4255.996,
+      "profile_serialization_cpu_ms": 0.001,
+      "profile_outside_loop_cpu_ms": 10.785,
+      "peak_rss_mb": 170.7265625
+    }
+  },
+  "year": {
+    "plain": {
+      "page": "/results/year.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 378877,
+      "startup_ms": 120.223551,
+      "pages_per_s": 53.223091098610816,
+      "p50_ms": 14.927726,
+      "p95_ms": 37.890458,
+      "cpu_ms": 18.792824,
+      "cgroup_cpu_ms": 18.793174,
+      "loaded_rss_mb": 69.44140625,
+      "loop_rss_mb": 150.5546875,
+      "idle_rss_mb": 71.5859375,
+      "peak_rss_mb": 163.43359375,
+      "loop_malloc_mb": {
+        "in_use": 6.6388397216796875,
+        "free": 52.80256652832031
+      },
+      "idle_malloc_mb": {
+        "in_use": 4.9787139892578125,
+        "free": 54.59159851074219
+      },
+      "rss_samples_mb": [
+        69.5, 105.0, 104.4, 108.1, 108.2, 106.7, 106.8, 108.5, 107.2, 108.6, 115.5, 107.0, 108.0,
+        109.9, 108.5, 109.9, 110.0, 109.1, 110.2, 109.1, 110.2, 107.0, 109.8, 108.0, 109.8, 108.0,
+        110.0, 111.4, 112.8, 115.3, 107.5, 110.2, 109.1, 111.6, 109.1, 162.8, 161.5, 160.8
+      ],
+      "profile_finish_cpu_ms": 0.0020000000004074536,
+      "profile_finish_ms": 0.00099
+    },
+    "cpu": {
+      "page": "/results/year.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 378877,
+      "startup_ms": 103.793327,
+      "pages_per_s": 49.170945871817956,
+      "p50_ms": 15.328355,
+      "p95_ms": 42.558756,
+      "cpu_ms": 20.375914,
+      "cgroup_cpu_ms": 20.376372,
+      "loaded_rss_mb": 68.5078125,
+      "loop_rss_mb": 195.05078125,
+      "idle_rss_mb": 115.21484375,
+      "peak_rss_mb": 222.05859375,
+      "loop_malloc_mb": {
+        "in_use": 7.3032989501953125,
+        "free": 127.40763854980469
+      },
+      "idle_malloc_mb": {
+        "in_use": 5.22283935546875,
+        "free": 129.48809814453125
+      },
+      "rss_samples_mb": [
+        68.5, 112.8, 115.7, 118.0, 119.8, 122.9, 122.8, 123.4, 124.2, 128.0, 129.5, 138.8, 130.4,
+        129.6, 130.4, 132.0, 133.4, 142.3, 141.7, 143.1, 140.7, 142.9, 142.9, 135.5, 136.3, 134.7,
+        134.8, 136.3, 138.5, 136.2, 144.6, 142.7, 143.0, 139.6, 140.2, 140.9, 141.9, 163.6, 130.6,
+        144.2, 144.6, 183.3
+      ],
+      "profile_finish_cpu_ms": 215.35399999999936,
+      "profile_finish_ms": 224.652071
+    },
+    "allocation": {
+      "page": "/results/year.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 378877,
+      "startup_ms": 102.110486,
+      "pages_per_s": 48.714869284681214,
+      "p50_ms": 16.588222,
+      "p95_ms": 37.833545,
+      "cpu_ms": 20.53535,
+      "cgroup_cpu_ms": 20.535833999999998,
+      "loaded_rss_mb": 68.11328125,
+      "loop_rss_mb": 263.69921875,
+      "idle_rss_mb": 95.96484375,
+      "peak_rss_mb": 335.875,
+      "loop_malloc_mb": {
+        "in_use": 6.1247100830078125,
+        "free": 161.6565399169922
+      },
+      "idle_malloc_mb": {
+        "in_use": 5.0940093994140625,
+        "free": 162.68724060058594
+      },
+      "rss_samples_mb": [
+        68.1, 105.5, 106.1, 110.4, 110.0, 113.6, 115.8, 115.9, 119.0, 121.7, 122.4, 130.2, 121.9,
+        122.4, 124.9, 125.5, 127.0, 132.7, 128.6, 129.9, 127.5, 127.8, 128.5, 128.8, 129.7, 129.8,
+        131.2, 131.4, 129.7, 129.5, 134.3, 134.4, 136.1, 134.6, 135.7, 137.7, 139.3, 139.7, 179.9,
+        184.7, 185.2, 183.1, 287.4
+      ],
+      "profile_finish_cpu_ms": 444.8700000000008,
+      "profile_finish_ms": 442.34472600000004
+    },
+    "bun-plain": {
+      "engine": "bun-native",
+      "page": "native/crates/render/results/year.json",
+      "count": 500,
+      "bytes": 379310,
+      "startup_ms": 207.596756,
+      "pages_per_s": 96.71007644609111,
+      "p50_ms": 8.518207000000075,
+      "p95_ms": 19.54562199999964,
+      "cgroup_cpu_ms": 10.149296,
+      "cpu_ms": 10.148546,
+      "profile_total_cpu_ms": 5074.702,
+      "profile_serialization_cpu_ms": 0.002,
+      "profile_outside_loop_cpu_ms": 0.429,
+      "peak_rss_mb": 174.37109375
+    },
+    "bun-profile": {
+      "engine": "bun-native",
+      "page": "native/crates/render/results/year.json",
+      "count": 500,
+      "bytes": 379310,
+      "startup_ms": 199.091075,
+      "pages_per_s": 52.77168591257001,
+      "p50_ms": 10.005904999999984,
+      "p95_ms": 48.695740000000114,
+      "cgroup_cpu_ms": 18.921532,
+      "cpu_ms": 18.921045999999997,
+      "profile_total_cpu_ms": 19805.371,
+      "profile_serialization_cpu_ms": 1308.903,
+      "profile_outside_loop_cpu_ms": 10344.848,
+      "peak_rss_mb": 2088.4140625
+    },
+    "v8-perf": {
+      "page": "/work/native/crates/render/results/year.json",
+      "count": 500,
+      "renderers": 1,
+      "concurrency": 1,
+      "bytes": 378877,
+      "startup_ms": 118.962574,
+      "pages_per_s": 51.44999524304663,
+      "p50_ms": 15.21617,
+      "p95_ms": 39.254329,
+      "cpu_ms": 19.505288,
+      "cgroup_cpu_ms": 19.517202,
+      "loaded_rss_mb": 69.5234375,
+      "loop_rss_mb": 114.63671875,
+      "idle_rss_mb": 74.50390625,
+      "peak_rss_mb": 157.63671875,
+      "loop_malloc_mb": {
+        "in_use": 7.2366180419921875,
+        "free": 50.36885070800781
+      },
+      "idle_malloc_mb": {
+        "in_use": 5.353790283203125,
+        "free": 52.247772216796875
+      },
+      "rss_samples_mb": [
+        69.5, 105.5, 104.9, 106.9, 108.3, 108.7, 105.5, 107.1, 108.3, 110.9, 118.6, 117.2, 108.3,
+        109.2, 109.6, 108.0, 109.6, 109.8, 111.1, 109.3, 110.0, 111.2, 109.9, 110.7, 111.8, 109.3,
+        110.8, 113.3, 117.7, 115.3, 116.0, 112.1, 110.7, 113.3, 111.4, 112.6, 78.2, 112.4, 113.5
+      ],
+      "profile_finish_cpu_ms": 0.0020000000004074536,
+      "profile_finish_ms": 0.00152
+    },
+    "bun-perf": {
+      "engine": "bun-native",
+      "page": "/work/native/crates/render/results/year.json",
+      "count": 500,
+      "bytes": 379310,
+      "startup_ms": 198.013418,
+      "pages_per_s": 93.78956654721513,
+      "p50_ms": 8.898560999999972,
+      "p95_ms": 20.27493400000003,
+      "cgroup_cpu_ms": 10.46,
+      "cpu_ms": 10.453768,
+      "profile_total_cpu_ms": 5227.652,
+      "profile_serialization_cpu_ms": 0.001,
+      "profile_outside_loop_cpu_ms": 0.768,
+      "peak_rss_mb": 180.1953125
+    }
+  }
+}

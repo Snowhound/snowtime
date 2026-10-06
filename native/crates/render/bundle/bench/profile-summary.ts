@@ -85,6 +85,12 @@ function bucket(node: Node): string {
   if (/Intl|DateTimeFormat|NumberFormat|formatToParts/.test(name)) return 'Intl'
   if (path.includes('/node_modules/solid-js')) return 'Solid'
   if (path.includes('/node_modules/@tanstack')) return 'TanStack'
+  if (
+    path.endsWith('/src/Icon.tsx') ||
+    path.includes('/shared/src/build/buildLucideIconNode') ||
+    path.includes('/shared/src/utils/mergeClasses')
+  )
+    return 'Lucide'
   if (path.includes('/node_modules/')) return 'other dependencies'
   if (path.includes('/src/')) return 'app'
   if (name === '(program)' || !path) return 'native/unattributed'

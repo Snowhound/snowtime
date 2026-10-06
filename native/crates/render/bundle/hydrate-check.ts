@@ -50,7 +50,8 @@ try {
       const result = { name, source, ...nodes, errors, navigated }
       findings.push(result)
       console.log(JSON.stringify(result))
-      if (errors.length || !navigated) throw new Error(`${name} ${source} failed hydration`)
+      if (errors.length || !navigated || nodes.replaced)
+        throw new Error(`${name} ${source} failed hydration`)
       await context.close()
     }
   }

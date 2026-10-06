@@ -78,6 +78,31 @@ async fn run(
     Ok(times)
 }
 
+// perf record starts disabled; its acknowledgement bounds all-thread sampling to the loop.
+fn perf_control(command: &str) -> anyhow::Result<()> {
+    use std::io::{BufRead, Write};
+    if let Ok(path) = std::env::var("RENDER_PERF_CONTROL") {
+        let mut control = std::fs::OpenOptions::new().write(true).open(path)?;
+        writeln!(control, "{command}")?;
+        if let Ok(path) = std::env::var("RENDER_PERF_ACK") {
+            let ack = std::fs::File::open(path)?;
+            let mut line = String::new();
+            std::io::BufReader::new(ack).read_line(&mut line)?;
+            anyhow::ensure!(line.trim() == "ack", "perf did not acknowledge {command}");
+        }
+    }
+    Ok(())
+}
+
+fn cgroup_cpu_us() -> Option<f64> {
+    std::fs::read_to_string("/sys/fs/cgroup/cpu.stat")
+        .ok()?
+        .lines()
+        .find_map(|line| line.strip_prefix("usage_usec "))?
+        .parse()
+        .ok()
+}
+
 // RENDER_HEAP_MB sets the heap limit, with the host's thresholds for it (crates/host).
 fn heap_limits() -> Policy {
     let Some(mb) = std::env::var("RENDER_HEAP_MB")
@@ -168,11 +193,29 @@ async fn main() -> anyhow::Result<()> {
             samples
         }
     });
+    perf_control("enable")?;
+    let cgroup_start = cgroup_cpu_us();
     let cpu_start = usage().0;
     let measured = Instant::now();
     let mut times = run(&pool, &page, count, concurrency).await?;
     let seconds = measured.elapsed().as_secs_f64();
     let cpu_ms = (usage().0 - cpu_start) / count as f64;
+    let cgroup_cpu_ms = cgroup_start
+        .zip(cgroup_cpu_us())
+        .map(|(start, end)| (end - start) / 1000.0 / count as f64);
+    perf_control("disable")?;
+    let collection_cpu = usage().0;
+    let collection_started = Instant::now();
+    if std::env::var_os("RENDER_CPU_PROFILE").is_some()
+        || std::env::var_os("RENDER_ALLOCATION_PROFILE").is_some()
+    {
+        // Stop and serialize outside the measured loop, before one extra render.
+        pool.render(page.clone())
+            .await
+            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    }
+    let profile_finish_cpu_ms = usage().0 - collection_cpu;
+    let profile_finish_ms = collection_started.elapsed().as_secs_f64() * 1000.0;
     sampling.store(false, Ordering::Relaxed);
     let samples = sampler.join().expect("the sampler runs");
     let loop_rss = rss_mb();
@@ -185,10 +228,11 @@ async fn main() -> anyhow::Result<()> {
         serde_json::json!({"page": args[1], "count": count, "renderers": renderers,
             "concurrency": concurrency, "bytes": first.body.len(), "startup_ms": startup_ms,
             "pages_per_s": count as f64 / seconds, "p50_ms": times[count / 2],
-            "p95_ms": times[count * 95 / 100], "cpu_ms": cpu_ms, "loaded_rss_mb": loaded_rss,
+            "p95_ms": times[count * 95 / 100], "cpu_ms": cpu_ms, "cgroup_cpu_ms": cgroup_cpu_ms, "loaded_rss_mb": loaded_rss,
             "loop_rss_mb": loop_rss, "idle_rss_mb": idle_rss, "peak_rss_mb": usage().1,
             "loop_malloc_mb": loop_malloc, "idle_malloc_mb": malloc_mb(),
-            "rss_samples_mb": samples})
+            "rss_samples_mb": samples, "profile_finish_cpu_ms": profile_finish_cpu_ms,
+            "profile_finish_ms": profile_finish_ms})
     );
     Ok(())
 }

@@ -1,0 +1,68 @@
+diff --git a/native/crates/render/src/lib.rs b/native/crates/render/src/lib.rs
+index bb633b3..1d828be 100644
+--- a/native/crates/render/src/lib.rs
++++ b/native/crates/render/src/lib.rs
+@@ -148,6 +148,7 @@ deno_core::extension!(host, ops = [op_send, op_head, op_chunk]);
+ struct Renderer {
+     profile: Option<profile::Profile>,
+     runtime: Option<JsRuntime>,
++    render_call: Option<deno_core::v8::Global<deno_core::v8::Function>>,
+     deadline: deadline::Deadline,
+     send: SendApi,
+     manifest: Arc<str>,
+@@ -178,10 +179,21 @@ impl Renderer {
+                 format!("globalThis.renderManifest = {manifest}"),
+             )
+             .expect("the manifest is JSON");
++        let call = runtime
++            .execute_script("render-call.js", "(input) => renderPage(JSON.parse(input))")
++            .expect("render call is valid JavaScript");
++        let render_call = {
++            deno_core::scope!(scope, &mut runtime);
++            let call = deno_core::v8::Local::new(scope, call);
++            let call = deno_core::v8::Local::<deno_core::v8::Function>::try_from(call)
++                .expect("render call is a function");
++            deno_core::v8::Global::new(scope, call)
++        };
+         let profile = profile::Profile::new(&mut runtime);
+         Self {
+             profile,
+             runtime: Some(runtime),
++            render_call: Some(render_call),
+             deadline: deadline::Deadline::new(),
+             send,
+             manifest,
+@@ -196,6 +208,7 @@ impl Renderer {
+         self.js().v8_isolate().cancel_terminate_execution();
+         // Dispose this isolate before entering its replacement on the same thread.
+         drop(self.profile.take());
++        drop(self.render_call.take());
+         drop(self.runtime.take());
+         *self = Self::new(
+             self.send.clone(),
+@@ -228,11 +241,20 @@ impl Renderer {
+         let isolate = self.js().v8_isolate().thread_safe_handle();
+         self.deadline.arm(self.policy.deadline, isolate);
+         let result = tokio::time::timeout(self.policy.deadline, async {
+-            let value = self.js().execute_script(
+-                "page.js",
+-                format!("renderPage({})", serde_json::to_string(request)?),
+-            )?;
+-            let promise = self.js().resolve(value);
++            let input = serde_json::to_string(request)?;
++            let call = self
++                .render_call
++                .as_ref()
++                .expect("render call exists")
++                .clone();
++            let input: deno_core::v8::Global<deno_core::v8::Value> = {
++                deno_core::scope!(scope, self.js());
++                let input = deno_core::v8::String::new(scope, &input)
++                    .ok_or_else(|| anyhow::anyhow!("Cannot allocate render input"))?;
++                let input: deno_core::v8::Local<deno_core::v8::Value> = input.into();
++                deno_core::v8::Global::new(scope, input)
++            };
++            let promise = self.js().call_with_args(&call, &[input]);
+             self.js()
+                 .with_event_loop_promise(promise, Default::default())
+                 .await?;

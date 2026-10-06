@@ -10,7 +10,7 @@ them. The host crate (`snowtime-axum`) serves pages through it.
 own with a current-thread Tokio runtime. The cloneable `Pool` is `Send + Sync`. An Axum
 handler awaits `render(PageRequest)` and gets the whole page: status, headers, and body.
 The renderer writes the body into a buffer and goes back to the queue, so a slow client
-never holds it. The year report, the largest page, is 482 KB; `max_page_bytes` fails a
+never holds it. The current year fixture, the largest page, is about 379 kB; `max_page_bytes` fails a
 page above 8 MiB. One page renders at a time per isolate, so cookies, locale, and query
 caches cannot overlap.
 
@@ -51,7 +51,13 @@ the counts and heap limits from the memory it may use and reports pressure from 
 Deno's MIT extension crates supply URL parsing, text encoding, structured cloning,
 Request/Response, and streams. Their stream machinery is JavaScript backed by native
 ops, as Deno implements it. The isolate's `fetch` throws; app reads go through the host
-callback. Numeric Intl parts use a bounded per-formatter cache that returns fresh
+callback. The isolated SSR build replaces Solid's `mergeProps` descriptor-map enumeration with
+own-key enumeration. It preserves descriptor traps, non-enumerable props, lazy getters,
+and inherited descriptor-map keys. The adapter fails the build if the upstream helper
+changes. Browser sources and the production client are unchanged. Task 081.13 records
+the measured benefit and compatibility tests.
+
+Numeric Intl parts use a bounded per-formatter cache that returns fresh
 parts objects; string encoding uses a thin V8/simdutf op. Receiver checks and non-string
 conversion remain with Deno. Task 081.12 records the measured selection and its limits.
 
@@ -115,8 +121,13 @@ docker build -f native/crates/render/bundle/bench/Dockerfile -t snowtime-render:
 
 Set `RENDER_CPU_PROFILE=/results/timer.cpuprofile` on a render-bench container to
 record V8's inspector profile after its initial render and 50 warm-ups.
+`RENDER_ALLOCATION_PROFILE=/results/timer.heapprofile` instead samples V8 heap
+allocations at 128 KiB, including objects collected by minor and major GC.
 `RENDER_PROFILE_COUNT` defaults to 500. Use one renderer and client; this instrumentation
-does not aggregate multiple isolates. `RENDER_API_TRACE=1` also writes a sibling
+does not aggregate multiple isolates. `render-bench` makes an extra unmeasured render
+to stop and write the profile. Its `profile_finish_cpu_ms` includes that render,
+collection, and output. The loop CPU excludes this finish work. Deep allocation trees
+are preserved as raw inspector JSON. `RENDER_API_TRACE=1` also writes a sibling
 `.apis.json` file with one page's API call counts and argument sizes. Trace runs add
 wrappers and must be separate from timing runs.
 
@@ -135,7 +146,11 @@ bun native/crates/render/bundle/bun-bench.ts --polyfills native/crates/render/re
 ```
 
 Set `BUN_RENDER_PROFILE=<path>.jsc.json` to sample only the measured loop with
-`bun:jsc.profile`, after warm-up. Bun's `--cpu-prof` flag instead includes startup
+`bun:jsc.profile`, after warm-up. Loop counters stop inside the callback, before result construction.
+`profile_outside_loop_cpu_ms` includes setup and result construction;
+`profile_serialization_cpu_ms` measures JSON encoding and file output separately.
+`BUN_RENDER_BUNDLE` selects an absolute saved bundle path for an original reference.
+Bun's `--cpu-prof` flag instead includes startup
 and warm-ups; keep those profiles separate. The forced-polyfill mode
 uses MIT JS URL, streams, and fetch implementations and an Apache-2.0 text-encoding
 fallback. It redirects the fetch package's internal encoding import too.
@@ -151,3 +166,41 @@ The `api-bench` Cargo feature adds MIT/Apache-2.0 Ada and encoding_rs only to th
 Microbenchmarks report three repetitions in one isolate. Their reduced URL, Headers,
 query-string, and JSON candidates are comparisons of observed operations, not complete
 replacement classes; a microbenchmark win alone does not select a production API.
+
+### Allocation and engine comparisons
+
+Save the original image and bundle/map before building a candidate. Use the same captures
+and production-client manifest throughout:
+
+```sh
+native/crates/render/bundle/compare.sh original-image candidate-image native/crates/render/results/comparison /work/native/crates/render/results/original/render.js
+native/crates/render/bundle/profile-pages.sh candidate-image allocation/final
+native/crates/render/bundle/profile-perf.sh candidate-image allocation/final
+```
+
+The comparison alternates three rounds per page and checks exact HTML. Its optional
+fourth argument selects Bun's original bundle inside the mounted `/work` checkout.
+Without it, Bun uses the current generated bundle. Profiling scripts use a results
+subdirectory as their optional second argument; never overwrite another bundle's profiles.
+The perf script samples all inherited threads only during the measured loop, using FIFO
+acknowledgements. `cgroup_cpu_ms` includes the perf recorder inside the container;
+`cpu_ms` includes only the renderer process and its threads. Both counters bracket the
+loop, with a small extra cgroup-counter read outside process CPU timing.
+
+Summarize allocation profiles with `bundle/bench/allocation-summary.ts <profile> <map>`.
+Estimated bytes exclude Rust allocations and external buffers. Summarize perf using
+`python3 bundle/bench/perf-summary.py <report.txt> <stacks.txt>`; it counts first frames
+and reports named GC/compiler symbols conservatively. Unresolved Bun native/JIT samples
+remain unresolved. Source maps for the adapted Solid helper retain line attribution,
+with columns mapped to the start of each upstream line.
+
+`bundle/heap-policy.sh <candidate-image>` compares 128/256 MiB heap limits and their
+proportional collection/replacement thresholds. It is a memory-policy diagnostic,
+not a production recommendation: the host supplies its own thresholds. The four-page
+allocation investigation, raw timings, profiler overhead, rejected candidates, and
+remaining gap are in
+[the WSL report](../../../tasks/081-native-backend/server-rendering/render-allocations-wsl.md).
+
+Before committing a render change, run render Cargo tests and Clippy, the browser
+hydration check, `bun run test`, harness lint, formatting, and both Knip checks. Keep
+large profiles, source maps, perf data, and JIT dumps under ignored `results/`.

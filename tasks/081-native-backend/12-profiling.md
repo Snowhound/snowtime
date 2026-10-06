@@ -300,6 +300,15 @@ The larger remaining investigation is [task 081.13](13-render-allocations.md):
 allocation sites, GC/compiler work, and rendering helpers. Whole-host load and
 off-CPU/allocation profiles remain part of this task and were outside this isolate pass.
 
+### Render allocation follow-up, 2026-10-06
+
+[The four-page allocation investigation](server-rendering/render-allocations-wsl.md)
+records V8 allocation sites, measured-window whole-process perf, Bun attribution
+limits, profiler overhead, and alternating candidate comparisons. A small server-only
+Solid helper adapter reduces whole-render CPU; the remaining engine gap is substantial.
+Unresolved Bun addresses remain unresolved. Whole-server HTTP load, off-CPU profiles,
+and hot-path Rust allocation profiles remain unfinished and separate from these runs.
+
 ## Acceptance criteria
 
 - [ ] CPU and off-CPU profiles of the native server at a passing load and past capacity,

@@ -1,0 +1,123 @@
+Tue Oct  6 03:56:55 UTC 2026
+Linux Tiamat 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 GNU/Linux
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           48 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  16
+On-line CPU(s) list:                     0-15
+Vendor ID:                               AuthenticAMD
+Model name:                              AMD Ryzen 7 5800X3D 8-Core Processor
+CPU family:                              25
+Model:                                   33
+Thread(s) per core:                      2
+Core(s) per socket:                      8
+Socket(s):                               1
+Stepping:                                2
+BogoMIPS:                                6800.08
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext perfctr_core ssbd ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves clzero xsaveerptr arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload umip vaes vpclmulqdq rdpid fsrm
+Virtualization:                          AMD-V
+Hypervisor vendor:                       Microsoft
+Virtualization type:                     full
+L1d cache:                               256 KiB (8 instances)
+L1i cache:                               256 KiB (8 instances)
+L2 cache:                                4 MiB (8 instances)
+L3 cache:                                96 MiB (1 instance)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-15
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Ghostwrite:                Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Old microcode:             Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Vulnerable: Safe RET, no microcode
+Vulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; Retpolines; IBPB conditional; IBRS_FW; STIBP always-on; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Vulnerable: No microcode
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+1.4.2
+cargo 1.99.0 (5f94df478 2026-08-27)
+rustc 1.99.0 (b940084d7 2026-09-28)
+Ubuntu clang version 21.1.8 (6ubuntu1)
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /usr/lib/llvm-21/bin
+Client:
+ Version:           29.8.2
+ API version:       1.56
+ Go version:        go1.26.8
+ Git commit:        7fc2dff
+ Built:             Wed Sep 30 19:31:45 2026
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Desktop 4.94.0 (241994)
+ Engine:
+  Version:          29.8.2
+  API version:      1.56 (minimum version 1.40)
+  Go version:       go1.26.8
+  Git commit:       8af9fe3
+  Built:            Wed Sep 30 19:32:25 2026
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          v2.3.6
+  GitCommit:        ee2735368117d2eb259779949d5e75cdafec9761
+ runc:
+  Version:          1.5.1
+  GitCommit:        v1.5.1-0-g8f2685a4
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+f0cd1bf0296310e0923d2251433b3ec05c6914b3
+1d35ea7a8ec1bedd3cfe129179cfa1b9807c4b80de57d3f7799f46d37fe08c6a  native/crates/render/results/timer.json
+00a58936142a0fa45a3a1a4bec12decb6aa57496e121bcdacdd521ace2313983  native/crates/render/results/week.json
+f175f197ffa36fa427dfb558f04a917e86c0b1f9ac7516d4084db8ec6f79c9f7  native/crates/render/results/month.json
+c1d4e082be4b809172bb2f6967419ab8147cf7e8b237a0f67957a92c427df403  native/crates/render/results/year.json
+7177ba82a313577b23f0fb352c94f9a5b670254f453074f8e07d6ec9d5695fdd  native/crates/render/results/answers.json
+344d53b911e486f1925391407074689f45a00c6db9b7e61680554924701c529a  native/crates/render/bundle/dist/render.js
+33b7a1f16c8fa3be96c15d22fa7a072329be4b972c84323aef862a00c97c72f0  native/crates/render/bundle/dist/manifest.json
+
+Windows power plan: AMD Ryzen Balanced (verified with powercfg).
+Measurement quota: Docker --cpus=1 --memory=2g; default Docker swap policy.
+Runtime image: Debian trixie-slim, linux-perf, binutils, Bun 1.4.2.
+Build image: rust:1.99-trixie with clang.
+PRETTY_NAME="Ubuntu 26.04.1 LTS"
+NAME="Ubuntu"
+VERSION_ID="26.04"
+VERSION="26.04.1 LTS (Resolute Raccoon)"
+VERSION_CODENAME=resolute
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=resolute
+LOGO=ubuntu-logo
+perf version 6.12.111
+[snowtime-render:api-bench] sha256:c67ac02ca2b71f06d2bddef17a4bd459aa4d9238cc5edc592ac28a9a5afa9965
+[snowtime-render:keys-safe] sha256:3f3024ac975156f22a168e2362d29e9f3d0a588f865e0dc9014f0234b39f54d0
+[snowtime-render:allocation-final] sha256:b2165e0705d061829946eae9ade25b880f81f8be6c47a46199d2f3b76a312ca1
+5a68014a2b8f714ab715f73118560f1f218b8ff88cc9be6ce886476e3b4facab  native/crates/render/bundle/dist/render.js
+33b7a1f16c8fa3be96c15d22fa7a072329be4b972c84323aef862a00c97c72f0  native/crates/render/bundle/dist/manifest.json
+Google Chrome 154.0.8037.97
+v22.22.1
+{"node":"26.3.0","bun":"1.4.2","boringssl":"41bf9b59c2ebf277a7aa427e1ecad5cc80dd4d4f","openssl":"1.1.0","llhttp":"9.3.0","libarchive":"ded82291ab41d5e355831b96b0e1ff49e24d8939","mimalloc":"6a64e1ba7f5b2130d4efccb67ec87fd0003f0f6a","picohttpparser":"066d2b1e9ab820703db0837a7255d92d30f0c9f5","uwebsockets":"744846f844374847c902b5e7fd59b4342a51ef99","webkit":"2e2aa2290fac856d6f451ceacb58f7f5b44dd057","zig":"04e7f6ac1e009525bc00934f20199c68f04e0a24","zlib":"12731092979c6d07f42da27da673a9f6c7b13586","tinycc":"05f0fafaa3be31e31d7b4b5c17dc60f62c991171","lolhtml":"725ce499aa9b71e38b7a2d0a9fbb6d7294a4079e","ares":"c7a3138dcfe3bb0eaaf10c0c24c36dc66dc790ab","libdeflate":"c8c56a20f8f621e6a966b716b31f1dedab6a41e3","usockets":"744846f844374847c902b5e7fd59b4342a51ef99","lshpack":"8905c024b6d052f083a3d11d0a169b3c2735c8a1","zstd":"f8745da6ff1ad1e7bab384bd1f9d742439278e99","v8":"14.6.202.34-node.20","uv":"1.48.0","napi":"10","icu":"78.3","unicode":"17.0","sqlite":"3.53.2","modules":"147"}
+name = "v8"
+version = "149.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ebfd8d6919bfb4b627ca778a67f85ca45e5fb442d352947ba093798bdf9b07e0"
+name = "deno_core"
+version = "0.405.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8220ba29cf7b51d98c12e3f04e32bee32f8a100875bd417b51712ab66314dad"

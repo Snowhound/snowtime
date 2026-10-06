@@ -1,0 +1,3098 @@
+{
+  "timer": {
+    "allocation": {
+      "profile": "native/crates/render/results/allocation/timer.heapprofile",
+      "count": 500,
+      "estimated_bytes_per_render": 7913369.52,
+      "sample_count": 28731,
+      "estimated_bytes_per_render_by_bucket": {
+        "native/bundle/unattributed": 1109374.8,
+        "Deno": 105361.2,
+        "Solid": 3806988.864,
+        "other dependencies": 358269.968,
+        "TanStack": 468128.32,
+        "app": 1179136.176,
+        "Lucide": 886110.192
+      },
+      "estimated_bytes_per_render_by_subsystem": {
+        "other": 5346829.072,
+        "serialization": 218703.968,
+        "router": 143211.856,
+        "query": 106212.496,
+        "Solid prop helpers": 1882360.896,
+        "calendar": 216051.232
+      },
+      "sites": [
+        {
+          "site": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:408",
+          "estimated_bytes_per_render": 1372030.592,
+          "percent": 17.33813375620048
+        },
+        {
+          "site": "Dynamic ../../../../../node_modules/solid-js/web/dist/server.js:778",
+          "estimated_bytes_per_render": 609572.096,
+          "percent": 7.70306624073837
+        },
+        {
+          "site": "splitProps ../../../../../node_modules/solid-js/dist/server.js:434",
+          "estimated_bytes_per_render": 494576.8,
+          "percent": 6.249888858974956
+        },
+        {
+          "site": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:495",
+          "estimated_bytes_per_render": 426823.68,
+          "percent": 5.393703389197981
+        },
+        {
+          "site": "children ../../../../../../../src/Icon.tsx:59",
+          "estimated_bytes_per_render": 410549.184,
+          "percent": 5.188045155257706
+        },
+        {
+          "site": "indexOf :0",
+          "estimated_bytes_per_render": 346265.728,
+          "percent": 4.375705281105083
+        },
+        {
+          "site": "buildLucideIconNode ../../../../../../../shared/src/build/buildLucideIconNode.ts:15",
+          "estimated_bytes_per_render": 211402.336,
+          "percent": 2.6714579101318146
+        },
+        {
+          "site": "createComponent ../../../../../node_modules/solid-js/dist/server.js:398",
+          "estimated_bytes_per_render": 203509.248,
+          "percent": 2.571714204494775
+        },
+        {
+          "site": "get when ../../../../../src/features/timer/timer-page.tsx:11",
+          "estimated_bytes_per_render": 168573.456,
+          "percent": 2.130236122222686
+        },
+        {
+          "site": "next :0",
+          "estimated_bytes_per_render": 153637.92,
+          "percent": 1.9414981141939647
+        },
+        {
+          "site": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:658",
+          "estimated_bytes_per_render": 152116.736,
+          "percent": 1.9222751523929846
+        },
+        {
+          "site": "entries :0",
+          "estimated_bytes_per_render": 138719.216,
+          "percent": 1.752972809489124
+        },
+        {
+          "site": "Icon ../../../../../../../src/Icon.tsx:17",
+          "estimated_bytes_per_render": 135642.256,
+          "percent": 1.714089752250063
+        },
+        {
+          "site": "keys :0",
+          "estimated_bytes_per_render": 116434.032,
+          "percent": 1.4713584612184267
+        },
+        {
+          "site": "wallClock ../../../../../src/lib/calendar.ts:35",
+          "estimated_bytes_per_render": 98324.88,
+          "percent": 1.2425159693541015
+        },
+        {
+          "site": "createMemo ../../../../../node_modules/solid-js/dist/server.js:84",
+          "estimated_bytes_per_render": 88134.032,
+          "percent": 1.1137358337336938
+        },
+        {
+          "site": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:447",
+          "estimated_bytes_per_render": 85734.08,
+          "percent": 1.0834080195966889
+        },
+        {
+          "site": "ssrAttribute ../../../../../node_modules/solid-js/web/dist/server.js:537",
+          "estimated_bytes_per_render": 75769.504,
+          "percent": 0.957487247480388
+        },
+        {
+          "site": "offsetAt ../../../../../src/lib/calendar.ts:46",
+          "estimated_bytes_per_render": 72892.816,
+          "percent": 0.9211349958544587
+        },
+        {
+          "site": "EntryRow ../../../../../src/features/timer/entry-list.tsx:167",
+          "estimated_bytes_per_render": 67168.48,
+          "percent": 0.8487974664931355
+        },
+        {
+          "site": "escape ../../../../../node_modules/solid-js/web/dist/server.js:544",
+          "estimated_bytes_per_render": 61365.92,
+          "percent": 0.775471432806287
+        },
+        {
+          "site": "TimeField ../../../../../src/features/timer/entry-fields.tsx:319",
+          "estimated_bytes_per_render": 59333.664,
+          "percent": 0.7497901349108237
+        },
+        {
+          "site": "TimeInput ../../../../../src/components/date-time/time-input.tsx:26",
+          "estimated_bytes_per_render": 58232.816,
+          "percent": 0.7358788927121906
+        },
+        {
+          "site": "values :0",
+          "estimated_bytes_per_render": 58205.264,
+          "percent": 0.7355307224424925
+        },
+        {
+          "site": " ../../../../../node_modules/class-variance-authority/dist/index.mjs:18",
+          "estimated_bytes_per_render": 54803.328,
+          "percent": 0.6925409948504465
+        },
+        {
+          "site": "serializeProperty ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1939",
+          "estimated_bytes_per_render": 51648.496,
+          "percent": 0.6526738814542303
+        },
+        {
+          "site": "cn ../../../../../src/lib/utils.ts:4",
+          "estimated_bytes_per_render": 47455.552,
+          "percent": 0.599688310776621
+        },
+        {
+          "site": "mergeClasses ../../../../../../../shared/src/utils/mergeClasses.ts:7",
+          "estimated_bytes_per_render": 45898.256,
+          "percent": 0.58000900733876
+        },
+        {
+          "site": "EntryActions ../../../../../src/features/timer/entry-list.tsx:245",
+          "estimated_bytes_per_render": 44863.888,
+          "percent": 0.5669378623936672
+        },
+        {
+          "site": "createSignal ../../../../../node_modules/solid-js/dist/server.js:62",
+          "estimated_bytes_per_render": 40663.776,
+          "percent": 0.5138617108328842
+        },
+        {
+          "site": " ../../../../../../../src/Icon.tsx:58",
+          "estimated_bytes_per_render": 38565.984,
+          "percent": 0.4873522448626916
+        },
+        {
+          "site": "parseSOS ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2662",
+          "estimated_bytes_per_render": 38288.848,
+          "percent": 0.48385012102910113
+        },
+        {
+          "site": "For ../../../../../node_modules/solid-js/dist/server.js:460",
+          "estimated_bytes_per_render": 37500.096,
+          "percent": 0.47388278665900085
+        },
+        {
+          "site": "filter :0",
+          "estimated_bytes_per_render": 34096.496,
+          "percent": 0.4308720313619324
+        },
+        {
+          "site": "join :0",
+          "estimated_bytes_per_render": 33682.752,
+          "percent": 0.42564361382178956
+        },
+        {
+          "site": "ssrHydrationKey ../../../../../node_modules/solid-js/web/dist/server.js:540",
+          "estimated_bytes_per_render": 33035.648,
+          "percent": 0.41746626284172306
+        },
+        {
+          "site": "revive ../../../../../src/lib/api/wire.ts:33",
+          "estimated_bytes_per_render": 32512.416,
+          "percent": 0.410854262748999
+        },
+        {
+          "site": "DateField ../../../../../src/features/timer/entry-fields.tsx:421",
+          "estimated_bytes_per_render": 28593.088,
+          "percent": 0.36132633422127874
+        },
+        {
+          "site": "parseProperties ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2449",
+          "estimated_bytes_per_render": 28327.408,
+          "percent": 0.3579689780491888
+        },
+        {
+          "site": "serialize$1 ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2321",
+          "estimated_bytes_per_render": 27266.736,
+          "percent": 0.34456543361316455
+        },
+        {
+          "site": "memo ../../../../../node_modules/solid-js/web/dist/server.js:136",
+          "estimated_bytes_per_render": 26484.64,
+          "percent": 0.33468221006315396
+        },
+        {
+          "site": "createEntryEditor ../../../../../src/features/timer/entry-fields.tsx:61",
+          "estimated_bytes_per_render": 25435.312,
+          "percent": 0.32142201796233066
+        },
+        {
+          "site": "packageData ext:deno_fetch/22_body.js:384",
+          "estimated_bytes_per_render": 24845.136,
+          "percent": 0.31396405712139674
+        },
+        {
+          "site": "Link$1 ../../../../../node_modules/@solidjs/meta/dist/index.jsx:199",
+          "estimated_bytes_per_render": 24146.912,
+          "percent": 0.30514071078030486
+        },
+        {
+          "site": "startsWith :0",
+          "estimated_bytes_per_render": 23613.696,
+          "percent": 0.29840254445744624
+        },
+        {
+          "site": "map :0",
+          "estimated_bytes_per_render": 23335.168,
+          "percent": 0.2948828301398467
+        },
+        {
+          "site": "~run ../../../../../node_modules/valibot/dist/index.mjs:5664",
+          "estimated_bytes_per_render": 20990.272,
+          "percent": 0.26525074997382403
+        },
+        {
+          "site": "ButtonRoot ../../../../../node_modules/@kobalte/core/dist/chunk/UKTBL2JL.jsx:43",
+          "estimated_bytes_per_render": 20984.288,
+          "percent": 0.26517513111153185
+        },
+        {
+          "site": "construct ../clock.ts:9",
+          "estimated_bytes_per_render": 20718.272,
+          "percent": 0.2618135289605432
+        },
+        {
+          "site": " ../../../../../../../shared/src/build/buildLucideIconNode.ts:40",
+          "estimated_bytes_per_render": 19664.896,
+          "percent": 0.24850218292346343
+        }
+      ]
+    },
+    "v8_inspector": {
+      "profile": "native/crates/render/results/allocation/timer.cpuprofile",
+      "sampled_ms": 9971.468,
+      "buckets_percent": {
+        "Solid": 37.67,
+        "GC": 20.89,
+        "app": 14.07,
+        "idle": 6.44,
+        "TanStack": 5.61,
+        "Lucide": 4.29,
+        "other dependencies": 3.97,
+        "native/unattributed": 2.93,
+        "bundle/other": 1.05,
+        "Deno streams": 0.93,
+        "native ops": 0.73,
+        "Request/Response/Headers": 0.52,
+        "WebIDL": 0.36,
+        "Intl": 0.19,
+        "Deno other": 0.16,
+        "API decoding": 0.12,
+        "URL": 0.08
+      },
+      "top_frames": [
+        {
+          "frame": "(garbage collector) :0",
+          "percent": 20.89
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:408",
+          "percent": 11.35
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:436",
+          "percent": 7.12
+        },
+        {
+          "frame": "splitProps ../../../../../node_modules/solid-js/dist/server.js:434",
+          "percent": 6.47
+        },
+        {
+          "frame": "(idle) :0",
+          "percent": 6.44
+        },
+        {
+          "frame": "(program) :0",
+          "percent": 2.72
+        },
+        {
+          "frame": "createComponent ../../../../../node_modules/solid-js/dist/server.js:398",
+          "percent": 2.18
+        },
+        {
+          "frame": "buildLucideIconNode ../../../../../../../shared/src/build/buildLucideIconNode.ts:15",
+          "percent": 2.08
+        },
+        {
+          "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:658",
+          "percent": 2.03
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:495",
+          "percent": 2
+        },
+        {
+          "frame": "uses12Hours ../../../../../src/lib/date-input.ts:98",
+          "percent": 1.64
+        },
+        {
+          "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:544",
+          "percent": 1.62
+        },
+        {
+          "frame": "formatTimeInput ../../../../../src/lib/date-input.ts:103",
+          "percent": 1.31
+        },
+        {
+          "frame": "get ../../../../../node_modules/solid-js/dist/server.js:419",
+          "percent": 1.15
+        },
+        {
+          "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:204",
+          "percent": 0.85
+        },
+        {
+          "frame": "createMemo ../../../../../node_modules/solid-js/dist/server.js:84",
+          "percent": 0.72
+        },
+        {
+          "frame": "EntryRow ../../../../../src/features/timer/entry-list.tsx:167",
+          "percent": 0.72
+        },
+        {
+          "frame": "dayNumber ../../../../../src/lib/calendar.ts:50",
+          "percent": 0.65
+        },
+        {
+          "frame": "PlainButton ../../../../../src/components/plain-button.tsx:11",
+          "percent": 0.59
+        },
+        {
+          "frame": "wallClock ../../../../../src/lib/calendar.ts:35",
+          "percent": 0.58
+        },
+        {
+          "frame": "construct ../clock.ts:9",
+          "percent": 0.55
+        },
+        {
+          "frame": "TimeInput ../../../../../src/components/date-time/time-input.tsx:26",
+          "percent": 0.53
+        },
+        {
+          "frame": "TimeField ../../../../../src/features/timer/entry-fields.tsx:319",
+          "percent": 0.53
+        },
+        {
+          "frame": "Icon ../../../../../../../src/Icon.tsx:17",
+          "percent": 0.51
+        },
+        {
+          "frame": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:447",
+          "percent": 0.47
+        },
+        {
+          "frame": " ../../../../../../../src/Icon.tsx:43",
+          "percent": 0.43
+        },
+        {
+          "frame": "op_render_encode :0",
+          "percent": 0.39
+        },
+        {
+          "frame": "formatDateTime ../../../../../src/lib/format.ts:38",
+          "percent": 0.38
+        },
+        {
+          "frame": " ../../../../../node_modules/class-variance-authority/dist/index.mjs:18",
+          "percent": 0.36
+        },
+        {
+          "frame": "createDynamic ../../../../../node_modules/solid-js/web/dist/server.js:769",
+          "percent": 0.35
+        }
+      ]
+    },
+    "bun_sampler": {
+      "profile": "native/crates/render/results/allocation/timer.jsc.json",
+      "sampled_ms": 4607,
+      "buckets_percent": {
+        "Solid": 38.44,
+        "native/unattributed": 30.5,
+        "app": 9.83,
+        "other dependencies": 7.38,
+        "TanStack": 5.58,
+        "Intl": 5.38,
+        "Lucide": 2.08,
+        "native ops": 0.43,
+        "API decoding": 0.2,
+        "bundle/other": 0.17
+      },
+      "top_frames": [
+        {
+          "frame": "getOwnPropertyDescriptors :0",
+          "percent": 7.55
+        },
+        {
+          "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:662",
+          "percent": 5.56
+        },
+        {
+          "frame": "formatToParts :0",
+          "percent": 5.38
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:417",
+          "percent": 4.08
+        },
+        {
+          "frame": "encode :0",
+          "percent": 4.08
+        },
+        {
+          "frame": "get ../../../../../node_modules/solid-js/dist/server.js:424",
+          "percent": 3.04
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:441",
+          "percent": 2.73
+        },
+        {
+          "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:562",
+          "percent": 2.69
+        },
+        {
+          "frame": "entries :0",
+          "percent": 2.11
+        },
+        {
+          "frame": "wallClock ../../../../../src/lib/calendar.ts:39",
+          "percent": 1.69
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:440",
+          "percent": 1.58
+        },
+        {
+          "frame": "cloneObject :0",
+          "percent": 1.54
+        },
+        {
+          "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:205",
+          "percent": 1.54
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:525",
+          "percent": 1.48
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:442",
+          "percent": 1.37
+        },
+        {
+          "frame": "copyDataProperties :0",
+          "percent": 1.24
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:414",
+          "percent": 1.17
+        },
+        {
+          "frame": "indexOf :0",
+          "percent": 1.15
+        },
+        {
+          "frame": "createComponent ../../../../../node_modules/solid-js/dist/server.js:402",
+          "percent": 0.93
+        },
+        {
+          "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:563",
+          "percent": 0.89
+        },
+        {
+          "frame": "concat :0",
+          "percent": 0.89
+        },
+        {
+          "frame": "map :1",
+          "percent": 0.87
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:415",
+          "percent": 0.87
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:507",
+          "percent": 0.82
+        },
+        {
+          "frame": "Date :0",
+          "percent": 0.74
+        },
+        {
+          "frame": "r ../../../../../node_modules/clsx/dist/clsx.mjs:1",
+          "percent": 0.69
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:517",
+          "percent": 0.67
+        },
+        {
+          "frame": " :0",
+          "percent": 0.63
+        },
+        {
+          "frame": "(host) :0",
+          "percent": 0.59
+        },
+        {
+          "frame": "getContextId ../../../../../node_modules/solid-js/dist/server.js:383",
+          "percent": 0.56
+        }
+      ]
+    },
+    "v8_perf": {
+      "report": "native/crates/render/results/allocation/timer-v8-perf.txt",
+      "method": "99 Hz cpu-clock; all inherited process threads; measured loop only; conservative named self symbols; counted first stack frames",
+      "samples": 925,
+      "classified_samples": 925,
+      "lost_samples": 0,
+      "accounted_percent": 100.00000000000024,
+      "buckets_percent": {
+        "JIT code/builtins": 27.13513513513524,
+        "other V8 runtime": 33.72972972972982,
+        "other named native": 4.432432432432428,
+        "unresolved": 7.567567567567557,
+        "GC named self symbols": 21.081081081081148,
+        "compiler named self symbols": 3.1351351351351333,
+        "string/encoding named self symbols": 2.0540540540540544,
+        "ICU/Intl named self symbols": 0.8648648648648649
+      },
+      "threads_percent": {
+        "snowtime-render": 77.18918918918898,
+        "V8 DefaultWorke": 22.70270270270278,
+        "tokio-rt-worker": 0.10810810810810811
+      },
+      "top_symbols": [
+        {
+          "thread": "snowtime-render",
+          "symbol": "[unknown]",
+          "percent": 4.756756756756752
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::ConcurrentMarking::RunMajor(v8::JobDelegate*, v8::base::EnumSet<v8::internal::CodeFlushMode, int>, unsigned int, bool)",
+          "percent": 4.216216216216212
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "[unknown]",
+          "percent": 2.7027027027027017
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::LookupIterator::State v8::internal::LookupIterator::LookupInRegularHolder<false>(v8::internal::Tagged<v8::internal::Map>, v8::internal::Tagged<v8::internal::JSReceiver>)",
+          "percent": 1.837837837837838
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::MarkingVisitorBase<v8::internal::MainMarkingVisitor>::ProcessStrongHeapObject<v8::internal::FullHeapObjectSlot>(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 1.7297297297297298
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "std::__Cr::pair<unsigned long, unsigned long> v8::internal::MarkCompactCollector::ProcessMarkingWorklist<(v8::internal::MarkCompactCollector::MarkingWorklistProcessingMode)0>(v8::base::TimeDelta, unsigned long)",
+          "percent": 1.6216216216216217
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:KeyedLoadIC_Megamorphic",
+          "percent": 1.6216216216216217
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 1.4054054054054055
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::Scavenger::Process(v8::JobDelegate*)",
+          "percent": 1.4054054054054055
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::Sweeper::RawSweep(v8::internal::NormalPage*, v8::internal::FreeSpaceTreatmentMode, v8::internal::Sweeper::SweepingMode, bool)",
+          "percent": 1.4054054054054055
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::String::WriteToFlat<unsigned short>(v8::internal::Tagged<v8::internal::String>, unsigned short*, unsigned int, unsigned int, v8::internal::SharedStringAccessGuardIfNeeded const&)",
+          "percent": 1.2972972972972974
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "JS:*get render.js:298:10",
+          "percent": 1.1891891891891893
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "void v8::internal::MarkingVisitorBase<v8::internal::ConcurrentMarkingVisitor>::ProcessStrongHeapObject<v8::internal::FullHeapObjectSlot>(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 1.1891891891891893
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::Scavenger::Process(v8::JobDelegate*)",
+          "percent": 1.0810810810810811
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 0.972972972972973
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:StringAdd_CheckNone",
+          "percent": 0.972972972972973
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::(anonymous namespace)::TryFastAddDataProperty(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::DirectHandle<v8::internal::Name>, v8::internal::DirectHandle<v8::internal::Object>, v8::internal::PropertyAttributes)",
+          "percent": 0.8648648648648649
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::RecordMigratedSlotVisitor::RecordMigratedSlot(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::Tagged<v8::internal::Union<v8::internal::Smi, v8::internal::HeapObject, v8::internal::Weak<v8::internal::HeapObject> > >, unsigned long)",
+          "percent": 0.8648648648648649
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:LoadIC",
+          "percent": 0.8648648648648649
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "_ZN2v88internal10DictionaryINS0_14NameDictionaryENS0_19NameDictionaryShapeEE3AddINS0_7IsolateENS0_12DirectHandleELNS0_14AllocationTypeE0EQsr3stdE16is_convertible_vITL0_0_IT_ENS7_ISA_EEEEET0_IS2_EPSA_SE_NS7_INS0_4NameEEENS7_INS0_6ObjectEEENS0_15PropertyDetailsEPNS0_13InternalIndexE",
+          "percent": 0.8648648648648649
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "JS:*'ssrElement render.js:2774:21",
+          "percent": 0.8648648648648649
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::LookupIterator::Start<false>()",
+          "percent": 0.7567567567567568
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:LoadICGenericBaseline",
+          "percent": 0.7567567567567568
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:BaselineOutOfLinePrologue",
+          "percent": 0.7567567567567568
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::PropertyDescriptor::ToPropertyDescriptor(v8::internal::Isolate*, v8::internal::Handle<v8::internal::Union<v8::internal::Smi, v8::internal::HeapNumber, v8::internal::BigInt, v8::internal::String, v8::internal::Symbol, v8::internal::Boolean, v8::internal::Null, v8::internal::Undefined, v8::internal::JSReceiver> >, v8::internal::PropertyDescriptor*)",
+          "percent": 0.7567567567567568
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:CallFunction_ReceiverIsNullOrUndefined",
+          "percent": 0.7567567567567568
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:Call_ReceiverIsNullOrUndefined",
+          "percent": 0.7567567567567568
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "JS:*'mergeProps render.js:287:21",
+          "percent": 0.6486486486486487
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "void v8::internal::BodyDescriptorBase::IteratePointers<v8::internal::ScavengerPromotedObjectVisitor>(v8::internal::Tagged<v8::internal::HeapObject>, int, int, v8::internal::ScavengerPromotedObjectVisitor*)",
+          "percent": 0.6486486486486487
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:DefineNamedOwnIC",
+          "percent": 0.6486486486486487
+        }
+      ]
+    },
+    "bun_perf": {
+      "report": "native/crates/render/results/allocation/timer-bun-perf.txt",
+      "method": "99 Hz cpu-clock; all inherited process threads; measured loop only; conservative named self symbols; counted first stack frames",
+      "samples": 514,
+      "classified_samples": 514,
+      "lost_samples": 0,
+      "accounted_percent": 100.000000000001,
+      "buckets_percent": {
+        "unresolved": 99.80544747081811,
+        "other named native": 0.19455252918287938
+      },
+      "threads_percent": {
+        "bun": 80.15564202334664,
+        "JITWorker": 19.260700389105025,
+        "mi-scavenger": 0.5836575875486382
+      },
+      "top_symbols": [
+        {
+          "thread": "bun",
+          "symbol": "[unknown]",
+          "percent": 79.96108949416376
+        },
+        {
+          "thread": "JITWorker",
+          "symbol": "[unknown]",
+          "percent": 19.260700389105025
+        },
+        {
+          "thread": "mi-scavenger",
+          "symbol": "[unknown]",
+          "percent": 0.5836575875486382
+        },
+        {
+          "thread": "bun",
+          "symbol": "__vdso_clock_gettime",
+          "percent": 0.19455252918287938
+        }
+      ]
+    }
+  },
+  "week": {
+    "allocation": {
+      "profile": "native/crates/render/results/allocation/week.heapprofile",
+      "count": 500,
+      "estimated_bytes_per_render": 5285129.504,
+      "sample_count": 19532,
+      "estimated_bytes_per_render_by_bucket": {
+        "native/bundle/unattributed": 715035.232,
+        "Deno": 149784,
+        "Solid": 2666615.712,
+        "other dependencies": 412023.472,
+        "TanStack": 663174.512,
+        "app": 605325.92,
+        "Lucide": 73170.656
+      },
+      "estimated_bytes_per_render_by_subsystem": {
+        "other": 2898652.688,
+        "serialization": 422913.456,
+        "router": 155026.32,
+        "query": 85234.736,
+        "Solid prop helpers": 1705998.256,
+        "calendar": 17304.048
+      },
+      "sites": [
+        {
+          "site": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:408",
+          "estimated_bytes_per_render": 1053651.12,
+          "percent": 19.93614573119834
+        },
+        {
+          "site": "splitProps ../../../../../node_modules/solid-js/dist/server.js:434",
+          "estimated_bytes_per_render": 622923.248,
+          "percent": 11.786338395843403
+        },
+        {
+          "site": "Dynamic ../../../../../node_modules/solid-js/web/dist/server.js:778",
+          "estimated_bytes_per_render": 200303.856,
+          "percent": 3.7899517097623043
+        },
+        {
+          "site": "indexOf :0",
+          "estimated_bytes_per_render": 176744.16,
+          "percent": 3.3441784135324
+        },
+        {
+          "site": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:495",
+          "estimated_bytes_per_render": 151541.392,
+          "percent": 2.8673165318902276
+        },
+        {
+          "site": "entries :0",
+          "estimated_bytes_per_render": 130580.208,
+          "percent": 2.4707097130008187
+        },
+        {
+          "site": "createComponent ../../../../../node_modules/solid-js/dist/server.js:398",
+          "estimated_bytes_per_render": 130335.088,
+          "percent": 2.4660717944821813
+        },
+        {
+          "site": "parseProperties ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2449",
+          "estimated_bytes_per_render": 111729.728,
+          "percent": 2.1140395503163814
+        },
+        {
+          "site": "serialize$1 ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2321",
+          "estimated_bytes_per_render": 101462.48,
+          "percent": 1.919772825305588
+        },
+        {
+          "site": "next :0",
+          "estimated_bytes_per_render": 89139.6,
+          "percent": 1.6866114620755375
+        },
+        {
+          "site": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:658",
+          "estimated_bytes_per_render": 84559.152,
+          "percent": 1.5999447494333339
+        },
+        {
+          "site": "Cell ../../../../../src/features/reports/timesheet.tsx:94",
+          "estimated_bytes_per_render": 79479.904,
+          "percent": 1.5038402358891374
+        },
+        {
+          "site": "keys :0",
+          "estimated_bytes_per_render": 79206.592,
+          "percent": 1.4986688961936172
+        },
+        {
+          "site": "createMemo ../../../../../node_modules/solid-js/dist/server.js:84",
+          "estimated_bytes_per_render": 77365.408,
+          "percent": 1.463831831205777
+        },
+        {
+          "site": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:447",
+          "estimated_bytes_per_render": 68954.864,
+          "percent": 1.3046958252926852
+        },
+        {
+          "site": "revive ../../../../../src/lib/api/wire.ts:33",
+          "estimated_bytes_per_render": 67646.672,
+          "percent": 1.2799435084571202
+        },
+        {
+          "site": "children ../../../../../src/features/reports/timesheet.tsx:205",
+          "estimated_bytes_per_render": 62693.12,
+          "percent": 1.1862172904666066
+        },
+        {
+          "site": "Duration ../../../../../src/components/duration.tsx:6",
+          "estimated_bytes_per_render": 53770.128,
+          "percent": 1.0173852496765612
+        },
+        {
+          "site": "serializeProperty ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1939",
+          "estimated_bytes_per_render": 47197.808,
+          "percent": 0.893030302555099
+        },
+        {
+          "site": "buildLucideIconNode ../../../../../../../shared/src/build/buildLucideIconNode.ts:15",
+          "estimated_bytes_per_render": 38293.104,
+          "percent": 0.724544289236777
+        },
+        {
+          "site": "~run ../../../../../node_modules/valibot/dist/index.mjs:5664",
+          "estimated_bytes_per_render": 38032.416,
+          "percent": 0.7196118083996906
+        },
+        {
+          "site": "escape ../../../../../node_modules/solid-js/web/dist/server.js:544",
+          "estimated_bytes_per_render": 37513.392,
+          "percent": 0.7097913489462906
+        },
+        {
+          "site": "~run ../../../../../node_modules/valibot/dist/index.mjs:4440",
+          "estimated_bytes_per_render": 32253.664,
+          "percent": 0.61027197111422
+        },
+        {
+          "site": "packageData ext:deno_fetch/22_body.js:384",
+          "estimated_bytes_per_render": 31727.024,
+          "percent": 0.6003074092316508
+        },
+        {
+          "site": "ssrHydrationKey ../../../../../node_modules/solid-js/web/dist/server.js:540",
+          "estimated_bytes_per_render": 30676.032,
+          "percent": 0.5804215767425025
+        },
+        {
+          "site": "serializeArray ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1920",
+          "estimated_bytes_per_render": 30150.304,
+          "percent": 0.5704742708230901
+        },
+        {
+          "site": "values :0",
+          "estimated_bytes_per_render": 29888.464,
+          "percent": 0.565519992979911
+        },
+        {
+          "site": "set :0",
+          "estimated_bytes_per_render": 29885.12,
+          "percent": 0.5654567211150026
+        },
+        {
+          "site": "split ../../../../../node_modules/solid-js/dist/server.js:436",
+          "estimated_bytes_per_render": 29423.888,
+          "percent": 0.5567297448005921
+        },
+        {
+          "site": "parseObject ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2641",
+          "estimated_bytes_per_render": 28589.84,
+          "percent": 0.5409487123893947
+        },
+        {
+          "site": "startsWith :0",
+          "estimated_bytes_per_render": 28507.872,
+          "percent": 0.5393977948586518
+        },
+        {
+          "site": "Link$1 ../../../../../node_modules/@solidjs/meta/dist/index.jsx:199",
+          "estimated_bytes_per_render": 28348.976,
+          "percent": 0.5363913216988221
+        },
+        {
+          "site": "ssrAttribute ../../../../../node_modules/solid-js/web/dist/server.js:537",
+          "estimated_bytes_per_render": 27004.976,
+          "percent": 0.5109614812572055
+        },
+        {
+          "site": "createNumberNode ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:391",
+          "estimated_bytes_per_render": 26226.96,
+          "percent": 0.4962406310034669
+        },
+        {
+          "site": "ButtonRoot ../../../../../node_modules/@kobalte/core/dist/chunk/UKTBL2JL.jsx:43",
+          "estimated_bytes_per_render": 24656.624,
+          "percent": 0.46652828433700383
+        },
+        {
+          "site": "children ../../../../../src/features/reports/timesheet.tsx:186",
+          "estimated_bytes_per_render": 22819.776,
+          "percent": 0.43177326085820733
+        },
+        {
+          "site": "cn ../../../../../src/lib/utils.ts:4",
+          "estimated_bytes_per_render": 22811.136,
+          "percent": 0.43160978331251126
+        },
+        {
+          "site": "simpleMap ../../../../../node_modules/solid-js/dist/server.js:449",
+          "estimated_bytes_per_render": 22553.312,
+          "percent": 0.4267314922544611
+        },
+        {
+          "site": "createFunction ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1618",
+          "estimated_bytes_per_render": 22481.04,
+          "percent": 0.4253640328583328
+        },
+        {
+          "site": "useLinkProps ../../../../../node_modules/@tanstack/solid-router/dist/source/link.jsx:40",
+          "estimated_bytes_per_render": 20476.736,
+          "percent": 0.3874405723549892
+        },
+        {
+          "site": "chunkToString ext:deno_fetch/22_body.js:71",
+          "estimated_bytes_per_render": 18643.792,
+          "percent": 0.3527594165079517
+        },
+        {
+          "site": "createSignal ../../../../../node_modules/solid-js/dist/server.js:62",
+          "estimated_bytes_per_render": 17572.112,
+          "percent": 0.3324821461177198
+        },
+        {
+          "site": "For ../../../../../node_modules/solid-js/dist/server.js:460",
+          "estimated_bytes_per_render": 17571.504,
+          "percent": 0.33247064214228195
+        },
+        {
+          "site": "push :0",
+          "estimated_bytes_per_render": 17052.208,
+          "percent": 0.32264503617355444
+        },
+        {
+          "site": "join :0",
+          "estimated_bytes_per_render": 15586.72,
+          "percent": 0.29491651979773326
+        },
+        {
+          "site": "MenuTrigger ../../../../../node_modules/@kobalte/core/dist/chunk/FWLJS4DZ.jsx:648",
+          "estimated_bytes_per_render": 13125.376,
+          "percent": 0.24834539986326132
+        },
+        {
+          "site": "Show ../../../../../node_modules/solid-js/dist/server.js:466",
+          "estimated_bytes_per_render": 13108.864,
+          "percent": 0.24803297610926434
+        },
+        {
+          "site": " ../../../../../node_modules/@solidjs/meta/dist/index.jsx:175",
+          "estimated_bytes_per_render": 13108.64,
+          "percent": 0.24802873780252405
+        },
+        {
+          "site": "TabsTrigger$1 ../../../../../node_modules/@kobalte/core/dist/chunk/PTWD4LYA.jsx:424",
+          "estimated_bytes_per_render": 12854.576,
+          "percent": 0.2432215897504713
+        },
+        {
+          "site": " ../../../../../node_modules/class-variance-authority/dist/index.mjs:18",
+          "estimated_bytes_per_render": 12848.992,
+          "percent": 0.24311593481816032
+        }
+      ]
+    },
+    "v8_inspector": {
+      "profile": "native/crates/render/results/allocation/week.cpuprofile",
+      "sampled_ms": 6435.936,
+      "buckets_percent": {
+        "Solid": 31.48,
+        "GC": 17.74,
+        "idle": 14.97,
+        "TanStack": 10.51,
+        "app": 9.17,
+        "other dependencies": 5.04,
+        "native/unattributed": 2.3,
+        "native ops": 2.08,
+        "Lucide": 1.85,
+        "Request/Response/Headers": 1.3,
+        "bundle/other": 1.2,
+        "Deno streams": 0.76,
+        "WebIDL": 0.68,
+        "API decoding": 0.49,
+        "URL": 0.2,
+        "Deno other": 0.2,
+        "Intl": 0.05
+      },
+      "top_frames": [
+        {
+          "frame": "(garbage collector) :0",
+          "percent": 17.74
+        },
+        {
+          "frame": "(idle) :0",
+          "percent": 14.97
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:408",
+          "percent": 9.69
+        },
+        {
+          "frame": "splitProps ../../../../../node_modules/solid-js/dist/server.js:434",
+          "percent": 6.41
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:436",
+          "percent": 6.31
+        },
+        {
+          "frame": "(program) :0",
+          "percent": 2.3
+        },
+        {
+          "frame": "createComponent ../../../../../node_modules/solid-js/dist/server.js:398",
+          "percent": 1.86
+        },
+        {
+          "frame": "formatIsoDateRange ../../../../../src/lib/format.ts:60",
+          "percent": 1.54
+        },
+        {
+          "frame": "get ../../../../../node_modules/solid-js/dist/server.js:419",
+          "percent": 1.28
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:495",
+          "percent": 0.88
+        },
+        {
+          "frame": "serializeString ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:167",
+          "percent": 0.84
+        },
+        {
+          "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:544",
+          "percent": 0.8
+        },
+        {
+          "frame": "buildLucideIconNode ../../../../../../../shared/src/build/buildLucideIconNode.ts:15",
+          "percent": 0.78
+        },
+        {
+          "frame": "structuredClone ext:core/01_core.js:1156",
+          "percent": 0.62
+        },
+        {
+          "frame": "ButtonRoot ../../../../../node_modules/@kobalte/core/dist/chunk/UKTBL2JL.jsx:43",
+          "percent": 0.6
+        },
+        {
+          "frame": "op_send :0",
+          "percent": 0.59
+        },
+        {
+          "frame": "Show ../../../../../node_modules/solid-js/dist/server.js:466",
+          "percent": 0.58
+        },
+        {
+          "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:658",
+          "percent": 0.56
+        },
+        {
+          "frame": "createMemo ../../../../../node_modules/solid-js/dist/server.js:84",
+          "percent": 0.55
+        },
+        {
+          "frame": "Cell ../../../../../src/features/reports/timesheet.tsx:94",
+          "percent": 0.5
+        },
+        {
+          "frame": "packageData ext:deno_fetch/22_body.js:384",
+          "percent": 0.49
+        },
+        {
+          "frame": "revive ../../../../../src/lib/api/wire.ts:33",
+          "percent": 0.49
+        },
+        {
+          "frame": "formatDateInput ../../../../../src/lib/date-input.ts:49",
+          "percent": 0.46
+        },
+        {
+          "frame": "construct ../clock.ts:9",
+          "percent": 0.42
+        },
+        {
+          "frame": " ../entry.tsx:13",
+          "percent": 0.4
+        },
+        {
+          "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:204",
+          "percent": 0.4
+        },
+        {
+          "frame": "serialize ../../../../../node_modules/@tanstack/router-core/node_modules/seroval-plugins/dist/web-CWqRG00W.js:432",
+          "percent": 0.39
+        },
+        {
+          "frame": "readableStreamReaderGenericRelease ext:deno_web/06_streams.js:3173",
+          "percent": 0.39
+        },
+        {
+          "frame": " ../../../../../node_modules/solid-js/dist/server.js:205",
+          "percent": 0.36
+        },
+        {
+          "frame": "hashQueryKeyByOptions ../../../../../node_modules/@tanstack/query-core/build/modern/utils.js:76",
+          "percent": 0.35
+        }
+      ]
+    },
+    "bun_sampler": {
+      "profile": "native/crates/render/results/allocation/week.jsc.json",
+      "sampled_ms": 3001,
+      "buckets_percent": {
+        "Solid": 36.55,
+        "native/unattributed": 33.66,
+        "TanStack": 10.6,
+        "other dependencies": 8.1,
+        "app": 6.96,
+        "Intl": 2.13,
+        "Lucide": 0.77,
+        "native ops": 0.53,
+        "bundle/other": 0.37,
+        "API decoding": 0.33
+      },
+      "top_frames": [
+        {
+          "frame": "getOwnPropertyDescriptors :0",
+          "percent": 7.63
+        },
+        {
+          "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:662",
+          "percent": 6.1
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:417",
+          "percent": 3.8
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:441",
+          "percent": 3.57
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:442",
+          "percent": 3.07
+        },
+        {
+          "frame": "encode :0",
+          "percent": 2.93
+        },
+        {
+          "frame": "get ../../../../../node_modules/solid-js/dist/server.js:424",
+          "percent": 2.23
+        },
+        {
+          "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:562",
+          "percent": 2.2
+        },
+        {
+          "frame": "entries :0",
+          "percent": 1.63
+        },
+        {
+          "frame": "copyDataProperties :0",
+          "percent": 1.57
+        },
+        {
+          "frame": "DateTimeFormat :0",
+          "percent": 1.5
+        },
+        {
+          "frame": "structuredClone :0",
+          "percent": 1.5
+        },
+        {
+          "frame": "cloneObject :0",
+          "percent": 1.37
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:415",
+          "percent": 1.37
+        },
+        {
+          "frame": "indexOf :0",
+          "percent": 1.27
+        },
+        {
+          "frame": "formatRange :0",
+          "percent": 1.27
+        },
+        {
+          "frame": "concat :0",
+          "percent": 1.17
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:414",
+          "percent": 1
+        },
+        {
+          "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:205",
+          "percent": 0.87
+        },
+        {
+          "frame": "json :0",
+          "percent": 0.83
+        },
+        {
+          "frame": "map :1",
+          "percent": 0.83
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:507",
+          "percent": 0.8
+        },
+        {
+          "frame": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:453",
+          "percent": 0.73
+        },
+        {
+          "frame": "stringify :0",
+          "percent": 0.7
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:525",
+          "percent": 0.63
+        },
+        {
+          "frame": "formatToParts :0",
+          "percent": 0.63
+        },
+        {
+          "frame": "Date :0",
+          "percent": 0.6
+        },
+        {
+          "frame": "getContextId ../../../../../node_modules/solid-js/dist/server.js:383",
+          "percent": 0.6
+        },
+        {
+          "frame": "createSerovalNode ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:121",
+          "percent": 0.57
+        },
+        {
+          "frame": "(host) :0",
+          "percent": 0.57
+        }
+      ]
+    },
+    "v8_perf": {
+      "report": "native/crates/render/results/allocation/week-v8-perf.txt",
+      "method": "99 Hz cpu-clock; all inherited process threads; measured loop only; conservative named self symbols; counted first stack frames",
+      "samples": 594,
+      "classified_samples": 594,
+      "lost_samples": 0,
+      "accounted_percent": 100.00000000000014,
+      "buckets_percent": {
+        "unresolved": 9.259259259259261,
+        "JIT code/builtins": 27.441077441077503,
+        "other named native": 6.060606060606063,
+        "compiler named self symbols": 4.545454545454545,
+        "other V8 runtime": 30.303030303030386,
+        "GC named self symbols": 18.855218855218855,
+        "string/encoding named self symbols": 2.3569023569023564,
+        "ICU/Intl named self symbols": 1.1784511784511786
+      },
+      "threads_percent": {
+        "snowtime-render": 76.93602693602696,
+        "V8 DefaultWorke": 22.895622895622925,
+        "tokio-rt-worker": 0.16835016835016836
+      },
+      "top_symbols": [
+        {
+          "thread": "snowtime-render",
+          "symbol": "[unknown]",
+          "percent": 6.060606060606063
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::ConcurrentMarking::RunMajor(v8::JobDelegate*, v8::base::EnumSet<v8::internal::CodeFlushMode, int>, unsigned int, bool)",
+          "percent": 3.1986531986531976
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "[unknown]",
+          "percent": 3.0303030303030294
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::LookupIterator::State v8::internal::LookupIterator::LookupInRegularHolder<false>(v8::internal::Tagged<v8::internal::Map>, v8::internal::Tagged<v8::internal::JSReceiver>)",
+          "percent": 3.0303030303030294
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::String::WriteToFlat<unsigned short>(v8::internal::Tagged<v8::internal::String>, unsigned short*, unsigned int, unsigned int, v8::internal::SharedStringAccessGuardIfNeeded const&)",
+          "percent": 2.02020202020202
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "void v8::internal::MarkingVisitorBase<v8::internal::ConcurrentMarkingVisitor>::ProcessStrongHeapObject<v8::internal::FullHeapObjectSlot>(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 2.02020202020202
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 1.8518518518518516
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:KeyedLoadIC_Megamorphic",
+          "percent": 1.8518518518518516
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 1.6835016835016834
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:LoadICGenericBaseline",
+          "percent": 1.6835016835016834
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::JSObject::MigrateToMap(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::DirectHandle<v8::internal::Map>, int)",
+          "percent": 1.3468013468013469
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "std::__Cr::pair<unsigned long, unsigned long> v8::internal::MarkCompactCollector::ProcessMarkingWorklist<(v8::internal::MarkCompactCollector::MarkingWorklistProcessingMode)0>(v8::base::TimeDelta, unsigned long)",
+          "percent": 1.0101010101010102
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::Scavenger::Process(v8::JobDelegate*)",
+          "percent": 1.0101010101010102
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::Scavenger::Process(v8::JobDelegate*)",
+          "percent": 1.0101010101010102
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "JS:*get render.js:298:10",
+          "percent": 0.8417508417508418
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::Sweeper::RawSweep(v8::internal::NormalPage*, v8::internal::FreeSpaceTreatmentMode, v8::internal::Sweeper::SweepingMode, bool)",
+          "percent": 0.8417508417508418
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:BaselineOutOfLinePrologue",
+          "percent": 0.8417508417508418
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::PropertyDescriptor::ToPropertyDescriptor(v8::internal::Isolate*, v8::internal::Handle<v8::internal::Union<v8::internal::Smi, v8::internal::HeapNumber, v8::internal::BigInt, v8::internal::String, v8::internal::Symbol, v8::internal::Boolean, v8::internal::Null, v8::internal::Undefined, v8::internal::JSReceiver> >, v8::internal::PropertyDescriptor*)",
+          "percent": 0.8417508417508418
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::LookupIterator::Start<false>()",
+          "percent": 0.8417508417508418
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "void v8::internal::BodyDescriptorBase::IteratePointers<v8::internal::ScavengerPromotedObjectVisitor>(v8::internal::Tagged<v8::internal::HeapObject>, int, int, v8::internal::ScavengerPromotedObjectVisitor*)",
+          "percent": 0.8417508417508418
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::HeapObject::SizeFromMap(v8::internal::Tagged<v8::internal::Map>) const",
+          "percent": 0.8417508417508418
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:CallFunction_ReceiverIsAny",
+          "percent": 0.6734006734006734
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::MarkingVisitorBase<v8::internal::MainMarkingVisitor>::ProcessStrongHeapObject<v8::internal::FullHeapObjectSlot>(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 0.6734006734006734
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:RecordWriteSaveFP",
+          "percent": 0.6734006734006734
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:BaselineLeaveFrame",
+          "percent": 0.6734006734006734
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::RelocIteratorBase<v8::internal::RelocInfo>::next()",
+          "percent": 0.6734006734006734
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::AccessorPair::GetComponent(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::NativeContext>, v8::internal::DirectHandle<v8::internal::AccessorPair>, v8::internal::AccessorComponent)",
+          "percent": 0.6734006734006734
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:CallFunction_ReceiverIsNotNullOrUndefined",
+          "percent": 0.6734006734006734
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::JSReceiver::GetOwnPropertyDescriptor(v8::internal::LookupIterator*, v8::internal::PropertyDescriptor*)",
+          "percent": 0.6734006734006734
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::RecordMigratedSlotVisitor::RecordMigratedSlot(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::Tagged<v8::internal::Union<v8::internal::Smi, v8::internal::HeapObject, v8::internal::Weak<v8::internal::HeapObject> > >, unsigned long)",
+          "percent": 0.6734006734006734
+        }
+      ]
+    },
+    "bun_perf": {
+      "report": "native/crates/render/results/allocation/week-bun-perf.txt",
+      "method": "99 Hz cpu-clock; all inherited process threads; measured loop only; conservative named self symbols; counted first stack frames",
+      "samples": 354,
+      "classified_samples": 354,
+      "lost_samples": 0,
+      "accounted_percent": 99.99999999999996,
+      "buckets_percent": {
+        "unresolved": 99.71751412429374,
+        "other named native": 0.2824858757062147
+      },
+      "threads_percent": {
+        "bun": 76.27118644067794,
+        "JITWorker": 22.88135593220338,
+        "mi-scavenger": 0.847457627118644
+      },
+      "top_symbols": [
+        {
+          "thread": "bun",
+          "symbol": "[unknown]",
+          "percent": 75.98870056497172
+        },
+        {
+          "thread": "JITWorker",
+          "symbol": "[unknown]",
+          "percent": 22.88135593220338
+        },
+        {
+          "thread": "mi-scavenger",
+          "symbol": "[unknown]",
+          "percent": 0.847457627118644
+        },
+        {
+          "thread": "bun",
+          "symbol": "__vdso_clock_gettime",
+          "percent": 0.2824858757062147
+        }
+      ]
+    }
+  },
+  "month": {
+    "allocation": {
+      "profile": "native/crates/render/results/allocation/month.heapprofile",
+      "count": 500,
+      "estimated_bytes_per_render": 7505089.68,
+      "sample_count": 27146,
+      "estimated_bytes_per_render_by_bucket": {
+        "native/bundle/unattributed": 881665.056,
+        "Deno": 168137.488,
+        "Solid": 2997010.336,
+        "other dependencies": 481497.296,
+        "TanStack": 873096.496,
+        "app": 2032870.432,
+        "Lucide": 70812.576
+      },
+      "estimated_bytes_per_render_by_subsystem": {
+        "other": 4828145.648,
+        "serialization": 635457.104,
+        "router": 146110.944,
+        "query": 91528.448,
+        "Solid prop helpers": 1788640.592,
+        "calendar": 15206.944
+      },
+      "sites": [
+        {
+          "site": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:408",
+          "estimated_bytes_per_render": 1123420.208,
+          "percent": 14.968777934709502
+        },
+        {
+          "site": "splitProps ../../../../../node_modules/solid-js/dist/server.js:434",
+          "estimated_bytes_per_render": 638691.712,
+          "percent": 8.5101143255093
+        },
+        {
+          "site": "Duration ../../../../../src/components/duration.tsx:6",
+          "estimated_bytes_per_render": 374554.64,
+          "percent": 4.990675074784716
+        },
+        {
+          "site": "Cell ../../../../../src/features/reports/timesheet.tsx:94",
+          "estimated_bytes_per_render": 371436.768,
+          "percent": 4.949131640489604
+        },
+        {
+          "site": "indexOf :0",
+          "estimated_bytes_per_render": 346675.392,
+          "percent": 4.619203857401475
+        },
+        {
+          "site": "children ../../../../../src/features/reports/timesheet.tsx:205",
+          "estimated_bytes_per_render": 310308.496,
+          "percent": 4.134640746891115
+        },
+        {
+          "site": "get children ../../../../../src/features/reports/timesheet.tsx:99",
+          "estimated_bytes_per_render": 249101.6,
+          "percent": 3.3191022442252813
+        },
+        {
+          "site": "parseSOS ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2662",
+          "estimated_bytes_per_render": 213479.392,
+          "percent": 2.8444615734425174
+        },
+        {
+          "site": "Dynamic ../../../../../node_modules/solid-js/web/dist/server.js:778",
+          "estimated_bytes_per_render": 201355.328,
+          "percent": 2.6829170147904216
+        },
+        {
+          "site": "createComponent ../../../../../node_modules/solid-js/dist/server.js:398",
+          "estimated_bytes_per_render": 174919.232,
+          "percent": 2.3306747748282737
+        },
+        {
+          "site": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:495",
+          "estimated_bytes_per_render": 173563.872,
+          "percent": 2.312615563575784
+        },
+        {
+          "site": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:658",
+          "estimated_bytes_per_render": 150292.8,
+          "percent": 2.0025450248850323
+        },
+        {
+          "site": "revive ../../../../../src/lib/api/wire.ts:33",
+          "estimated_bytes_per_render": 131629.136,
+          "percent": 1.7538649318311677
+        },
+        {
+          "site": "entries :0",
+          "estimated_bytes_per_render": 128217.536,
+          "percent": 1.7084077801452733
+        },
+        {
+          "site": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:447",
+          "estimated_bytes_per_render": 110640.608,
+          "percent": 1.4742076739581345
+        },
+        {
+          "site": "next :0",
+          "estimated_bytes_per_render": 88882.32,
+          "percent": 1.1842939097298035
+        },
+        {
+          "site": "settingsSignal ../../../../../src/lib/display-format.ts:18",
+          "estimated_bytes_per_render": 87858.816,
+          "percent": 1.1706564444410477
+        },
+        {
+          "site": "serializeArray ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1920",
+          "estimated_bytes_per_render": 87304.4,
+          "percent": 1.1632692442390642
+        },
+        {
+          "site": "createMemo ../../../../../node_modules/solid-js/dist/server.js:84",
+          "estimated_bytes_per_render": 83953.872,
+          "percent": 1.1186258336622568
+        },
+        {
+          "site": "serializeProperty ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1939",
+          "estimated_bytes_per_render": 82584.784,
+          "percent": 1.1003837065408657
+        },
+        {
+          "site": "~run ../../../../../node_modules/valibot/dist/index.mjs:4440",
+          "estimated_bytes_per_render": 78157.92,
+          "percent": 1.0413988817252882
+        },
+        {
+          "site": "parseProperties ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2449",
+          "estimated_bytes_per_render": 68718.096,
+          "percent": 0.9156199183485306
+        },
+        {
+          "site": "keys :0",
+          "estimated_bytes_per_render": 68712.128,
+          "percent": 0.91554039897895
+        },
+        {
+          "site": "cn ../../../../../src/lib/utils.ts:4",
+          "estimated_bytes_per_render": 62399.92,
+          "percent": 0.8314347017902656
+        },
+        {
+          "site": "~run ../../../../../node_modules/valibot/dist/index.mjs:5644",
+          "estimated_bytes_per_render": 51125.84,
+          "percent": 0.6812155774266511
+        },
+        {
+          "site": "ssrHydrationKey ../../../../../node_modules/solid-js/web/dist/server.js:540",
+          "estimated_bytes_per_render": 47717.696,
+          "percent": 0.6358044744909697
+        },
+        {
+          "site": "serializeProperties ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1955",
+          "estimated_bytes_per_render": 47716.48,
+          "percent": 0.6357882721529319
+        },
+        {
+          "site": "simpleMap ../../../../../node_modules/solid-js/dist/server.js:449",
+          "estimated_bytes_per_render": 46422.704,
+          "percent": 0.6185496240465976
+        },
+        {
+          "site": "parseObject ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2641",
+          "estimated_bytes_per_render": 43813.456,
+          "percent": 0.5837832440131482
+        },
+        {
+          "site": "escape ../../../../../node_modules/solid-js/web/dist/server.js:544",
+          "estimated_bytes_per_render": 40658.736,
+          "percent": 0.5417488362377569
+        },
+        {
+          "site": "~run ../../../../../node_modules/valibot/dist/index.mjs:5664",
+          "estimated_bytes_per_render": 39601.184,
+          "percent": 0.5276577054839403
+        },
+        {
+          "site": "packageData ext:deno_fetch/22_body.js:384",
+          "estimated_bytes_per_render": 37504.608,
+          "percent": 0.49972231644272636
+        },
+        {
+          "site": "startsWith :0",
+          "estimated_bytes_per_render": 37033.872,
+          "percent": 0.49345009292413944
+        },
+        {
+          "site": "buildLucideIconNode ../../../../../../../shared/src/build/buildLucideIconNode.ts:15",
+          "estimated_bytes_per_render": 35669.04,
+          "percent": 0.475264673985881
+        },
+        {
+          "site": "ssrAttribute ../../../../../node_modules/solid-js/web/dist/server.js:537",
+          "estimated_bytes_per_render": 34607.696,
+          "percent": 0.46112301752002516
+        },
+        {
+          "site": "get fallback ../../../../../src/features/reports/timesheet.tsx:99",
+          "estimated_bytes_per_render": 31200.224,
+          "percent": 0.4157208685079963
+        },
+        {
+          "site": "serializeArrayItem ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1909",
+          "estimated_bytes_per_render": 29625.488,
+          "percent": 0.3947386275602772
+        },
+        {
+          "site": "set :0",
+          "estimated_bytes_per_render": 29360.672,
+          "percent": 0.39121014207521104
+        },
+        {
+          "site": "get picked ../../../../../src/features/reports/reports-view.tsx:373",
+          "estimated_bytes_per_render": 27270.384,
+          "percent": 0.3633585361767456
+        },
+        {
+          "site": "For ../../../../../node_modules/solid-js/dist/server.js:460",
+          "estimated_bytes_per_render": 27013.328,
+          "percent": 0.3599334471910001
+        },
+        {
+          "site": "split ../../../../../node_modules/solid-js/dist/server.js:436",
+          "estimated_bytes_per_render": 26528.672,
+          "percent": 0.3534757495396111
+        },
+        {
+          "site": "Show ../../../../../node_modules/solid-js/dist/server.js:466",
+          "estimated_bytes_per_render": 24645.168,
+          "percent": 0.32837939386221965
+        },
+        {
+          "site": "values :0",
+          "estimated_bytes_per_render": 24382.8,
+          "percent": 0.3248835262418876
+        },
+        {
+          "site": "TableHead ../../../../../src/components/ui/table.tsx:44",
+          "estimated_bytes_per_render": 23604.816,
+          "percent": 0.31451744091617573
+        },
+        {
+          "site": "createFunction ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1618",
+          "estimated_bytes_per_render": 22873.616,
+          "percent": 0.3047747192276056
+        },
+        {
+          "site": "chunkToString ext:deno_fetch/22_body.js:71",
+          "estimated_bytes_per_render": 21773.344,
+          "percent": 0.290114374755879
+        },
+        {
+          "site": "children ../../../../../src/features/reports/timesheet.tsx:186",
+          "estimated_bytes_per_render": 21509.376,
+          "percent": 0.28659718826970765
+        },
+        {
+          "site": "useLinkProps ../../../../../node_modules/@tanstack/solid-router/dist/source/link.jsx:40",
+          "estimated_bytes_per_render": 20477.088,
+          "percent": 0.2728426824074939
+        },
+        {
+          "site": "ButtonRoot ../../../../../node_modules/@kobalte/core/dist/chunk/UKTBL2JL.jsx:43",
+          "estimated_bytes_per_render": 20458,
+          "percent": 0.2725883483380308
+        },
+        {
+          "site": "formatDateTime ../../../../../src/lib/format.ts:38",
+          "estimated_bytes_per_render": 18615.664,
+          "percent": 0.2480405270786851
+        }
+      ]
+    },
+    "v8_inspector": {
+      "profile": "native/crates/render/results/allocation/month.cpuprofile",
+      "sampled_ms": 8667.26,
+      "buckets_percent": {
+        "Solid": 33.78,
+        "GC": 23.27,
+        "app": 11.82,
+        "TanStack": 8.34,
+        "native/unattributed": 5.92,
+        "other dependencies": 4.92,
+        "idle": 4.69,
+        "Lucide": 1.47,
+        "native ops": 1.46,
+        "Deno streams": 1.2,
+        "Request/Response/Headers": 1.12,
+        "bundle/other": 0.7,
+        "API decoding": 0.63,
+        "WebIDL": 0.36,
+        "Deno other": 0.2,
+        "URL": 0.08,
+        "Intl": 0.04
+      },
+      "top_frames": [
+        {
+          "frame": "(garbage collector) :0",
+          "percent": 23.27
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:408",
+          "percent": 8.5
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:436",
+          "percent": 6.22
+        },
+        {
+          "frame": "(program) :0",
+          "percent": 5.56
+        },
+        {
+          "frame": "splitProps ../../../../../node_modules/solid-js/dist/server.js:434",
+          "percent": 5.01
+        },
+        {
+          "frame": "(idle) :0",
+          "percent": 4.69
+        },
+        {
+          "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:658",
+          "percent": 2.72
+        },
+        {
+          "frame": "createComponent ../../../../../node_modules/solid-js/dist/server.js:398",
+          "percent": 2.28
+        },
+        {
+          "frame": "get ../../../../../node_modules/solid-js/dist/server.js:419",
+          "percent": 1.42
+        },
+        {
+          "frame": "getContextId ../../../../../node_modules/solid-js/dist/server.js:380",
+          "percent": 1.41
+        },
+        {
+          "frame": "children ../../../../../src/features/reports/timesheet.tsx:205",
+          "percent": 1.22
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:495",
+          "percent": 1.2
+        },
+        {
+          "frame": "Duration ../../../../../src/components/duration.tsx:6",
+          "percent": 1.16
+        },
+        {
+          "frame": "Cell ../../../../../src/features/reports/timesheet.tsx:94",
+          "percent": 1
+        },
+        {
+          "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:544",
+          "percent": 0.93
+        },
+        {
+          "frame": "formatIsoDateRange ../../../../../src/lib/format.ts:60",
+          "percent": 0.85
+        },
+        {
+          "frame": "op_render_encode :0",
+          "percent": 0.85
+        },
+        {
+          "frame": "formatDateTime ../../../../../src/lib/format.ts:38",
+          "percent": 0.71
+        },
+        {
+          "frame": "parseProperties ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2449",
+          "percent": 0.68
+        },
+        {
+          "frame": "get children ../../../../../src/features/reports/timesheet.tsx:99",
+          "percent": 0.66
+        },
+        {
+          "frame": "packageData ext:deno_fetch/22_body.js:384",
+          "percent": 0.54
+        },
+        {
+          "frame": "parseSOS ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2662",
+          "percent": 0.52
+        },
+        {
+          "frame": "revive ../../../../../src/lib/api/wire.ts:33",
+          "percent": 0.5
+        },
+        {
+          "frame": "createMemo ../../../../../node_modules/solid-js/dist/server.js:84",
+          "percent": 0.5
+        },
+        {
+          "frame": "buildLucideIconNode ../../../../../../../shared/src/build/buildLucideIconNode.ts:15",
+          "percent": 0.44
+        },
+        {
+          "frame": "r ../../../../../node_modules/clsx/dist/clsx.mjs:1",
+          "percent": 0.43
+        },
+        {
+          "frame": "Show ../../../../../node_modules/solid-js/dist/server.js:466",
+          "percent": 0.41
+        },
+        {
+          "frame": "Icon ../../../../../../../src/Icon.tsx:17",
+          "percent": 0.41
+        },
+        {
+          "frame": " ../../../../../node_modules/@solidjs/meta/dist/index.jsx:172",
+          "percent": 0.39
+        },
+        {
+          "frame": "cleanNode ../../../../../node_modules/solid-js/dist/server.js:126",
+          "percent": 0.39
+        }
+      ]
+    },
+    "bun_sampler": {
+      "profile": "native/crates/render/results/allocation/month.jsc.json",
+      "sampled_ms": 3826,
+      "buckets_percent": {
+        "Solid": 36.77,
+        "native/unattributed": 34,
+        "TanStack": 9.88,
+        "app": 9.33,
+        "other dependencies": 6.87,
+        "Intl": 1.33,
+        "Lucide": 0.58,
+        "native ops": 0.58,
+        "API decoding": 0.42,
+        "bundle/other": 0.24
+      },
+      "top_frames": [
+        {
+          "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:662",
+          "percent": 9.1
+        },
+        {
+          "frame": "getOwnPropertyDescriptors :0",
+          "percent": 6.59
+        },
+        {
+          "frame": "encode :0",
+          "percent": 4.1
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:417",
+          "percent": 3.16
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:442",
+          "percent": 2.9
+        },
+        {
+          "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:562",
+          "percent": 2.72
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:441",
+          "percent": 2.64
+        },
+        {
+          "frame": "cloneObject :0",
+          "percent": 2.59
+        },
+        {
+          "frame": "get ../../../../../node_modules/solid-js/dist/server.js:424",
+          "percent": 2.14
+        },
+        {
+          "frame": "indexOf :0",
+          "percent": 1.62
+        },
+        {
+          "frame": "entries :0",
+          "percent": 1.46
+        },
+        {
+          "frame": "concat :0",
+          "percent": 1.39
+        },
+        {
+          "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:205",
+          "percent": 1.23
+        },
+        {
+          "frame": "Cell ../../../../../src/features/reports/timesheet.tsx:99",
+          "percent": 1.18
+        },
+        {
+          "frame": "json :0",
+          "percent": 1.1
+        },
+        {
+          "frame": "structuredClone :0",
+          "percent": 1.02
+        },
+        {
+          "frame": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:453",
+          "percent": 0.99
+        },
+        {
+          "frame": "children ../../../../../src/features/reports/timesheet.tsx:206",
+          "percent": 0.99
+        },
+        {
+          "frame": "DateTimeFormat :0",
+          "percent": 0.91
+        },
+        {
+          "frame": "getContextId ../../../../../node_modules/solid-js/dist/server.js:383",
+          "percent": 0.91
+        },
+        {
+          "frame": "formatRange :0",
+          "percent": 0.84
+        },
+        {
+          "frame": "copyDataProperties :0",
+          "percent": 0.84
+        },
+        {
+          "frame": "createComponent ../../../../../node_modules/solid-js/dist/server.js:402",
+          "percent": 0.78
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:414",
+          "percent": 0.73
+        },
+        {
+          "frame": "createSerovalNode ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:121",
+          "percent": 0.73
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:415",
+          "percent": 0.71
+        },
+        {
+          "frame": "startsWith :0",
+          "percent": 0.68
+        },
+        {
+          "frame": "map :1",
+          "percent": 0.68
+        },
+        {
+          "frame": "format :0",
+          "percent": 0.6
+        },
+        {
+          "frame": "serialize$1 ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2324",
+          "percent": 0.6
+        }
+      ]
+    },
+    "v8_perf": {
+      "report": "native/crates/render/results/allocation/month-v8-perf.txt",
+      "method": "99 Hz cpu-clock; all inherited process threads; measured loop only; conservative named self symbols; counted first stack frames",
+      "samples": 790,
+      "classified_samples": 790,
+      "lost_samples": 0,
+      "accounted_percent": 100.00000000000024,
+      "buckets_percent": {
+        "JIT code/builtins": 24.43037974683552,
+        "unresolved": 7.341772151898725,
+        "GC named self symbols": 24.177215189873493,
+        "other V8 runtime": 31.392405063291253,
+        "compiler named self symbols": 3.4177215189873396,
+        "string/encoding named self symbols": 3.291139240506327,
+        "other named native": 5.063291139240501,
+        "ICU/Intl named self symbols": 0.8860759493670887
+      },
+      "threads_percent": {
+        "snowtime-render": 74.93670886075864,
+        "V8 DefaultWorke": 24.936708860759573,
+        "tokio-rt-worker": 0.12658227848101267
+      },
+      "top_symbols": [
+        {
+          "thread": "snowtime-render",
+          "symbol": "[unknown]",
+          "percent": 5.316455696202526
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::ConcurrentMarking::RunMajor(v8::JobDelegate*, v8::base::EnumSet<v8::internal::CodeFlushMode, int>, unsigned int, bool)",
+          "percent": 3.544303797468352
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::String::WriteToFlat<unsigned short>(v8::internal::Tagged<v8::internal::String>, unsigned short*, unsigned int, unsigned int, v8::internal::SharedStringAccessGuardIfNeeded const&)",
+          "percent": 2.7848101265822773
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "void v8::internal::MarkingVisitorBase<v8::internal::ConcurrentMarkingVisitor>::ProcessStrongHeapObject<v8::internal::FullHeapObjectSlot>(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 2.7848101265822773
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 2.40506329113924
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "[unknown]",
+          "percent": 1.89873417721519
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "std::__Cr::pair<unsigned long, unsigned long> v8::internal::MarkCompactCollector::ProcessMarkingWorklist<(v8::internal::MarkCompactCollector::MarkingWorklistProcessingMode)0>(v8::base::TimeDelta, unsigned long)",
+          "percent": 1.89873417721519
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::HeapObject::SizeFromMap(v8::internal::Tagged<v8::internal::Map>) const",
+          "percent": 1.6455696202531647
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::Scavenger::Process(v8::JobDelegate*)",
+          "percent": 1.518987341772152
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 1.518987341772152
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:KeyedLoadIC_Megamorphic",
+          "percent": 1.2658227848101267
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::Scavenger::Process(v8::JobDelegate*)",
+          "percent": 1.2658227848101267
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:LoadIC",
+          "percent": 1.2658227848101267
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::LookupIterator::State v8::internal::LookupIterator::LookupInRegularHolder<false>(v8::internal::Tagged<v8::internal::Map>, v8::internal::Tagged<v8::internal::JSReceiver>)",
+          "percent": 1.139240506329114
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::BodyDescriptorBase::IteratePointers<v8::internal::ScavengerPromotedObjectVisitor>(v8::internal::Tagged<v8::internal::HeapObject>, int, int, v8::internal::ScavengerPromotedObjectVisitor*)",
+          "percent": 1.139240506329114
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:LoadICGenericBaseline",
+          "percent": 1.0126582278481013
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:FastNewClosure",
+          "percent": 1.0126582278481013
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::Sweeper::RawSweep(v8::internal::NormalPage*, v8::internal::FreeSpaceTreatmentMode, v8::internal::Sweeper::SweepingMode, bool)",
+          "percent": 0.8860759493670887
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "void v8::internal::BodyDescriptorBase::IteratePointers<v8::internal::ScavengerPromotedObjectVisitor>(v8::internal::Tagged<v8::internal::HeapObject>, int, int, v8::internal::ScavengerPromotedObjectVisitor*)",
+          "percent": 0.8860759493670887
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::RecordMigratedSlotVisitor::RecordMigratedSlot(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::Tagged<v8::internal::Union<v8::internal::Smi, v8::internal::HeapObject, v8::internal::Weak<v8::internal::HeapObject> > >, unsigned long)",
+          "percent": 0.759493670886076
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:Call_ReceiverIsNullOrUndefined",
+          "percent": 0.759493670886076
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::JSObject::MigrateToMap(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::DirectHandle<v8::internal::Map>, int)",
+          "percent": 0.6329113924050633
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::RecordMigratedSlotVisitor::RecordMigratedSlot(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::Tagged<v8::internal::Union<v8::internal::Smi, v8::internal::HeapObject, v8::internal::Weak<v8::internal::HeapObject> > >, unsigned long)",
+          "percent": 0.6329113924050633
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::Builtin_ObjectGetOwnPropertyDescriptors(int, unsigned long*, v8::internal::Isolate*)",
+          "percent": 0.6329113924050633
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:CallFunction_ReceiverIsNullOrUndefined",
+          "percent": 0.6329113924050633
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::Scavenger::SemiSpaceCopyObject<v8::internal::FullHeapObjectSlot>(v8::internal::Tagged<v8::internal::Map>, v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>, v8::base::StrongAlias<v8::internal::HeapObjectSizeTag, unsigned int>, v8::internal::ObjectFields)::{lambda(v8::internal::Tagged<v8::internal::HeapObject>)#1}::operator()(v8::internal::Tagged<v8::internal::HeapObject>) const",
+          "percent": 0.6329113924050633
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::Factory::AllocateRaw(int, v8::internal::AllocationType, v8::internal::AllocationAlignment, v8::internal::AllocationHint)",
+          "percent": 0.6329113924050633
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::MarkingBarrier::MarkValueLocal(v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 0.5063291139240507
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::LookupIterator::NextInternal<false>(v8::internal::Tagged<v8::internal::Map>, v8::internal::Tagged<v8::internal::JSReceiver>)",
+          "percent": 0.5063291139240507
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::FactoryBase<v8::internal::Factory>::NewFixedArrayWithFiller(v8::internal::DirectHandle<v8::internal::Map>, unsigned int, v8::internal::DirectHandle<v8::internal::HeapObject>, v8::internal::AllocationType)",
+          "percent": 0.5063291139240507
+        }
+      ]
+    },
+    "bun_perf": {
+      "report": "native/crates/render/results/allocation/month-bun-perf.txt",
+      "method": "99 Hz cpu-clock; all inherited process threads; measured loop only; conservative named self symbols; counted first stack frames",
+      "samples": 441,
+      "classified_samples": 441,
+      "lost_samples": 0,
+      "accounted_percent": 100.0000000000007,
+      "buckets_percent": {
+        "unresolved": 100.0000000000007
+      },
+      "threads_percent": {
+        "bun": 80.49886621315217,
+        "JITWorker": 18.59410430839004,
+        "mi-scavenger": 0.9070294784580499
+      },
+      "top_symbols": [
+        {
+          "thread": "bun",
+          "symbol": "[unknown]",
+          "percent": 80.49886621315217
+        },
+        {
+          "thread": "JITWorker",
+          "symbol": "[unknown]",
+          "percent": 18.59410430839004
+        },
+        {
+          "thread": "mi-scavenger",
+          "symbol": "[unknown]",
+          "percent": 0.9070294784580499
+        }
+      ]
+    }
+  },
+  "year": {
+    "allocation": {
+      "profile": "native/crates/render/results/allocation/year.heapprofile",
+      "count": 500,
+      "estimated_bytes_per_render": 9805802.176,
+      "sample_count": 34946,
+      "estimated_bytes_per_render_by_bucket": {
+        "native/bundle/unattributed": 1069717.232,
+        "Deno": 189104.752,
+        "Solid": 3255224.096,
+        "other dependencies": 557550.8,
+        "TanStack": 1064991.504,
+        "app": 3602072.208,
+        "Lucide": 67141.584
+      },
+      "estimated_bytes_per_render_by_subsystem": {
+        "other": 6922545.664,
+        "serialization": 819484.032,
+        "router": 158964.848,
+        "query": 87066.976,
+        "Solid prop helpers": 1803582.576,
+        "calendar": 14158.08
+      },
+      "sites": [
+        {
+          "site": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:408",
+          "estimated_bytes_per_render": 1101359.12,
+          "percent": 11.231708535744378
+        },
+        {
+          "site": "Duration ../../../../../src/components/duration.tsx:6",
+          "estimated_bytes_per_render": 789496.736,
+          "percent": 8.051322286842757
+        },
+        {
+          "site": "Cell ../../../../../src/features/reports/timesheet.tsx:94",
+          "estimated_bytes_per_render": 749952.272,
+          "percent": 7.648046111265951
+        },
+        {
+          "site": "splitProps ../../../../../node_modules/solid-js/dist/server.js:434",
+          "estimated_bytes_per_render": 678058.096,
+          "percent": 6.914866156076123
+        },
+        {
+          "site": "children ../../../../../src/features/reports/timesheet.tsx:205",
+          "estimated_bytes_per_render": 609597.472,
+          "percent": 6.216701714542115
+        },
+        {
+          "site": "indexOf :0",
+          "estimated_bytes_per_render": 516525.408,
+          "percent": 5.267548730120333
+        },
+        {
+          "site": "get children ../../../../../src/features/reports/timesheet.tsx:99",
+          "estimated_bytes_per_render": 494007.408,
+          "percent": 5.037909180027088
+        },
+        {
+          "site": "parseSOS ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2662",
+          "estimated_bytes_per_render": 297403.872,
+          "percent": 3.032937710368103
+        },
+        {
+          "site": "createComponent ../../../../../node_modules/solid-js/dist/server.js:398",
+          "estimated_bytes_per_render": 247567.184,
+          "percent": 2.5247009837290846
+        },
+        {
+          "site": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:658",
+          "estimated_bytes_per_render": 229898.592,
+          "percent": 2.3445159087818825
+        },
+        {
+          "site": "Dynamic ../../../../../node_modules/solid-js/web/dist/server.js:778",
+          "estimated_bytes_per_render": 185358.096,
+          "percent": 1.8902899800861739
+        },
+        {
+          "site": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:495",
+          "estimated_bytes_per_render": 175923.6,
+          "percent": 1.7940765767290143
+        },
+        {
+          "site": "revive ../../../../../src/lib/api/wire.ts:33",
+          "estimated_bytes_per_render": 164151.056,
+          "percent": 1.6740196574816155
+        },
+        {
+          "site": "serializeArray ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1920",
+          "estimated_bytes_per_render": 130563.824,
+          "percent": 1.3314955947159421
+        },
+        {
+          "site": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:447",
+          "estimated_bytes_per_render": 117719.552,
+          "percent": 1.2005091463921451
+        },
+        {
+          "site": "entries :0",
+          "estimated_bytes_per_render": 113533.344,
+          "percent": 1.1578180138885152
+        },
+        {
+          "site": "~run ../../../../../node_modules/valibot/dist/index.mjs:4440",
+          "estimated_bytes_per_render": 106209.312,
+          "percent": 1.0831272148233884
+        },
+        {
+          "site": "cn ../../../../../src/lib/utils.ts:4",
+          "estimated_bytes_per_render": 103299.568,
+          "percent": 1.0534535180898188
+        },
+        {
+          "site": "createMemo ../../../../../node_modules/solid-js/dist/server.js:84",
+          "estimated_bytes_per_render": 94441.936,
+          "percent": 0.963122999066303
+        },
+        {
+          "site": "serializeProperty ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1939",
+          "estimated_bytes_per_render": 89663.616,
+          "percent": 0.914393482457299
+        },
+        {
+          "site": "next :0",
+          "estimated_bytes_per_render": 89401.84,
+          "percent": 0.9117238793457789
+        },
+        {
+          "site": "useSettings ../../../../../src/lib/display-format.ts:36",
+          "estimated_bytes_per_render": 88387.072,
+          "percent": 0.901375230843735
+        },
+        {
+          "site": "get fallback ../../../../../src/features/reports/timesheet.tsx:99",
+          "estimated_bytes_per_render": 82586,
+          "percent": 0.8422156445510572
+        },
+        {
+          "site": "parseProperties ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2449",
+          "estimated_bytes_per_render": 75798.192,
+          "percent": 0.7729932813198943
+        },
+        {
+          "site": "keys :0",
+          "estimated_bytes_per_render": 75792.992,
+          "percent": 0.7729402514921794
+        },
+        {
+          "site": "~run ../../../../../node_modules/valibot/dist/index.mjs:5644",
+          "estimated_bytes_per_render": 72624.96,
+          "percent": 0.7406325224238339
+        },
+        {
+          "site": "simpleMap ../../../../../node_modules/solid-js/dist/server.js:449",
+          "estimated_bytes_per_render": 71862.336,
+          "percent": 0.7328552494755122
+        },
+        {
+          "site": "TableHead ../../../../../src/components/ui/table.tsx:44",
+          "estimated_bytes_per_render": 62691.488,
+          "percent": 0.6393305399678502
+        },
+        {
+          "site": "For ../../../../../node_modules/solid-js/dist/server.js:460",
+          "estimated_bytes_per_render": 62680.976,
+          "percent": 0.6392233381315157
+        },
+        {
+          "site": "serializeArrayItem ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1909",
+          "estimated_bytes_per_render": 61611.184,
+          "percent": 0.6283135524678976
+        },
+        {
+          "site": "escape ../../../../../node_modules/solid-js/web/dist/server.js:544",
+          "estimated_bytes_per_render": 55614.976,
+          "percent": 0.5671639607019541
+        },
+        {
+          "site": "get picked ../../../../../src/features/reports/reports-view.tsx:373",
+          "estimated_bytes_per_render": 53229.952,
+          "percent": 0.542841381506573
+        },
+        {
+          "site": "startsWith :0",
+          "estimated_bytes_per_render": 46917.472,
+          "percent": 0.478466434034657
+        },
+        {
+          "site": "parseObject ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2641",
+          "estimated_bytes_per_render": 46700.72,
+          "percent": 0.4762559876467979
+        },
+        {
+          "site": "~run ../../../../../node_modules/valibot/dist/index.mjs:5664",
+          "estimated_bytes_per_render": 46423.44,
+          "percent": 0.47342827406433696
+        },
+        {
+          "site": "serializeProperties ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1955",
+          "estimated_bytes_per_render": 43784.08,
+          "percent": 0.4465119652032434
+        },
+        {
+          "site": "packageData ext:deno_fetch/22_body.js:384",
+          "estimated_bytes_per_render": 42229.168,
+          "percent": 0.4306549045355736
+        },
+        {
+          "site": "ssrHydrationKey ../../../../../node_modules/solid-js/web/dist/server.js:540",
+          "estimated_bytes_per_render": 39590.208,
+          "percent": 0.4037426748919965
+        },
+        {
+          "site": "Show ../../../../../node_modules/solid-js/dist/server.js:466",
+          "estimated_bytes_per_render": 38016.352,
+          "percent": 0.38769242248274377
+        },
+        {
+          "site": "values :0",
+          "estimated_bytes_per_render": 36967.152,
+          "percent": 0.3769926349368768
+        },
+        {
+          "site": "children ../../../../../src/features/reports/timesheet.tsx:186",
+          "estimated_bytes_per_render": 35936.656,
+          "percent": 0.36648359160208294
+        },
+        {
+          "site": "buildLucideIconNode ../../../../../../../shared/src/build/buildLucideIconNode.ts:15",
+          "estimated_bytes_per_render": 34622.24,
+          "percent": 0.3530791196740537
+        },
+        {
+          "site": "createFunction ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:1618",
+          "estimated_bytes_per_render": 33044.864,
+          "percent": 0.33699297015065544
+        },
+        {
+          "site": "set :0",
+          "estimated_bytes_per_render": 30996.288,
+          "percent": 0.3161015023927809
+        },
+        {
+          "site": "ssrAttribute ../../../../../node_modules/solid-js/web/dist/server.js:537",
+          "estimated_bytes_per_render": 30150.88,
+          "percent": 0.30747999458723735
+        },
+        {
+          "site": "get fallback ../../../../../src/components/duration.tsx:14",
+          "estimated_bytes_per_render": 28314.192,
+          "percent": 0.28874936993222083
+        },
+        {
+          "site": "chunkToString ext:deno_fetch/22_body.js:71",
+          "estimated_bytes_per_render": 27383.344,
+          "percent": 0.27925654126514576
+        },
+        {
+          "site": "Link$1 ../../../../../node_modules/@solidjs/meta/dist/index.jsx:199",
+          "estimated_bytes_per_render": 27036.624,
+          "percent": 0.2757206755218147
+        },
+        {
+          "site": "ButtonRoot ../../../../../node_modules/@kobalte/core/dist/chunk/UKTBL2JL.jsx:43",
+          "estimated_bytes_per_render": 25965.6,
+          "percent": 0.26479832586824564
+        },
+        {
+          "site": "split ../../../../../node_modules/solid-js/dist/server.js:436",
+          "estimated_bytes_per_render": 24165.36,
+          "percent": 0.24643939951333566
+        }
+      ]
+    },
+    "v8_inspector": {
+      "profile": "native/crates/render/results/allocation/year.cpuprofile",
+      "sampled_ms": 10373.231,
+      "buckets_percent": {
+        "Solid": 28.73,
+        "GC": 27.36,
+        "app": 13.92,
+        "TanStack": 8.7,
+        "idle": 7.37,
+        "other dependencies": 3.35,
+        "native/unattributed": 2.52,
+        "native ops": 2.48,
+        "Lucide": 1.57,
+        "bundle/other": 1.44,
+        "Request/Response/Headers": 1.06,
+        "WebIDL": 0.48,
+        "API decoding": 0.38,
+        "Deno streams": 0.32,
+        "URL": 0.17,
+        "Deno other": 0.14,
+        "Intl": 0.02,
+        "encoding": 0.01
+      },
+      "top_frames": [
+        {
+          "frame": "(garbage collector) :0",
+          "percent": 27.36
+        },
+        {
+          "frame": "(idle) :0",
+          "percent": 7.37
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:408",
+          "percent": 5.36
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:436",
+          "percent": 5.25
+        },
+        {
+          "frame": "splitProps ../../../../../node_modules/solid-js/dist/server.js:434",
+          "percent": 4.66
+        },
+        {
+          "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:658",
+          "percent": 3.99
+        },
+        {
+          "frame": "(program) :0",
+          "percent": 2.52
+        },
+        {
+          "frame": "Duration ../../../../../src/components/duration.tsx:6",
+          "percent": 2.05
+        },
+        {
+          "frame": "Cell ../../../../../src/features/reports/timesheet.tsx:94",
+          "percent": 1.67
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:495",
+          "percent": 1.56
+        },
+        {
+          "frame": "op_render_encode :0",
+          "percent": 1.34
+        },
+        {
+          "frame": "get ../../../../../node_modules/solid-js/dist/server.js:419",
+          "percent": 1.1
+        },
+        {
+          "frame": "children ../../../../../src/features/reports/timesheet.tsx:205",
+          "percent": 1.1
+        },
+        {
+          "frame": "Show ../../../../../node_modules/solid-js/dist/server.js:466",
+          "percent": 0.89
+        },
+        {
+          "frame": "createComponent ../../../../../node_modules/solid-js/dist/server.js:398",
+          "percent": 0.85
+        },
+        {
+          "frame": "formatIsoDateRange ../../../../../src/lib/format.ts:60",
+          "percent": 0.81
+        },
+        {
+          "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:544",
+          "percent": 0.79
+        },
+        {
+          "frame": "get children ../../../../../src/features/reports/timesheet.tsx:99",
+          "percent": 0.78
+        },
+        {
+          "frame": "formatDateTime ../../../../../src/lib/format.ts:38",
+          "percent": 0.68
+        },
+        {
+          "frame": "construct ../clock.ts:9",
+          "percent": 0.66
+        },
+        {
+          "frame": " ../../../../../node_modules/@tanstack/router-core/dist/esm/searchParams.js:20",
+          "percent": 0.63
+        },
+        {
+          "frame": "nextHydrateContext ../../../../../node_modules/solid-js/dist/server.js:388",
+          "percent": 0.59
+        },
+        {
+          "frame": "getContextId ../../../../../node_modules/solid-js/dist/server.js:380",
+          "percent": 0.56
+        },
+        {
+          "frame": "createMemo ../../../../../node_modules/solid-js/dist/server.js:84",
+          "percent": 0.49
+        },
+        {
+          "frame": "buildLucideIconNode ../../../../../../../shared/src/build/buildLucideIconNode.ts:15",
+          "percent": 0.47
+        },
+        {
+          "frame": " ../entry.tsx:13",
+          "percent": 0.47
+        },
+        {
+          "frame": "hashQueryKeyByOptions ../../../../../node_modules/@tanstack/query-core/build/modern/utils.js:76",
+          "percent": 0.45
+        },
+        {
+          "frame": "advanceByteMatcher ../../../../../node_modules/@tanstack/router-core/dist/esm/ssr/htmlBoundaryScanner.js:13",
+          "percent": 0.42
+        },
+        {
+          "frame": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:447",
+          "percent": 0.42
+        },
+        {
+          "frame": "Icon ../../../../../../../src/Icon.tsx:17",
+          "percent": 0.4
+        }
+      ]
+    },
+    "bun_sampler": {
+      "profile": "native/crates/render/results/allocation/year.jsc.json",
+      "sampled_ms": 6155,
+      "buckets_percent": {
+        "Solid": 36.52,
+        "native/unattributed": 32.41,
+        "app": 11.13,
+        "TanStack": 10.04,
+        "other dependencies": 7.12,
+        "Intl": 1.04,
+        "Lucide": 0.73,
+        "native ops": 0.5,
+        "API decoding": 0.29,
+        "bundle/other": 0.21
+      },
+      "top_frames": [
+        {
+          "frame": "injectAssets ../../../../../node_modules/solid-js/web/dist/server.js:662",
+          "percent": 8.16
+        },
+        {
+          "frame": "getOwnPropertyDescriptors :0",
+          "percent": 6.58
+        },
+        {
+          "frame": "cloneObject :0",
+          "percent": 4.01
+        },
+        {
+          "frame": "encode :0",
+          "percent": 3.98
+        },
+        {
+          "frame": "escape ../../../../../node_modules/solid-js/web/dist/server.js:562",
+          "percent": 2.88
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:417",
+          "percent": 2.6
+        },
+        {
+          "frame": "concat :0",
+          "percent": 2.52
+        },
+        {
+          "frame": "getContextId ../../../../../node_modules/solid-js/dist/server.js:383",
+          "percent": 2
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:441",
+          "percent": 1.97
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:414",
+          "percent": 1.74
+        },
+        {
+          "frame": "Cell ../../../../../src/features/reports/timesheet.tsx:99",
+          "percent": 1.69
+        },
+        {
+          "frame": "split ../../../../../node_modules/solid-js/dist/server.js:442",
+          "percent": 1.67
+        },
+        {
+          "frame": "createSerovalNode ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:121",
+          "percent": 1.46
+        },
+        {
+          "frame": "indexOf :0",
+          "percent": 1.41
+        },
+        {
+          "frame": "ssrAttribute ../../../../../node_modules/solid-js/web/dist/server.js:538",
+          "percent": 1.36
+        },
+        {
+          "frame": "get ../../../../../node_modules/solid-js/dist/server.js:424",
+          "percent": 1.25
+        },
+        {
+          "frame": "entries :0",
+          "percent": 1.22
+        },
+        {
+          "frame": "mergeProps ../../../../../node_modules/solid-js/dist/server.js:415",
+          "percent": 1.2
+        },
+        {
+          "frame": "json :0",
+          "percent": 1.14
+        },
+        {
+          "frame": "get ../../../../../node_modules/tailwind-merge/dist/bundle-mjs.mjs:205",
+          "percent": 1.07
+        },
+        {
+          "frame": "children ../../../../../src/features/reports/timesheet.tsx:206",
+          "percent": 1.06
+        },
+        {
+          "frame": "Duration ../../../../../src/components/duration.tsx:14",
+          "percent": 1.04
+        },
+        {
+          "frame": "ssr ../../../../../node_modules/solid-js/web/dist/server.js:453",
+          "percent": 1.02
+        },
+        {
+          "frame": "formatRange :0",
+          "percent": 0.76
+        },
+        {
+          "frame": "structuredClone :0",
+          "percent": 0.75
+        },
+        {
+          "frame": "ssrElement ../../../../../node_modules/solid-js/web/dist/server.js:525",
+          "percent": 0.71
+        },
+        {
+          "frame": "copyDataProperties :0",
+          "percent": 0.7
+        },
+        {
+          "frame": "Duration ../../../../../src/components/duration.tsx:7",
+          "percent": 0.7
+        },
+        {
+          "frame": "parse :0",
+          "percent": 0.68
+        },
+        {
+          "frame": "serialize$1 ../../../../../node_modules/@tanstack/router-core/node_modules/seroval/dist/index.js:2324",
+          "percent": 0.67
+        }
+      ]
+    },
+    "v8_perf": {
+      "report": "native/crates/render/results/allocation/year-v8-perf.txt",
+      "method": "99 Hz cpu-clock; all inherited process threads; measured loop only; conservative named self symbols; counted first stack frames",
+      "samples": 996,
+      "classified_samples": 996,
+      "lost_samples": 0,
+      "accounted_percent": 99.99999999999974,
+      "buckets_percent": {
+        "JIT code/builtins": 23.795180722891494,
+        "GC named self symbols": 27.51004016064248,
+        "other V8 runtime": 30.020080321285036,
+        "compiler named self symbols": 2.7108433734939745,
+        "unresolved": 8.132530120481938,
+        "other named native": 3.313253012048191,
+        "string/encoding named self symbols": 3.614457831325299,
+        "ICU/Intl named self symbols": 0.9036144578313254
+      },
+      "threads_percent": {
+        "snowtime-render": 74.49799196787265,
+        "V8 DefaultWorke": 25.40160642570273,
+        "tokio-rt-worker": 0.10040160642570281
+      },
+      "top_symbols": [
+        {
+          "thread": "snowtime-render",
+          "symbol": "[unknown]",
+          "percent": 5.722891566265064
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::ConcurrentMarking::RunMajor(v8::JobDelegate*, v8::base::EnumSet<v8::internal::CodeFlushMode, int>, unsigned int, bool)",
+          "percent": 4.718875502008032
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::String::WriteToFlat<unsigned short>(v8::internal::Tagged<v8::internal::String>, unsigned short*, unsigned int, unsigned int, v8::internal::SharedStringAccessGuardIfNeeded const&)",
+          "percent": 3.212851405622488
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "[unknown]",
+          "percent": 2.4096385542168663
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 2.208835341365461
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "std::__Cr::pair<unsigned long, unsigned long> v8::internal::MarkCompactCollector::ProcessMarkingWorklist<(v8::internal::MarkCompactCollector::MarkingWorklistProcessingMode)0>(v8::base::TimeDelta, unsigned long)",
+          "percent": 2.208835341365461
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "void v8::internal::MarkingVisitorBase<v8::internal::ConcurrentMarkingVisitor>::ProcessStrongHeapObject<v8::internal::FullHeapObjectSlot>(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 2.108433734939758
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 1.9076305220883527
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "void v8::internal::MarkingVisitorBase<v8::internal::MainMarkingVisitor>::ProcessStrongHeapObject<v8::internal::FullHeapObjectSlot>(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 1.80722891566265
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::Scavenger::Process(v8::JobDelegate*)",
+          "percent": 1.6064257028112445
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::Scavenger::Process(v8::JobDelegate*)",
+          "percent": 1.6064257028112445
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::HeapObject::SizeFromMap(v8::internal::Tagged<v8::internal::Map>) const",
+          "percent": 1.5060240963855418
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:LoadICGenericBaseline",
+          "percent": 1.3052208835341363
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::LookupIterator::State v8::internal::LookupIterator::LookupInRegularHolder<false>(v8::internal::Tagged<v8::internal::Map>, v8::internal::Tagged<v8::internal::JSReceiver>)",
+          "percent": 1.2048192771084336
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:KeyedLoadIC_Megamorphic",
+          "percent": 1.104417670682731
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:StringAdd_CheckNone",
+          "percent": 1.0040160642570282
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::Factory::AllocateRaw(int, v8::internal::AllocationType, v8::internal::AllocationAlignment, v8::internal::AllocationHint)",
+          "percent": 1.0040160642570282
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "void v8::internal::ConcurrentMarkingVisitor::RecordSlot<v8::internal::FullHeapObjectSlot, (v8::internal::RecordYoungSlot)0>(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::FullHeapObjectSlot, v8::internal::Tagged<v8::internal::HeapObject>)",
+          "percent": 0.9036144578313254
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:CallFunction_ReceiverIsNullOrUndefined",
+          "percent": 0.8032128514056226
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::(anonymous namespace)::RememberedSetUpdatingItem::Process()",
+          "percent": 0.8032128514056226
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::RecordMigratedSlotVisitor::RecordMigratedSlot(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::Tagged<v8::internal::Union<v8::internal::Smi, v8::internal::HeapObject, v8::internal::Weak<v8::internal::HeapObject> > >, unsigned long)",
+          "percent": 0.8032128514056226
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::JSObject::MigrateToMap(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::JSObject>, v8::internal::DirectHandle<v8::internal::Map>, int)",
+          "percent": 0.8032128514056226
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:CloneObjectIC",
+          "percent": 0.8032128514056226
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::Sweeper::RawSweep(v8::internal::NormalPage*, v8::internal::FreeSpaceTreatmentMode, v8::internal::Sweeper::SweepingMode, bool)",
+          "percent": 0.8032128514056226
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:RecordWriteSaveFP",
+          "percent": 0.7028112449799198
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "v8::internal::RecordMigratedSlotVisitor::RecordMigratedSlot(v8::internal::Tagged<v8::internal::HeapObject>, v8::internal::Tagged<v8::internal::Union<v8::internal::Smi, v8::internal::HeapObject, v8::internal::Weak<v8::internal::HeapObject> > >, unsigned long)",
+          "percent": 0.7028112449799198
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "Builtin:LoadIC",
+          "percent": 0.7028112449799198
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "JS:*'parseSOS render.js:8012:19",
+          "percent": 0.7028112449799198
+        },
+        {
+          "thread": "snowtime-render",
+          "symbol": "v8::internal::Dictionary<v8::internal::NameDictionary, v8::internal::NameDictionaryShape>::SetEntry(v8::internal::InternalIndex, v8::internal::Tagged<v8::internal::Object>, v8::internal::Tagged<v8::internal::Object>, v8::internal::PropertyDetails)",
+          "percent": 0.6024096385542169
+        },
+        {
+          "thread": "V8 DefaultWorke",
+          "symbol": "void v8::internal::BodyDescriptorBase::IteratePointers<v8::internal::ScavengerPromotedObjectVisitor>(v8::internal::Tagged<v8::internal::HeapObject>, int, int, v8::internal::ScavengerPromotedObjectVisitor*)",
+          "percent": 0.6024096385542169
+        }
+      ]
+    },
+    "bun_perf": {
+      "report": "native/crates/render/results/allocation/year-bun-perf.txt",
+      "method": "99 Hz cpu-clock; all inherited process threads; measured loop only; conservative named self symbols; counted first stack frames",
+      "samples": 509,
+      "classified_samples": 509,
+      "lost_samples": 0,
+      "accounted_percent": 99.99999999999883,
+      "buckets_percent": {
+        "unresolved": 99.6070726915509,
+        "other named native": 0.3929273084479371
+      },
+      "threads_percent": {
+        "bun": 83.69351669941,
+        "JITWorker": 15.127701375245593,
+        "mi-scavenger": 1.1787819253438114
+      },
+      "top_symbols": [
+        {
+          "thread": "bun",
+          "symbol": "[unknown]",
+          "percent": 83.30058939096207
+        },
+        {
+          "thread": "JITWorker",
+          "symbol": "[unknown]",
+          "percent": 15.127701375245593
+        },
+        {
+          "thread": "mi-scavenger",
+          "symbol": "[unknown]",
+          "percent": 1.1787819253438114
+        },
+        {
+          "thread": "bun",
+          "symbol": "__vdso_gettimeofday",
+          "percent": 0.19646365422396855
+        },
+        {
+          "thread": "bun",
+          "symbol": "pthread_mutex_lock",
+          "percent": 0.19646365422396855
+        }
+      ]
+    }
+  }
+}

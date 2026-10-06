@@ -1,6 +1,6 @@
 # 081.13: Render allocations and the remaining engine gap
 
-Status: todo
+Status: done (scoped measurements and selection; engine gap remains open)
 
 Task 081.12's WSL isolate profiles put Solid, app rendering, and GC ahead of the
 web API JS layers. Solid accounts for 26–33% of V8 main-thread self samples and
@@ -25,11 +25,26 @@ the calendar's wallClock/Intl path. Attribute native symbols and allocation
 counts before choosing a fix. Existing calendar/date-input formatter caches
 already avoid repeated formatter construction.
 
+## Recorded investigation
+
+[The WSL report](server-rendering/render-allocations-wsl.md) contains allocation-site
+estimates, named GC/compiler self samples on every page and thread, and profiler
+coverage/overhead for both engines. Bun's sampler does not expose matching allocation
+sites or named GC CPU, and its release perf symbols are mostly unresolved. These are
+limits on comparing costs, not evidence that Bun has no GC.
+
+Keep the compatible server-only Solid `mergeProps` own-key adapter. Reject the cached
+render-call and bulk descriptor candidates. Timer, week, and month improve in all three
+pairs; a mixed year batch has three additional improving pairs. The report preserves
+raw measurements and the remaining gap. No application frontend or browser-client
+source changes are made. A broader review includes a separate heap-headroom diagnostic;
+production memory-policy changes require a host-pressure follow-up.
+
 ## Acceptance criteria
 
-- [ ] Allocation sites, bytes per page, and GC/compiler CPU recorded for all four pages
-- [ ] Sampling coverage and profiler overhead recorded for both engines
-- [ ] At least one candidate tested in three alternating original/candidate rounds
-- [ ] Only consistent whole-render CPU wins kept, with byte-identical HTML and hydration
-- [ ] Any frontend change reviewed separately for browser semantics and render savings
-- [ ] Remaining CPU difference to Bun recorded without assigning unnamed samples to GC
+- [x] Allocation sites, bytes per page, and GC/compiler CPU recorded for all four pages
+- [x] Sampling coverage and profiler overhead recorded for both engines
+- [x] At least one candidate tested in three alternating original/candidate rounds
+- [x] Only consistent whole-render CPU wins kept, with byte-identical HTML and hydration
+- [x] Any frontend change reviewed separately for browser semantics and render savings
+- [x] Remaining CPU difference to Bun recorded without assigning unnamed samples to GC

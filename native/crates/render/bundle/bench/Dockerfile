@@ -10,3 +10,4 @@ FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y --no-install-recommends linux-perf binutils && rm -rf /var/lib/apt/lists/*
 COPY --from=build /web-api-bench /usr/local/bin/web-api-bench
 COPY --from=build /render-bench /usr/local/bin/render-bench
+COPY --from=oven/bun:1.4.2 /usr/local/bin/bun /usr/local/bin/bun

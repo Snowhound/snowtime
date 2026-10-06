@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { closeSync, openSync, readFileSync, readSync, writeFileSync, writeSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { ApiAnswer, ApiInput, PageInput } from './contract'
 
@@ -40,7 +40,7 @@ globalThis.renderManifest = JSON.parse(
   readFileSync(resolve(import.meta.dir, 'dist/manifest.json'), 'utf8'),
 )
 const started = performance.now()
-await import(resolve(import.meta.dir, 'dist/render.js'))
+await import(process.env.BUN_RENDER_BUNDLE ?? resolve(import.meta.dir, 'dist/render.js'))
 
 async function render() {
   status = 0
@@ -58,19 +58,57 @@ for (let i = 0; i < 50; i++) await render()
 await Bun.sleep(1500)
 const profiler = process.env.BUN_RENDER_PROFILE ? await import('bun:jsc') : undefined
 const cpu = process.cpuUsage()
-const measured = performance.now()
+let loopCpu: NodeJS.CpuUsage
+let loopElapsed = 0
 const times: number[] = []
+function perfControl(command: string) {
+  const path = process.env.RENDER_PERF_CONTROL
+  if (!path) return
+  const control = openSync(path, 'w')
+  writeSync(control, command + '\n')
+  closeSync(control)
+  if (process.env.RENDER_PERF_ACK) {
+    const ack = openSync(process.env.RENDER_PERF_ACK, 'r')
+    const buffer = Buffer.alloc(32)
+    readSync(ack, buffer)
+    closeSync(ack)
+    if (!buffer.toString().startsWith('ack')) throw new Error('Missing perf acknowledgement')
+  }
+}
+function cgroupCpuUs() {
+  try {
+    const value = readFileSync('/sys/fs/cgroup/cpu.stat', 'utf8').match(/^usage_usec (\d+)$/m)
+    return value ? Number(value[1]) : undefined
+  } catch {
+    return undefined
+  }
+}
+let cgroupCpuMs: number | undefined
 async function measuredRenders() {
+  perfControl('enable')
+  const cgroupStart = cgroupCpuUs()
+  const startCpu = process.cpuUsage()
+  const measured = performance.now()
   for (let i = 0; i < count; i++) {
     const begin = performance.now()
     await render()
     times.push(performance.now() - begin)
   }
+  loopElapsed = performance.now() - measured
+  loopCpu = process.cpuUsage(startCpu)
+  const cgroupEnd = cgroupCpuUs()
+  cgroupCpuMs =
+    cgroupStart !== undefined && cgroupEnd !== undefined
+      ? (cgroupEnd - cgroupStart) / 1000 / count
+      : undefined
+  perfControl('disable')
 }
 const profile = profiler ? await profiler.profile(measuredRenders, 1000) : await measuredRenders()
-const elapsed = performance.now() - measured
+const elapsed = loopElapsed
 const used = process.cpuUsage(cpu)
+const serializeCpu = process.cpuUsage()
 if (profile) writeFileSync(process.env.BUN_RENDER_PROFILE!, JSON.stringify(profile))
+const serialization = process.cpuUsage(serializeCpu)
 times.sort((a, b) => a - b)
 console.log(
   JSON.stringify({
@@ -82,7 +120,11 @@ console.log(
     pages_per_s: (count * 1000) / elapsed,
     p50_ms: times[Math.floor(count / 2)],
     p95_ms: times[Math.floor((count * 95) / 100)],
-    cpu_ms: (used.user + used.system) / 1000 / count,
+    cgroup_cpu_ms: cgroupCpuMs,
+    cpu_ms: (loopCpu!.user + loopCpu!.system) / 1000 / count,
+    profile_total_cpu_ms: (used.user + used.system) / 1000,
+    profile_serialization_cpu_ms: (serialization.user + serialization.system) / 1000,
+    profile_outside_loop_cpu_ms: (used.user + used.system - loopCpu!.user - loopCpu!.system) / 1000,
     peak_rss_mb: process.resourceUsage().maxRSS / 1024,
   }),
 )
