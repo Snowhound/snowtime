@@ -431,10 +431,26 @@ function datasetPaths(name: DatasetName, day = new Date().toISOString().slice(0,
 
 // Returns the dataset's files, generating them first when today has none. Older files of the
 // same dataset are removed.
-export async function dataset(name: DatasetName) {
-  const paths = datasetPaths(name)
-  if (existsSync(paths.database) && existsSync(paths.users)) return paths
+export async function dataset(name: DatasetName, day?: string) {
+  if (day && !/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error('Dataset date is YYYY-MM-DD')
   const folder = join(CACHE, 'stress')
+  if (day && existsSync(folder)) {
+    const preserved = readdirSync(folder).filter(
+      (file) =>
+        file.startsWith(`${name}-${day}-`) &&
+        file.endsWith('.db') &&
+        existsSync(join(folder, file.replace(/\.db$/, '.users.json'))),
+    )
+    if (preserved.length > 1) throw new Error(`Ambiguous preserved ${name} dataset for ${day}`)
+    if (preserved.length === 1) {
+      const database = join(folder, preserved[0])
+      return { database, users: database.replace(/\.db$/, '.users.json') }
+    }
+  }
+  const paths = datasetPaths(name, day)
+  if (existsSync(paths.database) && existsSync(paths.users)) return paths
+  if (day && day !== new Date().toISOString().slice(0, 10))
+    throw new Error(`No preserved ${name} dataset for ${day}; generate a fresh matched pair`)
   mkdirSync(folder, { recursive: true })
   for (const old of readdirSync(folder)) {
     if (old.startsWith(`${name}-`)) rmSync(join(folder, old), { force: true })

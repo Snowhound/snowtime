@@ -1,6 +1,6 @@
 //! Shared request checks, with one connection held from session lookup through the rule.
-use crate::auth::session::{Session, find_session};
-use crate::auth::{SessionConfig, signed_in_user};
+use crate::auth::SessionConfig;
+use crate::auth::session::Session;
 use crate::rate_limit::{MemoryStore, WRITES_PER_USER};
 use crate::schemas::{Empty, Validate, decode};
 use crate::scope::{Scope, resolve_scope};
@@ -30,6 +30,7 @@ pub struct Request {
     params: Vec<(String, String)>,
 }
 
+#[derive(Debug)]
 pub struct Response {
     pub status: u16,
     pub body: Vec<u8>,
@@ -55,6 +56,9 @@ impl IntoResponse for Response {
             "application/json; charset=UTF-8".parse().unwrap(),
         );
         headers.insert(header::CACHE_CONTROL, "no-store".parse().unwrap());
+        if self.status == 503 {
+            headers.insert(header::RETRY_AFTER, "1".parse().unwrap());
+        }
         if let Some(cookie) = self.set_cookie {
             headers.insert(header::SET_COOKIE, cookie.parse().unwrap());
         }
@@ -66,14 +70,28 @@ impl IntoResponse for Response {
 }
 
 pub struct App {
-    db: Mutex<Connection>,
+    pub(crate) db: Mutex<Connection>,
+    pub(crate) db_gate: crate::admission::Gate,
+    pub(crate) hash_gate: crate::admission::Gate,
+    readers: Option<crate::connections::Readers>,
     pub(crate) config: Config,
     pub(crate) session: SessionConfig,
     rate_limits: MemoryStore,
 }
 impl App {
     pub fn open(config: Config) -> rusqlite::Result<Arc<Self>> {
+        Self::open_with_readers(config, 0)
+    }
+    pub fn open_with_readers(config: Config, count: usize) -> rusqlite::Result<Arc<Self>> {
+        Self::open_with_limits(config, count, crate::Limits::for_readers(count))
+    }
+    pub fn open_with_limits(
+        config: Config,
+        count: usize,
+        limits: crate::Limits,
+    ) -> rusqlite::Result<Arc<Self>> {
         let db = Connection::open(&config.database_path)?;
+        db.pragma_update(None, "journal_mode", "WAL")?;
         db.pragma_update(None, "foreign_keys", "ON")?;
         db.busy_timeout(std::time::Duration::from_secs(5))?;
         // Patch combinations and list lengths otherwise churn rusqlite's 16-entry cache.
@@ -83,7 +101,18 @@ impl App {
             secret: config.secret.clone(),
             secure: config.secure(),
         };
+        let readers = if count == 0 {
+            None
+        } else {
+            Some(crate::connections::Readers::open(
+                &config.database_path,
+                count,
+            )?)
+        };
         Ok(Arc::new(Self {
+            db_gate: crate::admission::Gate::new(limits.db_calls, limits.queue_timeout),
+            hash_gate: crate::admission::Gate::new(limits.hashes, limits.queue_timeout),
+            readers,
             db: Mutex::new(db),
             config,
             session,
@@ -95,7 +124,15 @@ impl App {
     }
     fn user(&self, db: &Connection, cookie: Option<&str>, write: bool) -> Result<String> {
         let now = clock::now();
-        let user = signed_in_user(db, &self.session, cookie, now)?.ok_or(AppError {
+        let user = crate::auth::session::find_session_with_writer(
+            db,
+            &self.db,
+            &self.session,
+            cookie,
+            now,
+        )?
+        .map(|s| s.user_id)
+        .ok_or(AppError {
             code: Code::Unauthenticated,
             key: Key::SignInRequired,
         })?;
@@ -205,6 +242,13 @@ fn input(request: &Request) -> Result<Value> {
     Ok(Value::Object(fields))
 }
 pub(crate) fn unavailable_or(db: &Connection, error: &rusqlite::Error) -> WireResponse {
+    #[cfg(feature = "bench")]
+    if matches!(
+        error.sqlite_error_code(),
+        Some(rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked)
+    ) {
+        crate::bench::SQLITE_BUSY_ERRORS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
     if !crate::availability::database_available(db) {
         return app_failure(AppError {
             code: Code::Unavailable,
@@ -262,14 +306,52 @@ impl Request {
 async fn answer(
     app: Arc<App>,
     request: Request,
+    read: bool,
     call: impl FnOnce(&App, &Connection, &Request, &mut Timer) -> Result<WireResponse> + Send + 'static,
 ) -> Response {
+    #[cfg(feature = "bench")]
+    let admission = std::time::Instant::now();
+    let permit = match app.db_gate.acquire().await {
+        Ok(p) => p,
+        Err(r) => return r,
+    };
+    #[cfg(feature = "bench")]
+    let admission_ms = admission.elapsed().as_secs_f64() * 1000.0;
     run_blocking(move || {
-        let db = app.db();
+        let _permit = permit;
+        #[cfg(feature = "bench")]
+        let waiting = std::time::Instant::now();
+        let reader = if read || request.method == "GET" {
+            app.readers.as_ref().map(|p| p.acquire())
+        } else {
+            None
+        };
+        let writer = if reader.is_none() {
+            Some(app.db())
+        } else {
+            None
+        };
+        let db: &Connection = reader
+            .as_deref()
+            .unwrap_or_else(|| writer.as_deref().unwrap());
+        #[cfg(feature = "bench")]
+        let (wait, held, cpu) = (
+            waiting.elapsed(),
+            std::time::Instant::now(),
+            crate::timing::cpu_ms(),
+        );
         let mut timer = Timer::start();
-        let result = call(&app, &db, &request, &mut timer);
-        let mut response = respond(&db, result);
-        response.server_timing = Some(timer.header());
+        let result = call(&app, db, &request, &mut timer);
+        let mut response = respond(db, result);
+        let header = timer.header();
+        #[cfg(feature = "bench")]
+        let header = format!(
+            "{header}, admission;dur={admission_ms:.3}, connection_wait;dur={:.3}, connection_hold;dur={:.3}, cpu;dur={:.3}",
+            wait.as_secs_f64() * 1000.0,
+            held.elapsed().as_secs_f64() * 1000.0,
+            crate::timing::cpu_ms() - cpu
+        );
+        response.server_timing = Some(header);
         response
     })
     .await
@@ -293,7 +375,7 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> InOrgani
         self,
         rule: fn(&Connection, &Scope, T) -> Result<O>,
     ) -> Response {
-        answer(self.0, self.1, move |app, db, request, timer| {
+        answer(self.0, self.1, READ, move |app, db, request, timer| {
             let user = app.caller(db, request, READ, timer)?;
             let scope = resolve_scope(db, &user, request.param("organizationId"))?;
             Ok(ok(&rule(db, &scope, decode(input(request)?)?)?))
@@ -306,7 +388,7 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> AsUser<T
         self,
         rule: fn(&Connection, &str, T) -> Result<O>,
     ) -> Response {
-        answer(self.0, self.1, move |app, db, request, timer| {
+        answer(self.0, self.1, READ, move |app, db, request, timer| {
             let user = app.caller(db, request, READ, timer)?;
             Ok(ok(&rule(db, &user, decode(input(request)?)?)?))
         })
@@ -318,7 +400,7 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> Public<T
         self,
         rule: fn(&Connection, T) -> Result<O>,
     ) -> Response {
-        answer(self.0, self.1, move |_, db, request, _| {
+        answer(self.0, self.1, READ, move |_, db, request, _| {
             Ok(ok(&rule(db, decode(input(request)?)?)?))
         })
         .await
@@ -330,9 +412,17 @@ impl Public<Empty> {
         self,
         rule: fn(&Connection, Option<Session>, &str) -> Result<O>,
     ) -> Response {
-        answer(self.0, self.1, move |app, db, request, timer| {
+        answer(self.0, self.1, true, move |app, db, request, timer| {
             let cookie = request.cookie.as_deref();
-            let session = timer.session(|| find_session(db, &app.session, cookie, clock::now()))?;
+            let session = timer.session(|| {
+                crate::auth::session::find_session_with_writer(
+                    db,
+                    &app.db,
+                    &app.session,
+                    cookie,
+                    clock::now(),
+                )
+            })?;
             Ok(ok(&rule(db, session, app.config.app_origin())?))
         })
         .await
@@ -354,14 +444,60 @@ impl FromRequest<Arc<App>> for AuthCall {
 }
 impl AuthCall {
     pub(crate) async fn sign_in(self) -> Response {
-        run_blocking(move || self.0.sign_in(&self.1, &self.2)).await
+        self.0.sign_in(self.1, self.2).await
     }
 }
 async fn run_blocking(call: impl FnOnce() -> Response + Send + 'static) -> Response {
-    tokio::task::spawn_blocking(call)
-        .await
-        .unwrap_or_else(|_| failure(500, "Internal error.").into())
+    #[cfg(feature = "bench")]
+    let queued = std::time::Instant::now();
+    #[cfg(feature = "bench")]
+    crate::bench::QUEUED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    tokio::task::spawn_blocking(move || {
+        #[cfg(feature = "bench")]
+        let queue_ms = queued.elapsed().as_secs_f64() * 1000.0;
+        #[cfg(feature = "bench")]
+        crate::bench::QUEUED.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+        #[cfg(feature = "bench")]
+        let _active = crate::bench::Active::new(&crate::bench::BLOCKING);
+        #[cfg(feature = "bench")]
+        crate::bench::mark_blocking_thread();
+        #[cfg(feature = "bench")]
+        let cpu = crate::timing::cpu_ms();
+        let response = call();
+        #[cfg(feature = "bench")]
+        let response = {
+            let mut response = response;
+            let timing = response.server_timing.get_or_insert_with(String::new);
+            if !timing.is_empty() {
+                timing.push_str(", ");
+            }
+            timing.push_str(&format!(
+                "blocking_queue;dur={queue_ms:.3}, blocking_cpu;dur={:.3}",
+                crate::timing::cpu_ms() - cpu
+            ));
+            response
+        };
+        response
+    })
+    .await
+    .unwrap_or_else(|_| failure(500, "Internal error.").into())
 }
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "bench")]
+impl App {
+    pub fn bench_stats(&self) -> serde_json::Value {
+        let writer = self.db.try_lock().ok().map(|db| crate::bench::sqlite(&db));
+        let readers = self.readers.as_ref().map(|r| r.stats());
+        serde_json::json!({ "db_admission": self.db_gate.stats(), "hash_admission": self.hash_gate.stats(), "writer": writer, "readers": readers,
+            "sqlite_busy_errors": crate::bench::SQLITE_BUSY_ERRORS.load(std::sync::atomic::Ordering::Relaxed),
+            "blocking_threads": crate::bench::BLOCKING_THREADS.load(std::sync::atomic::Ordering::Relaxed),
+            "blocking_threads_peak": crate::bench::BLOCKING_THREADS_PEAK.load(std::sync::atomic::Ordering::Relaxed),
+            "blocking_active": crate::bench::BLOCKING.load(std::sync::atomic::Ordering::Relaxed),
+            "blocking_queued": crate::bench::QUEUED.load(std::sync::atomic::Ordering::Relaxed),
+            "scrypt_active": crate::bench::SCRYPT.load(std::sync::atomic::Ordering::Relaxed),
+            "scrypt_peak": crate::bench::SCRYPT_PEAK.load(std::sync::atomic::Ordering::Relaxed) })
+    }
+}

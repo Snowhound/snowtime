@@ -6,6 +6,7 @@ license.workspace = true
 publish.workspace = true
 
 [features]
+bench = []
 scrypt-bench = ["dep:scrypt", "dep:openssl"]
 
 [dependencies]
@@ -24,7 +25,7 @@ sha2.workspace = true
 axum.workspace = true
 form_urlencoded.workspace = true
 rustc-hash.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["sync", "time"] }
 tower = { version = "0.5", features = ["util"] }
 unicode-normalization.workspace = true
 uuid.workspace = true

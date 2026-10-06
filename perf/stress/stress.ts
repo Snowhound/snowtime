@@ -13,8 +13,8 @@
 // (stack.ts). With --remote it sends load to a server that runs compose.bench.yml, which
 // someone else started with the same dataset; it only sends requests and reads the sampler.
 
-import { spawn } from 'node:child_process'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawn, spawnSync } from 'node:child_process'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { table } from '../checks/baseline'
@@ -61,6 +61,7 @@ const MAX_DISK_SHARE = 0.8
 const { values } = parseArgs({
   options: {
     dataset: { type: 'string', default: 'S' },
+    'dataset-date': { type: 'string' },
     run: { type: 'string', default: 'fixed' },
     users: { type: 'string' },
     seconds: { type: 'string' },
@@ -71,6 +72,17 @@ const { values } = parseArgs({
     build: { type: 'boolean', default: true },
     load: { type: 'boolean', default: true },
     memory: { type: 'string' },
+    'app-cpuset': { type: 'string', default: '1' },
+    'k6-cpuset': { type: 'string', default: '2-9' },
+    'sampler-cpuset': { type: 'string', default: '1' },
+    'preallocated-vus': { type: 'string' },
+    'max-vus': { type: 'string' },
+    'warmup-seconds': { type: 'string', default: '30' },
+    'sampler-url': { type: 'string' },
+    'litestream-image': { type: 'string' },
+    'litestream-memory': { type: 'string', default: '128m' },
+    'replica-dir': { type: 'string' },
+    'read-connections': { type: 'string', default: '0' },
     'caddy-memory': { type: 'string' },
     smol: { type: 'boolean', default: false },
     'max-requests': { type: 'string' },
@@ -92,8 +104,7 @@ if (app !== 'ts' && app !== 'native') throw new Error('[stress] --app is ts or n
 if (app === 'native' && !values.recording) {
   throw new Error('[stress] The native backend serves no pages to record; pass --recording')
 }
-if (values.direct && (app !== 'native' || values.remote))
-  throw new Error('[stress] --direct requires local --app=native')
+if (values.direct && app !== 'native') throw new Error('[stress] --direct requires --app=native')
 useApp(app)
 
 const name = values.dataset as DatasetName
@@ -141,23 +152,48 @@ async function sampler<T>(path: string): Promise<T> {
   const { hostname } = new URL(target.origin)
   const port = target.remote ? 443 : LOCAL_PORT
   const address = target.remote ? target.address! : '127.0.0.1'
+  const directSampler =
+    values['sampler-url'] ?? (!target.remote ? 'http://127.0.0.1:19100' : undefined)
   const curl = Bun.spawn(
     [
       'curl',
       '--silent',
       '--fail',
-      '--resolve',
-      `${hostname}:${port}:${address}`,
-      ...(target.insecure ? ['--insecure'] : []),
-      '--user',
-      `bench:${target.samplerPassword}`,
-      `https://${hostname}:${port}${path}`,
+      '--max-time',
+      '20',
+      '--retry',
+      '3',
+      '--retry-connrefused',
+      ...(directSampler
+        ? [directSampler + path]
+        : [
+            '--resolve',
+            `${hostname}:${port}:${address}`,
+            ...(target.insecure ? ['--insecure'] : []),
+            '--user',
+            `bench:${target.samplerPassword}`,
+            `https://${hostname}:${port}${path}`,
+          ]),
     ],
     { stdout: 'pipe', stderr: 'pipe' },
   )
   const [text, code] = await Promise.all([new Response(curl.stdout).text(), curl.exited])
   if (code !== 0) throw new Error(`[stress] sampler ${path}: curl exited ${code}`)
   return JSON.parse(text) as T
+}
+
+interface ContainerSample {
+  [key: string]: number | string | undefined
+  generation: string
+  cpuUsec: number
+  memory: number
+  memoryPeak: number
+  rss: number
+  swap?: number
+  threads: number
+  anon: number
+  file: number
+  oomKills: number
 }
 
 interface Sample {
@@ -168,7 +204,7 @@ interface Sample {
   diskUsed: number
   diskTotal: number
   files: Record<string, number>
-  containers: Record<string, Record<string, number>>
+  containers: Record<string, ContainerSample>
   readUsec: number
   // The app's process.memoryUsage() and how long it took to answer, on a bench deployment.
   heap?: { rss: number; heapTotal: number; heapUsed: number; external: number; answerMs: number }
@@ -183,6 +219,7 @@ interface LoggedRequest {
   size: number
 }
 
+let outputDirectory: string | undefined
 let logOffset = 0
 const logged: LoggedRequest[] = []
 
@@ -238,6 +275,8 @@ async function runK6(
     ORIGIN: target.origin,
     SECRET: target.secret,
     PLAN: JSON.stringify(plan),
+    ...(values['preallocated-vus'] && { PREALLOCATED_VUS: values['preallocated-vus'] }),
+    ...(values['max-vus'] && { MAX_VUS: values['max-vus'] }),
     ...(values.encoding && { ENCODING: values.encoding }),
     ...(!values['connection-reuse'] && { NO_CONNECTION_REUSE: '1' }),
     ...(target.address && { HOST_IP: target.address }),
@@ -246,7 +285,7 @@ async function runK6(
   const args = [
     'run',
     '--rm',
-    ...(target.remote ? [] : ['--network', NETWORK, '--cpuset-cpus', '2-9']),
+    ...(target.remote ? [] : ['--network', NETWORK, '--cpuset-cpus', values['k6-cpuset']]),
     '-v',
     `${join(ROOT, 'perf/stress')}:/scripts:ro`,
     '-v',
@@ -260,6 +299,7 @@ async function runK6(
     '--no-usage-report',
     '/scripts/scenario.js',
   ]
+  rmSync(join(files.out, 'summary.json'), { force: true })
   const k6 = spawn('docker', args, { stdio: ['ignore', 'inherit', 'inherit'] })
   const exited = new Promise<number>((resolve) => k6.on('exit', (code) => resolve(code ?? 1)))
   let aborted: string | null = null
@@ -275,6 +315,9 @@ async function runK6(
   } else {
     await exited
   }
+  const code = await exited
+  if (code !== 0 && !aborted)
+    throw new Error(`k6 exited ${code}; refusing stale or invalid results`)
   const summary = JSON.parse(readFileSync(join(files.out, 'summary.json'), 'utf8')) as K6Summary
   return { summary, aborted }
 }
@@ -299,28 +342,50 @@ function rates(samples: Sample[]) {
   const last = samples.at(-1)!
   const seconds = last.t - first.t || 1
   function container(name: string) {
-    const a = first.containers[name] ?? {}
-    const b = last.containers[name] ?? {}
+    const observed = samples.filter((s) => s.containers[name])
+    const a = observed[0]?.containers[name]
+    const b = observed.at(-1)?.containers[name]
+    let observedSeconds = 0
+    const deltas: Record<string, number> = {}
+    let peakCpu = 0
+    for (let i = 1; i < observed.length; i++) {
+      const previous = observed[i - 1],
+        next = observed[i]
+      const x = previous.containers[name],
+        y = next.containers[name]
+      if (x.generation !== y.generation || y.cpuUsec < x.cpuUsec) continue
+      const elapsed = next.t - previous.t
+      if (elapsed > 2 || elapsed <= 0) continue
+      observedSeconds += elapsed
+      peakCpu = Math.max(peakCpu, (y.cpuUsec - x.cpuUsec) / elapsed / 1e6)
+      for (const key of Object.keys(y)) {
+        if (typeof y[key] === 'number' && typeof x[key] === 'number')
+          deltas[key] = (deltas[key] ?? 0) + Math.max(0, y[key] - x[key])
+      }
+    }
     function per(key: string) {
-      return ((b[key] ?? 0) - (a[key] ?? 0)) / seconds
+      return (deltas[key] ?? 0) / (observedSeconds || 1)
     }
     const peak = Math.max(...samples.map((s) => s.containers[name]?.memory ?? 0))
     return {
       cpu: per('cpuUsec') / 1e6,
-      cpuUsec: (b.cpuUsec ?? 0) - (a.cpuUsec ?? 0),
+      cpuUsec: deltas.cpuUsec ?? 0,
+      observedSeconds,
+      peakCpu,
       throttled: per('throttledUsec') / 1e6,
-      memory: b.memory ?? 0,
+      memory: b?.memory ?? 0,
       peak,
-      peakEver: b.memoryPeak ?? 0,
-      anon: b.anon ?? 0,
-      file: b.file ?? 0,
+      peakEver: b?.memoryPeak ?? 0,
+      anon: b?.anon ?? 0,
+      file: b?.file ?? 0,
       rss: Math.max(...samples.map((s) => s.containers[name]?.rss ?? 0)),
+      swap: Math.max(...samples.map((s) => s.containers[name]?.swap ?? 0)),
       read: per('readBytes'),
       write: per('writeBytes'),
       cpuPressure: per('cpuSome') / 1e6,
       memoryPressure: per('memorySome') / 1e6,
       ioPressure: per('ioSome') / 1e6,
-      oomKills: (b.oomKills ?? 0) - (a.oomKills ?? 0),
+      oomKills: (b?.oomKills ?? 0) - (a?.oomKills ?? 0),
     }
   }
   const ticks = Object.keys(last.cpu).reduce((t, k) => t + last.cpu[k] - first.cpu[k], 0) || 1
@@ -329,6 +394,8 @@ function rates(samples: Sample[]) {
     app: container('app'),
     caddy: container('caddy'),
     sampler: container('sampler'),
+    k6: container('k6'),
+    litestream: container('litestream'),
     steal: (last.cpu.steal - first.cpu.steal) / ticks,
     memoryUsed: Math.max(...samples.map((s) => s.memTotal - s.memAvailable)),
     memTotal: last.memTotal,
@@ -351,13 +418,23 @@ function heapStats(heaps: NonNullable<Sample['heap']>[]) {
   }
 }
 
+function requestBounds(requests: LoggedRequest[]) {
+  let first = Infinity
+  let last = -Infinity
+  for (const request of requests) {
+    first = Math.min(first, request.t)
+    last = Math.max(last, request.t)
+  }
+  return { first, last }
+}
+
 // Where a step misses a target: a kind's p95 over any 30-second window, the error share, or
 // a dropped iteration.
 function misses(result: StepResult): string[] {
   const found: string[] = []
   const { requests } = result
   if (requests.length === 0) return ['no access-log samples; server-window validation unavailable']
-  const start = Math.min(...requests.map((r) => r.t))
+  const start = requestBounds(requests).first
   const windows = new Map<string, number[]>()
   for (const r of requests) {
     const key = `${r.kind}|${Math.floor((r.t - start) / WINDOW_S)}`
@@ -405,7 +482,9 @@ function report(result: StepResult): string {
   const sent = metric(summary, `http_reqs{step:${step.name}}`, 'count')
   const seconds = Math.max(
     1,
-    Math.max(...requests.map((r) => r.t)) - Math.min(...requests.map((r) => r.t)) || step.seconds,
+    requests.length
+      ? requestBounds(requests).last - requestBounds(requests).first || step.seconds
+      : step.seconds,
   )
   const completed = requests.filter((r) => r.status > 0 && r.status < 400).length
   lines.push(
@@ -462,13 +541,14 @@ function report(result: StepResult): string {
           'anon',
           'cache',
           'RSS',
+          'swap',
           'read MB/s',
           'write',
           'PSI cpu',
           'mem',
           'io',
         ],
-        (['app', 'caddy', 'sampler'] as const).map((n) => {
+        (['app', 'caddy', 'sampler', 'litestream', 'k6'] as const).map((n) => {
           const c = r[n]
           return [
             n,
@@ -479,6 +559,7 @@ function report(result: StepResult): string {
             mb(c.anon),
             mb(c.file),
             mb(c.rss),
+            mb(c.swap),
             (c.read / 1e6).toFixed(2),
             (c.write / 1e6).toFixed(2),
             `${(c.cpuPressure * 100).toFixed(0)}%`,
@@ -493,6 +574,9 @@ function report(result: StepResult): string {
         `${(r.caddy.cpuUsec / serverRequests / 1000).toFixed(2)} ms; steal ${(r.steal * 100).toFixed(1)}%; ` +
         `host memory ${mb(r.memoryUsed)} of ${mb(r.memTotal)} MB; database ${mb(r.database)} MB; ` +
         `disk ${(r.diskShare * 100).toFixed(0)}%; OOM kills ${r.app.oomKills}`,
+    )
+    lines.push(
+      `k6 CPU observed for ${r.k6.observedSeconds.toFixed(0)} s: mean ${(r.k6.cpu * 100).toFixed(1)}%, peak one-second ${(r.k6.peakCpu * 100).toFixed(1)}%; app peak threads ${Math.max(...result.samples.map((s) => s.containers.app?.threads ?? 0))}`,
     )
     if (r.heap) {
       const { peak, slowest, stalled } = r.heap
@@ -519,7 +603,22 @@ async function runPlan(plan: Step[], files: { recording: string; users: string; 
   const began = Date.now() / 1000
   async function watch(): Promise<string | null> {
     await readLog()
-    if (!target.remote) return null
+    if (!target.remote) {
+      const recent = await samplesBetween(Date.now() / 1000 - 5, Date.now() / 1000)
+      const last = recent.at(-1)
+      if (last && (last.memTotal - last.memAvailable) / last.memTotal > MAX_MEMORY_SHARE)
+        return 'shared VM memory above 85% (invalid co-located generator run)'
+      const cores = values['k6-cpuset'].split(',').reduce((n, part) => {
+        const [a, b] = part.split('-').map(Number)
+        return n + (b === undefined ? 1 : b - a + 1)
+      }, 0)
+      if (recent.length >= 3) {
+        const k = rates(recent).k6
+        if (k.observedSeconds >= 2 && k.cpu > cores * 0.7)
+          return 'k6 CPU above 70% of assigned cores (invalid generator-limited run)'
+      }
+      return null
+    }
     const now = Date.now() / 1000
     const [last] = (await samplesBetween(now - 5, now)).slice(-1)
     if (last && (last.memTotal - last.memAvailable) / last.memTotal > MAX_MEMORY_SHARE)
@@ -544,8 +643,8 @@ async function runPlan(plan: Step[], files: { recording: string; users: string; 
   const results: StepResult[] = []
   for (const step of plan) {
     const requests = logged.filter((r) => r.step === step.name && r.t >= began)
-    const from = requests.length ? Math.min(...requests.map((r) => r.t)) : began
-    const to = requests.length ? Math.max(...requests.map((r) => r.t)) : ended
+    const from = requests.length ? requestBounds(requests).first : began
+    const to = requests.length ? requestBounds(requests).last : ended
     const result: StepResult = {
       step,
       summary,
@@ -558,6 +657,24 @@ async function runPlan(plan: Step[], files: { recording: string; users: string; 
     console.log(text)
     writeFileSync(join(files.out, `${step.name}.txt`), text)
     writeFileSync(join(files.out, `${step.name}.samples.json`), JSON.stringify(result.samples))
+    writeFileSync(join(files.out, `${step.name}.summary.json`), JSON.stringify(summary))
+    writeFileSync(join(files.out, `${step.name}.requests.json`), JSON.stringify(result.requests))
+    const missed = misses(result)
+    writeFileSync(
+      join(files.out, `${step.name}.validity.json`),
+      JSON.stringify(
+        {
+          generatorLimited:
+            aborted?.includes('k6 CPU') ||
+            aborted?.includes('shared VM memory') ||
+            missed.some((reason) => reason.includes('dropped iterations')),
+          aborted,
+          missed,
+        },
+        null,
+        2,
+      ),
+    )
   }
   if (aborted) console.log(`[stress] Stopped early: ${aborted}`)
   return { results, aborted }
@@ -578,12 +695,43 @@ async function idleMemory(): Promise<string> {
 }
 
 async function main() {
-  const paths = await dataset(name)
+  const paths = await dataset(name, values['dataset-date'])
   if (!target.remote) {
+    if (!values.load && values['replica-dir']) {
+      const current = spawnSync('docker', ['inspect', 'snowtime-bench-litestream-1'], {
+        encoding: 'utf8',
+      })
+      if (current.status !== 0) throw new Error('Cannot inspect the prepared replication stack')
+      const inspection = JSON.parse(current.stdout)[0]
+      const mounts = inspection.Mounts as {
+        Destination: string
+        Source: string
+      }[]
+      if (
+        mounts
+          .find((mount) => mount.Destination === '/replica')
+          ?.Source.replace(/^\/host_mnt(?=\/)/, '') !==
+        resolve(values['replica-dir']).replace(/^\/host_mnt(?=\/)/, '')
+      )
+        throw new Error("--no-load must retain the prepared stack's replica directory")
+      if (!inspection.State.Running)
+        throw new Error('The prepared replication process must be running')
+      if (values['litestream-image'] && inspection.Config.Image !== values['litestream-image'])
+        throw new Error('--no-load must retain the prepared Litestream image')
+      const memory = Number(values['litestream-memory'].replace(/m$/i, '')) * 1024 * 1024
+      if (inspection.HostConfig.Memory !== memory)
+        throw new Error('--no-load must retain the prepared Litestream memory limit')
+    }
     if (values.build) buildImages()
     const tls = join(CACHE, 'stress', 'edge', 'tls')
     if (values.direct) directTls(tls)
     const settings = {
+      ...(values['replica-dir'] && { BENCH_REPLICA_DIR: resolve(values['replica-dir']) }),
+      ...(values['litestream-image'] && { BENCH_LITESTREAM_IMAGE: values['litestream-image'] }),
+      BENCH_LITESTREAM_MEMORY: values['litestream-memory'],
+      BENCH_APP_CPUSET: values['app-cpuset'],
+      BENCH_SAMPLER_CPUSET: values['sampler-cpuset'],
+      BENCH_READ_CONNECTIONS: values['read-connections'],
       ...(values.direct && { BENCH_DIRECT_TLS: tls }),
       ...(values.memory && { BENCH_APP_MEMORY: values.memory }),
       ...(values['caddy-memory'] && { BENCH_CADDY_MEMORY: values['caddy-memory'] }),
@@ -593,21 +741,28 @@ async function main() {
       ...(values['caddy-cpuset'] && { BENCH_CADDY_CPUSET: values['caddy-cpuset'] }),
       ...(values['caddy-config'] && { BENCH_CADDY_CONFIG: resolve(values['caddy-config']) }),
     }
+    if (!values['replica-dir']) {
+      const stop = Bun.spawnSync(['docker', 'stop', 'snowtime-bench-litestream-1'], {
+        stdout: 'ignore',
+        stderr: 'ignore',
+      })
+      if (stop.exitCode !== 0) console.log('[stress] No replication container to stop.')
+    }
     if (values.load) {
       compose(['up', '-d', '--no-start'], settings)
-      loadDataset(paths.database)
+      loadDataset(paths.database, settings)
     }
-    startStack(settings)
+    startStack(settings, !values.load && !!values['replica-dir'])
     if (values.direct) target.address = directAddress()
   }
   // The log keeps earlier runs' requests; this one reads only its own.
   logOffset = (await sampler<{ offset: number }>('/_bench/log?offset=end')).offset
-  const idle = await idleMemory()
-  const users = JSON.parse(readFileSync(paths.users, 'utf8')) as BenchUser[]
-  // A member of a mid-sized company records, so its pages are typical.
-  const recorder =
-    users.find((u) => u.role === 'member' && u.projectIds.length > 0 && u.slug !== 'lumen') ??
-    users.find((u) => u.slug === 'lumen' && u.role === 'member')!
+  if (Number(values['warmup-seconds']) > 0) {
+    console.log(
+      `[stress] Waiting ${values['warmup-seconds']} s for startup/replication before measuring`,
+    )
+    await Bun.sleep(Number(values['warmup-seconds']) * 1000)
+  }
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const out = join(
     CACHE,
@@ -616,6 +771,43 @@ async function main() {
     `${stamp}-${name}-${values.run}${values.label ? `-${values.label}` : ''}`,
   )
   mkdirSync(out, { recursive: true })
+  outputDirectory = out
+  writeFileSync(join(out, 'settings.json'), JSON.stringify(values, null, 2))
+  if (values['replica-dir'] && !target.remote && values.load) {
+    console.log('[stress] Waiting for initial replication before measuring')
+    const deadline = Date.now() + 15 * 60 * 1000
+    for (;;) {
+      checkReplicationRunning()
+      const logs = spawnSync('docker', ['logs', 'snowtime-bench-litestream-1'], {
+        encoding: 'utf8',
+      })
+      const text = logs.stdout + logs.stderr
+      if (
+        text
+          .split('\n')
+          .some(
+            (line) =>
+              (line.includes('compaction complete') &&
+                line.includes('level=1') &&
+                line.includes('txid.min=0000000000000001')) ||
+              (line.includes('ltx file uploaded') &&
+                line.includes('level=0') &&
+                line.includes('minTXID=0000000000000001') &&
+                line.includes('maxTXID=0000000000000001')),
+          )
+      )
+        break
+      if (Date.now() >= deadline)
+        throw new Error('Initial replication did not finish in 15 minutes')
+      await Bun.sleep(5000)
+    }
+  }
+  const idle = await idleMemory()
+  const users = JSON.parse(readFileSync(paths.users, 'utf8')) as BenchUser[]
+  // A member of a mid-sized company records, so its pages are typical.
+  const recorder =
+    users.find((u) => u.role === 'member' && u.projectIds.length > 0 && u.slug !== 'lumen') ??
+    users.find((u) => u.slug === 'lumen' && u.role === 'member')!
   writeFileSync(join(out, 'idle.txt'), idle)
   // A given recording replays as it is, such as one cut down to the calls the native backend
   // serves (native/bench/api-recording.ts).
@@ -637,6 +829,54 @@ async function main() {
   const files = { recording: recordingFile, users: paths.users, out }
   const stepSeconds = Number(values['step-seconds'])
 
+  function checkReplicationRunning() {
+    const inspection = spawnSync(
+      'docker',
+      ['inspect', '--format', '{{json .State}}', 'snowtime-bench-litestream-1'],
+      { encoding: 'utf8' },
+    )
+    if (inspection.status !== 0) throw new Error('Cannot inspect Litestream startup')
+    const state = JSON.parse(inspection.stdout)
+    if (!state.Running) {
+      writeFileSync(join(out, 'litestream-state.json'), JSON.stringify(state, null, 2))
+      throw new Error(
+        `Litestream stopped during startup: OOM=${state.OOMKilled}, exit=${state.ExitCode}`,
+      )
+    }
+  }
+
+  async function waitInitialCompaction() {
+    if (target.remote || !values['replica-dir'] || !values.load) return
+    console.log('[stress] Waiting for initial level-two replication compaction before measuring')
+    const deadline = Date.now() + 15 * 60 * 1000
+    for (;;) {
+      checkReplicationRunning()
+      const logs = spawnSync('docker', ['logs', 'snowtime-bench-litestream-1'], {
+        encoding: 'utf8',
+      })
+      if (
+        (logs.stdout + logs.stderr)
+          .split('\n')
+          .some(
+            (line) =>
+              line.includes('compaction complete') &&
+              line.includes('level=2') &&
+              line.includes('txid.min=0000000000000001'),
+          )
+      ) {
+        console.log('[stress] Initial replication compactions complete')
+        return
+      }
+      if (Date.now() >= deadline) throw new Error('Initial compaction did not finish in 15 minutes')
+      await Bun.sleep(5000)
+    }
+  }
+  if (values.run !== 'ramp' && !target.remote && values['replica-dir']) {
+    // A first write makes Litestream eligible to compact the initial database copy.
+    await runPlan([{ name: 'replication-warmup', users: 500, seconds: 30 }], files)
+    await waitInitialCompaction()
+  }
+
   if (values.run === 'fixed' || values.run === 'calibration') {
     const usersCount = Number(values.users ?? (values.run === 'calibration' ? 100 : 200))
     await runPlan(
@@ -650,8 +890,16 @@ async function main() {
     if (from > 0) {
       console.log(`\n[stress] Warming up at ${Math.round(from / 2)} users for 30 s`)
       await runPlan([{ name: 'warmup', users: Math.round(from / 2), seconds: 30 }], files)
+      await waitInitialCompaction()
     }
     let lastGood: number | undefined
+    let firstFail: number | undefined
+    function capacity(users: number | null, generatorLimited: boolean, reason?: string) {
+      writeFileSync(
+        join(out, 'capacity.json'),
+        JSON.stringify({ users, firstFail, generatorLimited, reason }, null, 2),
+      )
+    }
     for (const [i, count] of steps.entries()) {
       const { results, aborted } = await runPlan(
         [{ name: `u${count}`, users: count, seconds: stepSeconds }],
@@ -662,7 +910,16 @@ async function main() {
         lastGood = count
         continue
       }
+      firstFail = count
       console.log(`\n[stress] ${count} users missed: ${aborted ?? missed.join('; ')}`)
+      if (
+        aborted?.includes('k6 CPU') ||
+        aborted?.includes('shared VM memory') ||
+        missed.some((m) => m.includes('dropped iterations'))
+      ) {
+        capacity(null, true, aborted ?? missed.join('; '))
+        return
+      }
       if (target.remote && i >= 2) {
         console.log(`[stress] Dropping to ${steps[i - 2]} users for 2 minutes`)
         await runPlan([{ name: `cool${steps[i - 2]}`, users: steps[i - 2], seconds: 120 }], files)
@@ -671,25 +928,34 @@ async function main() {
     }
     if (lastGood === undefined) {
       console.log('[stress] Not even the first step held.')
+      capacity(null, false, 'First ramp step failed')
       return
     }
-    // A hold that misses falls back to the step below, twice at most.
-    const holds = RAMP.filter((n) => n <= lastGood)
-      .slice(-3)
-      .toReversed()
+    // Validate lower offers until one holds; growing WAL can make several earlier steps fail.
+    const holds = RAMP.filter((n) => n <= lastGood).toReversed()
     for (const users of holds) {
       console.log(`\n[stress] Holding ${users} users for ${values['hold-seconds']} s`)
-      const { results } = await runPlan(
+      const { results, aborted } = await runPlan(
         [{ name: `hold${users}`, users, seconds: Number(values['hold-seconds']) }],
         files,
       )
       const missed = misses(results[0])
-      if (missed.length === 0) {
+      if (
+        aborted?.includes('k6 CPU') ||
+        aborted?.includes('shared VM memory') ||
+        missed.some((m) => m.includes('dropped iterations'))
+      ) {
+        capacity(null, true, aborted ?? missed.join('; '))
+        return
+      }
+      if (missed.length === 0 && !aborted) {
         console.log(`\n[stress] Capacity on ${name}: ${users} active users`)
+        capacity(users, false)
         return
       }
       console.log(`\n[stress] The hold at ${users} users missed: ${missed.join('; ')}`)
     }
+    capacity(null, false, 'All hold candidates failed')
   } else if (values.run === 'overload') {
     if (target.remote) throw new Error('[stress] Overload runs locally only.')
     const knee = Number(values.users ?? 0)
@@ -704,7 +970,7 @@ async function main() {
       files,
     )
   } else if (values.run === 'kinds') {
-    // Each action alone at a low rate, for the CPU and server time each costs.
+    // Isolate page, API, and auth kinds so their CPU totals do not mix.
     const perSecond = Number(values.users ?? 2)
     const actions = [
       'open',
@@ -722,9 +988,34 @@ async function main() {
         (a) => (recording.actions[a as keyof Recording['actions']] ?? []).length > 0,
       ),
     )
+    const split = {
+      ...recording,
+      actions: { ...recording.actions } as Record<string, Recording['actions']['open']>,
+    }
+    const kinds = actions.flatMap((action) => {
+      if (action === 'timer') return [action]
+      const requests = split.actions[action]
+      const groups = new Map<string, typeof requests>()
+      for (const request of requests) {
+        const type = request.path.startsWith('/api/auth/')
+          ? 'auth'
+          : request.path.startsWith('/api/v1/') || request.path.startsWith('/_serverFn/')
+            ? 'api'
+            : 'page'
+        const group = groups.get(type) ?? []
+        group.push(request)
+        groups.set(type, group)
+      }
+      return [...groups.entries()].map(([type, requests]) => {
+        const key = `${action}:${type}`
+        split.actions[key] = requests
+        return key
+      })
+    })
+    writeFileSync(files.recording, JSON.stringify(split, null, 1))
     const { results } = await runPlan(
-      actions.map((action) => ({
-        name: action,
+      kinds.map((action) => ({
+        name: action.replaceAll(':', '-'),
         users: 0,
         seconds: Number(values.seconds ?? 60),
         action,
@@ -775,6 +1066,44 @@ try {
   if (!target.remote) checkOtherSessions()
   await main()
 } finally {
+  if (!target.remote && outputDirectory) {
+    for (const service of [
+      'app',
+      'caddy',
+      'sampler',
+      ...(values['replica-dir'] ? ['litestream'] : []),
+    ]) {
+      const logs = spawnSync('docker', ['logs', '--timestamps', `snowtime-bench-${service}-1`], {
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+      })
+      writeFileSync(join(outputDirectory, `${service}.log`), logs.stdout + logs.stderr)
+      const state = spawnSync(
+        'docker',
+        ['inspect', '-f', '{{json .State}}', `snowtime-bench-${service}-1`],
+        { encoding: 'utf8' },
+      )
+      writeFileSync(join(outputDirectory, `${service}.state.json`), state.stdout)
+    }
+    const images = spawnSync(
+      'docker',
+      [
+        'image',
+        'inspect',
+        '--format',
+        '{{.RepoTags}} {{.Id}}',
+        'snowtime-native:bench',
+        'snowtime-app:bench',
+        'snowtime-caddy:bench',
+        'snowtime-sampler:bench',
+        ...(values['replica-dir']
+          ? [values['litestream-image'] ?? 'litestream/litestream:0.5.0']
+          : []),
+      ],
+      { encoding: 'utf8' },
+    )
+    writeFileSync(join(outputDirectory, 'images.txt'), images.stdout)
+  }
   releaseStack()
   process.removeListener('exit', releaseStack)
 }

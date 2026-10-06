@@ -8,5 +8,9 @@ services:
       EDGE_COMPRESSION: 'false'
       EDGE_ACCESS_LOG: 'off'
       EDGE_HEADERS: 'false'
+      DB_READ_CONNECTIONS: ${BENCH_READ_CONNECTIONS:-0}
+      MIGRATIONS_DIR: /migrations
+    volumes:
+      - ../../drizzle:/migrations:ro
     healthcheck:
       test: ['CMD', 'curl', '-fsS', '-o', '/dev/null', 'http://localhost:3000/api/v1/availability']

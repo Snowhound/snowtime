@@ -1,0 +1,16 @@
+services:
+  sampler:
+    environment:
+      LITESTREAM_URL: http://litestream:9090
+  litestream:
+    image: ${BENCH_LITESTREAM_IMAGE:-litestream/litestream:0.5.0}
+    user: '10001:10001'
+    command: ['replicate', '-config', '/etc/litestream.yml']
+    cpuset: '${BENCH_APP_CPUSET:-1}'
+    mem_limit: ${BENCH_LITESTREAM_MEMORY:-128m}
+    ports:
+      - '127.0.0.1:19090:9090'
+    volumes:
+      - app_data:/data
+      - ./bench/litestream.yml:/etc/litestream.yml:ro
+      - ${BENCH_REPLICA_DIR:?Set BENCH_REPLICA_DIR}:/replica

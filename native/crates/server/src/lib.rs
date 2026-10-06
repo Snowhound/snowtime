@@ -1,9 +1,14 @@
 //! Application rules and their in-process JSON router.
+mod admission;
+pub use admission::Limits;
 pub mod auth;
 pub mod availability;
+#[cfg(feature = "bench")]
+mod bench;
 pub mod calendar;
 pub mod clock;
 mod config;
+mod connections;
 pub mod entries;
 pub mod errors;
 pub mod fill;
