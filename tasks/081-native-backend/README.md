@@ -221,8 +221,8 @@ which records the edge measurements.
 - [14](14-render-gc.md): render garbage that dies young, and a heap policy that allows a
   larger nursery
 - [15](15-framework-benchmarks.md): render benchmarks on Nuxt, SvelteKit, and Next.js apps
-- [16](16-javascriptcore.md): JavaScriptCore as the render engine, gated on plain JSC
-  matching Bun
+- [16](16-javascriptcore.md): JavaScriptCore as the render engine: the gate failed on plain
+  JSC, so Bun as a render sidecar is next
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

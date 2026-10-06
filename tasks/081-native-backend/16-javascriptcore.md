@@ -1,6 +1,6 @@
 # 081.16: JavaScriptCore as the render engine
 
-Status: in-progress (gate run; the next step awaits a decision)
+Status: in-progress (gate failed; the Bun render sidecar is next)
 
 On the same bundle, Bun runs Solid's synchronous render in 7.3 ms where V8 takes 12.7
 ([engine-gap report](server-rendering/engine-gap-wsl.md)). JSC's DFG tier is worth 37% to
@@ -140,18 +140,18 @@ By the rule above, Bun's lead is partly specific to Bun: plain JSC gets most of 
 but not its memory or p95. Closing those takes runtime work Bun has done and an embedding
 would redo: GC pacing driven by the host and a policy for the FTL tier.
 
-The recommendation is to follow the rule: measure a Bun render sidecar against V8 after
-task 081.14. A sidecar has Bun's CPU and RSS today, so it shows directly whether Bun's
-numbers survive a process boundary and IPC per render. Reopen the JSC prototype if the
-sidecar's process or IPC cost erases its lead, or if a single binary matters more than the
-work. Its first milestone would then be memory: RSS within the host's budget, with GC
-paced by the host and the FTL tier limited, before any CPU work.
+Following the rule, the next step is a Bun render sidecar, measured against V8 after task
+081.14 ([plan](#bun-render-sidecar)). A sidecar has Bun's CPU and RSS today, so it shows
+directly whether Bun's numbers survive a process boundary and IPC per render. Reopen the
+JSC prototype if the sidecar's process or IPC cost erases its lead, or if a single binary
+matters more than the work. Its first milestone would then be memory: RSS within the host's
+budget, with GC paced by the host and the FTL tier limited, before any CPU work.
 
-Proposed for both paths: the host chooses the renderer and its count from the deployment's
-memory budget, so small hosts can drop server rendering, where the project allows it, and
-large ones can run the fastest engine. Engine options, the bundle variant, and the web API
-implementations are settings read when a renderer starts. Only changes to which code the
-bundle contains, such as minification, need a build flag.
+Proposed for every engine: the host chooses the renderer and its count from the
+deployment's memory budget, so small hosts can drop server rendering, where the project
+allows it, and large ones can run the fastest engine. Engine options, the bundle variant,
+and the web API implementations are settings read when a renderer starts. Only changes to
+which code the bundle contains, such as minification, need a build flag.
 
 ### Reproduction
 
@@ -171,7 +171,69 @@ directory with the captures and `answers.json`, then:
 Stop the other containers while measuring. Raw output goes to the ignored
 `native/crates/render/results/engine-gap/jsc/`.
 
+## Bun render sidecar
+
+Decided by Kait on 2026-10-06: the Bun sidecar is the preferred renderer wherever memory
+isn't the deciding constraint. V8 in the host stays the renderer for the smallest memory
+budgets and the fallback. The measurements below can still reverse this if the sidecar
+loses Bun's lead.
+
+The reasons are Bun's render CPU (34–40% below V8 today; task 081.14 is expected to leave
+V8 at 1.4–1.5 times Bun) and that Bun maintains the engine, GC, and web APIs. A tag bump
+brings its improvements, with no fork or bindings of ours to keep up.
+
+### Shape
+
+- **Processes.** The host starts each renderer as a child process: the stock `bun` binary
+  running `render-server.js` with the render bundle and manifest. A pool is N processes,
+  one renderer each. One process with N Workers, each its own JSC VM, is the alternative to
+  measure: it shares Bun's runtime, but one crash takes down the pool.
+- **Protocol.** Length-prefixed frames over one Unix socket per renderer. The host sends a
+  `PageRequest`; the renderer sends API requests, which the host answers from its
+  in-process API, then the status and headers, the HTML chunks, and an end or error frame.
+  These carry what `op_send`, `op_head`, and `op_chunk` carry today, so the bundle doesn't
+  change: `render-server.js` installs the same `Deno.core.ops` stubs as `bun-bench.ts`.
+- **Host.** A `BunRenderer` behind the V8 renderer's interface (`Pool`, `PageRequest`,
+  `Page`). `RENDER_ENGINE` (`bun` or `v8`) picks the engine at start.
+- **Supervision.** Renderers start with the host and warm up before taking pages. The host
+  restarts a renderer that exits, times out a stuck render, and recycles a renderer whose
+  RSS (`/proc/<pid>/status`) passes its limit, starting the replacement first. The health
+  check fails only when no renderer is up.
+- **Settings.** `RENDERERS` (a count, or sized from the memory budget and CPUs), Bun's
+  `--smol`, and `BUN_JSC_*` options, passed through to each renderer at start.
+- **Image.** `native/Dockerfile`'s `app` stage copies `bun` from a pinned `oven/bun` image
+  (multi-arch, so x64 and arm64 hosts build alike) and the bundle files, about 100 MB more.
+  A build arg leaves Bun out of V8-only images. Compose doesn't change: the `app`
+  container's memory limit covers the host and its renderers, as the host's sizing
+  expects.
+- **Upgrades.** The `oven/bun` tag is pinned, and a dependency bot proposes bumps. CI checks
+  each bump: render tests, hydration, the HTML byte-compared with the previous version's,
+  and a short CPU and RSS run against a stored baseline. A regression holds the pin.
+
+### Memory on the smallest host
+
+On 1 vCPU and 2 GB the host runs one renderer. Peak RSS of a one-renderer process over 500
+back-to-back renders is 154–174 MB for Bun and 144–157 MB for the V8 crate (gate results
+above), so Bun costs 10–17 MB more per renderer. The sidecar's second process adds little
+beyond that: Bun's figure already counts its runtime, and the host drops V8. The estimate
+for the whole server at peak under load is 230–240 MB, against the 219 MB measured for
+V8 ([task 081.01](01-server-rendering.md)), still under the 256 MiB target.
+
+Two cases differ:
+
+- **Idle.** V8's host idles at 47 MB, because its snapshot's pages load as pages render,
+  and at 67–74 MiB after a trim. Bun has no snapshot and its idle RSS hasn't been measured;
+  expect it higher.
+- **Tight limits.** Under 160–240 MB container limits, V8 held its targets with a 64 MiB
+  heap (134 MB peak). A Bun renderer alone peaks above 154 MB, so those budgets stay on V8,
+  or without server rendering.
+
+Task 081.14 may move V8's numbers either way: a larger nursery costs memory.
+
 ## Prototype
+
+Paused on 2026-10-06 in favor of the [sidecar](#bun-render-sidecar); see the gate's
+recommendation for when to reopen it.
 
 A renderer behind the same interface as the V8 one (`Pool`, `PageRequest`, `Page`), so
 the host picks the engine at build time. JSC lacks a startup snapshot, so measure renderer
@@ -180,20 +242,40 @@ Bun's bindings layer means maintaining a fork of Bun's internals.
 
 ## Licensing
 
-Parts of JavaScriptCore are LGPL-2.1. Snowtime and the porting kit being open source lets
-users relink a statically linked binary, which LGPL requires. Distributed binaries and
-images still need the license notices and the WebKit source with our changes. A porting
-kit user who ships closed-source binaries takes on the same obligations, so the kit keeps
-V8 (BSD-3-Clause) as an option and documents when to pick each.
+Parts of JavaScriptCore are LGPL-2.1.
+
+- **Sidecar.** Bun is MIT and links an unmodified JavaScriptCore into its own executable.
+  The image ships that executable as Oven builds it, next to our files, and the host talks
+  to it over a socket, so our code isn't linked with the library. The image needs the
+  license notices and a pointer to the `oven-sh/WebKit` source of that build. This holds
+  for closed-source ports too. Bundling our code into Bun with `bun build --compile` would
+  change that, so the image doesn't.
+- **Embedded JSC.** Snowtime and the porting kit being open source lets users relink a
+  statically linked binary, which LGPL requires. Distributed binaries and images still need
+  the license notices and the WebKit source with our changes. A porting kit user who ships
+  closed-source binaries takes on the same obligations, so the kit keeps V8 (BSD-3-Clause)
+  as an option and documents when to pick each.
 
 ## Acceptance criteria
 
 - [x] The gate run recorded: JSC shell, Bun, and V8 on the four pages, with phases A, B,
       and C, CPU, and RSS, and the decision it leads to
-- [ ] If the gate passes: a JSC renderer behind the V8 renderer's interface, passing the
-      render tests and hydration on all four pages
-- [ ] If the gate passes: CPU, p95, renderer start, and RSS at one renderer and at the
-      host's renderer count, against V8 after task 081.14 and against Bun
-- [ ] If the gate fails: a Bun sidecar measured the same way, against V8 after task 081.14
+- [ ] Sidecar: a `BunRenderer` behind the V8 renderer's interface, passing the render tests
+      and hydration on all four pages, with HTML byte-identical to `bun-bench.ts`'s
+- [ ] Sidecar: CPU, p50, and p95 per page against `bun-bench.ts` in one process, under the
+      gate's limits, so the IPC cost is a number
+- [ ] Sidecar: one process per renderer against one process with Workers, CPU, p95, and RSS
+      at one renderer and at the host's renderer count
+- [ ] Sidecar: idle RSS, `--smol`, renderer start, and the time a recycled renderer takes to
+      serve again
+- [ ] Sidecar: the whole server on 1 vCPU and 2 GB under `perf:stress`, peak and idle RSS
+      and CPU, against V8 after task 081.14; the memory estimate above confirmed or
+      replaced
+- [ ] Sidecar: the Bun upgrade check in CI, and the image, Compose notes, and porting kit
+      updated, including which budgets pick V8
 - [ ] The LGPL obligations for Snowtime's images and for porting kit users checked and
-      written into the porting kit, with V8 kept as the engine for closed-source ports
+      written into the porting kit, for the sidecar and for embedded JSC
+- [ ] Prototype, if reopened: a JSC renderer behind the V8 renderer's interface, passing
+      the render tests and hydration on all four pages
+- [ ] Prototype, if reopened: CPU, p95, renderer start, and RSS at one renderer and at the
+      host's renderer count, against V8 after task 081.14 and against Bun
