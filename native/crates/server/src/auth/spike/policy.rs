@@ -3,10 +3,7 @@ use super::{
     store::{error, name_check, one, slug_check},
 };
 use crate::rate_limit::{MemoryStore, RateLimitRule, WRITES_PER_USER};
-use async_trait::async_trait;
-use better_auth_core::{
-    AuthRequest, AuthResponse, AuthResult, HttpMethod, Middleware, wire::UserView,
-};
+use better_auth_core::{AuthRequest, AuthResponse, AuthResult, HttpMethod, wire::UserView};
 use serde_json::json;
 use std::sync::Arc;
 
@@ -20,12 +17,13 @@ fn refused(code: &str, status: u16) -> AuthResult<Option<AuthResponse>> {
         AuthResponse::json(status, &json!({"code":code,"message":code})).map_err(error)?,
     ))
 }
-#[async_trait]
-impl Middleware for Policy {
-    fn name(&self) -> &'static str {
-        "snowtime-policy"
-    }
-    async fn before_request(&self, req: &AuthRequest) -> AuthResult<Option<AuthResponse>> {
+impl Policy {
+    /// `client_ip` is the host's resolved `Request.client_ip`, never a raw header.
+    pub async fn before_request(
+        &self,
+        req: &AuthRequest,
+        client_ip: Option<&str>,
+    ) -> AuthResult<Option<AuthResponse>> {
         if let Some(body) = req
             .body
             .as_deref()
@@ -61,12 +59,7 @@ impl Middleware for Policy {
         }
         let at = crate::clock::now();
         if self.production {
-            // The edge supplies only a trusted address in this header.
-            let ip = req
-                .headers
-                .get("x-forwarded-for")
-                .map(String::as_str)
-                .unwrap_or("unknown");
+            let ip = client_ip.unwrap_or("unknown");
             let rule = match req.path.as_str() {
                 "/organization/create" => RateLimitRule {
                     window: 3600,

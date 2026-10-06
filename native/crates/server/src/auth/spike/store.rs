@@ -827,7 +827,7 @@ impl InvitationStore for LaneStore {
         email: &str,
     ) -> AuthResult<Option<Invitation>> {
         let org_id = org_id.to_owned();
-        let email = email.to_owned();
+        let email = email.to_lowercase();
         self.run(move |db| Ok(query(db, "select * from invitation where organization_id=?1 and email=?2 and status='pending' and expires_at>?3", vec![json!(org_id),json!(email),json!(now())])?.into_iter().next())).await
     }
     async fn update_invitation_status(
@@ -862,7 +862,7 @@ impl InvitationStore for LaneStore {
         self.run(move |db| db.query_row("select count(*) from invitation where organization_id=?1 and status='pending' and expires_at>?2",params_from_iter(vec![json!(org_id),json!(now())].into_iter().map(sql_value).collect::<AuthResult<Vec<_>>>()?),|r|r.get(0)).map_err(error)).await
     }
     async fn list_user_invitations(&self, email: &str) -> AuthResult<Vec<Invitation>> {
-        let email = email.to_owned();
+        let email = email.to_lowercase();
         self.run(move |db| {
             query(
                 db,

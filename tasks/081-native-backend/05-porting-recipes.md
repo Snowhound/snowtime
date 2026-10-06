@@ -101,7 +101,7 @@ it:
 - One writer and a pool of readers on WAL; bounded database work that refuses with 503
   past a deadline. Open: built in 10, not yet measured
 - Better Auth through an app-owned `rusqlite` store on the host's lanes (question 5,
-  [auth spike](auth-spike.md), 2026-10-06). The 1,585-line adapter proves storage and
+  [auth spike](auth-spike.md), 2026-10-06). The 1,582-line adapter proves storage and
   selected flows without SeaORM or sqlx. Reject a library-owned pool where the host
   owns admission and one writer. Bound an async transaction's writer lifetime
   separately from admission. Keep the app's signed-cookie check at the boundary.

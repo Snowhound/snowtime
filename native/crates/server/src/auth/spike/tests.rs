@@ -18,10 +18,13 @@ use std::{
 const SECRET: &str = "spike-secret-for-better-auth-compatibility-081";
 const ORIGIN: &str = "http://localhost:3100";
 fn store(deadline: Duration) -> LaneStore {
+    store_at(deadline, ORIGIN)
+}
+fn store_at(deadline: Duration, origin: &str) -> LaneStore {
     let app = App::open_with_limits(
         Config {
             database_path: ":memory:".into(),
-            app_url: ORIGIN.into(),
+            app_url: origin.into(),
             secret: SECRET.into(),
             password_enabled: true,
             client_ip_header: None,
@@ -68,9 +71,16 @@ async fn call(
     body: Value,
     cookie: &str,
 ) -> (u16, Value, String) {
-    let response = super::bridge::handle(auth, req(method, path, body, cookie))
-        .await
-        .unwrap();
+    let response = super::bridge::handle(
+        auth,
+        &crate::auth::SessionConfig {
+            secret: auth.config().secret.clone(),
+            secure: auth.config().session.cookie_secure,
+        },
+        req(method, path, body, cookie),
+    )
+    .await
+    .unwrap();
     let cookies = response
         .headers
         .get_all("set-cookie")
@@ -102,23 +112,24 @@ async fn user(store: &LaneStore, email: &str) -> (String, String) {
         })
         .await
         .unwrap();
-    let cookie = crate::auth::SessionConfig {
-        secret: SECRET.into(),
-        secure: false,
-    }
-    .session_cookie(&session.token)
-    .split(';')
-    .next()
-    .unwrap()
-    .to_owned();
+    let cookie = store
+        .app
+        .session
+        .session_cookie(&session.token)
+        .split(';')
+        .next()
+        .unwrap()
+        .to_owned();
     (u.id, cookie)
 }
 async fn auth(store: LaneStore) -> BetterAuth<Schema> {
-    let mut keys = ApiKeyConfig::default();
-    keys.prefix = Some("snow_".into());
-    keys.require_name = true;
-    keys.store_starting_characters = false;
-    keys.enable_session_for_api_keys = false;
+    let mut keys = ApiKeyConfig {
+        prefix: Some("snow_".into()),
+        require_name: true,
+        store_starting_characters: false,
+        enable_session_for_api_keys: false,
+        ..Default::default()
+    };
     keys.rate_limit.time_window = 60000;
     keys.rate_limit.max_requests = 2;
     BetterAuth::<Schema>::new(AuthConfig::new(SECRET).base_url(ORIGIN))
@@ -345,7 +356,7 @@ async fn oauth_mock_google_github_and_policy() {
         );
         request.query.insert("code".into(), "mock-code".into());
         request.query.insert("state".into(), state);
-        let response = super::bridge::handle(&auth, request).await;
+        let response = super::bridge::handle(&auth, &store.app.session, request).await;
         println!(
             "OAuth {provider}: {:?}",
             response
@@ -419,6 +430,23 @@ async fn invitations_and_name_hooks() {
     .await;
     assert_eq!(status, 200, "{body}");
     let invitation = body["id"].as_str().unwrap();
+    let (duplicate_status, duplicate_body, _) = call(
+        &auth,
+        HttpMethod::Post,
+        "/organization/invite-member",
+        json!({"organizationId":org,"email":"Member@Example.com","role":"member"}),
+        &owner,
+    )
+    .await;
+    assert_eq!(duplicate_status, 200, "{duplicate_body}");
+    assert_eq!(duplicate_body["id"], invitation);
+    let invitations = store
+        .list_user_invitations("Member@Example.com")
+        .await
+        .unwrap();
+    assert_eq!(invitations.len(), 1);
+    assert_eq!(invitations[0].id, invitation);
+
     let (status, body, _) = call(
         &auth,
         HttpMethod::Post,
@@ -494,6 +522,7 @@ async fn invitations_and_name_hooks() {
             json!({"invitationId":body["id"]}),
             &unverified_cookie,
         ),
+        Some("192.0.2.1"),
     )
     .await
     .unwrap();
@@ -548,8 +577,10 @@ async fn api_keys_format_hash_permissions_and_rate() {
     assert_eq!(status, 404);
     // The published plugin exposes validation only through session emulation.
     // Enable it in this probe; Snowtime's real configuration keeps it disabled.
-    let mut probe = ApiKeyConfig::default();
-    probe.enable_session_for_api_keys = true;
+    let probe = ApiKeyConfig {
+        enable_session_for_api_keys: true,
+        ..Default::default()
+    };
     let validator = BetterAuth::<Schema>::new(AuthConfig::new(SECRET).base_url(ORIGIN))
         .store(store.clone())
         .plugin(ApiKeyPlugin::with_config(probe))
@@ -878,7 +909,6 @@ async fn passkey_signed_registration_login_reload_replay_and_origin() {
 
 #[tokio::test]
 async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() {
-    use better_auth_core::Middleware;
     let store = store(Duration::from_secs(1));
     let (id, cookie) = user(&store, "policy@example.com").await;
     let counts = Arc::new(crate::rate_limit::MemoryStore::default());
@@ -888,12 +918,15 @@ async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() 
         production: true,
     };
     let response = policy
-        .before_request(&req(
-            HttpMethod::Post,
-            "/update-user",
-            json!({"name":"x".repeat(101)}),
-            &cookie,
-        ))
+        .before_request(
+            &req(
+                HttpMethod::Post,
+                "/update-user",
+                json!({"name":"x".repeat(101)}),
+                &cookie,
+            ),
+            Some("192.0.2.1"),
+        )
         .await
         .unwrap()
         .unwrap();
@@ -902,12 +935,15 @@ async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() 
         "NAME_TOO_LONG"
     );
     let response = policy
-        .before_request(&req(
-            HttpMethod::Post,
-            "/organization/update",
-            json!({"data":{"slug":"changed"}}),
-            &cookie,
-        ))
+        .before_request(
+            &req(
+                HttpMethod::Post,
+                "/organization/update",
+                json!({"data":{"slug":"changed"}}),
+                &cookie,
+            ),
+            Some("192.0.2.1"),
+        )
         .await
         .unwrap()
         .unwrap();
@@ -928,7 +964,7 @@ async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() 
     );
     assert_eq!(
         policy
-            .before_request(&request)
+            .before_request(&request, Some("192.0.2.1"))
             .await
             .unwrap()
             .unwrap()
@@ -945,7 +981,10 @@ async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() 
         .unwrap();
     assert_eq!(
         policy
-            .before_request(&req(HttpMethod::Get, "/get-session", Value::Null, &cookie))
+            .before_request(
+                &req(HttpMethod::Get, "/get-session", Value::Null, &cookie),
+                Some("192.0.2.1")
+            )
             .await
             .unwrap()
             .unwrap()
@@ -963,12 +1002,10 @@ async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() 
     for _ in 0..10 {
         assert!(
             policy
-                .before_request(&req(
-                    HttpMethod::Post,
-                    "/organization/create",
-                    json!({}),
-                    &cookie
-                ))
+                .before_request(
+                    &req(HttpMethod::Post, "/organization/create", json!({}), &cookie),
+                    Some("192.0.2.1")
+                )
                 .await
                 .unwrap()
                 .is_none()
@@ -976,12 +1013,10 @@ async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() 
     }
     assert_eq!(
         policy
-            .before_request(&req(
-                HttpMethod::Post,
-                "/organization/create",
-                json!({}),
-                &cookie
-            ))
+            .before_request(
+                &req(HttpMethod::Post, "/organization/create", json!({}), &cookie),
+                Some("192.0.2.1")
+            )
             .await
             .unwrap()
             .unwrap()
@@ -998,12 +1033,15 @@ async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() 
     }
     assert_eq!(
         policy
-            .before_request(&req(
-                HttpMethod::Post,
-                "/update-user",
-                json!({"name":"Alice"}),
-                &cookie
-            ))
+            .before_request(
+                &req(
+                    HttpMethod::Post,
+                    "/update-user",
+                    json!({"name":"Alice"}),
+                    &cookie
+                ),
+                Some("192.0.2.1")
+            )
             .await
             .unwrap()
             .unwrap()
@@ -1017,12 +1055,10 @@ async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() 
     };
     for _ in 0..11 {
         assert!(
-            dev.before_request(&req(
-                HttpMethod::Post,
-                "/organization/create",
-                json!({}),
-                &cookie
-            ))
+            dev.before_request(
+                &req(HttpMethod::Post, "/organization/create", json!({}), &cookie),
+                Some("192.0.2.1")
+            )
             .await
             .unwrap()
             .is_none()
@@ -1032,56 +1068,132 @@ async fn policy_verified_invitations_existing_session_domains_and_fixed_rates() 
 
 #[tokio::test]
 async fn cookie_boundary_refuses_raw_tampered_and_bearer_tokens() {
-    let store = store(Duration::from_secs(1));
-    let (id, cookie) = user(&store, "cookie@example.com").await;
-    let auth = BetterAuth::<Schema>::new(AuthConfig::new(SECRET).base_url(ORIGIN))
+    for origin in [ORIGIN, "https://localhost:3100"] {
+        let store = store_at(Duration::from_secs(1), origin);
+        let (id, cookie) = user(&store, "cookie@example.com").await;
+        let auth = BetterAuth::<Schema>::new(
+            AuthConfig::new("different-alpha-secret-at-least-32-characters").base_url(origin),
+        )
         .store(store.clone())
         .plugin(SessionManagementPlugin::new())
         .build()
         .await
         .unwrap();
-    let policy = super::Policy {
-        store: store.clone(),
-        counts: Arc::new(crate::rate_limit::MemoryStore::default()),
-        production: false,
-    };
-    let response = super::handle_with_policy(
-        &auth,
-        &policy,
-        req(HttpMethod::Get, "/get-session", Value::Null, &cookie),
-    )
-    .await
-    .unwrap();
-    assert_eq!(
-        serde_json::from_slice::<Value>(&response.body).unwrap()["user"]["id"],
-        id
-    );
-    let token = store.get_user_sessions(&id).await.unwrap()[0].token.clone();
-    for cookie in [
-        format!("better-auth.session_token={token}"),
-        format!("{cookie}invalid"),
-    ] {
+        let policy = super::Policy {
+            store: store.clone(),
+            counts: Arc::new(crate::rate_limit::MemoryStore::default()),
+            production: false,
+        };
         let response = super::handle_with_policy(
             &auth,
             &policy,
             req(HttpMethod::Get, "/get-session", Value::Null, &cookie),
+            Some("192.0.2.1"),
         )
         .await
         .unwrap();
+        assert_eq!(
+            serde_json::from_slice::<Value>(&response.body).unwrap()["user"]["id"],
+            id
+        );
+        store
+            .app
+            .db()
+            .execute(
+                "update user set email='cookie@other.com' where id=?1",
+                [&id],
+            )
+            .unwrap();
+        let rejected = super::handle_with_policy(
+            &auth,
+            &policy,
+            req(HttpMethod::Get, "/get-session", Value::Null, &cookie),
+            Some("192.0.2.1"),
+        )
+        .await
+        .unwrap();
+        assert_eq!(rejected.status, 403);
+        let token = store.get_user_sessions(&id).await.unwrap()[0].token.clone();
+        for cookie in [
+            format!("better-auth.session_token={token}"),
+            format!("__Secure-better-auth.session_token={token}"),
+            format!("{cookie}invalid"),
+        ] {
+            let response = super::handle_with_policy(
+                &auth,
+                &policy,
+                req(HttpMethod::Get, "/get-session", Value::Null, &cookie),
+                Some("192.0.2.1"),
+            )
+            .await
+            .unwrap();
+            assert_eq!(
+                serde_json::from_slice::<Value>(&response.body).unwrap(),
+                Value::Null
+            );
+        }
+        let mut request = req(HttpMethod::Get, "/get-session", Value::Null, "");
+        request
+            .headers
+            .insert("authorization".into(), format!("Bearer {token}"));
+        let response = super::handle_with_policy(&auth, &policy, request, Some("192.0.2.1"))
+            .await
+            .unwrap();
         assert_eq!(
             serde_json::from_slice::<Value>(&response.body).unwrap(),
             Value::Null
         );
     }
-    let mut request = req(HttpMethod::Get, "/get-session", Value::Null, "");
-    request
-        .headers
-        .insert("authorization".into(), format!("Bearer {token}"));
-    let response = super::handle_with_policy(&auth, &policy, request)
-        .await
-        .unwrap();
+}
+
+#[tokio::test]
+async fn policy_rates_use_host_resolved_ip() {
+    let policy = Policy {
+        store: store(Duration::from_secs(1)),
+        counts: Arc::new(crate::rate_limit::MemoryStore::default()),
+        production: true,
+    };
+    for n in 0..11 {
+        let mut request = req(
+            HttpMethod::Post,
+            "/organization/create",
+            json!({"name":"Test","slug":"test"}),
+            "",
+        );
+        request.headers.insert(
+            "x-forwarded-for".into(),
+            format!("198.51.100.{n}, 203.0.113.1"),
+        );
+        let response = policy
+            .before_request(&request, Some("192.0.2.1"))
+            .await
+            .unwrap();
+        if n < 10 {
+            assert!(response.is_none());
+        } else {
+            assert_eq!(response.unwrap().status, 429);
+        }
+    }
+    let request = req(
+        HttpMethod::Post,
+        "/organization/create",
+        json!({"name":"Test","slug":"test"}),
+        "",
+    );
+    assert!(
+        policy
+            .before_request(&request, Some("192.0.2.2"))
+            .await
+            .unwrap()
+            .is_none()
+    );
     assert_eq!(
-        serde_json::from_slice::<Value>(&response.body).unwrap(),
-        Value::Null
+        policy
+            .before_request(&request, Some("192.0.2.1"))
+            .await
+            .unwrap()
+            .unwrap()
+            .status,
+        429
     );
 }

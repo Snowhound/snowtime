@@ -142,24 +142,12 @@ rejected, as in task 069.
    `@better-auth/api-key`'s format and stored hash. Versions are pinned, and each bump runs its compatibility
    tests and the conformance suite.
 
-   Spike result, 2026-10-06: the published `1.0.0-alpha.3` works with a `rusqlite`
-   store on the app's schema, through the host's existing database gate. It requires
-   12 store traits, even without device authorization and two-factor plugins. The
-   adapter is 1,585 Rust lines; seven focused tests and all 33 server tests pass. An
-   80 ms transaction deadline releases the writer after an async stall in 83.5 ms;
-   the lane's admission deadline alone does not bound that hold. API keys match
-   TypeScript's 69-character `snow_` format and 43-character base64url SHA-256 hash.
-
-   Recommendation: keep better-auth-rs as the target, but don't adopt this release
-   unchanged. Its public API lacks server-only scoped key creation and verification,
-   its passkey verifier refuses UV=false registrations that TypeScript accepts, and
-   its published cookie code uses raw tokens. The spike supplies the signed-cookie
-   boundary and app policies, including the missing verified-invitation check.
-   Production adoption waits on the key/passkey fixes, the final lane API, and the
-   upstream compatibility and app HTTP conformance suites. Those broader suites
-   weren't run. [Results and reproduction](auth-spike.md) record the traits,
-   schema mappings, measurements, and remaining checks. The per-request native
-   cookie check and AWS-LC scrypt stay in place.
+   Spike result, 2026-10-06: published `1.0.0-alpha.3` runs the app's auth flows
+   with a `rusqlite` store through the host's database gate. Keep better-auth-rs as
+   the target, but don't adopt this release unchanged: API key and passkey gaps,
+   final lane integration, and broader conformance checks remain. Keep the native
+   signed-cookie check and AWS-LC scrypt. [Results and recommendation](auth-spike.md)
+   record the evidence and adoption gates.
 
    It has no teams: they're its roadmap phases 14 and 15, outside its v1 scope, and on
    2026-10-02 nobody had started them. So teams leave Better Auth first (task 080, Kait,

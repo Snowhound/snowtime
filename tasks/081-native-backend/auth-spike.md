@@ -66,13 +66,13 @@ Lines from `wc -l`, including blanks and comments, after `rustfmt`:
 | File                                 | Lines |
 | ------------------------------------ | ----: |
 | `store.rs`                           | 1,075 |
-| `transaction.rs`                     |   119 |
+| `transaction.rs`                     |   125 |
 | `passkeys.rs`                        |   122 |
 | `mod.rs` (schema and session model)  |    66 |
-| `bridge.rs` (cookie boundary)        |    64 |
-| `policy.rs`                          |   133 |
-| Rust adapter total                   | 1,585 |
-| `tests.rs`                           | 1,087 |
+| `bridge.rs` (cookie boundary)        |    68 |
+| `policy.rs`                          |   126 |
+| Rust adapter total                   | 1,582 |
+| `tests.rs`                           | 1,199 |
 | TypeScript interoperability fixtures |   143 |
 
 The query helper maps snake-case columns, integer milliseconds, and booleans to the
@@ -171,20 +171,30 @@ before writing, and a policy boundary handles request-specific rules:
 - The boundary reuses the host's fixed-window `MemoryStore`, with a supplied shared
   instance for user writes. It tests 10 organization creates per hour, the 11th refusal,
   120 writes per minute shared with app calls, and production-only auth/IP counting.
-  The invite rule is 30 per minute. The edge must supply a trusted client address;
-  the library's forwarded-header defaults are not that trust decision.
+  The invite rule is 30 per minute. The caller supplies the host's resolved
+  `Request.client_ip`, using `Config.client_ip_header`; policy never reads forwarded
+  headers. A regression rotates raw `x-forwarded-for` values while holding the
+  resolved address fixed and still reaches the limit. Distinct resolved addresses
+  have separate buckets; a missing address uses the shared `unknown` bucket.
 
 The library's own sliding-window middleware differs from the app's atomic fixed
 windows, so disable it when mounting the app policy. The actual host must supply its
 one shared counter store; this spike does not alter `App` to mount the boundary.
 
 `handle_with_policy` checks policy on the signed request before `handle` unwraps the
-session cookie. `handle` verifies the app's HMAC, gives the alpha only the verified
-raw token, strips Authorization, and signs outgoing session-token cookies again.
-The hot path still calls the existing native cookie/session code. Boundary tests
-accept its valid cookie and refuse raw tokens, tampered signatures, and Bearer tokens. The alpha's raw
-cookie and unconditional Bearer fallback never become that path. Its cookie cache
-is not enabled in this spike.
+session cookie. Both use the host's `App.session` configuration for signing and
+verification. `handle` removes both the app cookie name and the alpha's unprefixed
+cookie name, passes only the verified raw token, strips Authorization, and signs
+outgoing session-token cookies again. The hot path still calls the existing native
+cookie/session code. HTTP and HTTPS boundary tests accept the host's signed cookie,
+refuse both raw cookie names, tampered signatures, and Bearer tokens, and enforce
+the current domain policy. The tests deliberately use a different alpha secret to
+check that policy and bridge depend on the same host configuration. The alpha's
+cookie cache is not enabled in this spike.
+
+Invitation creation and both email lookup methods lowercase addresses. A plugin
+regression reuses the pending invitation for a mixed-case address and finds the
+original row through a mixed-case user-invitation lookup.
 
 ## Recommendation and adoption gate
 
@@ -205,7 +215,7 @@ Keep better-auth-rs as the intended library, but leave production adoption open 
 4. Mount the policy/cookie boundary, keep the key endpoints closed, and run the upstream
    compatibility harness plus the app's HTTP conformance suite against that exact pin.
 
-Seven focused spike tests pass, and all 33 server tests pass. Clippy passes with warnings
+Eight focused spike tests pass, and all 34 server tests pass. Clippy passes with warnings
 as errors. The upstream dual-server compatibility harness and the full app HTTP
 conformance suite were **not** run; these results do not establish full parity or an
 RSS/CPU gain. No recommendation to replace Rust or the native backend follows from

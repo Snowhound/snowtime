@@ -5,16 +5,20 @@ use crate::auth::{SessionConfig, cookie};
 use better_auth::{AuthResult, BetterAuth};
 use better_auth_core::{AuthRequest, AuthResponse};
 
-pub async fn handle(auth: &BetterAuth<Schema>, mut req: AuthRequest) -> AuthResult<AuthResponse> {
-    let config = SessionConfig {
-        secret: auth.config().secret.clone(),
-        secure: auth.config().session.cookie_secure,
-    };
+pub async fn handle(
+    auth: &BetterAuth<Schema>,
+    config: &SessionConfig,
+    mut req: AuthRequest,
+) -> AuthResult<AuthResponse> {
     req.headers.remove("authorization");
     if let Some(header) = req.headers.remove("cookie") {
         let mut pairs = header
             .split(';')
-            .filter(|p| p.trim().split('=').next() != Some(config.cookie_name()))
+            .filter(|p| {
+                let name = p.trim().split('=').next();
+                name != Some(config.cookie_name())
+                    && name != Some(auth.config().session.cookie_name.as_str())
+            })
             .map(str::to_owned)
             .collect::<Vec<_>>();
         if let Some(value) = cookie::find(&header, config.cookie_name())
@@ -55,10 +59,10 @@ pub async fn handle_with_policy(
     auth: &BetterAuth<Schema>,
     policy: &super::Policy,
     req: AuthRequest,
+    client_ip: Option<&str>,
 ) -> AuthResult<AuthResponse> {
-    use better_auth_core::Middleware;
-    if let Some(response) = policy.before_request(&req).await? {
+    if let Some(response) = policy.before_request(&req, client_ip).await? {
         return Ok(response);
     }
-    handle(auth, req).await
+    handle(auth, &policy.store.app.session, req).await
 }
