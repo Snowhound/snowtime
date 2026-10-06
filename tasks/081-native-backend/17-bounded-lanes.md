@@ -76,6 +76,9 @@ tests only; nothing was measured.
 - Rendering: the pool keeps its own queue, so a caller withdraws its page on timeout or
   drop. The restart budget defaults to 5 panics in 60 seconds (`Policy`), unmeasured.
 - Health: `/livez` and `/readyz` on the host, outside `/api/v1`.
+- Readers: Kait made `DB_READ_CONNECTIONS=auto` the default on 2026-10-06, and `auto` now
+  opens no readers on one core and one per core above that. The measurements here
+  should confirm both with the split gates.
 
 Left for later sessions: the waiting-count bound, dedicated hash threads, the
 report/export budget, the runtime comparison, the measurements, and the client's refusal

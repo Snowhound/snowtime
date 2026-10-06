@@ -25,8 +25,7 @@ pub fn from_env() -> Result<Config, String> {
     let edge = crate::edge::Config::from_env(&app_url)?;
     let cpus = std::thread::available_parallelism().map_or(1, |n| n.get());
     let read_connections = match var("DB_READ_CONNECTIONS").as_deref() {
-        None | Some("0") => 0,
-        Some("auto") => std::thread::available_parallelism().map_or(1, |n| n.get()),
+        None | Some("auto") => auto_readers(cpus),
         Some(n) => n
             .parse::<usize>()
             .ok()
@@ -77,4 +76,20 @@ pub fn from_env() -> Result<Config, String> {
                 .ascii_serialization(),
         },
     })
+}
+
+// A reader per core, but none on one core, where a reader held fewer users than the single
+// connection (task 081.10).
+fn auto_readers(cpus: usize) -> usize {
+    if cpus > 1 { cpus } else { 0 }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn auto_gives_one_core_no_readers() {
+        assert_eq!(super::auto_readers(1), 0);
+        assert_eq!(super::auto_readers(2), 2);
+        assert_eq!(super::auto_readers(8), 8);
+    }
 }

@@ -60,9 +60,10 @@ let ids = query.query(db, |row| row.get::<_, String>(0))?;
 ```
 
 `Assignments` omits absent patches, binds null for removals, and binds present values.
-The writer caches 256 prepared statements. `DB_READ_CONNECTIONS=0` (the default)
-keeps all requests on that connection. Set `DB_READ_CONNECTIONS=auto` for one read-only
-connection per available core, or a number from 0 to 256 for an explicit pool size.
+The writer caches 256 prepared statements. `DB_READ_CONNECTIONS=auto` (the default)
+opens one read-only connection per available core, and none on a one-core host, where
+all requests use the writer. Set a number from 0 to 256 for an explicit pool size; 0 keeps
+all requests on the writer.
 The host uses WAL in both modes. Each reader has a 2 MiB page-cache budget and caches
 64 prepared statements; these caches fill on demand.
 

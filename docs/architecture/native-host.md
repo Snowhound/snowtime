@@ -120,10 +120,12 @@ under it. The simulation isn't planned yet.
 The host sizes each lane from the memory it may use (the cgroup's limit or physical
 memory) and its CPUs, as it already sizes the render pool (task 081.01). On one core each
 lane gets one worker, except the renderers, whose count comes from task 081.16's
-measurements. The read pool is opt-in (`DB_READ_CONNECTIONS`, default 0): it raised the
-held eight-core offer 1.3 times on M and 6 times on L, but one reader on one core held
-15,000 users on M against 25,000 with the single connection (task 081.10). Budget at
-least 2 MiB of page cache per reader plus its statements.
+measurements. The host opens a reader per core when it has more than one core, and none
+on one core (`DB_READ_CONNECTIONS=auto`, the default since 2026-10-06). The read pool
+raised the held eight-core offer 1.3 times on M and 6 times on L, but one reader on one
+core held 15,000 users on M against 25,000 with the single connection (task 081.10).
+Those runs predate the gate per connection class, and task 081.17's measurements repeat
+them. Budget at least 2 MiB of page cache per reader plus its statements.
 
 Task 081.10's provisional whole-host test budgets are 2 GiB for M and 4 GiB for L,
 including the OS, replication, and file cache. They come from a shared Mac VM and await
