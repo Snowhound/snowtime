@@ -100,6 +100,16 @@ it:
   tried (03, 06)
 - One writer and a pool of readers on WAL; bounded database work that refuses with 503
   past a deadline. Open: built in 10, not yet measured
+- Better Auth through an app-owned `rusqlite` store on the host's lanes (question 5,
+  [auth spike](auth-spike.md), 2026-10-06). The 1,582-line adapter proves storage and
+  selected flows without SeaORM or sqlx. Reject a library-owned pool where the host
+  owns admission and one writer. Bound an async transaction's writer lifetime
+  separately from admission. Keep the app's signed-cookie check at the boundary.
+  This applies to a Better Auth/SQLite port that keeps its schema; applications with
+  attestation policies cannot reuse the spike's passkey mapping. Open: adoption of a
+  pinned better-auth-rs release with public server-only key calls and TypeScript's
+  passkey UV policy, followed by compatibility and HTTP conformance runs. Alpha.3
+  alone does not pass that gate.
 - AWS-LC for scrypt (08)
 - The optional in-process edge, and Caddy's tuning where Caddy stays (07)
 - Drizzle's migrations applied by the binary, recorded as drizzle-orm records them

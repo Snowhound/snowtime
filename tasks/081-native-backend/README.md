@@ -142,6 +142,13 @@ rejected, as in task 069.
    `@better-auth/api-key`'s format and stored hash. Versions are pinned, and each bump runs its compatibility
    tests and the conformance suite.
 
+   Spike result, 2026-10-06: published `1.0.0-alpha.3` runs the app's auth flows
+   with a `rusqlite` store through the host's database gate. Keep better-auth-rs as
+   the target, but don't adopt this release unchanged: API key and passkey gaps,
+   final lane integration, and broader conformance checks remain. Keep the native
+   signed-cookie check and AWS-LC scrypt. [Results and recommendation](auth-spike.md)
+   record the evidence and adoption gates.
+
    It has no teams: they're its roadmap phases 14 and 15, outside its v1 scope, and on
    2026-10-02 nobody had started them. So teams leave Better Auth first (task 080, Kait,
    2026-10-02), and better-auth-rs needs no team support. The rejected way was a teams

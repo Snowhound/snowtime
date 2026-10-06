@@ -13,3 +13,6 @@ pub(crate) use sign_in::FetchHeaders;
 
 pub mod routes;
 mod sign_in;
+
+#[cfg(feature = "auth-spike")]
+pub mod spike;
