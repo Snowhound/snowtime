@@ -71,8 +71,11 @@ impl IntoResponse for Response {
 
 pub struct App {
     pub(crate) db: Mutex<Connection>,
-    pub(crate) db_gate: crate::admission::Gate,
+    // One slot, for the writer. Without readers every call takes it.
+    pub(crate) write_gate: crate::admission::Gate,
     pub(crate) hash_gate: crate::admission::Gate,
+    // A slot per reader, so a read admitted through the gate finds one idle.
+    read_gate: Option<crate::admission::Gate>,
     readers: Option<crate::connections::Readers>,
     pub(crate) config: Config,
     pub(crate) session: SessionConfig,
@@ -83,7 +86,7 @@ impl App {
         Self::open_with_readers(config, 0)
     }
     pub fn open_with_readers(config: Config, count: usize) -> rusqlite::Result<Arc<Self>> {
-        Self::open_with_limits(config, count, crate::Limits::for_readers(count))
+        Self::open_with_limits(config, count, crate::Limits::default())
     }
     pub fn open_with_limits(
         config: Config,
@@ -110,8 +113,11 @@ impl App {
             )?)
         };
         Ok(Arc::new(Self {
-            db_gate: crate::admission::Gate::new(limits.db_calls, limits.queue_timeout),
+            write_gate: crate::admission::Gate::new(1, limits.queue_timeout),
             hash_gate: crate::admission::Gate::new(limits.hashes, limits.queue_timeout),
+            read_gate: readers
+                .is_some()
+                .then(|| crate::admission::Gate::new(count, limits.queue_timeout)),
             readers,
             db: Mutex::new(db),
             config,
@@ -127,6 +133,7 @@ impl App {
         let user = crate::auth::session::find_session_with_writer(
             db,
             &self.db,
+            &self.write_gate,
             &self.session,
             cookie,
             now,
@@ -263,6 +270,7 @@ fn respond(db: &Connection, result: Result<WireResponse>) -> Response {
         Ok(r) => r.into(),
         Err(Error::App(e)) => app_failure(e).into(),
         Err(Error::Invalid(e)) => failure(400, &e).into(),
+        Err(Error::Busy) => crate::admission::busy().into(),
         Err(Error::Database(e)) => unavailable_or(db, &e).into(),
     }
 }
@@ -302,7 +310,8 @@ impl Request {
 }
 
 // Runs a call off the async runtime, holding the one connection from the session check
-// through the rule, and answers with its result and Server-Timing.
+// through the rule, and answers with its result and Server-Timing. A read with the read pool
+// on waits for a reader; anything else waits for the writer.
 async fn answer(
     app: Arc<App>,
     request: Request,
@@ -311,7 +320,12 @@ async fn answer(
 ) -> Response {
     #[cfg(feature = "bench")]
     let admission = std::time::Instant::now();
-    let permit = match app.db_gate.acquire().await {
+    let on_reader = app.readers.is_some() && (read || request.method == "GET");
+    let gate = match &app.read_gate {
+        Some(gate) if on_reader => gate,
+        _ => &app.write_gate,
+    };
+    let permit = match gate.acquire().await {
         Ok(p) => p,
         Err(r) => return r,
     };
@@ -321,11 +335,11 @@ async fn answer(
         let _permit = permit;
         #[cfg(feature = "bench")]
         let waiting = std::time::Instant::now();
-        let reader = if read || request.method == "GET" {
-            app.readers.as_ref().map(|p| p.acquire())
-        } else {
-            None
-        };
+        let reader = app
+            .readers
+            .as_ref()
+            .filter(|_| on_reader)
+            .map(|p| p.acquire());
         let writer = if reader.is_none() {
             Some(app.db())
         } else {
@@ -418,6 +432,7 @@ impl Public<Empty> {
                 crate::auth::session::find_session_with_writer(
                     db,
                     &app.db,
+                    &app.write_gate,
                     &app.session,
                     cookie,
                     clock::now(),
@@ -491,7 +506,7 @@ impl App {
     pub fn bench_stats(&self) -> serde_json::Value {
         let writer = self.db.try_lock().ok().map(|db| crate::bench::sqlite(&db));
         let readers = self.readers.as_ref().map(|r| r.stats());
-        serde_json::json!({ "db_admission": self.db_gate.stats(), "hash_admission": self.hash_gate.stats(), "writer": writer, "readers": readers,
+        serde_json::json!({ "read_admission": self.read_gate.as_ref().map(|g| g.stats()), "write_admission": self.write_gate.stats(), "hash_admission": self.hash_gate.stats(), "writer": writer, "readers": readers,
             "sqlite_busy_errors": crate::bench::SQLITE_BUSY_ERRORS.load(std::sync::atomic::Ordering::Relaxed),
             "blocking_threads": crate::bench::BLOCKING_THREADS.load(std::sync::atomic::Ordering::Relaxed),
             "blocking_threads_peak": crate::bench::BLOCKING_THREADS_PEAK.load(std::sync::atomic::Ordering::Relaxed),

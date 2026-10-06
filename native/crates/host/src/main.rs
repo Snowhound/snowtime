@@ -1,5 +1,6 @@
 mod config;
 mod edge;
+mod health;
 mod memory;
 mod pages;
 
@@ -16,7 +17,8 @@ fn main() {
     snowtime_server::clock::init_from_env();
     let config = config::from_env().unwrap_or_else(|message| panic!("{message}"));
     let runtime = tokio::runtime::Builder::new_multi_thread()
-        .max_blocking_threads(config.limits.db_calls + config.limits.hashes)
+        // A thread for each reader, the writer, and each hash the gates admit.
+        .max_blocking_threads(config.read_connections + 1 + config.limits.hashes)
         .enable_all()
         .build()
         .expect("the host runtime starts");
@@ -82,6 +84,10 @@ async fn serve(config: config::Config) {
             }
         });
     }
+    let health = health::routes(health::Lanes {
+        api: api.clone(),
+        pool: pool.clone(),
+    });
     let pages = Router::new()
         .fallback(pages::page)
         .with_state(Arc::new(pages::Pages {
@@ -89,7 +95,7 @@ async fn serve(config: config::Config) {
             app_url: origin.clone(),
         }));
 
-    let router = edge::router(api, pages, &config.edge, &origin);
+    let router = edge::router(api.merge(health), pages, &config.edge, &origin);
     let handle = axum_server::Handle::new();
     let shutdown_handle = handle.clone();
     tokio::spawn(async move {

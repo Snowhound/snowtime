@@ -234,7 +234,7 @@ impl App {
         let credentials_trace = trace.clone();
         let app = self.clone();
         let found = match self
-            .db_gate
+            .write_gate
             .run(move || {
                 #[cfg(feature = "bench")]
                 let waiting = std::time::Instant::now();
@@ -284,7 +284,7 @@ impl App {
         let session_trace = trace.clone();
         let app = self.clone();
         let token = match self
-            .db_gate
+            .write_gate
             .run(move || {
                 #[cfg(feature = "bench")]
                 let waiting = std::time::Instant::now();

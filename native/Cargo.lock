@@ -3669,6 +3669,7 @@ dependencies = [
  "rusqlite",
  "rustls",
  "rustls-acme",
+ "serde",
  "snowtime-render",
  "snowtime-server",
  "tempfile",

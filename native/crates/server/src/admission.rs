@@ -1,23 +1,29 @@
 //! Admission happens asynchronously, before a call can occupy a blocking thread.
+use crate::WireResponse;
 use crate::http::Response;
 use crate::wire::failure;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
+/// The database gates take their sizes from the connections: one slot per reader, and one
+/// for the writer.
 pub struct Limits {
-    pub db_calls: usize,
     pub hashes: usize,
     pub queue_timeout: Duration,
 }
-impl Limits {
-    pub fn for_readers(readers: usize) -> Self {
+impl Default for Limits {
+    fn default() -> Self {
         Self {
-            db_calls: readers + 2,
             hashes: std::thread::available_parallelism().map_or(1, |n| n.get()),
             queue_timeout: Duration::from_secs(1),
         }
     }
+}
+
+/// The answer when a gate refuses a caller.
+pub(crate) fn busy() -> WireResponse {
+    failure(503, "The server is busy. Try again.")
 }
 pub(crate) struct Gate {
     slots: Arc<Semaphore>,
@@ -46,7 +52,11 @@ impl Gate {
             .await
             .ok()
             .and_then(Result::ok)
-            .ok_or_else(|| failure(503, "The server is busy. Try again.").into())
+            .ok_or_else(|| busy().into())
+    }
+    /// `acquire` for a blocking thread of the host's runtime.
+    pub fn acquire_blocking(&self) -> Result<OwnedSemaphorePermit, Response> {
+        tokio::runtime::Handle::current().block_on(self.acquire())
     }
     #[cfg(feature = "bench")]
     pub fn stats(&self) -> serde_json::Value {

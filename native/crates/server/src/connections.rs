@@ -73,7 +73,9 @@ impl Drop for ReadLease<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::admission::Gate;
     use crate::auth::session::{EXPIRES_IN_S, SessionConfig, find_session_with_writer};
+    use std::time::Duration;
 
     #[test]
     fn session_maintenance_on_the_writer_does_not_relock_it() {
@@ -98,14 +100,16 @@ mod tests {
                 secure: false,
             };
             let cookie = config.session_cookie("token");
+            let gate = Gate::new(1, Duration::from_secs(1));
             let db = writer.lock().unwrap();
             let session =
-                find_session_with_writer(&db, &writer, &config, Some(&cookie), now).unwrap();
+                find_session_with_writer(&db, &writer, &gate, &config, Some(&cookie), now).unwrap();
             assert!(session.is_some());
             assert!(
                 find_session_with_writer(
                     &db,
                     &writer,
+                    &gate,
                     &config,
                     Some(&cookie),
                     now + 31 * 86_400_000
@@ -141,6 +145,10 @@ mod tests {
             .unwrap();
         let writer = Mutex::new(writer);
         let readers = Readers::open(path.to_str().unwrap(), 2).unwrap();
+        // A reader waits for the writer's gate on the runtime, as a blocking thread would.
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let _runtime = runtime.enter();
+        let gate = Gate::new(1, Duration::from_secs(1));
         let first = readers.acquire();
         let second = readers.acquire();
         assert!(first.execute("delete from session", []).is_err());
@@ -149,7 +157,7 @@ mod tests {
             secure: false,
         };
         let cookie = config.session_cookie("token");
-        let session = find_session_with_writer(&first, &writer, &config, Some(&cookie), now)
+        let session = find_session_with_writer(&first, &writer, &gate, &config, Some(&cookie), now)
             .unwrap()
             .unwrap();
         assert_eq!(session.user_id, "alice");
@@ -173,9 +181,16 @@ mod tests {
             .unwrap();
         for request_now in [stale_expiry - 1, stale_expiry + 1] {
             assert!(
-                find_session_with_writer(&first, &writer, &config, Some(&cookie), request_now)
-                    .unwrap()
-                    .is_some()
+                find_session_with_writer(
+                    &first,
+                    &writer,
+                    &gate,
+                    &config,
+                    Some(&cookie),
+                    request_now
+                )
+                .unwrap()
+                .is_some()
             );
             let actual: i64 = writer
                 .lock()
@@ -189,6 +204,7 @@ mod tests {
             find_session_with_writer(
                 &second,
                 &writer,
+                &gate,
                 &config,
                 Some(&cookie),
                 refreshed_expiry + 1

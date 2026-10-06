@@ -40,25 +40,45 @@ pub struct Session {
 }
 
 /// The session of a request's Cookie header, or None. An expired session is deleted; one
-/// used a day or more after it was last renewed is renewed for 30 days.
+/// used a day or more after it was last renewed is renewed for 30 days. On a read-only
+/// connection, either fails; `find_session_with_writer` handles them.
 pub fn find_session(
     db: &Connection,
     config: &SessionConfig,
     cookie_header: Option<&str>,
     now: i64,
 ) -> rusqlite::Result<Option<Session>> {
-    find_session_using(db, config, cookie_header, now, None)
+    match find_session_using(db, config, cookie_header, now)? {
+        Found::Session(session) => Ok(session),
+        Found::NeedsWriter => Err(rusqlite::Error::InvalidQuery),
+    }
 }
 
+/// `find_session` on any connection. A read-only one takes the writer, through its gate and
+/// within the gate's deadline, only to renew or delete the session.
 pub(crate) fn find_session_with_writer(
     db: &Connection,
     writer: &std::sync::Mutex<Connection>,
+    gate: &crate::admission::Gate,
     config: &SessionConfig,
     cookie_header: Option<&str>,
     now: i64,
-) -> rusqlite::Result<Option<Session>> {
-    let writer = db.is_readonly("main")?.then_some(writer);
-    find_session_using(db, config, cookie_header, now, writer)
+) -> crate::Result<Option<Session>> {
+    match find_session_using(db, config, cookie_header, now)? {
+        Found::Session(session) => Ok(session),
+        Found::NeedsWriter => {
+            let _permit = gate.acquire_blocking().map_err(|_| crate::Error::Busy)?;
+            let writer = writer.lock().unwrap_or_else(|e| e.into_inner());
+            // A different reader may have renewed the session before this writer was acquired.
+            Ok(find_session(&writer, config, cookie_header, now)?)
+        }
+    }
+}
+
+enum Found {
+    Session(Option<Session>),
+    // Renewing or deleting the session needs the writer; `db` is read-only.
+    NeedsWriter,
 }
 
 fn find_session_using(
@@ -66,13 +86,12 @@ fn find_session_using(
     config: &SessionConfig,
     cookie_header: Option<&str>,
     now: i64,
-    writer: Option<&std::sync::Mutex<Connection>>,
-) -> rusqlite::Result<Option<Session>> {
+) -> rusqlite::Result<Found> {
     let Some(cookie) = cookie_header.and_then(|h| cookie::find(h, config.cookie_name())) else {
-        return Ok(None);
+        return Ok(Found::Session(None));
     };
     let Some(token) = cookie::verify(&cookie, &config.secret) else {
-        return Ok(None);
+        return Ok(Found::Session(None));
     };
     let session = db
         .prepare_cached(
@@ -92,32 +111,25 @@ fn find_session_using(
         })
         .optional()?;
     let Some((session, expires_at)) = session else {
-        return Ok(None);
+        return Ok(Found::Session(None));
     };
-    // The SELECT has finished before taking the writer. No read transaction spans it.
-    let needs_write =
-        expires_at < now || expires_at - EXPIRES_IN_S * 1000 + UPDATE_AGE_S * 1000 <= now;
-    let writer = if needs_write && db.is_readonly("main")? {
-        writer.map(|w| w.lock().unwrap_or_else(|e| e.into_inner()))
-    } else {
-        None
-    };
-    if let Some(writer) = writer.as_deref() {
-        // A different reader may have renewed the session before this writer was acquired.
-        return find_session(writer, config, cookie_header, now);
+    let expired = expires_at < now;
+    let renew = expires_at - EXPIRES_IN_S * 1000 + UPDATE_AGE_S * 1000 <= now;
+    // The SELECT has finished, so no read transaction spans the wait for the writer.
+    if (expired || renew) && db.is_readonly("main")? {
+        return Ok(Found::NeedsWriter);
     }
-
-    if expires_at < now {
+    if expired {
         db.execute("delete from session where token = ?1", [token])?;
-        return Ok(None);
+        return Ok(Found::Session(None));
     }
-    if expires_at - EXPIRES_IN_S * 1000 + UPDATE_AGE_S * 1000 <= now {
+    if renew {
         db.execute(
             "update session set expires_at = ?1, updated_at = ?2 where token = ?3",
             params![now + EXPIRES_IN_S * 1000, now, token],
         )?;
     }
-    Ok(Some(session))
+    Ok(Found::Session(Some(session)))
 }
 
 /// The signed-in user of a request's Cookie header, or None.

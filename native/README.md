@@ -77,11 +77,17 @@ and normal completion. The pool remains opt-in: measured benefits depend on the
 workload and core allocation. [Subtask 10](../tasks/081-native-backend/10-load-and-scaling.md)
 records the paired results, memory costs, and reasons for retaining the default.
 
-DB calls acquire async admission before entering Tokio's blocking pool.
-`DB_CONCURRENCY` defaults to readers plus two; `SCRYPT_CONCURRENCY` defaults to available
-cores. `WORK_QUEUE_TIMEOUT_MS` defaults to 1,000 ms. Admission expiry returns 503 with
-`Retry-After: 1`. The blocking thread limit is the sum of DB and hash concurrency.
-Sign-in holds no DB permit while hashing. Renderer reads use the host runtime.
+DB calls acquire async admission before entering Tokio's blocking pool. Each connection
+class has its own gate: reads wait for one of the `DB_READ_CONNECTIONS` readers when the
+read pool is on, and everything else waits for the writer's single slot. A reader that
+must renew or delete a session waits for the writer's gate within its deadline.
+`SCRYPT_CONCURRENCY` defaults to available cores. `WORK_QUEUE_TIMEOUT_MS` defaults to
+1,000 ms. Admission expiry returns 503 with `Retry-After: 1`. The blocking thread limit is
+the readers, plus one for the writer, plus the hash concurrency. Sign-in holds no DB
+permit while hashing. Renderer reads use the host runtime.
+
+`/livez` answers 200 while the API can serve, and `/readyz` reports each lane
+([native-host.md](../docs/architecture/native-host.md), "Health").
 
 Ramp-first whole-server runs and the two-machine repeat protocol are in
 [`bench/scaling/README.md`](bench/scaling/README.md).

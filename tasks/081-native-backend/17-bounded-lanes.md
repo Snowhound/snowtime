@@ -1,6 +1,6 @@
 # 081.17: The lane contract, the overload policy, and refusal in the client
 
-Status: todo
+Status: in-progress
 
 Bring the database, password hashing, and V8 render lanes up to the contract in
 [native-host.md](../../docs/architecture/native-host.md), and build the overload policy
@@ -20,7 +20,7 @@ eight cores, with and without the read pool.
 
 Database and hashing:
 
-- [ ] One gate per connection class: reads wait for a reader and writes for the writer
+- [x] One gate per connection class: reads wait for a reader and writes for the writer
       when the read pool is on. A test with a deliberately slow writer shows reads
       continuing on idle readers, and one with slow readers shows a timer write going
       through. Session maintenance from a reader takes the writer within the writer's
@@ -41,17 +41,17 @@ Database and hashing:
 
 Rendering (V8):
 
-- [ ] The queue deadline enforced on the caller's side: a page queued behind a stuck render
+- [x] The queue deadline enforced on the caller's side: a page queued behind a stuck render
       is refused near `max_queue_wait`, not after the render deadline, with a test
-- [ ] A cancelled page leaves the queue at once, and cancelling or timing out a page aborts
+- [x] A cancelled page leaves the queue at once, and cancelling or timing out a page aborts
       the API calls it has queued on the host's runtime, with tests
-- [ ] A supervisor restarts a renderer thread that panics, keeps the renderer count
+- [x] A supervisor restarts a renderer thread that panics, keeps the renderer count
       correct, and answers its queued callers; a restart budget, with planned isolate
       replacements not counted, marks the render lane down, with tests
 
 Host and client:
 
-- [ ] Liveness and readiness as in "Health" in native-host.md, with a test where the render
+- [x] Liveness and readiness as in "Health" in native-host.md, with a test where the render
       lane is down and the API still serves
 - [ ] Tokio's `current_thread` runtime compared with the multi-threaded one on one core,
       with CPU per request and p95, and the choice recorded in native-host.md
@@ -60,3 +60,23 @@ Host and client:
       Reads retry with jitter, waiting at least `Retry-After`. A test injects 503s into an
       edit and the queries it invalidates, and counts the attempts
 - [ ] The decisions catalogue in task 081.05 updated with the results
+
+## Progress, 2026-10-06
+
+Branch `081-lanes` (off `081-native-poc`) built the five ticked criteria, with code and
+tests only; nothing was measured.
+
+- Database: the writer's gate has one slot, so single-connection mode admits one call
+  at a time where `DB_CONCURRENCY` admitted two. `DB_CONCURRENCY` is gone, and the
+  blocking thread cap is the readers plus one plus `SCRYPT_CONCURRENCY`. The M and L
+  repeats must check that the single-connection offer holds. A reader renewing a session
+  holds its connection while it waits for the writer, up to the writer's deadline; if
+  renewals under a slow writer starve reads, the alternative is to release the reader,
+  renew on the writer, and rerun the call on a reader.
+- Rendering: the pool keeps its own queue, so a caller withdraws its page on timeout or
+  drop. The restart budget defaults to 5 panics in 60 seconds (`Policy`), unmeasured.
+- Health: `/livez` and `/readyz` on the host, outside `/api/v1`.
+
+Left for later sessions: the waiting-count bound, dedicated hash threads, the
+report/export budget, the runtime comparison, the measurements, and the client's refusal
+handling.

@@ -113,8 +113,9 @@ databases, users, and recording to the appropriate machines. Use
 [`perf/README.md`](../../../perf/README.md)'s remote stack setup and credentials.
 
 Deploy each app-server cell with its assigned core and total memory budget. Configure
-`DB_READ_CONNECTIONS`, `DB_CONCURRENCY`, `SCRYPT_CONCURRENCY`, and
-`WORK_QUEUE_TIMEOUT_MS` in the native container. Keep one Bun process for TypeScript.
+`DB_READ_CONNECTIONS`, `SCRYPT_CONCURRENCY`, and `WORK_QUEUE_TIMEOUT_MS` in the native
+container. Builds before task 081.17 also take `DB_CONCURRENCY` (readers plus two); later
+ones size the database gates from the connections. Keep one Bun process for TypeScript.
 Stop app and Litestream before restoring the source dataset and clearing only the
 benchmark database's replication metadata. Use a fresh replica directory per cell,
 then wait for replication to reach steady state before offering load.
@@ -165,8 +166,8 @@ On the app machine, before starting load:
    set app memory-plus-swap equal to app memory, matching the local matrix. Record
    replication/proxy swap limits explicitly; the local defaults allow up to twice
    their RAM limit. Native uses `DB_READ_CONNECTIONS=0` then `auto`,
-   `DB_CONCURRENCY=<readers-plus-two>`, `SCRYPT_CONCURRENCY=<cores>`, and
-   `WORK_QUEUE_TIMEOUT_MS=1000`. Keep one Bun process.
+   `SCRYPT_CONCURRENCY=<cores>`, and `WORK_QUEUE_TIMEOUT_MS=1000`, plus
+   `DB_CONCURRENCY=<readers-plus-two>` for builds before task 081.17. Keep one Bun process.
 5. Stop app and Litestream. Copy the pinned source into only the benchmark data volume,
    remove its old `snowtime.db-wal`, `snowtime.db-shm`, and `.snowtime.db-litestream`,
    and select a new replica directory. Record hashes of the DB, users, and recording

@@ -42,7 +42,6 @@ pub fn from_env() -> Result<Config, String> {
         })
     };
     let limits = snowtime_server::Limits {
-        db_calls: number("DB_CONCURRENCY", read_connections + 2)?,
         hashes: number("SCRYPT_CONCURRENCY", cpus)?,
         queue_timeout: std::time::Duration::from_millis(
             number("WORK_QUEUE_TIMEOUT_MS", 1000)? as u64

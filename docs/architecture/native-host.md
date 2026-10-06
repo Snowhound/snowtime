@@ -42,11 +42,17 @@ as the V8 renderers are. The contract matters more than the mechanism. A lane ge
 own threads where the shared pool can't keep the contract: password hashing, whose lower
 priority must not carry over to database work on a reused thread.
 
-| Lane             | Built                                                                                                | _Planned_                                                                                            |
-| ---------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Database         | One gate of `DB_CONCURRENCY` slots (readers plus two) for reads and writes, bounded by time (081.10) | A gate per connection class, a waiting count, and a smaller budget for reports and exports           |
-| Password hashing | A gate of `SCRYPT_CONCURRENCY` slots on the shared blocking pool, sized from cores (081.10)          | Dedicated threads at lower priority, sized from memory as well                                       |
-| Rendering        | V8: a bounded queue that refuses when full, and a deadline checked when a page is dequeued (081.01)  | V8: the deadline on the caller's side, a supervisor, and a restart budget. Bun: the sidecar (081.16) |
+| Lane             | Built                                                                                                                                                       | _Planned_                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Database         | A gate per connection class, bounded by time: a slot per reader for reads with the read pool on, one for the writer (081.10, 081.17)                        | A waiting count, and a smaller budget for reports and exports  |
+| Password hashing | A gate of `SCRYPT_CONCURRENCY` slots on the shared blocking pool, sized from cores (081.10)                                                                 | Dedicated threads at lower priority, sized from memory as well |
+| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar (081.16)                                      |
+
+A reader that must renew or delete a session waits for the writer's gate on its own
+thread, within the writer's deadline, and the call answers 503 past it. The V8 restart
+budget counts only renderer threads that panic. An isolate replaced after a failed render
+or for its heap doesn't count, so one page that fails every time can't take the lane
+down.
 
 Reasons:
 
@@ -89,9 +95,11 @@ the `Retry-After` the server sent ("Application rules" in [README.md](README.md)
 ## Health
 
 Liveness fails only when the host can't serve the API. Readiness reports each lane:
-ready, degraded, or down. A render lane past its restart budget serves pages from V8 if
-the image includes it, which is degraded, or answers 503 for pages while the API keeps
-working. An orchestrator therefore doesn't restart a host whose API is healthy, which
+ready, degraded, or down. The host answers `/livez` with 200, or 503 when the database
+check fails, and `/readyz` with each lane's state as JSON. A database lane that refuses
+the check for being full counts as degraded, not down. A render lane past its restart
+budget serves pages from V8 if the image includes it, which is degraded, or answers 503
+for pages while the API keeps working. An orchestrator therefore doesn't restart a host whose API is healthy, which
 would also reset the budget.
 
 ## Rules stay synchronous and free of I/O

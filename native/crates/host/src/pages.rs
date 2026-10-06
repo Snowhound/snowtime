@@ -15,45 +15,52 @@ use std::sync::Arc;
 use std::time::Instant;
 
 /// The render isolate's API calls, through the API router as the browser's would go, with
-/// the page's cookie, which the bundle adds to each.
+/// the page's cookie, which the bundle adds to each. A call runs on the host's runtime and
+/// is aborted when the page drops it, as when the page is cancelled or times out.
 pub fn in_process(api: Router) -> SendApi {
     let runtime = tokio::runtime::Handle::current();
     Arc::new(move |call| {
         let api = api.clone();
         let runtime = runtime.clone();
         Box::pin(async move {
-            runtime
-                .spawn(async move {
-                    let mut request = Request::builder()
-                        .method(call.method.as_str())
-                        .uri(call.path);
-                    for (name, value) in call.headers {
-                        request = request.header(name, value);
-                    }
-                    let request = request
-                        .body(Body::from(call.body))
-                        .map_err(|e| e.to_string())?;
-                    let response = api.oneshot(request).await.unwrap_or_else(|e| match e {});
-                    let status = response.status().as_u16();
-                    let headers = response
-                        .headers()
-                        .iter()
-                        .filter_map(|(n, v)| Some((n.to_string(), v.to_str().ok()?.to_owned())))
-                        .collect();
-                    let body = to_bytes(response.into_body(), usize::MAX)
-                        .await
-                        .map_err(|e| e.to_string())?
-                        .to_vec();
-                    Ok(ApiResponse {
-                        status,
-                        headers,
-                        body,
-                    })
+            let mut task = AbortOnDrop(runtime.spawn(async move {
+                let mut request = Request::builder()
+                    .method(call.method.as_str())
+                    .uri(call.path);
+                for (name, value) in call.headers {
+                    request = request.header(name, value);
+                }
+                let request = request
+                    .body(Body::from(call.body))
+                    .map_err(|e| e.to_string())?;
+                let response = api.oneshot(request).await.unwrap_or_else(|e| match e {});
+                let status = response.status().as_u16();
+                let headers = response
+                    .headers()
+                    .iter()
+                    .filter_map(|(n, v)| Some((n.to_string(), v.to_str().ok()?.to_owned())))
+                    .collect();
+                let body = to_bytes(response.into_body(), usize::MAX)
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .to_vec();
+                Ok(ApiResponse {
+                    status,
+                    headers,
+                    body,
                 })
-                .await
-                .map_err(|e| e.to_string())?
+            }));
+            (&mut task.0).await.map_err(|e| e.to_string())?
         })
     })
+}
+
+// Dropping a Tokio JoinHandle detaches its task; this aborts it instead.
+struct AbortOnDrop<T>(tokio::task::JoinHandle<T>);
+impl<T> Drop for AbortOnDrop<T> {
+    fn drop(&mut self) {
+        self.0.abort();
+    }
 }
 
 pub struct Pages {
@@ -138,6 +145,10 @@ pub async fn page(State(pages): State<Arc<Pages>>, request: Request) -> Response
                 .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));
             busy
         }
+        Err(RenderError::Down) => text(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Pages are unavailable. Try again later.",
+        ),
         Err(RenderError::Failed(error)) => {
             tracing::error!(path, %error, "render failed");
             text(
@@ -145,5 +156,55 @@ pub async fn page(State(pages): State<Arc<Pages>>, request: Request) -> Response
                 "The page failed to render.",
             )
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use snowtime_render::ApiRequest;
+    use std::time::Duration;
+    use tokio::sync::mpsc;
+
+    #[tokio::test]
+    async fn dropping_a_call_aborts_it_on_the_host_runtime() {
+        struct Dropped(mpsc::UnboundedSender<&'static str>);
+        impl Drop for Dropped {
+            fn drop(&mut self) {
+                let _ = self.0.send("dropped");
+            }
+        }
+        let (events, mut received) = mpsc::unbounded_channel();
+        let api = Router::new().route(
+            "/stuck",
+            axum::routing::get(move || {
+                let events = events.clone();
+                async move {
+                    let _dropped = Dropped(events.clone());
+                    let _ = events.send("called");
+                    std::future::pending::<()>().await;
+                }
+            }),
+        );
+        let call = in_process(api)(ApiRequest {
+            method: "GET".into(),
+            path: "/stuck".into(),
+            headers: vec![],
+            body: vec![],
+        });
+        let call = tokio::spawn(call);
+        assert_eq!(
+            tokio::time::timeout(Duration::from_secs(1), received.recv())
+                .await
+                .unwrap(),
+            Some("called")
+        );
+        call.abort();
+        assert_eq!(
+            tokio::time::timeout(Duration::from_secs(1), received.recv())
+                .await
+                .unwrap(),
+            Some("dropped")
+        );
     }
 }

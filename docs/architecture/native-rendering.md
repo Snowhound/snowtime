@@ -19,10 +19,6 @@ contract in [native-host.md](native-host.md).
 
 ## V8 in the host
 
-The V8 pool doesn't yet keep the whole lane contract: its queue deadline is checked only
-when a page is dequeued, and no supervisor restarts a renderer thread that panics
-([native-host.md](native-host.md)).
-
 The native backend embeds V8 through `deno_core` and loads the app's Solid server bundle
 from a startup snapshot. It uses Start's streaming render, router dehydration, and
 serialization adapters. The server bundle must split route components like the client
@@ -40,7 +36,12 @@ taking the next, keeping locale, cookies, and query state separate.
 The host sizes the pool from the memory it may use, the cgroup's limit or physical
 memory, and from its CPUs, with at least one renderer. On Linux it watches its RSS and,
 near the limit, has renderers collect after every page and stops the extra ones. A full
-queue, or a page that waited too long in it, answers 503.
+queue answers 503, and so does a page still queued after `max_queue_wait`, however long
+the render ahead of it takes. A page whose client leaves is withdrawn from the queue, or
+stopped if it renders, and the API calls it started are aborted. A supervisor thread
+joins the renderer threads and replaces one that panics. Past the restart budget the
+pool is down, and pages answer 503 while the API keeps working
+([native-host.md](native-host.md)).
 
 Deno's web extensions supply URL parsing, encoding, and streams. The host collects on
 idle time or a used-heap threshold and replaces an isolate when collection fails to
