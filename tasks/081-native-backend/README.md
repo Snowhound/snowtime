@@ -125,6 +125,13 @@ rejected, as in task 069.
    invitation, API key, and device authorization flows against it on this app's schema,
    after task 080. If it holds, the native backend is in Rust.
 
+   Kait, 2026-10-06: better-auth-rs is the intended auth library; its compatibility harness
+   against `better-auth@1.7.6` outweighs the alpha label, which concerns its Rust API. The
+   spike also checks that its SeaORM adapter can work through the host's database lanes
+   (one writer, admission) rather than opening connections of its own, and how Better
+   Auth's scrypt hashes verify. Versions are pinned, and each bump runs its compatibility
+   tests and the conformance suite.
+
    It has no teams: they're its roadmap phases 14 and 15, outside its v1 scope, and on
    2026-10-02 nobody had started them. So teams leave Better Auth first (task 080, Kait,
    2026-10-02), and better-auth-rs needs no team support. The rejected way was a teams

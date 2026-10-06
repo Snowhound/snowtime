@@ -268,9 +268,9 @@ as recipes:
 - **The core ported, the long tail as JS jobs.** The app's central calls run in Rust, and
   rarely used server code runs as its TypeScript in a job lane, later possibly compiled by
   Perry (subtask 04). This fits an app with many server functions for features few people
-  use, where the core ports easily. Examples are Better Auth's rare flows (OAuth
-  callbacks, passkey registration, device authorization), payment or cloud SDKs, and PDF
-  or XLSX generation. Kait, 2026-10-06:
+  use, where the core ports easily. Examples are payment or cloud SDKs, PDF or XLSX
+  generation, and an auth flow its Rust library lacks. Auth itself ports to better-auth-rs
+  (task 081, question 5); a job is the fallback for a flow it doesn't have yet. Kait, 2026-10-06:
   - **Not the renderers.** Jobs run in their own lane, with their own bundle, an
     admission budget below timer calls, and a pool that starts on demand and exits when
     idle, since a rarely used job shouldn't hold memory. A slow job never blocks pages.
@@ -279,13 +279,13 @@ as recipes:
   - **The database only through the host,** because two processes must not write one
     SQLite file (task 043). A Drizzle-based library uses Drizzle's `sqlite-proxy` driver,
     whose callback forwards each statement to the host's lanes. State a library keeps in
-    memory, such as Better Auth's rate limits, moves to the database, because a job
+    memory, such as a rate limiter's counters, moves to the database, because a job
     process can exit at any time.
   - **A job kind declares three settings:** its secrets, whether it reaches the network,
     and whether it reads or writes the database.
   - **The engine follows the code.** Pure computation runs on either engine. Code that
-    needs Node's APIs (`node:crypto`, `Buffer`, `AsyncLocalStorage`), as most SDKs and
-    Better Auth do, runs on Bun, because `deno_core` has no Node layer. The survey
+    needs Node's APIs (`node:crypto`, `Buffer`, `AsyncLocalStorage`), as most SDKs do,
+    runs on Bun, because `deno_core` has no Node layer. The survey
     classifies each candidate by its settings and the Node APIs it uses, which picks the
     engine or rules the hybrid out.
 
