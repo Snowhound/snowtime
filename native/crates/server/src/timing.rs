@@ -68,3 +68,23 @@ impl Timer {
         )
     }
 }
+
+#[cfg(feature = "bench")]
+pub(crate) fn cpu_ms() -> f64 {
+    #[cfg(target_os = "linux")]
+    {
+        let mut t = libc::timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        // A thread-local CPU clock excludes time waiting for SQLite and the scheduler.
+        unsafe {
+            libc::clock_gettime(libc::CLOCK_THREAD_CPUTIME_ID, &mut t);
+        }
+        t.tv_sec as f64 * 1000.0 + t.tv_nsec as f64 / 1e6
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        0.0
+    }
+}

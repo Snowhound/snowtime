@@ -15,6 +15,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/binary"
 	"encoding/json"
 	"io"
 	"log"
@@ -31,21 +32,24 @@ import (
 const keep = 4 * 60 * 60
 
 // Processes by their command name (comm, at most 15 characters).
-var watched = map[string]string{"snowtime": "app", "caddy": "caddy"}
+var watched = map[string]string{"snowtime": "app", "caddy": "caddy", "k6": "k6", "litestream": "litestream"}
 
 type Container struct {
-	CPUUsec       int64 `json:"cpuUsec"`
-	UserUsec      int64 `json:"userUsec"`
-	SystemUsec    int64 `json:"systemUsec"`
-	Throttled     int64 `json:"throttled"`
-	ThrottledUsec int64 `json:"throttledUsec"`
-	Memory        int64 `json:"memory"`
-	MemoryPeak    int64 `json:"memoryPeak"`
-	Anon          int64 `json:"anon"`
-	File          int64 `json:"file"`
-	ReadBytes     int64 `json:"readBytes"`
-	WriteBytes    int64 `json:"writeBytes"`
-	OOMKills      int64 `json:"oomKills"`
+	Generation    string `json:"generation"`
+	PID           int    `json:"pid"`
+	CPUUsec       int64  `json:"cpuUsec"`
+	UserUsec      int64  `json:"userUsec"`
+	SystemUsec    int64  `json:"systemUsec"`
+	Throttled     int64  `json:"throttled"`
+	ThrottledUsec int64  `json:"throttledUsec"`
+	Memory        int64  `json:"memory"`
+	MemoryPeak    int64  `json:"memoryPeak"`
+	Swap          int64  `json:"swap"`
+	Anon          int64  `json:"anon"`
+	File          int64  `json:"file"`
+	ReadBytes     int64  `json:"readBytes"`
+	WriteBytes    int64  `json:"writeBytes"`
+	OOMKills      int64  `json:"oomKills"`
 	// Pressure stall totals in microseconds: some, and for memory and IO also full.
 	CPUSome    int64 `json:"cpuSome"`
 	MemorySome int64 `json:"memorySome"`
@@ -53,7 +57,8 @@ type Container struct {
 	IOSome     int64 `json:"ioSome"`
 	IOFull     int64 `json:"ioFull"`
 	// The main process's resident memory, from /proc/<pid>/status.
-	RSS int64 `json:"rss"`
+	RSS     int64 `json:"rss"`
+	Threads int64 `json:"threads"`
 }
 
 type Sample struct {
@@ -67,8 +72,10 @@ type Sample struct {
 	Files        map[string]int64      `json:"files"`
 	Containers   map[string]*Container `json:"containers"`
 	// The sampler's own time spent reading, in microseconds.
-	ReadUsec int64 `json:"readUsec"`
-	Heap     *Heap `json:"heap,omitempty"`
+	ReadUsec   int64             `json:"readUsec"`
+	Heap       *Heap             `json:"heap,omitempty"`
+	WAL        map[string]uint32 `json:"wal,omitempty"`
+	Litestream string            `json:"litestreamMetrics,omitempty"`
 }
 
 // The app's process.memoryUsage(), in bytes, and how long it took to answer. An answer that
@@ -110,11 +117,9 @@ func env(key, fallback string) string {
 func main() {
 	go func() {
 		next := time.Now().Truncate(time.Second)
-		for i := 0; ; i++ {
-			// Processes restart, so the cgroups are looked up again every 10 seconds.
-			if i%10 == 0 {
-				findGroups()
-			}
+		for {
+			// Discover short-lived generator processes on each sample.
+			findGroups()
 			next = next.Add(time.Second)
 			time.Sleep(time.Until(next))
 			sample := read()
@@ -199,11 +204,27 @@ func read() Sample {
 	mu.Unlock()
 	for name, g := range current {
 		if g.path != "" {
-			sample.Containers[name] = container(g)
+			if value := container(g); value != nil {
+				sample.Containers[name] = value
+			}
 		}
 	}
 	if appURL != "" {
 		sample.Heap = heap()
+	}
+	if data, err := os.ReadFile(filepath.Join(dataDir, "snowtime.db-shm")); err == nil && len(data) >= 136 {
+		sample.WAL = map[string]uint32{
+			"liveFrames":                binary.LittleEndian.Uint32(data[16:20]),
+			"checkpointedFrames":        binary.LittleEndian.Uint32(data[96:100]),
+			"checkpointAttemptedFrames": binary.LittleEndian.Uint32(data[128:132]),
+		}
+	}
+	if endpoint := os.Getenv("LITESTREAM_URL"); endpoint != "" {
+		if response, err := client.Get(endpoint + "/metrics"); err == nil {
+			data, _ := io.ReadAll(io.LimitReader(response.Body, 128<<10))
+			response.Body.Close()
+			sample.Litestream = string(data)
+		}
 	}
 	var after syscall.Rusage
 	syscall.Getrusage(syscall.RUSAGE_SELF, &after)
@@ -227,9 +248,13 @@ func usec(t syscall.Timeval) int64 { return t.Sec*1_000_000 + int64(t.Usec) }
 
 func container(g group) *Container {
 	cpu := keyed(filepath.Join(g.path, "cpu.stat"))
+	if _, live := cpu["usage_usec"]; !live {
+		return nil
+	}
 	memory := keyed(filepath.Join(g.path, "memory.stat"))
 	events := keyed(filepath.Join(g.path, "memory.events"))
 	c := &Container{
+		Generation: g.path, PID: g.pid,
 		CPUUsec:       cpu["usage_usec"],
 		UserUsec:      cpu["user_usec"],
 		SystemUsec:    cpu["system_usec"],
@@ -237,9 +262,11 @@ func container(g group) *Container {
 		ThrottledUsec: cpu["throttled_usec"],
 		Memory:        number(filepath.Join(g.path, "memory.current")),
 		MemoryPeak:    number(filepath.Join(g.path, "memory.peak")),
+		Swap:          number(filepath.Join(g.path, "memory.swap.current")),
 		Anon:          memory["anon"],
 		File:          memory["file"],
 		OOMKills:      events["oom_kill"],
+		Threads:       keyed(filepath.Join("/proc", strconv.Itoa(g.pid), "status"))["Threads"],
 		RSS:           keyed(filepath.Join("/proc", strconv.Itoa(g.pid), "status"))["VmRSS"] * 1024,
 	}
 	c.ReadBytes, c.WriteBytes = ioBytes(filepath.Join(g.path, "io.stat"))
@@ -348,9 +375,9 @@ type Request struct {
 }
 
 type logLine struct {
-	Fields RequestFields `json:"fields"`
-	Target  string  `json:"target"`
-	Time    float64 `json:"ts"`
+	Fields  RequestFields `json:"fields"`
+	Target  string        `json:"target"`
+	Time    float64       `json:"ts"`
 	Request struct {
 		Headers map[string][]string `json:"headers"`
 	} `json:"request"`

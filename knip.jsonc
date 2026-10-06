@@ -15,7 +15,7 @@
     "perf/weather/vite.config.ts",
     "perf/stress/scenario.js",
     "perf/stress/edge-config.ts",
-    "native/bench/*.ts",
+    "native/bench/**/*.ts",
     "native/crates/render/bundle/*.{ts,tsx,js}",
   ],
   "drizzle": false,

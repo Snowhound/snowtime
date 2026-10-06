@@ -289,6 +289,8 @@ struct Shared {
     renderers: AtomicUsize,
     // Renderers in the middle of a page.
     busy: AtomicUsize,
+    #[cfg(feature = "bench")]
+    refused: AtomicUsize,
     spawning: AtomicBool,
     pressure: AtomicBool,
 }
@@ -303,6 +305,8 @@ pub struct Pool {
 pub struct Stats {
     pub renderers: usize,
     pub queued: usize,
+    #[cfg(feature = "bench")]
+    pub refused: usize,
 }
 
 impl Pool {
@@ -318,6 +322,8 @@ impl Pool {
                 manifest: manifest.into(),
                 renderers: AtomicUsize::new(0),
                 busy: AtomicUsize::new(0),
+                #[cfg(feature = "bench")]
+                refused: AtomicUsize::new(0),
                 spawning: AtomicBool::new(false),
                 pressure: AtomicBool::new(false),
                 policy,
@@ -337,7 +343,11 @@ impl Pool {
             queued: Instant::now(),
             reply,
         };
-        self.jobs.try_send(job).map_err(|_| RenderError::Busy)?;
+        self.jobs.try_send(job).map_err(|_| {
+            #[cfg(feature = "bench")]
+            self.shared.refused.fetch_add(1, Ordering::Relaxed);
+            RenderError::Busy
+        })?;
         self.grow();
         answer
             .await
@@ -374,6 +384,8 @@ impl Pool {
         Stats {
             renderers: self.shared.renderers.load(Ordering::SeqCst),
             queued: self.jobs.max_capacity() - self.jobs.capacity(),
+            #[cfg(feature = "bench")]
+            refused: self.shared.refused.load(Ordering::Relaxed),
         }
     }
 }
@@ -425,11 +437,28 @@ async fn run_renderer(shared: Arc<Shared>) {
             continue;
         }
         if job.queued.elapsed() > policy.max_queue_wait {
+            #[cfg(feature = "bench")]
+            shared.refused.fetch_add(1, Ordering::Relaxed);
             let _ = job.reply.send(Err(RenderError::Busy));
             continue;
         }
         shared.busy.fetch_add(1, Ordering::SeqCst);
+        #[cfg(feature = "bench")]
+        let queue_ms = job.queued.elapsed().as_secs_f64() * 1000.0;
+        #[cfg(feature = "bench")]
+        let cpu = cpu_ms();
         let page = renderer.render(&job.request).await;
+        #[cfg(feature = "bench")]
+        let page = page.map(|mut p| {
+            p.headers.push((
+                "server-timing".into(),
+                format!(
+                    "render_queue;dur={queue_ms:.3}, render_cpu;dur={:.3}",
+                    cpu_ms() - cpu
+                ),
+            ));
+            p
+        });
         shared.busy.fetch_sub(1, Ordering::SeqCst);
         let _ = job.reply.send(page.map_err(RenderError::Failed));
         dirty = true;
@@ -462,6 +491,26 @@ fn retire(shared: &Shared, idle_since: Instant) -> bool {
             (n > shared.policy.min_renderers.max(1)).then(|| n - 1)
         })
         .is_ok()
+}
+
+#[cfg(feature = "bench")]
+fn cpu_ms() -> f64 {
+    #[cfg(target_os = "linux")]
+    {
+        let mut t = libc::timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        // Only this renderer's CPU, excluding the host's in-process API worker threads.
+        unsafe {
+            libc::clock_gettime(libc::CLOCK_THREAD_CPUTIME_ID, &mut t);
+        }
+        t.tv_sec as f64 * 1000.0 + t.tv_nsec as f64 / 1e6
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        0.0
+    }
 }
 
 #[cfg(test)]

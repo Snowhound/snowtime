@@ -215,6 +215,8 @@ which records the edge measurements.
   in the Rust binary
 - [08](08-fast-scrypt.md): a faster scrypt for the native sign-in
 - [09](09-http3.md): HTTP/3 in the native host, measured against HTTP/2
+- [10](10-load-and-scaling.md): whole-server load, core and memory scaling, and a measured
+  read-connection pool (local protocol complete)
 - [11](11-turso-engine.md): Turso's engine, its speed against SQLite, and its backups
 - [12](12-profiling.md): profiles of both servers under load, once features and tests are done
 - [13](13-render-allocations.md): render allocations and the remaining engine gap

@@ -9,7 +9,7 @@ import { installClock } from './clock'
 import type { PageInput, StartServerProps } from './contract'
 
 let context: PageInput | undefined
-let locale: string | undefined
+let locale: PageInput['locale']
 setSend(async (path, init) => {
   const headers = new Headers(init.headers)
   if (context?.cookie) headers.set('cookie', context.cookie)

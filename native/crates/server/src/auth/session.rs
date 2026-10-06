@@ -47,6 +47,27 @@ pub fn find_session(
     cookie_header: Option<&str>,
     now: i64,
 ) -> rusqlite::Result<Option<Session>> {
+    find_session_using(db, config, cookie_header, now, None)
+}
+
+pub(crate) fn find_session_with_writer(
+    db: &Connection,
+    writer: &std::sync::Mutex<Connection>,
+    config: &SessionConfig,
+    cookie_header: Option<&str>,
+    now: i64,
+) -> rusqlite::Result<Option<Session>> {
+    let writer = db.is_readonly("main")?.then_some(writer);
+    find_session_using(db, config, cookie_header, now, writer)
+}
+
+fn find_session_using(
+    db: &Connection,
+    config: &SessionConfig,
+    cookie_header: Option<&str>,
+    now: i64,
+    writer: Option<&std::sync::Mutex<Connection>>,
+) -> rusqlite::Result<Option<Session>> {
     let Some(cookie) = cookie_header.and_then(|h| cookie::find(h, config.cookie_name())) else {
         return Ok(None);
     };
@@ -73,6 +94,19 @@ pub fn find_session(
     let Some((session, expires_at)) = session else {
         return Ok(None);
     };
+    // The SELECT has finished before taking the writer. No read transaction spans it.
+    let needs_write =
+        expires_at < now || expires_at - EXPIRES_IN_S * 1000 + UPDATE_AGE_S * 1000 <= now;
+    let writer = if needs_write && db.is_readonly("main")? {
+        writer.map(|w| w.lock().unwrap_or_else(|e| e.into_inner()))
+    } else {
+        None
+    };
+    if let Some(writer) = writer.as_deref() {
+        // A different reader may have renewed the session before this writer was acquired.
+        return find_session(writer, config, cookie_header, now);
+    }
+
     if expires_at < now {
         db.execute("delete from session where token = ?1", [token])?;
         return Ok(None);
