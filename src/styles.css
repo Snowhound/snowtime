@@ -764,15 +764,6 @@ summary,
 .cal-day[data-today] {
   background-color: color-mix(in oklab, var(--accent) 35%, transparent);
 }
-/* Time that hasn't happened yet: entries can't end there. */
-.cal-future {
-  @apply pointer-events-none absolute inset-x-0 bottom-0;
-  background-image: repeating-linear-gradient(
-    135deg,
-    color-mix(in oklab, var(--muted-foreground) 10%, transparent) 0 6px,
-    transparent 6px 12px
-  );
-}
 .cal-now {
   @apply bg-primary pointer-events-none absolute inset-x-0 z-20 h-0.5;
 }

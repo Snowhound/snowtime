@@ -887,8 +887,7 @@ bar stays on top; the calendar takes the place of the entry list and the summary
   and disabled. Previous, next, and Today move by week.
 - **Grid**: 48 px per hour, snapping to 15 minutes. The body scrolls inside the card and
   opens at 07:00, or half an hour before the week's first entry when that is earlier. Today's
-  column is tinted and has a now line. Time after now is hatched, since entries can't end in
-  the future.
+  column is tinted and has a now line.
 - **Entries**: a block per entry in a tint of its project's color, with a bar in the full
   color; no project and unavailable projects are muted with a dashed bar. Tall blocks show the
   description, the project, and the times with the duration; short ones one line with the

@@ -93,12 +93,9 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     end: times().end ?? localTime(props.entry.stoppedAt.getTime(), props.zone),
   }))
 
-  function readNow() {
-    return readEntryTimes(values(), { running: false, zone: props.zone, original: props.entry })
-  }
-  // What the row shows. Its future check keeps the time of the last change, so a commit
-  // reads again with `readNow`.
-  const read = createMemo(readNow)
+  const read = createMemo(() =>
+    readEntryTimes(values(), { running: false, zone: props.zone, original: props.entry }),
+  )
 
   // The times' error, on the field it belongs to; `key` is the field being committed.
   function timesError(key: TimeKey, result = read()): { key: TimeKey; message: string } | null {
@@ -106,10 +103,7 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     if (!start) return { key: 'start', message: m.entry_error_missing_start() }
     if (!end) return { key: 'end', message: m.entry_error_missing_end() }
     if (!result.error) return null
-    return {
-      key,
-      message: result.error === 'future' ? m.entry_error_future() : m.entry_error_missing(),
-    }
+    return { key, message: m.entry_error_missing() }
   }
 
   // After a failed commit, the error follows the input until it is fixed.
@@ -131,7 +125,6 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     const { startedAt, stoppedAt } = props.entry
     const start = sameTimeOn(startedAt.getTime(), value, props.zone)
     const stop = start + stoppedAt.getTime() - startedAt.getTime()
-    if (stop > Date.now()) return { error: m.entry_error_future() }
     return { startedAt: new Date(start), stoppedAt: new Date(stop) }
   }
 
@@ -173,7 +166,7 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     },
     commitTimes(key: TimeKey) {
       if (times().start === undefined && times().end === undefined) return
-      const result = readNow()
+      const result = read()
       const error = timesError(key, result)
       if (error) {
         setInvalid(error.key)

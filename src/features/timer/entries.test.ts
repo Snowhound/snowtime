@@ -172,12 +172,14 @@ describe('readEntryTimes', () => {
     })
   })
 
-  test('requires every time, and no end in the future', () => {
+  test('requires every time, and allows an end in the future', () => {
     expect(readEntryTimes({ date: '2026-09-24', start: '09:00', end: '' }, options)).toEqual({
       error: 'missing',
     })
     expect(readEntryTimes({ date: '2026-09-24', start: '14:00', end: '15:30' }, options)).toEqual({
-      error: 'future',
+      startedAt: new Date('2026-09-24T11:00:00Z'),
+      stoppedAt: new Date('2026-09-24T12:30:00Z'),
+      nextDay: false,
     })
   })
 

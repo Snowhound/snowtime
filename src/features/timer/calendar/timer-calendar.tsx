@@ -51,7 +51,7 @@ import {
 } from './week-grid'
 
 const MINUTE = 60_000
-// The now line and the hatched future move this often.
+// The now line moves this often.
 const TICK_MS = 30_000
 const FLASH_MS = 1400
 // How long an entry a key moved waits for its block, on the day it moved to, to take focus.
@@ -419,7 +419,7 @@ export function TimerCalendar(props: {
     return slot && { startedAt: slot.startedAt.getTime(), stoppedAt: slot.stoppedAt.getTime() }
   }
 
-  // Where the grid's now line and hatched future start on the day, or null when the day is past.
+  // Where the grid's now line is on the day, or null when the day is past.
   function nowTop(date: IsoDate) {
     const start = startOfDay(date, zone())
     const end = startOfDay(addDays(date, 1), zone())
@@ -499,9 +499,6 @@ export function TimerCalendar(props: {
                 data-today={date === today() ? '' : undefined}
                 aria-label={formatIsoDate(date, { weekday: 'long', day: 'numeric', month: 'long' })}
               >
-                <Show when={nowTop(date) !== null}>
-                  <div class="cal-future" style={{ top: `${nowTop(date)}px` }} />
-                </Show>
                 <For each={keysOn(date)}>
                   {(key) => (
                     <Show

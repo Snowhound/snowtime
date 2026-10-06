@@ -32,8 +32,7 @@ const KEYS: Record<string, { minutes: number } | { days: number }> = {
 }
 
 export const DROP_ERRORS: Record<DragError, { ghost: () => string; status: () => string }> = {
-  future: { ghost: m.entry_error_future, status: m.calendar_error_future },
-  add_future: { ghost: m.calendar_add_up_to_now, status: m.calendar_error_add_future },
+  running_future: { ghost: m.entry_error_running_future, status: m.calendar_error_running_future },
 }
 
 function toDate(ms: number | undefined) {
@@ -135,9 +134,7 @@ export function createGridDrag(options: {
     if (!current.active) {
       // A click on an entry opens it through the button's click.
       if (current.drag.kind !== 'create') return
-      const slot = clickRange(current.drag.from, options.zone(), Date.now())
-      if (slot) options.onSlot(slot)
-      else options.onStatus({ text: m.calendar_add_up_to_now() })
+      options.onSlot(clickRange(current.drag.from, options.zone()))
       return
     }
     suppressClick = true
@@ -179,10 +176,6 @@ export function createGridDrag(options: {
     }
     const result = nudge(times, { ...key, end: event.shiftKey }, options.zone(), Date.now())
     if (!result) return
-    if (result.error) {
-      options.onStatus({ text: DROP_ERRORS.future.status(), error: true })
-      return
-    }
     const next = { startedAt: toDate(result.startedAt), stoppedAt: toDate(result.stoppedAt) }
     const patch = changedFields(entry, next, ['startedAt', 'stoppedAt'])
     if (patch) options.onChange(entry, patch, event.shiftKey ? 'changed' : 'moved', true)

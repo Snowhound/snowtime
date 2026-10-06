@@ -24,8 +24,8 @@ the timer bar stays. Its code is in `src/features/timer/calendar/`, with the tim
   because a deleted row keeps its id. `updateEntry`'s optimistic update moves an entry
   between the cached ranges it leaves and enters, so an entry moved into another week shows
   there at once.
-- The entry popover is the list's, with its fields and validation: no end in the future, and
-  an end at or before the start means the next day. The calendar opens it beside the slot
+- The entry popover is the list's, with its fields and validation: a running entry can't start
+  in the future, and an end at or before the start means the next day. The calendar opens it beside the slot
   or the entry, with Delete for a stopped entry.
 
 ## Date and time fields
