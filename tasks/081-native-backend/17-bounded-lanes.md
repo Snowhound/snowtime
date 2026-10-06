@@ -23,8 +23,8 @@ Database and hashing:
 - [x] One gate per connection class: reads wait for a reader and writes for the writer
       when the read pool is on. A test with a deliberately slow writer shows reads
       continuing on idle readers, and one with slow readers shows a timer write going
-      through. Session maintenance from a reader takes the writer within the writer's
-      deadline
+      through. Session maintenance from a reader takes the writer only when its gate has
+      a free slot, and never waits for it
 - [ ] Each gate refuses at once, with 503 and `Retry-After`, when its waiting callers reach
       a maximum, with a test; the maximum and the deadline recorded in native-host.md with
       the measurement that set them
@@ -69,10 +69,10 @@ tests only; nothing was measured.
 - Database: the writer's gate has one slot, so single-connection mode admits one call
   at a time where `DB_CONCURRENCY` admitted two. `DB_CONCURRENCY` is gone, and the
   blocking thread cap is the readers plus one plus `SCRYPT_CONCURRENCY`. The M and L
-  repeats must check that the single-connection offer holds. A reader renewing a session
-  holds its connection while it waits for the writer, up to the writer's deadline; if
-  renewals under a slow writer starve reads, the alternative is to release the reader,
-  renew on the writer, and rerun the call on a reader.
+  repeats must check that the single-connection offer holds. Kait chose on 2026-10-06
+  that a reader renewing or deleting a session takes the writer only if its gate is free
+  at once, and otherwise leaves it to a later request. Renewals cluster at the start of
+  the working day, when the writer is busiest, and waiting for it held readers idle.
 - Rendering: the pool keeps its own queue, so a caller withdraws its page on timeout or
   drop. The restart budget defaults to 5 panics in 60 seconds (`Policy`), unmeasured.
 - Health: `/livez` and `/readyz` on the host, outside `/api/v1`.

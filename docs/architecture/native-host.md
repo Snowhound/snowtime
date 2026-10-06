@@ -48,11 +48,15 @@ priority must not carry over to database work on a reused thread.
 | Password hashing | A gate of `SCRYPT_CONCURRENCY` slots on the shared blocking pool, sized from cores (081.10)                                                                 | Dedicated threads at lower priority, sized from memory as well |
 | Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar (081.16)                                      |
 
-A reader that must renew or delete a session waits for the writer's gate on its own
-thread, within the writer's deadline, and the call answers 503 past it. The V8 restart
-budget counts only renderer threads that panic. An isolate replaced after a failed render
-or for its heap doesn't count, so one page that fails every time can't take the lane
-down.
+A reader that finds a session due for renewal or expired takes the writer only if the
+writer's gate has a free slot at that moment. Otherwise it answers from the reader, and a
+later request renews or deletes the session. A session due for renewal stays valid for
+about 29 more days, and an expired one is refused either way, so a busy writer never
+holds up a read.
+
+The V8 restart budget counts only renderer threads that panic. An isolate replaced after
+a failed render or for its heap doesn't count, so one page that fails every time can't
+take the lane down.
 
 Reasons:
 

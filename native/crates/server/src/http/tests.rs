@@ -255,7 +255,8 @@ impl Drop for TempDb {
 
 const DEADLINE: std::time::Duration = std::time::Duration::from_millis(200);
 
-// Two readers, gates that refuse after DEADLINE, and a session that needs renewing.
+// Two readers, gates that refuse after DEADLINE, a session that needs renewing, and an
+// expired one.
 fn pooled_app(path: &std::path::Path) -> Arc<App> {
     let app = App::open_with_limits(
         Config {
@@ -282,6 +283,12 @@ fn pooled_app(path: &std::path::Path) -> Arc<App> {
             ],
         )
         .unwrap();
+    app.db()
+        .execute(
+            "insert into session values ('alice', 'expired', ?, ?, ?, null)",
+            [clock::now() - day, renewed, renewed],
+        )
+        .unwrap();
     app
 }
 fn cookie(app: &App, token: &str) -> String {
@@ -292,14 +299,22 @@ fn cookie(app: &App, token: &str) -> String {
         .unwrap()
         .to_owned()
 }
-fn expiry(app: &App, token: &str) -> i64 {
-    app.db()
-        .query_row(
-            "select expires_at from session where token = ?",
-            [token],
-            |r| r.get(0),
-        )
+// Reads through a connection of its own, since the test may hold the app's writer.
+fn row(file: &TempDb, sql: &str, token: &str) -> i64 {
+    Connection::open(&file.0)
         .unwrap()
+        .query_row(sql, [token], |r| r.get(0))
+        .unwrap()
+}
+fn sessions(file: &TempDb, token: &str) -> i64 {
+    row(file, "select count(*) from session where token = ?", token)
+}
+fn expiry(file: &TempDb, token: &str) -> i64 {
+    row(
+        file,
+        "select expires_at from session where token = ?",
+        token,
+    )
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -347,36 +362,69 @@ async fn a_slow_writer_leaves_reads_to_idle_readers() {
     assert_eq!(write.0, 503, "a write waits for the writer");
     assert!(started.elapsed() >= DEADLINE);
 
-    // Renewing a session from a reader needs the writer, within the writer's deadline.
+    // A reader leaves renewing and deleting sessions to a later request while the writer is
+    // busy, and answers at once.
     let stale = cookie(&app, "stale");
+    let expired = cookie(&app, "expired");
+    let stale_expiry = expiry(&file, "stale");
     let started = std::time::Instant::now();
-    let renewal = answer(
-        router.clone(),
-        "GET",
-        "/api/v1/timer",
-        Some(&stale),
-        None,
-        "",
-    )
-    .await;
-    assert_eq!(renewal.0, 503);
-    assert!(
-        started.elapsed() < 4 * DEADLINE,
-        "took {:?}",
-        started.elapsed()
+    assert_eq!(
+        answer(
+            router.clone(),
+            "GET",
+            "/api/v1/timer",
+            Some(&stale),
+            None,
+            ""
+        )
+        .await,
+        (200, "null".into())
     );
+    assert_eq!(
+        answer(
+            router.clone(),
+            "GET",
+            "/api/v1/timer",
+            Some(&expired),
+            None,
+            ""
+        )
+        .await
+        .0,
+        401
+    );
+    assert!(
+        started.elapsed() < DEADLINE,
+        "maintenance waited for the writer"
+    );
+    assert_eq!(expiry(&file, "stale"), stale_expiry);
+    assert_eq!(sessions(&file, "expired"), 1);
     finish.send(()).unwrap();
     slow.join().unwrap();
 
-    let stale_expiry = expiry(&app, "stale");
     assert_eq!(
-        answer(router, "GET", "/api/v1/timer", Some(&stale), None, "").await,
+        answer(
+            router.clone(),
+            "GET",
+            "/api/v1/timer",
+            Some(&stale),
+            None,
+            ""
+        )
+        .await,
         (200, "null".into())
     );
     assert!(
-        expiry(&app, "stale") > stale_expiry,
-        "the reader renewed it on the writer"
+        expiry(&file, "stale") > stale_expiry,
+        "the reader renewed it on the free writer"
     );
+    assert_eq!(
+        answer(router, "GET", "/api/v1/timer", Some(&expired), None, "")
+            .await
+            .0,
+        401
+    );
+    assert_eq!(sessions(&file, "expired"), 0);
 }
 
 #[tokio::test(flavor = "multi_thread")]

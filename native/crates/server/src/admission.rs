@@ -1,5 +1,4 @@
 //! Admission happens asynchronously, before a call can occupy a blocking thread.
-use crate::WireResponse;
 use crate::http::Response;
 use crate::wire::failure;
 use std::sync::Arc;
@@ -19,11 +18,6 @@ impl Default for Limits {
             queue_timeout: Duration::from_secs(1),
         }
     }
-}
-
-/// The answer when a gate refuses a caller.
-pub(crate) fn busy() -> WireResponse {
-    failure(503, "The server is busy. Try again.")
 }
 pub(crate) struct Gate {
     slots: Arc<Semaphore>,
@@ -52,11 +46,11 @@ impl Gate {
             .await
             .ok()
             .and_then(Result::ok)
-            .ok_or_else(|| busy().into())
+            .ok_or_else(|| failure(503, "The server is busy. Try again.").into())
     }
-    /// `acquire` for a blocking thread of the host's runtime.
-    pub fn acquire_blocking(&self) -> Result<OwnedSemaphorePermit, Response> {
-        tokio::runtime::Handle::current().block_on(self.acquire())
+    /// A slot if one is free now, without waiting.
+    pub fn try_acquire(&self) -> Option<OwnedSemaphorePermit> {
+        self.slots.clone().try_acquire_owned().ok()
     }
     #[cfg(feature = "bench")]
     pub fn stats(&self) -> serde_json::Value {

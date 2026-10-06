@@ -79,8 +79,9 @@ records the paired results, memory costs, and reasons for retaining the default.
 
 DB calls acquire async admission before entering Tokio's blocking pool. Each connection
 class has its own gate: reads wait for one of the `DB_READ_CONNECTIONS` readers when the
-read pool is on, and everything else waits for the writer's single slot. A reader that
-must renew or delete a session waits for the writer's gate within its deadline.
+read pool is on, and everything else waits for the writer's single slot. A reader renews
+or deletes a session only when the writer's gate has a free slot, and otherwise leaves it
+to a later request.
 `SCRYPT_CONCURRENCY` defaults to available cores. `WORK_QUEUE_TIMEOUT_MS` defaults to
 1,000 ms. Admission expiry returns 503 with `Retry-After: 1`. The blocking thread limit is
 the readers, plus one for the writer, plus the hash concurrency. Sign-in holds no DB

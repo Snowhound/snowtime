@@ -64,12 +64,11 @@ pub struct AppError {
 }
 
 /// How a call fails: on purpose, on input its schema refuses (valibot's ValiError, with the
-/// message the client shows), refused by a full lane, or unexpectedly.
+/// message the client shows), or unexpectedly.
 #[derive(Debug)]
 pub enum Error {
     App(AppError),
     Invalid(String),
-    Busy,
     Database(rusqlite::Error),
 }
 

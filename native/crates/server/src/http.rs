@@ -270,7 +270,6 @@ fn respond(db: &Connection, result: Result<WireResponse>) -> Response {
         Ok(r) => r.into(),
         Err(Error::App(e)) => app_failure(e).into(),
         Err(Error::Invalid(e)) => failure(400, &e).into(),
-        Err(Error::Busy) => crate::admission::busy().into(),
         Err(Error::Database(e)) => unavailable_or(db, &e).into(),
     }
 }

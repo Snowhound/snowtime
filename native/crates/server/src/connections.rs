@@ -145,9 +145,6 @@ mod tests {
             .unwrap();
         let writer = Mutex::new(writer);
         let readers = Readers::open(path.to_str().unwrap(), 2).unwrap();
-        // A reader waits for the writer's gate on the runtime, as a blocking thread would.
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let _runtime = runtime.enter();
         let gate = Gate::new(1, Duration::from_secs(1));
         let first = readers.acquire();
         let second = readers.acquire();

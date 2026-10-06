@@ -50,12 +50,14 @@ pub fn find_session(
 ) -> rusqlite::Result<Option<Session>> {
     match find_session_using(db, config, cookie_header, now)? {
         Found::Session(session) => Ok(session),
-        Found::NeedsWriter => Err(rusqlite::Error::InvalidQuery),
+        Found::NeedsWriter { .. } => Err(rusqlite::Error::InvalidQuery),
     }
 }
 
-/// `find_session` on any connection. A read-only one takes the writer, through its gate and
-/// within the gate's deadline, only to renew or delete the session.
+/// `find_session` on any connection. A read-only one renews or deletes the session on the
+/// writer only if the writer's gate has a free slot; otherwise a later request does it. A
+/// session due for renewal stays valid for weeks, and an expired one is refused either way,
+/// so a busy writer never holds up a read.
 pub(crate) fn find_session_with_writer(
     db: &Connection,
     writer: &std::sync::Mutex<Connection>,
@@ -63,22 +65,24 @@ pub(crate) fn find_session_with_writer(
     config: &SessionConfig,
     cookie_header: Option<&str>,
     now: i64,
-) -> crate::Result<Option<Session>> {
+) -> rusqlite::Result<Option<Session>> {
     match find_session_using(db, config, cookie_header, now)? {
         Found::Session(session) => Ok(session),
-        Found::NeedsWriter => {
-            let _permit = gate.acquire_blocking().map_err(|_| crate::Error::Busy)?;
-            let writer = writer.lock().unwrap_or_else(|e| e.into_inner());
-            // A different reader may have renewed the session before this writer was acquired.
-            Ok(find_session(&writer, config, cookie_header, now)?)
-        }
+        Found::NeedsWriter { session, expired } => match gate.try_acquire() {
+            Some(_permit) => {
+                let writer = writer.lock().unwrap_or_else(|e| e.into_inner());
+                // Another reader may have renewed the session since this one read it.
+                find_session(&writer, config, cookie_header, now)
+            }
+            None => Ok((!expired).then_some(session)),
+        },
     }
 }
 
 enum Found {
     Session(Option<Session>),
     // Renewing or deleting the session needs the writer; `db` is read-only.
-    NeedsWriter,
+    NeedsWriter { session: Session, expired: bool },
 }
 
 fn find_session_using(
@@ -115,9 +119,8 @@ fn find_session_using(
     };
     let expired = expires_at < now;
     let renew = expires_at - EXPIRES_IN_S * 1000 + UPDATE_AGE_S * 1000 <= now;
-    // The SELECT has finished, so no read transaction spans the wait for the writer.
     if (expired || renew) && db.is_readonly("main")? {
-        return Ok(Found::NeedsWriter);
+        return Ok(Found::NeedsWriter { session, expired });
     }
     if expired {
         db.execute("delete from session where token = ?1", [token])?;
