@@ -38,8 +38,10 @@ rest:
   - Better Auth-compatible email sign-in, session cookie, origin checks, and scrypt;
   - the in-process edge (subtask 07);
   - the render host: the renderer pool with its V8 and Bun sidecar engines, memory
-    sizing, and the API transport, in process for V8 and over the socket for Bun
-    (subtasks 01 and 16);
+    sizing, the sidecar's confinement, and the API transport, in process for V8 and over
+    the socket for Bun (subtasks 01 and 16). The bundle and manifest, the engine's
+    bootstrap, the request kinds a framework renders, and the delivery policy (whole or
+    streamed) are adapter interfaces, not fixed in the crate;
   - the lane: admission with waiting bounded by count and time, refusal, and a restart
     budget for workers that outlive a job (subtasks 10 and 17);
   - the conformance and byte-comparison harness (`native/bench/conformance.ts` and
@@ -78,12 +80,17 @@ It starts with task 081's. An entry still open says so and names the subtask tha
 it:
 
 - Rendering in an embedded V8 isolate, against page shells (01, task 079)
-- The render engine chosen by memory budget: the Bun sidecar where memory allows, V8 in
-  the host for the smallest budgets and as the fallback; embedded JSC paused. Open: the
-  sidecar's measurements and the budget that switches engines (16)
+- The render engine, chosen from measured inputs: rendering's share of the server's CPU,
+  the memory per renderer including a recycle's overlap, whether the framework needs
+  streaming, and the licensing a closed-source port accepts. For Snowtime: the confined
+  Bun sidecar where memory allows, V8 in the host for the smallest budgets and as the
+  fallback; embedded JSC paused. Open: the sidecar's measurements and the budget that
+  switches engines (16)
 - Tokio only at the edge, and lanes with a fixed number of workers, waiting bounded by
-  count and time, and refusal for the database, password hashing, and rendering
-  (`docs/architecture/native-host.md`). Open: admission built in 10, the rest in 17
+  count and time, admission per connection class, and refusal for the database,
+  password hashing, and rendering (`docs/architecture/native-host.md`). An overload
+  policy that names what keeps working, and a client that keeps a refused edit. Open:
+  admission built in 10, the rest in 17
 - A JSON API for both backends, not server functions (02, task 084)
 - JSON with dates revived by the schemas, and answers validated in full (task 089).
   Open: columns for the large responses (081 question 2, 02)
@@ -96,8 +103,11 @@ it:
 - The optional in-process edge, and Caddy's tuning where Caddy stays (07)
 - Drizzle's migrations applied by the binary, recorded as drizzle-orm records them
 - Litestream for backups (`docs/hosting.md`). Open: Turso's engine (11)
-- Renderers sized from memory and pressure, and a page buffered whole (01). Open: the
-  memory target, which awaits Kait's agreement (01)
+- Renderers sized from memory and pressure, and a page buffered whole (01). Buffering suits
+  finite pages like Snowtime's. A framework that relies on streaming, such as SvelteKit's
+  streamed promises or Next.js's server components, needs its own adapter and delivery
+  policy, and the survey says so instead of promising one run. Open: the memory target,
+  which awaits Kait's agreement (01)
 - Conformance tests and byte comparison as the definition of done (081 question 4, 03)
 - The repository layout (task 081, "Repository")
 - HTTP/3 deferred. Open: measured in 09

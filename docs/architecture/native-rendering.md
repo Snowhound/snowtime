@@ -11,12 +11,17 @@ picks one at start. Kait decided on 2026-10-06 that the Bun sidecar is the prefe
 engine wherever memory isn't the deciding constraint, and that V8 embedded in the host
 stays the engine for the smallest memory budgets and the fallback
 ([task 081.16](../../tasks/081-native-backend/16-javascriptcore.md)). The reason is
-render CPU: Bun renders the four measured pages with 34–40% less CPU than V8, and Bun
-maintains the engine, its collector, and the web APIs. The sidecar's measurements can
-still reverse this. The V8 engine is built; the sidecar is planned. Both follow the lane
+render CPU: Bun renders the four measured pages with 34–40% less CPU than V8 (one CPU on
+WSL, with recorded API answers), and Bun maintains the engine, its collector, and the web
+APIs. The sidecar's end-to-end measurements can still reverse this, for example if
+rendering turns out to be a small share of the whole server's CPU. The V8 engine is built; the sidecar is planned. Both follow the lane
 contract in [native-host.md](native-host.md).
 
 ## V8 in the host
+
+The V8 pool doesn't yet keep the whole lane contract: its queue deadline is checked only
+when a page is dequeued, and no supervisor restarts a renderer thread that panics
+([native-host.md](native-host.md)).
 
 The native backend embeds V8 through `deno_core` and loads the app's Solid server bundle
 from a startup snapshot. It uses Start's streaming render, router dehydration, and
@@ -52,19 +57,30 @@ lane contract; task 081.16 records the shape, the image, upgrades, and licensing
 - **One page in flight per renderer.** Rendering is CPU-bound and Bun runs JavaScript on
   one thread, so a second page in the same process would wait inside Bun, where the host
   can't see or bound it. The pool's queue stays the only queue.
+- **Confined by default.** Kait, 2026-10-06: render code is untrusted. Each renderer runs
+  as its own user, sees the bundle and assets read-only, and has no access to `/data`, the
+  TLS keys, or the host's secrets. It gets an explicit environment, no inherited file
+  descriptors but its socket, no network, and `no_new_privileges` with a syscall filter
+  that Bun's JIT works under. The host accepts API calls on a renderer's socket only while
+  it renders a page, and only with that page's cookie. An installation can opt out
+  explicitly and accept that render code runs with the host's authority.
 - **The host buffers the page whole,** as with V8, up to a maximum page size, so a slow
-  client never holds a renderer. A page past the maximum fails with 500.
+  client never holds a renderer. A page past the maximum fails with 500. This is
+  Snowtime's choice for finite pages; it gives up streaming's early first byte.
 - **Deadlines kill the process.** A render past its deadline gets SIGKILL and a
   replacement; the host needs no watchdog inside the engine.
 - **Restart budget.** Crashes and deadline kills past N in T seconds stop the respawning;
   planned recycles don't count. The host then serves pages from V8 if the image includes
   it, or answers 503.
-- **Recycling keeps capacity.** A renderer whose RSS passes its limit stops taking pages,
-  its replacement starts and warms first, and the old one exits after its page. The host
-  recycles one renderer at a time.
+- **Recycling keeps capacity where memory allows.** A renderer whose RSS passes its limit
+  stops taking pages. If the memory budget has room for one more renderer, its
+  replacement starts and warms first; otherwise the old one exits after its page and the
+  pool runs one short while the replacement warms. The host recycles one renderer at a
+  time, with jitter, and measures memory as the cgroup's usage plus each child's RSS.
 - **Renderers die with the host.** The socket is a `socketpair()` whose end the child
   inherits, so there's no path to clean up. On Linux the host sets `PR_SET_PDEATHSIG` in
-  each child before `exec`.
+  each child before `exec`, and starts each in its own process group, which it kills
+  whole so no descendant survives.
 - **Renderer count from measurement.** On one core, extra renderers only overlap the time
   a page waits on `op_send` round trips, and each costs a Bun process's RSS. Task 081.16
   sweeps the count.

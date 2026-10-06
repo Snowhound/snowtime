@@ -57,6 +57,10 @@ of the code keeps; the rest is by area:
   writes: `listProjects` says which projects have live time entries, so deleting one of those
   offers archiving without a call. A delete the server refuses anyway, because an entry was
   logged after the list loaded, brings the row back and shows the error.
+  - Planned (task 081.17, Kait, 2026-10-06): a write the server refused before running
+    it (503 with `Retry-After`) keeps its optimistic change, pending with a retry action,
+    instead of restoring the caches; nothing retries a write on its own. Reads retry with
+    jitter and wait at least `Retry-After`. Other errors restore the caches as above.
   - An optimistic change goes only into the caches it belongs in: a new entry joins the
     lists of its organization, user, and days, and a stopped timer ends where the server
     will end it, at most 24 hours after its start.

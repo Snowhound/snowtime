@@ -17,7 +17,8 @@ task.
 - Linux on one core, with resident memory under 64 MB, aiming at 32 MB, at task 078's
   peak load on the L dataset, SQLite's own cache included. This target predates server
   rendering: the V8 isolate alone runs at 66–118 MB on macOS (subtask 01), so the target
-  with a renderer is open. The domain code makes no OS
+  with a renderer is open. Subtask 10 measured the whole server well above it, and set
+  provisional whole-host test budgets of 2 GiB for M and 4 GiB for L. The domain code makes no OS
   calls outside a thin layer, so a port to a microcontroller without an OS stays possible
   later.
 - No garbage collector and, after the first port, no allocation per row on hot paths in
@@ -26,7 +27,8 @@ task.
   how.
 - The same SQLite schema and migrations as the TypeScript backend, so a self-hoster can
   switch either way on one file. Turso's engine comes later.
-- One app process per database. The native host can serve TLS, certificates, static
+- One app process per database, with its renderers as confined child processes when Bun
+  renders (subtask 16). The native host can serve TLS, certificates, static
   files, compression, and headers itself, or run behind Caddy, nginx, or Cloudflare.
   Subtask 07 records the edge comparison. The TypeScript app keeps Caddy in front.
 
@@ -225,8 +227,8 @@ which records the edge measurements.
 - [15](15-framework-benchmarks.md): render benchmarks on Nuxt, SvelteKit, and Next.js apps
 - [16](16-javascriptcore.md): JavaScriptCore as the render engine: the gate failed on plain
   JSC, so Bun as a render sidecar is next
-- [17](17-bounded-lanes.md): the lane contract for the database and password hashing,
-  on subtask 10's admission gates
+- [17](17-bounded-lanes.md): the lane contract for the database, hashing, and V8 render
+  lanes, the overload policy, and how the client handles refusal
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
@@ -234,7 +236,8 @@ per domain (Kait, 2026-10-04). On `main`, task 090 fixes `perf:stress`, and task
 at server-side caching for both backends.
 
 Concurrency (Kait, 2026-10-06): Tokio's async workers run only the edge; blocking and CPU
-work runs in lanes, each a fixed number of workers behind admission that refuses when full
+work runs in lanes, each a fixed number of workers behind admission that refuses when full.
+Under overload, timer calls keep working and reports and exports refuse first
 ([native-host.md](../../docs/architecture/native-host.md), subtask 17). Rendering is
 the Bun sidecar where memory allows and V8 in the host otherwise
 ([native-rendering.md](../../docs/architecture/native-rendering.md), subtask 16).

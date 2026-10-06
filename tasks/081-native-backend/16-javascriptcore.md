@@ -197,13 +197,15 @@ brings its improvements, with no fork or bindings of ours to keep up.
   `Page`). `RENDER_ENGINE` (`bun` or `v8`) picks the engine at start.
 - **Supervision.** Renderers start with the host and warm up before taking pages. The host
   restarts a renderer that exits, times out a stuck render, and recycles a renderer whose
-  RSS (`/proc/<pid>/status`) passes its limit, starting the replacement first. The health
-  check fails only when no renderer is up.
+  RSS (`/proc/<pid>/status`) passes its limit, starting the replacement first where memory
+  allows. Readiness and liveness follow "Health" in
+  [native-host.md](../../docs/architecture/native-host.md#health).
 - **Lanes.** Kait, 2026-10-06: the sidecar follows the host's lane contract
-  ([native-host.md](../../docs/architecture/native-host.md)). The rules it adds, one page
-  in flight per renderer, the page buffered whole, deadlines enforced by SIGKILL, a restart
-  budget, recycling one renderer at a time, and `socketpair()` with `PR_SET_PDEATHSIG`,
-  are recorded in [native-rendering.md](../../docs/architecture/native-rendering.md#bun-sidecar-planned).
+  ([native-host.md](../../docs/architecture/native-host.md)). The rules it adds,
+  confinement, one page in flight per renderer, the page buffered whole, deadlines
+  enforced by SIGKILL, a restart budget, recycling one renderer at a time within the
+  memory budget, and `socketpair()` with `PR_SET_PDEATHSIG` and a process group, are
+  recorded in [native-rendering.md](../../docs/architecture/native-rendering.md#bun-sidecar-planned).
 - **Settings.** `RENDERERS` (a count, or sized from the memory budget and CPUs), Bun's
   `--smol`, and `BUN_JSC_*` options, passed through to each renderer at start.
 - **Image.** `native/Dockerfile`'s `app` stage copies `bun` from a pinned `oven/bun` image
@@ -211,9 +213,14 @@ brings its improvements, with no fork or bindings of ours to keep up.
   A build arg leaves Bun out of V8-only images. Compose doesn't change: the `app`
   container's memory limit covers the host and its renderers, as the host's sizing
   expects.
-- **Upgrades.** The `oven/bun` tag is pinned, and a dependency bot proposes bumps. CI checks
-  each bump: render tests, hydration, the HTML byte-compared with the previous version's,
-  and a short CPU and RSS run against a stored baseline. A regression holds the pin.
+- **Upgrades.** One Bun version builds the bundle and runs it: the `oven/bun` tag follows
+  `packageManager` in `package.json`, and CI fails when they differ. A dependency bot
+  proposes bumps. CI checks each bump, and each change to the render adapter or its
+  dependencies: render tests, hydration, HTTP status and headers, and a short CPU and RSS
+  run against a stored baseline. The HTML byte comparison with the previous version is a
+  diagnostic whose differences are explained, not a gate. A regression holds the pin. The
+  image records the Bun version, its digest, the bundle's hash, and the client manifest's
+  identity together.
 
 ### Memory on the smallest host
 
@@ -222,7 +229,10 @@ back-to-back renders is 154–174 MB for Bun and 144–157 MB for the V8 crate (
 above), so Bun costs 10–17 MB more per renderer. The sidecar's second process adds little
 beyond that: Bun's figure already counts its runtime, and the host drops V8. The estimate
 for the whole server at peak under load is 230–240 MB, against the 219 MB measured for
-V8 ([task 081.01](01-server-rendering.md)), still under the 256 MiB target.
+V8 ([task 081.01](01-server-rendering.md)), still under the proposed 256 MiB app target.
+It's an estimate from one-renderer runs, not a measurement; 30% more would miss that
+target. A recycle that warms the replacement first adds a second renderer's peak for its
+warm-up. Task 081.10's provisional whole-host budget for M is 2 GiB.
 
 Two cases differ:
 
@@ -249,11 +259,14 @@ Bun's bindings layer means maintaining a fork of Bun's internals.
 
 Parts of JavaScriptCore are LGPL-2.1.
 
-- **Sidecar.** Bun is MIT and links an unmodified JavaScriptCore into its own executable.
-  The image ships that executable as Oven builds it, next to our files, and the host talks
-  to it over a socket, so our code isn't linked with the library. The image needs the
-  license notices and a pointer to the `oven-sh/WebKit` source of that build. This holds
-  for closed-source ports too. Bundling our code into Bun with `bun build --compile` would
+- **Sidecar.** Bun is MIT and statically links JavaScriptCore from Oven's patched WebKit
+  fork (`oven-sh/WebKit`). The image ships that executable as Oven builds it, next to our
+  files, and the host talks to it over a socket, so our code isn't linked with the
+  library. Redistributing Bun carries its own obligations: the license notices, the exact
+  WebKit source of that build, and a way to rebuild and relink Bun with a modified
+  JavaScriptCore. The socket boundary keeps those obligations off our code, including
+  closed-source ports, but doesn't remove them from the Bun executable we ship. Not a
+  legal conclusion until the check in the acceptance criteria is done. Bundling our code into Bun with `bun build --compile` would
   change that, so the image doesn't.
 - **Embedded JSC.** Snowtime and the porting kit being open source lets users relink a
   statically linked binary, which LGPL requires. Distributed binaries and images still need
@@ -275,10 +288,18 @@ Parts of JavaScriptCore are LGPL-2.1.
       renderer spends waiting on them, so the IPC cost per page is known beside the bytes
 - [ ] Sidecar: one page in flight per renderer, the page buffered whole up to a maximum
       size, and a render past its deadline killed and replaced, each covered by a test
-- [ ] Sidecar: the restart budget tested with a bundle that crashes on start, showing the
-      host stops respawning and falls back to V8 or answers 503 within the budget's window
+- [ ] Sidecar: confinement tested in the production image with a hostile render bundle that
+      tries to read and write `/data`, read the host's secrets and environment, open TCP
+      and UDP connections, signal the host, and start a child process; each is denied
+      while ordinary rendering, the JIT, and the socket work
+- [ ] Sidecar: the restart budget's scope chosen, per renderer or for the pool, with the
+      reason recorded, and tested with a bundle that crashes on start and with one page
+      that crashes every render, showing the host stops respawning and falls back to V8 or
+      answers 503 for pages within the budget's window while the API keeps working
 - [ ] Sidecar: a recycle under steady load measured, with no 503 while the replacement
-      warms, and renderers shown to exit when the host is killed with SIGKILL
+      warms when memory allows, and several renderers crossing their RSS limit at once on
+      2, 4, and 8 cores, with the cgroup's peak including the replacement; renderers and
+      their descendants shown to exit when the host is killed with SIGKILL
 - [ ] Sidecar: a sweep of `RENDERERS` at 1, 2, and 3 on one core and on two, with CPU,
       p95, and RSS, and the default chosen from it
 - [ ] Sidecar: idle RSS, `--smol`, renderer start, and the time a recycled renderer takes to
@@ -286,8 +307,9 @@ Parts of JavaScriptCore are LGPL-2.1.
 - [ ] Sidecar: the whole server on 1 vCPU and 2 GB under `perf:stress`, peak and idle RSS
       and CPU, against V8 after task 081.14; the memory estimate above confirmed or
       replaced
-- [ ] Sidecar: the Bun upgrade check in CI, and the image, Compose notes, and porting kit
-      updated, including which budgets pick V8
+- [ ] Sidecar: the Bun upgrade check in CI, including a test that fails when the
+      `oven/bun` tag and `packageManager` differ, and the image, Compose notes, and porting
+      kit updated, including which budgets pick V8
 - [ ] The LGPL obligations for Snowtime's images and for porting kit users checked and
       written into the porting kit, for the sidecar and for embedded JSC
 - [ ] Prototype, if reopened: a JSC renderer behind the V8 renderer's interface, passing
