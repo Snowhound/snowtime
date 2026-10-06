@@ -3,7 +3,9 @@
 //!
 //!   render-bench <page.json> <answers.json> [count] [renderers] [concurrency] [output.html]
 //!
-//! RENDER_HEAP_MB sets each isolate's heap limit.
+//! RENDER_HEAP_MB sets each isolate's heap limit, and V8_FLAGS passes flags to V8.
+//! `thread_cpu_ms` splits the measured CPU by thread: the renderer, and V8's GC and compiler
+//! workers.
 use snowtime_render::{ApiResponse, MANIFEST, PageRequest, Policy, Pool, SendApi};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::{collections::HashMap, sync::Arc, time::Duration, time::Instant};
@@ -120,10 +122,48 @@ fn heap_limits() -> Policy {
     }
 }
 
+// CPU milliseconds per thread name, from /proc/self/task.
+fn thread_cpu() -> HashMap<String, f64> {
+    let mut by_name = HashMap::new();
+    let tick = 1000.0 / unsafe { libc::sysconf(libc::_SC_CLK_TCK) } as f64;
+    for task in std::fs::read_dir("/proc/self/task")
+        .into_iter()
+        .flatten()
+        .flatten()
+    {
+        let path = task.path();
+        let name = std::fs::read_to_string(path.join("comm"))
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        let stat = std::fs::read_to_string(path.join("stat")).unwrap_or_default();
+        let fields: Vec<&str> = stat
+            .rsplit(')')
+            .next()
+            .unwrap_or("")
+            .split_whitespace()
+            .collect();
+        let user = fields
+            .get(11)
+            .and_then(|v| v.parse::<f64>().ok())
+            .unwrap_or(0.0);
+        let system = fields
+            .get(12)
+            .and_then(|v| v.parse::<f64>().ok())
+            .unwrap_or(0.0);
+        *by_name.entry(format!("{name}:user")).or_insert(0.0) += user * tick;
+        *by_name.entry(format!("{name}:sys")).or_insert(0.0) += system * tick;
+    }
+    by_name
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     if std::env::var_os("RENDER_PERF_PROF").is_some() {
         deno_core::v8::V8::set_flags_from_string("--perf-prof --perf-prof-unwinding-info");
+    }
+    if let Ok(flags) = std::env::var("V8_FLAGS") {
+        deno_core::v8::V8::set_flags_from_string(&flags);
     }
     let args: Vec<String> = std::env::args().collect();
     anyhow::ensure!(
@@ -196,10 +236,18 @@ async fn main() -> anyhow::Result<()> {
     perf_control("enable")?;
     let cgroup_start = cgroup_cpu_us();
     let cpu_start = usage().0;
+    let threads_start = thread_cpu();
     let measured = Instant::now();
     let mut times = run(&pool, &page, count, concurrency).await?;
     let seconds = measured.elapsed().as_secs_f64();
     let cpu_ms = (usage().0 - cpu_start) / count as f64;
+    let threads: HashMap<String, f64> = thread_cpu()
+        .into_iter()
+        .map(|(k, v)| {
+            let per_render = (v - threads_start.get(&k).copied().unwrap_or(0.0)) / count as f64;
+            (k, (per_render * 1000.0).round() / 1000.0)
+        })
+        .collect();
     let cgroup_cpu_ms = cgroup_start
         .zip(cgroup_cpu_us())
         .map(|(start, end)| (end - start) / 1000.0 / count as f64);
@@ -228,7 +276,7 @@ async fn main() -> anyhow::Result<()> {
         serde_json::json!({"page": args[1], "count": count, "renderers": renderers,
             "concurrency": concurrency, "bytes": first.body.len(), "startup_ms": startup_ms,
             "pages_per_s": count as f64 / seconds, "p50_ms": times[count / 2],
-            "p95_ms": times[count * 95 / 100], "cpu_ms": cpu_ms, "cgroup_cpu_ms": cgroup_cpu_ms, "loaded_rss_mb": loaded_rss,
+            "p95_ms": times[count * 95 / 100], "cpu_ms": cpu_ms, "thread_cpu_ms": threads, "cgroup_cpu_ms": cgroup_cpu_ms, "loaded_rss_mb": loaded_rss,
             "loop_rss_mb": loop_rss, "idle_rss_mb": idle_rss, "peak_rss_mb": usage().1,
             "loop_malloc_mb": loop_malloc, "idle_malloc_mb": malloc_mb(),
             "rss_samples_mb": samples, "profile_finish_cpu_ms": profile_finish_cpu_ms,

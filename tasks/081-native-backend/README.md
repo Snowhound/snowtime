@@ -218,6 +218,11 @@ which records the edge measurements.
 - [11](11-turso-engine.md): Turso's engine, its speed against SQLite, and its backups
 - [12](12-profiling.md): profiles of both servers under load, once features and tests are done
 - [13](13-render-allocations.md): render allocations and the remaining engine gap
+- [14](14-render-gc.md): render garbage that dies young, and a heap policy that allows a
+  larger nursery
+- [15](15-framework-benchmarks.md): render benchmarks on Nuxt, SvelteKit, and Next.js apps
+- [16](16-javascriptcore.md): JavaScriptCore as the render engine, gated on plain JSC
+  matching Bun
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
