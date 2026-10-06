@@ -57,13 +57,22 @@ lane contract; task 081.16 records the shape, the image, upgrades, and licensing
 - **One page in flight per renderer.** Rendering is CPU-bound and Bun runs JavaScript on
   one thread, so a second page in the same process would wait inside Bun, where the host
   can't see or bound it. The pool's queue stays the only queue.
-- **Confined by default.** Kait, 2026-10-06: render code is untrusted. Each renderer runs
-  as its own user, sees the bundle and assets read-only, and has no access to `/data`, the
-  TLS keys, or the host's secrets. It gets an explicit environment, no inherited file
-  descriptors but its socket, no network, and `no_new_privileges` with a syscall filter
-  that Bun's JIT works under. The host accepts API calls on a renderer's socket only while
-  it renders a page, and only with that page's cookie. An installation can opt out
-  explicitly and accept that render code runs with the host's authority.
+- **Least privilege where it's cheap.** Kait, 2026-10-06: render code is trusted as much as
+  the TypeScript server's code, but it's the only npm code in the native server and it
+  sees every user's session, so a renderer gets only what rendering needs:
+  - an empty environment plus the renderer's settings, so no secrets;
+  - a token valid for one render in place of the session cookie, which the host swaps
+    back when an API call arrives on the socket, so the renderer never holds a session;
+  - a seccomp filter, set before `exec` with `no_new_privileges`, that refuses internet
+    sockets and allows Unix ones, so it can't send data out or be used for SSRF;
+  - Landlock limiting its files to the bundle directory, where the kernel and container
+    allow it, so it can't read `/data` or the TLS keys.
+
+  Rejected: a separate user, mount views, and a full syscall policy. They need root at
+  start or image work, risk Bun's JIT, and add little beyond the four rules. Confinement
+  doesn't cover build-time supply-chain attacks or tampered HTML; CI and the content
+  security policy cover those.
+
 - **The host buffers the page whole,** as with V8, up to a maximum page size, so a slow
   client never holds a renderer. A page past the maximum fails with 500. This is
   Snowtime's choice for finite pages; it gives up streaming's early first byte.

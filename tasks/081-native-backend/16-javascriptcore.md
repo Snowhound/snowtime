@@ -202,7 +202,7 @@ brings its improvements, with no fork or bindings of ours to keep up.
   [native-host.md](../../docs/architecture/native-host.md#health).
 - **Lanes.** Kait, 2026-10-06: the sidecar follows the host's lane contract
   ([native-host.md](../../docs/architecture/native-host.md)). The rules it adds,
-  confinement, one page in flight per renderer, the page buffered whole, deadlines
+  least privilege, one page in flight per renderer, the page buffered whole, deadlines
   enforced by SIGKILL, a restart budget, recycling one renderer at a time within the
   memory budget, and `socketpair()` with `PR_SET_PDEATHSIG` and a process group, are
   recorded in [native-rendering.md](../../docs/architecture/native-rendering.md#bun-sidecar-planned).
@@ -288,10 +288,11 @@ Parts of JavaScriptCore are LGPL-2.1.
       renderer spends waiting on them, so the IPC cost per page is known beside the bytes
 - [ ] Sidecar: one page in flight per renderer, the page buffered whole up to a maximum
       size, and a render past its deadline killed and replaced, each covered by a test
-- [ ] Sidecar: confinement tested in the production image with a hostile render bundle that
-      tries to read and write `/data`, read the host's secrets and environment, open TCP
-      and UDP connections, signal the host, and start a child process; each is denied
-      while ordinary rendering, the JIT, and the socket work
+- [ ] Sidecar: least privilege tested in the production image with a render bundle that
+      reads its environment, opens a TCP and a UDP socket, reads `/data`, and records the
+      cookie it receives: no secrets, both sockets refused, `/data` refused where Landlock
+      applies (and the image's kernel and Docker support for Landlock recorded), and only
+      the per-render token, which the host refuses once the render ends
 - [ ] Sidecar: the restart budget's scope chosen, per renderer or for the pool, with the
       reason recorded, and tested with a bundle that crashes on start and with one page
       that crashes every render, showing the host stops respawning and falls back to V8 or

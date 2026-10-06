@@ -27,7 +27,7 @@ task.
   how.
 - The same SQLite schema and migrations as the TypeScript backend, so a self-hoster can
   switch either way on one file. Turso's engine comes later.
-- One app process per database, with its renderers as confined child processes when Bun
+- One app process per database, with its renderers as child processes with least privilege when Bun
   renders (subtask 16). The native host can serve TLS, certificates, static
   files, compression, and headers itself, or run behind Caddy, nginx, or Cloudflare.
   Subtask 07 records the edge comparison. The TypeScript app keeps Caddy in front.

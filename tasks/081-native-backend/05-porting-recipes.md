@@ -38,7 +38,7 @@ rest:
   - Better Auth-compatible email sign-in, session cookie, origin checks, and scrypt;
   - the in-process edge (subtask 07);
   - the render host: the renderer pool with its V8 and Bun sidecar engines, memory
-    sizing, the sidecar's confinement, and the API transport, in process for V8 and over
+    sizing, the sidecar's least-privilege start (environment, per-render token, seccomp, Landlock), and the API transport, in process for V8 and over
     the socket for Bun (subtasks 01 and 16). The bundle and manifest, the engine's
     bootstrap, the request kinds a framework renders, and the delivery policy (whole or
     streamed) are adapter interfaces, not fixed in the crate;
@@ -55,10 +55,11 @@ rest:
   conversions that recur across apps: valibot schemas to Rust input structs and
   their field tables, Hono routes to Axum routes, client functions from routes, and a
   Drizzle schema to the Rust models. With these, a session writes the rules and little else.
-- The V8 host recipe: rendering in an embedded isolate, with native code for the hot
-  paths. Other code that is costly to port and rarely run can stay in the isolate too,
-  such as Paraglide's message formatting or the export. Drizzle's migrations are SQL
-  files with a journal table, so Rust applies them without the isolate.
+- The render host recipe: rendering in an embedded V8 isolate or a Bun sidecar, with
+  native code for the hot paths. Other code that is costly to port and rarely run, such as
+  Paraglide's message formatting or the export, runs as a JS job ("Clean first, hybrid
+  only as a tradeoff"). Drizzle's migrations are SQL files with a journal table, so Rust
+  applies them without JS.
 - Where the port lives. A port that lags its app on purpose records the app commit it
   implements and builds the app's bundle and assets from that commit. Two layouts, with
   when each fits (task 081, "Repository"):
@@ -82,7 +83,7 @@ it:
 - Rendering in an embedded V8 isolate, against page shells (01, task 079)
 - The render engine, chosen from measured inputs: rendering's share of the server's CPU,
   the memory per renderer including a recycle's overlap, whether the framework needs
-  streaming, and the licensing a closed-source port accepts. For Snowtime: the confined
+  streaming, and the licensing a closed-source port accepts. For Snowtime: the
   Bun sidecar where memory allows, V8 in the host for the smallest budgets and as the
   fallback; embedded JSC paused. Open: the sidecar's measurements and the budget that
   switches engines (16)
@@ -264,10 +265,35 @@ shows where the CPU goes (task 081.12). The hot, central calls are ported native
 tail of rarely used calls can be left behind. These hybrids are sketches, not yet written
 as recipes:
 
-- **The core ported, the long tail in the isolate.** The app's central calls run in Rust,
-  and rarely used server functions run as their TypeScript code in the V8 isolate the
-  host already has, later possibly compiled by Perry (subtask 04). This fits an app with
-  many server functions for features few people use, where the core ports easily.
+- **The core ported, the long tail as JS jobs.** The app's central calls run in Rust, and
+  rarely used server code runs as its TypeScript in a job lane, later possibly compiled by
+  Perry (subtask 04). This fits an app with many server functions for features few people
+  use, where the core ports easily. Examples are Better Auth's rare flows (OAuth
+  callbacks, passkey registration, device authorization), payment or cloud SDKs, and PDF
+  or XLSX generation. Kait, 2026-10-06:
+  - **Not the renderers.** Jobs run in their own lane, with their own bundle, an
+    admission budget below timer calls, and a pool that starts on demand and exits when
+    idle, since a rarely used job shouldn't hold memory. A slow job never blocks pages.
+  - **Trusted like the TypeScript server.** A job can reach the network. It gets only the
+    secrets its job kind names, passed explicitly, and not the renderers' restrictions.
+  - **The database only through the host,** because two processes must not write one
+    SQLite file (task 043). A Drizzle-based library uses Drizzle's `sqlite-proxy` driver,
+    whose callback forwards each statement to the host's lanes. State a library keeps in
+    memory, such as Better Auth's rate limits, moves to the database, because a job
+    process can exit at any time.
+  - **A job kind declares three settings:** its secrets, whether it reaches the network,
+    and whether it reads or writes the database.
+  - **The engine follows the code.** Pure computation runs on either engine. Code that
+    needs Node's APIs (`node:crypto`, `Buffer`, `AsyncLocalStorage`), as most SDKs and
+    Better Auth do, runs on Bun, because `deno_core` has no Node layer. The survey
+    classifies each candidate by its settings and the Node APIs it uses, which picks the
+    engine or rules the hybrid out.
+
+  Open: interactive transactions over the proxy, which would hold the writer across JS
+  round trips (batches only, or a short deadline); and Bun-only jobs on V8-only images,
+  which must either ship Bun or drop the feature. A job that streams its answer, such as
+  an AI SDK's, has no recipe yet.
+
 - **Server functions served from Rust**, for apps where moving to an API costs too much,
   such as hundreds of server functions of kinds 1 to 3 (Kait, 2026-10-05). The host
   answers `/_serverFn/<id>`, decodes and encodes Start's serialization format, and
@@ -336,6 +362,6 @@ layering does.
       with the same backend stack on another frontend framework (SvelteKit) reuses the
       backend recipes and lists only the framework's recipes as missing
 - [ ] Recipes marked as not written yet: a replacement port, a static frame from Rust,
-      the long tail in the isolate, and server functions in Rust
+      the long tail as JS jobs, and server functions in Rust
 - [ ] The survey's split between native and hybrid based on usage and a profile, not on
       guesses
