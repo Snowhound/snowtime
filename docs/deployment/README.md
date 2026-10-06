@@ -102,7 +102,7 @@ webhook URL and permissions, which sign-in doesn't use. In the OAuth App form:
 
 - Homepage URL: `https://<host>`.
 - Redirect URIs: `https://<host>/api/auth/callback/github`. The form takes up to 10, so
-  one app can also list `http://localhost:3000/api/auth/callback/github` for local
+  one app can also list `http://localhost:3100/api/auth/callback/github` for local
   development.
 - Leave **Allow wildcard matching** and **Enable Device Flow** off. **Expire user access
   tokens** can stay on: the app uses GitHub's token only at sign-in and then keeps its

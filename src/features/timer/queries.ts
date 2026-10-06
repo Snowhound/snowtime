@@ -9,10 +9,11 @@ import {
   listEntries,
   updateEntry,
 } from '~/lib/api/entries'
-import { getRunningTimer, startTimer, stopTimer } from '~/lib/api/timer'
+import { startTimer, stopTimer } from '~/lib/api/timer'
 import type { Range } from '~/lib/calendar'
 import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
+import { runningTimerQuery } from '~/lib/queries/timer'
 import {
   type CreateEntryInput,
   type DeleteEntryInput,
@@ -26,11 +27,6 @@ export type { Entry, RunningTimer }
 
 // An entry that has ended, as the day lists show and edit them.
 export type StoppedEntry = Entry & { stoppedAt: Date }
-
-export const runningTimerQuery = queryOptions({
-  queryKey: ['timer'],
-  queryFn: () => getRunningTimer(),
-})
 
 // The user's own entries overlapping the range, newest first, a running one included.
 export function entriesQuery(organizationId: string, userId: string, range: Range) {

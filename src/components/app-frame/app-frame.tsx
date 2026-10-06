@@ -15,6 +15,7 @@ import { getLocale } from '~/paraglide/runtime.js'
 import type { AppSession } from '~/server/auth/auth.schemas'
 import { AppHeader } from './app-header'
 import { PasskeyPrompt } from './passkey-prompt'
+import { TimerTitle } from './timer-title/timer-title'
 
 // The organization of the app frame a component renders in, undefined outside one, so a page
 // that picks its own frame, such as the error page, doesn't add a second one.
@@ -58,6 +59,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
 
   return (
     <div class="isolate flex min-h-dvh flex-col" {...sceneAttributes(shown())}>
+      <TimerTitle userId={session.data?.user.id} />
       <SceneLayer settings={shown()} pace="calm" />
       <IntroPage class="flex flex-1 flex-col">
         <AppHeader organizationId={props.organizationId} />

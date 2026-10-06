@@ -257,7 +257,7 @@ describe('TimerCalendar', () => {
     })
   })
 
-  test('dragging an edge changes one end; a drop in the future changes nothing', async () => {
+  test('dragging an edge changes one end; an entry moves into the future', async () => {
     renderView()
     const entry = await block()
     const end = entry.querySelector('[data-handle="end"]')!
@@ -273,8 +273,11 @@ describe('TimerCalendar', () => {
     fn.updateEntry.mockClear()
     // Thursday is after now.
     drag(await block(), point(0, 9.5), point(3, 9.5))
-    expect(status()).toHaveTextContent("An entry can't end in the future. Nothing changed.")
-    expect(fn.updateEntry).not.toHaveBeenCalled()
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith(
+        expect.objectContaining({ id: review.id, startedAt: at('2026-10-01', '09:00') }),
+      ),
+    )
   })
 
   test('Alt+arrows move a focused entry and keep focus; Shift changes its end', async () => {

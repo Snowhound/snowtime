@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "vite dev --port 3100",
     "build": "vite build",
     "build:self-hosted": "bun scripts/build-self-hosted.ts",
     "build:binary": "bun scripts/build-self-hosted.ts --binary",

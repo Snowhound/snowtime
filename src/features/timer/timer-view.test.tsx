@@ -347,7 +347,7 @@ describe('TimerView', () => {
     expect(start).not.toHaveFocus()
   })
 
-  test('keeps an end in the future on the field without saving, until Escape', async () => {
+  test('saves an end in the future', async () => {
     server.entries = [entry(0, '00:00', '00:01', 'Invoice export review')]
     renderView()
     await screen.findByDisplayValue('Invoice export review')
@@ -356,13 +356,11 @@ describe('TimerView', () => {
     end.focus()
     fireEvent.input(end, { target: { value: '23:59' } })
     fireEvent.keyDown(end, { key: 'Enter' })
-    expect(await screen.findByRole('alert')).toHaveTextContent("An entry can't end in the future.")
-    expect(end).toHaveAttribute('aria-invalid', 'true')
-    expect(end).toHaveValue('23:59')
-    expect(fn.updateEntry).not.toHaveBeenCalled()
-
-    fireEvent.keyDown(end, { key: 'Escape' })
-    expect((end as HTMLInputElement).value.replace(/\s/g, ' ')).toBe('00:01')
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith(
+        expect.objectContaining({ stoppedAt: expect.any(Date) }),
+      ),
+    )
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 

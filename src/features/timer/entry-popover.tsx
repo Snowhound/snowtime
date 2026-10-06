@@ -58,7 +58,6 @@ interface FormValues {
 const ERRORS: Record<EntryFormError, () => string> = {
   missing: m.entry_error_missing,
   missing_running: m.entry_error_missing_running,
-  future: m.entry_error_future,
   running_future: m.entry_error_running_future,
 }
 
