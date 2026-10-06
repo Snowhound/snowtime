@@ -240,7 +240,7 @@ which records the edge measurements.
 - [12](12-profiling.md): profiles of both servers under load, once features and tests are done
 - [13](13-render-allocations.md): render allocations and the remaining engine gap
 - [14](14-render-gc.md): render garbage that dies young, and a heap policy that allows a
-  larger nursery
+  larger nursery (done)
 - [15](15-framework-benchmarks.md): render benchmarks on Nuxt, SvelteKit, and Next.js apps
 - [16](16-javascriptcore.md): JavaScriptCore as the render engine: the gate failed on plain
   JSC, so Bun as a render sidecar is next

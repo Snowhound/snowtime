@@ -43,7 +43,7 @@ has gone, such as one whose connection closed.
 The pool starts `min_renderers`. While pages wait, it adds one renderer at a time, up to
 `max_renderers`; an extra renderer idle for `retire_after` stops. `set_pressure(true)`
 makes renderers collect after every page, stops extra ones, and adds none. The host sets
-the counts and heap limits from the memory it may use and reports pressure from its RSS
+the counts, heap limits, and semi-space size from the memory it may use and reports pressure from its RSS
 (`crates/host/src/memory.rs`).
 
 ## Web APIs and collection
@@ -62,8 +62,12 @@ parts objects; string encoding uses a thin V8/simdutf op. Receiver checks and no
 conversion remain with Deno. Task 081.12 records the measured selection and its limits.
 
 The default policy collects after one second idle, or after a page that leaves more than
-48 MiB of used V8 heap. It replaces the isolate if a collection leaves more than 80 MiB
-live. A near-limit callback terminates work at the 128 MiB heap limit and grants 16 MiB
+48 MiB in V8's old generation. It replaces the isolate if a collection leaves more than
+80 MiB live there. Both thresholds leave out the young generation, which a scavenge
+empties, so a larger nursery doesn't force a full collection after every page.
+`semi_space_bytes` fixes the size of each of the young generation's two semi-spaces; the
+host sets 32 or 16 MiB when its memory allows, and otherwise V8 sizes it from the heap
+limit (task 081.14). A near-limit callback terminates work at the 128 MiB heap limit and grants 16 MiB
 for unwinding. These are heap thresholds, not process RSS limits. After each collection
 on glibc, the renderer calls `malloc_trim(0)`: glibc otherwise keeps 55–60 MiB that V8's
 compiler and the page buffers freed, which is most of the gap between a warm renderer's

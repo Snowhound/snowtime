@@ -4,8 +4,8 @@ Status: in-progress (gate failed; the Bun render sidecar is next)
 
 On the same bundle, Bun runs Solid's synchronous render in 7.3 ms where V8 takes 12.7
 ([engine-gap report](server-rendering/engine-gap-wsl.md)). JSC's DFG tier is worth 37% to
-Bun, while TurboFan is worth 5% to V8. Task 081.14 is expected to leave V8 at about 1.4–1.5
-times Bun's CPU. This task checks whether embedding JSC would close that gap, before
+Bun, while TurboFan is worth 5% to V8. Task 081.14 left V8 at 1.50–1.63 times Bun's CPU
+([report](server-rendering/render-gc-wsl.md)). This task checks whether embedding JSC would close that gap, before
 anyone builds it.
 
 The engine spike (subtask 01) found the macOS system JSC, through its C API, slower than
@@ -178,8 +178,8 @@ isn't the deciding constraint. V8 in the host stays the renderer for the smalles
 budgets and the fallback. The measurements below can still reverse this if the sidecar
 loses Bun's lead.
 
-The reasons are Bun's render CPU (34–40% below V8 today; task 081.14 is expected to leave
-V8 at 1.4–1.5 times Bun) and that Bun maintains the engine, GC, and web APIs. A tag bump
+The reasons are Bun's render CPU (34–40% below V8 at the time; after task 081.14, V8
+takes 1.50–1.63 times Bun's CPU) and that Bun maintains the engine, GC, and web APIs. A tag bump
 brings its improvements, with no fork or bindings of ours to keep up.
 
 ### Shape
