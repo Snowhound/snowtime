@@ -107,13 +107,16 @@ rejected, as in task 069.
 5. Auth through [better-auth-rs](https://github.com/better-auth-rs/better-auth-rs) (MIT or
    Apache-2.0). It targets `better-auth@1.7.6`, the version this app uses, and tests its
    routes, payloads, and cookies against the TypeScript server with the real
-   `better-auth/client`, so the frontend's auth calls could stay unchanged. Device
-   authorization, which issue #2 chose for `/api/v1` (Kait, 2026-10-02), and API keys,
-   which may follow for scripts, are both in its v1 scope.
+   `better-auth/client`, so the frontend's auth calls could stay unchanged. Clients of
+   `/api/v1` sign in with personal API keys from `@better-auth/api-key` (task 089, PR #3),
+   which its v1 scope includes. Device authorization, which issue #2 first chose, was
+   cancelled on 2026-10-03 (task 089.02).
 
    Checked on 2026-10-02 at `1.0.0-alpha.3`, it has these gaps for this app:
    - It hashes passwords with Argon2. Better Auth's default is scrypt, which this app's
-     password users (development and demo seeds) have.
+     password users have. Passwords serve only development and demo seeds, and the native
+     sign-in already verifies them with AWS-LC scrypt (subtask 08), so this matters only if
+     passwords reach production.
    - This app's hooks (name checks, the login domain policy, refusing unverified sign-ups,
      the rate-limit rules) must fit its plugin model.
    - It runs on Axum, Tokio, and SeaORM. Auth flows are rare, but the per-request session
@@ -122,14 +125,21 @@ rejected, as in task 069.
 
    It names Google and GitHub providers, the two production uses. Microsoft sign-in can go
    if it costs work (Kait, 2026-10-02). A spike runs the app's sign-in, passkey,
-   invitation, API key, and device authorization flows against it on this app's schema,
-   after task 080. If it holds, the native backend is in Rust.
+   invitation, and API key flows against it on this app's schema, after task 080. If it
+   holds, the native backend is in Rust. The proof of concept didn't use it: its email
+   sign-in is the app's own code.
 
    Kait, 2026-10-06: better-auth-rs is the intended auth library; its compatibility harness
    against `better-auth@1.7.6` outweighs the alpha label, which concerns its Rust API. The
-   spike also checks that its SeaORM adapter can work through the host's database lanes
-   (one writer, admission) rather than opening connections of its own, and how Better
-   Auth's scrypt hashes verify. Versions are pinned, and each bump runs its compatibility
+   spike's main question is storage. Its SeaORM adapter, an optional crate behind the
+   `seaorm2` feature, runs on sqlx's own connection pool, which would bypass the host's
+   gates and single writer. Its core defines async store traits (`UserStore`,
+   `SessionStore`, `AccountStore`, `VerificationStore`, `TransactionStore`, and others)
+   that its test `MemoryStore` implements, so the spike writes a store over `rusqlite` and
+   the host's lanes, in SQL strings as subtask 03 chose over SeaQuery. It records which
+   traits the app's plugins need, and whether `TransactionStore` holds the writer across
+   async calls in a way the lane's deadline bounds. It also checks that API keys match
+   `@better-auth/api-key`'s format and stored hash. Versions are pinned, and each bump runs its compatibility
    tests and the conformance suite.
 
    It has no teams: they're its roadmap phases 14 and 15, outside its v1 scope, and on
