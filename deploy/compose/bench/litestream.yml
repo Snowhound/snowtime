@@ -1,0 +1,11 @@
+# The self-hosted replication cadence, with a local replica for the benchmark.
+addr: :9090
+dbs:
+  - path: /data/snowtime.db
+    replica:
+      type: file
+      path: /replica/snowtime
+      sync-interval: 1s
+snapshot:
+  interval: 24h
+  retention: 168h

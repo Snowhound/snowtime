@@ -12,10 +12,17 @@ async fn shutdown() {
     tokio::select! { _ = tokio::signal::ctrl_c() => {}, _ = terminate.recv() => {} }
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     snowtime_server::clock::init_from_env();
     let config = config::from_env().unwrap_or_else(|message| panic!("{message}"));
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .max_blocking_threads(config.limits.db_calls + config.limits.hashes)
+        .enable_all()
+        .build()
+        .expect("the host runtime starts");
+    runtime.block_on(serve(config));
+}
+async fn serve(config: config::Config) {
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
         .expect("one TLS provider");
@@ -37,8 +44,13 @@ async fn main() {
             Err(error) => panic!("Migrations failed: {error}"),
         }
     }
-    let app = snowtime_server::App::open(config.server).expect("the database opens");
-    let api = snowtime_server::router(app);
+    let app = snowtime_server::App::open_with_limits(
+        config.server,
+        config.read_connections,
+        config.limits,
+    )
+    .expect("the database opens");
+    let api = snowtime_server::router(app.clone());
 
     let limit = memory::limit();
     let cpus = std::thread::available_parallelism().map_or(1, |n| n.get());
@@ -58,6 +70,18 @@ async fn main() {
     )
     .expect("the renderer starts");
     memory::watch(pool.clone(), limit.bytes);
+    #[cfg(feature = "bench")]
+    {
+        let pool = pool.clone();
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                let stats = pool.stats();
+                tracing::info!(renderers = stats.renderers, render_queued = stats.queued, render_busy_answers = stats.refused,
+                    database = %app.bench_stats(), "bench counters");
+            }
+        });
+    }
     let pages = Router::new()
         .fallback(pages::page)
         .with_state(Arc::new(pages::Pages {

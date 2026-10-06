@@ -60,9 +60,39 @@ let ids = query.query(db, |row| row.get::<_, String>(0))?;
 ```
 
 `Assignments` omits absent patches, binds null for removals, and binds present values.
-The connection caches 256 prepared statements instead of rusqlite's default 16, so patch
-combinations and user-list lengths have room alongside the fixed queries. The cache stays
-bounded; more than 256 distinct statements can still evict older ones.
+The writer caches 256 prepared statements. `DB_READ_CONNECTIONS=0` (the default)
+keeps all requests on that connection. Set `DB_READ_CONNECTIONS=auto` for one read-only
+connection per available core, or a number from 0 to 256 for an explicit pool size.
+The host uses WAL in both modes. Each reader has a 2 MiB page-cache budget and caches
+64 prepared statements; these caches fill on demand.
+
+GETs and POST routes marked as reads lease a reader. The renderer's in-process calls
+use the same router and pool. Other calls and sign-in writes use the writer. Session
+checks can renew expiry or delete expired sessions; these operations take the writer
+after the session SELECT has finished, even when the calling rule uses a reader.
+Maintenance rechecks the session under the writer lock before changing it. A
+request already using the writer reuses that lock.
+Readers cannot mutate the database. A lease returns its connection on early errors
+and normal completion. The pool remains opt-in: measured benefits depend on the
+workload and core allocation. [Subtask 10](../tasks/081-native-backend/10-load-and-scaling.md)
+records the paired results, memory costs, and reasons for retaining the default.
+
+DB calls acquire async admission before entering Tokio's blocking pool.
+`DB_CONCURRENCY` defaults to readers plus two; `SCRYPT_CONCURRENCY` defaults to available
+cores. `WORK_QUEUE_TIMEOUT_MS` defaults to 1,000 ms. Admission expiry returns 503 with
+`Retry-After: 1`. The blocking thread limit is the sum of DB and hash concurrency.
+Sign-in holds no DB permit while hashing. Renderer reads use the host runtime.
+
+Ramp-first whole-server runs and the two-machine repeat protocol are in
+[`bench/scaling/README.md`](bench/scaling/README.md).
+
+The optional `bench` Cargo feature adds connection wait/hold, blocking queue and CPU,
+and renderer queue timings, plus one-second SQLite cache, live DB/hash blocking
+worker counts, blocking concurrency,
+scrypt concurrency, and render-pool counters. New diagnostics are compiled out of the
+default build. Thread CPU measurements work on Linux; macOS reports zero for those
+fields. Build a benchmark image with `--build-arg CARGO_FEATURES=bench`, or set
+`NATIVE_FEATURES=bench` when the stress harness builds it.
 
 ## Server rendering
 
@@ -101,7 +131,8 @@ The optional `scrypt-bench` feature adds RustCrypto and vendored OpenSSL for mea
 It is excluded from the release Docker image. Run each candidate sequentially:
 
 ```sh
-cargo build --release --manifest-path native/Cargo.toml -p snowtime-server --example scrypt-bench --features scrypt-bench
+cargo build --release --manifest-path native/Cargo.toml -p snowtime-server --example
+scrypt-bench --features scrypt-bench
 native/target/release/examples/scrypt-bench aws-lc 30
 native/target/release/examples/scrypt-bench openssl 30
 native/target/release/examples/scrypt-bench rust 30
@@ -111,7 +142,8 @@ docker build --target scrypt-bench -f native/Dockerfile -t snowtime-scrypt:bench
 docker run --rm --cpuset-cpus=1 snowtime-scrypt:bench aws-lc 30
 docker run --rm --cpuset-cpus=1 snowtime-scrypt:bench openssl 30
 docker run --rm --cpuset-cpus=1 snowtime-scrypt:bench rust 30
-docker run --rm --cpuset-cpus=1 -v "$PWD/native/bench:/bench:ro" oven/bun:1.4.2 bun /bench/scrypt.ts 30
+docker run --rm --cpuset-cpus=1 -v "$PWD/native/bench:/bench:ro" oven/bun:1.4.2 bun
+/bench/scrypt.ts 30
 ```
 
 Each command checks every hash against the Better Auth fixture, discards three warmups,
@@ -146,7 +178,8 @@ TypeScript build and the binary and fails on any answer that differs in status o
 masking only each server's clock, sign-in time, and URL. It also compares malformed
 inputs, the order of request checks, and Better Auth's origin and CSRF checks on
 sign-in. `lines.ts` counts the code
-lines of each ported handler in TypeScript and in the server crate (or a historical rules crate it's given).
+lines of each ported handler in TypeScript and in the server crate (or a historical rules
+crate it's given).
 `api-recording.ts` cuts a `perf:stress` recording down to the calls and pages the native
 backend serves, for `perf:stress --app=native --recording=<file>`; `native/Dockerfile`
 builds the image that run uses, from the repository root once the bundle is built.

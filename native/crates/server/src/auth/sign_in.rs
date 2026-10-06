@@ -2,7 +2,7 @@
 //! verifies the scrypt hash, writes the session row, and sets the signed session cookie.
 //! The database is held only for the reads and the write, not while scrypt runs.
 use crate::auth::session::User;
-use crate::auth::{Credentials, create_session, find_credentials, password};
+use crate::auth::{create_session, find_credentials, password};
 use crate::clock;
 use serde::{Deserialize, Serialize};
 
@@ -190,7 +190,11 @@ fn looks_like_email(email: &str) -> bool {
 impl App {
     // Better Auth's order: the body's JSON, the router's origin check, the body's schema, the
     // endpoint's CSRF check, then the endpoint itself.
-    pub(crate) fn sign_in(&self, request: &Request, fetch: &FetchHeaders) -> Response {
+    pub(crate) async fn sign_in(
+        self: std::sync::Arc<Self>,
+        request: Request,
+        fetch: FetchHeaders,
+    ) -> Response {
         let body = match request.body.as_slice() {
             [] => None,
             bytes => match serde_json::from_slice(bytes) {
@@ -223,41 +227,83 @@ impl App {
         if body.password.chars().count() > 128 {
             return refusal(400, "PASSWORD_TOO_LONG", "Password too long");
         }
-        let found = {
-            let db = self.db();
-            match find_credentials(&db, &body.email) {
-                Ok(found) => found,
-                Err(error) => return unavailable_or(&db, &error).into(),
-            }
+        let email = body.email;
+        #[cfg(feature = "bench")]
+        let trace = std::sync::Arc::new(crate::bench::SignInTrace::default());
+        #[cfg(feature = "bench")]
+        let credentials_trace = trace.clone();
+        let app = self.clone();
+        let found = match self
+            .db_gate
+            .run(move || {
+                #[cfg(feature = "bench")]
+                let waiting = std::time::Instant::now();
+                let db = app.db();
+                #[cfg(feature = "bench")]
+                let _work = credentials_trace.locked(waiting);
+                find_credentials(&db, &email)
+                    .map_err(|error| Response::from(unavailable_or(&db, &error)))
+            })
+            .await
+        {
+            Ok(Ok(found)) => found,
+            Ok(Err(response)) | Err(response) => return response,
         };
-        let Some(Credentials {
-            user,
-            password: Some(hash),
-        }) = found
-        else {
-            // The same work as a wrong password, so the answer doesn't tell the two apart.
-            password::hash(&body.password);
-            return refusal(
-                401,
-                "INVALID_EMAIL_OR_PASSWORD",
-                "Invalid email or password",
-            );
+        let hash = found.as_ref().and_then(|c| c.password.clone());
+        let password = body.password;
+        #[cfg(feature = "bench")]
+        let hash_trace = trace.clone();
+        let verified = match self
+            .hash_gate
+            .run(move || {
+                #[cfg(feature = "bench")]
+                let _work = hash_trace.hashing();
+                match hash {
+                    Some(hash) => password::verify(&hash, &password),
+                    None => {
+                        password::hash(&password);
+                        false
+                    }
+                }
+            })
+            .await
+        {
+            Ok(value) => value,
+            Err(response) => return response,
         };
-        if !password::verify(&hash, &body.password) {
+        if !verified {
             return refusal(
                 401,
                 "INVALID_EMAIL_OR_PASSWORD",
                 "Invalid email or password",
             );
         }
-        let ip = request.client_ip.as_deref().unwrap_or("");
-        let user_agent = request.user_agent.as_deref().unwrap_or("");
-        let token = {
-            let db = self.db();
-            match create_session(&db, &user.id, ip, user_agent, clock::now()) {
-                Ok(token) => token,
-                Err(error) => return unavailable_or(&db, &error).into(),
-            }
+        let user = found.expect("a verified hash has a user").user;
+        let user_id = user.id.clone();
+        #[cfg(feature = "bench")]
+        let session_trace = trace.clone();
+        let app = self.clone();
+        let token = match self
+            .db_gate
+            .run(move || {
+                #[cfg(feature = "bench")]
+                let waiting = std::time::Instant::now();
+                let db = app.db();
+                #[cfg(feature = "bench")]
+                let _work = session_trace.locked(waiting);
+                create_session(
+                    &db,
+                    &user_id,
+                    request.client_ip.as_deref().unwrap_or(""),
+                    request.user_agent.as_deref().unwrap_or(""),
+                    clock::now(),
+                )
+                .map_err(|error| Response::from(unavailable_or(&db, &error)))
+            })
+            .await
+        {
+            Ok(Ok(token)) => token,
+            Ok(Err(response)) | Err(response) => return response,
         };
         Response {
             status: 200,
@@ -268,7 +314,16 @@ impl App {
             })
             .expect("the answer serializes"),
             set_cookie: Some(self.session.session_cookie(&token)),
-            server_timing: None,
+            server_timing: {
+                #[cfg(feature = "bench")]
+                {
+                    Some(trace.header())
+                }
+                #[cfg(not(feature = "bench"))]
+                {
+                    None
+                }
+            },
         }
     }
 }

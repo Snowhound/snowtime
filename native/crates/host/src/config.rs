@@ -2,6 +2,8 @@ use snowtime_server::Config as ServerConfig;
 use std::env;
 pub struct Config {
     pub server: ServerConfig,
+    pub read_connections: usize,
+    pub limits: snowtime_server::Limits,
     pub host: String,
     pub port: u16,
     pub edge: crate::edge::Config,
@@ -21,7 +23,34 @@ pub fn from_env() -> Result<Config, String> {
         .to_owned();
     let app_url = required("BETTER_AUTH_URL")?;
     let edge = crate::edge::Config::from_env(&app_url)?;
+    let cpus = std::thread::available_parallelism().map_or(1, |n| n.get());
+    let read_connections = match var("DB_READ_CONNECTIONS").as_deref() {
+        None | Some("0") => 0,
+        Some("auto") => std::thread::available_parallelism().map_or(1, |n| n.get()),
+        Some(n) => n
+            .parse::<usize>()
+            .ok()
+            .filter(|n| *n <= 256)
+            .ok_or("DB_READ_CONNECTIONS is auto or a number from 0 to 256.")?,
+    };
+    let number = |name: &str, default: usize| -> Result<usize, String> {
+        var(name).map_or(Ok(default), |v| {
+            v.parse::<usize>()
+                .ok()
+                .filter(|n| *n > 0 && *n <= 65536)
+                .ok_or_else(|| format!("{name} is a number from 1 to 65536."))
+        })
+    };
+    let limits = snowtime_server::Limits {
+        db_calls: number("DB_CONCURRENCY", read_connections + 2)?,
+        hashes: number("SCRYPT_CONCURRENCY", cpus)?,
+        queue_timeout: std::time::Duration::from_millis(
+            number("WORK_QUEUE_TIMEOUT_MS", 1000)? as u64
+        ),
+    };
     Ok(Config {
+        read_connections,
+        limits,
         edge,
         host: var("HOST").unwrap_or_else(|| "0.0.0.0".into()),
         port: var("PORT").map_or(Ok(3000), |p| p.parse().map_err(|_| "PORT is a number."))?,

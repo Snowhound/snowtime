@@ -17,34 +17,41 @@ use std::time::Instant;
 /// The render isolate's API calls, through the API router as the browser's would go, with
 /// the page's cookie, which the bundle adds to each.
 pub fn in_process(api: Router) -> SendApi {
+    let runtime = tokio::runtime::Handle::current();
     Arc::new(move |call| {
         let api = api.clone();
+        let runtime = runtime.clone();
         Box::pin(async move {
-            let mut request = Request::builder()
-                .method(call.method.as_str())
-                .uri(call.path);
-            for (name, value) in call.headers {
-                request = request.header(name, value);
-            }
-            let request = request
-                .body(Body::from(call.body))
-                .map_err(|e| e.to_string())?;
-            let response = api.oneshot(request).await.unwrap_or_else(|e| match e {});
-            let status = response.status().as_u16();
-            let headers = response
-                .headers()
-                .iter()
-                .filter_map(|(n, v)| Some((n.to_string(), v.to_str().ok()?.to_owned())))
-                .collect();
-            let body = to_bytes(response.into_body(), usize::MAX)
+            runtime
+                .spawn(async move {
+                    let mut request = Request::builder()
+                        .method(call.method.as_str())
+                        .uri(call.path);
+                    for (name, value) in call.headers {
+                        request = request.header(name, value);
+                    }
+                    let request = request
+                        .body(Body::from(call.body))
+                        .map_err(|e| e.to_string())?;
+                    let response = api.oneshot(request).await.unwrap_or_else(|e| match e {});
+                    let status = response.status().as_u16();
+                    let headers = response
+                        .headers()
+                        .iter()
+                        .filter_map(|(n, v)| Some((n.to_string(), v.to_str().ok()?.to_owned())))
+                        .collect();
+                    let body = to_bytes(response.into_body(), usize::MAX)
+                        .await
+                        .map_err(|e| e.to_string())?
+                        .to_vec();
+                    Ok(ApiResponse {
+                        status,
+                        headers,
+                        body,
+                    })
+                })
                 .await
                 .map_err(|e| e.to_string())?
-                .to_vec();
-            Ok(ApiResponse {
-                status,
-                headers,
-                body,
-            })
         })
     })
 }
@@ -117,7 +124,7 @@ pub async fn page(State(pages): State<Arc<Pages>>, request: Request) -> Response
             }
             let timing = format!("render;dur={:.1}", started.elapsed().as_secs_f64() * 1000.0);
             if let Ok(timing) = HeaderValue::try_from(timing) {
-                headers.insert("server-timing", timing);
+                headers.append("server-timing", timing);
             }
             response
         }

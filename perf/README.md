@@ -188,11 +188,48 @@ bun run perf:stress --recording=<file> --dataset=M --run=kinds
 | `overload` | 2 minutes at `--users`, 5 at twice and four times that, 5 back at `--users`                                                                                |
 
 `--no-build` skips the image builds and `--no-load` keeps the database in the bench
-volume. `--step-seconds`, `--hold-seconds`, and `--from` adjust a ramp, and `--label` names its
+volume. `--step-seconds`, `--hold-seconds`, and `--from` adjust a ramp, and `--label`
+names its
 results folder. A ramp `--from` a higher step first warms the app up for 30 s at half that
 load, which it doesn't judge. `--recording=<file>` replays a recording from an earlier run
 (its `recording.json`) instead of recording again; `kinds` then skips actions the file has no
 requests for. `--caddy-cpuset=<cores>` moves Caddy off the app's core, such as to `0`.
+
+`--app-cpuset=<cores>` pins the app (default `1`), and
+`--k6-cpuset=<cores>` pins the local generator (default `2-9`). Keep these sets disjoint.
+`--sampler-cpuset=<cores>` moves the sampler (default `1`); Caddy has its existing
+`--caddy-cpuset` option. `--memory` limits the app, not the sum of the whole stack's
+memory limits. Record the combined app, proxy, and replication RSS separately.
+
+`--replica-dir=<absolute-or-relative-directory>` starts Litestream 0.5.0 alongside the
+app, pinned to its cores, with a default 128 MiB memory limit. Set
+`--litestream-memory=512m` to override that limit. The scaling driver reserves
+512 MiB for L after smaller limits caused startup OOM kills. The local-file replica uses the
+self-hosted config's one-second sync and daily snapshot cadence. Give container UID
+10001 write access to that directory. It contains benchmark data. The harness stops
+replication before replacing the dataset. Preserve its logs and replica with the run.
+Omitting the option stops any previous replication container. Use a fresh replica directory
+for each restored source dataset. `--warmup-seconds` waits before idle sampling (default
+30). Local replication runs warm with writes and wait for initial level-two compaction
+before measuring. `--litestream-image` selects a
+benchmark-only version override.
+
+`--read-connections=0|auto|<number>` configures the native pool. The sampler now records
+Litestream and k6 CPU, memory, swap, and thread counts separately. k6 counters are available
+while its container runs. CPU rates use adjacent samples from the same cgroup generation
+and report the observed duration. The harness stops when k6 uses more than 70% of its
+assigned-core budget and rejects dropped iterations. `--preallocated-vus` and `--max-vus`
+override the action-aware VU budgets. Local sampling uses a separate loopback HTTP port;
+`--sampler-url` overrides it, including for a remote SSH tunnel. Kind runs isolate page,
+API, and auth requests before measuring CPU; the timer action
+still alternates starts/stops. Each run saves settings,
+idle RSS, per-step requests/summaries/samples, images, and service logs. Ramps save
+`capacity.json`; a generator-limited ramp establishes no app capacity.
+
+`--dataset-date=YYYY-MM-DD` selects a preserved source database/users pair, even when
+selection-only harness edits change the current source fingerprint. It refuses ambiguous
+pairs and missing older dates. Pin it across a long matrix and retain file SHA-256 hashes.
+Without it, the harness retains its usual current-day generation behavior.
 
 Local worktrees share the Docker stack. A run reserves `/tmp/snowtime-perf-stress.lock`
 before touching it and releases the reservation on normal exit. If a run stops abruptly,
@@ -200,10 +237,13 @@ verify that its owner and k6 have stopped before removing the stale directory. S
 using an older checkout must also check for a running `perf:stress` or k6 process.
 
 For native-host TLS comparisons, `--direct` requires `--app=native` and a recording.
-It reuses the local Caddy certificate and sends load straight to the host on port 3000.
+Locally, it reuses the Caddy certificate and sends load straight to the host on port 3000.
 Run the normal stack first to create the certificate. Both modes share the same database,
-CPU limits, sampler, and complete access records. In direct mode, Caddy receives only
-sampler requests; its idle overhead is instrumentation, not an application proxy cost.
+CPU limits, sampler, and complete access records. Local sampler traffic uses its separate
+loopback port; Caddy's idle overhead is instrumentation. Remote direct mode requires the
+native TLS
+listener on the configured origin; see
+[`native/bench/scaling`](../native/bench/scaling/README.md).
 
 For edge comparisons, `--caddy-config=<absolute-or-relative.json>` mounts an effective
 Caddy JSON configuration in place of the Caddyfile. Capture the running configuration
@@ -278,7 +318,8 @@ client and in Caddy's access log, and the target. Per container, from cgroup v2:
 throttling, memory split into anonymous and page cache, disk traffic, and pressure (PSI).
 The host's steal time, memory, and the database size follow, then whether the step held
 its targets: server p95 under 300 ms for API calls, 1 s for pages and password
-sign-in, and 3 s for the year report and export, in every 30-second window, with under 0.1% errors and no dropped
+sign-in, and 3 s for the year report and export, in every 30-second window, with under
+0.1% errors and no dropped
 iterations. Results go to `perf/.cache/stress/runs/`.
 
 The sampler (`perf/stress/sampler/`) reads cgroup files and Caddy's bench log once a
@@ -320,17 +361,20 @@ saved to `perf/.cache/weather/` for comparison.
 
 - Uncapped (`--disable-gpu-vsync --disable-frame-rate-limit`, renderer pacing off): frames
   per second, the median and mean GPU time per frame (`EXT_disjoint_timer_query_webgl2`), and
-  the median CPU time per frame. With two canvases, a frame's time is both contexts'. The page lets at most 64 frames queue on the GPU, since Chrome would
+  the median CPU time per frame. With two canvases, a frame's time is both contexts'. The
+  page lets at most 64 frames queue on the GPU, since Chrome would
   otherwise accept thousands a second and stall later.
 - Paced, as the app runs: frame rate, the weather's GPU milliseconds per second (`gpu/s`),
-  and busy milliseconds per second on the page's main and compositor threads, the display compositor (viz), and the GPU process, from a trace.
+  and busy milliseconds per second on the page's main and compositor threads, the display
+  compositor (viz), and the GPU process, from a trace.
   Then the GPU process's CPU time per second over all its threads (`proc`, from CDP's
   `SystemInfo.getProcessInfo`), and on macOS the GPU's utilization (`use %`, the
   IOAccelerator's "Device Utilization %"). Utilization counts every process on the machine,
   so only large gaps between variants mean anything; `--window=<ms>` lengthens each
   measured window (500 by default) to steady it.
 - Timing draws each image's photo, since the glass shows a blurred copy of it
-  (`docs/architecture/scene.md`, "Glass"). `--variant=live` blurs the surfaces live instead, as
+  (`docs/architecture/scene.md`, "Glass"). `--variant=live` blurs the surfaces live
+  instead, as
   the app does before the copy is ready.
 
 A case is a preset from `IMAGE_WEATHER` with the tuning fields that take other paths

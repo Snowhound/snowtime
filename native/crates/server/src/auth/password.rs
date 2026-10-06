@@ -5,6 +5,13 @@ use rand::RngExt;
 use unicode_normalization::UnicodeNormalization;
 
 fn key(password: &str, salt: &str) -> [u8; 64] {
+    #[cfg(feature = "bench")]
+    let _active = crate::bench::Active::new(&crate::bench::SCRYPT);
+    #[cfg(feature = "bench")]
+    crate::bench::SCRYPT_PEAK.fetch_max(
+        crate::bench::SCRYPT.load(std::sync::atomic::Ordering::Relaxed),
+        std::sync::atomic::Ordering::Relaxed,
+    );
     let normalized: String = password.nfkc().collect();
     let mut key = [0u8; 64];
     // AWS-LC needs slightly more than 32 MiB for its ROMix buffer and scratch blocks.

@@ -10,7 +10,7 @@ services:
     environment:
       # --smol, for an A/B run (perf:stress --smol).
       BUN_OPTIONS: ${BENCH_BUN_OPTIONS:-}
-    cpuset: '1'
+    cpuset: '${BENCH_APP_CPUSET:-1}'
     mem_limit: ${BENCH_APP_MEMORY:-1792m}
     memswap_limit: ${BENCH_APP_MEMORY:-1792m}
   caddy:
@@ -29,8 +29,10 @@ services:
         aliases:
           - snowtime-bench.test
   sampler:
+    ports:
+      - '127.0.0.1:${BENCH_SAMPLER_PORT:-19100}:9100'
     image: snowtime-sampler:bench
-    cpuset: '1'
+    cpuset: '${BENCH_SAMPLER_CPUSET:-1}'
 volumes:
   caddy_data:
     name: snowtime_bench_caddy_data

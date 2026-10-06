@@ -50,6 +50,7 @@ export function compose(args: string[], env: Record<string, string> = {}) {
       'compose.bench.local.yml',
       ...(app === 'native' ? ['-f', 'compose.bench.native.yml'] : []),
       ...(env.BENCH_DIRECT_TLS ? ['-f', 'compose.bench.direct.yml'] : []),
+      ...(env.BENCH_REPLICA_DIR ? ['-f', 'compose.bench.replication.yml'] : []),
       ...(env.BENCH_CADDY_CONFIG ? ['-f', 'compose.bench.edge.yml'] : []),
       ...args,
     ],
@@ -83,6 +84,8 @@ export function buildImages() {
       join(native, 'Dockerfile'),
       '--build-arg',
       `BIN=${bin}`,
+      '--build-arg',
+      `CARGO_FEATURES=${process.env.NATIVE_FEATURES ?? ''}`,
       '-t',
       'snowtime-native:bench',
       ROOT,
@@ -92,8 +95,8 @@ export function buildImages() {
 
 // Replaces the bench volume's database with the dataset, while the app is stopped, and drops
 // the page cache, so the run starts as a server would after a restart: from the disk.
-export function loadDataset(database: string) {
-  compose(['stop', 'app'])
+export function loadDataset(database: string, settings: Record<string, string> = {}) {
+  compose(['stop', 'app', ...(settings.BENCH_REPLICA_DIR ? ['litestream'] : [])], settings)
   run('docker', [
     'run',
     '--rm',
@@ -104,7 +107,7 @@ export function loadDataset(database: string) {
     'alpine',
     'sh',
     '-c',
-    `rm -f /data/snowtime.db /data/snowtime.db-* && cp /source/${basename(database)} /data/snowtime.db && chown -R 10001:10001 /data`,
+    `rm -f /data/snowtime.db /data/snowtime.db-* && rm -rf /data/.snowtime.db-litestream && cp /source/${basename(database)} /data/snowtime.db && chown -R 10001:10001 /data`,
   ])
   dropCaches()
 }
@@ -123,8 +126,19 @@ function dropCaches() {
 
 // Starts the stack, or recreates its containers with changed settings, such as a memory
 // limit, and waits until the app is healthy.
-export function startStack(env: Record<string, string> = {}) {
-  compose(['up', '-d', '--wait', '--force-recreate'], env)
+export function startStack(env: Record<string, string> = {}, retainReplication = false) {
+  if (retainReplication)
+    run('docker', ['update', '--cpuset-cpus', env.BENCH_APP_CPUSET, 'snowtime-bench-litestream-1'])
+  compose(
+    [
+      'up',
+      '-d',
+      '--wait',
+      '--force-recreate',
+      ...(retainReplication ? ['app', 'caddy', 'sampler'] : []),
+    ],
+    env,
+  )
 }
 
 // Reuse the benchmark's certificate so both edges serve the same hostname and key.

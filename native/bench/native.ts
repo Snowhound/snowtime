@@ -32,6 +32,9 @@ export async function startNative(
       TURSO_DATABASE_URL: `file:${copy}`,
       BETTER_AUTH_SECRET: 'perf-harness-secret-perf-harness-secret',
       BETTER_AUTH_URL: url,
+      ...(process.env.DB_READ_CONNECTIONS && {
+        DB_READ_CONNECTIONS: process.env.DB_READ_CONNECTIONS,
+      }),
       EDGE_ACCESS_LOG: 'off',
       ...env,
     },
@@ -53,8 +56,11 @@ export async function startNative(
     pid: server.pid!,
     stop: async () => {
       server.kill()
+      if (server.exitCode === null) await new Promise((resolve) => server.once('exit', resolve))
       rmSync(copy, { force: true })
       rmSync(`${copy}-journal`, { force: true })
+      rmSync(`${copy}-wal`, { force: true })
+      rmSync(`${copy}-shm`, { force: true })
     },
   }
 }

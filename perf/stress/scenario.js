@@ -19,6 +19,21 @@ import { Counter, Trend } from 'k6/metrics'
 
 const handshakes = new Counter('bench_tls_handshakes')
 const protocols = new Counter('bench_protocols')
+const serverTiming = new Trend('bench_server_timing', true)
+const TIMINGS = [
+  'admission',
+  'connection_wait',
+  'connection_hold',
+  'cpu',
+  'scrypt_cpu',
+  'blocking_cpu',
+  'blocking_queue',
+  'render_queue',
+  'render_cpu',
+  'render',
+  'session',
+  'db',
+]
 
 const ORIGIN = __ENV.ORIGIN
 const HOST = ORIGIN.replace(/^https:\/\//, '')
@@ -49,10 +64,12 @@ const users = new SharedArray('users', () => JSON.parse(open(__ENV.USERS)))
 const recording = JSON.parse(open(__ENV.RECORDING))
 
 const errors = new Counter('bench_errors')
+const callDuration = new Trend('bench_call_duration', true)
 const actionDuration = new Trend('bench_action_duration', true)
 
 // A request's kind: the action and what it asks for, as the result tables group them.
 function kindOf(action, request) {
+  action = action.split(':')[0]
   if (isCall(request)) return `${action} api`
   if (request.path.startsWith('/api/auth/')) return `${action} auth`
   return `${action} page`
@@ -77,6 +94,17 @@ for (const step of PLAN) {
   for (const kind of KINDS) {
     thresholds[`http_req_duration{step:${step.name},kind:${kind}}`] = ['max>=0']
     thresholds[`http_reqs{step:${step.name},kind:${kind}}`] = ['count>=0']
+    for (const timing of TIMINGS)
+      thresholds[`bench_server_timing{step:${step.name},kind:${kind},timing:${timing}}`] = [
+        'max>=0',
+      ]
+  }
+  for (const [action, requests] of Object.entries(recording.actions)) {
+    for (const request of requests) {
+      const kind = kindOf(action, request),
+        call = `${request.method} ${request.path.split('?')[0]}`
+      thresholds[`bench_call_duration{step:${step.name},kind:${kind},call:${call}}`] = ['max>=0']
+    }
   }
   thresholds[`http_reqs{step:${step.name}}`] = ['count>=0']
   thresholds[`dropped_iterations{step:${step.name}}`] = ['count>=0']
@@ -90,15 +118,31 @@ let start = 0
 const scenarios = {}
 for (const step of PLAN) {
   const perHour = Math.max(1, Math.round(step.perHour ?? step.users * ACTIONS_PER_HOUR))
-  // Enough virtual users for every action to wait 30 s at the planned rate.
-  const concurrent = Math.ceil((perHour / 3600) * 30) + 10
+  // An action can contain several sequential requests, each with its own timeout.
+  const groups = Math.max(
+    ...Object.values(recording.actions).map((requests) => {
+      let count = 0,
+        batch = false
+      for (const request of requests) {
+        const read = request.method === 'GET' && isCall(request)
+        if (!read || !batch) count++
+        batch = read
+      }
+      return count
+    }),
+  )
+  const concurrent = Number(__ENV.MAX_VUS) || Math.ceil((perHour / 3600) * 30 * groups) + 20
   scenarios[step.name] = {
     executor: 'constant-arrival-rate',
     rate: perHour,
     timeUnit: '1h',
     duration: `${step.seconds}s`,
     startTime: `${start}s`,
-    preAllocatedVUs: Math.min(concurrent, 50),
+    preAllocatedVUs: Math.min(
+      concurrent,
+      Number(__ENV.PREALLOCATED_VUS) ||
+        Math.max(50, Math.min(500, Math.ceil((perHour / 3600) * 2))),
+    ),
     maxVUs: concurrent,
     gracefulStop: '30s',
     exec: 'act',
@@ -186,7 +230,7 @@ export function act() {
       started.set(index, fresh[0])
     }
   }
-  const signedIn = action !== 'sign-in'
+  const signedIn = action !== 'sign-in' && action !== 'sign-in:auth'
   const jar = new http.CookieJar()
   // Without it, a page answers a user whose language isn't English with a redirect.
   jar.set(ORIGIN, LOCALE_COOKIE, user.locale)
@@ -221,7 +265,16 @@ export function act() {
   }
 
   function check(response, request) {
+    callDuration.add(response.timings.duration, {
+      kind: kindOf(action, request),
+      call: request.call,
+    })
     protocols.add(1, { protocol: response.proto })
+    for (const part of (response.headers['Server-Timing'] ?? '').split(',')) {
+      const match = part.trim().match(/^([a-z_]+);dur=([\d.]+)/)
+      if (match)
+        serverTiming.add(Number(match[2]), { kind: kindOf(action, request), timing: match[1] })
+    }
     if (response.timings.tls_handshaking > 0) handshakes.add(1)
     if (action === 'stop' && request.method === 'POST' && response.status === 404) return
     const type = classify(response)
@@ -232,6 +285,7 @@ export function act() {
   // browser's refetches do.
   const requests = recording.actions[action].map((r) => ({
     ...r,
+    call: `${r.method} ${r.path.split('?')[0]}`,
     path: fill(r.path, user, fresh),
     body: r.body && fill(r.body, user, fresh).replace('snowtime-local', PASSWORD),
   }))
