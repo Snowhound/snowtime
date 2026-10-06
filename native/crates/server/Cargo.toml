@@ -7,9 +7,24 @@ publish.workspace = true
 
 [features]
 bench = []
+auth-spike = [
+    "dep:better-auth",
+    "dep:better-auth-core",
+    "dep:async-trait",
+    "dep:chrono",
+    "dep:serde_cbor_2",
+    "dep:webauthn-rs-core",
+    "dep:openssl",
+]
 scrypt-bench = ["dep:scrypt", "dep:openssl"]
 
 [dependencies]
+webauthn-rs-core = { version = "=0.5.5", optional = true }
+better-auth = { version = "=1.0.0-alpha.3", default-features = false, features = ["rustls"], optional = true }
+better-auth-core = { version = "=1.0.0-alpha.3", optional = true }
+async-trait = { version = "0.1", optional = true }
+chrono = { version = "0.4", features = ["serde"], optional = true }
+serde_cbor_2 = { version = "0.13", optional = true }
 libc = "0.2"
 aws-lc-sys = "0.45"
 base64.workspace = true

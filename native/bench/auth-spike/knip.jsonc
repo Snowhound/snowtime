@@ -1,0 +1,6 @@
+{
+  "entry": ["verify-key.ts", "verify-passkey.ts"],
+  "project": ["*.ts"],
+  // Pins the plugin whose WebAuthn verifier and options define the reference behavior.
+  "ignoreDependencies": ["@better-auth/passkey"],
+}
