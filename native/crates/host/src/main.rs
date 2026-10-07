@@ -61,6 +61,7 @@ async fn serve(config: config::Config) {
         cpus,
         renderers = policy.max_renderers,
         heap_mib = policy.heap_limit_bytes >> 20,
+        semi_space_mib = policy.semi_space_bytes.map(|bytes| bytes >> 20),
         "sized the renderers"
     );
     let pool = snowtime_render::Pool::start(

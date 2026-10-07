@@ -70,10 +70,17 @@ pub struct Policy {
     pub idle: Duration,
     /// V8's heap limit; past it, the page fails and the isolate is replaced.
     pub heap_limit_bytes: usize,
-    /// Collect after a page that leaves more than this in use.
+    /// Collect after a page that leaves more than this in V8's old generation.
     pub collect_heap_bytes: usize,
-    /// Replace the isolate when a collection leaves more than this live.
+    /// Replace the isolate when a collection leaves more than this live in the old
+    /// generation.
     pub replace_heap_bytes: usize,
+    /// The size of each of the young generation's two semi-spaces; `None` keeps V8's
+    /// default, which grows with the heap limit. A set size replaces V8's young
+    /// generation, a small part of `heap_limit_bytes`, with three times this size, and
+    /// leaves the old generation's limit as it was: at 128 MiB and 32 MiB the whole heap
+    /// may reach about 212 MiB.
+    pub semi_space_bytes: Option<usize>,
     pub deadline: Duration,
     pub queue_capacity: usize,
     /// A page that waited longer than this is refused as Busy instead of rendered.
@@ -91,6 +98,7 @@ impl Default for Policy {
             heap_limit_bytes: 128 << 20,
             collect_heap_bytes: 48 << 20,
             replace_heap_bytes: 80 << 20,
+            semi_space_bytes: None,
             deadline: Duration::from_secs(5),
             queue_capacity: 64,
             max_queue_wait: Duration::from_secs(1),
@@ -161,9 +169,7 @@ impl Renderer {
             inspector: profile::Profile::enabled(),
             startup_snapshot: Some(include_bytes!(concat!(env!("OUT_DIR"), "/render.bin"))),
             extensions: exts,
-            create_params: Some(
-                deno_core::v8::CreateParams::default().heap_limits(0, policy.heap_limit_bytes),
-            ),
+            create_params: Some(create_params(&policy)),
             ..Default::default()
         });
         let handle = runtime.v8_isolate().thread_safe_handle();
@@ -203,16 +209,20 @@ impl Renderer {
             self.policy.clone(),
         );
     }
-    fn heap_bytes(&mut self) -> usize {
-        self.js()
-            .v8_isolate()
-            .get_heap_statistics()
-            .used_heap_size()
+    // The young generation is left out: a scavenge empties it, and counting it would make
+    // a larger nursery trigger a full collection after every page.
+    fn old_generation_bytes(&mut self) -> usize {
+        let isolate = self.js().v8_isolate();
+        (0..isolate.number_of_heap_spaces())
+            .filter_map(|space| isolate.get_heap_space_statistics(space))
+            .filter(|space| !space.space_name().to_bytes().starts_with(b"new_"))
+            .map(|space| space.space_used_size())
+            .sum()
     }
     fn collect(&mut self) {
         self.js().v8_isolate().low_memory_notification();
         trim();
-        if self.heap_bytes() > self.policy.replace_heap_bytes {
+        if self.old_generation_bytes() > self.policy.replace_heap_bytes {
             self.reset();
         }
     }
@@ -260,6 +270,18 @@ impl Renderer {
             }
         }
     }
+}
+
+fn create_params(policy: &Policy) -> deno_core::v8::CreateParams {
+    let params = deno_core::v8::CreateParams::default().heap_limits(0, policy.heap_limit_bytes);
+    let Some(semi_space) = policy.semi_space_bytes else {
+        return params;
+    };
+    // V8 sizes the young generation as two semi-spaces plus a large-object space of the
+    // same size. Starting it at its maximum keeps it from growing through extra scavenges.
+    params
+        .set_initial_young_generation_size_in_bytes(semi_space * 3)
+        .set_max_young_generation_size_in_bytes(semi_space * 3)
 }
 
 // glibc keeps what V8's compiler and the page buffers freed, 55-60 MiB; return it to the
@@ -465,7 +487,7 @@ async fn run_renderer(shared: Arc<Shared>) {
         idle_since = Instant::now();
         let pressure = shared.pressure.load(Ordering::Relaxed);
         untrimmed += 1;
-        if pressure || renderer.heap_bytes() > policy.collect_heap_bytes {
+        if pressure || renderer.old_generation_bytes() > policy.collect_heap_bytes {
             renderer.collect();
             dirty = false;
             untrimmed = 0;

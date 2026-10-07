@@ -3,7 +3,8 @@
 //!
 //!   render-bench <page.json> <answers.json> [count] [renderers] [concurrency] [output.html]
 //!
-//! RENDER_HEAP_MB sets each isolate's heap limit, and V8_FLAGS passes flags to V8.
+//! RENDER_HEAP_MB sets each isolate's heap limit, RENDER_SEMI_MB its semi-space size, and
+//! V8_FLAGS passes flags to V8.
 //! `thread_cpu_ms` splits the measured CPU by thread: the renderer, and V8's GC and compiler
 //! workers.
 use snowtime_render::{ApiResponse, MANIFEST, PageRequest, Policy, Pool, SendApi};
@@ -105,20 +106,27 @@ fn cgroup_cpu_us() -> Option<f64> {
         .ok()
 }
 
-// RENDER_HEAP_MB sets the heap limit, with the host's thresholds for it (crates/host).
+// RENDER_HEAP_MB sets the heap limit, with the host's thresholds for it (crates/host), and
+// RENDER_SEMI_MB the semi-space size.
 fn heap_limits() -> Policy {
-    let Some(mb) = std::env::var("RENDER_HEAP_MB")
-        .ok()
-        .and_then(|v| v.parse::<usize>().ok())
-    else {
-        return Policy::default();
+    let mb = |name| {
+        std::env::var(name)
+            .ok()
+            .and_then(|v| v.parse::<usize>().ok())
+            .map(|mb| mb << 20)
     };
-    let heap = mb << 20;
+    let policy = Policy {
+        semi_space_bytes: mb("RENDER_SEMI_MB"),
+        ..Policy::default()
+    };
+    let Some(heap) = mb("RENDER_HEAP_MB") else {
+        return policy;
+    };
     Policy {
         heap_limit_bytes: heap,
         collect_heap_bytes: heap * 3 / 8,
         replace_heap_bytes: heap * 5 / 8,
-        ..Policy::default()
+        ..policy
     }
 }
 
