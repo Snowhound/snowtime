@@ -259,7 +259,7 @@ which records the edge measurements.
   getters, as Solid 2.0 compiles them, behind a bundle flag: off by default on both
   engines (done)
 - [20](20-shared-accessors.md): server props with shared own accessors, as Solid 2.0
-  ships them, against the plain bundle and task 19's variant
+  ships them: the V8 default, while Bun keeps the plain bundle (done)
 - [21](21-render-hot-spots.md): one more profiling pass for small rewrites of hot bundle
   code like task 20's, toward V8 within 1.2 times Bun
 

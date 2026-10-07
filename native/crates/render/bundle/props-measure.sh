@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# Three alternating rounds of the plain, prototype, and shared props bundles on V8 (default
+# Three alternating rounds of the plain and shared props bundles on V8 (default
 # and 32 MiB semi-space) and Bun, after building snowtime-render:props-<variant> images.
 set -euo pipefail
 cd "$(dirname "$0")/../../../.."
 results="$(pwd)/native/crates/render/results"
 out="$results/props"
 mkdir -p "$out/html" "$out/raw"
-for variant in plain prototype shared; do
+for variant in plain shared; do
   cp "native/crates/render/bundle/dist/render$([ $variant = plain ] || echo .$variant).js" \
     "$out/render.measured.$variant.js"
 done
 for round in 1 2 3; do
   for page in timer week month year; do
-    variants=(plain prototype shared)
-    if [ "$round" = 2 ]; then variants=(shared prototype plain); fi
+    variants=(plain shared)
+    if [ "$round" = 2 ]; then variants=(shared plain); fi
     for variant in "${variants[@]}"; do
       for semi in default 32; do
         envs=()
@@ -28,9 +28,7 @@ for round in 1 2 3; do
         /work/native/crates/render/results/answers.json 500 "/html/$page-bun-$variant.html" > "$out/raw/$page-bun-$variant-$round.json"
     done
     for engine in v8-default v8-32 bun; do
-      for variant in prototype shared; do
-        cmp "$out/html/$page-$engine-plain.html" "$out/html/$page-$engine-$variant.html"
-      done
+      cmp "$out/html/$page-$engine-plain.html" "$out/html/$page-$engine-shared.html"
     done
     echo "round $round $page: HTML identical"
   done

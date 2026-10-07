@@ -3,10 +3,9 @@ mod extensions;
 fn main() {
     println!("cargo:rerun-if-env-changed=RENDER_PROPS");
     let path = match std::env::var("RENDER_PROPS").as_deref() {
-        Ok("plain") | Err(_) => "bundle/dist/render.js",
-        Ok("prototype") => "bundle/dist/render.prototype.js",
-        Ok("shared") => "bundle/dist/render.shared.js",
-        _ => panic!("RENDER_PROPS must be plain, prototype, or shared"),
+        Ok("shared") | Err(_) => "bundle/dist/render.shared.js",
+        Ok("plain") => "bundle/dist/render.js",
+        _ => panic!("RENDER_PROPS must be shared or plain"),
     };
     let bundle = std::fs::read_to_string(path)
         .expect("Build the render bundle first: bun native/crates/render/bundle/build.ts");

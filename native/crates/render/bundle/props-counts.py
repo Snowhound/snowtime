@@ -51,7 +51,7 @@ writeFileSync(output,before+s+after);
 instrument = instrument.replace(chr(92)+chr(96), chr(96))
 script = out/'instrument-counts.mjs'
 script.write_text(instrument)
-for variant in ('plain','prototype','shared'):
+for variant in ('plain','shared'):
     bundle = root/'native/crates/render/bundle/dist'/('render.js' if variant=='plain' else f'render.{variant}.js')
     counted = out/f'counted-{variant}.js'
     subprocess.run(['bun',str(script),str(bundle),str(counted)],check=True,cwd=root)

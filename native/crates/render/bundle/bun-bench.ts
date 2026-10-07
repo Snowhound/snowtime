@@ -41,8 +41,7 @@ globalThis.renderManifest = JSON.parse(
 )
 const started = performance.now()
 const variant = process.env.RENDER_PROPS ?? 'plain'
-if (!['plain', 'prototype', 'shared'].includes(variant))
-  throw new Error('RENDER_PROPS must be plain, prototype, or shared')
+if (!['plain', 'shared'].includes(variant)) throw new Error('RENDER_PROPS must be plain or shared')
 await import(
   process.env.BUN_RENDER_BUNDLE ??
     resolve(import.meta.dir, variant === 'plain' ? 'dist/render.js' : `dist/render.${variant}.js`)

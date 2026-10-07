@@ -50,12 +50,15 @@ idle time or an old-generation threshold and replaces an isolate when collection
 reduce its live heap. A watchdog interrupts synchronous JavaScript; a separate async
 deadline covers API futures. A failed render replaces the isolate, and the host answers 500. The render crate documents the current thresholds, which remain tunable.
 
-The prototype-getter props experiment keeps the plain server bundle as the default on
-both engines (`RENDER_PROTOTYPE_PROPS=0`). Task 081.19 found faster V8 report pages but a
-slower timer, and 20–36% more render CPU on Bun. The explicit flag selects the alternate
-V8 snapshot at build time or the Bun bundle at startup. It changes no browser assets or
-pool policy. [The WSL report](../../tasks/081-native-backend/server-rendering/prototype-props-wsl.md)
-records the measurements and the audited props-enumeration scope.
+V8 renders a server bundle whose props getters are own accessors defined from shared
+descriptors, as Solid 2.0 emits them (`RENDER_PROPS=shared`). Bun keeps the plain bundle
+(`RENDER_PROPS=plain`). On task 081.20's measurements the shared bundle takes 3–22% off
+V8's render CPU on every page, with lower p95, peak RSS, and post-render promotion, but
+costs Bun 10–21%. Task 081.19's prototype getters, the earlier candidate, were slower than
+plain on V8's timer and on every Bun page, and are removed. The choice is made per engine at build time
+(V8's snapshot) or at startup (Bun), and changes no browser assets or pool policy.
+[The report](../../tasks/081-native-backend/server-rendering/shared-props-mac.md) records
+the measurements.
 
 ## Bun sidecar (planned)
 

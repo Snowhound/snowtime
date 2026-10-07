@@ -112,37 +112,41 @@ and navigates to the other page without reloading.
 `results/` and the generated bundle are ignored. Raw measurements and findings are kept
 in tasks 081.01 and 081.12.
 
-## Prototype props experiment
+## Props bundles
 
-The isolated build also writes `dist/render.prototype.js` and
-`dist/prototype-audit.json`. The prototype variant moves compiled getter literals to
-shared, enumerable prototype getters. Its getter bodies remain lazy closures in private
-instance fields. Cached layouts replace Solid's server `mergeProps` and `splitProps`.
-The plain `render.js` and production browser assets retain their existing output.
+The isolated build writes two server bundles from the same compiled app:
 
-`RENDER_PROTOTYPE_PROPS=0` selects the plain bundle by default on both engines.
-Task 081.19 found report-page gains on V8, but a timer regression; Bun regressed on every
-page. These measurements keep the experiment off by default.
-`RENDER_PROTOTYPE_PROPS=1` selects the experiment when Cargo creates V8's startup snapshot,
-or when the Bun benchmark starts. An existing V8 binary cannot change its snapshot through
-a runtime environment variable. Docker builds accept the same build argument:
+- `dist/render.shared.js` turns every compiled props literal with getters into a
+  constructor call. Each getter stays an own, enumerable accessor, defined from one
+  descriptor per key that every site shares, and its closure sits in a symbol-keyed slot,
+  as Solid 2.0 emits props ([solid#3550](https://github.com/solidjs/solid/pull/3550)).
+  Solid's server `mergeProps` and `splitProps` use cached shared descriptors too, and
+  `splitProps` re-homes a shared getter it copies so the copy still reads its source.
+- `dist/render.js`, the plain bundle, keeps Solid's output.
+
+`RENDER_PROPS` picks the bundle: `shared` is V8's default and `plain` is Bun's. V8 reads it
+when Cargo creates the startup snapshot, so a built binary keeps its bundle; Bun reads it
+when `bun-bench.ts` starts. Docker builds take it as a build argument:
 
 ```sh
-docker build -f native/crates/render/Dockerfile --build-arg RENDER_PROTOTYPE_PROPS=1 -t snowtime-render:prototype19 .
+docker build -f native/crates/render/Dockerfile --build-arg RENDER_PROPS=plain -t snowtime-render:plain .
 ```
 
-The rewrite guards enumeration, spread, and descriptor reads in the isolated bundle.
-Native rest destructuring uses an own-descriptor bridge for branded props so named
-getters retain their evaluation order. Raw own-property checks still distinguish a
-prototype getter from an own property; this is an experiment for the audited bundle,
-not a general replacement for Solid's props contract. The build rejects changed upstream
+On task 081.20's measurements the shared bundle takes 3–22% off V8's render CPU on every
+page and lowers its p95 and peak RSS, while it costs Bun 10–21%. Own keys, key order,
+flags, and the prototype match the literals, so spreads, `Object.keys`, and rest
+destructuring need no adapters. Two differences remain: a spread or `Object.assign` copies
+the symbol slots, and a getter descriptor copied onto another object reads that object
+unless `splitProps` re-homed it. Nothing in the bundle reads symbol keys of props or
+copies their descriptors outside `splitProps`. The build rejects changed upstream
 merge/split helpers and generated-name collisions.
 
-[Task 081.19's report](../../../tasks/081-native-backend/server-rendering/prototype-props-wsl.md)
-records the measurements, getter counts, promotion probe, and complete read inventory.
-Run `bash native/crates/render/bundle/prototype-measure.sh` after building the two
-images named in that script. Timing runs use the saved captures; diagnostic getter counts
-run separately with `python3 native/crates/render/bundle/prototype-counts.py`.
+[Task 081.20's report](../../../tasks/081-native-backend/server-rendering/shared-props-mac.md)
+records the measurements, getter counts, and GC diagnostics. To compare the bundles, build
+`snowtime-render:props-plain` and `snowtime-render:props-shared` with the build argument,
+then run `bash native/crates/render/bundle/props-measure.sh` and
+`python3 native/crates/render/bundle/props-summary.py`. Getter counts run separately with
+`python3 native/crates/render/bundle/props-counts.py`.
 
 ## Render profiling and API benchmarks
 

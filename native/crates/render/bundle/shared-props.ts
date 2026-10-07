@@ -1,7 +1,6 @@
-import { parse } from 'acorn'
+import { parse, type Node } from 'acorn'
 import { readFileSync } from 'node:fs'
 import type { Plugin } from 'vite'
-import { propsSites, walk, type Ast, type Edit } from './prototype-props'
 
 // Solid 2.0's hoisted props (solid#3550): each site's getters stay own accessors, defined
 // from one shared descriptor per key that reads the site's closure from a symbol slot.
@@ -9,6 +8,91 @@ const runtime = readFileSync(new URL('./shared-runtime.js', import.meta.url), 'u
   /^export /gm,
   '',
 )
+
+type Ast = Node & {
+  [key: string]: unknown
+  name: string
+  value: unknown
+  computed: boolean
+  method: boolean
+  kind: string
+  key: Ast
+  body: Ast & { body: Ast[] }
+  callee: Ast & { object: Ast; property: Ast }
+  arguments: Ast[]
+  properties: Ast[]
+  params: Ast[]
+  left: Ast
+  id: Ast
+  init: Ast
+  argument: Ast
+}
+type Edit = { start: number; end: number; text: string }
+
+function walk(node: Ast, visit: (node: Ast) => void) {
+  visit(node)
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value)) {
+      for (const child of value)
+        if (child && typeof child === 'object' && 'type' in child) walk(child as Ast, visit)
+    } else if (value && typeof value === 'object' && 'type' in value) walk(value as Ast, visit)
+  }
+}
+function unsafeGetter(node: Ast) {
+  let unsafe = false
+  walk(node, (child) => {
+    if (
+      child.type === 'ThisExpression' ||
+      child.type === 'Super' ||
+      child.type === 'MetaProperty' ||
+      (child.type === 'Identifier' && child.name === 'arguments')
+    )
+      unsafe = true
+  })
+  return unsafe
+}
+function propertyKey(property: Ast): string | undefined {
+  if (!property.key) return undefined
+  if (!property.computed && property.key.type === 'Identifier') return property.key.name
+  if (property.key.type === 'Literal' && ['string', 'number'].includes(typeof property.key.value))
+    return String(property.key.value)
+  return undefined
+}
+
+// Getter literals passed as props, with the reason a site keeps its literal.
+function propsSites(node: Ast) {
+  if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier') return []
+  const name = node.callee.name
+  const candidates =
+    name === 'mergeProps'
+      ? node.arguments
+      : ['createComponent', 'ssrElement'].includes(name)
+        ? [node.arguments[1]]
+        : []
+  return candidates
+    .filter(
+      (object) =>
+        object?.type === 'ObjectExpression' && object.properties.some((p: Ast) => p.kind === 'get'),
+    )
+    .map((object) => {
+      const properties: Ast[] = object.properties
+      const keys = properties.map(propertyKey)
+      const reason = properties.some((p) => p.type === 'SpreadElement')
+        ? 'spread'
+        : properties.some((p) => p.kind === 'set')
+          ? 'setter'
+          : properties.some((p) => p.method)
+            ? 'method'
+            : keys.some((key) => key === undefined || key === '__proto__' || key === 'constructor')
+              ? 'key'
+              : new Set(keys).size !== keys.length
+                ? 'duplicate'
+                : properties.some((p) => p.kind === 'get' && unsafeGetter(p.value))
+                  ? 'receiver'
+                  : undefined
+      return { object, properties, keys, reason }
+    })
+}
 
 export function rewriteSharedProps(code: string) {
   if (code.includes('renderShared') || /SharedProps\$\d/.test(code))

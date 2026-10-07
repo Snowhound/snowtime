@@ -2,8 +2,8 @@
 
 Status: todo
 
-Task 081.20 left V8's best bundle at 1.26–1.36 times Bun's plain bundle in render CPU on
-this machine's quick checks, above the 1.2 target. The changes that helped there were
+Task 081.20 left V8's best bundle at 1.26–1.38 times Bun's plain bundle in render CPU,
+above the 1.2 target. The changes that helped there were
 small, local rewrites of hot bundle code: keeping splitProps' descriptor map in fast mode,
 and copying plain data props by assignment instead of `defineProperty`. Each took 3–5% off
 the renders. This task looks for more of the same in one short profiling pass. A change

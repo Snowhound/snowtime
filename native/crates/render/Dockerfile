@@ -2,7 +2,7 @@
 # pinned Bun dependencies (README.md, "Reproduce").
 FROM rust:1.99-trixie AS build
 RUN apt-get update && apt-get install -y --no-install-recommends clang && rm -rf /var/lib/apt/lists/*
-ARG RENDER_PROPS=plain
+ARG RENDER_PROPS=shared
 WORKDIR /src
 COPY native /src/native
 RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,target=/src/native/target \

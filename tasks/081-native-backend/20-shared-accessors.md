@@ -1,6 +1,6 @@
 # 081.20: Server props with shared own accessors
 
-Status: todo
+Status: done
 
 Task 081.19's prototype getters cut getter creation per page from thousands to tens, but
 the render CPU didn't follow. On V8 the report pages got 2–12% faster, while the timer got
@@ -63,22 +63,22 @@ plain bundle and task 081.19's variant.
 
 ## Acceptance criteria
 
-- [ ] A V8 and Bun microbenchmark comparing getter literals, 081.19's prototype getters,
+- [x] A V8 and Bun microbenchmark comparing getter literals, 081.19's prototype getters,
       and shared own accessors: creation time, map sharing (`%HaveSameMap`), and bytes
       promoted after dropping 2,000 objects
-- [ ] The rewrite built, with rewritten and skipped site counts, per-page counts of
+- [x] The rewrite built, with rewritten and skipped site counts, per-page counts of
       `defineProperty` getters and getter literals, and a test of own keys, key order,
       descriptor flags, laziness, and re-homed descriptor copies
-- [ ] The adapters that 081.19 needed and this form doesn't, removed; each remaining one
+- [x] The adapters that 081.19 needed and this form doesn't, removed; each remaining one
       listed with the audit rows it covers
-- [ ] Byte-identical HTML on all four pages and the browser hydration check passing
-- [ ] Plain, 081.19's prototype variant, and the new variant measured on the same
+- [x] Byte-identical HTML on all four pages and the browser hydration check passing
+- [x] Plain, 081.19's prototype variant, and the new variant measured on the same
       machine in one session, as task 081.19 measured them: CPU, p95, and peak RSS on
       four pages for V8 (default and 32 MiB semi-space) and Bun, three alternating rounds,
       plus promotion, scavenges, and mark-compacts per page
-- [ ] If the new variant is slower on any page, the cause found with a profile, not left
+- [x] If the new variant is slower on any page, the cause found with a profile, not left
       as an anomaly; the same for 081.19's timer regression if the new form shares it
-- [ ] The default per engine decided and recorded in the render README and
+- [x] The default per engine decided and recorded in the render README and
       `docs/architecture/native-rendering.md`. Remove the losing variant's code; if
       neither variant wins on an engine, remove both and keep only the reports
 
@@ -94,5 +94,20 @@ render CPU on any page, profile V8 again and try further changes. This part is f
 follow-up task if the session runs out of time. Each change is measured as above and kept
 only if it wins without costing Bun.
 
-- [ ] V8's best bundle within 1.2 times Bun's plain bundle in render CPU on every page, or
+- [x] V8's best bundle within 1.2 times Bun's plain bundle in render CPU on every page, or
       a profile of the remaining gap with each change tried and its measured effect
+
+## Results
+
+V8 uses the shared bundle (`RENDER_PROPS=shared`), and Bun keeps the plain one. Measured
+on the Mac in one session:
+
+- **V8:** shared takes 3–22% off render CPU on every page at both semi-space settings,
+  with lower p95, peak RSS, promotion, and GC counts.
+- **Bun:** shared costs 10–21% more.
+- **Prototype bundle:** task 081.19's prototype getters lost to plain on V8's timer and
+  week pages and on every Bun page, and their code is removed.
+
+V8's best bundle is still 1.26–1.38 times Bun's plain bundle, so task 081.21 continues the
+profiling. [The Mac report](server-rendering/shared-props-mac.md) records the gate,
+measurements, diagnostics, and every change tried.

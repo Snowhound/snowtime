@@ -32,3 +32,4 @@ deploy/compose/.env.import
 
 # Benchmark database, build copy, and server logs (perf/README.md)
 perf/.cache
+__pycache__/

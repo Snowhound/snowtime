@@ -7,7 +7,7 @@ from pathlib import Path
 from statistics import mean
 root = Path(__file__).resolve().parents[4]
 results = root/'native/crates/render/results/props'
-variants = ('plain', 'prototype', 'shared')
+variants = ('plain', 'shared')
 out = root/'tasks/081-native-backend/server-rendering'/(sys.argv[1] if len(sys.argv) > 1 else 'shared-props-mac.jsonl')
 rows = []
 groups = {}
@@ -38,8 +38,8 @@ def metrics(runs):
             'workers': mean(threads(r, 'V8 ') for r in runs)}
 
 
-print('| Engine / semi-space | Page | CPU ms, plain → prototype → shared | Render thread | V8 workers | p95 ms | Peak RSS MB | Prototype | Shared |')
-print('| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |')
+print('| Engine / semi-space | Page | CPU ms, plain → shared | Render thread | V8 workers | p95 ms | Peak RSS MB | CPU change |')
+print('| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |')
 for engine in ('v8-default', 'v8-32', 'bun'):
     for page in ('timer', 'week', 'month', 'year'):
         m = [metrics(groups[page, engine, v]) for v in variants]
@@ -48,4 +48,4 @@ for engine in ('v8-default', 'v8-32', 'bun'):
         v8 = engine.startswith('v8')
         print(f"| {engine} | {page} | {chain('cpu')} | {chain('thread') if v8 else '—'} | "
               f"{chain('workers') if v8 else '—'} | {chain('p95')} | {chain('rss', 0)} | "
-              f"{(m[1]['cpu']/m[0]['cpu']-1)*100:+.1f}% | {(m[2]['cpu']/m[0]['cpu']-1)*100:+.1f}% |")
+              f"{(m[1]['cpu']/m[0]['cpu']-1)*100:+.1f}% |")

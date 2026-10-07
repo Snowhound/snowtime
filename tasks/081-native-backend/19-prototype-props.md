@@ -74,3 +74,4 @@ reads.
 [The WSL report](server-rendering/prototype-props-wsl.md) records the implementation,
 complete props-read inventory, timing and GC measurements, and validation. Keep the plain
 bundle as the default on both engines; the prototype variant remains opt-in.
+Task 081.20 later made shared own accessors V8's default and removed this variant.

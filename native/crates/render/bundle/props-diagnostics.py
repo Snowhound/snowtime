@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parents[4]
 diag = root/'native/crates/render/results/props/diagnostic'
 rows = []
 groups = {}
-VARIANTS = ('plain', 'prototype', 'shared')
+VARIANTS = ('plain', 'shared')
 for page in ('timer', 'week', 'month', 'year'):
     for variant in VARIANTS:
         lines = (diag/f'{page}-{variant}-counts.txt').read_text().splitlines()
