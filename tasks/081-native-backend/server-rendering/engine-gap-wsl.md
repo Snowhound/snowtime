@@ -143,6 +143,8 @@ component code about 1.7 times slower: dictionary-mode props, slow-path property
 definition, and an optimizing tier that rarely pays off. Fixing promotion, the heap
 policy, and props creation should recover part of it; this report's estimate is that V8
 stays at about 1.4–1.5 times Bun's CPU.
+Task 081.14 measured 1.50–1.63 times after its GC changes
+([report](render-gc-wsl.md)).
 
 ## Reproduction
 

@@ -34,17 +34,19 @@ and bodies use the same contract as browser requests. An isolate finishes one pa
 taking the next, keeping locale, cookies, and query state separate.
 
 The host sizes the pool from the memory it may use, the cgroup's limit or physical
-memory, and from its CPUs, with at least one renderer. On Linux it watches its RSS and,
-near the limit, has renderers collect after every page and stops the extra ones. A full
-queue answers 503, and so does a page still queued after `max_queue_wait`, however long
-the render ahead of it takes. A page whose client leaves is withdrawn from the queue, or
-stopped if it renders, and the API calls it started are aborted. A supervisor thread
-joins the renderer threads and replaces one that panics. Past the restart budget the
-pool is down, and pages answer 503 while the API keeps working
-([native-host.md](native-host.md)).
+memory, and from its CPUs, with at least one renderer. With the memory left after that,
+it gives each renderer a 32 or 16 MiB semi-space, so a page fits in V8's young
+generation; that costs 20–50 MB per renderer and saves 3–11% of render CPU (task
+081.14). On Linux it watches its RSS and, near the limit, has renderers collect after
+every page and stops the extra ones. A full queue answers 503, and so does a page still
+queued after `max_queue_wait`, however long the render ahead of it takes. A page whose
+client leaves is withdrawn from the queue, or stopped if it renders, and the API calls it
+started are aborted. A supervisor thread joins the renderer threads and replaces one that
+panics. Past the restart budget the pool is down, and pages answer 503 while the API keeps
+working ([native-host.md](native-host.md)).
 
 Deno's web extensions supply URL parsing, encoding, and streams. The host collects on
-idle time or a used-heap threshold and replaces an isolate when collection fails to
+idle time or an old-generation threshold and replaces an isolate when collection fails to
 reduce its live heap. A watchdog interrupts synchronous JavaScript; a separate async
 deadline covers API futures. A failed render replaces the isolate, and the host answers 500. The render crate documents the current thresholds, which remain tunable.
 
@@ -115,8 +117,8 @@ lane contract; task 081.16 records the shape, the image, upgrades, and licensing
 
 The spike's rejection of a separate Bun render process (it adds a process and an IPC
 lifecycle and keeps the renderer's memory cost) is superseded by the decision above.
-Task 081.14 is expected to leave V8's render CPU at 1.4–1.5 times Bun's even after
-tuning.
+After task 081.14's tuning, V8's render CPU is 1.50–1.63 times Bun's on the four
+measured pages.
 
 ## Memory target
 

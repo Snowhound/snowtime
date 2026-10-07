@@ -12,6 +12,11 @@ const EXTRA_RENDERER_PEAK: u64 = 80 * MIB;
 // The share of the limit the server plans to use; the rest is headroom for SQLite's cache,
 // request buffers, and sign-in's scrypt, 32 MiB each.
 const PLANNED_SHARE: f64 = 0.75;
+// Semi-space sizes for each renderer, largest first, with what each adds to a renderer's
+// peak RSS. A nursery that holds a whole page saves 8-11% CPU a page at 32 MiB and 3-8% at
+// 16 MiB (task 081.14). The renderers get the largest that the memory left after sizing
+// them allows; without room for either, V8 sizes the young generation itself.
+const SEMI_SPACES: [(u64, u64); 2] = [(32 * MIB, 56 * MIB), (16 * MIB, 24 * MIB)];
 // Renderers collect after every page above this share of the limit, and below the lower
 // one return to collecting by heap size.
 const PRESSURE_ON: f64 = 0.8;
@@ -79,10 +84,17 @@ pub fn policy(limit: &Limit, cpus: usize, at_most: Option<usize>) -> Policy {
     } else {
         128 * MIB
     } as usize;
+    let spare =
+        planned.saturating_sub(FIRST_RENDERER_PEAK + (renderers as u64 - 1) * EXTRA_RENDERER_PEAK);
+    let semi_space = SEMI_SPACES
+        .iter()
+        .find(|&&(_, peak)| peak * renderers as u64 <= spare)
+        .map(|&(size, _)| size as usize);
     Policy {
         heap_limit_bytes: heap,
         collect_heap_bytes: heap * 3 / 8,
         replace_heap_bytes: heap * 5 / 8,
+        semi_space_bytes: semi_space,
         max_renderers: renderers,
         ..Default::default()
     }
@@ -142,13 +154,17 @@ mod tests {
                 cpus,
                 None,
             );
-            (p.max_renderers, p.heap_limit_bytes as u64 / MIB)
+            (
+                p.max_renderers,
+                p.heap_limit_bytes as u64 / MIB,
+                p.semi_space_bytes.map_or(0, |bytes| bytes as u64 / MIB),
+            )
         };
-        assert_eq!(sized(256, 4), (1, 64));
-        assert_eq!(sized(384, 4), (1, 128));
-        assert_eq!(sized(512, 4), (2, 128));
-        assert_eq!(sized(1024, 4), (4, 128));
-        assert_eq!(sized(2048, 1), (1, 128));
-        assert_eq!(sized(2048, 32), (17, 128));
+        assert_eq!(sized(256, 4), (1, 64, 0));
+        assert_eq!(sized(384, 4), (1, 128, 16));
+        assert_eq!(sized(512, 4), (2, 128, 16));
+        assert_eq!(sized(1024, 4), (4, 128, 32));
+        assert_eq!(sized(2048, 1), (1, 128, 32));
+        assert_eq!(sized(2048, 32), (17, 128, 0));
     }
 }

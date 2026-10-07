@@ -1,5 +1,6 @@
 import { RouterProvider } from '@tanstack/solid-router'
 import { createRequestHandler, renderRouterToStream } from '@tanstack/solid-router/ssr/server'
+import { sharedConfig } from 'solid-js'
 import { setSend } from '~/lib/api/request'
 import { extractLocaleFromRequest, overwriteGetLocale } from '~/paraglide/runtime.js'
 import { getRouter } from '~/router'
@@ -69,6 +70,9 @@ globalThis.renderPage = async function (input: PageInput) {
   context = undefined
   locale = undefined
   globalThis.renderContext = undefined
+  // Solid's server render leaves its context set, which would keep this page's whole graph
+  // alive until the next one.
+  sharedConfig.context = undefined
 }
 
 function StartServer(props: StartServerProps) {
