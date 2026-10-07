@@ -55,7 +55,7 @@ Host and client:
       lane is down and the API still serves
 - [ ] Tokio's `current_thread` runtime compared with the multi-threaded one on one core,
       with CPU per request and p95, and the choice recorded in native-host.md
-- [ ] The client keeps `Retry-After` on a refused call. A write refused with 503 keeps its
+- [x] The client keeps `Retry-After` on a refused call. A write refused with 503 keeps its
       optimistic change, pending with a retry action, and nothing retries it on its own.
       Reads retry with jitter, waiting at least `Retry-After`. A test injects 503s into an
       edit and the queries it invalidates, and counts the attempts
@@ -104,12 +104,27 @@ bundle and V8 engine decision are included.
   Tokio's blocking thread cap is now readers plus one. A source test enforces the single
   gated `spawn_blocking` entry point.
 - Validation: the final 35 server unit tests passed on macOS with `bench` enabled. An
-  earlier 35-test Linux run passed, including the actual
-  priority test, with `bench` enabled. The Linux Docker build's final image
-  export was cancelled after the tests passed when Kait checked CPU use. No load tests
+  earlier 35-test Linux run passed, including the actual priority test, with `bench`
+  enabled. The Linux Docker build's final image export was cancelled after the tests passed when Kait checked CPU use. No load tests
   or render benchmarks ran. Hash sizing assertions passed in the server suite; the host
-  suite is deferred
-  to avoid another large build during the other session's measurements.
+  suite is deferred to avoid another large build during the other session's measurements.
+
+- Client: commit `597c3ce` on `081-client-refusal`, based on `main`, in
+  `/private/tmp/snowtime-081-client`. It is separate from the native branch and awaits
+  review before merging. Kait approved reusing Alert and the “Try again” button.
+  The API preserves `Retry-After`, including non-JSON edge refusals. A refused optimistic
+  write stays pending, and only that button sends its original variables again. The
+  shared helper prevents automatic mutation retries and re-applies pending changes after
+  independent reads. Timer timestamps stay fixed while pending. Signing out or changing
+  users clears pending changes and disables their old retry actions.
+- Reads retry up to three times with jitter, waiting at least `Retry-After` in seconds or
+  HTTP-date form. The injection test counts one refused write during a simulated minute,
+  one write on “Try again”, and two attempts for each invalidated read, with the retry
+  delayed by the header plus jitter. Further tests cover repeated refusal, rollback after
+  a permanent error, newly loaded caches, frozen timer timestamps, and changing users.
+- Client validation: the initial four targeted suites passed 58 tests; the final two
+  changed suites passed nine tests. The five API request tests, TypeScript, icon check,
+  lint, formatting, and knip passed. `main` remains at `4783c27` and was never edited.
 
 The queue-bound and report criteria stay unticked because each also requires
 measurements. The runtime comparison, sign-in burst, overload ramp, and decisions

@@ -42,11 +42,11 @@ as the V8 renderers are. The contract matters more than the mechanism. A lane ge
 own threads where the shared pool can't keep the contract: password hashing, whose lower
 priority must not carry over to database work on a reused thread.
 
-| Lane             | Built                                                                                                                                                       | _Planned_                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                        | Measure and tune the bounds         |
-| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                                   | Measure the sign-in burst           |
-| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Measure the completed lane contract |
+| Lane             | Built                                                                                                                                                       | _Planned_                         |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                        | Measure and tune the bounds       |
+| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                                   | Measure the sign-in burst         |
+| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar, parked (081.16) |
 
 A reader that finds a session due for renewal or expired takes the writer only if the
 writer's gate has a free slot at that moment. Otherwise it answers from the reader, and a
