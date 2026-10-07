@@ -34,6 +34,13 @@ function formatter(zone: string) {
 // UTC. Whole seconds: zone offsets never have a fraction of one.
 function wallClock(ms: number, zone: string): number {
   const seconds = Math.floor(ms / 1000) * 1000
+  // format() is several times cheaper than formatToParts(), and en-US with h23 writes
+  // 10/7/2026, 14:05:09 for the years the app shows. Any other text takes the parts.
+  const text = /^(\d+)\/(\d+)\/(\d{4}), (\d\d):(\d\d):(\d\d)$/.exec(formatter(zone).format(seconds))
+  if (text) {
+    const [month, day, year, hour, minute, second] = text.slice(1).map(Number)
+    return Date.UTC(year, month - 1, day, hour, minute, second) + (ms - seconds)
+  }
   const p: Record<string, number> = {}
   for (const part of formatter(zone).formatToParts(seconds)) {
     if (part.type !== 'literal') p[part.type] = Number(part.value)

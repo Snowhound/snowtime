@@ -40,6 +40,10 @@ export function formatDateTime(
   timeZone: string,
   options: Intl.DateTimeFormatOptions,
 ): string {
+  return formatter(timeZone, options).format(ms)
+}
+
+function formatter(timeZone: string, options: Intl.DateTimeFormatOptions) {
   const locale = getLocale()
   const key = `${locale}|${timeZone}|${JSON.stringify(options)}`
   let formatter = formatters.get(key)
@@ -47,7 +51,7 @@ export function formatDateTime(
     formatter = new Intl.DateTimeFormat(locale, { timeZone, ...options })
     formatters.set(key, formatter)
   }
-  return formatter.format(ms)
+  return formatter
 }
 
 // An ISO date such as 2026-09-24, which is a calendar day rather than an instant, so it is
@@ -62,6 +66,8 @@ export function formatIsoDateRange(
   to: string,
   options: Intl.DateTimeFormatOptions,
 ): string {
-  const formatter = new Intl.DateTimeFormat(getLocale(), { timeZone: 'UTC', ...options })
-  return formatter.formatRange(Date.parse(`${from}T00:00:00Z`), Date.parse(`${to}T00:00:00Z`))
+  return formatter('UTC', options).formatRange(
+    Date.parse(`${from}T00:00:00Z`),
+    Date.parse(`${to}T00:00:00Z`),
+  )
 }
