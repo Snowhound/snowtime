@@ -927,7 +927,7 @@
         b.addEventListener('click', () => {
           if (b.dataset.view === 'calendar') return
           appFrame.settings.set({ timerView: 'list' })
-          location.href = appFrame.link('timer.html')
+          location.href = appFrame.link('timer.html#list')
         })
       )
       document.addEventListener('click', (event) => {

@@ -251,7 +251,8 @@
 
     <script>
       // The Timer page opens as the user left it: the list here, or the week calendar.
-      if (appFrame.settings.get().timerView === 'calendar') location.replace(appFrame.link('calendar.html'))
+      if (location.hash === '#list') appFrame.settings.set({ timerView: 'list' })
+      else if (appFrame.settings.get().timerView === 'calendar') location.replace(appFrame.link('calendar.html'))
       appFrame.mount({ page: 'timer', title: 'Timer and entries', scene: true })
       document.querySelector('[data-view="calendar"]').addEventListener('click', () => {
         appFrame.settings.set({ timerView: 'calendar' })
