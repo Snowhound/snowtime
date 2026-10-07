@@ -335,9 +335,10 @@ async fn answer(
 ) -> Response {
     #[cfg(feature = "bench")]
     let admission = std::time::Instant::now();
+    let deadline = app.write_gate.deadline();
     // Reports take their budget first, so waiting for it never holds a database slot.
     let report_permit = if report {
-        match app.report_gate.acquire().await {
+        match app.report_gate.acquire_by(deadline).await {
             Ok(p) => Some(p),
             Err(r) => return r,
         }
@@ -349,7 +350,7 @@ async fn answer(
         Some(gate) if on_reader => gate,
         _ => &app.write_gate,
     };
-    let permit = match gate.acquire().await {
+    let permit = match gate.acquire_by(deadline).await {
         Ok(p) => p,
         Err(r) => return r,
     };

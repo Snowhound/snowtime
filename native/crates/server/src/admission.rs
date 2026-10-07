@@ -50,12 +50,20 @@ impl Gate {
         }
     }
     pub async fn acquire(&self) -> Result<Permit, Response> {
+        self.acquire_by(self.deadline()).await
+    }
+    /// When a caller arriving now must be admitted by.
+    pub fn deadline(&self) -> tokio::time::Instant {
+        tokio::time::Instant::now() + self.timeout
+    }
+    /// A slot by `deadline`, so a call that passes several gates waits one deadline in all.
+    pub async fn acquire_by(&self, deadline: tokio::time::Instant) -> Result<Permit, Response> {
         if let Some(permit) = self.try_acquire() {
             return Ok(permit);
         }
         let _waiting = Waiting::new(&self.waiting, self.max_waiting)
             .ok_or_else(|| Response::from(failure(503, "The server is busy. Try again.")))?;
-        tokio::time::timeout(self.timeout, self.slots.clone().acquire_owned())
+        tokio::time::timeout_at(deadline, self.slots.clone().acquire_owned())
             .await
             .ok()
             .and_then(Result::ok)
@@ -151,6 +159,23 @@ mod tests {
         assert_eq!(gate.waiting.load(Ordering::Relaxed), 0);
         drop(running);
         assert!(gate.acquire().await.is_ok());
+    }
+    #[tokio::test]
+    async fn gates_passed_in_turn_share_one_deadline() {
+        let timeout = Duration::from_millis(200);
+        let (first, second) = (Arc::new(Gate::new(1, timeout)), Gate::new(1, timeout));
+        let held_first = first.acquire().await.unwrap();
+        let _held_second = second.acquire().await.unwrap();
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(150)).await;
+            drop(held_first);
+        });
+        let start = tokio::time::Instant::now();
+        let deadline = first.deadline();
+        let _admitted = first.acquire_by(deadline).await.unwrap();
+        assert!(second.acquire_by(deadline).await.is_err());
+        // Each gate's own deadline would have refused at 350 ms.
+        assert!(start.elapsed() < Duration::from_millis(300));
     }
     #[test]
     fn blocking_work_is_only_spawned_by_admission() {

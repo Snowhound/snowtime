@@ -92,9 +92,9 @@ provisional: task 081.10 measured 117 waiting callers in a passing eight-core ho
 872 under overload, but neither run tested the count bound. Task 081.17 still needs the
 measurements that set the final limits.
 
-Reports take at most `max(1, readers / 4)` workers and allow four waiting callers, with
-the same deadline. They take that budget before database admission, so waiting reports
-hold no connection. The report route uses `run_report`; exports must use it when ported.
+Reports take at most `max(1, readers / 4)` workers and allow four waiting callers. They
+take that budget before database admission, so waiting reports hold no connection, and
+both waits share one deadline, so a report is admitted or refused within it. The report route uses `run_report`; exports must use it when ported.
 Without readers, a running report still shares the only connection with ordinary calls.
 The worker share and waiting limit are provisional and await the organization-burst test.
 
@@ -146,7 +146,7 @@ at 32 MiB per hash, with at least one worker. `SCRYPT_CONCURRENCY` can reduce th
 This share fits inside the render policy's 25% headroom and still needs measurement.
 On Linux each dedicated thread increases its inherited niceness by five, capped at 19,
 and verifies the new value before accepting work. Startup fails if a thread cannot get a
-lower priority. On other systems the dedicated threads keep their inherited priority.
+lower priority, except on a host already at 19, which has no lower one. On other systems the dedicated threads keep their inherited priority.
 Only database admission reaches Tokio's blocking pool, capped at readers plus one;
 a source test rejects `spawn_blocking` elsewhere in the server crate.
 

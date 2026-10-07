@@ -86,8 +86,9 @@ fn priority() -> io::Result<i32> {
 fn lower_priority() -> io::Result<()> {
     let before = priority()?;
     let target = (before + 5).min(19);
-    if target <= before {
-        return Err(io::Error::other("password priority cannot be lowered"));
+    // A host already at the lowest priority has nothing below it to give hashes.
+    if target == before {
+        return Ok(());
     }
     if unsafe { libc::setpriority(libc::PRIO_PROCESS, 0, target) } != 0 {
         return Err(io::Error::last_os_error());

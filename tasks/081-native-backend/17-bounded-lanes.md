@@ -129,3 +129,15 @@ bundle and V8 engine decision are included.
 The queue-bound and report criteria stay unticked because each also requires
 measurements. The runtime comparison, sign-in burst, overload ramp, and decisions
 catalogue results remain pending.
+
+## Review fixes, 2026-10-07
+
+- A report's two waits, for the report budget and then a database slot, share one
+  deadline instead of taking one each; a test covers two gates passed in turn.
+- A host already at niceness 19 starts, since its hash threads can't go lower.
+- The server crate's 37 tests pass on Linux in `rust:1.99-trixie`, including the priority
+  test, and on macOS with and without `bench`; the host's tests pass on macOS.
+- The client branch now holds a write made while one is pending and sends them in order,
+  shows the pending message only for kept writes, skips query retries in server renders,
+  and shows pending changes in an orange alert, in their rows, and in the calendar's
+  status line (task 081.17's client commits after `597c3ce`).
