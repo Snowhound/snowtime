@@ -129,6 +129,44 @@ Bun's timer spends 4.6% in `formatToParts`, called by `wallClock` in `src/lib/ca
 for every zone conversion. V8 spends 0.6% there, thanks to the render crate's cached Intl
 parts (task 081.12).
 
+### Month and year, task 081.23
+
+2026-10-07, fresh profiles of `9adb20e`'s shared bundle, after Kait confirmed that the
+other measurement session had stopped. V8 uses a 32 MiB semi-space; both engines use
+one CPU and 2 GiB. Self-sample shares include idle samples, not whole-process CPU.
+Bun's builtin frames are listed separately from JavaScript functions.
+
+| Function or group                                     | V8 month | V8 year | Bun month | Bun year |
+| ----------------------------------------------------- | -------: | ------: | --------: | -------: |
+| Idle                                                  |    16.7% |   13.4% |         — |        — |
+| GC                                                    |     9.6% |   11.0% |         — |        — |
+| Shared site getter                                    |     2.4% |    3.5% |      0.5% |     0.4% |
+| `renderSharedMergeKey`                                |     2.3% |    1.7% |      3.9% |     2.8% |
+| `renderSharedSplit`                                   |     1.9% |    1.2% |      0.3% |     0.3% |
+| `renderSharedMerge`                                   |     1.5% |    1.5% |      1.2% |     1.8% |
+| Solid `createComponent`                               |     2.0% |    2.6% |      1.3% |     1.0% |
+| Timesheet callbacks                                   |     1.9% |    1.9% |      1.3% |     1.7% |
+| Cell's Show props constructor (`SharedProps$835`)     |     1.3% |    1.8% |      0.8% |     1.4% |
+| Duration's Show props constructor (`SharedProps$605`) |     0.8% |    1.1% |      0.7% |     1.0% |
+| `injectAssets`                                        |     1.2% |    2.2% |      7.4% |     8.8% |
+| Solid `escape`                                        |     1.4% |    1.5% |      5.9% |     7.0% |
+| Lucide builder, Icon, classes, and accessibility      |     0.8% |    0.8% |      0.4% |     0.3% |
+| Seroval `advanceByteMatcher`                          |     0.6% |    2.1% |         — |        — |
+
+The profiles contain 4,845 / 5,756 V8 samples and 3,736 / 5,165 Bun traces for month /
+year. Anonymous timesheet callbacks were identified by their positions in the saved
+bundle; generated constructors belong to the bundle runtime. These identify the report
+code separately from Solid and its props helpers. Each individual named date-formatting
+helper is below 0.6% on V8. The native SIMD UTF-8 encoder is 1.8% on V8 year; Bun's
+separate encoder builtin is 6.6% / 6.0%. The named `parse` frames are schema/router
+helpers, not native JSON-parser frames; the profiles do not establish a JSON-parsing
+bottleneck or justify a simdjson render trial. Rust JSON handling is a separate
+candidate in [task 081.12](../12-profiling.md).
+
+Raw profiles stay ignored under `results/q21/profiles/t23-clean/`; their matching shared
+bundle is `results/q21/bundles/t23-base.js`. Profiled run timings are not used to choose
+changes.
+
 ## Early-read props
 
 Behind its own option, the build pass marked getters whose body is a single `return` of
@@ -211,9 +249,57 @@ all four pages.
 `render-bench` keeps 24.7 MB of symbol tables (`.symtab` and `.strtab`) for profiles; the
 release image (`native/Dockerfile`) already strips the server.
 
+## Task 081.23's month and year trials
+
+2026-10-07, `9adb20e`, M1 Pro and Docker Desktop. No candidate qualifies: the getter
+has no repeatable V8 win, the cell rewrite slows both engines, and Lucide's year gain
+comes with a month regression. All three are reverted, and no app commit goes to `main`.
+
+Four alternating quick rounds, 500 renders per run, with one CPU and 2 GiB; V8 uses the
+shared bundle and a 32 MiB semi-space, and Bun uses both bundles. Rounds 2 and 4 reverse
+the order. All candidates compare with the baseline in this one session. The initial
+run overlapped another session and was stopped; none of its numbers or profiles is used.
+The timer runs for shared code; the cell trial runs on month and year.
+[Raw runs and bundle hashes](month-year-trials-mac.jsonl) retain each round. Positive
+changes mean more CPU per render:
+
+| Trial  | Page  | V8 shared | Bun shared | Bun plain |
+| ------ | ----- | --------: | ---------: | --------: |
+| getter | timer |     +1.6% |      +1.7% |         — |
+| getter | month |     +2.4% |      +1.4% |         — |
+| getter | year  |     -0.5% |      +1.5% |         — |
+| cell   | month |     +3.8% |      +8.2% |     +4.5% |
+| cell   | year  |     +4.3% |      +7.6% |     +9.7% |
+| lucide | timer |     -0.3% |      -2.2% |     -0.5% |
+| lucide | month |     +1.9% |      +2.2% |     -1.2% |
+| lucide | year  |     -1.3% |      +0.1% |     -0.5% |
+
+- **Getter:** `shared-props.ts` generates one named getter per prop key with a direct
+  read of that key's symbol, rather than routing all keys through `this[slot]` in one
+  getter body. The descriptor remains shared per key. This does not qualify; a key's
+  getter still serves props objects from many sites with different shapes.
+- **Cell:** `timesheet.tsx` puts one `<td>` around Show, makes the dot its fallback, and
+  folds the empty-cell class into `shade`. It reduces the Show props' getters, but its
+  whole-render cost rises on both engines. The existing branch structure stays.
+- **Lucide:** the trial replaces `buildLucideIconNode` in `lucide-nodes.ts` with loops for class
+  deduplication and direct attribute assignments. Unscaled child nodes are reused;
+  attribute-name remapping falls back to the upstream builder. Comparisons cover
+  classes, aliases, sizes, absolute/non-scaling stroke, accessibility, and attributes.
+  The trial guards the complete compiled Icon module with SHA-256. Its tests pass and
+  reject changes both to a node and to an unrelated Icon expression. A build with the
+  changed expression also fails with `Unsupported lucide-solid Icon implementation`.
+  Month's V8 regression disqualifies the replacement. The existing Lucide patch stays.
+
+The getter's plain bundle is byte-identical to the baseline's, so Bun plain runs once
+for both. Every candidate's HTML matches its own same-engine plain build: exact on V8,
+whitespace-normalized on Bun. No code is kept, so there is no new hydration check or
+full three-round before/after measurement. `checks.sh` passes before the report commit:
+13 bundle tests, 8 render tests (2 ignored), and Clippy. An unfiltered app test run
+confirms 464 Bun tests and 184 Vitest tests passing.
+
 ## Follow-ups
 
-- **Month and year, and Lucide's icon building**: task 081.23.
+- **Month and year, and Lucide's icon building**: task 081.23 records the rejected trials above.
 - **Release image base.** A distroless base in place of `debian:trixie-slim` would make
   the image about 80 MB smaller and change nothing at runtime. The health check would
   need to stop using `curl`. Not worth a task on its own.

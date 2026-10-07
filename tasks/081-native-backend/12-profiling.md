@@ -27,6 +27,15 @@ profiler and one without, at the same load.
 - **The TypeScript server:** a Bun CPU profile at the same load, so the comparison shows
   where each spends its time, not only how much.
 
+### Rust JSON parsing candidate
+
+If whole-server profiles show JSON parsing as a meaningful Rust cost, compare the
+current parser with simdjson, including input preparation, conversion to the app's
+output types, and allocations. Measure the actual request and response payloads, then
+CPU per request and latency under matched load. Keep it only if the full path wins and
+preserves behavior. This is an option to investigate, not a selected dependency
+(Kait, 2026-10-07).
+
 ### The V8 render isolate
 
 Rendering is likely the native server's largest CPU cost per page, and nothing has

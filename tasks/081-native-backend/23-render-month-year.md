@@ -1,6 +1,6 @@
 # 081.23: Month and year render hot spots
 
-Status: todo
+Status: done (2026-10-07)
 
 V8 in the host is the render engine (Kait, 2026-10-07), and Kait wants the app's renders
 as fast as reasonably possible. After [task 081.22](22-render-follow-ups.md), V8's shared
@@ -10,6 +10,15 @@ is in the report code and the shared site getter, not in merge and split. This t
 it with fresh profiles of month and year, and keeps only small, local rewrites. A change
 stays only if it wins on V8 without costing Bun. Fixes in app code (`src/`) go to `main`
 as soon as they're verified, each as its own commit.
+
+## Result
+
+No candidate qualifies in four clean alternating rounds. The shared getter has no
+repeatable V8 win, the timesheet cell rewrite costs both engines, and Lucide's year
+improvement comes with a month regression. All trials are reverted; no app fix needs a
+cherry-pick. [Profiles and results](server-rendering/hot-spots-mac.md#task-08123s-month-and-year-trials)
+record the runs. No code is kept, so the conditional hydration and full-measurement
+repeat do not apply.
 
 ## Known so far
 
@@ -43,12 +52,12 @@ container, with the render crate's recorded answers (`native/crates/render/READM
 
 ## Acceptance criteria
 
-- [ ] V8 and Bun profiles of month and year, with the top self-time functions in the
+- [x] V8 and Bun profiles of month and year, with the top self-time functions in the
       report's Profiles section
-- [ ] Each candidate measured in quick rounds and kept only if it wins on V8 without
+- [x] Each candidate measured in quick rounds and kept only if it wins on V8 without
       costing Bun; app fixes cherry-picked to `main`
-- [ ] The shared site getter tried, or the reason it can't be made cheaper recorded
-- [ ] Lucide's icon building tried as a replacement in `bundle/lucide-nodes.ts`, kept
+- [x] The shared site getter tried, or the reason it can't be made cheaper recorded
+- [x] Lucide's icon building tried as a replacement in `bundle/lucide-nodes.ts`, kept
       only if it wins and the build still fails on an unknown `Icon`
-- [ ] If anything is kept: the hydration check passing on all four pages, and the full
+- [x] If anything is kept: the hydration check passing on all four pages, and the full
       three-round measurement repeated, with results added to task 081.21's report
