@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import { cpSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { minifySync } from 'rolldown/utils'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
 import { lucideNodes } from './lucide-nodes'
@@ -59,6 +60,30 @@ try {
   })
 } finally {
   writeFileSync(routeTreePath, routeTree)
+}
+
+// Minified with names kept, so profiles and serialized function sources stay readable. V8
+// stores the script source in the snapshot at two bytes per character if any character is
+// above U+00FF, so the output is ASCII; tagged templates keep their text, and the warning
+// lists what is left so the source can escape it.
+for (const name of ['render.js', 'render.shared.js']) {
+  const path = resolve(import.meta.dir, 'dist', name)
+  const mapPath = `${path}.map`
+  const withMap = name === 'render.js'
+  const result = minifySync(name, readFileSync(path, 'utf8'), {
+    compress: true,
+    mangle: false,
+    codegen: { removeWhitespace: true, asciiOnly: true },
+    sourcemap: withMap,
+    ...(withMap && { inputMap: JSON.parse(readFileSync(mapPath, 'utf8')) }),
+  })
+  if (result.errors.length) throw new Error(`${name}: ${result.errors[0].message}`)
+  writeFileSync(path, result.code)
+  if (withMap && result.map) writeFileSync(mapPath, JSON.stringify(result.map))
+  for (const match of result.code.matchAll(/[^\0-\xff]/gu)) {
+    const at = match.index
+    console.warn(`${name}: ${JSON.stringify(match[0])} in`, result.code.slice(at - 60, at + 20))
+  }
 }
 
 // The client manifest of the app build in .output (`bun run build`); the renderer embeds it
