@@ -183,6 +183,7 @@
           <div id="description-field" class="ticket-field flex-1" data-ticket-owner="timer">
             <input id="description" type="text" placeholder="What are you working on?" autocomplete="off" />
             <span id="description-ticket" class="contents"></span>
+            <button type="button" data-ui="button" data-variant="ghost" data-size="sm" data-add-issue="timer" class="h-7 shrink-0 px-2 text-xs text-muted-foreground">Add issue</button>
           </div>
           <label for="project" class="sr-only">Project</label>
           <select id="project" data-ui="select" class="sm:w-48"></select>
@@ -209,6 +210,18 @@
       </aside>
     </main>
 
+    <div id="issue-picker" popover data-ui="popover" role="dialog" aria-labelledby="issue-picker-title" class="w-80 max-w-[calc(100vw-16px)]">
+      <form id="issue-form" class="grid gap-3">
+        <h2 id="issue-picker-title" class="font-medium">Add issue</h2>
+        <div class="grid gap-1.5">
+          <label data-ui="label" for="issue-key">Issue key or URL</label>
+          <input id="issue-key" data-ui="input" placeholder="SNOW-161 or an issue URL" autocomplete="off" aria-describedby="issue-error" />
+          <p id="issue-error" class="text-xs text-destructive" role="alert" hidden>Enter an issue key such as SNOW-161 or an issue URL.</p>
+        </div>
+        <div class="grid gap-1"><p class="text-xs text-muted-foreground">Issues from loaded entries</p><div id="recent-issues" class="grid max-h-48 overflow-y-auto"></div></div>
+        <div class="flex justify-end gap-2"><button type="button" id="issue-cancel" data-ui="button" data-variant="ghost" data-size="sm">Cancel</button><button data-ui="button" data-size="sm">Add issue</button></div>
+      </form>
+    </div>
     <div id="entry-popover" popover data-ui="popover" role="dialog" aria-labelledby="entry-popover-title" aria-describedby="entry-popover-description" class="max-h-[calc(100dvh-16px)] w-[28rem] overflow-y-auto">
       <form id="entry-form" class="grid gap-4" novalidate>
         <div class="grid gap-1.5">
@@ -462,9 +475,9 @@
       }
 
       // The ticket column: a fixed width after the description, so every row's text starts in
-      // the same place; empty without a ticket.
+      // the same place; a link adds an issue when the cell is empty.
       function ticketCell(e, { inline = false } = {}) {
-        return e.ticket ? ticketChip(e.ticket, e.id, { row: true, inline }) : ''
+        return e.ticket ? ticketChip(e.ticket, e.id, { row: true, inline }) : inline ? '' : `<button type="button" data-ui="button" data-variant="link" data-size="sm" data-add-issue="${e.id}" class="h-7 px-1 text-xs text-muted-foreground">Add issue</button>`
       }
 
       // The input fills the cell and the chip sits at its end, where every row's chip lines up.
@@ -712,6 +725,7 @@
       function renderTicket(owner) {
         const ticket = drafts[owner].ticket
         document.getElementById(owner === 'timer' ? 'description-ticket' : 'edit-description-ticket').innerHTML = ticket ? ticketChip(ticket, owner) : ''
+        document.querySelectorAll(`[data-add-issue="${owner}"]`).forEach((button) => button.hidden = !!ticket)
       }
       function commitTicket(owner) {
         const input = ticketInput(owner)
@@ -1209,6 +1223,7 @@
       // Turns a description input into a combobox. The list opens on focus and typing; arrows
       // move through it, Enter or a click picks, and Escape closes only the list. Picking fills
       // in the description and project; typing never changes the project.
+      const quietFocus = new WeakSet()
       function combobox(input, select, onPick, { anchor = input, ticket = () => null } = {}) {
         const list = document.createElement('div')
         list.id = `${input.id}-suggestions`
@@ -1255,7 +1270,7 @@
                 ${p.id === 'none' ? '' : `<span class="max-w-[40%] shrink-0 truncate text-xs text-muted-foreground">${escapeHtml(p.name)}</span>`}
               </div>`
             })
-            .join('')
+            .join('') + (ticket() ? '' : `<div class="mt-1 border-t pt-1"><button type="button" data-ui="button" data-variant="ghost" data-size="sm" data-add-issue="${input.id === 'description' ? 'timer' : 'editor'}" class="h-7 w-full justify-start px-2 text-xs text-muted-foreground">Add an issue without replacing the description</button></div>`)
           if (!list.matches(':popover-open')) list.showPopover()
           input.setAttribute('aria-expanded', 'true')
           setActive(-1)
@@ -1275,7 +1290,10 @@
           onPick(e)
         }
 
-        input.addEventListener('focus', open)
+        input.addEventListener('focus', () => {
+          if (quietFocus.has(input)) quietFocus.delete(input)
+          else open()
+        })
         input.addEventListener('input', open)
         input.addEventListener('blur', close)
         input.addEventListener('keydown', (event) => {
@@ -1340,6 +1358,65 @@
         const input = ticketInput(owner)
         input.addEventListener('blur', () => (owner === 'timer' ? saveRunning() : commitTicket(owner)))
       }
+      const issuePicker = document.getElementById('issue-picker')
+      const issueKey = document.getElementById('issue-key')
+      let issueOwner = 'timer'
+      let issueTrigger = null
+      function placeIssuePicker() {
+        if (!issueTrigger || !issuePicker.matches(':popover-open')) return
+        const r = issueTrigger.getBoundingClientRect()
+        issuePicker.style.inset = 'auto'
+        issuePicker.style.left = `${Math.max(8, Math.min(r.left, innerWidth - issuePicker.offsetWidth - 8))}px`
+        issuePicker.style.top = `${Math.max(8, Math.min(r.bottom + 4, innerHeight - issuePicker.offsetHeight - 8))}px`
+      }
+      addEventListener('resize', placeIssuePicker)
+      issuePicker.addEventListener('toggle', (event) => {
+        if (event.newState !== 'closed') return
+        if (issueOwner === 'timer' || issueOwner === 'editor') {
+          const input = ticketInput(issueOwner)
+          quietFocus.add(input)
+          input.focus()
+        } else issueTrigger?.focus()
+      })
+      function addIssue(key) {
+        if (issueOwner === 'timer' || issueOwner === 'editor') {
+          const input = ticketInput(issueOwner)
+          setTicket(issueOwner, key, input.value)
+          if (issueOwner === 'timer') saveRunning()
+        } else {
+          saveField(issueOwner, { ticket: key }, 'ticket')
+        }
+        issuePicker.hidePopover()
+      }
+      document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-add-issue]')
+        if (!trigger) return
+        issueOwner = trigger.dataset.addIssue
+        // The suggestions' Add issue closes with them, so the picker hangs from the field.
+        issueTrigger = trigger.closest('[role="listbox"]') ? ticketInput(issueOwner).closest('.ticket-field') : trigger
+        document.querySelectorAll('[role="listbox"]:popover-open').forEach((list) => list.hidePopover())
+        issueKey.value = ''
+        document.getElementById('issue-error').hidden = true
+        const recent = [...new Set([...state.entries].sort((a, b) => b.startedAt - a.startedAt).map((e) => e.ticket).filter(Boolean))].slice(0, 6)
+        document.getElementById('recent-issues').innerHTML = recent.length ? recent.map((key) => `<button type="button" data-ui="button" data-variant="ghost" data-size="sm" data-issue-key="${escapeHtml(key)}" class="justify-start">${escapeHtml(key)}</button>`).join('') : '<p class="py-2 text-xs text-muted-foreground">No issues in loaded entries. Enter one above.</p>'
+        issuePicker.showPopover()
+        requestAnimationFrame(placeIssuePicker)
+        issueKey.focus()
+      })
+      document.getElementById('recent-issues').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-issue-key]')
+        if (button) addIssue(button.dataset.issueKey)
+      })
+      document.getElementById('issue-cancel').addEventListener('click', () => issuePicker.hidePopover())
+      document.getElementById('issue-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const text = issueKey.value.trim().replace(ISSUE_LINK, (_, key) => key.toUpperCase()).toUpperCase()
+        if (!new RegExp(`^${KEY}$`).test(text)) {
+          document.getElementById('issue-error').hidden = false
+          return
+        }
+        addIssue(text)
+      })
       document.getElementById('issue-links').addEventListener('change', (event) => {
         issueLinks = event.currentTarget.value
         renderTicket('timer')

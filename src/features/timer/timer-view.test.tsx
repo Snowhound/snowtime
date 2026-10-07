@@ -771,6 +771,138 @@ describe('TimerView', () => {
 })
 
 describe('ticket keys', () => {
+  test.each([false, true])(
+    'typing after adding an issue to an empty timer keeps it (running: %s)',
+    async (running) => {
+      server.entries[0].ticket = 'NBW-412'
+      if (running) {
+        server.running = { ...entry(0, '09:00', '09:01', ''), stoppedAt: null, project: null }
+        fn.updateEntry.mockImplementation(async (patch: Partial<Entry>) => {
+          Object.assign(server.running!, patch)
+        })
+      }
+      renderView()
+      await screen.findByDisplayValue('Invoice export review')
+      const input = within(timer()).getByPlaceholderText('What are you working on?')
+      await userEvent.click(within(timer()).getByRole('button', { name: 'Add issue' }))
+      const picker = await screen.findByRole('dialog', { name: 'Add issue' })
+      await userEvent.click(within(picker).getByRole('button', { name: 'NBW-412' }))
+      await waitFor(() => expect(input).toHaveFocus())
+      expect(within(timer()).queryByRole('listbox')).not.toBeInTheDocument()
+      await userEvent.type(input, 'New description')
+      expect(within(timer()).getByText('NBW-412')).toBeInTheDocument()
+      await userEvent.tab()
+      expect(within(timer()).getByText('NBW-412')).toBeInTheDocument()
+      expect(input).toHaveValue('New description')
+      expect(
+        fn.updateEntry.mock.calls.some(([patch]) => patch.description === 'New description'),
+      ).toBe(running)
+    },
+  )
+
+  test('the issue picker keeps the timer description and project, and hides Add issue after picking', async () => {
+    server.entries[0].ticket = 'NBW-412'
+    fn.startTimer.mockReturnValue(new Promise(() => {}))
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const input = within(timer()).getByPlaceholderText('What are you working on?')
+    await userEvent.type(input, 'My work')
+    await userEvent.click(within(timer()).getAllByRole('button', { name: 'Add issue' })[0])
+    const picker = await screen.findByRole('dialog', { name: 'Add issue' })
+    await userEvent.click(within(picker).getByRole('button', { name: 'NBW-412' }))
+    expect(input).toHaveValue('My work')
+    expect(within(timer()).queryByRole('button', { name: 'Add issue' })).not.toBeInTheDocument()
+    expect(fn.startTimer).not.toHaveBeenCalled()
+    await userEvent.type(input, '{Enter}')
+    expect(fn.startTimer).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'My work', projectId: null, ticket: 'NBW-412' }),
+    )
+    await userEvent.click(
+      within(timer()).getByRole('button', { name: 'Turn NBW-412 back into text' }),
+    )
+    expect(within(timer()).getAllByRole('button', { name: 'Add issue' }).length).toBeGreaterThan(0)
+  })
+
+  test('an empty Ticket cell saves only the selected issue and rolls back a failed save', async () => {
+    server.settings.wideTimer = true
+    fn.updateEntry.mockRejectedValue(new Error('offline'))
+    renderView()
+    const description = await screen.findByDisplayValue('Invoice export review')
+    const row = description.closest('li')!
+    await userEvent.click(within(row).getByRole('button', { name: 'Add issue' }))
+    const picker = await screen.findByRole('dialog', { name: 'Add issue' })
+    const key = within(picker).getByLabelText('Issue key or URL')
+    await userEvent.type(key, 'invalid{Enter}')
+    expect(within(picker).getByRole('alert')).toBeInTheDocument()
+    expect(fn.updateEntry).not.toHaveBeenCalled()
+    await userEvent.clear(key)
+    await userEvent.type(key, 'https://acme.atlassian.net/browse/nbw-9{Enter}')
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith({
+        organizationId,
+        id: server.entries[0].id,
+        ticket: 'NBW-9',
+      }),
+    )
+    expect(await within(row).findByRole('alert')).toHaveTextContent('undone')
+    expect(within(row).getByRole('button', { name: 'Add issue' })).toBeInTheDocument()
+    expect(description).toHaveValue('Invoice export review')
+  })
+
+  test('picking an issue for an empty Ticket cell moves focus to its chip', async () => {
+    server.settings.wideTimer = true
+    server.entries.push({ ...entry(2, '11:00', '12:00', 'Planning'), ticket: 'NBW-412' })
+    saveOnServer()
+    renderView()
+    const description = await screen.findByDisplayValue('Invoice export review')
+    const row = description.closest('li')!
+    await userEvent.click(within(row).getByRole('button', { name: 'Add issue' }))
+    const picker = await screen.findByRole('dialog', { name: 'Add issue' })
+    await userEvent.click(within(picker).getByRole('button', { name: 'NBW-412' }))
+    // Without issue links the chip has no link, so its × takes focus.
+    await waitFor(() =>
+      expect(document.activeElement).toHaveAccessibleName('Turn NBW-412 back into text'),
+    )
+    expect(row).toContainElement(document.activeElement as HTMLElement)
+  })
+
+  test('the suggestions offer adding an issue without replacing the description', async () => {
+    server.entries[0].ticket = 'NBW-412'
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const input = within(timer()).getByPlaceholderText('What are you working on?')
+    await userEvent.type(input, 'Inv')
+    await userEvent.click(
+      await within(timer()).findByRole('button', {
+        name: 'Add an issue without replacing the description',
+      }),
+    )
+    const picker = await screen.findByRole('dialog', { name: 'Add issue' })
+    await userEvent.click(within(picker).getByRole('button', { name: 'NBW-412' }))
+    expect(input).toHaveValue('Inv')
+    expect(within(timer()).getByText('NBW-412')).toBeInTheDocument()
+  })
+
+  test('the Add entry issue picker stays inside the editor and preserves its draft', async () => {
+    server.entries[0].ticket = 'NBW-412'
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    await userEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+    const editor = await screen.findByRole('dialog', { name: 'Add entry' })
+    const input = within(editor).getByLabelText('Description')
+    await userEvent.type(input, 'Separate description')
+    await userEvent.click(within(editor).getByRole('button', { name: 'Add issue' }))
+    const picker = await screen.findByRole('dialog', { name: 'Add issue' })
+    await userEvent.click(within(picker).getByRole('button', { name: 'NBW-412' }))
+    expect(editor).toBeInTheDocument()
+    expect(input).toHaveValue('Separate description')
+    expect(within(editor).getByText('NBW-412')).toBeInTheDocument()
+    await waitFor(() => expect(input).toHaveFocus())
+    expect(within(editor).queryByRole('listbox')).not.toBeInTheDocument()
+    expect(within(editor).queryByRole('button', { name: 'Add issue' })).not.toBeInTheDocument()
+    expect(fn.createEntry).not.toHaveBeenCalled()
+  })
+
   function saveOnServer() {
     fn.updateEntry.mockImplementation(async (data: Partial<Entry> & { id: string }) => {
       Object.assign(

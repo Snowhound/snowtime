@@ -170,7 +170,13 @@ function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
         <Show when={props.wide}>
           <TableCell class="max-w-0">
             <div class="flex">
-              <TicketCell editor={editor} entry={props.entry} issueLinks={props.issueLinks} />
+              <TicketCell
+                editor={editor}
+                entry={props.entry}
+                issueLinks={props.issueLinks}
+                tickets={props.tickets}
+                active={activation.active()}
+              />
             </div>
           </TableCell>
         </Show>

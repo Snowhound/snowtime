@@ -8,11 +8,13 @@
 import { For, Show, createMemo, createSignal, createUniqueId } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { ProjectDot } from '~/components/project-dot'
+import { Button } from '~/components/ui/button'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { suggestWork } from './entries'
+import { recentTickets, suggestWork } from './entries'
+import { IssuePicker } from './issue-picker'
 import type { Entry } from './queries'
 import { TicketLabel } from './ticket-chip'
 
@@ -35,6 +37,7 @@ export function DescriptionCombobox(props: {
   ref?: (input: HTMLInputElement) => void
   onChange: (value: string) => void
   onPick: (entry: Entry) => void
+  onAddTicket: (ticket: string) => void
   onBlur?: () => void
   // Keys the list doesn't take, such as Enter with nothing highlighted.
   onKeyDown?: (event: KeyboardEvent) => void
@@ -42,6 +45,16 @@ export function DescriptionCombobox(props: {
   const listId = createUniqueId()
   const [open, setOpen] = createSignal(false)
   const [active, setActive] = createSignal(-1)
+  const [issueOpen, setIssueOpen] = createSignal(false)
+  const [field, setField] = createSignal<HTMLDivElement>()
+  let input: HTMLInputElement | undefined
+  let quietFocus = false
+
+  // The picker hangs from the field, since the suggestions' Add issue closes with them.
+  function addIssue() {
+    close()
+    setIssueOpen(true)
+  }
 
   function pickable(projectId: string | null) {
     if (!projectId) return true
@@ -109,6 +122,7 @@ export function DescriptionCombobox(props: {
       >
         <TextFieldLabel class={props.labelClass}>{props.label}</TextFieldLabel>
         <div
+          ref={setField}
           data-input-field
           class={cn(
             'border-input ring-offset-background focus-within:ring-ring flex min-h-10 w-full min-w-0 cursor-text items-center gap-1 rounded-md border bg-transparent py-1 pr-1.5 pl-2 text-sm focus-within:ring-2 focus-within:ring-offset-2',
@@ -123,7 +137,10 @@ export function DescriptionCombobox(props: {
           }}
         >
           <TextFieldInput
-            ref={props.ref}
+            ref={(el) => {
+              input = el
+              props.ref?.(el)
+            }}
             class="h-8 min-w-24 flex-1 rounded-none border-0 py-0 pr-1.5 pl-1 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-100"
             placeholder={props.placeholder}
             autocomplete="off"
@@ -132,7 +149,10 @@ export function DescriptionCombobox(props: {
             aria-expanded={shown()}
             aria-controls={shown() ? listId : undefined}
             aria-activedescendant={shown() && active() >= 0 ? `${listId}-${active()}` : undefined}
-            onFocus={show}
+            onFocus={() => {
+              if (quietFocus) quietFocus = false
+              else show()
+            }}
             onBlur={() => {
               close()
               props.onBlur?.()
@@ -140,32 +160,74 @@ export function DescriptionCombobox(props: {
             onKeyDown={keyDown}
           />
           {props.chip}
+          <Show when={!props.ticket && !props.disabled}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              class="text-muted-foreground h-7 shrink-0 px-2 text-xs"
+              aria-haspopup="dialog"
+              aria-expanded={issueOpen()}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={addIssue}
+            >
+              {m.ticket_add()}
+            </Button>
+          </Show>
         </div>
       </TextField>
       <Show when={shown()}>
         <div
-          id={listId}
-          role="listbox"
-          aria-label={m.entry_suggestions()}
-          class="bg-popover text-popover-foreground absolute top-full left-0 z-50 mt-1 max-h-80 w-full min-w-72 overflow-y-auto rounded-md border p-1 shadow-md"
+          class="bg-popover text-popover-foreground absolute top-full left-0 z-50 mt-1 w-full min-w-72 rounded-md border p-1 shadow-md"
           // Keeps focus in the input, so a click doesn't blur it and close the list first.
           onMouseDown={(event) => event.preventDefault()}
         >
-          <For each={items()}>
-            {(entry, index) => (
-              <Suggestion
-                id={`${listId}-${index()}`}
-                entry={entry}
-                query={props.value.trim()}
-                project={props.projects.find((p) => p.id === entry.projectId)}
-                active={active() === index()}
-                onHover={() => setActive(index())}
-                onPick={() => pick(entry)}
-              />
-            )}
-          </For>
+          <div
+            id={listId}
+            role="listbox"
+            aria-label={m.entry_suggestions()}
+            class="max-h-72 overflow-y-auto"
+          >
+            <For each={items()}>
+              {(entry, index) => (
+                <Suggestion
+                  id={`${listId}-${index()}`}
+                  entry={entry}
+                  query={props.value.trim()}
+                  project={props.projects.find((p) => p.id === entry.projectId)}
+                  active={active() === index()}
+                  onHover={() => setActive(index())}
+                  onPick={() => pick(entry)}
+                />
+              )}
+            </For>
+          </div>
+          <Show when={!props.ticket}>
+            <div class="mt-1 border-t pt-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="text-muted-foreground h-7 w-full justify-start px-2 text-xs"
+                onClick={addIssue}
+              >
+                {m.ticket_add_keep_description()}
+              </Button>
+            </div>
+          </Show>
         </div>
       </Show>
+      <IssuePicker
+        open={issueOpen()}
+        anchor={field()}
+        tickets={recentTickets(props.entries)}
+        returnFocus={() => {
+          quietFocus = true
+          return input
+        }}
+        onClose={() => setIssueOpen(false)}
+        onPick={props.onAddTicket}
+      />
     </div>
   )
 }

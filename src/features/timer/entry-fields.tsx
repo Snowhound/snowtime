@@ -26,6 +26,7 @@ import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
 import { changedFields, readEntryTimes } from './entries'
+import { IssuePicker } from './issue-picker'
 import { projectChoices } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
 import { TicketChip } from './ticket-chip'
@@ -264,17 +265,69 @@ export function InlineDescription(props: {
   )
 }
 
-// The row's chip, at the end of the description or in the Wide page's Ticket column; nothing
-// without a ticket.
+// The row's chip, or an Add issue link in an empty Ticket column.
 export function TicketCell(props: {
   editor: EntryEditor
   entry: Entry
   issueLinks: string | null
   inline?: boolean
   class?: string
+  tickets?: readonly string[]
+  active?: boolean
 }) {
+  const [open, setOpen] = createSignal(false)
+  let anchor: HTMLButtonElement | undefined
+  let cell: HTMLElement | null = null
+  let focusChip = false
+
+  // The picked issue's chip replaces Add issue, so focus moves to it once it shows.
+  createEffect(
+    on(
+      () => props.entry.ticket,
+      (ticket) => {
+        if (!ticket || !focusChip) return
+        focusChip = false
+        cell?.querySelector<HTMLElement>('a, button')?.focus()
+      },
+      { defer: true },
+    ),
+  )
+
   return (
-    <Show when={props.entry.ticket}>
+    <Show
+      when={props.entry.ticket}
+      fallback={
+        <Show when={!props.inline}>
+          <Button
+            ref={(el) => (anchor = el)}
+            type="button"
+            variant="link"
+            size="sm"
+            class={cn('text-muted-foreground h-7 px-1 text-xs', props.class)}
+            aria-haspopup="dialog"
+            aria-expanded={open()}
+            onClick={() => {
+              cell = anchor!.parentElement
+              setOpen(true)
+            }}
+          >
+            {m.ticket_add()}
+          </Button>
+          <Show when={props.active || open()}>
+            <IssuePicker
+              open={open()}
+              anchor={anchor}
+              tickets={props.tickets ?? []}
+              onClose={() => setOpen(false)}
+              onPick={(ticket) => {
+                focusChip = true
+                props.editor.save({ ticket })
+              }}
+            />
+          </Show>
+        </Show>
+      }
+    >
       {(ticket) => (
         <TicketChip
           ticket={ticket()}

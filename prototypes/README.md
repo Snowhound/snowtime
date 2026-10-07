@@ -1230,3 +1230,13 @@ presets changed, with each overlay: every effect compiles and draws, glitter sta
 horizon, the bands sit where set, the mist leaves the tagline and cards readable, and there are
 no browser errors. Screenshots show single frames, so the motion, the gusts, the snow's arc,
 and how visible the day glitter, spray, and dust are need a look on a real screen.
+
+## Adding issues to tracker entries
+
+`timer.html` and the app have an Add issue link in empty Ticket cells in Wide page, a button at the
+right of the timer description, and an Add issue action below its recent-work suggestions.
+The picker offers up to six distinct issue keys from loaded entries, newest first, or a
+custom key or issue URL. Picking an issue keeps the description and project unchanged.
+Once an issue is attached, only its chip shows. Removing it restores Add issue. The description
+gets focus after the picker closes, with recent-work suggestions closed until typing or an
+arrow key opens them. Typed keys and pasted issue URLs still work in the description.

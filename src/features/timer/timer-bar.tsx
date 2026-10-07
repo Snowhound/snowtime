@@ -235,6 +235,10 @@ export function TimerBar(props: {
             ref={(el) => (input = el)}
             onChange={draft.setDescription}
             onPick={pick}
+            onAddTicket={(ticket) => {
+              draft.addTicket(ticket)
+              if (props.running) props.onUpdate({ ticket })
+            }}
             onBlur={saveDescription}
             onKeyDown={(event) => {
               if (event.key !== 'Enter') return

@@ -242,3 +242,15 @@ export function readEntryTimes(values: EntryFormTimes, options: ReadOptions): En
   }
   return { startedAt: new Date(startedAt), stoppedAt: new Date(stoppedAt), nextDay }
 }
+
+// Up to six distinct issues, newest first, for the issue picker.
+export function recentTickets(entries: readonly (EntryTimes & Pick<Work, 'ticket'>)[]) {
+  return [
+    ...new Set(
+      [...entries]
+        .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
+        .map((entry) => entry.ticket)
+        .filter((ticket): ticket is string => !!ticket),
+    ),
+  ].slice(0, 6)
+}

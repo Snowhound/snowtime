@@ -33,6 +33,9 @@ export function createTicketDraft(fields = signalFields()) {
     description: fields.description,
     setDescription: fields.setDescription,
     ticket: fields.ticket,
+    addTicket(ticket: string) {
+      fields.setTicket(ticket)
+    },
     // Shows other work: a loaded entry or a picked suggestion.
     reset(description: string, ticket: string | null) {
       fields.setDescription(description)

@@ -35,7 +35,14 @@ import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { type CalendarControls, TimerCalendar } from './calendar/timer-calendar'
-import { RECENT_DAYS, groupByDay, recentRange, recentWork, summarize } from './entries'
+import {
+  RECENT_DAYS,
+  groupByDay,
+  recentRange,
+  recentWork,
+  recentTickets,
+  summarize,
+} from './entries'
 import type { EntryPatch } from './entry-fields'
 import { EmptyState, EntryList } from './entry-list'
 import { EntryPopover, type EntryPopoverTarget, type EntryPopoverValues } from './entry-popover'
@@ -307,6 +314,9 @@ export function TimerView(props: {
   }
 
   const listProps = {
+    get tickets() {
+      return recentTickets(stopped())
+    },
     get projects() {
       return projects.data ?? []
     },

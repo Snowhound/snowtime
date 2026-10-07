@@ -94,6 +94,17 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
   Off, the page keeps the header's width and each row's chip sits at the end of its
   description. The Timer route is `wide` (its `staticData`), so the view sets its own width.
 
+## Adding an issue
+
+The timer and entry form offer Add issue while no issue is attached; Wide page also offers
+it in empty Ticket cells. The picker shows up to six distinct issues from loaded entries,
+newest first, and accepts an issue key or URL. Choosing one changes only the issue, so the
+description and project stay intact. The chip replaces Add issue until the issue is removed.
+
+The picker returns focus to the description with recent-work suggestions closed. Typing or
+an arrow key can open them again. This lets the user continue writing without immediately
+offering to replace the entry with recent work.
+
 ## Timer project draft
 
 The timer remembers the last selected project per user and organization in this browser,
