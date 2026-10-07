@@ -166,18 +166,59 @@ option.
 - Bun's `encode` and `injectAssets` (6.3% and 6.5% of Bun's timer samples). Both work on
   the finished page string, and the task left them optional.
 - `wallClock`'s `formatToParts` on Bun: a follow-up for the app, because it only costs Bun.
+  Task 081.22 replaced it.
+
+## Task 081.22's follow-ups
+
+2026-10-07, from `bd15d4a` to `5cb2245`, on the same machine. The app was rebuilt and
+recaptured after the app fixes, and both sides ran in one session. V8's render CPU is
+unchanged within noise except on month, but the minified bundle takes 7–9 MB off V8's
+loaded RSS and 7–13 MB off its peak on every page. The CPU ratio to Bun's plain bundle
+doesn't improve, because the app fixes also help Bun:
+
+| Page  | V8 CPU, before → now | V8 loaded RSS MB | V8 peak RSS MB | Bun plain CPU | Ratio, before → now |
+| ----- | -------------------: | ---------------: | -------------: | ------------: | ------------------: |
+| timer |        11.52 → 11.27 |      69.1 → 61.9 |      177 → 170 |   9.49 → 9.34 |         1.21 → 1.21 |
+| week  |          8.25 → 8.68 |      68.9 → 60.3 |      175 → 164 |   6.91 → 6.67 |         1.19 → 1.30 |
+| month |        11.32 → 10.66 |      69.3 → 60.6 |      179 → 167 |   8.59 → 8.42 |         1.32 → 1.27 |
+| year  |        13.51 → 13.45 |      68.8 → 61.5 |      187 → 174 | 10.58 → 10.43 |         1.28 → 1.29 |
+
+V8 runs the shared bundle at a 32 MiB semi-space; "before" is task 081.21's final bundles.
+Three alternating rounds, 500 renders each, round 2 reversed
+([raw runs and bundle hashes](hot-spots-follow-ups.jsonl)). Week's rise comes from one
+round (9.48 ms against 8.20 and 8.34); without it the ratio is 1.24. This session's
+"before" ratios are 0.02–0.09 higher than task 081.21's, so compare within a table only.
+Every run's HTML matched the same engine's plain bundle, and the hydration check passed on
+all four pages.
+
+- **App fixes** (`3f58a26`, on `main` as `9536fdb`). `formatIsoDateRange` caches its
+  formatter, and `wallClock` parses `format()` instead of calling `formatToParts`. In
+  quick rounds against `bd15d4a`: V8 month −5.5% and year −2.5%, the timer within noise;
+  Bun shared −1 to −4%, Bun plain −1 to −3%.
+- **Minification** (`5cb2245`). `bundle/build.ts` runs rolldown's `minifySync` on both
+  bundles, with compression, names kept, and ASCII output. V8 stores a script's source at
+  two bytes per character if any character is above U+00FF, and the bundle had about 100
+  (dashes, quotes, emoji). The build warns about any that remain. One was in a `String.raw`
+  regex, which the minifier leaves as written, so `src/lib/tickets.ts` now escapes it
+  (`49226d2`, on `main` as `4783c27`). The renderer's binary fell from 98.3 MB to 94.9 MB.
+  In quick rounds, minifying without ASCII output saved 3.7 MB of loaded RSS, and Bun's
+  re-print (`bun build --no-bundle --minify-syntax`) 7 MB, because it escapes every
+  non-ASCII character. Neither changed CPU on V8.
+- **Lucide's icon building** stays. What remains of `buildLucideIconNode` is class merging,
+  alias lists, and attribute spreads, which needs a rewrite of the function rather than a
+  small addition to `bundle/lucide-nodes.ts`.
+
+The binary has 24.7 MB of symbol tables (`.symtab` and `.strtab`); stripping them in a
+production build would take it to about 70 MB. Measurement images keep them for profiles.
 
 ## Follow-ups
 
-- **Minification.** The render bundle builds with `minify: false` (`bundle/build.ts`). Bun
-  re-prints every file it loads, as `bun build --no-bundle --minify-syntax` does, and task
-  081.16's control found the re-print made no difference on JavaScriptCore. Nobody has
-  measured it on V8. Try the re-print and rolldown's minifier on the V8 shared bundle, with
-  function names kept for profiles.
-- **Lucide's icon building.** `buildLucideIconNode` and `Icon` remain at about 3% of V8's
-  timer: alias and class lists, spreads, and a new node array per icon.
 - **Month and year.** Their remaining gap is in the report code and the shared site getter,
   not in merge and split.
+- **Lucide's icon building.** `buildLucideIconNode` and `Icon` remain at about 3% of V8's
+  timer: alias and class lists, spreads, and a new node array per icon.
+- **Production image.** Strip the binary and try a distroless runtime base in place of
+  `debian:trixie-slim`.
 
 ## Validation
 
