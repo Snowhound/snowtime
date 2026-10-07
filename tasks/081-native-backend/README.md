@@ -250,7 +250,7 @@ which records the edge measurements.
   larger nursery (done)
 - [15](15-framework-benchmarks.md): render benchmarks on Nuxt, SvelteKit, and Next.js apps
 - [16](16-javascriptcore.md): JavaScriptCore as the render engine: the gate failed on plain
-  JSC, so Bun as a render sidecar is next
+  JSC; the Bun render sidecar that followed is parked in favor of V8 (2026-10-07)
 - [17](17-bounded-lanes.md): the lane contract for the database, hashing, and V8 render
   lanes, the overload policy, and how the client handles refusal
 - [18](18-v8-builds.md): newer V8 builds, flags, and build options against the render gap:
@@ -273,8 +273,8 @@ at server-side caching for both backends.
 Concurrency (Kait, 2026-10-06): Tokio's async workers run only the edge; blocking and CPU
 work runs in lanes, each a fixed number of workers behind admission that refuses when full.
 Under overload, timer calls keep working and reports and exports refuse first
-([native-host.md](../../docs/architecture/native-host.md), subtask 17). Rendering is
-the Bun sidecar where memory allows and V8 in the host otherwise
+([native-host.md](../../docs/architecture/native-host.md), subtask 17). Rendering is V8
+in the host (Kait, 2026-10-07); the Bun sidecar is parked
 ([native-rendering.md](../../docs/architecture/native-rendering.md), subtask 16).
 
 Libraries (Kait, 2026-10-04, subtask 03): Axum with `rusqlite` and SQL strings. Actix Web

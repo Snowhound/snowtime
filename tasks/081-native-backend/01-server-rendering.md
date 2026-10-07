@@ -455,7 +455,9 @@ with Deno extensions and the policy measured above:
 ## Open
 
 - Agree the whole-server memory target with Kait (proposed above: under 256 MiB RSS at
-  peak with one renderer, 80 MiB for each further one).
+  peak with one renderer, 80 MiB for each further one). V8 is the engine since
+  2026-10-07, and task 081.22's minified bundle took 7–9 MB off a renderer's loaded RSS
+  and 7–13 MB off its peak, which leaves the proposal more headroom.
 - Confirm on the Linux deployment host. These measurements are Docker on this Mac: the
   stress runs on dataset M with Caddy on the app's core, the renderer runs on the Lumen
   Works seed with recorded answers.

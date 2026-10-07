@@ -1,6 +1,10 @@
 # 081.16: JavaScriptCore as the render engine
 
-Status: in-progress (gate failed; the Bun render sidecar is next)
+Status: parked (gate failed; the Bun render sidecar is parked in favor of V8, 2026-10-07)
+
+Kait parked the sidecar on 2026-10-07, when tasks 081.19–081.22 had brought V8 to
+1.21–1.30 times Bun's render CPU. Its open criteria wait on the conditions in
+[native-rendering.md](../../docs/architecture/native-rendering.md) that can reopen it.
 
 On the same bundle, Bun runs Solid's synchronous render in 7.3 ms where V8 takes 12.7
 ([engine-gap report](server-rendering/engine-gap-wsl.md)). JSC's DFG tier is worth 37% to

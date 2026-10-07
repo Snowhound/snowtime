@@ -83,10 +83,10 @@ it:
 - Rendering in an embedded V8 isolate, against page shells (01, task 079)
 - The render engine, chosen from measured inputs: rendering's share of the server's CPU,
   the memory per renderer including a recycle's overlap, whether the framework needs
-  streaming, and the licensing a closed-source port accepts. For Snowtime: the
-  Bun sidecar where memory allows, V8 in the host for the smallest budgets and as the
-  fallback; embedded JSC paused. Open: the sidecar's measurements and the budget that
-  switches engines (16)
+  streaming, and the licensing a closed-source port accepts. For Snowtime: V8 in the
+  host, at 1.21–1.30 times Bun's render CPU (22); the Bun sidecar parked; embedded JSC
+  paused. Open: the gap confirmed on Linux, and whole-server load showing whether the
+  render lane saturates first (10, 12, 16)
 - Tokio only at the edge, and lanes with a fixed number of workers, waiting bounded by
   count and time, admission per connection class, and refusal for the database,
   password hashing, and rendering (`docs/architecture/native-host.md`). An overload

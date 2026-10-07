@@ -46,7 +46,7 @@ priority must not carry over to database work on a reused thread.
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | Database         | A gate per connection class, bounded by time: a slot per reader for reads with the read pool on, one for the writer (081.10, 081.17)                        | A waiting count, and a smaller budget for reports and exports  |
 | Password hashing | A gate of `SCRYPT_CONCURRENCY` slots on the shared blocking pool, sized from cores (081.10)                                                                 | Dedicated threads at lower priority, sized from memory as well |
-| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar (081.16)                                      |
+| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar, parked (081.16)                              |
 
 A reader that finds a session due for renewal or expired takes the writer only if the
 writer's gate has a free slot at that moment. Otherwise it answers from the reader, and a

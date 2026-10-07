@@ -7,15 +7,22 @@ native host (`snowtime-axum`) serves the timer and report pages through it.
 and remaining work.
 
 Two engines sit behind one interface (`Pool`, `PageRequest`, `Page`), and `RENDER_ENGINE`
-picks one at start. Kait decided on 2026-10-06 that the Bun sidecar is the preferred
-engine wherever memory isn't the deciding constraint, and that V8 embedded in the host
-stays the engine for the smallest memory budgets and the fallback
-([task 081.16](../../tasks/081-native-backend/16-javascriptcore.md)). The reason is
-render CPU: Bun renders the four measured pages with 34–40% less CPU than V8 (one CPU on
-WSL, with recorded API answers), and Bun maintains the engine, its collector, and the web
-APIs. The sidecar's end-to-end measurements can still reverse this, for example if
-rendering turns out to be a small share of the whole server's CPU. The V8 engine is built; the sidecar is planned. Both follow the lane
-contract in [native-host.md](native-host.md).
+picks one at start. Kait decided on 2026-10-07 that V8 embedded in the host is the engine,
+and parked the Bun sidecar
+([task 081.16](../../tasks/081-native-backend/16-javascriptcore.md)). Tasks 081.19–081.22
+brought V8 to 1.21–1.30 times Bun's render CPU on the four measured pages, from 1.50–1.63
+when the sidecar was chosen on 2026-10-06, at the same or lower peak RSS and about 61 MB
+loaded per renderer ([report](../../tasks/081-native-backend/server-rendering/hot-spots-mac.md#task-08122s-follow-ups)).
+V8 keeps the host one binary, with renderers as threads, one RSS to budget, and no child
+processes to start, confine, and restart. The sidecar would save 17–23% of render CPU,
+and it stays the alternative behind the same interface. Two conditions can reopen it:
+
+- The ratios above are from Docker Desktop on a Mac; the 1.50–1.63 was on WSL. A pages run
+  on the Linux host must confirm the gap before task 081.05 records the choice.
+- Whole-server load (tasks 081.10 and 081.12) shows the render lane saturating before the
+  database lane, or a deployment's memory budget affords Bun's CPU advantage.
+
+Both engines follow the lane contract in [native-host.md](native-host.md).
 
 ## V8 in the host
 
@@ -60,7 +67,9 @@ plain on V8's timer and on every Bun page, and are removed. The choice is made p
 [The report](../../tasks/081-native-backend/server-rendering/shared-props-mac.md) records
 the measurements.
 
-## Bun sidecar (planned)
+## Bun sidecar (parked)
+
+Parked on 2026-10-07 in favor of V8; the design below stands if it reopens.
 
 The host starts each renderer as a child process running the stock `bun` binary on the
 same render bundle, and talks to it over a socket pair with length-prefixed frames that
