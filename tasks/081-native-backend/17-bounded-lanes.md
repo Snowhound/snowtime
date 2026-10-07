@@ -109,9 +109,8 @@ bundle and V8 engine decision are included.
   or render benchmarks ran. Hash sizing assertions passed in the server suite; the host
   suite is deferred to avoid another large build during the other session's measurements.
 
-- Client: commit `597c3ce` on `081-client-refusal`, based on `main`, in
-  `/private/tmp/snowtime-081-client`. It is separate from the native branch and awaits
-  review before merging. Kait approved reusing Alert and the “Try again” button.
+- Client: branch `081-client-refusal`, separate from the native branch, reviewed and
+  merged into `main` on 2026-10-07 as `a967782`..`74e1ba4`. Kait approved reusing Alert and the “Try again” button.
   The API preserves `Retry-After`, including non-JSON edge refusals. A refused optimistic
   write stays pending, and only that button sends its original variables again. The
   shared helper prevents automatic mutation retries and re-applies pending changes after
@@ -140,4 +139,4 @@ catalogue results remain pending.
 - The client branch now holds a write made while one is pending and sends them in order,
   shows the pending message only for kept writes, skips query retries in server renders,
   and shows pending changes in an orange alert, in their rows, and in the calendar's
-  status line (task 081.17's client commits after `597c3ce`).
+  status line. Rebased onto `main`, it is `a967782`..`74e1ba4` there.
