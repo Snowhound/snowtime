@@ -10,13 +10,17 @@ const replacement =
 export function transformServerProps(code: string) {
   const start = code.indexOf('function mergeProps(')
   const end = code.indexOf('function splitProps(', start)
+  const splitEnd = code.indexOf('function simpleMap(', end)
   if (
     start < 0 ||
     end < 0 ||
+    splitEnd < 0 ||
+    createHash('sha256').update(code.slice(end, splitEnd)).digest('hex') !==
+      'e234c6d9d342cab5aea13127b53fb50a495ba2fffe456ee0852e9101d011b290' ||
     createHash('sha256').update(code.slice(start, end)).digest('hex') !==
       '710f8b96c778dadbf7b9cbbc11f481caca5eaaa47fc9c8d660653c9df19cd5c3'
   )
-    throw new Error('Unsupported Solid server mergeProps implementation')
+    throw new Error('Unsupported Solid server mergeProps or splitProps implementation')
   return code
     .replace(original, replacement)
     .replace(

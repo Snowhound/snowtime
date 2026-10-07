@@ -1,6 +1,6 @@
 # 081.19: Server props without per-render getters
 
-Status: todo
+Status: done
 
 Solid 1's server output creates props objects whose getters are fresh closures on every
 render: compiled `createComponent(C, { get a() { … } })` sites, and getters that
@@ -10,13 +10,12 @@ its scavenger treats it as a root until the next mark-compact. That promotes mos
 page's dead objects ([task 081.14's report](server-rendering/render-gc-wsl.md),
 [engine-gap report](server-rendering/engine-gap-wsl.md)).
 
-Solid 2.0 fixes this from rc.10 (2026-09-23): the SSR compiler hoists each props literal
-with getters into a constructor whose getters live on a shared prototype
-([solid#3511](https://github.com/solidjs/solid/issues/3511),
-[next-yak#657](https://github.com/DigitecGalaxus/next-yak/issues/657)). Migrating the app
-to Solid 2.0 is a separate, larger job: Kobalte's support is unknown, and TanStack's is
-in beta. This task backports the idea to Solid 1's server bundle as a build-time
-rewrite, behind a flag.
+The investigation in [solid#3511](https://github.com/solidjs/solid/issues/3511)
+identified shared getter functions as the fix. Its final implementation
+([solid#3550](https://github.com/solidjs/solid/pull/3550)) uses shared **own** accessor
+descriptors, preserving enumeration. The earlier bare-prototype proposal needs adapters
+for those reads. This task measures that prototype form in Solid 1's server bundle,
+behind a flag. Migrating the app to Solid 2.0 remains a separate job.
 
 A microbenchmark of 1M three-prop objects (`results/gc/scripts/shapes.mjs` in
 `/root/snowtime-gc` on the WSL machine) motivates it:
@@ -54,18 +53,24 @@ reads.
 
 ## Acceptance criteria
 
-- [ ] The rewrite and adapters built, with the count of rewritten and skipped sites, and
+- [x] The rewrite and adapters built, with the count of rewritten and skipped sites, and
       the per-page counts of `defineProperty` getters and getter literals before and after
-- [ ] Byte-identical HTML on all four pages, the browser hydration check passing on the
+- [x] Byte-identical HTML on all four pages, the browser hydration check passing on the
       rewritten bundle, and a test of the adapters' own-key, descriptor, and laziness
       behaviour
-- [ ] Every `Object.keys`, spread, or descriptor read of props in the server bundle
+- [x] Every `Object.keys`, spread, or descriptor read of props in the server bundle
       listed, with how each is handled
-- [ ] Promotion after a post-render minor GC, and scavenges and mark-compacts per page,
+- [x] Promotion after a post-render minor GC, and scavenges and mark-compacts per page,
       before and after, as task 081.14 measured them
-- [ ] CPU, p95, and peak RSS on four pages for V8 (32 MiB semi-space and V8's default)
+- [x] CPU, p95, and peak RSS on four pages for V8 (32 MiB semi-space and V8's default)
       and for Bun, three alternating rounds against the plain bundle, as task 081.14
       measures
-- [ ] The flag's default per engine decided from those numbers and recorded in the render
+- [x] The flag's default per engine decided from those numbers and recorded in the render
       README and `docs/architecture/native-rendering.md`; a variant that loses on an engine
       isn't its default there
+
+## Results
+
+[The WSL report](server-rendering/prototype-props-wsl.md) records the implementation,
+complete props-read inventory, timing and GC measurements, and validation. Keep the plain
+bundle as the default on both engines; the prototype variant remains opt-in.

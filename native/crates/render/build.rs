@@ -1,9 +1,15 @@
 #[path = "src/extensions.rs"]
 mod extensions;
 fn main() {
-    let bundle = std::fs::read_to_string("bundle/dist/render.js")
+    println!("cargo:rerun-if-env-changed=RENDER_PROTOTYPE_PROPS");
+    let path = match std::env::var("RENDER_PROTOTYPE_PROPS").as_deref() {
+        Ok("1") => "bundle/dist/render.prototype.js",
+        Ok("0") | Err(_) => "bundle/dist/render.js",
+        _ => panic!("RENDER_PROTOTYPE_PROPS must be 0 or 1"),
+    };
+    let bundle = std::fs::read_to_string(path)
         .expect("Build the render bundle first: bun native/crates/render/bundle/build.ts");
-    println!("cargo:rerun-if-changed=bundle/dist/render.js");
+    println!("cargo:rerun-if-changed={path}");
     println!("cargo:rerun-if-changed=bundle/dist/manifest.json");
     println!("cargo:rerun-if-changed=bundle/bootstrap.js");
     println!("cargo:rerun-if-changed=src/extensions.rs");

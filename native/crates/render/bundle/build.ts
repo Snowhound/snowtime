@@ -4,6 +4,7 @@ import { cpSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
+import { prototypeProps } from './prototype-props'
 import { serverProps } from './solid-props'
 
 const root = resolve(import.meta.dir, '../../../..')
@@ -28,6 +29,7 @@ try {
     plugins: [
       tailwindcss(),
       serverProps(),
+      prototypeProps(),
       {
         name: 'exclude-api-routes',
         enforce: 'pre',
