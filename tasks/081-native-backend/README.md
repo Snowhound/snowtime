@@ -14,11 +14,13 @@ task.
 
 ## Targets
 
-- Linux on one core, with resident memory under 64 MB, aiming at 32 MB, at task 078's
-  peak load on the L dataset, SQLite's own cache included. This target predates server
-  rendering: the V8 isolate alone runs at 66–118 MB on macOS (subtask 01), so the target
-  with a renderer is open. Subtask 10 measured the whole server well above it, and set
-  provisional whole-host test budgets of 2 GiB for M and 4 GiB for L. The domain code makes no OS
+- Snowtime's native server runs on one Hetzner instance of 1 vCPU and 2 GB, the
+  documented minimum (Kait, 2026-10-07). That is the target that decides its changes.
+- For constrained machines, a guideline that doesn't block progress: the app process with
+  one renderer under 256 MiB RSS at peak, 80 MiB for each further renderer, and under
+  64 MB, aiming at 32 MB, without a renderer, at task 078's peak load on the L dataset,
+  SQLite's own cache included (subtask 01). Subtask 10 set provisional whole-host test
+  budgets of 2 GiB for M and 4 GiB for L. The domain code makes no OS
   calls outside a thin layer, so a port to a microcontroller without an OS stays possible
   later.
 - No garbage collector and, after the first port, no allocation per row on hot paths in

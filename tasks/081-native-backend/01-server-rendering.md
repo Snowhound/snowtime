@@ -1,7 +1,7 @@
 # 081.01: Server rendering in the native backend
 
-Status: in-progress (the native host serves pages, measured 2026-10-04; the whole-server
-memory target awaits Kait's agreement)
+Status: in-progress (the native host serves pages, measured 2026-10-04; the memory
+target agreed on 2026-10-07 awaits its Linux check)
 
 The native backend renders pages and the browser hydrates them, as it does with today's
 Start server. Rust embeds a V8 isolate that runs the app's Solid server render. Kait chose
@@ -172,10 +172,17 @@ lists. The 161 MiB peak remains: it comes in the first pages, while V8 optimizes
 background threads, before the first trim. The earlier spike's 219 MB macOS and 237 MB
 Linux peaks probably had the same cause; they weren't re-measured.
 
-#### Proposed memory target
+#### Memory target
 
-For Kait to agree: **the whole server with one renderer stays under 256 MiB RSS at its
-peak**, at the 128 MiB heap limit, on the load it can carry on one core. Measured: 219 MB
+Kait, 2026-10-07: Snowtime's own native server targets one Hetzner instance of 1 vCPU
+and 2 GB. The figures below are a guideline for constrained machines, kept so the port
+stays able to run in them, and a change that misses them isn't rejected for that alone.
+They count the app process only, since the proxy and replication have budgets of their
+own, and the peak includes startup's warmup. A Linux run of the host at its own heap and
+semi-space choices confirms them, because they predate tasks 081.14 and 081.19–081.22.
+
+The guideline, proposed on 2026-10-04: **the app with one renderer stays under 256 MiB RSS
+at its peak**, at the 128 MiB heap limit, on the load it can carry on one core. Measured: 219 MB
 at 40,000 users of the slice, 114 MB of it anonymous. Each further renderer may add 80 MiB.
 With the host planning on 75% of its limit, one renderer needs a 384 MiB container
 limit and each further one 107 MiB more; the cgroup's page cache uses the rest. Below 340
@@ -454,10 +461,9 @@ with Deno extensions and the policy measured above:
 
 ## Open
 
-- Agree the whole-server memory target with Kait (proposed above: under 256 MiB RSS at
-  peak with one renderer, 80 MiB for each further one). V8 is the engine since
-  2026-10-07, and task 081.22's minified bundle took 7–9 MB off a renderer's loaded RSS
-  and 7–13 MB off its peak, which leaves the proposal more headroom.
+- Check the memory target on Linux ([Memory target](#memory-target)). V8 is the engine
+  since 2026-10-07, and task 081.22's minified bundle took 7–9 MB off a renderer's loaded
+  RSS and 7–13 MB off its peak.
 - Confirm on the Linux deployment host. These measurements are Docker on this Mac: the
   stress runs on dataset M with Caddy on the app's core, the renderer runs on the Lumen
   Works seed with recorded answers.
@@ -472,7 +478,7 @@ with Deno extensions and the policy measured above:
       CPU per render, with the GC policy chosen
 - [x] A render API in the proof of concept: Rust serves the timer and week report
       server-rendered, and Start's client hydrates them
-- [ ] A memory target for the native backend with a renderer, agreed with Kait
+- [x] A memory target for the native backend with a renderer, agreed with Kait
 - [x] The decision recorded in `docs/architecture/` with what was rejected: shells
       (task 079), a separate Bun render process, and the other engines
 - [x] The renderer's harness kept where it can be re-run: `native/crates/render/`,

@@ -375,3 +375,7 @@ layering does.
       the long tail as JS jobs, and server functions in Rust
 - [ ] The survey's split between native and hybrid based on usage and a profile, not on
       guesses
+- [ ] Capacity per machine size: how many users and organizations a ported app serves at
+      task 078's load model on three Hetzner sizes, from 1 vCPU and 2 GB up, measured on
+      Linux. Kait, 2026-10-07: the aim is a headline such as "one Hetzner instance this
+      size could run all of a company like AMD North America"
