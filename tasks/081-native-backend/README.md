@@ -15,7 +15,9 @@ task.
 ## Targets
 
 - Snowtime's native server runs on one Hetzner instance of 1 vCPU and 2 GB, the
-  documented minimum (Kait, 2026-10-07). That is the target that decides its changes.
+  documented minimum, for one company of about 20 people (Kait, 2026-10-07). That fits
+  with room to spare, so the work aims at speed and at the porting kit, including its
+  capacity figures per machine size (subtask 05), not at fitting the instance.
 - For constrained machines, a guideline that doesn't block progress: the app process with
   one renderer under 256 MiB RSS at peak, 80 MiB for each further renderer, and under
   64 MB, aiming at 32 MB, without a renderer, at task 078's peak load on the L dataset,
