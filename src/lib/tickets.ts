@@ -8,7 +8,7 @@
 const KEY = String.raw`[A-Z][A-Z0-9]{1,9}-[1-9]\d{0,6}`
 const KEYS = new RegExp(String.raw`(?<![\w-])${KEY}(?![\w-])`, 'g')
 // A key at the start, optionally in brackets, and the separator after it.
-const LEADING = new RegExp(String.raw`^\[?(${KEY})\]?(?:\s*[:|,/–—-]\s*|\s+|$)`)
+const LEADING = new RegExp(String.raw`^\[?(${KEY})\]?(?:\s*[:|,/\u2013\u2014-]\s*|\s+|$)`)
 // A pasted issue link, such as …/browse/KEY or …/issue/KEY, becomes its key.
 const ISSUE_LINK = new RegExp(
   String.raw`https?://\S+?/(?:browse|issues?)/(${KEY})(?![\w-])\S*`,
