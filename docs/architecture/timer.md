@@ -51,6 +51,64 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
 - Mobile uses the same components, not the native wheels: the calendar works by touch, and a time
   field asks for the number pad in 24-hour locales.
 
+## Copying durations
+
+A click on an entry row's duration or a day's total on the Timer page copies it, for pasting
+into a ticket's work log or an invoice (task 078). Other durations don't copy yet.
+
+- `copy_duration_pattern` sets the copied text, per user. In the pattern, `H`, `M`, and `S`
+  are hours, minutes, and seconds, and a run of one letter sets the minimum digits: `HH`
+  gives `09`. A backslash keeps the next character, and any other character is copied as
+  typed, so `Hh Mm Ss` copies two hours as `2h 0m 0s`. The default, `H:MM:SS`, copies an
+  entry's duration as its row shows it. `src/lib/duration-pattern.ts` formats
+  patterns. `src/lib/duration-pattern-settings.ts` validates them for the client and server
+  without loading the tokenizer into shared settings schemas.
+- The first unit in the pattern holds the whole duration: hours don't wrap at 24, and
+  `M:SS` copies 2:05:09 as `125:09`. This follows Google Sheets' `[h]` duration format.
+- The copy starts from the milliseconds and rounds to the pattern's smallest field:
+  minutes when there is `M` but no `S`, or hours when there is only `H`. Patterns with `S`
+  cut off partial seconds, as entry rows do. `duration_format` doesn't change the copy.
+- Uppercase `H`, `M`, and `S` are always fields, even inside a word, so `Hours` copies as
+  `2ours`. The settings field colors each field behind the typed text and warns about a
+  field after a letter or before two (`fieldsInWords`); one letter after is a unit, as in
+  `Hh`. A warned pattern still saves.
+- Settings > Preferences groups both settings under Copying durations.
+- `copy_duration_control` picks how a duration copies: a click on the duration (`text`, the
+  default) or a copy button beside it (`button`). From 640 px the button shows only while
+  its row or the duration is hovered or focused, like the rows' other controls. In button
+  mode the list's duration column widens from 64 to 88 px and the table's from 96 to
+  112 px, the same in every row so the times line up. At 1024 px with the summary panel,
+  that narrows the row's description from 67 to 43 px, which was accepted on 2026-10-02.
+- After a copy, a bubble shows the copied text for two seconds. The bubble sits above an
+  entry's duration and left of a day's total, where the day's card would clip it above.
+  `prototypes/copy-durations.html` compares it with swapping the text in place, which made
+  rows grow.
+- `CopyAnnouncer`, one `aria-live="polite"` region, reads the same text aloud, because the
+  bubble is `aria-hidden` and doesn't take focus. `AppFrame`, the shell of every signed-in
+  page, renders it outside `IntroPage`, which is inert while the intro plays. The
+  placement follows from three constraints:
+  - A screen reader reads a live region's changes, and often skips a region that
+    appears with its text, so the region must be in the page before the first copy. The
+    first version created it on the first copy, which risked a silent first copy.
+  - One region serves every duration. A region per duration would add about 200 hidden
+    elements to the Timer page, whose rows are kept light (`row-activation.ts`).
+  - Copying needs a signed-in user's settings, and the durations planned under task 078's
+    "Later" are on Reports and Projects too, so the region belongs to the signed-in shell,
+    which stays mounted between those pages.
+
+  The root layout was rejected because it renders signed-out pages too, which never copy,
+  and it would tie the root to one feature. `TimerPage` was rejected because Reports and
+  Projects would each need their own region once their durations copy. If another
+  feature needs announcements, the region should become a shared `announce()` in
+  `src/lib/` rather than a second region.
+
+  `announce()` clears the text and sets it 50 ms later, so the same copy twice is read
+  twice, and the region is polite so it doesn't cut off speech.
+
+- A click doesn't move focus to the copy control. An entry row stays active while it holds
+  focus (`row-activation.ts`), so a focused copy control kept the row's hover controls
+  showing after the pointer left. Keyboard focus is unchanged.
+
 ## User settings
 
 - All of a user's settings live in `user_settings`, one row per user, so they follow the
@@ -62,6 +120,8 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
   `scene_pin`, `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`,
   `scene_tagline`), and
   how durations, dates, and times show (`duration_format`, `date_format`, `time_format`),
+  how durations copy (`copy_duration_pattern`, `copy_duration_control`; see "Copying
+  durations"),
   and the country whose working days count (`country`; see "Working days" in [data.md](data.md)).
   They default to 11:10, 30.09.2026, and 15:30 in every language. Exports keep the
   formats spreadsheets read, whatever the duration format.

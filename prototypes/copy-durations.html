@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Copy durations</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
+    <script src="seasons.js"></script>
+    <script src="scene.js"></script>
+    <script src="intro.js"></script>
+    <script src="app-frame.js"></script>
+    <style type="text/tailwindcss">
+      /* Reads as the text it wraps; the ring and a soft hover show it can be clicked. */
+      .copy-duration {
+        @apply relative -mx-1 inline-flex cursor-copy items-center rounded-sm px-1 tabular-nums outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:hover:bg-transparent;
+      }
+      /* The bubble sits above the duration, out of the layout, and never takes the pointer. */
+      .copy-bubble {
+        @apply pointer-events-none absolute bottom-full right-0 z-20 mb-1.5 flex items-center gap-1 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-xs font-medium text-popover-foreground shadow-md;
+      }
+      .copy-bubble[data-failed] {
+        @apply text-destructive;
+      }
+      body[data-design='inline'] .copy-bubble {
+        display: none;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body data-design="bubble" class="bg-muted/40">
+    <div id="prototype-controls">
+      <label for="fixture" class="sr-only">Fixture</label>
+      <select id="fixture" data-ui="select" class="h-9 w-40">
+        <option value="populated">Populated</option>
+        <option value="long">Long durations</option>
+        <option value="invalid">Invalid row</option>
+        <option value="empty">Empty</option>
+      </select>
+      <label for="layout" class="sr-only">Layout</label>
+      <select id="layout" data-ui="select" class="h-9 w-32" title="The timer layout setting">
+        <option value="list">List</option>
+        <option value="table">Table</option>
+      </select>
+      <label for="design" class="sr-only">Feedback</label>
+      <select id="design" data-ui="select" class="h-9 w-40" title="How a copy shows">
+        <option value="bubble">Bubble above</option>
+        <option value="inline">Text swaps in place</option>
+      </select>
+      <label class="flex items-center gap-2 text-sm" title="Prototype only: the browser refuses the clipboard">
+        <input id="refuse" type="checkbox" data-ui="checkbox" />Refuse clipboard
+      </label>
+    </div>
+
+    <div class="mx-auto max-w-6xl px-4 pt-6 sm:px-8">
+      <h1 class="text-2xl font-semibold tracking-tight">Copy durations</h1>
+      <p class="scene-text mt-1 text-sm text-muted-foreground">
+        Click an entry's duration or a day's total. The copied text follows the pattern under Copied durations.
+      </p>
+    </div>
+
+    <main class="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+      <div id="entries" class="flex min-w-0 flex-col gap-4"></div>
+
+      <div class="flex flex-col gap-4">
+        <section data-ui="card" aria-labelledby="pattern-heading">
+          <div data-ui="card-header">
+            <h2 data-ui="card-title" id="pattern-heading">Copied durations</h2>
+            <p data-ui="card-description">Settings › Preferences, under Durations.</p>
+          </div>
+          <div data-ui="card-content" class="grid gap-3">
+            <div class="grid gap-1.5">
+              <label data-ui="label" for="pattern">Pattern</label>
+              <div class="flex gap-2">
+                <input id="pattern" data-ui="input" class="font-mono" autocomplete="off" spellcheck="false" maxlength="40" aria-describedby="pattern-preview pattern-error pattern-help" />
+                <button type="button" id="pattern-reset" data-ui="button" data-variant="outline" title="Back to H:MM:SS">Reset</button>
+              </div>
+              <p id="pattern-preview" class="text-sm" aria-live="polite"></p>
+              <p id="pattern-error" data-ui="error-message" hidden></p>
+            </div>
+            <div class="flex flex-wrap gap-1.5" role="group" aria-label="Examples">
+              <button type="button" data-example="H:MM:SS" data-ui="button" data-variant="outline" data-size="sm" class="font-mono">H:MM:SS</button>
+              <button type="button" data-example="Hh Mm Ss" data-ui="button" data-variant="outline" data-size="sm" class="font-mono">Hh Mm Ss</button>
+              <button type="button" data-example="HH:MM" data-ui="button" data-variant="outline" data-size="sm" class="font-mono">HH:MM</button>
+              <button type="button" data-example="M:SS" data-ui="button" data-variant="outline" data-size="sm" class="font-mono">M:SS</button>
+            </div>
+            <dl id="pattern-help" class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <dt class="font-mono text-foreground">H M S</dt><dd>Hours, minutes, seconds</dd>
+              <dt class="font-mono text-foreground">HH</dt><dd>At least two digits: 09</dd>
+              <dt class="font-mono text-foreground">\H</dt><dd>A letter copied as typed</dd>
+              <dt class="font-mono text-foreground">other</dt><dd>Copied as typed</dd>
+            </dl>
+            <p class="text-xs text-muted-foreground">The first unit holds the whole duration: with <span class="font-mono">M:SS</span>, 2:05:09 copies as 125:09.</p>
+          </div>
+        </section>
+
+        <!-- Prototype only: what the clipboard holds now, to check copies without leaving the page. -->
+        <section class="rounded-lg border border-dashed p-3 text-sm" aria-labelledby="clipboard-heading">
+          <h2 id="clipboard-heading" class="text-xs font-medium text-muted-foreground">Prototype: last copied</h2>
+          <p id="last-copied" class="mt-1 font-mono">Nothing yet</p>
+          <label for="paste" class="mt-3 block text-xs font-medium text-muted-foreground">Paste here to check</label>
+          <textarea id="paste" data-ui="input" rows="2" class="mt-1 h-auto font-mono"></textarea>
+        </section>
+      </div>
+    </main>
+
+    <!-- Announces copies to screen readers; the bubble itself is aria-hidden. -->
+    <p id="copy-status" class="sr-only" aria-live="polite"></p>
+
+    <script>
+      appFrame.mount({ page: 'timer', title: 'Copy durations', scene: true })
+
+      const HOUR = 3_600_000
+      const MIN = 60_000
+      const SEC = 1000
+      const DAY = 86_400_000
+      const DEFAULT_PATTERN = 'H:MM:SS'
+      const PREVIEW_MS = 2 * HOUR + 5 * MIN + 9 * SEC
+      const { escapeHtml: esc, icon } = appFrame
+
+      const projects = {
+        p1: { name: 'Snowtime', color: 'var(--series-1)' },
+        p2: { name: 'Client portal', color: 'var(--series-3)' },
+        p3: { name: 'Internal', color: 'var(--series-4)' },
+      }
+
+      // The pattern formatter the app gets in src/lib/format.ts. Runs of H, M, or S are fields
+      // whose length is the minimum number of digits; a backslash copies the next character;
+      // everything else is copied as typed. The largest field holds the whole duration.
+      function parsePattern(pattern) {
+        const parts = []
+        for (let i = 0; i < pattern.length; i++) {
+          const c = pattern[i]
+          if (c === '\\' && i + 1 < pattern.length) {
+            parts.push({ text: pattern[++i] })
+          } else if (c === 'H' || c === 'M' || c === 'S') {
+            let width = 1
+            while (pattern[i + 1] === c) width++, i++
+            parts.push({ field: c, width })
+          } else {
+            parts.push({ text: c })
+          }
+        }
+        return parts
+      }
+      function validPattern(pattern) {
+        if (!pattern.length) return 'Enter a pattern.'
+        if (pattern.length > 40) return 'Use at most 40 characters.'
+        if (!parsePattern(pattern).some((p) => p.field)) return 'Add H, M, or S.'
+        return null
+      }
+      function formatPattern(ms, pattern) {
+        const parts = parsePattern(pattern)
+        const has = (f) => parts.some((p) => p.field === f)
+        let rest = Math.max(0, Math.floor(ms / SEC))
+        const values = {}
+        if (has('H')) {
+          values.H = Math.floor(rest / 3600)
+          rest %= 3600
+        }
+        if (has('M')) {
+          values.M = Math.floor(rest / 60)
+          rest %= 60
+        }
+        values.S = rest
+        return parts.map((p) => (p.field ? String(values[p.field]).padStart(p.width, '0') : p.text)).join('')
+      }
+
+      function clock(ms) {
+        const total = Math.max(0, Math.floor(ms / SEC))
+        return `${Math.floor(total / 3600)}:${String(Math.floor((total % 3600) / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+      }
+      // Day totals show rounded to the minute, as the Durations setting's 11:10 does.
+      function hours(ms) {
+        const total = Math.round(Math.max(0, ms) / MIN)
+        return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+      }
+      const timeFmt = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
+      const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+
+      const today = new Date().setHours(0, 0, 0, 0)
+      function entry(id, day, startHour, ms, description, projectId) {
+        const startedAt = today - day * DAY + startHour * HOUR
+        return { id, day, description, projectId, startedAt, stoppedAt: startedAt + ms }
+      }
+      const fixtures = {
+        populated: () => [
+          entry('a', 0, 8.5, 55 * MIN + 12 * SEC, 'Standup and planning', 'p3'),
+          entry('b', 0, 9.5, 2 * HOUR, 'Timer schema and the partial unique index', 'p1'),
+          entry('c', 0, 12, 11 * HOUR + 15 * MIN + 10 * SEC, 'Client portal release', 'p2'),
+          entry('d', 1, 9, 3 * HOUR + 4 * MIN + 30 * SEC, 'Reports export', 'p1'),
+          entry('e', 1, 13, 45 * SEC, 'Quick call', 'p3'),
+        ],
+        long: () => [
+          entry('a', 0, 0, 23 * HOUR + 59 * MIN + 59 * SEC, 'Server migration over the night', 'p1'),
+          entry('b', 1, 0, 23 * HOUR + 30 * MIN, 'On call', 'p3'),
+          entry('c', 1, 23.5, 30 * MIN + 1 * SEC, 'Hand-over', 'p2'),
+        ],
+        invalid: () => [
+          entry('a', 0, 9, 2 * HOUR, 'Design review', 'p1'),
+          { ...entry('b', 0, 13, 0, 'Missing end time', 'p2'), invalid: true },
+        ],
+        empty: () => [],
+      }
+
+      const state = { entries: fixtures.populated(), layout: 'list', copied: null }
+      const settings = () => appFrame.settings.get()
+      function pattern() {
+        const saved = settings().copyDurationPattern
+        return validPattern(saved ?? '') ? DEFAULT_PATTERN : saved
+      }
+
+      function groups() {
+        const byDay = new Map()
+        for (const e of state.entries) {
+          if (!byDay.has(e.day)) byDay.set(e.day, [])
+          byDay.get(e.day).push(e)
+        }
+        return [...byDay.entries()].map(([day, items]) => ({
+          day,
+          items,
+          total: items.reduce((sum, e) => sum + (e.invalid ? 0 : e.stoppedAt - e.startedAt), 0),
+        }))
+      }
+      function dayLabel(day) {
+        return day === 0 ? 'Today' : day === 1 ? 'Yesterday' : dayFmt.format(today - day * DAY)
+      }
+
+      // The CopyDuration component: a button around the shown text. `key` finds it again after
+      // a re-render, so the feedback stays on the duration that was clicked.
+      function copyButton(key, ms, shown, { disabled = false } = {}) {
+        const copied = state.copied?.key === key ? state.copied : null
+        const inline = document.body.dataset.design === 'inline' && copied
+        const content = inline
+          ? `${icon(copied.failed ? 'x' : 'check', 'size-3.5 mr-1')}${esc(copied.failed ? "Couldn't copy" : copied.text)}`
+          : esc(shown)
+        return `<button type="button" class="copy-duration" data-copy="${key}" data-ms="${ms}" ${disabled ? 'disabled' : ''}
+            aria-label="${disabled ? 'No duration' : `Copy duration ${esc(shown)}`}">
+            ${content}
+            ${copied ? `<span class="copy-bubble" aria-hidden="true" ${copied.failed ? 'data-failed' : ''}>${icon(copied.failed ? 'x' : 'check', 'size-3.5')}${esc(copied.failed ? "Couldn't copy" : `Copied ${copied.text}`)}</span>` : ''}
+          </button>`
+      }
+
+      function projectLabel(e) {
+        const p = projects[e.projectId]
+        return `<span class="flex min-w-0 items-center gap-1.5 text-xs"><span class="inline-block size-2 shrink-0 rounded-full" style="background:${p.color}"></span><span class="truncate">${esc(p.name)}</span></span>`
+      }
+      function times(e) {
+        return e.invalid ? `${timeFmt.format(e.startedAt)} – <span class="text-destructive">--:--</span>` : `${timeFmt.format(e.startedAt)} – ${timeFmt.format(e.stoppedAt)}`
+      }
+      function entryDuration(e) {
+        const ms = e.stoppedAt - e.startedAt
+        return e.invalid ? copyButton(e.id, 0, '—', { disabled: true }) : copyButton(e.id, ms, clock(ms))
+      }
+
+      function renderList() {
+        return groups()
+          .map(
+            (g) => `<div data-ui="card" class="overflow-visible">
+              <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
+                <h2 class="font-medium">${dayLabel(g.day)}</h2>
+                <span class="text-muted-foreground">${copyButton(`day-${g.day}`, g.total, hours(g.total))}</span>
+              </header>
+              <ul class="divide-y">${g.items
+                .map(
+                  (e) => `<li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 md:flex-nowrap">
+                    <span class="min-w-0 basis-full truncate text-sm md:basis-auto md:flex-1">${esc(e.description)}</span>
+                    <span class="min-w-0 md:w-36 md:shrink-0">${projectLabel(e)}</span>
+                    <span class="ml-auto text-sm text-muted-foreground tabular-nums md:ml-0">${times(e)}</span>
+                    <span class="w-20 shrink-0 text-right text-sm">${entryDuration(e)}</span>
+                  </li>`
+                )
+                .join('')}</ul>
+            </div>`
+          )
+          .join('')
+      }
+
+      function renderTable() {
+        const rows = groups()
+          .map(
+            (g) => `<tr data-ui="table-row" class="bg-muted/50">
+                <th colspan="3" scope="rowgroup" data-ui="table-cell" class="text-left text-xs font-medium">${dayLabel(g.day)}</th>
+                <td data-ui="table-cell" class="text-right text-xs">${copyButton(`day-${g.day}`, g.total, hours(g.total))}</td>
+              </tr>
+              ${g.items
+                .map(
+                  (e) => `<tr data-ui="table-row">
+                    <td data-ui="table-cell" class="max-w-0 truncate">${esc(e.description)}</td>
+                    <td data-ui="table-cell" class="max-w-0">${projectLabel(e)}</td>
+                    <td data-ui="table-cell" class="tabular-nums text-muted-foreground">${times(e)}</td>
+                    <td data-ui="table-cell" class="text-right">${entryDuration(e)}</td>
+                  </tr>`
+                )
+                .join('')}`
+          )
+          .join('')
+        // Top padding leaves the first row's bubble room inside the scrolling wrapper.
+        return `<div class="surface relative w-full overflow-auto rounded-lg border bg-card pt-8">
+          <table data-ui="table" class="min-w-[36rem] table-fixed">
+            <colgroup><col /><col class="w-40" /><col class="w-36" /><col class="w-28" /></colgroup>
+            <thead data-ui="table-header"><tr data-ui="table-row"><th data-ui="table-head">Description</th><th data-ui="table-head">Project</th><th data-ui="table-head">Time</th><th data-ui="table-head" class="text-right">Duration</th></tr></thead>
+            <tbody data-ui="table-body">${rows}</tbody>
+          </table>
+        </div>`
+      }
+
+      function renderEntries() {
+        const focused = document.activeElement?.dataset?.copy
+        const root = document.getElementById('entries')
+        root.innerHTML = state.entries.length
+          ? state.layout === 'table'
+            ? renderTable()
+            : renderList()
+          : `<div class="surface rounded-lg border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">No entries yet. Nothing to copy.</div>`
+        if (focused) root.querySelector(`[data-copy="${focused}"]`)?.focus()
+      }
+
+      let hideTimer
+      async function copy(button) {
+        const text = formatPattern(Number(button.dataset.ms), pattern())
+        let failed = false
+        try {
+          if (document.getElementById('refuse').checked) throw new Error('refused')
+          await navigator.clipboard.writeText(text)
+        } catch {
+          // file:// pages may be refused too; the prototype still shows what would be copied.
+          failed = document.getElementById('refuse').checked
+        }
+        state.copied = { key: button.dataset.copy, text, failed }
+        document.getElementById('copy-status').textContent = failed ? "Couldn't copy" : `Copied ${text}`
+        if (!failed) document.getElementById('last-copied').textContent = text
+        renderEntries()
+        clearTimeout(hideTimer)
+        hideTimer = setTimeout(() => {
+          state.copied = null
+          renderEntries()
+        }, 2000)
+      }
+      document.getElementById('entries').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-copy]')
+        if (button && !button.disabled) copy(button)
+      })
+
+      // The settings field: a live preview while typing, saved on blur or Enter when valid.
+      const input = document.getElementById('pattern')
+      function showPattern() {
+        const value = input.value
+        const error = validPattern(value)
+        const errorEl = document.getElementById('pattern-error')
+        errorEl.hidden = !error
+        errorEl.textContent = error ?? ''
+        input.toggleAttribute('data-invalid', !!error)
+        document.getElementById('pattern-preview').innerHTML = error
+          ? ''
+          : `<span class="text-muted-foreground">${clock(PREVIEW_MS)} copies as</span> <span class="font-mono font-medium">${esc(formatPattern(PREVIEW_MS, value))}</span>`
+      }
+      function savePattern() {
+        if (validPattern(input.value)) return
+        if (input.value !== settings().copyDurationPattern) appFrame.settings.set({ copyDurationPattern: input.value })
+      }
+      function setPattern(value) {
+        input.value = value
+        showPattern()
+        savePattern()
+      }
+      input.addEventListener('input', showPattern)
+      input.addEventListener('blur', savePattern)
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') savePattern()
+        if (event.key === 'Escape') {
+          input.value = pattern()
+          showPattern()
+        }
+      })
+      document.getElementById('pattern-reset').addEventListener('click', () => setPattern(DEFAULT_PATTERN))
+      document.querySelectorAll('[data-example]').forEach((b) => b.addEventListener('click', () => setPattern(b.dataset.example)))
+
+      document.getElementById('fixture').addEventListener('change', (event) => {
+        state.entries = fixtures[event.currentTarget.value]()
+        state.copied = null
+        renderEntries()
+      })
+      document.getElementById('layout').addEventListener('change', (event) => {
+        state.layout = event.currentTarget.value
+        renderEntries()
+      })
+      document.getElementById('design').addEventListener('change', (event) => {
+        document.body.dataset.design = event.currentTarget.value
+        renderEntries()
+      })
+
+      ui.ready.then(() => {
+        input.value = pattern()
+        showPattern()
+        renderEntries()
+      })
+    </script>
+  </body>
+</html>

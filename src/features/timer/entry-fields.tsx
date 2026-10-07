@@ -4,6 +4,7 @@
 // field saves on its own, with only what changed; an error shows under the row.
 import CalendarIcon from 'lucide-solid/icons/calendar'
 import { For, Show, createEffect, createMemo, createSignal, createUniqueId, on } from 'solid-js'
+import { CopyDuration } from '~/components/copy-duration'
 import { DatePicker } from '~/components/date-time/date-picker'
 import { TimeInput } from '~/components/date-time/time-input'
 import { PlainButton } from '~/components/plain-button'
@@ -558,11 +559,17 @@ export function DateField(props: {
   )
 }
 
-// Read-only: start and end set it, and it follows them while the user types.
+// Start and end set it, and it follows them while the user types. A click copies it.
 export function EntryDuration(props: { editor: EntryEditor; class?: string }) {
+  function text() {
+    const ms = props.editor.duration()
+    return ms === null ? '—' : formatClock(ms)
+  }
   return (
     <span class={props.class}>
-      {props.editor.duration() === null ? '—' : formatClock(props.editor.duration()!)}
+      <CopyDuration ms={props.editor.duration()} label={text()}>
+        {text()}
+      </CopyDuration>
     </span>
   )
 }

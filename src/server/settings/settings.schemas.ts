@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 import { APP_ICON_IDS } from '~/lib/app-icon'
+import { validDurationPattern } from '~/lib/duration-pattern-settings'
 import { COUNTRIES } from '~/lib/holidays/region'
 import { COLLECTION_IDS, IMAGE_IDS } from '~/lib/scene/images'
 import { m } from '~/paraglide/messages.js'
@@ -67,6 +68,14 @@ export type DateFormat = v.InferOutput<typeof DateFormat>
 export const TIME_FORMATS = ['24h', '12h'] as const
 export const TimeFormat = v.picklist(TIME_FORMATS)
 export type TimeFormat = v.InferOutput<typeof TimeFormat>
+// How a duration is copied: a click on it, or a copy button beside it.
+export const COPY_DURATION_CONTROLS = ['text', 'button'] as const
+const CopyDurationControl = v.picklist(COPY_DURATION_CONTROLS)
+// The text a copied duration becomes, such as `Hh Mm Ss` (src/lib/duration-pattern.ts).
+const CopyDurationPattern = v.pipe(
+  v.string(),
+  v.check(validDurationPattern, () => m.validation_copy_duration_pattern()),
+)
 // Whose working days count for the taglines; null guesses from the time zone.
 const Country = v.nullable(v.picklist(COUNTRIES))
 
@@ -102,6 +111,8 @@ export const UpdateSettingsInput = v.object({
   durationFormat: v.optional(DurationFormat),
   dateFormat: v.optional(DateFormat),
   timeFormat: v.optional(TimeFormat),
+  copyDurationPattern: v.optional(CopyDurationPattern),
+  copyDurationControl: v.optional(CopyDurationControl),
   country: v.optional(Country),
 })
 export type UpdateSettingsInput = v.InferOutput<typeof UpdateSettingsInput>
@@ -130,6 +141,10 @@ export const Settings = v.object({
   durationFormat: DurationFormat,
   dateFormat: DateFormat,
   timeFormat: TimeFormat,
+  // Any stored text: the client formats with whatever is saved rather than failing the
+  // whole session over one setting.
+  copyDurationPattern: v.string(),
+  copyDurationControl: CopyDurationControl,
   country: Country,
 })
 export type Settings = v.InferOutput<typeof Settings>

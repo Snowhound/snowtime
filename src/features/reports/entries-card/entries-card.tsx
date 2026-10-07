@@ -5,7 +5,7 @@
 import ChevronDownIcon from 'lucide-solid/icons/chevron-down'
 import XIcon from 'lucide-solid/icons/x'
 import { Show, createEffect, createSignal } from 'solid-js'
-import { Duration } from '~/components/duration'
+import { CopyableDuration } from '~/components/copy-duration'
 import { ErrorAlert } from '~/components/error-alert'
 import { Badge } from '~/components/ui/badge'
 import { Card, CardHeader, CardTitle } from '~/components/ui/card'
@@ -102,7 +102,8 @@ export function EntriesCard(props: {
             <Show when={summary()}>
               {(s) => (
                 <span class="tabular-nums">
-                  {m.reports_entries_count({ count: s().count })} · <Duration ms={s().total} />
+                  {m.reports_entries_count({ count: s().count })} ·{' '}
+                  <CopyableDuration ms={s().total} />
                 </span>
               )}
             </Show>

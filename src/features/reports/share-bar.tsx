@@ -1,9 +1,11 @@
 // A row's share of the total, as Summary's share card and Breakdown's outline draw it: name,
 // project dot, share, total, and bar. A row that narrows the Entries card does so by its total.
 import { type ComponentProps, Show } from 'solid-js'
+import { CopyableDuration } from '~/components/copy-duration'
 import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
 import { projectColor } from '~/lib/colors'
+import { useCopyControl } from '~/lib/display-format'
 import { cn } from '~/lib/utils'
 import type { OutlineRow } from './breakdown/outline'
 import { PickButton } from './pick-button'
@@ -14,13 +16,32 @@ export function sharePercent(ms: number, of: number) {
 
 type SharePick = Omit<ComponentProps<typeof PickButton>, 'children'>
 
-// Wide enough for a total in either duration format, so the totals line up.
-export function ShareTotal(props: { ms: number; pick?: SharePick; class?: string }) {
+// Wide enough for a total in either duration format, and for the copy button when it shows,
+// so the totals line up. A total that picks a row stays a pick; a plain one copies, unless it
+// is a `placeholder`, the invisible copy inside a <summary> that keeps the row's room.
+export function ShareTotal(props: {
+  ms: number
+  pick?: SharePick
+  placeholder?: boolean
+  class?: string
+}) {
+  const copyControl = useCopyControl()
   return (
     <span
-      class={cn('w-20 shrink-0 text-right whitespace-nowrap tabular-nums sm:w-24', props.class)}
+      class={cn(
+        'shrink-0 text-right whitespace-nowrap tabular-nums',
+        copyControl() === 'button' ? 'w-28 sm:w-32' : 'w-20 sm:w-24',
+        props.class,
+      )}
     >
-      <Show when={props.pick} fallback={<Duration ms={props.ms} />}>
+      <Show
+        when={props.pick}
+        fallback={
+          <Show when={!props.placeholder} fallback={<Duration ms={props.ms} />}>
+            <CopyableDuration ms={props.ms} />
+          </Show>
+        }
+      >
         {(pick) => (
           <PickButton {...pick()}>
             <Duration ms={props.ms} />
@@ -70,6 +91,7 @@ export function ShareRow(props: {
         <ShareTotal
           ms={props.row.total}
           pick={props.pick}
+          placeholder={props.totalOutside}
           class={props.totalOutside ? 'invisible' : undefined}
         />
       </span>

@@ -5,7 +5,7 @@
 import ChevronRightIcon from 'lucide-solid/icons/chevron-right'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import { For, Show } from 'solid-js'
-import { Duration } from '~/components/duration'
+import { CopyableDuration } from '~/components/copy-duration'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { m } from '~/paraglide/messages.js'
 import type { ReportPart } from '../buckets'
@@ -60,7 +60,7 @@ export function Breakdown(props: {
           </Show>
         </div>
         <p class="text-2xl tabular-nums">
-          <Duration ms={props.total} />
+          <CopyableDuration ms={props.total} side="left" />
         </p>
       </CardHeader>
       <Show when={props.total > 0} fallback={<EmptyState />}>

@@ -12,9 +12,11 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core'
 import { APP_ICON_IDS, DEFAULT_APP_ICON } from '~/lib/app-icon'
+import { DEFAULT_COPY_PATTERN } from '~/lib/duration-pattern-settings'
 import { COUNTRIES } from '~/lib/holidays/region'
 import { COLLECTION_IDS, IMAGE_IDS } from '~/lib/scene/images'
 import {
+  COPY_DURATION_CONTROLS,
   DATE_FORMATS,
   DURATION_FORMATS,
   LOCALES,
@@ -335,6 +337,10 @@ export const userSettings = sqliteTable(
     timerView: text('timer_view', { enum: TIMER_VIEWS }).default('list').notNull(),
     calendarWeekend: integer('calendar_weekend', { mode: 'boolean' })
       .default(sql`0`)
+      .notNull(),
+    copyDurationPattern: text('copy_duration_pattern').default(DEFAULT_COPY_PATTERN).notNull(),
+    copyDurationControl: text('copy_duration_control', { enum: COPY_DURATION_CONTROLS })
+      .default('text')
       .notNull(),
   },
   () => [

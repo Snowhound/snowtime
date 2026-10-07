@@ -8,7 +8,7 @@ import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'
 import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { For, Show, createEffect, on } from 'solid-js'
-import { Duration } from '~/components/duration'
+import { CopyableDuration } from '~/components/copy-duration'
 import { PlainButton } from '~/components/plain-button'
 import { Glass } from '~/components/scene/glass'
 import { Button } from '~/components/ui/button'
@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { type WeekStart, addDays } from '~/lib/calendar'
+import { useCopyControl } from '~/lib/display-format'
 import { formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
@@ -138,7 +139,7 @@ export function EntryList(
               <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
                 <h2 class="font-medium">{dayLabel(date, props.today)}</h2>
                 <span class="text-muted-foreground tabular-nums">
-                  <Duration ms={group()?.total ?? 0} />
+                  <CopyableDuration ms={group()?.total ?? 0} side="left" />
                 </span>
               </header>
               <Show
@@ -169,6 +170,7 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
   const editor = createEntryEditor(props)
   const activation = createRowActivation()
   const ref = revealWhenSaved(props)
+  const copyControl = useCopyControl()
   return (
     <li
       ref={(el) => {
@@ -228,7 +230,11 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
         </div>
         <EntryDuration
           editor={editor}
-          class="row-start-3 w-16 shrink-0 text-right text-sm tabular-nums"
+          class={cn(
+            'row-start-3 shrink-0 text-right text-sm tabular-nums',
+            // Room for the copy button, the same in every row so the times line up.
+            copyControl() === 'button' ? 'w-22' : 'w-16',
+          )}
         />
         <div class="col-start-2 row-start-2 justify-self-end">
           <EntryActions
