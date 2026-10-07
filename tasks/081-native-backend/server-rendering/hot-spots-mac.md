@@ -213,10 +213,7 @@ release image (`native/Dockerfile`) already strips the server.
 
 ## Follow-ups
 
-- **Month and year.** Their remaining gap is in the report code and the shared site getter,
-  not in merge and split.
-- **Lucide's icon building.** `buildLucideIconNode` and `Icon` remain at about 3% of V8's
-  timer: alias and class lists, spreads, and a new node array per icon.
+- **Month and year, and Lucide's icon building**: task 081.23.
 - **Release image base.** A distroless base in place of `debian:trixie-slim` would make
   the image about 80 MB smaller and change nothing at runtime. The health check would
   need to stop using `curl`. Not worth a task on its own.

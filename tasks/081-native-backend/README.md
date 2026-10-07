@@ -268,6 +268,8 @@ which records the edge measurements.
   code like task 20's: V8 at 1.12–1.27 times Bun, within 1.2 on timer and week (done)
 - [22](22-render-follow-ups.md): task 21's cheap follow-ups: app formatter fixes and an
   ASCII minified bundle take 7–9 MB off V8's render RSS; V8 at 1.21–1.30 times Bun (done)
+- [23](23-render-month-year.md): month and year render hot spots, where V8 is still 1.27–1.29
+  times Bun: the report code, the shared site getter, and Lucide's icon building
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
