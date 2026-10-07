@@ -1525,8 +1525,8 @@
       }
       // A pending row shows it where a saved one shows "Saved".
       function pendingMark() {
-        return `<div class="flex h-9 items-center gap-1.5 whitespace-nowrap text-xs font-medium text-warning">${icon('clock', 'size-3.5')}Not saved
-            <button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-xs text-warning" data-retry${retrying ? ' disabled' : ''}>Try again</button></div>`
+        return `<div class="flex h-9 items-center gap-1.5 whitespace-nowrap text-xs font-medium text-warning">${icon('clock', 'size-3.5')}<div class="flex flex-col items-start leading-4">Not saved
+            <button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-xs leading-4 text-warning" data-retry${retrying ? ' disabled' : ''}>Try again</button></div></div>`
       }
       function renderPending() {
         const el = document.getElementById('pending')

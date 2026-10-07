@@ -86,8 +86,8 @@ When a prototype needs another component, copy its class strings verbatim from t
 registry into `ui.js`, keeping the commit noted at the top of the file. Badge variants
 `success` / `warning` / `error` are left out because their tokens are not in `src/styles.css`.
 The alert's `warning` variant is Snowtime's own, on a proposed `--warning` token in
-`prototype.css`: the chart's ochre (`--series-4`), darker in light mode so its text passes
-4.5:1. The timer and calendar prototypes use it for pending changes.
+`prototype.css`, an orange whose text passes 4.5:1 in both themes. The timer and calendar
+prototypes use it for pending changes.
 
 The app changes its copies in `src/components/ui/` where every use needs the change, and lists
 each change in [`src/components/ui/README.md`](../src/components/ui/README.md).
@@ -761,9 +761,9 @@ end, continue, and delete.
 overloaded native server does (task 081.17). The change stays on screen, and an alert above
 the page offers "Try again", which sends the pending changes in order once the server
 answers. Nothing retries on its own, and a change made meanwhile waits behind them. The
-alert uses the warning variant, ochre like the chart's fourth series, with its icon centered
-on the row and its text and button in the same color. Each pending row also shows "Not saved ·
-Try again" where a saved row shows "Saved". Changes without a row, such as starting the timer
+alert uses the warning variant, orange, with its icon centered on the row and its text and
+button in the same color. Each pending row also shows "Not saved" over "Try again" where a
+saved row shows "Saved". Changes without a row, such as starting the timer
 or a delete, show only in the alert.
 
 The entry popover is for Add entry and for the running entry's start. It opens under the Add
