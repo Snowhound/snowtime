@@ -4900,6 +4900,7 @@ dependencies = [
  "tokio",
  "tower",
  "unicode-normalization",
+ "url",
  "uuid",
  "webauthn-rs-core",
 ]

@@ -7,7 +7,15 @@ pub struct Config {
     pub secret: String,
     // Password sign-in is for local development and demo deployments (passwordEnabled).
     pub password_enabled: bool,
+    pub sign_in_page: SignInPageConfig,
     pub client_ip_header: Option<String>,
+}
+
+#[derive(Default)]
+pub struct SignInPageConfig {
+    pub demo_mode: bool,
+    pub allowed_domains: Vec<String>,
+    pub providers: Vec<String>,
 }
 
 impl Config {

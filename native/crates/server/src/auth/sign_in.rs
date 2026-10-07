@@ -23,7 +23,7 @@ struct SignedIn<'a> {
 }
 
 // Better Auth's refusal: its message and code, not wrapped in `error`.
-fn refusal(status: u16, code: &str, message: &str) -> Response {
+pub(super) fn refusal(status: u16, code: &str, message: &str) -> Response {
     #[derive(Serialize)]
     struct Refusal<'a> {
         message: &'a str,
@@ -33,7 +33,7 @@ fn refusal(status: u16, code: &str, message: &str) -> Response {
     Response {
         status,
         body,
-        set_cookie: None,
+        set_cookies: Vec::new(),
         server_timing: None,
     }
 }
@@ -70,7 +70,7 @@ impl FetchHeaders {
 
     // validateOrigin: the Origin, else the Referer, must be the app's origin. Without force,
     // only a request that carries cookies is checked.
-    fn validate(&self, app_origin: &str, force: bool) -> Result<(), Response> {
+    pub(super) fn validate(&self, app_origin: &str, force: bool) -> Result<(), Response> {
         if !force && !self.cookie {
             return Ok(());
         }
@@ -313,7 +313,7 @@ impl App {
                 user,
             })
             .expect("the answer serializes"),
-            set_cookie: Some(self.session.session_cookie(&token)),
+            set_cookies: vec![self.session.session_cookie(&token)],
             server_timing: {
                 #[cfg(feature = "bench")]
                 {

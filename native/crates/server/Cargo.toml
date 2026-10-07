@@ -46,6 +46,7 @@ sha2.workspace = true
 tokio = { workspace = true, features = ["sync", "time"] }
 tower = { version = "0.5", features = ["util"] }
 unicode-normalization.workspace = true
+url = "2"
 uuid.workspace = true
 webauthn-rs-core = { version = "=0.5.5", optional = true }
 

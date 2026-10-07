@@ -1,6 +1,6 @@
 // Sends the same calls to the TypeScript build and a native server, each on its own copy of
 // the benchmark database at SEED_NOW, and reports where the answers differ: in status, in
-// content, or only in bytes (key order). Reads only, so both copies stay equal. Fields that
+// content, or only in bytes (key order). Writes run in the same order on both copies. Fields that
 // hold each server's own clock or sign-in time are masked.
 //
 //   bun native/bench/compare.ts native/target/release/snowtime-axum
@@ -93,6 +93,15 @@ function masked(text: string, keys: string[] = []) {
   )
 }
 
+function tokenOnly(credentials: Record<string, string>) {
+  return {
+    cookie: credentials.cookie
+      .split('; ')
+      .filter((pair) => pair.startsWith('better-auth.session_token='))
+      .join('; '),
+  }
+}
+
 try {
   const sessions = {
     ts: { admin: await signInHeaders(ts, 'admin'), member: await signInHeaders(ts, 'member') },
@@ -119,6 +128,15 @@ try {
     ['session, admin', 'getAppSession', undefined, 'admin', session],
     ['session, member', 'getAppSession', undefined, 'member', session],
     ['session, signed out', 'getAppSession', undefined, null],
+    ...(['getSignInMethods', 'getDeployment', 'getDevUsers'] as const).flatMap((name) =>
+      (['admin', 'member', null] as const).map((who): [string, CallName, unknown, Who] => [
+        `${name}, ${who ?? 'signed out'}`,
+        name,
+        undefined,
+        who,
+      ]),
+    ),
+    ['sign-in methods ignore unknown query fields', 'getSignInMethods', { unexpected: 'x' }, null],
     ['running timer, none', 'getRunningTimer', undefined, 'admin'],
     ['signed out', 'getRunningTimer', undefined, null],
     ['week, admin', 'listEntries', { organizationId, ...week }, 'admin'],
@@ -587,6 +605,135 @@ try {
       return { status: response.status, text: await response.text() }
     }
     judge(label, await call(ts), await call(native))
+  }
+
+  // Run sign-out last: each server deletes only its own session. Replay the old cookie to
+  // prove that deletion, rather than browser cookie expiry alone, signs the user out.
+  const signOuts: [string, Who, (server: Server) => Record<string, string>, string?][] = [
+    ['sign-out, malformed JSON', 'admin', (s) => ({ origin: s.url }), '{'],
+    ['sign-out, cookie without origin', 'member', () => ({})],
+    ['sign-out, foreign origin', 'admin', () => ({ origin: evil })],
+    ['sign-out, malformed JSON before origin', 'admin', () => ({ origin: evil }), '{'],
+    [
+      'sign-out, wrong types',
+      'member',
+      (s) => ({ origin: s.url }),
+      '{"disableRedirect":"yes","state":3}',
+    ],
+    [
+      'sign-out, foreign callback',
+      'admin',
+      (s) => ({ origin: s.url }),
+      '{"callbackURL":"https://evil.test/x"}',
+    ],
+    [
+      'sign-out, callback type before schema',
+      'admin',
+      (s) => ({ origin: s.url }),
+      '{"callbackURL":3,"disableRedirect":"yes"}',
+    ],
+    [
+      'sign-out, unsafe relative callback',
+      'member',
+      (s) => ({ origin: s.url }),
+      '{"callbackURL":"/%2f/evil.test"}',
+    ],
+    ['sign-out, array body', 'admin', (s) => ({ origin: s.url }), '[]'],
+    ['sign-out, null body', null, () => ({}), 'null'],
+    ['sign-out, signed out', null, () => ({})],
+    [
+      'sign-out, invalid cookie',
+      null,
+      (s) => ({ origin: s.url, cookie: 'better-auth.session_token=invalid' }),
+      '{}',
+    ],
+    [
+      'sign-out, owner',
+      'admin',
+      (s) => ({ origin: s.url }),
+      '{"callbackURL":"/sign-in","disableRedirect":true,"state":"x"}',
+    ],
+    ['sign-out, member and cached chunks', 'member', (s) => ({ origin: s.url }), '{}'],
+  ]
+  for (const [label, who, headersOf, body] of signOuts) {
+    async function call(server: Server, credentials: Record<string, string>) {
+      const headers = {
+        ...(who
+          ? { cookie: `${tokenOnly(credentials).cookie}; better-auth.session_data=cached` }
+          : credentials),
+        ...headersOf(server),
+        'content-type': 'application/json',
+      }
+      if (label.includes('cached chunks')) {
+        headers.cookie += '; better-auth.session_data.0=a; better-auth.session_data.1=b'
+      }
+      const response = await fetch(`${server.url}/api/auth/sign-out`, {
+        method: 'POST',
+        headers,
+        body,
+      })
+      return {
+        status: response.status,
+        text: JSON.stringify({
+          body: await response.text(),
+          cookies: response.headers.getSetCookie(),
+        }),
+      }
+    }
+    judge(
+      label,
+      await call(ts, who ? sessions.ts[who] : {}),
+      await call(native, who ? sessions.native[who] : {}),
+    )
+  }
+  for (const who of ['admin', 'member'] as const) {
+    async function replay(server: Server, credentials: Record<string, string>) {
+      const response = await fetch(`${server.url}/api/v1/session`, {
+        headers: tokenOnly(credentials),
+      })
+      const text = await response.text()
+      if (response.status !== 200 || text !== 'null')
+        throw new Error(`Sign-out did not delete ${who}'s session`)
+      return { status: response.status, text }
+    }
+    judge(
+      `session after ${who} signs out`,
+      await replay(ts, sessions.ts[who]),
+      await replay(native, sessions.native[who]),
+    )
+  }
+  for (const [label, env] of [
+    ['production', { NODE_ENV: 'production' }],
+    ['demo', { NODE_ENV: 'production', DEMO_MODE: 'true' }],
+    [
+      'providers and domains',
+      {
+        NODE_ENV: 'production',
+        GOOGLE_CLIENT_ID: 'fixture-google',
+        GOOGLE_CLIENT_SECRET: 'fixture-google-secret',
+        GITHUB_CLIENT_ID: 'fixture-github',
+        GITHUB_CLIENT_SECRET: 'fixture-github-secret',
+        MICROSOFT_CLIENT_ID: 'fixture-microsoft',
+        MICROSOFT_CLIENT_SECRET: 'fixture-microsoft-secret',
+        ALLOWED_LOGIN_DOMAINS: '@Example.com, lumen.example.com, example.com',
+      },
+    ],
+  ] as [string, Record<string, string>][]) {
+    const a = await startApp({ database, env })
+    let b: Awaited<ReturnType<typeof startNative>> | undefined
+    try {
+      b = await startNative(binary, database, env)
+      for (const name of ['getSignInMethods', 'getDeployment', 'getDevUsers'] as const) {
+        async function read(server: Server) {
+          const response = await fetch(`${server.url}${CALLS[name].path}`)
+          return { status: response.status, text: await response.text() }
+        }
+        judge(`${label}, ${name}`, await read(a), await read(b))
+      }
+    } finally {
+      await a.stop()
+      await b?.stop()
+    }
   }
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {

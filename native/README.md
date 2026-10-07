@@ -42,9 +42,10 @@ Unported routes answer 404. Ported reads: the session, the running timer, entrie
 the first entry's start, projects, teams, members, and all five report reads (report,
 breakdown, entries, entry totals, and export). Each report read uses `run_report`, so
 reports and export pieces take the report budget before database admission.
-Of the writes, the timer's and the entries'. Not ported: settings, team, project, and
-organization writes; invitations; and the sign-in page's reads (sign-in methods,
-deployment, seeded users), so `/sign-in` signed out answers 500.
+The sign-in page's reads (sign-in methods, deployment, seeded users), password sign-in,
+and Better Auth sign-out are also ported. `/sign-in` renders signed out.
+Of the other writes, the timer's and the entries'. Not ported: settings, team, project,
+and organization writes; invitations; and Google/OAuth sign-in.
 
 Pages call the API in process: the renderer's host callback sends each call through
 `router.oneshot` with the page request's cookie, as `src/lib/api/request.ts` sends it.

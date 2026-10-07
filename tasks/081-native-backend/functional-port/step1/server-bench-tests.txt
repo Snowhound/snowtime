@@ -1,0 +1,61 @@
+    Finished `test` profile [unoptimized] target(s) in 0.12s
+     Running unittests src/lib.rs (/root/snowtime/native/target/debug/deps/snowtime_server-cc8336ad4c54525a)
+
+running 48 tests
+test admission::tests::count_bound_refuses_immediately_and_cancellation_frees_waiting ... ok
+test auth::cookie::tests::signs_as_better_call_does ... ok
+test calendar::tests::reads_iso_dates_and_weekdays ... ok
+test auth::sign_in_page::tests::methods_follow_provider_order_and_demo_hides_providers ... ok
+test hash_lane::tests::hashes_are_bounded_by_memory_and_cores ... ok
+test auth::sign_in_page::tests::seed_names_and_order_are_static_and_company_users_require_a_row ... ok
+test hash_lane::tests::cancellation_keeps_the_running_hash_permit ... ok
+test admission::tests::blocking_work_is_only_spawned_by_admission ... ok
+test hash_lane::tests::dedicated_worker_survives_a_job_panic ... ok
+test calendar::tests::starts_days_across_clock_changes ... ok
+test holidays::tests::counts_days_off ... ok
+test hash_lane::tests::linux_priority_is_applied_only_to_password_threads ... ok
+test connections::tests::session_maintenance_on_the_writer_does_not_relock_it ... ok
+test http::tests::forwards_page_cookie_through_oneshot ... ok
+test http::tests::full_report_budget_refuses_export_immediately_and_admits_timer ... ok
+test http::tests::sign_out_expires_cookies_and_deletes_only_the_signed_session ... ok
+test migrations::tests::reads_folder_timestamps_as_drizzle_does ... ok
+test http::tests::authenticates_cookies_split_across_http2_fields ... ok
+test migrations::tests::rolls_back_a_failing_migration ... ok
+test http::tests::checks_known_origin_session_scope_then_input ... ok
+test queries::tests::assignments_preserve_absent_null_and_value ... ok
+test reports::aggregation::tests::breakdown_clips_spans_caps_running_time_and_preserves_ties ... ok
+test queries::tests::binds_values_and_splices_nested_fragments ... ok
+test reports::aggregation::tests::day_pages_end_on_whole_days_when_multiple_days_fit ... ok
+test reports::aggregation::tests::description_rows_count_distinct_entries_days_and_users_in_piece_order ... ok
+test reports::aggregation::tests::description_ties_use_collation_for_case_and_accents ... ok
+test reports::aggregation::tests::splits_entries_into_day_and_week_buckets ... ok
+test reports::schemas::tests::serializes_cursor_milliseconds_like_javascript_numbers ... ok
+test reports::schemas::tests::validates_nested_filters_before_list_fields_and_export_checks ... ok
+test schemas::tests::checks_ids_and_tickets ... ok
+test schemas::tests::decodes_with_defaults_and_trimming ... ok
+test schemas::tests::reads_query_booleans ... ok
+test timestamp::tests::reads_what_date_reads ... ok
+test timestamp::tests::round_trips ... ok
+test reports::aggregation::tests::busy_day_pages_keep_whole_day_totals_and_cursor_order_without_duplicates ... ok
+test admission::tests::rejects_queue_timeout_and_releases_a_completed_slot ... ok
+test http::tests::post_reads_skip_origin_and_write_rate ... ok
+test admission::tests::cancelling_a_caller_does_not_release_running_work ... ok
+test connections::tests::readers_see_committed_writes_and_session_maintenance_uses_writer ... ok
+test http::tests::a_running_report_leaves_readers_and_writer_available_and_keeps_budget_on_cancel ... ok
+test migrations::tests::applies_the_repository_migrations_once_and_refuses_edits ... ok
+test http::tests::report_queue_holds_no_database_slot_and_the_route_refuses_with_retry_after ... ok
+test admission::tests::gates_passed_in_turn_share_one_deadline ... ok
+test http::tests::slow_readers_leave_the_writer_to_writes ... ok
+test http::tests::a_slow_writer_leaves_reads_to_idle_readers ... ok
+test auth::password::tests::verifies_better_auths_hashes ... ok
+test auth::password::tests::verifies_its_own_hashes ... ok
+test auth::password::tests::verifies_normalized_password_with_nul ... ok
+
+test result: ok. 48 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.97s
+
+   Doc-tests snowtime_server
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

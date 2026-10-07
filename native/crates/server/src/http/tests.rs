@@ -18,8 +18,45 @@ fn config() -> Config {
         app_url: "http://snowtime.test".into(),
         secret: "test-secret".into(),
         password_enabled: false,
+        sign_in_page: Default::default(),
         client_ip_header: None,
     }
+}
+
+#[tokio::test]
+async fn sign_out_expires_cookies_and_deletes_only_the_signed_session() {
+    let app = app();
+    app.db()
+        .execute(
+            "insert into session values ('alice', 'other-token', ?, ?, ?, null)",
+            [clock::now() + 100000, clock::now(), clock::now()],
+        )
+        .unwrap();
+    let cookie = format!(
+        "better-auth.session_token={}",
+        crate::auth::cookie::sign("token", "test-secret")
+    );
+    let response = router(app.clone())
+        .oneshot(
+            HttpRequest::builder()
+                .method("POST")
+                .uri("/api/auth/sign-out")
+                .header("cookie", cookie)
+                .header("origin", "http://snowtime.test")
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+    assert_eq!(response.headers().get_all("set-cookie").iter().count(), 3);
+    assert_eq!(
+        app.db()
+            .query_row("select token from session", [], |r| r.get::<_, String>(0))
+            .unwrap(),
+        "other-token"
+    );
 }
 fn tables(app: &App) {
     app.db()

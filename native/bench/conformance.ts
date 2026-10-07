@@ -20,11 +20,21 @@ try {
     resolve(ROOT, file),
   )
   code =
-    spawnSync('bun', ['test', ...tests], {
-      cwd: ROOT,
-      stdio: 'inherit',
-      env: { ...process.env, CONFORMANCE_URL: server.url },
-    }).status ?? 1
+    spawnSync(
+      'bun',
+      [
+        'test',
+        ...tests,
+        ...(process.env.CONFORMANCE_TEST_NAME_PATTERN
+          ? ['-t', process.env.CONFORMANCE_TEST_NAME_PATTERN]
+          : []),
+      ],
+      {
+        cwd: ROOT,
+        stdio: 'inherit',
+        env: { ...process.env, CONFORMANCE_URL: server.url },
+      },
+    ).status ?? 1
 } finally {
   await server.stop()
 }

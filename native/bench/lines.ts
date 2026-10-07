@@ -10,6 +10,48 @@ import { ROOT } from '../../perf/lib/database'
 // TypeScript [file, names] against Rust [module, names], per row.
 const PAIRS: [string, string, string[], string, string[]][] = [
   [
+    'signInMethods',
+    'src/server/auth/sign-in.server.ts',
+    ['signInMethods', 'passwordEnabled', 'socialProviders'],
+    'auth/sign_in_page.rs',
+    ['sign_in_methods'],
+  ],
+  [
+    'getDeployment',
+    'src/server/auth/auth.server.ts',
+    ['getDeployment'],
+    'auth/sign_in_page.rs',
+    ['get_deployment'],
+  ],
+  [
+    'getDevUsers',
+    'src/server/auth/auth.server.ts',
+    ['getDevUsers'],
+    'auth/sign_in_page.rs',
+    ['SEED_USERS', 'COMPANY_USERS', 'get_dev_users'],
+  ],
+  [
+    'signOut',
+    'node_modules/better-auth/dist/api/routes/sign-out.mjs',
+    ['signOut'],
+    'auth/sign_out.rs',
+    ['sign_out'],
+  ],
+  [
+    'signOut body validation',
+    'node_modules/better-auth/dist/api/routes/sign-out.mjs',
+    ['signOutBodySchema'],
+    'auth/schemas.rs',
+    ['sign_out_body_issues'],
+  ],
+  [
+    'signOut URL checks',
+    'node_modules/better-auth/dist/api/middlewares/origin-check.mjs',
+    ['originCheckMiddleware'],
+    'auth/sign_out.rs',
+    ['truthy', 'check_urls'],
+  ],
+  [
     'report context',
     'src/server/reports/reports.server.ts',
     [
@@ -220,12 +262,14 @@ function isCode(line: string) {
 // The lines of a declaration: from its line until its brackets close and it ends.
 function declaration(lines: string[], name: string): string[] | null {
   const start = lines.findIndex((line) =>
-    new RegExp(`^\\s*(export )?(pub )?(async )?(function|fn|const|static) ${name}\\b`).test(line),
+    new RegExp(
+      `^\\s*(export )?(pub(?:\\([^)]*\\))? )?(async )?(function|fn|const|static) ${name}\\b`,
+    ).test(line),
   )
   if (start === -1) return null
   let depth = 0
   for (let i = start; i < lines.length; i++) {
-    for (const char of lines[i].replace(/\/\/.*$/, '')) {
+    for (const char of lines[i].replace(/"(?:\\.|[^"\\])*"|\/\/.*$/g, '')) {
       if ('({['.includes(char)) depth++
       if (')}]'.includes(char)) depth--
     }

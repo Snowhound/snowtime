@@ -1,0 +1,15 @@
+{"timestamp":"2026-10-07T17:09:26.688165Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-07T17:09:26.688869Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3427","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/session.conformance.ts:
+(pass) the session > signed out, the session is null [2.66ms]
+(pass) the session > signed in, it has the user, their organizations and settings, and the app URL [4.85ms]
+(pass) signed-out reads > the app says it can serve pages [0.61ms]
+(pass) signed-out reads > the sign-in methods, the deployment, and the seeded users [1.92ms]
+
+ 4 pass
+ 3 filtered out
+ 0 fail
+ 11 expect() calls
+Ran 4 tests across 1 file. [732.00ms]

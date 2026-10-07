@@ -4,6 +4,9 @@
 
 export const CALLS = {
   getAppSession: { method: 'GET', path: '/api/v1/session' },
+  getSignInMethods: { method: 'GET', path: '/api/v1/sign-in-methods' },
+  getDeployment: { method: 'GET', path: '/api/v1/deployment' },
+  getDevUsers: { method: 'GET', path: '/api/v1/dev-users' },
   checkAvailability: { method: 'GET', path: '/api/v1/availability' },
   getRunningTimer: { method: 'GET', path: '/api/v1/timer' },
   startTimer: { method: 'POST', path: '/api/v1/organizations/:organizationId/timer/start' },
