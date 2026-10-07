@@ -262,6 +262,8 @@ which records the edge measurements.
   ships them: the V8 default, while Bun keeps the plain bundle (done)
 - [21](21-render-hot-spots.md): one more profiling pass for small rewrites of hot bundle
   code like task 20's: V8 at 1.12–1.27 times Bun, within 1.2 on timer and week (done)
+- [22](22-render-follow-ups.md): task 21's cheap follow-ups: app formatter fixes,
+  minification, and Lucide's icon building
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
