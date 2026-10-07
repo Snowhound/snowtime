@@ -93,3 +93,14 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
   88rem and puts the timer across the summary column, so rows have room for a Ticket column.
   Off, the page keeps the header's width and each row's chip sits at the end of its
   description. The Timer route is `wide` (its `staticData`), so the view sets its own width.
+
+## Timer project draft
+
+The timer remembers the last selected project per user and organization in this browser,
+including an explicit No project choice. Starting, selecting recent work, or editing the
+running timer's project updates it. Stopping clears the description and issue, and keeps
+that project for the next timer. A saved project must still be available and active.
+
+This is a browser draft in `localStorage`, rather than a user setting: it reduces repeated
+project selection without adding a server write for an unfinished timer. A running timer
+always shows its own project, including when it runs in another organization.

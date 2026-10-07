@@ -153,6 +153,7 @@ function timer() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
   server.running = null
   server.entries = [entry(1, '09:00', '10:30', 'Invoice export review')]
   server.settings = defaultSettings()
@@ -218,8 +219,26 @@ describe('TimerView', () => {
     expect(fn.stopTimer).toHaveBeenCalledWith({ id })
     expect(await within(timer()).findByRole('button', { name: 'Start' })).toBeInTheDocument()
     expect(within(timer()).getByPlaceholderText('What are you working on?')).toHaveValue('')
+    expect(within(timer()).getByLabelText('Project')).toHaveTextContent('Snowtime')
     expect(await screen.findByDisplayValue('Timer view')).toBeInTheDocument()
     expect(screen.getByText('Today')).toBeInTheDocument()
+  })
+
+  test('restores the project in this browser and remembers No project', async () => {
+    localStorage.setItem(`snowtime:timer-project:${userId}:${organizationId}`, snowtime.id)
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    expect(within(timer()).getByLabelText('Project')).toHaveTextContent('Snowtime')
+    await userEvent.click(within(timer()).getByLabelText('Project'))
+    await userEvent.click(await screen.findByRole('option', { name: 'No project' }))
+    expect(localStorage.getItem(`snowtime:timer-project:${userId}:${organizationId}`)).toBe('')
+  })
+
+  test('ignores a remembered unavailable project', async () => {
+    localStorage.setItem(`snowtime:timer-project:${userId}:${organizationId}`, 'unavailable')
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    expect(within(timer()).getByLabelText('Project')).toHaveTextContent('No project')
   })
 
   test('rolls back a failed start and says why', async () => {

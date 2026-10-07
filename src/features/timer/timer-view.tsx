@@ -402,6 +402,8 @@ export function TimerView(props: {
         >
           <ErrorAlert message={error()} />
           <TimerBar
+            organizationId={props.organizationId}
+            userId={props.userId}
             layout={layout()}
             compact={props.settings.compactRows}
             running={running.data ?? null}
