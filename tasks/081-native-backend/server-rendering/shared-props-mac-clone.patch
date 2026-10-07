@@ -1,0 +1,602 @@
+diff --git a/native/crates/render/build.rs b/native/crates/render/build.rs
+index 8d17c2d..abf9a1a 100644
+--- a/native/crates/render/build.rs
++++ b/native/crates/render/build.rs
+@@ -15,6 +15,7 @@ fn main() {
+     println!("cargo:rerun-if-changed=bundle/bootstrap.js");
+     println!("cargo:rerun-if-changed=src/extensions.rs");
+     println!("cargo:rerun-if-changed=src/encoding.rs");
++    println!("cargo:rerun-if-changed=src/props.rs");
+     let snapshot = deno_core::snapshot::create_snapshot(
+         deno_core::snapshot::CreateSnapshotOptions {
+             cargo_manifest_dir: env!("CARGO_MANIFEST_DIR"),
+diff --git a/native/crates/render/bundle/shared-props.test.ts b/native/crates/render/bundle/shared-props.test.ts
+index 69f701a..4716f8a 100644
+--- a/native/crates/render/bundle/shared-props.test.ts
++++ b/native/crates/render/bundle/shared-props.test.ts
+@@ -1,129 +1,149 @@
+-import { expect, test } from 'bun:test'
++import { beforeEach, describe, expect, test } from 'bun:test'
+ import { rewriteSharedProps } from './shared-props'
+ 
++// What V8's op_props_clone returns: a copy with the same accessor functions.
++function clone(object: object) {
++  return Object.defineProperties({}, Object.getOwnPropertyDescriptors(object))
++}
++let cloning = false
+ function evaluate(body: string) {
+   const result = rewriteSharedProps('(function(){' + body + '})()')
+-  // oxlint-disable-next-line typescript/no-implied-eval -- Exercise generated JavaScript in an isolated function.
+-  return { ...result, value: new Function('return ' + result.code)() }
++  const deno = (globalThis as { Deno?: unknown }).Deno
++  ;(globalThis as { Deno?: unknown }).Deno = cloning
++    ? { core: { ops: { op_props_clone: clone } } }
++    : undefined
++  try {
++    // oxlint-disable-next-line typescript/no-implied-eval -- Exercise generated JavaScript in an isolated function.
++    return { ...result, value: new Function('return ' + result.code)() }
++  } finally {
++    ;(globalThis as { Deno?: unknown }).Deno = deno
++  }
+ }
+ 
+-test('keeps own keys, order, flags, prototype, and lazy live getters', () => {
+-  const { value, rewritten, descriptors } = evaluate(`
+-    function createComponent(c,p){return p}
+-    let current=1, reads=0;
+-    const make=()=>createComponent(null,{get ["class"](){reads++;return current},fixed:2,get children(){return p.fixed}});
+-    const p=make(), q=make();
+-    const before=reads;
+-    const keys=Object.keys(p);
+-    const flags=Object.entries(Object.getOwnPropertyDescriptors(p)).map(([k,d])=>[k,'get' in d,d.enumerable,d.configurable]);
+-    current=3;
+-    return {before,reads,keys,flags,value:p.class,children:p.children,own:Object.hasOwn(p,"class"),
+-      proto:Object.getPrototypeOf(p)===Object.prototype,constructor:p.constructor===Object,
+-      shared:Object.getOwnPropertyDescriptor(p,"class").get===Object.getOwnPropertyDescriptor(q,"class").get,
+-      spread:Object.fromEntries(Object.entries({...p})),names:Object.getOwnPropertyNames(p),slots:Object.getOwnPropertySymbols({...p}).map(String)};
+-  `)
+-  expect(rewritten).toBe(1)
+-  expect(descriptors).toBe(2)
+-  expect(value).toEqual({
+-    before: 0,
+-    reads: 0,
+-    keys: ['class', 'fixed', 'children'],
+-    flags: [
+-      ['class', true, true, true],
+-      ['fixed', false, true, true],
+-      ['children', true, true, true],
+-    ],
+-    value: 3,
+-    children: 2,
+-    own: true,
+-    proto: true,
+-    constructor: true,
+-    shared: true,
+-    spread: { class: 3, fixed: 2, children: 2 },
+-    names: ['class', 'fixed', 'children'],
+-    // As in Solid 2.0, slots are enumerable symbols, so a spread copies them.
+-    slots: ['Symbol(class)', 'Symbol(children)'],
+-  })
+-})
++for (const mode of ['defined', 'cloned']) {
++  describe(mode, () => {
++    beforeEach(() => {
++      cloning = mode === 'cloned'
++    })
++    test('keeps own keys, order, flags, prototype, and lazy live getters', () => {
++      const { value, rewritten, descriptors } = evaluate(`
++        function createComponent(c,p){return p}
++        let current=1, reads=0;
++        const make=()=>createComponent(null,{get ["class"](){reads++;return current},fixed:2,get children(){return p.fixed}});
++        const p=make(), q=make();
++        const before=reads;
++        const keys=Object.keys(p);
++        const flags=Object.entries(Object.getOwnPropertyDescriptors(p)).map(([k,d])=>[k,'get' in d,d.enumerable,d.configurable]);
++        current=3;
++        return {before,reads,keys,flags,value:p.class,children:p.children,own:Object.hasOwn(p,"class"),
++          proto:Object.getPrototypeOf(p)===Object.prototype,constructor:p.constructor===Object,
++          shared:Object.getOwnPropertyDescriptor(p,"class").get===Object.getOwnPropertyDescriptor(q,"class").get,
++          spread:Object.fromEntries(Object.entries({...p})),names:Object.getOwnPropertyNames(p),slots:Object.getOwnPropertySymbols({...p}).map(String)};
++      `)
++      expect(rewritten).toBe(1)
++      expect(descriptors).toBe(2)
++      expect(value).toEqual({
++        before: 0,
++        reads: 0,
++        keys: ['class', 'fixed', 'children'],
++        flags: [
++          ['class', true, true, true],
++          ['fixed', false, true, true],
++          ['children', true, true, true],
++        ],
++        value: 3,
++        children: 2,
++        own: true,
++        proto: true,
++        constructor: true,
++        shared: true,
++        spread: { class: 3, fixed: 2, children: 2 },
++        names: ['class', 'fixed', 'children'],
++        // As in Solid 2.0, slots are enumerable symbols, so a spread copies them.
++        slots: ['Symbol(class)', 'Symbol(children)'],
++      })
++    })
+ 
+-test('shares one descriptor per getter key across sites', () => {
+-  const { value, descriptors, rewritten } = evaluate(`
+-    function createComponent(c,p){return p}
+-    const a=createComponent(null,{get when(){return 1}});
+-    const b=createComponent(null,{id:2,get when(){return 3}});
+-    return [a.when,b.when,Object.getOwnPropertyDescriptor(a,"when").get===Object.getOwnPropertyDescriptor(b,"when").get];
+-  `)
+-  expect(rewritten).toBe(2)
+-  expect(descriptors).toBe(1)
+-  expect(value).toEqual([1, 3, true])
+-})
++    test('shares one descriptor per getter key across sites', () => {
++      const { value, descriptors, rewritten } = evaluate(`
++        function createComponent(c,p){return p}
++        const a=createComponent(null,{get when(){return 1}});
++        const b=createComponent(null,{id:2,get when(){return 3}});
++        return [a.when,b.when,Object.getOwnPropertyDescriptor(a,"when").get===Object.getOwnPropertyDescriptor(b,"when").get];
++      `)
++      expect(rewritten).toBe(2)
++      expect(descriptors).toBe(1)
++      expect(value).toEqual([1, 3, true])
++    })
+ 
+-test('merge and split re-home getters to their source and keep undefined fallback', () => {
+-  const { value } = evaluate(`
+-    function mergeProps(...sources){}
+-    function splitProps(props,...keys){}
+-    function createComponent(c,p){return p}
+-    let reads=0, latest=4;
+-    const source=createComponent(null,{fixed:2,get value(){reads++;return latest},get children(){return source.fixed}});
+-    const merged=mergeProps({value:1},source);
+-    const [selected,rest]=splitProps(merged,["value"]);
+-    const [inner]=splitProps(selected,["value"]);
+-    const [direct,others]=splitProps(source,["value"]);
+-    const before=reads;
+-    const copied=Object.defineProperties({},Object.getOwnPropertyDescriptors(direct));
+-    latest=undefined;
+-    const fallback=selected.value;
+-    latest=7;
+-    return {before,fallback,changed:inner.value,direct:direct.value,children:rest.children,others:others.children,
+-      keys:Object.keys(rest),own:Object.hasOwn(selected,"value"),mergedFlags:Object.getOwnPropertyDescriptor(merged,"value"),
+-      splitFlags:Object.getOwnPropertyDescriptor(direct,"value"),copied:copied.value,symbols:Object.getOwnPropertySymbols(others).length};
+-  `)
+-  expect(value).toMatchObject({
+-    before: 0,
+-    fallback: 1,
+-    changed: 7,
+-    direct: 7,
+-    children: 2,
+-    others: 2,
+-    keys: ['fixed', 'children'],
+-    own: true,
+-    mergedFlags: { enumerable: true, configurable: false },
+-    splitFlags: { enumerable: true, configurable: true },
+-    copied: 7,
+-    symbols: 1,
+-  })
+-})
++    test('merge and split re-home getters to their source and keep undefined fallback', () => {
++      const { value } = evaluate(`
++        function mergeProps(...sources){}
++        function splitProps(props,...keys){}
++        function createComponent(c,p){return p}
++        let reads=0, latest=4;
++        const source=createComponent(null,{fixed:2,get value(){reads++;return latest},get children(){return source.fixed}});
++        const merged=mergeProps({value:1},source);
++        const [selected,rest]=splitProps(merged,["value"]);
++        const [inner]=splitProps(selected,["value"]);
++        const [direct,others]=splitProps(source,["value"]);
++        const before=reads;
++        const copied=Object.defineProperties({},Object.getOwnPropertyDescriptors(direct));
++        latest=undefined;
++        const fallback=selected.value;
++        latest=7;
++        return {before,fallback,changed:inner.value,direct:direct.value,children:rest.children,others:others.children,
++          keys:Object.keys(rest),own:Object.hasOwn(selected,"value"),mergedFlags:Object.getOwnPropertyDescriptor(merged,"value"),
++          splitFlags:Object.getOwnPropertyDescriptor(direct,"value"),copied:copied.value,symbols:Object.getOwnPropertySymbols(others).length};
++      `)
++      expect(value).toMatchObject({
++        before: 0,
++        fallback: 1,
++        changed: 7,
++        direct: 7,
++        children: 2,
++        others: 2,
++        keys: ['fixed', 'children'],
++        own: true,
++        mergedFlags: { enumerable: true, configurable: false },
++        splitFlags: { enumerable: true, configurable: true },
++        copied: 7,
++        symbols: 1,
++      })
++    })
+ 
+-test('ordinary descriptors, proxies, non-enumerable data, and symbols survive split', () => {
+-  const { value } = evaluate(`
+-    function splitProps(props,...keys){}
+-    const symbol=Symbol();
+-    const source={a:1,get b(){return this.a}};
+-    Object.defineProperty(source,"hidden",{value:2});
+-    source[symbol]=3;
+-    const proxy=new Proxy(source,{});
+-    const [a,rest]=splitProps(proxy,["hidden",symbol]);
+-    return {keys:Object.keys(a),all:Reflect.ownKeys(a).map(String),hidden:a.hidden,symbol:a[symbol],rest:{...rest}};
+-  `)
+-  expect(value).toEqual({
+-    keys: [],
+-    all: ['hidden', 'Symbol()'],
+-    hidden: 2,
+-    symbol: 3,
+-    rest: { a: 1, b: 1 },
+-  })
+-})
++    test('ordinary descriptors, proxies, non-enumerable data, and symbols survive split', () => {
++      const { value } = evaluate(`
++        function splitProps(props,...keys){}
++        const symbol=Symbol();
++        const source={a:1,get b(){return this.a}};
++        Object.defineProperty(source,"hidden",{value:2});
++        source[symbol]=3;
++        const proxy=new Proxy(source,{});
++        const [a,rest]=splitProps(proxy,["hidden",symbol]);
++        return {keys:Object.keys(a),all:Reflect.ownKeys(a).map(String),hidden:a.hidden,symbol:a[symbol],rest:{...rest}};
++      `)
++      expect(value).toEqual({
++        keys: [],
++        all: ['hidden', 'Symbol()'],
++        hidden: 2,
++        symbol: 3,
++        rest: { a: 1, b: 1 },
++      })
++    })
+ 
+-test('keeps literals with spreads, setters, methods, and receiver references', () => {
+-  const { rewritten, skipped } = evaluate(`
+-    function createComponent(c,p){return p}
+-    const x={};
+-    createComponent(null,{...x,get a(){return 1}});
+-    createComponent(null,{get a(){return 1},set a(v){}});
+-    createComponent(null,{get a(){return 1},m(){}});
+-    createComponent(null,{get a(){return this.b},b:1});
+-    createComponent(null,{get a(){return createComponent(null,{get b(){return 2}}).b}});
+-  `)
+-  expect(rewritten).toBe(2)
+-  expect(skipped).toEqual({ spread: 1, setter: 1, method: 1, receiver: 1 })
+-})
++    test('keeps literals with spreads, setters, methods, and receiver references', () => {
++      const { rewritten, skipped } = evaluate(`
++        function createComponent(c,p){return p}
++        const x={};
++        createComponent(null,{...x,get a(){return 1}});
++        createComponent(null,{get a(){return 1},set a(v){}});
++        createComponent(null,{get a(){return 1},m(){}});
++        createComponent(null,{get a(){return this.b},b:1});
++        createComponent(null,{get a(){return createComponent(null,{get b(){return 2}}).b}});
++      `)
++      expect(rewritten).toBe(2)
++      expect(skipped).toEqual({ spread: 1, setter: 1, method: 1, receiver: 1 })
++    })
++  })
++}
+diff --git a/native/crates/render/bundle/shared-props.ts b/native/crates/render/bundle/shared-props.ts
+index 2a50e83..54aae1b 100644
+--- a/native/crates/render/bundle/shared-props.ts
++++ b/native/crates/render/bundle/shared-props.ts
+@@ -48,38 +48,65 @@ export function rewriteSharedProps(code: string) {
+         continue
+       }
+       const id = 'SharedProps$' + rewritten++
+-      const body = properties.map((property, index) => {
++      const parameters = properties.map((_, index) => 'v' + index).join(',')
++      const define: string[] = []
++      const fill: string[] = []
++      properties.forEach((property, index) => {
+         const key = JSON.stringify(keys[index])
+         if (property.kind !== 'get') {
+           edit(property.start, property.value.start, '')
+-          return 'this[' + key + ']=v' + index + ';'
++          define.push('this[' + key + ']=v' + index + ';')
++          fill.push('o[' + key + ']=v' + index + ';')
++          return
+         }
+         edit(property.start, property.value.body.start, '() => ')
+         const shared = descriptor(keys[index]!)
+-        return (
++        define.push(
+           'this[' +
+-          shared +
+-          'Slot]=v' +
+-          index +
+-          ';Object.defineProperty(this,' +
+-          key +
+-          ',' +
+-          shared +
+-          ');'
++            shared +
++            'Slot]=v' +
++            index +
++            ';Object.defineProperty(this,' +
++            key +
++            ',' +
++            shared +
++            ');',
+         )
++        fill.push('o[' + shared + 'Slot]=v' + index + ';')
+       })
+-      edit(object.start, object.start + 1, 'new ' + id + '(')
++      edit(object.start, object.start + 1, id + '(')
+       edit(object.end - 1, object.end, ')')
++      // On V8 the host's clone op copies a boilerplate, so its map and accessors, in one call;
++      // elsewhere each object defines its accessors.
+       declarations.push(
+         'function ' +
+           id +
+-          '(' +
+-          properties.map((_, index) => 'v' + index).join(',') +
++          'Init(' +
++          parameters +
+           '){' +
+-          body.join('') +
++          define.join('') +
+           '}' +
+           id +
+-          '.prototype=Object.prototype;',
++          'Init.prototype=Object.prototype;' +
++          'const ' +
++          id +
++          'Boilerplate=renderSharedClone&&renderSharedBoilerplate(' +
++          id +
++          'Init);' +
++          'function ' +
++          id +
++          '(' +
++          parameters +
++          '){if(!renderSharedClone)return new ' +
++          id +
++          'Init(' +
++          parameters +
++          ');' +
++          'const o=renderSharedClone(' +
++          id +
++          'Boilerplate);' +
++          fill.join('') +
++          'return o}',
+       )
+     }
+   })
+diff --git a/native/crates/render/bundle/shared-runtime.js b/native/crates/render/bundle/shared-runtime.js
+index 31e89d1..58e4b7f 100644
+--- a/native/crates/render/bundle/shared-runtime.js
++++ b/native/crates/render/bundle/shared-runtime.js
+@@ -4,6 +4,18 @@ const renderSharedMergeSlot = Symbol('merged sources')
+ const renderSharedSplitSlot = Symbol('split source')
+ const renderSharedMerges = new Map()
+ const renderSharedSplits = new Map()
++// V8's host op copies an object with its map, so a copy of a boilerplate shares its accessors
++// without a defineProperty each. Other engines define them.
++const renderSharedClone = globalThis.Deno?.core?.ops?.op_props_clone
++const renderSharedMergeBoilerplates = new Map()
++const renderSharedSplitBoilerplates = new Map()
++
++// V8 shrinks a constructor's objects to their used size after its first few constructions,
++// so a boilerplate made earlier would give every copy that unused space.
++export function renderSharedBoilerplate(Init) {
++  for (let i = 0; i < 16; i++) new Init()
++  return new Init()
++}
+ 
+ export function renderSharedSite(slot) {
+   const descriptor = {
+@@ -17,16 +29,22 @@ export function renderSharedSite(slot) {
+   renderSharedGetters.add(descriptor.get)
+   return descriptor
+ }
+-function renderSharedCache(cache, key, make) {
+-  let descriptor = cache.get(key)
+-  if (!descriptor) {
+-    descriptor = make()
+-    renderSharedGetters.add(descriptor.get)
++function renderSharedCached(cache, key, make) {
++  let value = cache.get(key)
++  if (!value) {
++    value = make()
+     // Arbitrary prop names must not grow a process-wide cache without a bound.
+     if (cache.size === 4096) cache.delete(cache.keys().next().value)
+-    cache.set(key, descriptor)
++    cache.set(key, value)
+   }
+-  return descriptor
++  return value
++}
++function renderSharedCache(cache, key, make) {
++  return renderSharedCached(cache, key, () => {
++    const descriptor = make()
++    renderSharedGetters.add(descriptor.get)
++    return descriptor
++  })
+ }
+ function renderSharedMergeDescriptor(key) {
+   return renderSharedCache(renderSharedMerges, key, () => ({
+@@ -57,9 +75,14 @@ function renderSharedSplitDescriptor(key, enumerable, configurable) {
+     }),
+   )
+ }
++function renderSharedMergeDefine(target, keys) {
++  target[renderSharedMergeSlot] = undefined
++  for (const key of keys) Object.defineProperty(target, key, renderSharedMergeDescriptor(key))
++  return target
++}
+ export function renderSharedMerge(...sources) {
+-  const target = {}
+-  target[renderSharedMergeSlot] = sources
++  const merged = []
++  let cloneable = !!renderSharedClone
+   for (let i = 0; i < sources.length; i++) {
+     let source = sources[i]
+     if (typeof source === 'function') source = source()
+@@ -72,36 +95,90 @@ export function renderSharedMerge(...sources) {
+           typeof key === 'symbol' ||
+           key === '__proto__' ||
+           key === 'constructor' ||
+-          Object.hasOwn(target, key)
++          merged.includes(key)
+         )
+           continue
+-        Object.defineProperty(target, key, renderSharedMergeDescriptor(key))
++        merged.push(key)
++        // Keys join into the boilerplate cache key.
++        if (key.includes('\0')) cloneable = false
+       }
+     }
+   }
++  const target = cloneable
++    ? renderSharedClone(
++        renderSharedCached(renderSharedMergeBoilerplates, merged.join('\0'), () =>
++          renderSharedMergeDefine({}, merged),
++        ),
++      )
++    : renderSharedMergeDefine({}, merged)
++  target[renderSharedMergeSlot] = sources
++  return target
++}
++// A split part's layout: re-homed shared getters and copied descriptors, in key order.
++function renderSharedSplitDefine(target, entries, props) {
++  let homed = false
++  for (const [key, descriptor, rehome] of entries) {
++    if (rehome) {
++      if (!homed) {
++        target[renderSharedSplitSlot] = props
++        homed = true
++      }
++      Object.defineProperty(
++        target,
++        key,
++        renderSharedSplitDescriptor(key, descriptor.enumerable, descriptor.configurable),
++      )
++    } else Object.defineProperty(target, key, descriptor)
++  }
+   return target
+ }
+ export function renderSharedSplit(props, ...keys) {
+   const descriptors = Object.getOwnPropertyDescriptors(props)
+   function split(k) {
+-    const clone = {}
+-    let homed = false
++    const entries = []
++    let shape = renderSharedClone ? '' : undefined
+     for (let i = 0; i < k.length; i++) {
+       const key = k[i]
+       const descriptor = descriptors[key]
+       if (!descriptor) continue
+-      if (descriptor.get && renderSharedGetters.has(descriptor.get)) {
+-        if (!homed) {
+-          clone[renderSharedSplitSlot] = props
+-          homed = true
+-        }
+-        Object.defineProperty(
+-          clone,
+-          key,
+-          renderSharedSplitDescriptor(key, descriptor.enumerable, descriptor.configurable),
+-        )
+-      } else Object.defineProperty(clone, key, descriptor)
++      const rehome = !!descriptor.get && renderSharedGetters.has(descriptor.get)
++      entries.push([key, descriptor, rehome])
+       delete descriptors[key]
++      if (shape === undefined) continue
++      // Only plain data, which an assignment can fill, and re-homed getters fit a boilerplate.
++      if (typeof key !== 'string' || key.includes('\0')) shape = undefined
++      else if (rehome)
++        shape += (descriptor.enumerable ? 'g' : 'h') + (descriptor.configurable ? 'c' : '-')
++      else if (
++        'value' in descriptor &&
++        descriptor.writable &&
++        descriptor.enumerable &&
++        descriptor.configurable &&
++        key !== '__proto__'
++      )
++        shape += 'd-'
++      else shape = undefined
++      if (shape !== undefined) shape += key + '\0'
++    }
++    if (shape === undefined) return renderSharedSplitDefine({}, entries, props)
++    const clone = renderSharedClone(
++      renderSharedCached(renderSharedSplitBoilerplates, shape, () =>
++        renderSharedSplitDefine(
++          {},
++          entries.map(([key, descriptor, rehome]) => [
++            key,
++            rehome
++              ? descriptor
++              : { value: undefined, writable: true, enumerable: true, configurable: true },
++            rehome,
++          ]),
++          undefined,
++        ),
++      ),
++    )
++    for (const [key, descriptor, rehome] of entries) {
++      if (rehome) clone[renderSharedSplitSlot] = props
++      else clone[key] = descriptor.value
+     }
+     return clone
+   }
+diff --git a/native/crates/render/src/extensions.rs b/native/crates/render/src/extensions.rs
+index 27f4f97..6e183aa 100644
+--- a/native/crates/render/src/extensions.rs
++++ b/native/crates/render/src/extensions.rs
+@@ -1,9 +1,12 @@
+ #[path = "encoding.rs"]
+ mod encoding;
++#[path = "props.rs"]
++mod props;
+ 
+ pub fn extensions() -> Vec<deno_core::Extension> {
+     vec![
+         encoding::encoding_ops::init(),
++        props::props_ops::init(),
+         deno_webidl::deno_webidl::init(),
+         deno_web::deno_web::init(
+             deno_web::BlobStore::default_arc(),
+diff --git a/native/crates/render/src/web_api_tests.rs b/native/crates/render/src/web_api_tests.rs
+index f107ba6..d3fbe2c 100644
+--- a/native/crates/render/src/web_api_tests.rs
++++ b/native/crates/render/src/web_api_tests.rs
+@@ -62,3 +62,33 @@ async fn encoding_and_formatting_keep_web_semantics() {
+       }
+     "#).unwrap();
+ }
++
++// Timing only: cargo test --release -p snowtime-render props_clone_timing -- --ignored --nocapture
++#[tokio::test(flavor = "current_thread")]
++#[ignore]
++async fn props_clone_timing() {
++    let send: SendApi = Arc::new(|_| Box::pin(async { Err("unused API".into()) }));
++    let mut renderer = Renderer::new(send, r#"{"routes":{}}"#.into(), Policy::default());
++    renderer.js().execute_script("props-clone-timing.js", r#"
++      const clone = Deno.core.ops.op_props_clone;
++      const a = Symbol(), l = Symbol();
++      const da = {get() { return this[a]() }, enumerable: true, configurable: true};
++      const dl = {get() { return this[l]() }, enumerable: true, configurable: true};
++      function Shared(x, id, y) { this[a] = x; Object.defineProperty(this, 'active', da); this.id = id; this[l] = y; Object.defineProperty(this, 'label', dl) }
++      const boilerplate = new Shared(undefined, 0, undefined);
++      function cloned(x, id, y) { const o = clone(boilerplate); o[a] = x; o.id = id; o[l] = y; return o }
++      const layouts = {
++        literal: (x, y) => ({get active() { return x() }, id: 1, get label() { return y() }}),
++        shared: (x, y) => new Shared(x, 1, y),
++        cloned: (x, y) => cloned(x, 1, y),
++      };
++      function run(f) { let s = 0; const t = Date.now(); for (let i = 0; i < 1e6; i++) { const v = i; s += f(() => v, () => 'x').id } return Date.now() - t }
++      for (const k in layouts) run(layouts[k]);
++      const out = [];
++      for (const k in layouts) out.push(k + ' ' + Math.min(run(layouts[k]), run(layouts[k]), run(layouts[k])) + ' ms');
++      const [p, q] = [cloned(() => 1, 1, () => 2), cloned(() => 3, 1, () => 4)];
++      out.push('values ' + [p.active, p.label, q.active, q.label, Object.keys(p)].join(','));
++      out.push('same getter ' + (Object.getOwnPropertyDescriptor(p, 'active').get === da.get));
++      Deno.core.print(out.join('\n') + '\n');
++    "#).unwrap();
++}

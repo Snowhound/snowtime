@@ -78,10 +78,39 @@ function shared(signal, label) {
   )
 }
 
-const layouts = { literal, prototype, shared }
+// Solid 2.0's full hoisting: getter bodies live in the shared descriptors, and slots hold
+// the captured bindings instead of a closure per getter.
+const signalSlot = Symbol()
+const textSlot = Symbol()
+const hoistedActive = {
+  get() {
+    const signal = this[signalSlot]
+    return signal()
+  },
+  enumerable: true,
+  configurable: true,
+}
+const hoistedLabel = {
+  get() {
+    return this[textSlot]
+  },
+  enumerable: true,
+  configurable: true,
+}
+function Hoisted(signal, id, label) {
+  this[signalSlot] = signal
+  Object.defineProperty(this, 'active', hoistedActive)
+  this.id = id
+  this[textSlot] = label
+  Object.defineProperty(this, 'label', hoistedLabel)
+}
+function hoisted(signal, label) {
+  return new Hoisted(signal, 1, label)
+}
+
+const layouts = { literal, prototype, shared, hoisted }
 
 function native(body) {
-  // oxlint-disable-next-line typescript/no-implied-eval -- V8 natives syntax doesn't parse elsewhere.
   return new Function('a', 'b', 'return ' + body)
 }
 let sameMap, fastProperties
