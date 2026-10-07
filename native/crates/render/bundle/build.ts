@@ -4,6 +4,7 @@ import { cpSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
+import { lucideNodes } from './lucide-nodes'
 import { sharedProps } from './shared-props'
 import { serverProps } from './solid-props'
 
@@ -29,6 +30,7 @@ try {
     plugins: [
       tailwindcss(),
       serverProps(),
+      lucideNodes(),
       sharedProps(),
       {
         name: 'exclude-api-routes',
