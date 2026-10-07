@@ -33,7 +33,7 @@ These come from the code on `scenery-collections`. Check them again before relyi
   the corners; light pages whiten toward the edges, to 28% of `rgb(216 227 239)`. The corners
   lose the most.
 - **Crop** (`.scene-photo-image`): `background-size: cover` with `background-position:
-center 20%`. A screen wider than 16:9 cuts the height, 20% of the cut at the top and 80% at
+  center 20%`. A screen wider than 16:9 cuts the height, 20% of the cut at the top and 80% at
   the bottom. A 1920 × 1080 screen with browser chrome (about 1920 × 950, 2:1) keeps about
   88% of the height, losing about 2% at the top and 10% at the bottom. A 21:9 screen keeps
   about 76%. A narrower screen cuts the sides. A phone in portrait shows only the middle
