@@ -81,3 +81,18 @@ plain bundle and task 081.19's variant.
 - [ ] The default per engine decided and recorded in the render README and
       `docs/architecture/native-rendering.md`. Remove the losing variant's code; if
       neither variant wins on an engine, remove both and keep only the reports
+
+## Closing the engine gap
+
+Kait wants the embedded V8 renderer good enough that the Bun sidecar stays optional, so
+Snowtime can ship as one self-contained binary, for example on embedded systems. On task
+081.19's numbers, plain Bun renders each page in 60–65% of V8's best CPU time (timer
+11.1 ms against 17.3 ms).
+
+If the measurements above leave V8's best bundle more than 1.2 times Bun's plain bundle in
+render CPU on any page, profile V8 again and try further changes. This part is for a
+follow-up task if the session runs out of time. Each change is measured as above and kept
+only if it wins without costing Bun.
+
+- [ ] V8's best bundle within 1.2 times Bun's plain bundle in render CPU on every page, or
+      a profile of the remaining gap with each change tried and its measured effect
