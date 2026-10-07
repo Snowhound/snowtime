@@ -37,12 +37,14 @@ crates/host/src/
   config.rs
 ```
 
-Each domain's `routes.rs` mirrors the ported paths in its TypeScript routes file. Unported
-routes answer 404. Ported reads: the session, the running timer, entries and the first
-entry's start, projects, teams, members, and the report (`getReport`). Of the writes, the
-timer's and the entries'. Not ported: the report's breakdown, entry lists, and export;
-settings, team, project, and organization writes; invitations; and the sign-in page's
-reads (sign-in methods, deployment, seeded users), so `/sign-in` signed out answers 500.
+Each domain's `routes.rs` mirrors the ported paths in its TypeScript routes file.
+Unported routes answer 404. Ported reads: the session, the running timer, entries and
+the first entry's start, projects, teams, members, and all five report reads (report,
+breakdown, entries, entry totals, and export). Each report read uses `run_report`, so
+reports and export pieces take the report budget before database admission.
+Of the writes, the timer's and the entries'. Not ported: settings, team, project, and
+organization writes; invitations; and the sign-in page's reads (sign-in methods,
+deployment, seeded users), so `/sign-in` signed out answers 500.
 
 Pages call the API in process: the renderer's host callback sends each call through
 `router.oneshot` with the page request's cookie, as `src/lib/api/request.ts` sends it.

@@ -27,13 +27,15 @@ on the day.
   and region), teams, members, and the report (`POST /report`) join the timer, entries,
   and projects. With them, the timer and every report page render with no recorded
   answers. Time zones come from `jiff` with its bundled zone database. The report's
-  breakdown, entry lists, and export remain unported.
-- **Same answers.** `compare.ts` finds every one of its 191 calls byte-equal to the
-  TypeScript server, masking only each server's clock, sign-in time, and URL. They include
-  the new reads as owner and member, report filters and refusals, malformed report input,
-  and Better Auth's origin and CSRF checks on sign-in. The comparison found that the
-  TypeScript `IsoDate` check threw on a non-date (`"bad"`, `2026-13-01`) and answered 500;
-  it now refuses with the date-format message.
+  breakdown, entry lists, entry totals, and export are also ported and verified in
+  [task 081.24](24-report-reads.md), including CSV and XLSX downloads on the native host.
+- **Same answers.** `compare.ts` finds all 349 calls byte-equal to the TypeScript
+  server, masking only each server's clock, sign-in time, and URL. They include the
+  session, team, member, and all five report reads as owner and member, report filters
+  and refusals, malformed report input, and Better Auth's origin and CSRF checks on
+  sign-in. Task 081.24 adds case and accent ties and three pages of one busy day.
+  The earlier comparison found that the TypeScript `IsoDate` check threw on a non-date
+  (`"bad"`, `2026-13-01`) and answered 500; it now refuses with the date-format message.
 - **Same pages.** The timer, the week, the month, and a year report render with the same
   status and markup as Start's, apart from the recorded ICU text (`28 Mon`) and the
   whitespace of one function seroval prints from source. Redirects match Start's (signed
@@ -468,7 +470,7 @@ with Deno extensions and the policy measured above:
   stress runs on dataset M with Caddy on the app's core, the renderer runs on the Lumen
   Works seed with recorded answers.
 - Port the sign-in page's reads (sign-in methods, deployment, seeded users), so `/sign-in`
-  renders signed out, and the report's breakdown, entry lists, and export.
+  renders signed out.
 - Bring the 161 MiB warmup peak down if the target needs it: it comes before the first
   trim, while V8 optimizes the bundle.
 
