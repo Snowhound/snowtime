@@ -539,6 +539,12 @@ describe('TimerView', () => {
   })
 
   test('Add entry picks recent work from the keyboard and starts after today’s last entry', async () => {
+    // Noon today in the test zone, so today's 08:00 entry has ended whenever the test runs.
+    // Only Date is faked, so user events keep running.
+    vi.useFakeTimers({
+      toFake: ['Date'],
+      now: atLocalTime(localDate(Date.now(), zone), '12:00', zone),
+    })
     server.entries = [...server.entries, entry(0, '08:00', '09:15', 'Standup')]
     renderView()
     await screen.findByDisplayValue('Standup')
