@@ -246,6 +246,7 @@ which records the edge measurements.
   JSC, so Bun as a render sidecar is next
 - [17](17-bounded-lanes.md): the lane contract for the database, hashing, and V8 render
   lanes, the overload policy, and how the client handles refusal
+- [18](18-v8-builds.md): newer V8 builds, flags, and build options against the render gap
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
