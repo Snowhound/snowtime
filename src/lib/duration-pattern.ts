@@ -58,13 +58,15 @@ export function fieldsInWords(pattern: string): string[] {
 }
 
 // The largest field in the pattern holds the whole duration, so hours don't wrap at 24 and
-// `M:SS` gives 125:09 for 2:05:09. Seconds are whole, as the entry rows show them.
+// `M:SS` gives 125:09 for 2:05:09. Round to the smallest field, except seconds,
+// which are cut off as the entry rows show them.
 export function formatDurationPattern(ms: number, pattern: string): string {
   const tokens = tokenizePattern(pattern)
   function has(field: Field) {
     return tokens.some((token) => token.kind === 'field' && token.field === field)
   }
-  let rest = Math.max(0, Math.floor(ms / 1000))
+  const unit = has('M') ? 60 : 3600
+  let rest = Math.max(0, has('S') ? Math.floor(ms / 1000) : Math.round(ms / (unit * 1000)) * unit)
   const values: Record<Field, number> = { H: 0, M: 0, S: 0 }
   if (has('H')) {
     values.H = Math.floor(rest / 3600)

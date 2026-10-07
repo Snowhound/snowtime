@@ -35,6 +35,19 @@ describe('formatDurationPattern', () => {
     expect(formatDurationPattern(90 * SECOND, 'S')).toBe('90')
   })
 
+  test('rounds to the minute without a seconds field and carries into hours', () => {
+    expect(formatDurationPattern(7 * HOUR + 14 * MINUTE + 45 * SECOND, 'HH:MM')).toBe('07:15')
+    expect(formatDurationPattern(7 * HOUR + 14 * MINUTE + 29 * SECOND, 'HH:MM')).toBe('07:14')
+    expect(formatDurationPattern(59 * MINUTE + 59 * SECOND, 'HH:MM')).toBe('01:00')
+    expect(formatDurationPattern(59 * MINUTE + 59 * SECOND, 'M')).toBe('60')
+  })
+
+  test('rounds to the hour when hours are the only field', () => {
+    expect(formatDurationPattern(7 * HOUR + 29 * MINUTE + 59 * SECOND, 'HH')).toBe('07')
+    expect(formatDurationPattern(7 * HOUR + 30 * MINUTE, 'HH')).toBe('08')
+    expect(formatDurationPattern(7 * HOUR + 30 * MINUTE, 'HH\\S')).toBe('08S')
+  })
+
   test('drops partial seconds and negative time', () => {
     expect(formatDurationPattern(59_999, 'H:MM:SS')).toBe('0:00:59')
     expect(formatDurationPattern(-HOUR, 'H:MM:SS')).toBe('0:00:00')

@@ -65,8 +65,9 @@ into a ticket's work log or an invoice (task 078). Other durations don't copy ye
   without loading the tokenizer into shared settings schemas.
 - The first unit in the pattern holds the whole duration: hours don't wrap at 24, and
   `M:SS` copies 2:05:09 as `125:09`. This follows Google Sheets' `[h]` duration format.
-- The copy starts from the milliseconds, not the shown text, so `duration_format` and the
-  day totals' rounding to the minute don't change it.
+- The copy starts from the milliseconds and rounds to the pattern's smallest field:
+  minutes when there is `M` but no `S`, or hours when there is only `H`. Patterns with `S`
+  cut off partial seconds, as entry rows do. `duration_format` doesn't change the copy.
 - Uppercase `H`, `M`, and `S` are always fields, even inside a word, so `Hours` copies as
   `2ours`. The settings field colors each field behind the typed text and warns about a
   field after a letter or before two (`fieldsInWords`); one letter after is a unit, as in
