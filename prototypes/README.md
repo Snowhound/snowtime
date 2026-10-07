@@ -85,6 +85,8 @@ original `class` is what gets re-merged. Start page scripts from `ui.ready`.
 When a prototype needs another component, copy its class strings verbatim from the Solid-UI
 registry into `ui.js`, keeping the commit noted at the top of the file. Badge variants
 `success` / `warning` / `error` are left out because their tokens are not in `src/styles.css`.
+The alert's `warning` variant is Snowtime's own, on a proposed `--warning` token in
+`prototype.css`, for the timer prototype's pending changes.
 
 The app changes its copies in `src/components/ui/` where every use needs the change, and lists
 each change in [`src/components/ui/README.md`](../src/components/ui/README.md).
@@ -758,9 +760,10 @@ end, continue, and delete.
 overloaded native server does (task 081.17). The change stays on screen, and an alert above
 the page offers "Try again", which sends the pending changes in order once the server
 answers. Nothing retries on its own, and a change made meanwhile waits behind them. The
-select beside it compares three designs: one alert for all pending changes, an alert per
-change, and one alert with each unsaved row and the timer marked by a muted bar at their
-start.
+alert uses the warning variant, orange, with its icon centered on the row. The select beside
+it compares the alert alone with the alert plus a "Not saved · Try again" mark in each pending
+row, where a saved row shows "Saved". Changes without a row, such as starting the timer or a
+delete, show only in the alert.
 
 The entry popover is for Add entry and for the running entry's start. It opens under the Add
 entry button, or under the timer's clock for the running entry. It has description, project,

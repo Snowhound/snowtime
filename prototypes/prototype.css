@@ -17,6 +17,7 @@
   --accent-foreground: #0f1f2e;
   --destructive: #dc0010;
   --destructive-foreground: #ffffff;
+  --warning: #b85000;
   --border: #c9e0f3;
   --input: #6a8cae;
   --ring: #3b82b8;
@@ -40,6 +41,7 @@
   --accent-foreground: #e6f4ff;
   --destructive: #ff6467;
   --destructive-foreground: #0b1622;
+  --warning: #fb923c;
   --border: #263b54;
   --input: #587ba3;
   --ring: #4f7fb9;

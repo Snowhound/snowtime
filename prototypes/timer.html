@@ -13,13 +13,6 @@
     <script src="intro.js"></script>
     <script src="app-frame.js"></script>
     <style type="text/tailwindcss">
-      /* "One alert, marked rows": what isn't saved yet carries a muted bar at its start. */
-      body[data-pending-ui='marked'] [data-row][data-pending] {
-        @apply bg-muted/50 shadow-[inset_3px_0_0_var(--muted-foreground)];
-      }
-      body[data-pending-ui='marked'] #timer[data-pending] {
-        @apply shadow-[inset_3px_0_0_var(--muted-foreground)];
-      }
       /* Timer controls share one DOM across designs; only layout changes. */
       body[data-design='bar'] .timer {
         @apply flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center;
@@ -136,9 +129,8 @@
       </label>
       <label for="pending-ui" class="sr-only">Pending changes</label>
       <select id="pending-ui" data-ui="select" class="h-9 w-48" title="How refused changes show">
-        <option value="one">One alert</option>
-        <option value="each">Alert per change</option>
-        <option value="marked">One alert, marked rows</option>
+        <option value="one">Alert</option>
+        <option value="rows">Alert and rows</option>
       </select>
     </div>
 
@@ -461,6 +453,7 @@
 
       // data-entry and data-key let a re-render put focus back on the same control.
       function actions(e) {
+        if (isPending(e)) return pendingMark()
         return `<div class="entry-actions">
           <button data-ui="button" data-variant="ghost" data-size="icon" data-continue="${e.id}" data-entry="${e.id}" data-key="continue" aria-label="Continue ${name(e)}">${icon('play')}</button>
           <button data-ui="button" data-variant="ghost" data-size="icon" data-delete="${e.id}" data-entry="${e.id}" data-key="delete" aria-label="Delete ${name(e)}">${icon('trash-2')}</button>
@@ -653,7 +646,6 @@
         else if (design === 'focus') el.innerHTML = renderDayCards(groups.slice(0, 3), true)
         else el.innerHTML = renderDayCards(groups, false)
         rendering = false
-        markPending()
         if (focus) {
           const target = el.querySelector(`[data-entry="${focus.entry}"][data-key="${focus.key}"]`)
           target?.focus({ preventScroll: true })
@@ -1519,43 +1511,38 @@
         renderRecent()
         renderSummary()
       }
-      function retryPending(key) {
+      function retryPending() {
         if (retrying) return
         retrying = true
         renderPending()
         setTimeout(() => {
           retrying = false
-          if (!busy()) {
-            if (key === undefined) pending.length = 0
-            else pending.splice(0, pending.findIndex((p) => p.key === key) + 1)
-          }
+          if (!busy()) pending.length = 0
           renderPending()
         }, 700)
       }
-      function pendingAlert(text, key) {
-        return `<div data-ui="alert" class="mt-6 -mb-2">${icon('clock')}<div data-ui="alert-description" class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+      // The icon sits in the row, centered with the text and button, instead of pinned top left.
+      function pendingAlert(text) {
+        return `<div data-ui="alert" data-variant="warning" class="mt-6 -mb-2 flex items-center gap-3 py-3 [&>svg]:static [&>svg]:shrink-0 [&>svg+div]:translate-y-0 [&>svg~*]:pl-0">${icon('clock')}<div data-ui="alert-description" class="flex flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <span role="status">${escapeHtml(text)}</span>
-            <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-retry="${key ?? ''}"${retrying ? ' disabled' : ''}>Try again</button>
+            <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-retry${retrying ? ' disabled' : ''}>Try again</button>
           </div></div>`
+      }
+      // "Alert and rows": a pending row shows it where a saved one shows "Saved".
+      function pendingMark() {
+        return `<div class="flex h-9 items-center gap-1.5 whitespace-nowrap text-xs font-medium text-warning">${icon('clock', 'size-3.5')}Not saved
+            <button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-xs text-warning" data-retry${retrying ? ' disabled' : ''}>Try again</button></div>`
       }
       function renderPending() {
         const ui = document.getElementById('pending-ui').value
         document.body.dataset.pendingUi = ui
         const el = document.getElementById('pending')
-        if (!pending.length) el.innerHTML = ''
-        else if (ui === 'each')
-          el.innerHTML = pending.map((p) => pendingAlert('Change pending. The server is busy; try again when you’re ready.', p.key)).join('')
-        else el.innerHTML = pendingAlert('Not saved yet: the server is busy. Try again when you’re ready.')
-        markPending()
+        el.innerHTML = pending.length ? pendingAlert('Not saved yet: the server is busy. Try again when you’re ready.') : ''
+        renderEntries()
       }
-      function markPending() {
-        const ids = new Set(pending.map((p) => p.entryId))
-        document.querySelectorAll('[data-row]').forEach((row) => row.toggleAttribute('data-pending', ids.has(row.dataset.row)))
-        document.getElementById('timer').toggleAttribute('data-pending', !!state.running && ids.has(state.running.id))
-      }
-      document.getElementById('pending').addEventListener('click', (event) => {
-        const button = event.target.closest('[data-retry]')
-        if (button) retryPending(button.dataset.retry ? Number(button.dataset.retry) : undefined)
+      const isPending = (e) => document.body.dataset.pendingUi === 'rows' && pending.some((p) => p.entryId === e.id)
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('[data-retry]')) retryPending()
       })
       document.getElementById('pending-ui').addEventListener('change', renderPending)
 

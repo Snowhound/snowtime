@@ -38,6 +38,8 @@
     variant: {
       default: 'bg-background text-foreground',
       destructive: 'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
+      // Snowtime's: something needs the user, but nothing failed for good.
+      warning: 'border-warning/60 bg-[color-mix(in_oklab,var(--warning)_8%,var(--background))] [&>svg]:text-warning',
     },
   }
 
