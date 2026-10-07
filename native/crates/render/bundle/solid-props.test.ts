@@ -114,6 +114,12 @@ test('fails closed when the upstream implementation changes', () => {
   )
 })
 
+test('fails closed when upstream splitProps changes', () => {
+  expect(() =>
+    transformServerProps(source.replace('keys.map(split).concat', 'keys.map(other).concat')),
+  ).toThrow('Unsupported')
+})
+
 test('preserves inherited enumerable descriptor-map keys', () => {
   const key = 'renderPropsInheritedTest'
   try {
