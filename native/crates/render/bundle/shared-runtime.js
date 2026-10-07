@@ -64,16 +64,13 @@ export function renderSharedMerge(...sources) {
     if (typeof source === 'function') source = source()
     if (source) {
       // Keep descriptor traps while avoiding descriptor objects that mergeProps never reads.
-      const keys = Reflect.ownKeys(Object(source)).filter((key) => Object.hasOwn(source, key))
+      // Symbols are never merged, so only names are listed.
+      const keys = Object.getOwnPropertyNames(Object(source)).filter((key) =>
+        Object.hasOwn(source, key),
+      )
       for (const key in Object.prototype) if (!keys.includes(key)) keys.push(key)
       for (const key of keys) {
-        if (
-          typeof key === 'symbol' ||
-          key === '__proto__' ||
-          key === 'constructor' ||
-          Object.hasOwn(target, key)
-        )
-          continue
+        if (key === '__proto__' || key === 'constructor' || Object.hasOwn(target, key)) continue
         Object.defineProperty(target, key, renderSharedMergeDescriptor(key))
       }
     }
@@ -100,9 +97,12 @@ export function renderSharedSplit(props, ...keys) {
           renderSharedSplitDescriptor(key, descriptor.enumerable, descriptor.configurable),
         )
       } else Object.defineProperty(clone, key, descriptor)
-      delete descriptors[key]
+      // Deleting would turn the descriptor map into a dictionary.
+      descriptors[key] = undefined
     }
     return clone
   }
-  return keys.map(split).concat(split(Object.keys(descriptors)))
+  const parts = keys.map(split)
+  parts.push(split(Object.keys(descriptors).filter((key) => descriptors[key] !== undefined)))
+  return parts
 }
