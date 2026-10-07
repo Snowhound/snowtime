@@ -258,6 +258,8 @@ which records the edge measurements.
 - [19](19-prototype-props.md): server props with prototype getters instead of per-render
   getters, as Solid 2.0 compiles them, behind a bundle flag: off by default on both
   engines (done)
+- [20](20-shared-accessors.md): server props with shared own accessors, as Solid 2.0
+  ships them, against the plain bundle and task 19's variant
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
