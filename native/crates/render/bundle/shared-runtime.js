@@ -7,7 +7,8 @@ const renderSharedSplitSlot = Symbol('split source')
 const renderSharedMergedSlot = Symbol('merge target')
 const renderSharedMergedCountSlot = Symbol('merged keys')
 const renderSharedMerges = new Map()
-const renderSharedSplits = new Map()
+// One map per enumerable and configurable pair, so a lookup needs no composed key.
+const renderSharedSplits = [new Map(), new Map(), new Map(), new Map()]
 
 export function renderSharedSite(slot) {
   const descriptor = {
@@ -31,7 +32,11 @@ function renderSharedCache(cache, key, make) {
   }
   return descriptor
 }
+// A hit allocates nothing; only a miss builds the closure that makes the descriptor.
 function renderSharedMergeDescriptor(key) {
+  return renderSharedMerges.get(key) ?? renderSharedNewMergeDescriptor(key)
+}
+function renderSharedNewMergeDescriptor(key) {
   return renderSharedCache(renderSharedMerges, key, () => ({
     enumerable: true,
     get() {
@@ -48,17 +53,17 @@ function renderSharedMergeDescriptor(key) {
   }))
 }
 function renderSharedSplitDescriptor(key, enumerable, configurable) {
-  return renderSharedCache(
-    renderSharedSplits,
-    (enumerable ? 'e' : '-') + (configurable ? 'c' : '-') + key,
-    () => ({
-      enumerable,
-      configurable,
-      get() {
-        return this[renderSharedSplitSlot][key]
-      },
-    }),
-  )
+  const cache = renderSharedSplits[(enumerable ? 2 : 0) + (configurable ? 1 : 0)]
+  return cache.get(key) ?? renderSharedNewSplitDescriptor(cache, key, enumerable, configurable)
+}
+function renderSharedNewSplitDescriptor(cache, key, enumerable, configurable) {
+  return renderSharedCache(cache, key, () => ({
+    enumerable,
+    configurable,
+    get() {
+      return this[renderSharedSplitSlot][key]
+    },
+  }))
 }
 export function renderSharedMerge(...sources) {
   const target = {}
