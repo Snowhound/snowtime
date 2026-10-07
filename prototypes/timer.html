@@ -127,11 +127,6 @@
       <label class="flex items-center gap-2 text-sm" title="Prototype only: the server refuses every write with 503 until this is off">
         <input id="server-busy" type="checkbox" data-ui="checkbox" />Server busy
       </label>
-      <label for="pending-ui" class="sr-only">Pending changes</label>
-      <select id="pending-ui" data-ui="select" class="h-9 w-48" title="How refused changes show">
-        <option value="one">Alert</option>
-        <option value="rows">Alert and rows</option>
-      </select>
     </div>
 
     <div id="pending" class="timer-page mx-auto px-4 sm:px-8"></div>
@@ -1525,26 +1520,23 @@
       function pendingAlert(text) {
         return `<div data-ui="alert" data-variant="warning" class="mt-6 -mb-2 flex items-center gap-3 py-3 [&>svg]:static [&>svg]:shrink-0 [&>svg+div]:translate-y-0 [&>svg~*]:pl-0">${icon('clock')}<div data-ui="alert-description" class="flex flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <span role="status">${escapeHtml(text)}</span>
-            <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-retry${retrying ? ' disabled' : ''}>Try again</button>
+            <button type="button" data-ui="button" data-variant="outline" data-size="sm" class="border-warning/50 text-warning hover:bg-warning/10 hover:text-warning" data-retry${retrying ? ' disabled' : ''}>Try again</button>
           </div></div>`
       }
-      // "Alert and rows": a pending row shows it where a saved one shows "Saved".
+      // A pending row shows it where a saved one shows "Saved".
       function pendingMark() {
         return `<div class="flex h-9 items-center gap-1.5 whitespace-nowrap text-xs font-medium text-warning">${icon('clock', 'size-3.5')}Not saved
             <button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-xs text-warning" data-retry${retrying ? ' disabled' : ''}>Try again</button></div>`
       }
       function renderPending() {
-        const ui = document.getElementById('pending-ui').value
-        document.body.dataset.pendingUi = ui
         const el = document.getElementById('pending')
         el.innerHTML = pending.length ? pendingAlert('Not saved yet: the server is busy. Try again when you’re ready.') : ''
         renderEntries()
       }
-      const isPending = (e) => document.body.dataset.pendingUi === 'rows' && pending.some((p) => p.entryId === e.id)
+      const isPending = (e) => pending.some((p) => p.entryId === e.id)
       document.addEventListener('click', (event) => {
         if (event.target.closest('[data-retry]')) retryPending()
       })
-      document.getElementById('pending-ui').addEventListener('change', renderPending)
 
       appFrame.on('settings', applySettings)
 

@@ -527,11 +527,11 @@
         document.getElementById('pending').innerHTML = pending.count
           ? `<div data-ui="alert" data-variant="warning" class="mt-6 -mb-2 flex items-center gap-3 py-3 [&>svg]:static [&>svg]:shrink-0 [&>svg+div]:translate-y-0 [&>svg~*]:pl-0">${icon('clock')}<div data-ui="alert-description" class="flex flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-2">
               <span role="status">Not saved yet: the server is busy. Try again when you’re ready.</span>
-              <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-retry${disabled}>Try again</button>
+              <button type="button" data-ui="button" data-variant="outline" data-size="sm" class="border-warning/50 text-warning hover:bg-warning/10 hover:text-warning" data-retry${disabled}>Try again</button>
             </div></div>`
           : ''
         if (pending.count)
-          status(`<span class="inline-flex items-center gap-1.5 text-warning">${icon('clock', 'size-3.5')}Not saved yet: the server is busy.</span> <button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-warning" data-retry${disabled}>Try again</button>`)
+          status(`<span class="inline-flex items-center gap-x-2 text-warning"><span class="inline-flex items-center gap-1.5">${icon('clock', 'size-3.5')}Not saved yet: the server is busy.</span><button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-warning" data-retry${disabled}>Try again</button></span>`)
       }
       function retryPending() {
         if (pending.retrying) return

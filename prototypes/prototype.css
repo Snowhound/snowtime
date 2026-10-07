@@ -17,7 +17,8 @@
   --accent-foreground: #0f1f2e;
   --destructive: #dc0010;
   --destructive-foreground: #ffffff;
-  --warning: #b85000;
+  /* Ochre, as --series-4; darker in light mode so text on it passes 4.5:1. */
+  --warning: #8f6306;
   --border: #c9e0f3;
   --input: #6a8cae;
   --ring: #3b82b8;
@@ -41,7 +42,7 @@
   --accent-foreground: #e6f4ff;
   --destructive: #ff6467;
   --destructive-foreground: #0b1622;
-  --warning: #fb923c;
+  --warning: #d59a1c;
   --border: #263b54;
   --input: #587ba3;
   --ring: #4f7fb9;
