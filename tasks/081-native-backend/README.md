@@ -247,6 +247,8 @@ which records the edge measurements.
 - [17](17-bounded-lanes.md): the lane contract for the database, hashing, and V8 render
   lanes, the overload policy, and how the client handles refusal
 - [18](18-v8-builds.md): newer V8 builds, flags, and build options against the render gap
+- [19](19-prototype-props.md): server props with prototype getters instead of per-render
+  getters, as Solid 2.0 compiles them, behind a bundle flag
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
