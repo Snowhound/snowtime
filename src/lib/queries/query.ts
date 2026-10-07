@@ -1,6 +1,13 @@
 import type { QueryClient, QueryKey } from '@tanstack/solid-query'
 import { v7 as uuidv7 } from 'uuid'
-import { finishChange, isRefused, retainChange } from './refusal'
+import {
+  finishChange,
+  isRefused,
+  pendingContext,
+  retainChange,
+  waitingError,
+  waitsBehind,
+} from './refusal'
 
 // How long the organization's projects, teams and members stay fresh. This app's own changes
 // update their caches at once, so the wait only delays other people's changes. Each refetch is a
@@ -37,8 +44,9 @@ export function cacheUpdate<TData, TVariables>(
 }
 
 // Callbacks for a mutation that updates each cache in `updates` before the server answers.
-// A refused write keeps its optimistic change until an explicit retry. Other failures
-// restore the snapshot, and completed writes invalidate their queries.
+// A refused write keeps its optimistic change until the user sends it again (refusal.ts),
+// and a write made meanwhile waits behind it. Other failures restore the snapshot, and
+// completed writes invalidate their queries.
 //
 // `invalidate` lists more keys to refetch after, for caches the write changes but that
 // can't be updated here, such as reports.
@@ -48,58 +56,64 @@ export function optimistic<TVariables>(
   { invalidate = [] }: { invalidate?: QueryKey[] } = {},
 ) {
   type Context = { snapshot: [QueryKey, unknown][]; now: number }
-  const retained = new Map<TVariables, Context>()
+
+  function keep(variables: TVariables, context: Context, error: unknown) {
+    // A refetch replaces the cache with the server's data, which lacks the pending change:
+    // it becomes the rollback point, and the change goes back on top.
+    retainChange(queryClient, variables, context, error, (key, data) => {
+      const matched = updates.filter(({ queryKey }) =>
+        queryClient
+          .getQueryCache()
+          .findAll({ queryKey })
+          .some((query) => query.queryKey === key),
+      )
+      if (!matched.length) return
+      const snapshot = context.snapshot.find(
+        ([snapshotKey]) => JSON.stringify(snapshotKey) === JSON.stringify(key),
+      )
+      if (snapshot) snapshot[1] = data
+      else context.snapshot.push([key, data])
+      for (const { update } of matched) {
+        queryClient.setQueryData(key, (current: unknown) =>
+          update(current, variables, key, context.now),
+        )
+      }
+    })
+  }
 
   return {
     retry: false as const,
     onMutate: async (variables: TVariables): Promise<Context> => {
       await Promise.all(updates.map(({ queryKey }) => queryClient.cancelQueries({ queryKey })))
-      const previous = retained.get(variables)
-      if (previous) return previous
-      const now = Date.now()
-      const snapshot = updates.flatMap(({ queryKey }) => queryClient.getQueriesData({ queryKey }))
-      for (const { queryKey, update } of updates) {
-        for (const [key, data] of queryClient.getQueriesData({ queryKey })) {
-          if (data !== undefined) queryClient.setQueryData(key, update(data, variables, key, now))
-        }
-      }
-      return { snapshot, now }
-    },
-    onError: (error: unknown, variables: TVariables, context: Context | undefined) => {
-      if (context && isRefused(error)) {
-        retained.set(variables, context)
-        retainChange(queryClient, context, (key, data) => {
-          const matched = updates.filter(({ queryKey }) =>
-            queryClient
-              .getQueryCache()
-              .findAll({ queryKey })
-              .some((query) => query.queryKey === key),
-          )
-          if (!matched.length) return
-          const snapshot = context.snapshot.find(
-            ([snapshotKey]) => JSON.stringify(snapshotKey) === JSON.stringify(key),
-          )
-          if (snapshot) snapshot[1] = data
-          else context.snapshot.push([key, data])
-          for (const { update } of matched) {
-            queryClient.setQueryData(key, (current: unknown) =>
-              update(current, variables, key, context.now),
-            )
+      let context = pendingContext(queryClient, variables) as Context | undefined
+      if (!context) {
+        const now = Date.now()
+        const snapshot = updates.flatMap(({ queryKey }) => queryClient.getQueriesData({ queryKey }))
+        for (const { queryKey, update } of updates) {
+          for (const [key, data] of queryClient.getQueriesData({ queryKey })) {
+            if (data !== undefined) queryClient.setQueryData(key, update(data, variables, key, now))
           }
-        })
+        }
+        context = { snapshot, now }
+      }
+      if (waitsBehind(queryClient, variables)) {
+        const error = waitingError()
+        keep(variables, context, error)
+        throw error
+      }
+      return context
+    },
+    onError: (error: unknown, variables: TVariables, mutated: Context | undefined) => {
+      const context = mutated ?? (pendingContext(queryClient, variables) as Context | undefined)
+      if (context && isRefused(error)) {
+        keep(variables, context, error)
         return
       }
       for (const [key, data] of context?.snapshot ?? []) queryClient.setQueryData(key, data)
     },
-    onSettled: (
-      _data: unknown,
-      error: unknown,
-      variables: TVariables,
-      context: Context | undefined,
-    ) => {
+    onSettled: (_data: unknown, error: unknown, variables: TVariables) => {
       if (isRefused(error)) return Promise.resolve()
-      retained.delete(variables)
-      if (context) finishChange(queryClient, context)
+      finishChange(queryClient, variables)
       return Promise.all(
         [...updates.map(({ queryKey }) => queryKey), ...invalidate].map((queryKey) =>
           queryClient.invalidateQueries({ queryKey }),

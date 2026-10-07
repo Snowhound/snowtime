@@ -2,6 +2,7 @@ import { QueryClient } from '@tanstack/solid-query'
 import { createRouter as createTanStackRouter } from '@tanstack/solid-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/solid-router-ssr-query'
 import { getGlobalStartContext } from '@tanstack/solid-start'
+import { isServer } from 'solid-js/web'
 import { ErrorPage } from '~/features/errors/error-page'
 import { NotFoundPage } from '~/features/errors/not-found-page'
 import { readRetryDelay } from '~/lib/queries/refusal'
@@ -16,7 +17,9 @@ export function getRouter() {
         // Data rendered on the server is fresh when the page hydrates; without this the
         // client refetches everything right away.
         staleTime: 30_000,
-        retry: 3,
+        // A server render answers at once with what it has, as query-core's own default
+        // does there; the browser retries, waiting at least a refusal's Retry-After.
+        retry: isServer ? 0 : 3,
         retryDelay: readRetryDelay,
       },
     },

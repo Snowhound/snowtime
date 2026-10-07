@@ -4,9 +4,10 @@ import * as v from 'valibot'
 import { afterEach, expect, test, vi } from 'vitest'
 import { PendingChanges } from '~/components/pending-changes'
 import { request, setSend } from '~/lib/api/request'
+import { errorMessage } from '~/lib/errors'
 import { AppError } from '~/server/errors'
 import { cacheUpdate, optimistic } from './query'
-import { pendingChanges, readRetryDelay, retryAfterMs } from './refusal'
+import { pendingCount, readRetryDelay, retryAfterMs, retryPending } from './refusal'
 import { followSession } from './session'
 
 const clients: QueryClient[] = []
@@ -73,7 +74,7 @@ test('injected refusals retain an edit until Try again and retry its invalidated
   await expect(edit(cache).execute(2)).rejects.toBeInstanceOf(AppError)
   await vi.advanceTimersByTimeAsync(0)
   expect(cache.getQueryData(['entries'])).toBe(2)
-  expect(screen.getByRole('status').textContent).toContain('Change pending')
+  expect(screen.getByRole('status').textContent).toContain('Not saved yet')
   expect(attempts).toEqual({ edit: 1, entries: 0, report: 0 })
   await vi.advanceTimersByTimeAsync(60_000)
   expect(attempts.edit).toBe(1)
@@ -87,7 +88,7 @@ test('injected refusals retain an edit until Try again and retry its invalidated
   await vi.advanceTimersByTimeAsync(501)
   expect(attempts).toEqual({ edit: 2, entries: 2, report: 2 })
   expect(cache.getQueryData(['entries'])).toBe(2)
-  expect(pendingChanges(cache)).toHaveLength(0)
+  expect(pendingCount(cache)).toBe(0)
   expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
   stopEntries()
   stopReport()
@@ -116,11 +117,11 @@ test('an independent read cannot overwrite a refused edit and repeated refusals 
     queryFn: () => request('GET', '/entries', undefined, v.number()),
   })
   expect(cache.getQueryData(['entries', 'later'])).toBe(2)
-  await pendingChanges(cache)[0].retry()
-  expect(pendingChanges(cache)).toHaveLength(1)
+  await retryPending(cache)
+  expect(pendingCount(cache)).toBe(1)
   expect(cache.getQueryData(['entries'])).toBe(2)
-  await pendingChanges(cache)[0].retry()
-  expect(pendingChanges(cache)).toHaveLength(0)
+  await retryPending(cache)
+  expect(pendingCount(cache)).toBe(0)
   expect(cache.getQueryData(['entries'])).toBe(1)
   expect(cache.getQueryData(['entries', 'later'])).toBe(1)
   expect(writes).toBe(3)
@@ -160,11 +161,52 @@ test('changing users clears refused edits and disables their old retry actions',
   cache.setQueryData(['session'], { user: { id: 'ada' } })
   read(cache, 'entries')
   await expect(edit(cache).execute(2)).rejects.toMatchObject({ status: 503 })
-  const previous = pendingChanges(cache)[0]
   cache.setQueryData(['session'], { user: { id: 'ben' } })
   await cache.refetchQueries({ queryKey: ['entries'] })
-  expect(pendingChanges(cache)).toHaveLength(0)
+  expect(pendingCount(cache)).toBe(0)
   expect(cache.getQueryData(['entries'])).toBe(1)
-  await previous.retry()
+  await retryPending(cache)
   expect(writes).toBe(1)
+})
+
+test('a write made while one is pending waits unsent, and Try again sends both in order', async () => {
+  const sent: number[] = []
+  let busy = true
+  setSend((path, init) => {
+    if (path !== '/edit') return Response.json(0)
+    const { value } = JSON.parse(init?.body as string) as { value: number }
+    sent.push(value)
+    return busy ? refused() : Response.json(value)
+  })
+  const cache = client()
+  read(cache, 'entries')
+  const first = edit(cache).execute(2)
+  await expect(first).rejects.toMatchObject({ status: 503 })
+  await expect(edit(cache).execute(3)).rejects.toMatchObject({ status: 503 })
+  expect(sent).toEqual([2])
+  expect(pendingCount(cache)).toBe(2)
+  expect(cache.getQueryData(['entries'])).toBe(3)
+  await cache.refetchQueries({ queryKey: ['entries'] })
+  expect(cache.getQueryData(['entries'])).toBe(3)
+
+  busy = false
+  await retryPending(cache)
+  expect(sent).toEqual([2, 2, 3])
+  expect(pendingCount(cache)).toBe(0)
+})
+
+test('only a kept write reads as pending; other refusals keep their own message', async () => {
+  setSend(() => refused())
+  const cache = client()
+  read(cache, 'entries')
+  const kept = await edit(cache)
+    .execute(2)
+    .catch((error: unknown) => error)
+  expect(errorMessage(kept)).toBe('Not saved yet: the server is busy. Try again when you’re ready.')
+  const plain = await request('POST', '/organizations', {}, v.number()).catch(
+    (error: unknown) => error,
+  )
+  expect(errorMessage(plain)).toBe(
+    errorMessage(new AppError('UNAVAILABLE', 'database_unavailable')),
+  )
 })
