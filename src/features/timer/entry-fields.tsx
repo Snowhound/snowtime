@@ -23,6 +23,7 @@ import { type WeekStart, localDate, localTime, sameTimeOn } from '~/lib/calendar
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
+import { isPendingChange } from '~/lib/queries/refusal'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
@@ -116,9 +117,10 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
 
   function save(patch: EntryPatch) {
     setFailed(null)
-    props
-      .onSave(props.entry, patch)
-      .catch((error: unknown) => setFailed(m.entry_save_failed({ error: errorMessage(error) })))
+    props.onSave(props.entry, patch).catch((error: unknown) => {
+      // A change the busy server refused stays, marked in the row's actions.
+      if (!isPendingChange(error)) setFailed(m.entry_save_failed({ error: errorMessage(error) }))
+    })
   }
 
   // Moves the entry to `value`, keeping its times of day, seconds, and duration.

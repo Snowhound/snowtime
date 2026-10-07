@@ -1,4 +1,10 @@
-import type { Mutation, QueryClient, QueryKey } from '@tanstack/solid-query'
+import {
+  type Mutation,
+  type QueryClient,
+  type QueryKey,
+  useQueryClient,
+} from '@tanstack/solid-query'
+import { createSignal, onCleanup } from 'solid-js'
 
 export function isRefused(error: unknown): error is { status: 503; retryAfter?: string | null } {
   return typeof error === 'object' && error !== null && 'status' in error && error.status === 503
@@ -102,12 +108,36 @@ export function finishChange(client: QueryClient, variables: unknown) {
   notify(state)
 }
 
-export function pendingCount(client: QueryClient) {
-  return clients.get(client)?.changes.length ?? 0
+function pendingVariables(client: QueryClient): readonly unknown[] {
+  return clients.get(client)?.changes.map((c) => c.variables) ?? []
 }
 
-export function isRetrying(client: QueryClient) {
+export function pendingCount(client: QueryClient) {
+  return pendingVariables(client).length
+}
+
+function isRetrying(client: QueryClient) {
   return clients.get(client)?.retrying ?? false
+}
+
+// The pending writes for a view: how many, whether one is for the row with `id`, and the
+// retry that sends them all.
+export function usePendingChanges() {
+  const client = useQueryClient()
+  function read() {
+    return { variables: pendingVariables(client), retrying: isRetrying(client) }
+  }
+  const [state, setState] = createSignal(read())
+  onCleanup(subscribePending(client, () => setState(read())))
+  return {
+    count: () => state().variables.length,
+    retrying: () => state().retrying,
+    has: (id: string) =>
+      state().variables.some(
+        (v) => typeof v === 'object' && v !== null && 'id' in v && v.id === id,
+      ),
+    retry: () => void retryPending(client),
+  }
 }
 
 // Sends the pending writes again, oldest first, and stops at the first the server refuses.
@@ -133,7 +163,7 @@ export async function retryPending(client: QueryClient) {
   }
 }
 
-export function subscribePending(client: QueryClient, listener: () => void) {
+function subscribePending(client: QueryClient, listener: () => void) {
   const state = pendingState(client)
   state.listeners.add(listener)
   return () => state.listeners.delete(listener)

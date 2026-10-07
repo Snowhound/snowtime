@@ -215,10 +215,12 @@ function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
           <EntryActions
             entry={props.entry}
             saved={props.justSaved(props.entry.id)}
+            pending={props.pending(props.entry.id)}
             compact={props.compact}
             active={activation.active()}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
+            onRetry={props.onRetry}
           />
         </TableCell>
       </TableRow>

@@ -8,6 +8,7 @@ import { SceneryFields } from '~/components/scene/scenery-fields'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
 import { errorMessage } from '~/lib/errors'
+import { isPendingChange } from '~/lib/queries/refusal'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { playIntro } from '~/lib/scene/intro'
 import { useSeason } from '~/lib/scene/seasons'
@@ -43,7 +44,8 @@ export function PreferencesCard(props: { settings: Settings }) {
           <CardDescription>{m.settings_preferences_description()}</CardDescription>
         </div>
         <p class="text-muted-foreground flex items-center gap-1.5 text-sm" aria-live="polite">
-          <Show when={save.isError}>
+          {/* A change the busy server refused stays pending, with the page's alert. */}
+          <Show when={save.isError && !isPendingChange(save.error)}>
             <span class="text-destructive flex items-center gap-1.5">
               <CircleAlertIcon class="size-4" aria-hidden="true" />
               {errorMessage(save.error)}

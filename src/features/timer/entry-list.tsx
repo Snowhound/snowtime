@@ -65,6 +65,9 @@ export interface EntryRowProps {
   onSave: SaveEntry
   // Whether the entry's last save was confirmed a moment ago.
   justSaved: (id: string) => boolean
+  // Whether a change to the entry waits for the busy server, and the retry that sends it.
+  pending: (id: string) => boolean
+  onRetry: () => void
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
 }
@@ -240,10 +243,12 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
           <EntryActions
             entry={props.entry}
             saved={props.justSaved(props.entry.id)}
+            pending={props.pending(props.entry.id)}
             compact={props.compact}
             active={activation.active()}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
+            onRetry={props.onRetry}
           />
         </div>
       </div>
@@ -253,15 +258,18 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
 }
 
 // The row's continue and more actions. After a confirmed save, "Saved" takes their place for
-// a moment; they stay mounted underneath, so a button being tabbed to keeps its focus.
-// Compact buttons match the fields' height. The menu mounts while the row is `active`.
+// a moment, and while the busy server hasn't saved a change, "Not saved" over "Try again"
+// does. They stay mounted underneath, so a button being tabbed to keeps its focus. Compact
+// buttons match the fields' height. The menu mounts while the row is `active`.
 export function EntryActions(props: {
   entry: Entry
   saved: boolean
+  pending: boolean
   compact: boolean
   active: boolean
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
+  onRetry: () => void
 }) {
   function description() {
     return entryName(props.entry)
@@ -285,7 +293,7 @@ export function EntryActions(props: {
           'flex items-center gap-1',
           REVEAL,
           'sm:has-data-expanded:opacity-100',
-          props.saved &&
+          (props.saved || props.pending) &&
             'pointer-events-none opacity-0 sm:opacity-0 sm:group-focus-within:opacity-0 sm:group-hover:opacity-0',
         )}
       >
@@ -330,14 +338,30 @@ export function EntryActions(props: {
         role="status"
         class={cn(
           'text-primary pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 text-xs font-medium whitespace-nowrap transition-opacity duration-300',
-          props.saved ? 'opacity-100' : 'opacity-0',
+          props.saved && !props.pending ? 'opacity-100' : 'opacity-0',
         )}
       >
-        <Show when={props.saved}>
+        <Show when={props.saved && !props.pending}>
           <CheckIcon class="size-3.5" aria-hidden="true" />
           {m.timer_entry_saved()}
         </Show>
       </p>
+      <Show when={props.pending}>
+        <div class="text-warning absolute inset-y-0 right-0 flex items-center gap-1.5 text-xs font-medium whitespace-nowrap">
+          <ClockIcon class="size-3.5" aria-hidden="true" />
+          <div class="flex flex-col items-start leading-4">
+            <span role="status">{m.timer_entry_not_saved()}</span>
+            <Button
+              variant="link"
+              size="sm"
+              class="text-warning h-auto p-0 text-xs leading-4"
+              onClick={() => props.onRetry()}
+            >
+              {m.page_error_retry()}
+            </Button>
+          </div>
+        </div>
+      </Show>
     </div>
   )
 }

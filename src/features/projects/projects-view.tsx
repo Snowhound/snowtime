@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { TextField, TextFieldInput, TextFieldLabel } from '~/components/ui/text-field'
 import { errorMessage } from '~/lib/errors'
 import { type Project, projectsQuery } from '~/lib/queries/projects'
+import { isPendingChange } from '~/lib/queries/refusal'
 import { teamsQuery } from '~/lib/queries/teams'
 import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
@@ -78,8 +79,9 @@ export function ProjectsView(props: {
     return inTab(t).filter((p) => !q || p.name.toLowerCase().includes(q))
   }
 
+  // A change the busy server refused stays pending, with the page's alert instead of an error.
   function showError(e: unknown) {
-    setError(errorMessage(e))
+    if (!isPendingChange(e)) setError(errorMessage(e))
   }
   const options = { onError: showError }
 

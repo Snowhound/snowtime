@@ -29,6 +29,7 @@ import { errorMessage } from '~/lib/errors'
 import { formatIsoDate } from '~/lib/format'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
+import { isPendingChange, usePendingChanges } from '~/lib/queries/refusal'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { runningTimerQuery } from '~/lib/queries/timer'
 import { useQuery } from '~/lib/queries/use-query'
@@ -234,8 +235,9 @@ export function TimerView(props: {
     })
   })
 
+  // A change the busy server refused stays pending, with the page's alert instead of an error.
   function showError(e: unknown) {
-    setError(errorMessage(e))
+    if (!isPendingChange(e)) setError(errorMessage(e))
   }
   const options = { onError: showError }
 
@@ -294,6 +296,7 @@ export function TimerView(props: {
   // Rows whose save the server confirmed a moment ago; they show "Saved" (EntryActions).
   // Kept here, not in the row, because a new date moves the entry to another day's row.
   const [savedIds, setSavedIds] = createSignal<ReadonlySet<string>>(new Set())
+  const pending = usePendingChanges()
   const savedTimers = new Map<string, ReturnType<typeof setTimeout>>()
   onCleanup(() => savedTimers.forEach(clearTimeout))
 
@@ -345,6 +348,8 @@ export function TimerView(props: {
       markSaved(entry.id)
     },
     justSaved: (id: string) => savedIds().has(id),
+    pending: (id: string) => pending.has(id),
+    onRetry: () => pending.retry(),
     onContinue: (entry: Entry) => start(entry.description, entry.projectId, entry.ticket),
     onDelete: remove,
   }
