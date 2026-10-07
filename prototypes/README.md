@@ -939,6 +939,10 @@ Decided on 2026-09-29:
   Alt+Right by a day; Shift+Alt+Up and Shift+Alt+Down change its end. They go through
   `updateEntry` with Undo like a drag, and focus stays on the entry. Alt+Left is the
   browser's Back on Windows and Linux, so the page prevents it on an entry.
+- "Server busy" in the prototype bar has the server refuse every write, as in the timer
+  prototype. The change stays on the grid, the page shows the pending-change alert, and the
+  status line under the grid says "Not saved yet" in orange with "Try again" where Undo
+  would be.
 
 ### [auth.html](auth.html) — Sign-in flows
 
