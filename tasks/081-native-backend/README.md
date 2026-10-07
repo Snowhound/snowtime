@@ -261,7 +261,7 @@ which records the edge measurements.
 - [20](20-shared-accessors.md): server props with shared own accessors, as Solid 2.0
   ships them: the V8 default, while Bun keeps the plain bundle (done)
 - [21](21-render-hot-spots.md): one more profiling pass for small rewrites of hot bundle
-  code like task 20's, toward V8 within 1.2 times Bun
+  code like task 20's: V8 at 1.12–1.27 times Bun, within 1.2 on timer and week (done)
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

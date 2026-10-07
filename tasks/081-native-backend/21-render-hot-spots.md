@@ -1,6 +1,6 @@
 # 081.21: Further render hot spots
 
-Status: todo
+Status: done
 
 Task 081.20 left V8's best bundle at 1.26–1.38 times Bun's plain bundle in render CPU,
 above the 1.2 target. The changes that helped there were
@@ -40,8 +40,28 @@ scope here.
 
 ## Acceptance criteria
 
-- [ ] One V8 and one Bun profile of the timer and year pages on the shared bundle
-- [ ] Each candidate tried, with two alternating quick rounds on V8 and Bun and identical
+- [x] One V8 and one Bun profile of the timer and year pages on the shared bundle
+- [x] Each candidate tried, with two alternating quick rounds on V8 and Bun and identical
       HTML; the winners kept and the rest listed with their effect
-- [ ] If any change is kept, the full three-round measurement repeated as task 081.20 ran
+- [x] If any change is kept, the full three-round measurement repeated as task 081.20 ran
       it, and the gap to Bun recorded
+
+## Results
+
+Six changes take 7–17% off V8's render CPU on every page, against task 081.20's shared
+bundle, measured in one session:
+
+- the `uses12Hours` cache
+- the merge key listing
+- the split fast path for merge results
+- the descriptor lookup
+- two Lucide `Icon` patches
+
+V8's best bundle is now 1.12–1.27 times Bun's plain bundle: the timer and week pages meet
+the 1.2 target, and month and year don't. The defaults don't change: V8 keeps shared and
+Bun keeps plain.
+
+The early-read props experiment stopped at its first measurement: early getters make only
+5–8% of merge and split keys copyable. [The Mac report](server-rendering/hot-spots-mac.md)
+records each change's quick rounds, the full measurement, the profiles, the early-read
+counts, and follow-ups (minification, Lucide's icon building, and month and year).

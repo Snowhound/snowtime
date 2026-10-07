@@ -121,8 +121,14 @@ The isolated build writes two server bundles from the same compiled app:
   descriptor per key that every site shares, and its closure sits in a symbol-keyed slot,
   as Solid 2.0 emits props ([solid#3550](https://github.com/solidjs/solid/pull/3550)).
   Solid's server `mergeProps` and `splitProps` use cached shared descriptors too, and
-  `splitProps` re-homes a shared getter it copies so the copy still reads its source.
+  `splitProps` re-homes a shared getter it copies so the copy still reads its source. A
+  split of an unchanged merge result copies the merge getters and their sources instead.
 - `dist/render.js`, the plain bundle, keeps Solid's output.
+
+Both bundles patch Lucide's `Icon` (`bundle/lucide-nodes.ts`). It renders a string path
+element with one `ssrElement` instead of `Dynamic`, which saves a merge and a split per
+path, and spreads the default svg attributes without rebuilding them. The build fails if
+Lucide's `Icon` changes.
 
 `RENDER_PROPS` picks the bundle: `shared` is V8's default and `plain` is Bun's. V8 reads it
 when Cargo creates the startup snapshot, so a built binary keeps its bundle; Bun reads it
@@ -142,7 +148,10 @@ copies their descriptors outside `splitProps`. The build rejects changed upstrea
 merge/split helpers and generated-name collisions.
 
 [Task 081.20's report](../../../tasks/081-native-backend/server-rendering/shared-props-mac.md)
-records the measurements, getter counts, and GC diagnostics. To compare the bundles, build
+records the measurements, getter counts, and GC diagnostics.
+[Task 081.21's report](../../../tasks/081-native-backend/server-rendering/hot-spots-mac.md)
+records the later merge, split, and Lucide changes: V8's shared bundle at 1.12–1.27 times
+Bun's plain bundle. To compare the bundles, build
 `snowtime-render:props-plain` and `snowtime-render:props-shared` with the build argument,
 then run `bash native/crates/render/bundle/props-measure.sh` and
 `python3 native/crates/render/bundle/props-summary.py`. Getter counts run separately with

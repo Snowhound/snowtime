@@ -1,0 +1,162 @@
+diff --git a/native/crates/render/bundle/shared-props.ts b/native/crates/render/bundle/shared-props.ts
+index a9bd485..4e220e5 100644
+--- a/native/crates/render/bundle/shared-props.ts
++++ b/native/crates/render/bundle/shared-props.ts
+@@ -51,6 +51,46 @@ function unsafeGetter(node: Ast) {
+   })
+   return unsafe
+ }
++// A getter whose value can be read before Solid needs it: its body returns member reads,
++// literals, and operators or template strings over them, with no call, `new`, assignment,
++// or JSX (which compiles to calls). A member read can still reach another getter, so the
++// runtime only follows getters it knows (early-read props, bundle/shared-runtime.js).
++function earlyExpression(node: Ast): boolean {
++  switch (node.type) {
++    case 'Literal':
++      return !('regex' in node)
++    case 'Identifier':
++      return node.name !== 'arguments'
++    case 'TemplateLiteral':
++      return (node.expressions as Ast[]).every(earlyExpression)
++    case 'UnaryExpression':
++      return node.operator !== 'delete' && earlyExpression(node.argument)
++    case 'BinaryExpression':
++    case 'LogicalExpression':
++      return earlyExpression(node.left) && earlyExpression(node.right as Ast)
++    case 'ConditionalExpression':
++      return [node.test, node.consequent, node.alternate].every((n) => earlyExpression(n as Ast))
++    case 'ChainExpression':
++      return earlyExpression(node.expression as Ast)
++    case 'MemberExpression':
++      return (
++        (!node.computed || (node.property as Ast).type === 'Literal') &&
++        (node.object as Ast).type !== 'Super' &&
++        earlyExpression(node.object as Ast)
++      )
++    default:
++      return false
++  }
++}
++function earlyGetter(getter: Ast) {
++  const statements = getter.body.body
++  return (
++    statements.length === 1 &&
++    statements[0]!.type === 'ReturnStatement' &&
++    !!statements[0]!.argument &&
++    earlyExpression(statements[0]!.argument)
++  )
++}
+ function propertyKey(property: Ast): string | undefined {
+   if (!property.key) return undefined
+   if (!property.computed && property.key.type === 'Identifier') return property.key.name
+@@ -94,7 +134,9 @@ function propsSites(node: Ast) {
+     })
+ }
+ 
+-export function rewriteSharedProps(code: string) {
++// `early` marks early-read getters with descriptors of their own, which the runtime may read
++// when it merges or splits props (task 081.21's experiment, RENDER_PROPS=early).
++export function rewriteSharedProps(code: string, { early = false } = {}) {
+   if (code.includes('renderShared') || /SharedProps\$\d/.test(code))
+     throw new Error('Shared props generated-name collision')
+   const ast = parse(code, { ecmaVersion: 'latest', sourceType: 'script' }) as Ast
+@@ -103,14 +145,16 @@ export function rewriteSharedProps(code: string) {
+   const descriptors = new Map<string, string>()
+   const skipped: Record<string, number> = {}
+   let rewritten = 0
++  let earlyGetters = 0
+   function edit(start: number, end: number, text: string) {
+     edits.push({ start, end, text })
+   }
+-  function descriptor(key: string) {
+-    let name = descriptors.get(key)
++  function descriptor(key: string, earlyRead: boolean) {
++    const id = (earlyRead ? 'early:' : 'lazy:') + key
++    let name = descriptors.get(id)
+     if (!name) {
+       name = 'renderShared$' + descriptors.size
+-      descriptors.set(key, name)
++      descriptors.set(id, name)
+       declarations.push(
+         'const ' +
+           name +
+@@ -120,7 +164,9 @@ export function rewriteSharedProps(code: string) {
+           name +
+           '=renderSharedSite(' +
+           name +
+-          'Slot);',
++          'Slot' +
++          (earlyRead ? ',true' : '') +
++          ');',
+       )
+     }
+     return name
+@@ -139,7 +185,9 @@ export function rewriteSharedProps(code: string) {
+           return 'this[' + key + ']=v' + index + ';'
+         }
+         edit(property.start, property.value.body.start, '() => ')
+-        const shared = descriptor(keys[index]!)
++        const earlyRead = early && earlyGetter(property.value)
++        if (earlyRead) earlyGetters++
++        const shared = descriptor(keys[index]!, earlyRead)
+         return (
+           'this[' +
+           shared +
+@@ -203,14 +251,19 @@ export function rewriteSharedProps(code: string) {
+   output =
+     output.slice(0, anchor) +
+     '\n' +
+-    runtime +
++    (early
++      ? runtime.replace(
++          'const renderSharedEarlyProps = false',
++          'const renderSharedEarlyProps = true',
++        )
++      : runtime) +
+     '\n' +
+     declarations.join('\n') +
+     '\n' +
+     output.slice(anchor)
+   output = output.replace(/\/\/# sourceMappingURL=.*$/m, '')
+   parse(output, { ecmaVersion: 'latest', sourceType: 'script' })
+-  return { code: output, rewritten, skipped, descriptors: descriptors.size }
++  return { code: output, rewritten, skipped, descriptors: descriptors.size, earlyGetters }
+ }
+ 
+ export function sharedProps(): Plugin {
+@@ -230,6 +283,9 @@ export function sharedProps(): Plugin {
+         result.descriptors,
+         'shared descriptors',
+       )
++      const early = rewriteSharedProps(plain.code, { early: true })
++      this.emitFile({ type: 'asset', fileName: 'render.early.js', source: early.code })
++      console.log('early-props:', early.earlyGetters, 'early-read getters')
+     },
+   }
+ }
+diff --git a/native/crates/render/bundle/shared-runtime.js b/native/crates/render/bundle/shared-runtime.js
+index 4f8b582..a443870 100644
+--- a/native/crates/render/bundle/shared-runtime.js
++++ b/native/crates/render/bundle/shared-runtime.js
+@@ -10,7 +10,12 @@ const renderSharedMerges = new Map()
+ // One map per enumerable and configurable pair, so a lookup needs no composed key.
+ const renderSharedSplits = [new Map(), new Map(), new Map(), new Map()]
+ 
+-export function renderSharedSite(slot) {
++// Set by the build for the early-read bundle (RENDER_PROPS=early), which marks getters whose
++// bodies only read members (shared-props.ts, earlyGetter).
++const renderSharedEarlyProps = false
++const renderSharedEarly = new WeakSet()
++
++export function renderSharedSite(slot, early) {
+   const descriptor = {
+     get() {
+       return this[slot]()
+@@ -19,6 +24,7 @@ export function renderSharedSite(slot) {
+     configurable: true,
+   }
+   renderSharedGetters.add(descriptor.get)
++  if (early) renderSharedEarly.add(descriptor.get)
+   return descriptor
+ }
+ function renderSharedCache(cache, key, make) {
