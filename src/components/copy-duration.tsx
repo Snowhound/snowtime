@@ -10,30 +10,10 @@ import { useCopyControl, useCopyPattern, useFormatHours } from '~/lib/display-fo
 import { formatDurationPattern } from '~/lib/duration-pattern'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import { announce } from './copy-announcer'
 import { Duration } from './duration'
 
 const SHOWN_MS = 2000
-
-// One live region for every duration, rendered once by AppFrame, the shell of every signed-in
-// page: it is in the page before the first copy (a region added along with its text often
-// isn't read), and rows don't each have one. See docs/architecture/timer.md, "Copying
-// durations".
-const [status, setStatus] = createSignal('')
-
-function announce(text: string) {
-  // Cleared first and set in a later task, so the same text twice is read twice. A timer
-  // rather than a frame, which a hidden page never paints.
-  setStatus('')
-  setTimeout(() => setStatus(text), 50)
-}
-
-export function CopyAnnouncer() {
-  return (
-    <p class="sr-only" aria-live="polite">
-      {status()}
-    </p>
-  )
-}
 
 // A click doesn't move focus to the copy control: an entry row stays active while it holds
 // focus (src/features/timer/row-activation.ts), which kept the row's hover controls showing

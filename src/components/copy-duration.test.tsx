@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { sessionQuery } from '~/lib/queries/session'
-import { CopyAnnouncer, CopyDuration } from './copy-duration'
+import { CopyAnnouncer } from './copy-announcer'
+import { CopyDuration } from './copy-duration'
 
 vi.mock('~/lib/api/auth', () => ({ getAppSession: vi.fn() }))
 

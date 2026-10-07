@@ -60,8 +60,9 @@ into a ticket's work log or an invoice (task 078). Other durations don't copy ye
   are hours, minutes, and seconds, and a run of one letter sets the minimum digits: `HH`
   gives `09`. A backslash keeps the next character, and any other character is copied as
   typed, so `Hh Mm Ss` copies two hours as `2h 0m 0s`. The default, `H:MM:SS`, copies an
-  entry's duration as its row shows it. `src/lib/duration-pattern.ts` formats and validates
-  patterns for the client and the server.
+  entry's duration as its row shows it. `src/lib/duration-pattern.ts` formats
+  patterns. `src/lib/duration-pattern-settings.ts` validates them for the client and server
+  without loading the tokenizer into shared settings schemas.
 - The first unit in the pattern holds the whole duration: hours don't wrap at 24, and
   `M:SS` copies 2:05:09 as `125:09`. This follows Google Sheets' `[h]` duration format.
 - The copy starts from the milliseconds, not the shown text, so `duration_format` and the

@@ -6,7 +6,7 @@ import { type QueryClient, QueryClientContext, hashKey } from '@tanstack/solid-q
 import { createSignal, useContext } from 'solid-js'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { DateFormat, TimeFormat } from '~/server/settings/settings.schemas'
-import { DEFAULT_COPY_PATTERN } from './duration-pattern'
+import { DEFAULT_COPY_PATTERN } from './duration-pattern-settings'
 import { formatHours } from './format'
 import { sessionQuery } from './queries/session'
 import type { Settings } from './queries/settings'

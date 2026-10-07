@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/solid-query'
 import { useMatches } from '@tanstack/solid-router'
 import { type ParentProps, createContext, onMount } from 'solid-js'
-import { CopyAnnouncer } from '~/components/copy-duration'
+import { CopyAnnouncer } from '~/components/copy-announcer'
 import { Intro, IntroPage } from '~/components/scene/intro'
 import { SceneLayer } from '~/components/scene/scene-layer'
 import { createSettings } from '~/lib/api/settings'

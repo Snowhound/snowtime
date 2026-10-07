@@ -12,7 +12,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core'
 import { APP_ICON_IDS, DEFAULT_APP_ICON } from '~/lib/app-icon'
-import { DEFAULT_COPY_PATTERN } from '~/lib/duration-pattern'
+import { DEFAULT_COPY_PATTERN } from '~/lib/duration-pattern-settings'
 import { COUNTRIES } from '~/lib/holidays/region'
 import { COLLECTION_IDS, IMAGE_IDS } from '~/lib/scene/images'
 import {

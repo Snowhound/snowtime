@@ -2,9 +2,6 @@
 // "Copying durations"). Runs of H, M, or S are hours, minutes, and seconds, the run's length
 // their minimum digits; a backslash keeps the next character; anything else is copied as typed.
 
-export const DEFAULT_COPY_PATTERN = 'H:MM:SS'
-export const MAX_COPY_PATTERN = 40
-
 type Field = 'H' | 'M' | 'S'
 
 // A piece of the pattern as typed, so the settings field can color it: a field, a character
@@ -43,14 +40,6 @@ export function tokenizePattern(pattern: string): PatternToken[] {
   if (tokenized.size >= CACHE_SIZE) tokenized.clear()
   tokenized.set(pattern, tokens)
   return tokens
-}
-
-export function validDurationPattern(pattern: string): boolean {
-  return (
-    pattern.length > 0 &&
-    pattern.length <= MAX_COPY_PATTERN &&
-    tokenizePattern(pattern).some((token) => token.kind === 'field')
-  )
 }
 
 // Fields inside a word, such as the H of "Hours", which were likely meant as text: after a

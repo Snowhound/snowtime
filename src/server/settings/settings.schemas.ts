@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 import { APP_ICON_IDS } from '~/lib/app-icon'
-import { validDurationPattern } from '~/lib/duration-pattern'
+import { validDurationPattern } from '~/lib/duration-pattern-settings'
 import { COUNTRIES } from '~/lib/holidays/region'
 import { COLLECTION_IDS, IMAGE_IDS } from '~/lib/scene/images'
 import { m } from '~/paraglide/messages.js'

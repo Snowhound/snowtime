@@ -1,12 +1,8 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from 'bun:test'
-import {
-  fieldsInWords,
-  formatDurationPattern,
-  tokenizePattern,
-  validDurationPattern,
-} from './duration-pattern'
+import { fieldsInWords, formatDurationPattern, tokenizePattern } from './duration-pattern'
+import { validDurationPattern } from './duration-pattern-settings'
 
 const SECOND = 1000
 const MINUTE = 60 * SECOND
@@ -51,6 +47,8 @@ describe('validDurationPattern', () => {
     expect(validDurationPattern('')).toBe(false)
     expect(validDurationPattern('hms')).toBe(false)
     expect(validDurationPattern('\\H')).toBe(false)
+    expect(validDurationPattern('\\HH')).toBe(true)
+    expect(validDurationPattern('\\\\H')).toBe(true)
     expect(validDurationPattern(`H${' '.repeat(39)}`)).toBe(true)
     expect(validDurationPattern(`H${' '.repeat(40)}`)).toBe(false)
   })

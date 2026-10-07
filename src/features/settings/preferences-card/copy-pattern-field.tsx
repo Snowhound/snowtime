@@ -10,14 +10,16 @@ import {
   TextFieldLabel,
 } from '~/components/ui/text-field'
 import {
-  DEFAULT_COPY_PATTERN,
-  MAX_COPY_PATTERN,
   type PatternToken,
   fieldsInWords,
   formatDurationPattern,
   tokenizePattern,
-  validDurationPattern,
 } from '~/lib/duration-pattern'
+import {
+  DEFAULT_COPY_PATTERN,
+  MAX_COPY_PATTERN,
+  validDurationPattern,
+} from '~/lib/duration-pattern-settings'
 import { formatClock } from '~/lib/format'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
