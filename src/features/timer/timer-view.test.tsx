@@ -260,6 +260,7 @@ describe('TimerView', () => {
 
     await userEvent.clear(input)
     await userEvent.type(input, 'Invoice export{Enter}')
+    expect(input).not.toHaveFocus()
     await waitFor(() =>
       expect(fn.updateEntry).toHaveBeenCalledWith({
         organizationId,

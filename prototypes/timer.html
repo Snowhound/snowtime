@@ -1065,7 +1065,7 @@
         const { entry: id, key } = t.dataset
         if (event.key === 'Enter') {
           event.preventDefault()
-          commit(id, key)
+          t.blur()
         } else if (event.key === 'Escape') {
           event.preventDefault()
           const e = find(id)

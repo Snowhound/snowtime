@@ -232,7 +232,7 @@ export function DescriptionField(props: { editor: EntryEditor }) {
       onBlur={() => props.editor.commitDescription()}
       onKeyDown={(event) =>
         commitKeys(
-          () => props.editor.commitDescription(),
+          () => event.currentTarget.blur(),
           () => props.editor.resetDescription(),
         )(event)
       }

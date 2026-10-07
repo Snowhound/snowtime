@@ -205,7 +205,7 @@ export function TimerBar(props: {
             onKeyDown={(event) => {
               if (event.key !== 'Enter') return
               event.preventDefault()
-              if (props.running) saveDescription()
+              if (props.running) input?.blur()
               else start()
             }}
           />
