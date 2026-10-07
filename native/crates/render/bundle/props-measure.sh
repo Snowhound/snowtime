@@ -18,7 +18,7 @@ for round in 1 2 3; do
       for semi in default 32; do
         envs=()
         if [ "$semi" = 32 ]; then envs=(-e RENDER_SEMI_MB=32); fi
-        docker run --rm --cpus=1 --memory=2g -v "$results:/results:ro" -v "$out/html:/html" "${envs[@]}" \
+        docker run --rm --cpus=1 --memory=2g -v "$results:/results:ro" -v "$out/html:/html" ${envs[@]+"${envs[@]}"} \
           "snowtime-render:props-$variant" "/results/$page.json" /results/answers.json 500 1 1 \
           "/html/$page-v8-$semi-$variant.html" > "$out/raw/$page-v8-$semi-$variant-$round.json"
       done

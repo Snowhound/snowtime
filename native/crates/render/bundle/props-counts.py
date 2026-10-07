@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Instrument getter construction in saved server bundles, outside timing runs."""
+"""Instrument getter construction in the props bundles, outside timing runs."""
 from pathlib import Path
 import subprocess
 root = Path(__file__).resolve().parents[4]
-out = root/'native/crates/render/results/prototype/diagnostic'
+out = root/'native/crates/render/results/props/diagnostic'
 out.mkdir(parents=True, exist_ok=True)
 instrument = r"""
 import {parse} from 'acorn';
@@ -28,10 +28,10 @@ walk(parse(code,{ecmaVersion:'latest',sourceType:'script'}));
 let s=code;
 for(const [start,end,text] of edits.sort((a,b)=>b[0]-a[0]||b[1]-a[1])) s=s.slice(0,start)+text+s.slice(end);
 const before=String.raw\`
-var propsCounts={definePropertyGetters:0,definePropertiesGetters:0,literalObjects:0,literalGetters:0};
+var propsCounts={definePropertyGetters:0,freshDefinePropertyGetters:0,definePropertiesGetters:0,literalObjects:0,literalGetters:0};
 {
- const one=Object.defineProperty, many=Object.defineProperties;
- Object.defineProperty=function(o,k,d){if(typeof d.get==='function') propsCounts.definePropertyGetters++;return one(o,k,d)};
+ const one=Object.defineProperty, many=Object.defineProperties, seen=new WeakSet();
+ Object.defineProperty=function(o,k,d){if(typeof d.get==='function'){propsCounts.definePropertyGetters++;if(!seen.has(d.get)){seen.add(d.get);propsCounts.freshDefinePropertyGetters++}}return one(o,k,d)};
  Object.defineProperties=function(o,ds){for(const d of Object.values(ds)) if(typeof d.get==='function') propsCounts.definePropertiesGetters++;return many(o,ds)};
 }
 \`;
@@ -51,8 +51,8 @@ writeFileSync(output,before+s+after);
 instrument = instrument.replace(chr(92)+chr(96), chr(96))
 script = out/'instrument-counts.mjs'
 script.write_text(instrument)
-for variant in ('plain','prototype'):
-    bundle = root/'native/crates/render/bundle/dist'/('render.js' if variant=='plain' else 'render.prototype.js')
+for variant in ('plain','prototype','shared'):
+    bundle = root/'native/crates/render/bundle/dist'/('render.js' if variant=='plain' else f'render.{variant}.js')
     counted = out/f'counted-{variant}.js'
     subprocess.run(['bun',str(script),str(bundle),str(counted)],check=True,cwd=root)
     for page in ('timer','week','month','year'):

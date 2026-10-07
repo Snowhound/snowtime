@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 root=Path(__file__).resolve().parents[4]
 import tempfile
-out=Path(tempfile.mkdtemp(prefix='snowtime-prototype19-diagnostic-'))
+out=Path(tempfile.mkdtemp(prefix='snowtime-props-diagnostic-'))
 print(out)
 out.mkdir(exist_ok=True)
 # Copy only render build inputs; do not copy ignored captures or target directories.
@@ -16,7 +16,7 @@ for p in (root/'native').rglob('*'):
         dest.parent.mkdir(parents=True,exist_ok=True)
         shutil.copyfile(p,dest)
 render=out/'native/crates/render'
-shutil.copyfile(root/'native/crates/render/bundle/bench/prototype-gc.rs',render/'src/gc-probe.rs')
+shutil.copyfile(root/'native/crates/render/bundle/bench/props-gc.rs',render/'src/gc-probe.rs')
 p=render/'src/extensions.rs'
 s=p.read_text().replace('pub fn extensions()', '#[path = "gc-probe.rs"]\nmod gc_probe;\n\npub fn extensions()').replace('        encoding::encoding_ops::init(),','        encoding::encoding_ops::init(),\n        gc_probe::props_gc_ops::init(),')
 p.write_text(s)
