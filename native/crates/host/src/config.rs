@@ -41,7 +41,11 @@ pub fn from_env() -> Result<Config, String> {
         })
     };
     let limits = snowtime_server::Limits {
-        hashes: number("SCRYPT_CONCURRENCY", cpus)?,
+        hashes: number("SCRYPT_CONCURRENCY", cpus)?.min(snowtime_server::hash_workers(
+            crate::memory::limit().bytes,
+            cpus,
+        )),
+        max_waiting: number("WORK_QUEUE_MAX_WAITING", 32)?,
         queue_timeout: std::time::Duration::from_millis(
             number("WORK_QUEUE_TIMEOUT_MS", 1000)? as u64
         ),

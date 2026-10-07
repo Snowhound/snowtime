@@ -10,47 +10,65 @@ use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 pub struct Limits {
     pub hashes: usize,
     pub queue_timeout: Duration,
+    pub max_waiting: usize,
 }
 impl Default for Limits {
     fn default() -> Self {
         Self {
             hashes: std::thread::available_parallelism().map_or(1, |n| n.get()),
             queue_timeout: Duration::from_secs(1),
+            max_waiting: 32,
         }
     }
 }
+pub(crate) struct Permit {
+    _slot: OwnedSemaphorePermit,
+}
+
 pub(crate) struct Gate {
     slots: Arc<Semaphore>,
     #[cfg(feature = "bench")]
     capacity: usize,
-    #[cfg(feature = "bench")]
     waiting: std::sync::atomic::AtomicUsize,
     timeout: Duration,
+    max_waiting: usize,
 }
 impl Gate {
+    #[cfg(test)]
     pub fn new(slots: usize, timeout: Duration) -> Self {
+        Self::bounded(slots, 32, timeout)
+    }
+    pub fn bounded(slots: usize, max_waiting: usize, timeout: Duration) -> Self {
         assert!(slots > 0 && !timeout.is_zero());
         Self {
             slots: Arc::new(Semaphore::new(slots)),
             #[cfg(feature = "bench")]
             capacity: slots,
-            #[cfg(feature = "bench")]
             waiting: std::sync::atomic::AtomicUsize::new(0),
             timeout,
+            max_waiting,
         }
     }
-    pub async fn acquire(&self) -> Result<OwnedSemaphorePermit, Response> {
-        #[cfg(feature = "bench")]
-        let _waiting = Waiting::new(&self.waiting);
+    pub async fn acquire(&self) -> Result<Permit, Response> {
+        if let Some(permit) = self.try_acquire() {
+            return Ok(permit);
+        }
+        let _waiting = Waiting::new(&self.waiting, self.max_waiting)
+            .ok_or_else(|| Response::from(failure(503, "The server is busy. Try again.")))?;
         tokio::time::timeout(self.timeout, self.slots.clone().acquire_owned())
             .await
             .ok()
             .and_then(Result::ok)
+            .map(|slot| Permit { _slot: slot })
             .ok_or_else(|| failure(503, "The server is busy. Try again.").into())
     }
     /// A slot if one is free now, without waiting.
-    pub fn try_acquire(&self) -> Option<OwnedSemaphorePermit> {
-        self.slots.clone().try_acquire_owned().ok()
+    pub fn try_acquire(&self) -> Option<Permit> {
+        self.slots
+            .clone()
+            .try_acquire_owned()
+            .ok()
+            .map(|slot| Permit { _slot: slot })
     }
     #[cfg(feature = "bench")]
     pub fn stats(&self) -> serde_json::Value {
@@ -62,6 +80,12 @@ impl Gate {
         call: impl FnOnce() -> T + Send + 'static,
     ) -> Result<T, Response> {
         let permit = self.acquire().await?;
+        Self::run_admitted(permit, call).await
+    }
+    pub(crate) async fn run_admitted<T: Send + 'static>(
+        permit: Permit,
+        call: impl FnOnce() -> T + Send + 'static,
+    ) -> Result<T, Response> {
         #[cfg(feature = "bench")]
         let queued = crate::bench::Active::new(&crate::bench::QUEUED);
         tokio::task::spawn_blocking(move || {
@@ -79,16 +103,19 @@ impl Gate {
     }
 }
 
-#[cfg(feature = "bench")]
 struct Waiting<'a>(&'a std::sync::atomic::AtomicUsize);
-#[cfg(feature = "bench")]
 impl<'a> Waiting<'a> {
-    fn new(counter: &'a std::sync::atomic::AtomicUsize) -> Self {
-        counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        Self(counter)
+    fn new(counter: &'a std::sync::atomic::AtomicUsize, maximum: usize) -> Option<Self> {
+        counter
+            .try_update(
+                std::sync::atomic::Ordering::Relaxed,
+                std::sync::atomic::Ordering::Relaxed,
+                |waiting| (waiting < maximum).then_some(waiting + 1),
+            )
+            .ok()?;
+        Some(Self(counter))
     }
 }
-#[cfg(feature = "bench")]
 impl Drop for Waiting<'_> {
     fn drop(&mut self) {
         self.0.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
@@ -98,6 +125,54 @@ impl Drop for Waiting<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test]
+    async fn count_bound_refuses_immediately_and_cancellation_frees_waiting() {
+        use axum::response::IntoResponse;
+        use std::sync::atomic::Ordering;
+        let gate = Arc::new(Gate::bounded(1, 1, Duration::from_secs(60)));
+        let running = gate.acquire().await.unwrap();
+        let queued_gate = gate.clone();
+        let queued = tokio::spawn(async move { queued_gate.acquire().await });
+        while gate.waiting.load(Ordering::Relaxed) != 1 {
+            tokio::task::yield_now().await;
+        }
+        let response = tokio::time::timeout(Duration::from_millis(50), gate.acquire())
+            .await
+            .expect("the count bound must not wait for the deadline")
+            .err()
+            .unwrap();
+        assert_eq!(response.status, 503);
+        assert_eq!(
+            response.into_response().headers()[axum::http::header::RETRY_AFTER],
+            "1"
+        );
+        queued.abort();
+        let _ = queued.await;
+        assert_eq!(gate.waiting.load(Ordering::Relaxed), 0);
+        drop(running);
+        assert!(gate.acquire().await.is_ok());
+    }
+    #[test]
+    fn blocking_work_is_only_spawned_by_admission() {
+        fn check(path: &std::path::Path) {
+            for entry in std::fs::read_dir(path).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    check(&path);
+                } else if path.extension().is_some_and(|ext| ext == "rs")
+                    && path.file_name().unwrap() != "admission.rs"
+                {
+                    let source = std::fs::read_to_string(&path).unwrap();
+                    assert!(
+                        !source.contains("spawn_blocking"),
+                        "ungated blocking work: {}",
+                        path.display()
+                    );
+                }
+            }
+        }
+        check(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src"));
+    }
     #[tokio::test]
     async fn rejects_queue_timeout_and_releases_a_completed_slot() {
         let gate = Gate::new(1, Duration::from_millis(20));

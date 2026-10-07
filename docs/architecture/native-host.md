@@ -42,11 +42,11 @@ as the V8 renderers are. The contract matters more than the mechanism. A lane ge
 own threads where the shared pool can't keep the contract: password hashing, whose lower
 priority must not carry over to database work on a reused thread.
 
-| Lane             | Built                                                                                                                                                       | _Planned_                                                      |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Database         | A gate per connection class, bounded by time: a slot per reader for reads with the read pool on, one for the writer (081.10, 081.17)                        | A waiting count, and a smaller budget for reports and exports  |
-| Password hashing | A gate of `SCRYPT_CONCURRENCY` slots on the shared blocking pool, sized from cores (081.10)                                                                 | Dedicated threads at lower priority, sized from memory as well |
-| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar, parked (081.16)                              |
+| Lane             | Built                                                                                                                                                       | _Planned_                           |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                        | Measure and tune the bounds         |
+| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                                   | Measure the sign-in burst           |
+| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Measure the completed lane contract |
 
 A reader that finds a session due for renewal or expired takes the writer only if the
 writer's gate has a free slot at that moment. Otherwise it answers from the reader, and a
@@ -83,6 +83,20 @@ Rejected:
   need Tokio. Leaving Tokio means replacing that stack for no measured gain.
 - **Running SQLite calls on the async workers.** Most calls take under a millisecond, but
   a report or export query would stall every connection on that worker.
+
+The database and hash gates allow 32 waiting callers each by default
+(`WORK_QUEUE_MAX_WAITING`), and wait at most 1,000 ms (`WORK_QUEUE_TIMEOUT_MS`).
+An idle worker starts a call without counting it as waiting. A cancelled waiter frees
+its place, and running work keeps its permits when its caller leaves. These bounds are
+provisional: task 081.10 measured 117 waiting callers in a passing eight-core hold and
+872 under overload, but neither run tested the count bound. Task 081.17 still needs the
+measurements that set the final limits.
+
+Reports take at most `max(1, readers / 4)` workers and allow four waiting callers, with
+the same deadline. They take that budget before database admission, so waiting reports
+hold no connection. The report route uses `run_report`; exports must use it when ported.
+Without readers, a running report still shares the only connection with ordinary calls.
+The worker share and waiting limit are provisional and await the organization-burst test.
 
 ## Overload policy
 
@@ -126,6 +140,15 @@ raised the held eight-core offer 1.3 times on M and 6 times on L, but one reader
 core held 15,000 users on M against 25,000 with the single connection (task 081.10).
 Those runs predate the gate per connection class, and task 081.17's measurements repeat
 them. Budget at least 2 MiB of page cache per reader plus its statements.
+
+Password workers use the smaller of the core count and one eighth of the memory limit
+at 32 MiB per hash, with at least one worker. `SCRYPT_CONCURRENCY` can reduce that cap.
+This share fits inside the render policy's 25% headroom and still needs measurement.
+On Linux each dedicated thread increases its inherited niceness by five, capped at 19,
+and verifies the new value before accepting work. Startup fails if a thread cannot get a
+lower priority. On other systems the dedicated threads keep their inherited priority.
+Only database admission reaches Tokio's blocking pool, capped at readers plus one;
+a source test rejects `spawn_blocking` elsewhere in the server crate.
 
 Task 081.10's provisional whole-host test budgets are 2 GiB for M and 4 GiB for L,
 including the OS, replication, and file cache. They come from a shared Mac VM and await

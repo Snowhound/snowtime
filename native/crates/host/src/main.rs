@@ -17,8 +17,8 @@ fn main() {
     snowtime_server::clock::init_from_env();
     let config = config::from_env().unwrap_or_else(|message| panic!("{message}"));
     let runtime = tokio::runtime::Builder::new_multi_thread()
-        // A thread for each reader, the writer, and each hash the gates admit.
-        .max_blocking_threads(config.read_connections + 1 + config.limits.hashes)
+        // A thread per reader and one for the writer; hashes have dedicated threads.
+        .max_blocking_threads(config.read_connections + 1)
         .enable_all()
         .build()
         .expect("the host runtime starts");

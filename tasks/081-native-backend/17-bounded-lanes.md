@@ -31,7 +31,7 @@ Database and hashing:
 - [ ] Reports and exports admitted through a smaller budget inside the database lane. With
       one organization bursting reports, other organizations' timer p95 and refusals
       measured before and after
-- [ ] Password hashing on dedicated threads below the other lanes' OS priority, sized from
+- [x] Password hashing on dedicated threads below the other lanes' OS priority, sized from
       memory (32 MiB a hash) as well as cores; `spawn_blocking` reached only through a
       gate, checked by a test or a lint
 - [ ] A fixed load with a burst of sign-ins (10 a second for 10 seconds) before and after:
@@ -83,3 +83,34 @@ tests only; nothing was measured.
 Left for later sessions: the waiting-count bound, dedicated hash threads, the
 report/export budget, the runtime comparison, the measurements, and the client's refusal
 handling.
+
+## Progress, 2026-10-07
+
+Merged `081-native-poc` into `081-lanes` by fast-forward before editing. Its task 081.22
+bundle and V8 engine decision are included.
+
+- Gates now cap waiting callers at 32 (`WORK_QUEUE_MAX_WAITING`) and refuse at once with
+  503 and `Retry-After: 1` when full. Cancellation releases a waiting place. The existing
+  1,000 ms deadline remains configurable. Both bounds are provisional and unmeasured.
+- Reports take a separate budget before database admission: `max(1, readers / 4)` active
+  calls and four waiters. Tests cover an ordinary read while a report waits, refusal at
+  the report route, and ordinary reads and writes while a report runs. A cancelled caller
+  keeps both permits until the report finishes. Exports are still unported and must use
+  `run_report` when added.
+- Hashes run on dedicated threads. On Linux workers apply and verify niceness five above
+  their inherited value. A test reads both workers' actual priority and checks that the
+  edge and database threads retain theirs. The host caps hashes by cores and one eighth
+  of the memory limit at 32 MiB a hash; `SCRYPT_CONCURRENCY` can only reduce that cap.
+  Tokio's blocking thread cap is now readers plus one. A source test enforces the single
+  gated `spawn_blocking` entry point.
+- Validation: the final 35 server unit tests passed on macOS with `bench` enabled. An
+  earlier 35-test Linux run passed, including the actual
+  priority test, with `bench` enabled. The Linux Docker build's final image
+  export was cancelled after the tests passed when Kait checked CPU use. No load tests
+  or render benchmarks ran. Hash sizing assertions passed in the server suite; the host
+  suite is deferred
+  to avoid another large build during the other session's measurements.
+
+The queue-bound and report criteria stay unticked because each also requires
+measurements. The runtime comparison, sign-in burst, overload ramp, and decisions
+catalogue results remain pending.

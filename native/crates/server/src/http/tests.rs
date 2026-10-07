@@ -267,6 +267,7 @@ fn pooled_app(path: &std::path::Path) -> Arc<App> {
         crate::Limits {
             hashes: 1,
             queue_timeout: DEADLINE,
+            max_waiting: 32,
         },
     )
     .unwrap();
@@ -472,4 +473,111 @@ async fn slow_readers_leave_the_writer_to_writes() {
     );
     assert!(started.elapsed() < DEADLINE);
     drop(held);
+}
+
+fn lane_request() -> Request {
+    Request {
+        method: "GET".into(),
+        query: None,
+        cookie: None,
+        user_agent: None,
+        client_ip: None,
+        body: vec![],
+        params: vec![],
+    }
+}
+
+#[tokio::test]
+async fn report_queue_holds_no_database_slot_and_the_route_refuses_with_retry_after() {
+    let app = App::open_with_limits(
+        Config {
+            database_path: ":memory:".into(),
+            ..config()
+        },
+        0,
+        crate::Limits {
+            hashes: 1,
+            queue_timeout: std::time::Duration::from_millis(50),
+            max_waiting: 32,
+        },
+    )
+    .unwrap();
+    let busy = app.report_gate.acquire().await.unwrap();
+    let queued_app = app.clone();
+    let queued = tokio::spawn(async move {
+        super::answer(queued_app, lane_request(), true, true, |_, _, _, _| {
+            Ok(crate::wire::ok(&42))
+        })
+        .await
+    });
+    tokio::task::yield_now().await;
+    // A report waits on its own budget while the only database connection remains idle.
+    assert_eq!(
+        super::answer(app.clone(), lane_request(), true, false, |_, _, _, _| Ok(
+            crate::wire::ok(&7)
+        ))
+        .await
+        .status,
+        200
+    );
+    let (a, b, c, response) = tokio::join!(
+        app.report_gate.acquire(),
+        app.report_gate.acquire(),
+        app.report_gate.acquire(),
+        async {
+            tokio::task::yield_now().await;
+            router(app.clone())
+                .oneshot(
+                    HttpRequest::builder()
+                        .method("POST")
+                        .uri("/api/v1/organizations/org/report")
+                        .body(Body::from("{}"))
+                        .unwrap(),
+                )
+                .await
+                .unwrap()
+        }
+    );
+    assert_eq!(response.status(), 503);
+    assert_eq!(response.headers()[header::RETRY_AFTER], "1");
+    assert!(a.is_err() && b.is_err() && c.is_err());
+    queued.abort();
+    let _ = queued.await;
+    drop(busy);
+}
+
+#[tokio::test]
+async fn a_running_report_leaves_readers_and_writer_available_and_keeps_budget_on_cancel() {
+    let path = std::env::temp_dir().join(format!("snowtime-report-{}.db", uuid::Uuid::now_v7()));
+    let app = pooled_app(&path);
+    let (began, started) = tokio::sync::oneshot::channel();
+    let (finish, wait) = std::sync::mpsc::channel();
+    let report_app = app.clone();
+    let report = tokio::spawn(async move {
+        super::answer(report_app, lane_request(), true, true, move |_, _, _, _| {
+            began.send(()).unwrap();
+            wait.recv().unwrap();
+            Ok(crate::wire::ok(&42))
+        })
+        .await
+    });
+    started.await.unwrap();
+    let read = super::answer(app.clone(), lane_request(), true, false, |_, _, _, _| {
+        Ok(crate::wire::ok(&1))
+    });
+    let mut write_request = lane_request();
+    write_request.method = "POST".into();
+    let write = super::answer(app.clone(), write_request, false, false, |_, _, _, _| {
+        Ok(crate::wire::ok(&2))
+    });
+    let (read, write) = tokio::join!(read, write);
+    assert_eq!((read.status, write.status), (200, 200));
+    report.abort();
+    let _ = report.await;
+    assert!(app.report_gate.try_acquire().is_none());
+    finish.send(()).unwrap();
+    let permit = app.report_gate.acquire().await.unwrap();
+    drop(permit);
+    drop(app);
+    std::fs::remove_file(path).unwrap();
 }
