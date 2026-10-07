@@ -40,11 +40,12 @@ globalThis.renderManifest = JSON.parse(
   readFileSync(resolve(import.meta.dir, 'dist/manifest.json'), 'utf8'),
 )
 const started = performance.now()
-const variant = process.env.RENDER_PROTOTYPE_PROPS ?? '0'
-if (!['0', '1'].includes(variant)) throw new Error('RENDER_PROTOTYPE_PROPS must be 0 or 1')
+const variant = process.env.RENDER_PROPS ?? 'plain'
+if (!['plain', 'prototype', 'shared'].includes(variant))
+  throw new Error('RENDER_PROPS must be plain, prototype, or shared')
 await import(
   process.env.BUN_RENDER_BUNDLE ??
-    resolve(import.meta.dir, variant === '1' ? 'dist/render.prototype.js' : 'dist/render.js')
+    resolve(import.meta.dir, variant === 'plain' ? 'dist/render.js' : `dist/render.${variant}.js`)
 )
 
 async function render() {

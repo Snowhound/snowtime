@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import { build } from 'vite'
 import solid from 'vite-plugin-solid'
 import { prototypeProps } from './prototype-props'
+import { sharedProps } from './shared-props'
 import { serverProps } from './solid-props'
 
 const root = resolve(import.meta.dir, '../../../..')
@@ -30,6 +31,7 @@ try {
       tailwindcss(),
       serverProps(),
       prototypeProps(),
+      sharedProps(),
       {
         name: 'exclude-api-routes',
         enforce: 'pre',

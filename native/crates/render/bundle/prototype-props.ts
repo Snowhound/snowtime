@@ -2,7 +2,7 @@ import { parse, type Node } from 'acorn'
 import { readFileSync } from 'node:fs'
 import type { Plugin } from 'vite'
 
-type Ast = Node & {
+export type Ast = Node & {
   [key: string]: unknown
   name: string
   value: unknown
@@ -20,7 +20,7 @@ type Ast = Node & {
   init: Ast
   argument: Ast
 }
-type Edit = { start: number; end: number; text: string }
+export type Edit = { start: number; end: number; text: string }
 
 const runtime = readFileSync(new URL('./prototype-runtime.js', import.meta.url), 'utf8').replace(
   /^export /gm,
@@ -36,7 +36,7 @@ const reads: Record<string, string> = {
   'Reflect.ownKeys': 'renderProtoOwnKeys',
 }
 
-function walk(node: Ast, visit: (node: Ast) => void) {
+export function walk(node: Ast, visit: (node: Ast) => void) {
   visit(node)
   for (const value of Object.values(node)) {
     if (Array.isArray(value)) {
@@ -58,12 +58,53 @@ function unsafeGetter(node: Ast) {
   })
   return unsafe
 }
-function propertyKey(property: Ast): string | undefined {
+export function propertyKey(property: Ast): string | undefined {
   if (!property.key) return undefined
   if (!property.computed && property.key.type === 'Identifier') return property.key.name
   if (property.key.type === 'Literal' && ['string', 'number'].includes(typeof property.key.value))
     return String(property.key.value)
   return undefined
+}
+
+// Getter literals passed as props, with the reason a site keeps its literal.
+export function propsSites(node: Ast) {
+  if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier') return []
+  const name = node.callee.name
+  const candidates =
+    name === 'mergeProps'
+      ? node.arguments
+      : ['createComponent', 'ssrElement'].includes(name)
+        ? [node.arguments[1]]
+        : []
+  return candidates
+    .filter(
+      (object) =>
+        object?.type === 'ObjectExpression' && object.properties.some((p: Ast) => p.kind === 'get'),
+    )
+    .map((object) => {
+      const properties: Ast[] = object.properties
+      const keys = properties.map(propertyKey)
+      const reason = properties.some((p) => p.type === 'SpreadElement')
+        ? 'spread'
+        : properties.some((p) => p.kind === 'set')
+          ? 'setter'
+          : properties.some((p) => p.method)
+            ? 'method'
+            : keys.some(
+                  (key) =>
+                    key === undefined ||
+                    key === '__proto__' ||
+                    key === 'constructor' ||
+                    key === 'read',
+                )
+              ? 'key'
+              : new Set(keys).size !== keys.length
+                ? 'duplicate'
+                : properties.some((p) => p.kind === 'get' && unsafeGetter(p.value))
+                  ? 'receiver'
+                  : undefined
+      return { object, properties, keys, reason }
+    })
 }
 
 export function rewritePrototypeProps(code: string) {
@@ -124,40 +165,7 @@ export function rewritePrototypeProps(code: string) {
       }
     }
     if (node.type === 'CallExpression' && node.callee.type === 'Identifier') {
-      const name = node.callee.name
-      const candidates =
-        name === 'mergeProps'
-          ? node.arguments
-          : ['createComponent', 'ssrElement'].includes(name)
-            ? [node.arguments[1]]
-            : []
-      for (const object of candidates) {
-        if (
-          object?.type !== 'ObjectExpression' ||
-          !object.properties.some((p: Ast) => p.kind === 'get')
-        )
-          continue
-        const properties: Ast[] = object.properties
-        const keys = properties.map(propertyKey)
-        const reason = properties.some((p) => p.type === 'SpreadElement')
-          ? 'spread'
-          : properties.some((p) => p.kind === 'set')
-            ? 'setter'
-            : properties.some((p) => p.method)
-              ? 'method'
-              : keys.some(
-                    (key) =>
-                      key === undefined ||
-                      key === '__proto__' ||
-                      key === 'constructor' ||
-                      key === 'read',
-                  )
-                ? 'key'
-                : new Set(keys).size !== keys.length
-                  ? 'duplicate'
-                  : properties.some((p) => p.kind === 'get' && unsafeGetter(p.value))
-                    ? 'receiver'
-                    : undefined
+      for (const { object, properties, keys, reason } of propsSites(node)) {
         if (reason) {
           skipped[reason] = (skipped[reason] ?? 0) + 1
           continue
