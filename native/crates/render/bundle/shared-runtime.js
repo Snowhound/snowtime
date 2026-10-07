@@ -59,23 +59,27 @@ function renderSharedSplitDescriptor(key, enumerable, configurable) {
 export function renderSharedMerge(...sources) {
   const target = {}
   target[renderSharedMergeSlot] = sources
+  let inherited
+  for (const key in Object.prototype) (inherited ??= []).push(key)
   for (let i = 0; i < sources.length; i++) {
     let source = sources[i]
     if (typeof source === 'function') source = source()
     if (source) {
       // Keep descriptor traps while avoiding descriptor objects that mergeProps never reads.
       // Symbols are never merged, so only names are listed.
-      const keys = Object.getOwnPropertyNames(Object(source)).filter((key) =>
-        Object.hasOwn(source, key),
-      )
-      for (const key in Object.prototype) if (!keys.includes(key)) keys.push(key)
-      for (const key of keys) {
-        if (key === '__proto__' || key === 'constructor' || Object.hasOwn(target, key)) continue
-        Object.defineProperty(target, key, renderSharedMergeDescriptor(key))
-      }
+      const names = Object.getOwnPropertyNames(Object(source))
+      for (let j = 0; j < names.length; j++)
+        if (Object.hasOwn(source, names[j])) renderSharedMergeKey(target, names[j])
+      if (inherited)
+        for (const key of inherited)
+          if (!names.includes(key) || !Object.hasOwn(source, key)) renderSharedMergeKey(target, key)
     }
   }
   return target
+}
+function renderSharedMergeKey(target, key) {
+  if (key === '__proto__' || key === 'constructor' || Object.hasOwn(target, key)) return
+  Object.defineProperty(target, key, renderSharedMergeDescriptor(key))
 }
 export function renderSharedSplit(props, ...keys) {
   const descriptors = Object.getOwnPropertyDescriptors(props)
