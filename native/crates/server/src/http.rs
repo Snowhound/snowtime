@@ -180,6 +180,7 @@ pub fn router(app: Arc<App>) -> Router {
         .merge(crate::auth::routes::routes())
         .merge(crate::availability::routes::routes())
         .merge(crate::timer::routes::routes())
+        .merge(crate::settings::routes::routes())
         .nest("/organizations/{organizationId}", organization);
     Router::new()
         .nest("/api/v1", api)

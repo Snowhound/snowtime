@@ -7,6 +7,8 @@ export const CALLS = {
   getSignInMethods: { method: 'GET', path: '/api/v1/sign-in-methods' },
   getDeployment: { method: 'GET', path: '/api/v1/deployment' },
   getDevUsers: { method: 'GET', path: '/api/v1/dev-users' },
+  createSettings: { method: 'PUT', path: '/api/v1/settings' },
+  updateSettings: { method: 'PATCH', path: '/api/v1/settings' },
   checkAvailability: { method: 'GET', path: '/api/v1/availability' },
   getRunningTimer: { method: 'GET', path: '/api/v1/timer' },
   startTimer: { method: 'POST', path: '/api/v1/organizations/:organizationId/timer/start' },

@@ -1,0 +1,16 @@
+{"timestamp":"2026-10-07T17:19:34.279937Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-07T17:19:34.280571Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3469","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/session.conformance.ts:
+(pass) the session > signed out, the session is null [1.25ms]
+(pass) the session > signed in, it has the user, their organizations and settings, and the app URL [3.87ms]
+(pass) the session > reading it sets no language cookie, even in another language than the account's [9.79ms]
+(pass) signed-out reads > the app says it can serve pages [0.71ms]
+(pass) signed-out reads > the sign-in methods, the deployment, and the seeded users [1.94ms]
+
+ 5 pass
+ 2 filtered out
+ 0 fail
+ 14 expect() calls
+Ran 5 tests across 1 file. [703.00ms]

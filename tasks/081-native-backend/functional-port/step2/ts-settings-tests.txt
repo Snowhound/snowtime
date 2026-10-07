@@ -1,0 +1,21 @@
+bun test v1.4.2 (744846f84)
+
+src/server/settings/settings.test.ts:
+(pass) createSettings > the first call creates the settings with the browser's zone and locale; later calls keep them [6.58ms]
+(pass) createSettings > seeded users get their own settings [0.45ms]
+(pass) updateSettings > changes only the fields present, and only the user's own row [2.03ms]
+(pass) updateSettings > view settings save one field at a time, as the UI auto-saves them [4.70ms]
+(pass) updateSettings > the country saves, and null brings back the time zone guess [2.07ms]
+(pass) updateSettings > choosing a collection clears the pin, and a pin must be in the collection [4.49ms]
+(pass) updateSettings > a user without settings is told to load them first [0.70ms]
+(pass) settings input > time zones must be IANA names [5.85ms]
+(pass) settings input > the week starts on Monday or Sunday [0.06ms]
+(pass) settings input > theme, timer layout, and app icon are known values, and show summary a boolean [0.15ms]
+(pass) settings input > scene settings are known values, and the switches booleans [0.21ms]
+(pass) settings input > the locale is a supported language, English by default [0.13ms]
+(pass) settings input > the country is EE, US, other, or null for the time zone guess [0.09ms]
+
+ 13 pass
+ 0 fail
+ 66 expect() calls
+Ran 13 tests across 1 file. [212.00ms]

@@ -57,6 +57,11 @@ pub enum Field {
     // An ISO calendar day (IsoDate).
     RequiredDay,
     Bool,
+    CheckedString {
+        required: bool,
+        check: fn(&str) -> Result<()>,
+    },
+    NullablePicklist(&'static [&'static str]),
     True,
     Picklist(&'static [&'static str]),
 }
@@ -84,7 +89,10 @@ fn expected(field: Field) -> String {
         Field::Bool => "boolean".into(),
         Field::True => "true".into(),
         Field::IdOrNone => "(string | \"none\")".into(),
-        Field::Picklist([one]) | Field::RequiredPicklist([one]) | Field::Discriminator([one]) => {
+        Field::Picklist([one])
+        | Field::RequiredPicklist([one])
+        | Field::Discriminator([one])
+        | Field::NullablePicklist([one]) => {
             format!("\"{one}\"")
         }
         Field::Picklist(options)
@@ -93,6 +101,7 @@ fn expected(field: Field) -> String {
             let quoted: Vec<_> = options.iter().map(|o| format!("\"{o}\"")).collect();
             format!("({})", quoted.join(" | "))
         }
+        Field::NullablePicklist(options) => expected(Field::Picklist(options)),
         _ => "string".into(),
     }
 }
@@ -113,6 +122,7 @@ pub(crate) fn check_field(name: &str, field: Field, value: Option<&Value>) -> Re
                 | Field::RequiredNumber
                 | Field::RequiredPicklist(_)
                 | Field::Object { required: true, .. }
+                | Field::CheckedString { required: true, .. }
         ) {
             return invalid(format!(
                 "Invalid key: Expected \"{name}\" but received undefined"
@@ -141,12 +151,15 @@ pub(crate) fn check_field(name: &str, field: Field, value: Option<&Value>) -> Re
     let text = value.as_str();
     let typed = match (field, text) {
         (Field::NullableId | Field::Ticket, _) if value.is_null() => return Ok(()),
+        (Field::NullablePicklist(_), _) if value.is_null() => return Ok(()),
         (Field::Bool, _) => value.is_boolean() || matches!(text, Some("true" | "false")),
+        (Field::CheckedString { check, .. }, Some(text)) => return check(text),
         (Field::True, _) => value == &Value::Bool(true),
         (
             Field::Picklist(options)
             | Field::RequiredPicklist(options)
-            | Field::Discriminator(options),
+            | Field::Discriminator(options)
+            | Field::NullablePicklist(options),
             Some(text),
         ) => options.contains(&text),
         (Field::RequiredDate | Field::Date, Some(text)) => {
@@ -284,6 +297,12 @@ pub(crate) fn query_bool<'de, D: Deserializer<'de>>(
         Value::String(text) => Ok(text == "true"),
         _ => Err(serde::de::Error::custom("Expected a boolean")),
     }
+}
+
+pub(crate) fn optional_bool<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<bool>, D::Error> {
+    query_bool(deserializer).map(Some)
 }
 
 #[cfg(test)]

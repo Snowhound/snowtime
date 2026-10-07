@@ -10,6 +10,20 @@ import { ROOT } from '../../perf/lib/database'
 // TypeScript [file, names] against Rust [module, names], per row.
 const PAIRS: [string, string, string[], string, string[]][] = [
   [
+    'createSettings',
+    'src/server/settings/settings.server.ts',
+    ['createSettings'],
+    'settings/mod.rs',
+    ['create_settings'],
+  ],
+  [
+    'updateSettings',
+    'src/server/settings/settings.server.ts',
+    ['updateSettings'],
+    'settings/mod.rs',
+    ['update_settings'],
+  ],
+  [
     'signInMethods',
     'src/server/auth/sign-in.server.ts',
     ['signInMethods', 'passwordEnabled', 'socialProviders'],

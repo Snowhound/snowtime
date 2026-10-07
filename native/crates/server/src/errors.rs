@@ -53,6 +53,7 @@ pub enum Key {
     TeamNotFound,
     TeamReportForbidden,
     SettingsNotFound,
+    ScenePinNotInCollection,
     RateLimited,
     DatabaseUnavailable,
 }

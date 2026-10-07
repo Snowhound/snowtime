@@ -19,7 +19,7 @@ crates/server/src/
   entries/       mod (rules), schemas, routes
   projects/      mod (rules), schemas, routes
   reports/       mod (rules), aggregation, schemas, routes
-  settings/      mod (rules), schemas
+  settings/      mod (rules), schemas, routes
   teams/         mod (rules), schemas, routes
   timer/         mod (rules), schemas, routes
   http.rs        InOrganization, AsUser, Public, AuthCall, router
@@ -44,8 +44,11 @@ breakdown, entries, entry totals, and export). Each report read uses `run_report
 reports and export pieces take the report budget before database admission.
 The sign-in page's reads (sign-in methods, deployment, seeded users), password sign-in,
 and Better Auth sign-out are also ported. `/sign-in` renders signed out.
-Of the other writes, the timer's and the entries'. Not ported: settings, team, project,
-and organization writes; invitations; and Google/OAuth sign-in.
+Of the other writes, the timer's, the entries', and settings PUT/PATCH are ported.
+Not ported: team, project, and organization writes; invitations; and Google/OAuth sign-in.
+
+[Task 081.26](../tasks/081-native-backend/26-functional-port.md#local-review) gives
+localhost commands for separate seeded TypeScript and native hosts.
 
 Pages call the API in process: the renderer's host callback sends each call through
 `router.oneshot` with the page request's cookie, as `src/lib/api/request.ts` sends it.

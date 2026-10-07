@@ -43,6 +43,7 @@ on the day.
   no errors, keeps all 610 and 434 keyed nodes, and navigates between them without a
   reload. Task 081.26 ports the signed-out `/sign-in` page's reads and sign-out;
   password sign-in and sign-out work through the native host in Chrome.
+  Settings PUT/PATCH also work; Preferences saves week start and theme through a reload.
 
 The manifest the renderer embeds must come from the build whose assets the host serves.
 `bundle/build.ts` now strips it as Start's `getStartManifest` does, which drops the build
@@ -470,8 +471,9 @@ with Deno extensions and the policy measured above:
 - Confirm on the Linux deployment host. These measurements are Docker on this Mac: the
   stress runs on dataset M with Caddy on the app's core, the renderer runs on the Lumen
   Works seed with recorded answers.
-- Finish the functional port ([task 081.26](26-functional-port.md)): settings, project
-  and team writes, invitations, and issue links. Google/OAuth sign-in stays a follow-up.
+- Finish the functional port ([task 081.26](26-functional-port.md)): project and team
+  writes, invitations, and issue links, after Kait reviews the settings port on localhost.
+  Google/OAuth sign-in stays a follow-up.
 - Bring the 161 MiB warmup peak down if the target needs it: it comes before the first
   trim, while V8 optimizes the bundle.
 

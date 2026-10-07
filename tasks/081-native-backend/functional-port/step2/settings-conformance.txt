@@ -1,0 +1,14 @@
+{"timestamp":"2026-10-07T17:19:33.626600Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-07T17:19:33.627210Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3485","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/settings.conformance.ts:
+(pass) settings > creating settings the user already has returns them unchanged [2.13ms]
+(pass) settings > a patch changes only its fields [8.36ms]
+(pass) settings > a pinned image must be in the collection [0.74ms]
+(pass) settings > a write from the app without a session is refused [0.47ms]
+
+ 4 pass
+ 0 fail
+ 8 expect() calls
+Ran 4 tests across 1 file. [389.00ms]

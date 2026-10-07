@@ -12,6 +12,7 @@ import { isDeepStrictEqual } from 'node:util'
 import { buildApp, signInHeaders, startApp } from '../../perf/lib/app'
 import { CACHE, COMPANY, SEED_NOW, USERS, seededDatabase } from '../../perf/lib/database'
 import { companyIds } from '../../src/db/seed-company'
+import { COLLECTION_IMAGES } from '../../src/lib/scene/images'
 import { CALLS, type CallName, requestOf } from './calls'
 import { startNative } from './native'
 
@@ -27,6 +28,9 @@ const database = join(fixtureDirectory, 'fixture.db')
 cpSync(seedDatabase, database)
 const fixture = createClient({ url: `file:${database}` })
 try {
+  await fixture.execute(
+    "delete from user_settings where user_id = (select id from user where email = 'noah@example.com')",
+  )
   const users = await fixture.execute({
     sql: 'select id from user where email = ?',
     args: [USERS.admin.email],
@@ -373,6 +377,132 @@ try {
       'admin',
     ],
   )
+  const settingsValues = {
+    timeZone: 'America/New_York',
+    weekStart: 'sun',
+    locale: 'et',
+    theme: 'dark',
+    timerLayout: 'table',
+    showSummary: false,
+    compactRows: true,
+    wideTimer: true,
+    timerView: 'calendar',
+    calendarWeekend: true,
+    appIcon: '12',
+    sceneCollection: 'coast',
+    scenePin: 'coast-june',
+    sceneBackground: false,
+    sceneStrength: 'full',
+    surfaces: 'solid',
+    sceneWeather: false,
+    sceneIntro: false,
+    sceneTagline: false,
+    durationFormat: 'units',
+    dateFormat: 'mdy',
+    timeFormat: '12h',
+    country: 'US',
+  }
+  for (const who of ['admin', 'member'] as const) {
+    cases.push(
+      [
+        `settings PUT existing, ${who}`,
+        'createSettings',
+        { timeZone: 'Asia/Tokyo', locale: 'et' },
+        who,
+      ],
+      [`settings PUT locale default, ${who}`, 'createSettings', { timeZone: 'UTC' }, who],
+      [`settings PUT missing zone, ${who}`, 'createSettings', {}, who],
+      [
+        `settings PUT invalid zone before locale, ${who}`,
+        'createSettings',
+        { locale: 'bad', timeZone: 'Mars/Olympus' },
+        who,
+      ],
+      [`settings PATCH empty, ${who}`, 'updateSettings', {}, who],
+      [`settings PATCH strips unknown user id, ${who}`, 'updateSettings', { userId: unknown }, who],
+      [`settings PATCH malformed JSON, ${who}`, 'updateSettings', {}, who, { body: '{' }],
+      [
+        `settings PATCH origin before JSON, ${who}`,
+        'updateSettings',
+        {},
+        who,
+        { origin: false, body: '{' },
+      ],
+      [
+        `settings PATCH validation order, ${who}`,
+        'updateSettings',
+        { country: 'FI', timeZone: 'Mars/Olympus', locale: 'bad' },
+        who,
+      ],
+      [
+        `settings pin refuses another collection, ${who}`,
+        'updateSettings',
+        { scenePin: COLLECTION_IMAGES.coast[0] },
+        who,
+      ],
+      [`settings unchanged after refusal, ${who}`, 'createSettings', { timeZone: 'UTC' }, who],
+    )
+    for (const field of Object.keys(settingsValues)) {
+      for (const value of [null, [], 'bogus']) {
+        cases.push([
+          `settings ${field} = ${JSON.stringify(value)}, ${who}`,
+          'updateSettings',
+          { [field]: value },
+          who,
+        ])
+      }
+    }
+    for (const [field, value] of Object.entries(settingsValues)) {
+      cases.push([`settings valid ${field}, ${who}`, 'updateSettings', { [field]: value }, who])
+    }
+    cases.push(
+      [
+        `settings saved collection rejects pin, ${who}`,
+        'updateSettings',
+        { scenePin: 'autumn' },
+        who,
+      ],
+      [
+        `settings clears pin on collection selection, ${who}`,
+        'updateSettings',
+        { sceneCollection: 'mountains' },
+        who,
+      ],
+      [
+        `settings explicit null pin and country, ${who}`,
+        'updateSettings',
+        { scenePin: null, country: null },
+        who,
+      ],
+      [`settings boolean string revival, ${who}`, 'updateSettings', { showSummary: 'true' }, who],
+      [`settings no-op retains all fields, ${who}`, 'updateSettings', {}, who],
+    )
+  }
+  for (const [i, timeZone] of [
+    'UTC',
+    'utc',
+    'US/Eastern',
+    'Etc/GMT+2',
+    'America/Argentina/Buenos_Aires',
+    '+02:00',
+    '',
+    'Factory',
+    'Z',
+    'UTC\n',
+    'Europe/Tallinn; DROP',
+  ].entries()) {
+    cases.push([
+      `settings PUT zone ${JSON.stringify(timeZone)}`,
+      'createSettings',
+      { timeZone },
+      i % 2 === 0 ? 'member' : 'admin',
+    ])
+  }
+  cases.push(
+    ['settings PUT signed out', 'createSettings', { timeZone: 'UTC' }, null],
+    ['settings PATCH signed out', 'updateSettings', { weekStart: 'sun' }, null],
+    ['settings session before JSON', 'updateSettings', {}, null, { body: '{' }],
+  )
   for (const row of [
     { group: 'project', id: 'none' },
     { group: 'team', id: companyIds.teams.web },
@@ -543,12 +673,59 @@ try {
         headers,
         body,
       })
+      if (label.startsWith('settings') && response.status === 429)
+        throw new Error(`Settings case hit the write limit: ${label}`)
       return { status: response.status, text: masked(await response.text(), options?.mask) }
     }
     judge(
       label,
       await call(ts, who ? sessions.ts[who] : {}),
       await call(native, who ? sessions.native[who] : {}),
+    )
+  }
+
+  async function freshSettingsHeaders(server: Server) {
+    const response = await fetch(`${server.url}/api/auth/sign-in/email`, {
+      method: 'POST',
+      headers: { origin: server.url, 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'noah@example.com', password: USERS.member.password }),
+    })
+    if (!response.ok) throw new Error('Fresh-settings user could not sign in')
+    return {
+      cookie: response.headers
+        .getSetCookie()
+        .map((value) => value.split(';')[0])
+        .join('; '),
+    }
+  }
+  const fresh = { ts: await freshSettingsHeaders(ts), native: await freshSettingsHeaders(native) }
+  for (const [label, name, input, expected] of [
+    ['empty patch before creation', 'updateSettings', {}, 404],
+    ['patch before creation', 'updateSettings', { weekStart: 'sun' }, 404],
+    ['wrong collection before missing settings', 'updateSettings', { scenePin: 'coast-june' }, 422],
+    ['valid pin before missing settings', 'updateSettings', { scenePin: 'autumn' }, 404],
+    ['invalid PUT before creation', 'createSettings', { timeZone: '+02:00' }, 400],
+    ['first PUT with default locale', 'createSettings', { timeZone: 'Asia/Tokyo' }, 200],
+    ['second PUT ignores input', 'createSettings', { timeZone: 'Europe/Paris', locale: 'et' }, 200],
+    ['new settings patch', 'updateSettings', { scenePin: 'autumn', country: 'EE' }, 200],
+    ['new settings selects collection', 'updateSettings', { sceneCollection: 'coast' }, 200],
+    ['new settings no-op', 'updateSettings', {}, 200],
+  ] as [string, 'createSettings' | 'updateSettings', unknown, number][]) {
+    async function call(server: Server, credentials: Record<string, string>) {
+      const request = requestOf(CALLS[name], input)
+      const response = await fetch(`${server.url}${request.path}`, {
+        method: CALLS[name].method,
+        headers: { ...credentials, origin: server.url, 'content-type': 'application/json' },
+        body: request.body,
+      })
+      if (response.status !== expected)
+        throw new Error(`${label} returned ${response.status}, expected ${expected}`)
+      return { status: response.status, text: await response.text() }
+    }
+    judge(
+      `settings fresh user, ${label}`,
+      await call(ts, fresh.ts),
+      await call(native, fresh.native),
     )
   }
 
