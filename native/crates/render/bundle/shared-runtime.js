@@ -96,7 +96,16 @@ export function renderSharedSplit(props, ...keys) {
           key,
           renderSharedSplitDescriptor(key, descriptor.enumerable, descriptor.configurable),
         )
-      } else Object.defineProperty(clone, key, descriptor)
+      } else if (
+        descriptor.writable &&
+        descriptor.enumerable &&
+        descriptor.configurable &&
+        typeof key === 'string' &&
+        key !== '__proto__'
+      )
+        // The same own data property, without a runtime call.
+        clone[key] = descriptor.value
+      else Object.defineProperty(clone, key, descriptor)
       // Deleting would turn the descriptor map into a dictionary.
       descriptors[key] = undefined
     }
