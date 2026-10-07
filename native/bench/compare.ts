@@ -5,9 +5,12 @@
 //
 //   bun native/bench/compare.ts native/target/release/snowtime-axum
 
+import { createClient } from '@libsql/client'
+import { cpSync, mkdtempSync, rmSync } from 'node:fs'
+import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { buildApp, signInHeaders, startApp } from '../../perf/lib/app'
-import { COMPANY, SEED_NOW, USERS, seededDatabase } from '../../perf/lib/database'
+import { CACHE, COMPANY, SEED_NOW, USERS, seededDatabase } from '../../perf/lib/database'
 import { companyIds } from '../../src/db/seed-company'
 import { CALLS, type CallName, requestOf } from './calls'
 import { startNative } from './native'
@@ -18,7 +21,39 @@ if (!binary) throw new Error('Usage: bun native/bench/compare.ts <binary>')
 const DAY = 86_400_000
 const organizationId = COMPANY.id
 
-const database = await seededDatabase()
+const seedDatabase = await seededDatabase()
+const fixtureDirectory = mkdtempSync(join(CACHE, 'report-compare-'))
+const database = join(fixtureDirectory, 'fixture.db')
+cpSync(seedDatabase, database)
+const fixture = createClient({ url: `file:${database}` })
+try {
+  const users = await fixture.execute({
+    sql: 'select id from user where email = ?',
+    args: [USERS.admin.email],
+  })
+  const userId = users.rows[0].id
+  if (typeof userId !== 'string') throw new Error('Fixture owner id is not text')
+  const start = Date.parse('2024-10-01T09:00:00Z')
+  const descriptions = ['b', 'Á', 'A', 'á', 'a', ...Array.from({ length: 230 }, () => 'Busy day')]
+  await fixture.batch(
+    descriptions.map((description, i) => ({
+      sql: 'insert into time_entry (id, organization_id, user_id, description, started_at, stopped_at, created_by, updated_by) values (?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [
+        `01900000-0000-7000-800f-${i.toString(16).padStart(12, '0')}`,
+        organizationId,
+        userId,
+        description,
+        start,
+        start + 1000,
+        userId,
+        userId,
+      ],
+    })),
+    'write',
+  )
+} finally {
+  fixture.close()
+}
 await buildApp()
 const [ts, native] = await Promise.all([startApp({ database }), startNative(binary, database)])
 
@@ -191,6 +226,184 @@ try {
     ['report, unknown day', 'getReport', { ...reportWeek, from: '2026-02-30' }, 'admin'],
     ['report, no from', 'getReport', { organizationId, to: '2026-10-05' }, 'admin'],
   ]
+  const report = { from: reportWeek.from, to: reportWeek.to, unit: 'day' }
+  const nested = { organizationId, report }
+  cases.push(
+    ['breakdown with tickets', 'getReportBreakdown', { ...reportWeek, tickets: true }, 'admin'],
+    ['breakdown own entries, member', 'getReportBreakdown', reportWeek, 'member'],
+    [
+      'breakdown own filter, member',
+      'getReportBreakdown',
+      { ...reportWeek, userId: memberId, tickets: true },
+      'member',
+    ],
+    ['entries by day, member', 'getReportEntries', { ...nested, view: 'day' }, 'member'],
+    [
+      'entries by description, member',
+      'getReportEntries',
+      { ...nested, view: 'description' },
+      'member',
+    ],
+    [
+      'entries own filter, member',
+      'getReportEntries',
+      { ...nested, report: { ...report, userId: memberId }, view: 'day' },
+      'member',
+    ],
+    ['entry totals, member', 'getReportEntryTotals', nested, 'member'],
+    [
+      'entry totals own filter, member',
+      'getReportEntryTotals',
+      { ...nested, report: { ...report, userId: memberId } },
+      'member',
+    ],
+    [
+      'export first piece, member',
+      'getReportExport',
+      { ...nested, from: report.from, to: report.to },
+      'member',
+      now,
+    ],
+    [
+      'export later piece, member',
+      'getReportExport',
+      { ...nested, from: report.from, to: report.to, now: SEED_NOW },
+      'member',
+    ],
+
+    [
+      'breakdown refused member',
+      'getReportBreakdown',
+      { ...reportWeek, userId: unknown },
+      'member',
+    ],
+    ['entries by day', 'getReportEntries', { ...nested, view: 'day' }, 'admin'],
+    ['entries by description', 'getReportEntries', { ...nested, view: 'description' }, 'admin'],
+    [
+      'entries remaining descriptions',
+      'getReportEntries',
+      { ...nested, view: 'description', offset: 25 },
+      'admin',
+    ],
+    [
+      'entries refused member',
+      'getReportEntries',
+      { ...nested, report: { ...report, userId: unknown }, view: 'day' },
+      'member',
+    ],
+    ['entry totals', 'getReportEntryTotals', nested, 'admin'],
+    [
+      'entry totals refused member',
+      'getReportEntryTotals',
+      { ...nested, report: { ...report, teamId: companyIds.teams.web } },
+      'member',
+    ],
+    [
+      'export first piece',
+      'getReportExport',
+      { ...nested, from: report.from, to: report.to },
+      'admin',
+      now,
+    ],
+    [
+      'export later piece',
+      'getReportExport',
+      { ...nested, from: report.from, to: report.to, now: SEED_NOW },
+      'admin',
+    ],
+    [
+      'export future now clamped',
+      'getReportExport',
+      { ...nested, from: report.from, to: report.to, now: new Date(SEED_NOW.getTime() + DAY) },
+      'admin',
+    ],
+    [
+      'export refused member',
+      'getReportExport',
+      { ...nested, report: { ...report, userId: unknown }, from: report.from, to: report.to },
+      'member',
+    ],
+    [
+      'export reversed',
+      'getReportExport',
+      { ...nested, from: report.to, to: report.from },
+      'admin',
+    ],
+    [
+      'export outside report',
+      'getReportExport',
+      { ...nested, from: '2026-09-01', to: report.to },
+      'admin',
+    ],
+    [
+      'export too long',
+      'getReportExport',
+      { ...nested, report: { ...report, from: '2026-08-01' }, from: '2026-08-01', to: report.to },
+      'admin',
+    ],
+    ['entries missing view', 'getReportEntries', nested, 'admin'],
+    [
+      'entries fractional offset',
+      'getReportEntries',
+      { ...nested, view: 'description', offset: 0.5 },
+      'admin',
+    ],
+    [
+      'entries negative offset',
+      'getReportEntries',
+      { ...nested, view: 'description', offset: -1 },
+      'admin',
+    ],
+  )
+  for (const row of [
+    { group: 'project', id: 'none' },
+    { group: 'team', id: companyIds.teams.web },
+    { group: 'team', id: 'none' },
+    { group: 'team', id: unknown },
+    { group: 'member', id: memberId },
+    { group: 'ticket', id: 'none' },
+    { group: 'ticket', id: 'LUM-1' },
+  ]) {
+    const label = JSON.stringify(row)
+    cases.push(
+      [`entries row ${label}`, 'getReportEntries', { ...nested, view: 'day', row }, 'admin'],
+      [`totals row ${label}`, 'getReportEntryTotals', { ...nested, row }, 'admin'],
+    )
+  }
+  const busyReport = { from: '2024-10-01', to: '2024-10-02' }
+  cases.push([
+    'description case and accent ties',
+    'getReportEntries',
+    {
+      organizationId,
+      report: busyReport,
+      view: 'description',
+    },
+    'admin',
+  ])
+  // Follow reference cursors through ordinary days and a guaranteed three-page busy day.
+  for (const range of [report, busyReport]) {
+    let after: unknown
+    let pages = 0
+    for (;;) {
+      const input = { organizationId, report: range, view: 'day', after }
+      cases.push(['entries cursor page', 'getReportEntries', input, 'admin'])
+      const request = requestOf(CALLS.getReportEntries, input)
+      const response = await fetch(`${ts.url}${request.path}`, {
+        method: 'POST',
+        headers: sessions.ts.admin,
+        body: request.body,
+      })
+      if (!response.ok) throw new Error(`Reference pagination failed: ${response.status}`)
+      const page = (await response.json()) as { next: unknown }
+      pages++
+      if (!page.next) break
+      if (pages >= 100) throw new Error('Reference pagination did not finish')
+      after = page.next
+    }
+    if (range === busyReport && pages !== 3)
+      throw new Error(`Expected three busy-day pages, got ${pages}`)
+  }
   for (const value of [undefined, null, 3, true, false, [], {}, 'bad', 'none', '2026-13-01']) {
     const label = JSON.stringify(value) ?? 'absent'
     cases.push(
@@ -236,6 +449,53 @@ try {
       [`report project ${label}`, 'getReport', { ...reportWeek, projectId: value }, 'admin', now],
       [`report tickets ${label}`, 'getReport', { ...reportWeek, tickets: value }, 'admin', now],
       [`report team ${label}`, 'getReport', { ...reportWeek, teamId: value }, 'admin', now],
+      [`breakdown from ${label}`, 'getReportBreakdown', { ...reportWeek, from: value }, 'admin'],
+      [
+        `entries report ${label}`,
+        'getReportEntries',
+        { ...nested, report: value, view: 'day' },
+        'admin',
+      ],
+      [`entries view ${label}`, 'getReportEntries', { ...nested, view: value }, 'admin'],
+      [`entries row ${label}`, 'getReportEntries', { ...nested, view: 'day', row: value }, 'admin'],
+      [
+        `entries cursor ${label}`,
+        'getReportEntries',
+        { ...nested, view: 'day', after: value },
+        'admin',
+      ],
+      [
+        `entries offset ${label}`,
+        'getReportEntries',
+        { ...nested, view: 'description', offset: value },
+        'admin',
+      ],
+      [`totals report ${label}`, 'getReportEntryTotals', { ...nested, report: value }, 'admin'],
+      [
+        `totals row id ${label}`,
+        'getReportEntryTotals',
+        { ...nested, row: { group: 'member', id: value } },
+        'admin',
+      ],
+      [
+        `export report ${label}`,
+        'getReportExport',
+        { ...nested, report: value, from: report.from, to: report.to },
+        'admin',
+      ],
+      [
+        `export from ${label}`,
+        'getReportExport',
+        { ...nested, from: value, to: report.to },
+        'admin',
+      ],
+      [
+        `export now ${label}`,
+        'getReportExport',
+        { ...nested, from: report.from, to: report.to, now: value },
+        'admin',
+        now,
+      ],
     )
   }
   cases.push(
@@ -331,5 +591,6 @@ try {
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {
   await Promise.all([ts.stop(), native.stop()])
+  rmSync(fixtureDirectory, { recursive: true, force: true })
 }
 process.exit(differences ? 1 : 0)

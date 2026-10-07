@@ -18,6 +18,19 @@ export const CALLS = {
   deleteEntry: { method: 'DELETE', path: '/api/v1/organizations/:organizationId/entries/:id' },
   listProjects: { method: 'GET', path: '/api/v1/organizations/:organizationId/projects' },
   getReport: { method: 'POST', path: '/api/v1/organizations/:organizationId/report' },
+  getReportBreakdown: {
+    method: 'POST',
+    path: '/api/v1/organizations/:organizationId/report/breakdown',
+  },
+  getReportEntries: {
+    method: 'POST',
+    path: '/api/v1/organizations/:organizationId/report/entries',
+  },
+  getReportEntryTotals: {
+    method: 'POST',
+    path: '/api/v1/organizations/:organizationId/report/entry-totals',
+  },
+  getReportExport: { method: 'POST', path: '/api/v1/organizations/:organizationId/report/export' },
   listTeams: { method: 'GET', path: '/api/v1/organizations/:organizationId/teams' },
   listMembers: { method: 'GET', path: '/api/v1/organizations/:organizationId/members' },
 } as const
