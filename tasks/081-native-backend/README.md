@@ -270,6 +270,10 @@ which records the edge measurements.
   ASCII minified bundle take 7–9 MB off V8's render RSS; V8 at 1.21–1.30 times Bun (done)
 - [23](23-render-month-year.md): month and year render hot spots, where V8 is still 1.27–1.29
   times Bun: the report code, the shared site getter, and Lucide's icon building
+- [24](24-report-reads.md): the report's breakdown, entry lists, and export in the native
+  server, through the report budget
+- [25](25-router-state.md): the router's hydration state per page, measured by bytes and
+  allocations rather than timing alone
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
