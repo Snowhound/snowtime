@@ -61,7 +61,6 @@ const intlCalls = []
 renderApiCalls.intlCalls = intlCalls
 const formatterIds = new WeakMap()
 let nextFormatterId = 1
-// oxlint-disable-next-line typescript/unbound-method -- The wrapper supplies the receiver explicitly.
 const formatParts = Intl.DateTimeFormat.prototype.formatToParts
 Intl.DateTimeFormat.prototype.formatToParts = function (...args) {
   let id = formatterIds.get(this)

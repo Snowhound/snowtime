@@ -75,7 +75,9 @@
     "src/paraglide/**",
     "drizzle/**",
     "prototypes/**",
-    ".output/**"
+    ".output/**",
+    "native/crates/render/bundle/bench/**",
+    "native/crates/render/bundle/*.js"
   ],
   "overrides": [
     {

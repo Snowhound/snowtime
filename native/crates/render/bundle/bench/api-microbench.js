@@ -1,4 +1,3 @@
-// oxlint-disable-next-line typescript/no-floating-promises -- The Rust harness awaits this script's returned promise.
 ;(async function () {
   // Compare Deno and ICU themselves, even when the production snapshot has wrappers.
   if (typeof denoEncode === 'function') TextEncoder.prototype.encode = denoEncode

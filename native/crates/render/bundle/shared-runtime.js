@@ -13,7 +13,6 @@ export function renderSharedSite(slot) {
     enumerable: true,
     configurable: true,
   }
-  // oxlint-disable-next-line typescript/unbound-method -- Registered by identity, never called unbound.
   renderSharedGetters.add(descriptor.get)
   return descriptor
 }
