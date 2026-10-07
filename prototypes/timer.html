@@ -99,9 +99,9 @@
       .ticket-field > input {
         @apply h-8 min-w-24 flex-1 bg-transparent pl-1 outline-none placeholder:text-muted-foreground;
       }
-      /* In rows, a chip's remove button shows on hover and focus, like the row's actions. */
+      /* In rows, the remove button stays visible and brightens on hover and focus. */
       .entry-ticket-remove {
-        @apply sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100;
+        @apply sm:opacity-50 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100;
       }
     </style>
     <link rel="stylesheet" href="prototype.css" />

@@ -815,13 +815,13 @@ Decisions:
   `COVID-` numbers stay text.
 - **A chip's × turns the key back into text**, at the start of the description, and it isn't
   found again: only keys an edit adds are found. That fixes a false match such as `Q3-2026`
-  without losing what was typed; a wrong ticket is then deleted as text. In rows the × shows
-  on hover and focus, like the row's actions.
+  without losing what was typed; a wrong ticket is then deleted as text. In rows the × stays
+  faintly visible and brightens on hover and focus.
 - **The ticket goes after the description**, so the text starts in the same place with or
   without one. At the standard width the description's input fills the cell and the chip
   sits at its end, taking at most 60% of the cell, so every row's chip lines up and the
-  input gets the room the chip doesn't need. Its × keeps its room and shows on hover or
-  focus, so the key doesn't move. With Wide page on, rows have an 8rem Ticket column between
+  input gets the room the chip doesn't need. Its × keeps its room, so the key doesn't move
+  on hover or focus. With Wide page on, rows have an 8rem Ticket column between
   the description and the project from 1280 px, empty without a ticket; below 1280 px the
   summary or the window leaves no room for the column, so the chip stays at the end of the
   description, and below 768 px it joins the project on the row's second line. A long key is
