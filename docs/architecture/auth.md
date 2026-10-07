@@ -2,10 +2,13 @@
 
 ## Sign-in methods
 
-`DEMO_MODE=true` explicitly enables a deployed demo on local SQLite. It disables
+`DEMO_MODE=true` explicitly enables a deployed demo on local SQLite, or a Vercel preview
+on the shared staging database ([Preview deployments](#preview-deployments)). It disables
 OAuth even when credentials are present, enables seeded password sign-in, and disables
 password sign-up. A box on the sign-in page explains that accounts and changes are
-shared. The flag defaults to false and is read at runtime.
+shared. The flag defaults to false and is read at runtime. The app refuses to start with
+`DEMO_MODE=true` and a remote database anywhere but a preview, so a production database
+can't be opened to the public seed password by mistake.
 Full-year sample data is seeded explicitly, never at startup. Demo mode is for sample
 data; company use starts with a fresh database and normal OAuth configuration.
 
@@ -33,10 +36,10 @@ membership or other permissions.
   and returns method ids (`google`, `github`, `microsoft`, `password`, `passkey`), never
   secrets or display text.
 - Each provider's OAuth app redirects to `<BETTER_AUTH_URL>/api/auth/callback/<id>`, for
-  example `http://localhost:3000/api/auth/callback/github` locally. Providers match the
+  example `http://localhost:3100/api/auth/callback/github` locally. Providers match the
   redirect URL exactly and allow no wildcards, so OAuth sign-in works only on hosts
-  registered in advance: local, the staging host, and production. A
-  preview deployment on its own generated URL cannot use OAuth.
+  registered in advance: local and production. A preview deployment on its own
+  generated URL cannot use OAuth.
   - Google: one OAuth client can list the redirect URLs of every environment.
   - GitHub: an OAuth app lists up to 10 redirect URIs, so one app can serve every
     environment. A separate app per environment keeps a staging secret from signing in
@@ -47,14 +50,14 @@ membership or other permissions.
     accounts. `MICROSOFT_TENANT_ID` restricts sign-in to one tenant, for example in a
     dedicated stack for one client.
 - Better Auth caches the session and user in a signed cookie for 5 minutes
-  (`cookieCache`), so a server function call doesn't read them from the database, which
+  (`cookieCache`), so an API call doesn't read them from the database, which
   was 2 of its reads. The cost: a session revoked on another device, or an erased user,
   stays usable for up to 5 minutes where the cookie is. Organization access is still
   checked on every call, because `resolveScope` reads the `member` row.
 - Profile edits go straight through the Better Auth client, as organization management does
   (see "Tenancy" in [data.md](data.md)): changing the name, linking and unlinking providers,
   and adding and removing passkeys. Better Auth checks that the session owns the account, and
-  no Snowtime rule applies, so there are no server functions for them.
+  no Snowtime rule applies, so the API has no calls for them.
   - Better Auth's defaults apply. A provider links only when its email matches the
     user's. Unlinking and passkey changes need a session from the last day, and the last
     account can't be unlinked; passkeys don't count as accounts.
@@ -89,13 +92,13 @@ membership or other permissions.
     without a passkey, in a browser with WebAuthn. Adding one or choosing "Not now" hides
     it on that device (`snowtime.passkeyPromptDismissed` in localStorage), so a user is
     asked again on a new device, where a passkey helps.
-- A passkey is bound to its relying party, the host of `BETTER_AUTH_URL`, so it works
-  only in the environment where it was registered. A preview deployment with its own
-  URL needs its own passkeys.
+- A passkey is bound to its relying party, the host of the app's URL (`BETTER_AUTH_URL`,
+  or a preview's branch URL), so it works only in the environment where it was
+  registered.
 - Email provider when email is added: Brevo (free tier 300 emails a day, EU-based
   company), optional per deployment through env vars (task 016).
 - Sign-up and sign-in screens are prototyped in `prototypes/auth.html`.
-- An invitation link is `<BETTER_AUTH_URL>/invitation/<id>`. Better Auth shows an
+- An invitation link is `<app URL>/invitation/<id>`. Better Auth shows an
   invitation only to the invited user's session, but the screen must name the
   organization, team, inviter, and invited address before sign-in, so the reader knows
   which account to use. `getInvitation` returns those details signed out. The id is
@@ -108,8 +111,28 @@ membership or other permissions.
 - Links last 48 hours (`invitationExpiresIn`). Better Auth ignores expired invitations
   when it checks for an open one, so a new link for an expired invitation is a new
   invitation; the Organization view then cancels the expired one. The view builds the
-  link from the session's `appUrl` (`getAppSession`), the origin of `BETTER_AUTH_URL`: the Better Auth
+  link from the session's `appUrl` (`getAppSession`), the origin of the app's URL: the Better Auth
   client only knows the page's origin, which a proxy or a second domain can change.
+
+### Preview deployments
+
+Vercel preview deployments run against `snowtime-staging`, a Turso database seeded with
+`bun run db:seed --company` and shared by every preview (task 087). Seeded users sign in with
+the public seed password, through `DEMO_MODE=true` in Vercel's Preview environment. OAuth
+callbacks can't follow generated hosts, and a separate staging flag was rejected: demo mode
+already does what previews need, and its shared-accounts box is true of staging.
+
+- The app's URL follows the preview host. When `VERCEL_ENV` is `preview`,
+  `src/lib/app-url.ts` uses `https://$VERCEL_BRANCH_URL` as Better Auth's `baseURL`, the
+  passkey relying party, and the invitation link origin, and Better Auth also trusts
+  `https://$VERCEL_URL`. The branch URL stays the same across a branch's pushes, so
+  invitation links keep working; the deployment URL is the one Vercel's PR comment links.
+  `BETTER_AUTH_URL` must stay unset on previews, and the app refuses to start otherwise. A
+  fixed preview domain was rejected because only the branch it's assigned to could sign in.
+- The seed password is public in the repository, so Vercel Deployment Protection stays on
+  for previews, and staging holds no real data.
+- Previews have no Upstash and count rate limits in memory, so staging traffic doesn't
+  count against production's limits.
 
 ## Cookies and consent
 
@@ -188,20 +211,23 @@ runs the forms' own `Name` and `Slug` schemas (`auth.schemas.ts`), so both sides
 limit, in two Better Auth hooks:
 
 - The organization plugin's `organizationHooks` check the organization's name and slug on
-  create, the name on update, and a team's name on create and rename. The slug's format
-  matters beyond the URL: the report export puts it in file names.
+  create and the name on update. The slug's format matters beyond the URL: the report
+  export puts it in file names.
 - The `user.update.before` database hook checks the profile's name. Sign-up isn't
   checked, since the OAuth provider supplies the name.
 
 A refusal is an `APIError` with a code such as `NAME_TOO_LONG`, which `errorMessage` in
-`src/lib/errors.ts` maps to the form's own message.
+`src/lib/errors.ts` maps to the form's own message. The teams domain checks team names
+with the same `Name` schema and returns translated `AppError`s.
 
 Rate limits bound how fast one user or address can write, which the caps don't. The rates
 are `rateLimits` in `src/server/limits.server.ts`.
 
-- `sessionMiddleware` counts every POST server function against the user's write rate,
-  across all their organizations, and throws `AppError` with code `RATE_LIMITED` past it.
-  Every write is a POST, so a new write function is covered without extra code.
+- The API's session check (`signedInUser` in `src/server/auth/auth.server.ts`) counts every
+  write against the user's write rate, across all their organizations, and refuses with
+  `AppError` code `RATE_LIMITED` past it. Every call but a GET or a POST marked `reads` writes, so a new
+  write is covered without extra code. The app's invitation call also applies the
+  invitation rate per user before calling Better Auth.
 - Better Auth limits `/api/auth/*` per IP address and path, in production only, with
   stricter rules for creating organizations and inviting members. Its per-IP rules stay
   loose because an office may share one address.
@@ -218,6 +244,14 @@ are `rateLimits` in `src/server/limits.server.ts`.
 - Upstash was chosen over Better Auth's `storage: 'database'`, which would cost a Turso
   write per counted request, and over Vercel Firewall rules, which limit only per IP.
   Upstash is Redis over HTTP, so it doesn't tie the app to Vercel.
+- Snowhound's Vercel deployment runs without Upstash, decided on 2026-10-03. Each counted
+  write would wait for one round trip to Upstash, which offers no region nearer than
+  Frankfurt to the Stockholm functions. Users are few, production has no password
+  sign-in, and the caps above bound the database whatever the rates do. Each warm
+  instance still stops a sustained flood from one user or address; a client spread over
+  many instances gets the rate times the instance count. Add Upstash once abuse shows in
+  the logs or the app opens to the public at scale. Self-hosted, one process counts
+  exactly in memory.
 
 ## Content security policy
 

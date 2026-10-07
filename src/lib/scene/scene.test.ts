@@ -13,7 +13,7 @@ import {
   thumbUrl,
 } from './scene'
 import { IMAGE_WEATHER, PRESETS, weatherFor } from './weather'
-import { EFFECTS } from './weather-renderer'
+import { EFFECTS, placeStars, weatherCanvases } from './weather-renderer'
 
 describe('seasons', () => {
   test('the month picks the season, with December in winter', () => {
@@ -157,6 +157,34 @@ describe('weather', () => {
         }
       }
     }
+  })
+
+  test("the stars' sky and moon lie within the image, and every star finds a place", () => {
+    for (const id of IMAGE_IDS) {
+      for (const theme of THEMES) {
+        const weather = weatherFor(id, theme)
+        for (const stars of [weather, weather.also]) {
+          if (stars?.effect !== 'stars') continue
+          for (const f of stars.sky!.flat(2)) {
+            expect(f).toBeGreaterThanOrEqual(0)
+            expect(f).toBeLessThanOrEqual(1)
+          }
+          // The renderer's defaults, 60 stars from seed 91.
+          const count = stars.count ?? 60
+          expect(placeStars({ ...stars, count, seed: stars.seed ?? 91 })).toHaveLength(count)
+        }
+      }
+    }
+  })
+
+  test('a second effect at a coarser resolution gets a canvas of its own', () => {
+    expect(
+      weatherCanvases(weatherFor('land-april', 'dark')).map((c) => c.map((w) => w.effect)),
+    ).toEqual([['mist'], ['stars']])
+    expect(
+      weatherCanvases(weatherFor('coast-july', 'dark')).map((c) => c.map((w) => w.effect)),
+    ).toEqual([['fireflies', 'stars']])
+    expect(weatherCanvases(weatherFor('winter', 'light'))).toHaveLength(1)
   })
 })
 

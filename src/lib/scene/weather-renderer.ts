@@ -1,9 +1,9 @@
-// The seasonal scene's weather renderer: one WebGL 2 canvas that draws an image's effect as
-// points, or rain and mist as quads, in one call with no buffers; each item's randomness comes
-// from gl_VertexID and its position from the vertex shader. SceneLayer
+// The seasonal scene's weather renderer: a WebGL 2 canvas that draws an image's effects, each as
+// points, or rain, mist, and the aurora as quads, in one call with no buffers; each item's
+// randomness comes from gl_VertexID and its position from the vertex shader. SceneLayer
 // (src/components/scene/scene-layer.tsx) imports it the first time weather runs, so pages with
 // the weather off send no shaders.
-import type { Colors, Effect, Rgb, Weather, Zone } from './weather'
+import type { Colors, Effect, Point, Rgb, Weather, Zone } from './weather'
 
 const TUNING = {
   wind: 0,
@@ -21,6 +21,9 @@ const TUNING = {
   peaks: 1.2,
   peakTime: 1.5,
   peakSize: 2,
+  count: 60,
+  seed: 91,
+  spread: 0.6,
 }
 
 type EffectDef = {
@@ -41,6 +44,16 @@ type EffectDef = {
   // Backing pixels per CSS pixel, when less than the usual MAX_DPR: a soft effect draws fewer
   // pixels, and the browser scales the canvas up.
   resolution?: number
+  // For an effect laid out on the image rather than scattered: its item count, which the pace
+  // doesn't thin, and vec4 uniform arrays worked out once per setup.
+  layout?: (
+    t: typeof TUNING & Weather,
+    w: number,
+    h: number,
+  ) => {
+    count: number
+    uniforms: Record<string, number[]>
+  }
   colors: Colors
 }
 
@@ -147,6 +160,25 @@ function fallDefines(t: typeof TUNING & Weather) {
 function zoneCount(t: typeof TUNING & Weather) {
   return Math.min(t.zones?.length ?? 1, 4)
 }
+
+// The photos' aspect ratio and `background-position` y (.scene-photo-image in src/styles.css), to
+// map image rows and rectangles to the screen the way `cover` crops the photo.
+const PHOTO_ASPECT = 1920 / 1084
+const PHOTO_Y = 0.2
+const FULL_BAND: [number, number] = [1.2, -1.2]
+
+// Quads per stretch of an aurora curtain between two of its points.
+const AURORA_STEPS = 24
+// Smooth value noise along a line, for the aurora's rays and patches.
+const VNOISE = `
+float vhash(highp float cell){ return float(lowbias32(uint(int(cell) + 65536))) / 4294967295.0; }
+float vnoise(highp float x){
+  highp float i = floor(x);
+  float f = fract(x);
+  f = f*f*(3.0 - 2.0*f);
+  return mix(vhash(i), vhash(i + 1.0), f);
+}
+`
 
 export const EFFECTS: Record<Effect, EffectDef> = {
   // Snow. A is the near flakes' color, B the far ones'.
@@ -270,6 +302,7 @@ export const EFFECTS: Record<Effect, EffectDef> = {
     max: 60,
     fps: 30,
     vs: `${VS_HEAD}
+    uniform float u_tempo;
     flat out float v_alpha;
     void main() {
       uint item = uint(gl_VertexID);
@@ -277,11 +310,11 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       float z = mix(.4, 1.0, r3);
       // Mostly low, over the meadow, a few up to the tree line.
       vec2 p = vec2(r1*2.0-1.0, mix(-.95, .3, pow(r2, 1.3)));
-      float t = u_time * mix(.12, .22, r4);
+      float t = u_time * u_tempo * mix(.12, .22, r4);
       p += vec2(sin(t*2.1 + r4*6.28) + .5*sin(t*4.7 + r1*6.28), cos(t*1.7 + r5*6.28) + .5*sin(t*3.9 + r2*6.28)) * vec2(.06, .05);
       gl_Position = vec4(p, 0.0, 1.0);
       // A quick glow, a slower fade, then dark for the rest of the cycle.
-      float ph = fract(u_time / mix(3.0, 6.0, r5) + r1);
+      float ph = fract(u_time * u_tempo / mix(3.0, 6.0, r5) + r1);
       float glow = smoothstep(0.0, .12, ph) * (1.0 - smoothstep(.18, .6, ph));
       v_alpha = glow * mix(.6, 1.0, z) * u_opacity;
       gl_PointSize = v_alpha < .01 ? 0.0 : u_dpr * mix(9.0, 18.0, z) * u_size;
@@ -663,6 +696,167 @@ export const EFFECTS: Record<Effect, EffectDef> = {
       ],
     },
   },
+  // Night sky: stars at fixed points of the image's open sky (`sky`, out of the `moon`'s circle),
+  // each scintillating a little all the time and now and then flashing brighter, about `peaks`
+  // at once for `peakTime` seconds, `peakSize` times as large. `count` and `seed` pick them (see
+  // placeStars), and the pace doesn't thin them; `spread` sets bright against faint, `tempo` the
+  // twinkle's speed. A is a cool star's color, B a warm one's.
+  stars: {
+    density: 0,
+    min: 0,
+    max: 0,
+    fps: 30,
+    layout: starLayout,
+    vs: `${VS_HEAD}${COLORS}
+    uniform vec4 u_cover, u_stars[32];
+    uniform float u_tempo, u_spread, u_cycle, u_peakTime, u_peakSize;
+    flat out vec4 v_color;
+    void main() {
+      uint item = uint(gl_VertexID);
+      vec4 two = u_stars[gl_VertexID / 2];
+      vec2 at = gl_VertexID % 2 == 0 ? two.xy : two.zw;
+      gl_Position = vec4(u_cover.zw + at * u_cover.xy, 0.0, 1.0);
+      float r1 = rnd(item, 1u), r2 = rnd(item, 2u), r3 = rnd(item, 3u), r4 = rnd(item, 4u);
+      // A few bright stars and more faint ones.
+      float base = mix(1.0, mix(.25, 1.0, r1*r1), u_spread);
+      // Scintillation: three detuned waves per star, so it never repeats visibly.
+      float t = u_time * u_tempo * .3;
+      float n = sin(t * mix(5.0, 9.0, r2) + r3 * 40.0) * .5
+              + sin(t * mix(11.0, 17.0, r3) + r4 * 40.0) * .3
+              + sin(t * mix(2.0, 3.5, r4) + r1 * 40.0) * .4;
+      float scint = clamp(1.0 + .32 * n, 0.0, 2.0);
+      // A quick rise and a slower fade, once a cycle at the star's own time.
+      float x = mod(u_time + r4 * u_cycle * 7.13, u_cycle) / u_peakTime;
+      float flash = x < 1.0 ? min(smoothstep(0.0, .15, x) * (1.0-x)*(1.0-x) / .72, 1.0) : 0.0;
+      float alpha = base * scint * mix(1.0, 2.2, flash) * u_opacity;
+      // Bluish white to warm white, with a slight color flicker as the atmosphere bends it.
+      float warm = clamp(r2 * .4 + .075 * sin(t * mix(7.0, 12.0, r1) + r2 * 30.0), 0.0, 1.0);
+      v_color = vec4(mix(u_colorA, u_colorB, warm), alpha);
+      // The core, and the halo reaching 3.4 times as far.
+      float core = .9 * u_size * u_dpr * mix(.7, 1.3, base) * mix(1.0, u_peakSize, flash);
+      gl_PointSize = alpha < .005 ? 0.0 : 6.8 * core;
+    }`,
+    fs: `${FS_HEAD}
+    flat in vec4 v_color;
+    void main() {
+      // 0 at the center, 1 at the point's edge; the core's radius is 0.18 of that.
+      float d = length(gl_PointCoord - .5) * 2.0;
+      float core = exp(-d*d * 32.1);
+      float a = min(1.0, (core + .07 * exp(-d * 2.27)) * v_color.a) * (1.0 - smoothstep(.85, 1.0, d));
+      // White in the middle, the star's color around it.
+      outColor = vec4(mix(v_color.rgb, vec3(1.0), core * .6) * a, a);
+    }`,
+    colors: {
+      dark: [
+        [0.82, 0.9, 1.0],
+        [1.0, 0.9, 0.76],
+      ],
+      image: [
+        [0.82, 0.9, 1.0],
+        [1.0, 0.9, 0.76],
+      ],
+      plain: [
+        [0.82, 0.9, 1.0],
+        [1.0, 0.9, 0.76],
+      ],
+    },
+  },
+  // An aurora's curtains (`curtains`), each standing on its lower edge, a Catmull-Rom curve
+  // through its points, drawn as quads along it. Its rays are value noise along the curtain that
+  // drifts sideways, upright but ending at their own heights; the edge sways slowly, brightness
+  // pulses travel along it, and dim patches drift along it. Where a curtain bends toward the viewer,
+  // its rays line up behind each other and it glows brighter. A is the green, B the violet of its
+  // top.
+  aurora: {
+    density: 0,
+    min: 0,
+    max: 0,
+    fps: 30,
+    quads: true,
+    layout: auroraLayout,
+    vs: `${VS_HEAD}${VNOISE}
+    // Per control point: x, y, and the distance along its curtain in image widths. Per curtain:
+    // its first and last control points, height, and gain; then its lean, seed, length, and
+    // first quad.
+    uniform vec4 u_cover, u_base[24], u_curtain[4], u_curtainB[4];
+    uniform float u_tempo;
+    out float v_u, v_v, v_y, v_gain, v_pulse;
+    out highp float v_x, v_ray1, v_ray2, v_top;
+    const vec2 CORNERS[6] = vec2[6](vec2(0, 0), vec2(1, 0), vec2(1, 1), vec2(0, 0), vec2(1, 1), vec2(0, 1));
+    void main() {
+      int quad = gl_VertexID / 6;
+      vec2 corner = CORNERS[gl_VertexID % 6];
+      float q = float(quad);
+      int c = int(step(u_curtainB[1].w, q) + step(u_curtainB[2].w, q) + step(u_curtainB[3].w, q));
+      vec4 cur = u_curtain[c], curB = u_curtainB[c];
+      int local = quad - int(curB.w), first = int(cur.x), last = int(cur.y);
+      int k = first + local / ${AURORA_STEPS};
+      float t = (float(local % ${AURORA_STEPS}) + corner.x) / ${AURORA_STEPS}.0;
+      vec4 b1 = u_base[k], b2 = u_base[min(k + 1, last)];
+      vec2 p0 = u_base[max(k - 1, first)].xy, p1 = b1.xy, p2 = b2.xy, p3 = u_base[min(k + 2, last)].xy;
+      vec2 a = 2.0*p0 - 5.0*p1 + 4.0*p2 - p3, b = 3.0*p1 - p0 - 3.0*p2 + p3;
+      vec2 p = .5 * (2.0*p1 + (p2 - p0)*t + a*t*t + b*t*t*t);
+      vec2 dp = .5 * ((p2 - p0) + 2.0*a*t + 3.0*b*t*t);
+      float steep = abs(dp.y) / max(length(vec2(dp.x * ${PHOTO_ASPECT.toFixed(4)}, dp.y)), 1e-6);
+      float s = mix(b1.z, b2.z, t), v = corner.y, seed = curB.y;
+      float time = u_time * u_tempo, sway = time * .4, x0 = p.x;
+      p.y += sin(s*9.0 + sway*.7 + seed) * .006 + sin(s*23.0 - sway*1.1 + seed*2.0) * .0025;
+      p.x += sin(s*5.0 - sway*.5 + seed) * .004;
+      // Taller and shorter along the curtain, slowly changing.
+      float h = cur.z * 1.4 * (.75 + .25 * sin(s*7.0 + sway*.4 + seed*3.0));
+      p -= v * h * vec2(curB.x / ${PHOTO_ASPECT.toFixed(4)}, 1.0);
+      // Rays in perspective: each tilts very slightly toward one point far above x 0.15, the
+      // middle of land December's curtains.
+      p.x += v * h * (.15 - x0) * .3;
+      gl_Position = vec4(u_cover.zw + p * u_cover.xy, 0.0, 1.0);
+      v_x = s * 150.0;
+      v_ray1 = time * .24 + seed * 13.0;
+      v_ray2 = seed * 7.0 - time * .4;
+      v_top = time * .24 + seed * 11.0;
+      v_pulse = mod(seed * 5.0 - time * .5, 6.2832);
+      v_u = s / curB.z;
+      v_v = v;
+      v_y = p.y;
+      // Stretches of the curtain dim as patches drift along it, slowly enough to work out per
+      // corner.
+      float patches = vnoise(s * 20.0 + seed * 17.0 + time * .05) * .7 + vnoise(s * 51.67 + seed * 3.0 - time * .08) * .3;
+      v_gain = cur.w * (1.0 + 2.5 * steep) * u_opacity * (.235 + .765 * smoothstep(.25, .75, patches));
+    }`,
+    fs: `${FS_HEAD}${COLORS}
+    in float v_u, v_v, v_y, v_gain, v_pulse;
+    in highp float v_x, v_ray1, v_ray2, v_top;
+    ${HASH}${VNOISE}
+    void main() {
+      float rays = vnoise(v_x + v_ray1) * .6 + vnoise(v_x * 2.7 + v_ray2) * .4;
+      rays = mix(1.0, pow(rays, 1.6) * 1.9, .6);
+      // Each ray ends at its own height.
+      float top = mix(.4, 1.05, vnoise(v_x * .9 + v_top));
+      float ragged = mix(1.0, smoothstep(top, top - .3, v_v), .5);
+      // Brightest just above the lower edge, fading upward, and out at the curtain's ends.
+      float profile = smoothstep(0.0, .22, v_v) * exp(-2.6 * v_v) * (1.0 - v_v);
+      float ends = smoothstep(0.0, .15, v_u) * smoothstep(1.0, .8, v_u);
+      float pulse = 1.0 - .45 * (.5 + .5 * sin(v_u * 9.0 + v_pulse));
+      // Hidden behind the treeline.
+      float trees = smoothstep(.73, .72, v_y);
+      float a = clamp(profile * ragged * ends * rays * pulse * v_gain * trees * .5, 0.0, 1.0);
+      vec3 col = mix(u_colorA, u_colorB, smoothstep(.35, 1.0, v_v) * .2);
+      outColor = vec4(col * a, a);
+    }`,
+    colors: {
+      dark: [
+        [0.36, 1.0, 0.62],
+        [0.72, 0.42, 1.0],
+      ],
+      image: [
+        [0.36, 1.0, 0.62],
+        [0.72, 0.42, 1.0],
+      ],
+      plain: [
+        [0.36, 1.0, 0.62],
+        [0.72, 0.42, 1.0],
+      ],
+    },
+  },
 }
 
 // The two colors the weather's effect mixes on the page: the image's or the preset's for the
@@ -674,12 +868,6 @@ export function weatherColors(
   const key = page.dark ? 'dark' : page.background ? 'image' : 'plain'
   return weather.colors?.[key] ?? EFFECTS[weather.effect].colors[key]
 }
-
-// The photos' aspect ratio and `background-position` y (.scene-photo-image in src/styles.css), to
-// map image rows and rectangles to the screen the way `cover` crops the photo.
-const PHOTO_ASPECT = 1920 / 1084
-const PHOTO_Y = 0.2
-const FULL_BAND: [number, number] = [1.2, -1.2]
 
 // Rows of the image, as fractions of its height, in clip space.
 function bandClip(band: number[] | undefined, w: number, h: number) {
@@ -706,10 +894,150 @@ function glitterCycle(t: typeof TUNING) {
   return (EFFECTS.glitter.density * t.amount * t.peakTime) / Math.max(t.peaks, 0.01)
 }
 
+// Where `cover` puts the image in clip space: x = z + f.x * x, y = w + f.y * y for a point f of
+// the image, as zoneClip maps it.
+function coverClip(w: number, h: number) {
+  const shownW = Math.max(w, h * PHOTO_ASPECT)
+  const shownH = Math.max(h, w / PHOTO_ASPECT)
+  const top = (h - shownH) * PHOTO_Y
+  return [(2 * shownW) / w, (-2 * shownH) / h, (w - shownW) / w - 1, 1 - (2 * top) / h]
+}
+
+// prototypes/stars.html's generator, so a seed places the stars where Kait picked them.
+function rng(seed: number) {
+  let s = seed * 2654435761
+  return () => {
+    s = (s + 0x6d2b79f5) | 0
+    let t = Math.imul(s ^ (s >>> 15), 1 | s)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function inPolygon(polygon: Point[], [x, y]: Point) {
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i]
+    const [xj, yj] = polygon[j]
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside
+  }
+  return inside
+}
+
+// Up to `count` stars in the sky's polygons, out of the moon's circle (x, y, and radius in image
+// heights), kept apart so they don't clump, as prototypes/stars.html places them.
+export function placeStars({
+  sky = [],
+  moon,
+  count,
+  seed,
+}: Pick<Weather, 'sky' | 'moon'> & { count: number; seed: number }): Point[] {
+  const random = rng(seed)
+  const stars: Point[] = []
+  const top = Math.max(0, ...sky.flat().map((p) => p[1]))
+  const gap = 0.35 / Math.sqrt(count)
+  for (let tries = 0; stars.length < count && tries < 5000; tries++) {
+    const p: Point = [random(), random() * top]
+    if (moon && Math.hypot((p[0] - moon[0]) * PHOTO_ASPECT, p[1] - moon[1]) < moon[2]) continue
+    if (!sky.some((polygon) => inPolygon(polygon, p))) continue
+    const near = gap * (tries < 3000 ? 1 : 0.4)
+    if (stars.some((s) => Math.hypot((s[0] - p[0]) * 1.77, s[1] - p[1]) < near)) continue
+    stars.push(p)
+    // The prototype draws four more numbers per star; the shader hashes its own instead.
+    for (let k = 0; k < 4; k++) random()
+  }
+  return stars
+}
+
+const MAX_STARS = 64
+
+function starLayout(t: typeof TUNING & Weather, w: number, h: number) {
+  const stars = placeStars({ ...t, count: Math.min(t.count, MAX_STARS) })
+  const packed = stars.flat()
+  return {
+    count: stars.length,
+    uniforms: {
+      u_cover: coverClip(w, h),
+      u_stars: [...packed, ...Array<number>(MAX_STARS * 2 - packed.length).fill(0)],
+    },
+  }
+}
+
+// A curtain's points along its Catmull-Rom curve, `steps` per stretch, the ends repeated.
+function catmullRom(points: Point[], steps: number): Point[] {
+  const p = [points[0], ...points, points.at(-1)!]
+  const out: Point[] = []
+  for (let i = 1; i < p.length - 2; i++) {
+    for (let j = 0; j < steps; j++) {
+      const t = j / steps
+      out.push(
+        [0, 1].map(
+          (k) =>
+            0.5 *
+            (2 * p[i][k] +
+              (p[i + 1][k] - p[i - 1][k]) * t +
+              (2 * p[i - 1][k] - 5 * p[i][k] + 4 * p[i + 1][k] - p[i + 2][k]) * t * t +
+              (3 * p[i][k] - p[i - 1][k] - 3 * p[i + 1][k] + p[i + 2][k]) * t * t * t),
+        ) as Point,
+      )
+    }
+  }
+  out.push(points.at(-1)!)
+  return out
+}
+
+const MAX_CURTAIN_POINTS = 24
+
+function auroraLayout(t: typeof TUNING & Weather, w: number, h: number) {
+  const base: number[] = []
+  const curtain: number[] = []
+  const curtainB: number[] = []
+  let quads = 0
+  for (const [c, { base: points, height, gain, lean = 0 }] of (t.curtains ?? [])
+    .slice(0, 4)
+    .entries()) {
+    const first = base.length / 4
+    if (first + points.length > MAX_CURTAIN_POINTS) break
+    // The distance along the curve to each point, in image widths.
+    const curve = catmullRom(points, AURORA_STEPS)
+    let length = 0
+    for (const [i, [x, y]] of points.entries()) {
+      if (i) {
+        for (let j = (i - 1) * AURORA_STEPS + 1; j <= i * AURORA_STEPS; j++) {
+          length += Math.hypot(
+            curve[j][0] - curve[j - 1][0],
+            (curve[j][1] - curve[j - 1][1]) / PHOTO_ASPECT,
+          )
+        }
+      }
+      base.push(x, y, length, 0)
+    }
+    curtain.push(first, first + points.length - 1, height, gain)
+    curtainB.push(lean, c * 1.7 + 0.3, length, quads)
+    quads += (points.length - 1) * AURORA_STEPS
+  }
+  while (curtainB.length < 16) {
+    curtain.push(0, 0, 0, 0)
+    curtainB.push(0, 1, 1, 1e9)
+  }
+  return {
+    count: quads,
+    uniforms: {
+      u_cover: coverClip(w, h),
+      u_base: [...base, ...Array<number>(MAX_CURTAIN_POINTS * 4 - base.length).fill(0)],
+      u_curtain: curtain,
+      u_curtainB: curtainB,
+    },
+  }
+}
+
+// An effect to draw: a weather with an effect, and its two colors on the page (weatherColors).
+export type Layer = { weather: Weather & { effect: Effect }; colors: [Rgb, Rgb] }
+
 export type WeatherRenderer = {
-  // Draws `weather`, which has an effect (see weatherFor), with its two colors (weatherColors).
-  // Throws if the effect's shaders don't compile.
-  start(weather: Weather & { effect: Effect }, colors: [Rgb, Rgb]): void
+  // Draws the layers, the first lowest, every frame at the fastest one's rate and on a canvas of
+  // the finest one's resolution. Throws if an effect's shaders don't compile.
+  start(layers: Layer[]): void
   stop(): void
   // Stops and draws the frame at `seconds` of the weather's time, for the weather bench's golden
   // frames (perf/weather.ts).
@@ -740,6 +1068,7 @@ const UNIFORMS = [
   'u_shimmer',
   'u_peakTime',
   'u_peakSize',
+  'u_spread',
   'u_colorA',
   'u_colorB',
 ] as const
@@ -759,18 +1088,47 @@ const TUNED = [
   'shimmer',
   'peakTime',
   'peakSize',
+  'spread',
 ] as const
 
 // The most backing pixels per CSS pixel the canvas has, whatever the screen's.
 const MAX_DPR = 1.5
 
 // A weather's tuning, with the defaults for what it leaves out.
-function tuned(weather: Weather & { effect: Effect }) {
+function tuned(weather: Layer['weather']) {
   return { ...TUNING, ...weather }
 }
 
-function fps(weather: Weather & { effect: Effect }) {
+function fps(weather: Layer['weather']) {
   return weather.fps ?? EFFECTS[weather.effect].fps
+}
+
+function resolution(weather: Layer['weather']) {
+  return EFFECTS[weather.effect].resolution ?? MAX_DPR
+}
+
+// A weather's effects, as canvases from the lowest up, each with the effects it draws. Effects at
+// the same resolution share a canvas and draw at the faster one's rate; one at a coarser
+// resolution, as the mist is, gets a canvas of its own, so it keeps its own rate and density.
+// A canvas costs a floor of its own each frame, about 0.2 ms on an Apple M1 Pro and 1.2 ms under
+// SwiftShader, while the mist drawn at the stars' density and rate cost up to five times as much
+// (task 076, subtask 01).
+export function weatherCanvases(weather: Weather): Layer['weather'][][] {
+  const effects = [weather, weather.also]
+    .filter((w): w is Weather => !!w?.effect)
+    .map((w) => ({ ...w, effect: w.effect! }))
+  const canvases: Layer['weather'][][] = []
+  for (const effect of effects) {
+    const shared = canvases.at(-1)
+    if (shared && resolution(shared[0]) === resolution(effect)) shared.push(effect)
+    else canvases.push([effect])
+  }
+  return canvases
+}
+
+// How often each star flashes, in seconds, so that about `peaks` flash at once.
+function starCycle(t: typeof TUNING, count: number) {
+  return Math.max(t.peakTime, (count * t.peakTime) / Math.max(t.peaks, 0.01))
 }
 
 // One WebGL context for all effects; each effect's program compiles the first time it runs.
@@ -825,7 +1183,7 @@ export function createWeatherRenderer(
     programs.set(key, { p, u })
     return { p, u }
   }
-  function programFor(weather: Weather & { effect: Effect }) {
+  function programFor(weather: Layer['weather']) {
     return program(weather.effect, EFFECTS[weather.effect].defines?.(tuned(weather)) ?? [])
   }
   gl.bindVertexArray(gl.createVertexArray())
@@ -840,20 +1198,18 @@ export function createWeatherRenderer(
   const resize = new ResizeObserver(([entry]) => {
     cssWidth = entry.contentRect.width
     cssHeight = entry.contentRect.height
-    setup = null
+    for (const layer of layers) layer.setup = null
   })
   resize.observe(canvas)
 
   let raf = 0
   let last = 0
   let elapsed = 0
-  let current: (Weather & { effect: Effect }) | null = null
-  let colors: [Rgb, Rgb] | null = null
-
   // What a frame draws with, worked out again only on a start or a resize.
   type Setup = ReturnType<typeof prepare>
-  let setup: Setup | null = null
-  function prepare(weather: Weather & { effect: Effect }, w: number, h: number, dpr: number) {
+  type Drawn = Layer & { setup: Setup | null }
+  let layers: Drawn[] = []
+  function prepare(weather: Layer['weather'], w: number, h: number, dpr: number) {
     const t = tuned(weather)
     const fx = EFFECTS[weather.effect]
     const zones = (t.zones ?? [[0, t.horizon ?? 1, 1, 1] as Zone])
@@ -862,6 +1218,8 @@ export function createWeatherRenderer(
     // Item counts scale with the drawn area. A band's effect keeps the count of its full-screen
     // version, so it's thicker in the band.
     const area = (cssWidth * cssHeight) / (1440 * 900)
+    const layout = fx.layout?.(t, w, h)
+    const count = layout?.count ?? Math.min(fx.max, Math.max(fx.min, fx.density * area)) * t.amount
     return {
       w,
       h,
@@ -873,8 +1231,10 @@ export function createWeatherRenderer(
       horizon: t.horizon === undefined ? FULL_BAND[1] : bandClip([t.horizon], w, h)[0],
       zones: [...zones.flat(), ...Array<number>((4 - zones.length) * 4).fill(0)],
       zoneGain: [0, 1, 2, 3].map((i) => t.zones?.[i]?.[4] ?? 1),
-      cycle: glitterCycle(t),
-      count: Math.min(fx.max, Math.max(fx.min, fx.density * area)) * t.amount,
+      cycle: weather.effect === 'stars' ? starCycle(t, count) : glitterCycle(t),
+      count,
+      paced: !layout,
+      uniforms: layout?.uniforms ?? {},
     }
   }
 
@@ -932,10 +1292,14 @@ export function createWeatherRenderer(
     newWindow(now)
   }
 
+  function targetFps() {
+    return Math.max(...layers.map((layer) => fps(layer.weather)))
+  }
+
   function frame(now: number) {
     raf = requestAnimationFrame(frame)
-    if (!current || !colors) return
-    const target = fps(current)
+    if (!layers.length) return
+    const target = targetFps()
     const gap = prev ? now - prev : 0
     prev = now
     if (gap && hz) watch(now, gap, target)
@@ -957,31 +1321,43 @@ export function createWeatherRenderer(
     last = now
     draw()
   }
+
+  function size(dpr: number) {
+    return [Math.max(1, Math.floor(cssWidth * dpr)), Math.max(1, Math.floor(cssHeight * dpr))]
+  }
+
+  function drawLayer(layer: Drawn, w: number, h: number, dpr: number) {
+    if (!layer.setup || layer.setup.w !== w || layer.setup.h !== h || layer.setup.dpr !== dpr) {
+      layer.setup = prepare(layer.weather, w, h, dpr)
+      upload(layer.setup, layer.colors)
+    }
+    const { u, p } = layer.setup.program
+    gl.useProgram(p)
+    gl.uniform1f(u.u_time, elapsed)
+    const count = Math.round(layer.setup.count * (layer.setup.paced ? pace().density : 1))
+    if (layer.setup.fx.quads) gl.drawArrays(gl.TRIANGLES, 0, count * 6)
+    else gl.drawArrays(gl.POINTS, 0, count)
+  }
+
   function draw() {
-    if (!current || !colors) return
-    const dpr = Math.min(devicePixelRatio || 1, EFFECTS[current.effect].resolution ?? MAX_DPR)
-    const w = Math.max(1, Math.floor(cssWidth * dpr))
-    const h = Math.max(1, Math.floor(cssHeight * dpr))
+    if (!layers.length) return
+    const dpr = Math.min(
+      devicePixelRatio || 1,
+      Math.max(...layers.map((l) => resolution(l.weather))),
+    )
+    const [w, h] = size(dpr)
     if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w
       canvas.height = h
-      gl.viewport(0, 0, w, h)
     }
-    if (!setup || setup.w !== w || setup.h !== h || setup.dpr !== dpr) {
-      setup = prepare(current, w, h, dpr)
-      upload(setup, colors)
-    }
-    const { u } = setup.program
+    gl.viewport(0, 0, w, h)
     // The clear color is WebGL's default, transparent.
     gl.clear(gl.COLOR_BUFFER_BIT)
-    gl.uniform1f(u.u_time, elapsed)
-    const count = Math.round(setup.count * pace().density)
-    if (setup.fx.quads) gl.drawArrays(gl.TRIANGLES, 0, count * 6)
-    else gl.drawArrays(gl.POINTS, 0, count)
+    for (const layer of layers) drawLayer(layer, w, h, dpr)
   }
-  // The uniforms that change only with the setup. A program keeps its uniforms, and only one
-  // program is in use until the next start, which makes a new setup.
-  function upload({ program: { p, u }, t, ...setup }: Setup, [a, b]: [Rgb, Rgb]) {
+  // The uniforms that change only with the setup. A program keeps its uniforms, and each layer
+  // has a program of its own.
+  function upload({ program: { p, u }, t, uniforms, ...setup }: Setup, [a, b]: [Rgb, Rgb]) {
     gl.useProgram(p)
     gl.uniform3f(u.u_colorA, ...a)
     gl.uniform3f(u.u_colorB, ...b)
@@ -993,6 +1369,9 @@ export function createWeatherRenderer(
     gl.uniform1f(u.u_cycle, setup.cycle)
     gl.uniform1f(u.u_dpr, setup.dpr)
     for (const key of TUNED) gl.uniform1f(u[`u_${key}`], t[key])
+    for (const [name, values] of Object.entries(uniforms)) {
+      gl.uniform4fv(gl.getUniformLocation(p, name), values)
+    }
   }
   function stop() {
     cancelAnimationFrame(raf)
@@ -1000,12 +1379,12 @@ export function createWeatherRenderer(
     gl.clear(gl.COLOR_BUFFER_BIT)
   }
   return {
-    start(weather, pair) {
-      programFor(weather)
-      if (!current || fps(weather) !== fps(current)) slower = 0
-      current = weather
-      colors = pair
-      setup = null
+    start(shown) {
+      for (const layer of shown) programFor(layer.weather)
+      const before = layers.length ? targetFps() : 0
+      layers = shown.map((layer) => ({ ...layer, setup: null }))
+      if (!layers.length) return stop()
+      if (targetFps() !== before) slower = 0
       if (raf) return
       last = 0
       prev = 0

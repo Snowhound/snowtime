@@ -4,6 +4,7 @@ import {
   lastEndToday,
   readEntryTimes,
   recentRange,
+  recentTickets,
   recentWork,
   suggestWork,
   summarize,
@@ -11,6 +12,21 @@ import {
 
 const zone = 'Europe/Tallinn'
 const now = Date.parse('2026-09-24T12:00:00Z') // 15:00 in Tallinn
+
+test('recent issues are distinct, newest first, and limited to six', () => {
+  const entries = [
+    'NBW-1',
+    null,
+    'NBW-2',
+    'NBW-1',
+    'NBW-3',
+    'NBW-4',
+    'NBW-5',
+    'NBW-6',
+    'NBW-7',
+  ].map((ticket, index) => ({ startedAt: new Date(index), stoppedAt: new Date(index + 1), ticket }))
+  expect(recentTickets(entries)).toEqual(['NBW-7', 'NBW-6', 'NBW-5', 'NBW-4', 'NBW-3', 'NBW-1'])
+})
 
 function entry(start: string, stop: string | null) {
   return { startedAt: new Date(start), stoppedAt: stop ? new Date(stop) : null }
@@ -172,12 +188,14 @@ describe('readEntryTimes', () => {
     })
   })
 
-  test('requires every time, and no end in the future', () => {
+  test('requires every time, and allows an end in the future', () => {
     expect(readEntryTimes({ date: '2026-09-24', start: '09:00', end: '' }, options)).toEqual({
       error: 'missing',
     })
     expect(readEntryTimes({ date: '2026-09-24', start: '14:00', end: '15:30' }, options)).toEqual({
-      error: 'future',
+      startedAt: new Date('2026-09-24T11:00:00Z'),
+      stoppedAt: new Date('2026-09-24T12:30:00Z'),
+      nextDay: false,
     })
   })
 

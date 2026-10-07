@@ -23,6 +23,8 @@ import { Route as OrgSettingsRouteImport } from './routes/$org/settings'
 import { Route as OrgTimerRouteImport } from './routes/$org/timer'
 import { Route as InvitationIdRouteImport } from './routes/invitation.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiBenchHeapRouteImport } from './routes/api/bench/heap'
+import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +96,16 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBenchHeapRoute = ApiBenchHeapRouteImport.update({
+  id: '/api/bench/heap',
+  path: '/api/bench/heap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SplatRoute = ApiV1SplatRouteImport.update({
+  id: '/api/v1/$',
+  path: '/api/v1/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +122,8 @@ export interface FileRoutesByFullPath {
   '/invitation/$id': typeof InvitationIdRoute
   '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/bench/heap': typeof ApiBenchHeapRoute
+  '/api/v1/$': typeof ApiV1SplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,6 +139,8 @@ export interface FileRoutesByTo {
   '/invitation/$id': typeof InvitationIdRoute
   '/$org': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/bench/heap': typeof ApiBenchHeapRoute
+  '/api/v1/$': typeof ApiV1SplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,6 +158,8 @@ export interface FileRoutesById {
   '/invitation/$id': typeof InvitationIdRoute
   '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/bench/heap': typeof ApiBenchHeapRoute
+  '/api/v1/$': typeof ApiV1SplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,6 +178,8 @@ export interface FileRouteTypes {
     | '/invitation/$id'
     | '/$org/'
     | '/api/auth/$'
+    | '/api/bench/heap'
+    | '/api/v1/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -175,6 +195,8 @@ export interface FileRouteTypes {
     | '/invitation/$id'
     | '/$org'
     | '/api/auth/$'
+    | '/api/bench/heap'
+    | '/api/v1/$'
   id:
     | '__root__'
     | '/'
@@ -191,6 +213,8 @@ export interface FileRouteTypes {
     | '/invitation/$id'
     | '/$org/'
     | '/api/auth/$'
+    | '/api/bench/heap'
+    | '/api/v1/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -202,6 +226,8 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   InvitationIdRoute: typeof InvitationIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiBenchHeapRoute: typeof ApiBenchHeapRoute
+  ApiV1SplatRoute: typeof ApiV1SplatRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -304,6 +330,20 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bench/heap': {
+      id: '/api/bench/heap'
+      path: '/api/bench/heap'
+      fullPath: '/api/bench/heap'
+      preLoaderRoute: typeof ApiBenchHeapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/$': {
+      id: '/api/v1/$'
+      path: '/api/v1/$'
+      fullPath: '/api/v1/$'
+      preLoaderRoute: typeof ApiV1SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -336,6 +376,8 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   InvitationIdRoute: InvitationIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiBenchHeapRoute: ApiBenchHeapRoute,
+  ApiV1SplatRoute: ApiV1SplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

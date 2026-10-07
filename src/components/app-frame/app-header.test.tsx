@@ -13,8 +13,8 @@ const fn = vi.hoisted(() => ({
   navigate: vi.fn(),
   updateSettings: vi.fn(),
 }))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
-vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
+vi.mock('~/lib/api/auth', () => fn)
+vi.mock('~/lib/api/settings', () => fn)
 vi.mock('~/lib/auth-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/lib/auth-client')>()),
   authClient: { organization: { setActive: fn.setActive } },
@@ -118,6 +118,6 @@ describe('AppHeader', () => {
     expect(language).toHaveValue('en')
 
     await userEvent.selectOptions(language, 'et')
-    expect(fn.updateSettings).toHaveBeenCalledWith({ data: { locale: 'et' } })
+    expect(fn.updateSettings).toHaveBeenCalledWith({ locale: 'et' })
   })
 })

@@ -4,6 +4,7 @@ import { type ParentProps, createContext, onMount } from 'solid-js'
 import { CopyAnnouncer } from '~/components/copy-duration'
 import { Intro, IntroPage } from '~/components/scene/intro'
 import { SceneLayer } from '~/components/scene/scene-layer'
+import { createSettings } from '~/lib/api/settings'
 import { LAYERS_ID } from '~/lib/layers'
 import { sessionQuery } from '~/lib/queries/session'
 import { useQuery } from '~/lib/queries/use-query'
@@ -12,10 +13,10 @@ import { SCENE_DEFAULTS, sceneAttributes, shownSeason } from '~/lib/scene/scene'
 import { SeasonProvider, TaglineProvider } from '~/lib/scene/seasons'
 import { cn } from '~/lib/utils'
 import { getLocale } from '~/paraglide/runtime.js'
-import type { AppSession } from '~/server/auth/auth.functions'
-import { getSettings } from '~/server/settings/settings.functions'
+import type { AppSession } from '~/server/auth/auth.schemas'
 import { AppHeader } from './app-header'
 import { PasskeyPrompt } from './passkey-prompt'
+import { TimerTitle } from './timer-title/timer-title'
 
 // The organization of the app frame a component renders in, undefined outside one, so a page
 // that picks its own frame, such as the error page, doesn't add a second one.
@@ -46,18 +47,20 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
     } else releaseIntroPending()
   })
 
-  // The first getSettings call creates the user's settings from the browser's time zone
-  // and language (docs/architecture/timer.md, "User settings"); the server can't know the zone.
+  // A new user's settings start from the browser's time zone and language
+  // (docs/architecture/timer.md, "User settings"); the server can't know the zone.
   onMount(async () => {
     if (props.session.settings) return
-    await getSettings({
-      data: { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, locale: getLocale() },
+    await createSettings({
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      locale: getLocale(),
     })
     await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })
   })
 
   return (
     <div class="isolate flex min-h-dvh flex-col" {...sceneAttributes(shown())}>
+      <TimerTitle userId={session.data?.user.id} />
       <SceneLayer settings={shown()} pace="calm" />
       <IntroPage class="flex flex-1 flex-col">
         <AppHeader organizationId={props.organizationId} />

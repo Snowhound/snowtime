@@ -46,12 +46,12 @@ only covers driving them.
 **The dev server is the user's, not yours.** Check, do not manage:
 
 ```bash
-curl -sf -o /dev/null http://localhost:3000 && echo up || echo down
+curl -sf -o /dev/null http://localhost:3100 && echo up || echo down
 ```
 
 If it is down, ask the user to start it (`bun --bun run dev`) and wait. Do not run it yourself
 unless they say to, and never `pkill` a dev server. Check the port in `package.json` before
-assuming 3000.
+assuming 3100.
 
 Client-rendered views can legitimately snapshot as `(no interactive elements)` right after `open`.
 Wait for a visible control or another readiness condition before snapshotting. Prefer

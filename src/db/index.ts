@@ -1,12 +1,13 @@
-// Server-only database client. Import it from server functions and server code only; the
+// Server-only database client. Import it from server code only; the
 // Turso token must never reach the browser.
 import { drizzle } from 'drizzle-orm/libsql'
 import { env } from '~/env'
+import { timedClient } from '~/server/timing.server'
 import { openClient } from './connection'
 import { relations } from './relations'
 
 export const db = drizzle({
-  client: openClient({ url: env.TURSO_DATABASE_URL, authToken: env.TURSO_AUTH_TOKEN }),
+  client: timedClient(openClient({ url: env.TURSO_DATABASE_URL, authToken: env.TURSO_AUTH_TOKEN })),
   relations,
 })
 

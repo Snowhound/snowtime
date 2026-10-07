@@ -23,18 +23,26 @@ import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
 import { Button } from '~/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
-import { addDays, localDate, runningMs, startOfDay } from '~/lib/calendar'
+import { addDays, localDate, startOfDay } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
-import { formatClock, formatIsoDate } from '~/lib/format'
+import { formatIsoDate } from '~/lib/format'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
+import { runningTimerQuery } from '~/lib/queries/timer'
 import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { type CalendarControls, TimerCalendar } from './calendar/timer-calendar'
-import { RECENT_DAYS, groupByDay, recentRange, recentWork, summarize } from './entries'
+import {
+  RECENT_DAYS,
+  groupByDay,
+  recentRange,
+  recentWork,
+  recentTickets,
+  summarize,
+} from './entries'
 import type { EntryPatch } from './entry-fields'
 import { EmptyState, EntryList } from './entry-list'
 import { EntryPopover, type EntryPopoverTarget, type EntryPopoverValues } from './entry-popover'
@@ -44,7 +52,6 @@ import {
   type StoppedEntry,
   entriesQuery,
   firstEntryQuery,
-  runningTimerQuery,
   useCreateEntry,
   useDeleteEntry,
   useStartTimer,
@@ -177,15 +184,6 @@ export function TimerView(props: {
     setEditor((current) => (current?.target.kind === target.kind ? null : { target, anchor }))
   }
 
-  const title = `${m.nav_timer()} · ${m.app_name()}`
-  createEffect(() => {
-    const timer = running.data
-    document.title = timer ? `${formatClock(runningMs(timer.startedAt, now()))} · ${title}` : title
-  })
-  onCleanup(() => {
-    if (typeof document !== 'undefined') document.title = title
-  })
-
   function elsewhere() {
     const timer = running.data
     if (!timer || timer.organizationId === props.organizationId) return null
@@ -316,6 +314,9 @@ export function TimerView(props: {
   }
 
   const listProps = {
+    get tickets() {
+      return recentTickets(stopped())
+    },
     get projects() {
       return projects.data ?? []
     },
@@ -411,6 +412,8 @@ export function TimerView(props: {
         >
           <ErrorAlert message={error()} />
           <TimerBar
+            organizationId={props.organizationId}
+            userId={props.userId}
             layout={layout()}
             compact={props.settings.compactRows}
             running={running.data ?? null}

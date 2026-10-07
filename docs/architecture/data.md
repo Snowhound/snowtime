@@ -22,14 +22,14 @@
   console with `datetime(x / 1000, 'unixepoch')`.
 - Audit columns on every app-owned table: `created_at`, `created_by`, and on
   tables whose rows are updated, `updated_at`, `updated_by`. Better Auth
-  tables keep the plugin's own columns.
+  tables, `team` and `team_member` included, keep the plugin's columns.
   - `created_at`/`updated_at` default to the current time in ms in the
     database. The app sets `updated_at` on every update (Drizzle
     `$onUpdate`); a guarded `AFTER UPDATE` trigger sets it only when a
     statement did not, as a safety net. The trigger rewrites the row, so the
     app setting it keeps writes (a Turso quota) single.
   - `created_by`/`updated_by` are the acting user, set by the app from a
-    per-request context in server-function middleware (Drizzle
+    per-call context the API sets (`withActor`, Drizzle
     `$defaultFn`/`$onUpdateFn`). SQLite has no session variables, so a
     trigger cannot know the actor. `NOT NULL`, no default: a write without an
     actor fails. Scripts (seed, maintenance) act as a fixed system user.
@@ -61,15 +61,15 @@
 
 ## Tenancy
 
-- Model: Better Auth organization plugin with teams enabled
+- Model: Better Auth organization plugin for organizations; app-owned teams
   (`organization`, `member`, `team`, `teamMember`, `invitation` tables).
 - One shared database per environment; tenant isolation is row-level.
 - Every tenant-owned table has a non-null `organization_id`; team-scoped rows
   (e.g. project assignments) also reference `team_id`.
 - Each tab's organization comes from its URL: the app's pages live under the
   organization's slug (`/<slug>/timer`, `/<slug>/reports`, and so on). Every
-  organization-scoped server function takes `organizationId`, and `scopeMiddleware` checks
-  that the user is a member (`resolveScope`) before the function touches data; queries
+  organization-scoped API call names `organizationId` in its path, and the API's
+  `organization` middleware checks that the user is a member (`resolveScope`) before the call touches data; queries
   always filter by `organization_id`. Tabs never disagree with the server, and two
   organizations can stay open side by side (task 052).
   - Rejected: the session's active organization as the one every call acts in. Tabs share
@@ -98,34 +98,38 @@
   - The Organization view's Better Auth calls name the organization the view shows
     (`organizationId`). Canceling an invitation takes the invitation's organization.
   - The running timer spans organizations, so `getRunningTimer` and `stopTimer` check no
-    organization. `startTimer` creates an entry in one, so it goes through
-    `scopeMiddleware` like every other organization-scoped call.
+    organization. `startTimer` creates an entry in one, so it resolves that organization's
+    scope like every other organization-scoped call.
 - `getAppSession` loads the app frame's session: the user's organizations with their
   role in each, the default (active) one, and their settings. When the session has no
-  active organization, or one the user has left, it saves the first by name to the
-  session. A signed-in user with no organization goes to their open invitation, or to
+  active organization, or one the user has left, the first by name is the default; the read
+  doesn't save it, and only switching organizations does, through Better Auth. A signed-in user with no organization goes to their open invitation, or to
   create an organization.
 - Organization roles: owner / admin / member (plugin defaults).
   - `member.role` can hold several roles, comma-separated. `strongestRole` reads the list
     as Better Auth's permission check does, without trimming, so the app never grants
     more than the plugin. An admin can store `member, owner` through invite-member,
     whose owner check doesn't trim, and the plugin grants that member rights only.
-- Team role: `lead` or `member`, stored per team membership. The plugin has
-  no team roles and (as of Better Auth 1.7) no additional fields on team
-  members, so `team_member.role` is an extra column Better Auth never reads or
-  writes; its inserts get the default `member`, and the app sets leads.
-- The UI calls Better Auth's organization client directly for organizations, teams, team
-  membership, invitations, and org roles. The plugin's default access control limits
-  those writes to admins and owners, and removing a member deletes their team rows,
-  lead role included. Server functions cover only what involves `team_member.role`:
-  `setTeamRole` (admins and owners) and `listMembers`/`listTeams`, which return team
-  roles. Wrapping the plugin's endpoints would duplicate its checks for no new rule.
-  `listMembers` also returns each member's `memberId`, which the plugin's
+- Team role: `lead` or `member`, stored per team membership. New memberships start
+  as `member`; admins and owners set leads through `setTeamRole`.
+- The UI calls Better Auth's organization client for organizations, organization
+  membership, and organization roles. Teams and team membership go through the teams
+  domain, which checks admin or owner access, organization scope, names, and the team
+  limit, so teams don't depend on the auth backend.
+  `listMembers` returns each member's `memberId`, which the plugin's
   `updateMemberRole` and `removeMember` take.
-- Teams are optional, so the plugin runs with `allowRemovingAllTeams`: by default it
-  refuses to delete an organization's last team. Deleting a team deletes its
-  `team_member` rows (the plugin) and its `project_team` rows (a cascade), so a project
-  left without teams opens to the whole organization.
+- App invitation functions call Better Auth for its permission and recipient checks.
+  The invite function stores the optional team in `invitation.team_id`; after acceptance,
+  the accept function adds the recipient to that team. The two steps aren't atomic: if
+  adding to the team fails, the person joins the organization without it. Deleting the team clears the
+  invitation's team through its foreign key, so the invitation still joins the organization.
+  The member-removal hook stops the timer and deletes team memberships for both removal
+  and leaving.
+- Teams are optional, and the app permits deleting the last team. Foreign keys cascade
+  deletion to `team_member` and `project_team`, so a project left without teams opens
+  to the whole organization. The organization plugin runs without teams. The unused
+  `session.active_team_id` stays to avoid rebuilding the session table; the app never
+  reads or writes it.
 - Teams group people for access and reporting; data is owned by the
   organization, not the team.
 
@@ -187,8 +191,9 @@ production.
 - Reports: day/week boundaries are computed in TypeScript on the server using
   the user's zone, then queried as UTC ranges. Aggregation happens in
   TypeScript; entries crossing midnight are split there.
-- This lives in one tested reports module: `src/lib/calendar.ts` holds the pure zone math
-  (Intl offsets, no library), and `src/server/reports/reports.server.ts` queries and sums.
+- This lives in one tested reports domain: `src/lib/calendar.ts` holds the pure zone math
+  (Intl offsets, no library), `src/server/reports/reports.server.ts` queries, and
+  `aggregation.server.ts` beside it sums.
   The client uses the same calendar functions for its own dates.
   - A day starts at its first instant in the zone: local midnight, its first occurrence
     when clocks fall back, or the moment clocks spring forward past it.

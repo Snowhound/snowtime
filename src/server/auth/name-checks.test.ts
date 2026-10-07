@@ -27,7 +27,7 @@ function createAuth(db: Database) {
     advanced: { database: { generateId: () => uuidv7() } },
     emailAndPassword: { enabled: true },
     databaseHooks,
-    plugins: [organization({ teams: { enabled: true }, organizationHooks })],
+    plugins: [organization({ organizationHooks })],
   })
 }
 
@@ -96,26 +96,5 @@ describe('name checks', () => {
     expect((await refusal(update({ name: long }))).code).toBe('NAME_TOO_LONG')
     expect((await refusal(update({ slug: 'acme-co' }))).code).toBe('SLUG_READ_ONLY')
     expect((await update({ name: 'Acme Co' }))?.name).toBe('Acme Co')
-  })
-
-  test("a team's name", async () => {
-    const org = await auth.api.createOrganization({
-      body: { name: 'Teams', slug: 'teams' },
-      headers,
-    })
-    const organizationId = org.id
-    expect(
-      (await refusal(auth.api.createTeam({ body: { name: long, organizationId }, headers }))).code,
-    ).toBe('NAME_TOO_LONG')
-
-    const team = await auth.api.createTeam({ body: { name: 'Design', organizationId }, headers })
-    function rename(name: string) {
-      return auth.api.updateTeam({
-        body: { teamId: team.id, data: { name, organizationId } },
-        headers,
-      })
-    }
-    expect((await refusal(rename(long))).code).toBe('NAME_TOO_LONG')
-    expect((await rename('Brand'))?.name).toBe('Brand')
   })
 })

@@ -1,4 +1,4 @@
-// Checks on what the Better Auth client writes: organization and team names, the slug, and
+// Checks on what the Better Auth client writes: organization names, the slug, and
 // the user's own name. The forms validate the same schemas in the browser; these refuse a
 // call made around them, with a code errorMessage (src/lib/errors.ts) maps to the form's
 // message.
@@ -47,12 +47,6 @@ export const organizationHooks = {
   beforeUpdateOrganization: async ({ organization }) => {
     if (organization.slug !== undefined) refuse('SLUG_READ_ONLY')
     if (organization.name !== undefined) checkName(organization.name)
-  },
-  beforeCreateTeam: async ({ team }) => {
-    checkName(team.name)
-  },
-  beforeUpdateTeam: async ({ updates }) => {
-    if (updates.name !== undefined) checkName(updates.name)
   },
 } satisfies OrganizationOptions['organizationHooks']
 

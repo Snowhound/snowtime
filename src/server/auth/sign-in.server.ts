@@ -2,8 +2,7 @@
 // build from the same rule and cannot disagree about what is configured. Also which provider
 // addresses count as verified (docs/architecture/auth.md, "Sign-in methods").
 import { APIError } from 'better-auth/api'
-
-export type SignInMethod = 'google' | 'github' | 'microsoft' | 'password' | 'passkey'
+import type { SignInMethod } from './auth.schemas'
 
 export type SignInConfig = {
   NODE_ENV: 'development' | 'test' | 'production'

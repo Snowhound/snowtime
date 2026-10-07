@@ -1,0 +1,44 @@
+# The load benchmark (perf/README.md, "Load benchmark"), imported into the site block by
+# compose.bench.yml. Requests that carry X-Bench-Kind go to a log of their own, which the
+# sampler reads; the sampler's routes need the password whose bcrypt hash is in
+# BENCH_SAMPLER_HASH.
+log bench {
+	output file /var/log/caddy/access.log {
+		roll_disabled
+		# The sampler runs as nobody.
+		mode 0644
+	}
+	# Only what the sampler reads, so a day of runs stays small on a 20 GB disk.
+	format filter {
+		wrap json
+		fields {
+			resp_headers delete
+			request>tls delete
+			request>remote_ip delete
+			request>remote_port delete
+			request>headers>Cookie delete
+			request>headers>User-Agent delete
+			request>headers>Accept delete
+			request>headers>Accept-Encoding delete
+			request>headers>Origin delete
+			request>headers>Sec-Fetch-Site delete
+			request>headers>Content-Type delete
+			request>headers>Content-Length delete
+			request>headers>X-Tsr-Serverfn delete
+			request>headers>Cf-Connecting-Ip delete
+		}
+	}
+}
+
+handle /_bench/* {
+	log_skip
+	basic_auth {
+		bench {$BENCH_SAMPLER_HASH}
+	}
+	reverse_proxy sampler:9100
+}
+
+# The app's heap is for the sampler, which asks the app directly.
+handle /api/bench/* {
+	respond 404
+}

@@ -1,5 +1,6 @@
 import { createEnv } from '@t3-oss/env-core'
 import * as v from 'valibot'
+import { appUrls } from '~/lib/app-url'
 import { parseLoginDomains } from '~/lib/login-domains'
 
 const secret = v.pipe(v.string(), v.minLength(1))
@@ -16,6 +17,11 @@ export const env = createEnv({
       v.optional(v.picklist(['true', 'false']), 'false'),
       v.transform((value) => value === 'true'),
     ),
+    // Serves /api/bench/heap for the load benchmark (compose.bench.yml).
+    BENCH_HEAP: v.pipe(
+      v.optional(v.picklist(['true', 'false']), 'false'),
+      v.transform((value) => value === 'true'),
+    ),
     MIGRATE_ON_START: v.pipe(
       v.optional(v.picklist(['true', 'false']), 'false'),
       v.transform((value) => value === 'true'),
@@ -26,7 +32,12 @@ export const env = createEnv({
     // Absent locally, where the database is a file.
     TURSO_AUTH_TOKEN: v.optional(secret),
     BETTER_AUTH_SECRET: v.pipe(v.string(), v.minLength(32)),
-    BETTER_AUTH_URL: v.pipe(v.string(), v.url()),
+    // Required except on a Vercel preview, whose URL comes from Vercel (appUrls).
+    BETTER_AUTH_URL: v.optional(v.pipe(v.string(), v.url())),
+    // Vercel's system variables, set on every Vercel deployment.
+    VERCEL_ENV: v.optional(v.picklist(['production', 'preview', 'development'])),
+    VERCEL_BRANCH_URL: v.optional(secret),
+    VERCEL_URL: v.optional(secret),
     // Each OAuth provider is enabled when both its client ID and secret are set
     // (docs/architecture/auth.md, "Sign-in methods").
     GOOGLE_CLIENT_ID: v.optional(secret),
@@ -50,13 +61,17 @@ export const env = createEnv({
   emptyStringAsUndefined: true,
 })
 
-if (env.DEMO_MODE && !env.TURSO_DATABASE_URL.startsWith('file:')) {
-  throw new Error('DEMO_MODE needs a local file: TURSO_DATABASE_URL.')
+// A remote database in demo mode is only the shared staging database behind previews, so a
+// production database can't be opened to the seeded password by mistake.
+if (env.DEMO_MODE && !env.TURSO_DATABASE_URL.startsWith('file:') && env.VERCEL_ENV !== 'preview') {
+  throw new Error('DEMO_MODE needs a local file: TURSO_DATABASE_URL, except on a Vercel preview.')
 }
 // The seeded users have example.com addresses, so a domain allowlist would lock them out.
 if (env.DEMO_MODE && env.ALLOWED_LOGIN_DOMAINS) {
   throw new Error('DEMO_MODE signs in seeded users; unset ALLOWED_LOGIN_DOMAINS.')
 }
+
+export const { appUrl, trustedOrigins } = appUrls(env)
 
 for (const provider of ['GOOGLE', 'GITHUB', 'MICROSOFT'] as const) {
   const id = `${provider}_CLIENT_ID` as const

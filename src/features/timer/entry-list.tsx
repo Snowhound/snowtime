@@ -52,6 +52,7 @@ export function dayLabel(date: string, today: string) {
 }
 
 export interface EntryRowProps {
+  tickets: readonly string[]
   projects: readonly Project[]
   zone: string
   weekStart: WeekStart
@@ -196,7 +197,13 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
         <div class="-ml-2 flex min-w-0 items-center gap-2 md:contents">
           <Show when={props.wide}>
             <div class="order-last flex min-w-0 shrink-0 md:hidden xl:order-none xl:flex xl:w-32">
-              <TicketCell editor={editor} entry={props.entry} issueLinks={props.issueLinks} />
+              <TicketCell
+                editor={editor}
+                entry={props.entry}
+                issueLinks={props.issueLinks}
+                tickets={props.tickets}
+                active={activation.active()}
+              />
             </div>
           </Show>
           <div class="min-w-0 md:w-36 md:shrink-0">

@@ -196,9 +196,6 @@ the last two columns from 8 seconds at 10 concurrent.
   - `docs/architecture/platform.md` no longer names Vercel as the only adapter.
 - [x] A CI deploy job for the self-hosted target, or a documented manual deploy. Manual,
       in the runbook.
-- [ ] If Snowhound's production moves, the privacy page names the server's provider (and
-      Cloudflare, and the backup storage) instead of Vercel, Turso, and Upstash. Waits on
-      Kait's decision to move.
 
 ## Still to test on a real server
 
@@ -215,6 +212,9 @@ the last two columns from 8 seconds at 10 concurrent.
 - Snowhound's production stays on Vercel and Turso. Self-hosting is an option this open
   source project offers, not a planned move, so task 043 doesn't block this task. The
   self-hosted runbook and `docs/hosting.md` name task 043 as a known risk until it's fixed.
+  The privacy page keeps naming Vercel, Turso, and Upstash. It covers the public Vercel
+  service only; whoever runs a self-hosted stack, such as a company's internal tool, sets
+  its operator and privacy text (`docs/deployment/README.md`).
 - A week of point-in-time restore (`retention: 168h` in `litestream.yml`) is enough.
 - 4 GB is expected to be enough for building on the server; Kait will confirm it on a real
   server later, with the other checks above.

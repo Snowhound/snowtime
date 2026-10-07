@@ -37,12 +37,9 @@ describe('timer', () => {
     const { started, stopped } = await as(scope, () =>
       startTimer(db, scope, { id, description: 'Audit', projectId: P.audit }),
     )
-    expect(started).toMatchObject({
-      id,
-      organizationId: O.harbor,
-      stoppedAt: null,
-      createdBy: U.member,
-    })
+    expect(started).toMatchObject({ id, organizationId: O.harbor, stoppedAt: null })
+    const [row] = await db.select().from(timeEntry).where(eq(timeEntry.id, id))
+    expect(row.createdBy).toBe(U.member)
     expect(stopped?.id).toBe(E.running)
     expect(stopped?.stoppedAt).not.toBeNull()
     expect((await getRunningTimer(db, U.member))?.id).toBe(id)
@@ -76,7 +73,8 @@ describe('timer', () => {
       stopTimer(db, U.member, { id: running!.id }),
     )
     expect(stopped.stoppedAt!.getTime()).toBeGreaterThan(stopped.startedAt.getTime())
-    expect(stopped.updatedBy).toBe(U.member)
+    const [row] = await db.select().from(timeEntry).where(eq(timeEntry.id, stopped.id))
+    expect(row.updatedBy).toBe(U.member)
     expect(await getRunningTimer(db, U.member)).toBeNull()
   })
 

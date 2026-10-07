@@ -39,28 +39,27 @@ works; one that lacks it gets a notice at the top of each page.
 | Environment | Branch    | Database                                                   |
 | ----------- | --------- | ---------------------------------------------------------- |
 | Local       |           | `file:local.db`, no token                                  |
-| Staging     | `develop` | `staging` Turso database (planned)                         |
+| Preview     | any other | `snowtime-staging` Turso database, seeded and shared       |
 | Production  | `main`    | `prod` Turso database, same region as the Vercel functions |
 
-Production runs in Vercel's `dub1` (Dublin) with Turso's `aws-eu-west-1` (Ireland), the
-only EU region Turso offers. A page makes several database round trips, so the functions
-sit beside the database rather than nearer to users in Estonia. Postgres nearer to
-Estonia was rejected for now: Supabase in Stockholm (with Vercel `arn1`) or Neon in
-Frankfurt (`fra1`) would save roughly 20–30 ms per request, but both mean porting the
-schema, migrations, and tooling from SQLite, and the free tiers pause idle databases. If
-this changes, switch before production holds real data.
+Production runs in Vercel's `arn1` (Stockholm) with Turso's `aws-eu-north-1` (Stockholm),
+the Turso region nearest users in Estonia. A page makes several database round trips, so
+the functions sit beside the database.
 
 **Migrations and deploys:** CI runs `db:migrate` after the checks pass on a push to the
 environment's branch, and then deploys that commit to Vercel. Migrations never run in the
-Vercel build or on Vercel app start. A database only
+Vercel build or on Vercel app start. Production only
 receives merged migrations, because `db:verify` rejects an applied migration that a PR
 later edits, and two open PRs would mix their migrations in one shared database. PRs
-test their migrations on throwaway local databases only (`db:drift`).
+test their migrations on throwaway local databases (`db:drift`). The staging database is
+the exception: a push that changes a branch's migrations applies them there, and staging
+is reseeded when branches' migrations conflict (`../migrations.md`, "Staging"). It holds
+only seeded data, so a reseed costs nothing.
 
-- Staging is planned, not set up. When added, the `develop` branch deploys to a stable
-  host such as `staging.<domain>`, with branch-scoped Preview env vars, so OAuth
-  callbacks and passkeys can be registered for it once. Other preview deployments have
-  generated URLs and no sign-in.
+- Preview deployments of every branch run in demo mode against the seeded staging
+  database and sign in with the seeded users (task 087; `auth.md`, "Preview
+  deployments"). A `develop` branch on a fixed staging host was planned before and
+  dropped: only that branch could sign in.
 - Vercel doesn't deploy `main` by itself (`vercel.json`). CI's `deploy-prod` job runs
   `vercel deploy --prod` once the migration has applied, so a failed check or migration
   keeps new code off production. Vercel used to deploy each push in parallel with CI;
@@ -85,8 +84,9 @@ test their migrations on throwaway local databases only (`db:drift`).
   opt in with `MIGRATE_ON_START=true`; Vercel retains its CI migration flow.
   The initial Hetzner demo at `snowtime-internal.snowhound.eu` defers backups and uses
   Cloudflare as a CDN for static files. HTML and server responses bypass caching.
-  Its images are built on GitHub Actions and pushed to GHCR, and it deploys only when
-  someone runs the manual Compose deploy workflow, never on a push.
+  Its images are built on GitHub Actions and pushed to GHCR. The Compose deploy workflow
+  deploys `main` after CI passes on it (`COMPOSE_AUTO_DEPLOY`), and any branch when run
+  by hand. The repository is public, so its Actions minutes cost nothing.
   Setup is in [the Compose runbook](../deployment/compose.md).
 - Both deployments use `@libsql/client` (task 077, decided 2026-09-30). Turso's own
   drivers were measured and not adopted:
@@ -120,13 +120,15 @@ test their migrations on throwaway local databases only (`db:drift`).
   `bun run test` run.
 - The locale lives in the `PARAGLIDE_LOCALE` cookie, not the URL: the app has no public pages
   that need localized links. Without the cookie, the browser's `Accept-Language` picks it,
-  then English. Signed-in pages set the cookie from `user_settings.locale`: when the account's
-  language differs from the request's, `getAppSession` sets the cookie and the page loads
-  again, so the user sees only the account's language. The cookie never holds anything but the
+  then English. Signed-in pages set the cookie from `user_settings.locale` in the browser:
+  the session read only reads (task 084), so when a page arrives in another language than the
+  account's, the root route stores the account's in the cookie and loads the page again.
+  After that, saving another language switches it in place. The cookie never holds anything but the
   account's language (see "Cookies and consent" in [auth.md](auth.md)). `src/server-entry.ts`
   runs Paraglide's middleware around every request, which scopes the locale per request.
 - The user's language is `user_settings.locale` (see "User settings" in [timer.md](timer.md)).
-  The first `getSettings` call sets it from the browser, as it does the time zone.
+  A new user's settings, which `PUT /api/v1/settings` creates, take it from the browser, as
+  they do the time zone.
 - The server returns keys, dates, and numbers, never display text; the client translates
   and formats them in the user's locale and zone.
   - Each `AppError` carries a stable snake_case message key from the catalog in
@@ -154,6 +156,15 @@ test their migrations on throwaway local databases only (`db:drift`).
 - The error page shows `errorMessage` of the error (see "Internationalization"): an
   `AppError`'s message, or the generic one for anything else. It offers a retry, which
   reloads the routes, and a link home.
+- While the database is unreachable, for example while production moves to another
+  database, the error page is a maintenance page instead. When an API call fails with an
+  unexpected error, `unavailableOr` (`src/server/http.server.ts`) runs `select 1`, and
+  if that fails or takes over 3 seconds, the call fails with an `UNAVAILABLE` `AppError`. The maintenance page stays at the
+  requested URL, so a reload opens that page once the database is back. It calls
+  `checkAvailability` every 15 seconds while the tab is visible, and again on focus,
+  when the tab is shown, or when the device comes online. Once the database answers,
+  it reloads the routes. A failed change shows the same error's message. Better Auth's
+  own routes, such as sign-in, still fail with their generic error.
 - An unknown path answers 404. A route whose loader reads one record named in the URL
   throws `notFound()` when the record is missing, so the reader gets the not-found page
   and a 404 rather than an error. No route does so yet: the invitation page shows a missing
@@ -163,11 +174,11 @@ test their migrations on throwaway local databases only (`db:drift`).
   second page. `ErrorPage` therefore throws again during the server's first render, which
   has no `reset`, so that Solid's boundary renders it on both sides. Solid sends that error
   to the client before Start's serialization adapters load, so it is a plain `Error`
-  carrying only the message to show. Remove the workaround once the router renders both
+  carrying only the message to show and whether the database was unreachable. Remove the workaround once the router renders both
   sides alike.
 - The router's dehydrated state still carries a loader error's own message in the page
-  source, though the page never shows it. Start already sends a server function's error
-  message to the browser, so this adds no new exposure.
+  source, though the page never shows it. The API already sends a refusal's code and key
+  to the browser, and the message is the key's text, so this adds no new exposure.
 
 ## Performance harnesses
 
@@ -183,3 +194,33 @@ to update a baseline on purpose:
 They gate only counts that don't depend on the machine (bytes, rows, plans, nodes, pixels)
 and print timings, since no machine here gives stable ones. Data comes from the company
 seed at a fixed date, with the server's and browser's clocks moved to it.
+
+## Server-Timing
+
+Page and JSON API responses send a `Server-Timing` header (task 088), so the browser's
+network tab shows where any deployment spends a request's server time:
+
+```
+server-timing: session;dur=8.4, db;dur=31.2, render;dur=52.7
+```
+
+| Name      | Covers                                                                    |
+| --------- | ------------------------------------------------------------------------- |
+| `session` | Better Auth's session lookups (`sessionOf`), its database reads included  |
+| `db`      | Every statement, batch, and transaction step on the app's database client |
+| `render`  | Pages only: from the request's start to the first byte, the two above too |
+
+Each value counts the time at least one call of its kind was open, in milliseconds. Queries
+sent in parallel count once, so no value exceeds the request's time, and the values overlap
+rather than add up: `render` minus `db` is roughly the time spent outside the database.
+
+`src/server/timing.server.ts` holds the timer, in an `AsyncLocalStorage` for each request,
+and the wrapped libSQL client that `src/db/index.ts` uses. `src/server-entry.ts` starts the
+timer and sets the header on HTML responses; `handleApiRequest` (`api.server.ts`) does the
+same for `/api/v1`. A page's loaders call the API in process, so their queries count toward
+the page's header.
+
+Start resolves a page's response once its loaders finish and streams the HTML after it, so
+`render` stops at the first byte; streaming the rest isn't timed, and pages aren't buffered
+to time it. The header holds names and durations only, never tables, queries, or user
+data, so it stays on in production.

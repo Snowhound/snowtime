@@ -16,7 +16,7 @@ const fn = vi.hoisted(() => ({
   getReportExport: vi.fn(),
   toXlsx: vi.fn(),
 }))
-vi.mock('~/server/reports/reports.functions', () => ({ getReportExport: fn.getReportExport }))
+vi.mock('~/lib/api/reports', () => fn)
 // The files themselves are export.test.ts's; here only the tables that go into them count.
 vi.mock('./export', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./export')>()),
@@ -168,7 +168,7 @@ describe('ExportMenu', () => {
     expect(await screen.findByRole('button', { name: 'Exporting… 2/3' })).toBeDisabled()
     answer({ entries: [] })
     expect(await screen.findByRole('button', { name: 'Export the report' })).toBeEnabled()
-    expect(fn.getReportExport.mock.calls.map(([{ data }]) => data)).toEqual([
+    expect(fn.getReportExport.mock.calls.map(([input]) => input)).toEqual([
       { organizationId: 'org', report: expect.anything(), from: '2026-07-15', to: '2026-08-01' },
       {
         organizationId: 'org',

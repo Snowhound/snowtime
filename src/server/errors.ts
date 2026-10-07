@@ -1,7 +1,7 @@
-// Errors server functions throw on purpose. The code tells the client what went wrong
+// Errors the rules throw on purpose. The code tells the client what went wrong
 // without it parsing messages; the key names the message, so the client can show it in
-// the user's language. This file reaches the client through src/start.ts: no server
-// imports.
+// the user's language. This file reaches the client through src/lib/api/wire.ts and
+// src/start.ts: no server imports.
 export type AppErrorCode =
   | 'UNAUTHENTICATED'
   | 'FORBIDDEN'
@@ -14,6 +14,8 @@ export type AppErrorCode =
   | 'LIMIT_REACHED'
   // A rate in rateLimits (src/server/limits.server.ts).
   | 'RATE_LIMITED'
+  // The database is unreachable (unavailableOr in src/server/http.server.ts).
+  | 'UNAVAILABLE'
 
 // Every message an AppError can carry, by key. Keys are stable and snake_case, so they
 // name the Paraglide message error_<key> (src/lib/errors.ts); the English text is the fallback.
@@ -21,6 +23,8 @@ export const errorMessages = {
   sign_in_required: 'Sign in first.',
   not_organization_member: 'You are not a member of this organization.',
   member_not_found: 'Member not found.',
+  team_name_taken: 'A team with this name already exists.',
+  team_limit: 'This organization has too many teams. Delete unused ones first.',
   team_not_found: 'Team not found.',
   team_member_not_found: 'This member is not on the team.',
   teams_forbidden: 'Only admins can manage teams.',
@@ -48,6 +52,7 @@ export const errorMessages = {
   scene_pin_not_in_collection: "That image isn't in your collection.",
   rate_limited: 'Too many changes in a short time. Wait a minute and try again.',
   organization_forbidden: 'Only admins and owners manage the organization.',
+  database_unavailable: 'Snowtime is down for maintenance. Try again in a few minutes.',
 } as const
 
 export type AppErrorKey = keyof typeof errorMessages

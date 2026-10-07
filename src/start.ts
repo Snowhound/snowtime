@@ -1,10 +1,10 @@
 import { createSerializationAdapter } from '@tanstack/solid-router'
-import { createCsrfMiddleware, createStart } from '@tanstack/solid-start'
+import { createStart } from '@tanstack/solid-start'
 import { AppError, type AppErrorCode, type AppErrorKey } from '~/server/errors'
 
-// Start drops everything but the message of a thrown error; this keeps AppError's code, so
-// the client can tell "not found" from "forbidden", and its key, so the client can show
-// the message in the user's language.
+// A server render sends its loaders' errors to the browser through Start's serializer, which
+// keeps only an error's message. This keeps AppError's code, so the error page can tell "not
+// found" from "forbidden", and its key, so it can show the message in the user's language.
 const appErrorAdapter = createSerializationAdapter({
   key: 'snowtime/AppError',
   test: (value): value is AppError => value instanceof AppError,
@@ -13,12 +13,6 @@ const appErrorAdapter = createSerializationAdapter({
     new AppError(code, key),
 })
 
-// Start applies this CSRF check by default only while there is no start instance.
-const csrfMiddleware = createCsrfMiddleware({
-  filter: (ctx) => ctx.handlerType === 'serverFn',
-})
-
 export const startInstance = createStart(() => ({
   serializationAdapters: [appErrorAdapter],
-  requestMiddleware: [csrfMiddleware],
 }))

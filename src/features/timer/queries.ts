@@ -2,61 +2,42 @@
 // lists are separate caches, since the running timer spans organizations; each mutation
 // updates both before the server answers and rolls both back on error.
 import { type QueryKey, queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
-import type { Range } from '~/lib/calendar'
-import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
-import { sessionQuery } from '~/lib/queries/session'
 import {
   createEntry,
   deleteEntry,
   getFirstEntryStart,
   listEntries,
   updateEntry,
-} from '~/server/entries/entries.functions'
+} from '~/lib/api/entries'
+import { startTimer, stopTimer } from '~/lib/api/timer'
+import type { Range } from '~/lib/calendar'
+import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
+import { sessionQuery } from '~/lib/queries/session'
+import { runningTimerQuery } from '~/lib/queries/timer'
 import {
   type CreateEntryInput,
   type DeleteEntryInput,
+  type Entry,
   MAX_ENTRY_MS,
   type UpdateEntryInput,
 } from '~/server/entries/entries.schemas'
-import { getRunningTimer, startTimer, stopTimer } from '~/server/timer/timer.functions'
-import type { StartTimerInput, StopTimerInput } from '~/server/timer/timer.schemas'
+import type { RunningTimer, StartTimerInput, StopTimerInput } from '~/server/timer/timer.schemas'
 
-type ListedEntry = Awaited<ReturnType<typeof listEntries>>[number]
-
-// The fields the view reads, so an optimistic entry needs no audit columns.
-export type Entry = Pick<
-  ListedEntry,
-  | 'id'
-  | 'organizationId'
-  | 'userId'
-  | 'projectId'
-  | 'description'
-  | 'ticket'
-  | 'startedAt'
-  | 'stoppedAt'
->
+export type { Entry, RunningTimer }
 
 // An entry that has ended, as the day lists show and edit them.
 export type StoppedEntry = Entry & { stoppedAt: Date }
-
-// The running entry, with its project for a timer running in another organization, whose
-// projects the view hasn't loaded.
-export type RunningTimer = Entry & {
-  project: { id: string; name: string; color: string | null } | null
-}
-
-export const runningTimerQuery = queryOptions({
-  queryKey: ['timer'],
-  queryFn: (): Promise<RunningTimer | null> => getRunningTimer(),
-})
 
 // The user's own entries overlapping the range, newest first, a running one included.
 export function entriesQuery(organizationId: string, userId: string, range: Range) {
   return queryOptions({
     queryKey: ['entries', organizationId, userId, range.from, range.to],
-    queryFn: (): Promise<Entry[]> =>
+    queryFn: () =>
       listEntries({
-        data: { organizationId, from: new Date(range.from), to: new Date(range.to), userId },
+        organizationId,
+        from: new Date(range.from),
+        to: new Date(range.to),
+        userId,
       }),
   })
 }
@@ -66,7 +47,7 @@ export function entriesQuery(organizationId: string, userId: string, range: Rang
 export function firstEntryQuery(organizationId: string, userId: string) {
   return queryOptions({
     queryKey: ['first-entry', organizationId, userId],
-    queryFn: () => getFirstEntryStart({ data: { organizationId, userId } }),
+    queryFn: () => getFirstEntryStart({ organizationId, userId }),
   })
 }
 
@@ -83,7 +64,7 @@ function firstEntryKey(organizationId: string) {
 const settled = { invalidate: [reportsKey, sessionQuery.queryKey] }
 
 // Whether an entry belongs in the list cached under `key`: the list's organization and user,
-// and a range it overlaps, as listEntries reads them.
+// and a range it overlaps, as the listEntries rule reads them.
 function listed(entry: Entry, key: QueryKey) {
   const [, organizationId, userId, from, to] = key as [string, string, string, number, number]
   return (
@@ -128,7 +109,7 @@ type Keys = { organizationId: string }
 export function useStartTimer({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: StartTimerInput) => startTimer({ data: { ...input, organizationId } }),
+    mutationFn: (input: StartTimerInput) => startTimer({ ...input, organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -161,7 +142,7 @@ export function useStartTimer({ organizationId }: Keys) {
 export function useStopTimer() {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: StopTimerInput) => stopTimer({ data: input }),
+    mutationFn: (input: StopTimerInput) => stopTimer(input),
     ...optimistic(
       queryClient,
       [
@@ -182,7 +163,7 @@ export function useStopTimer() {
 export function useUpdateEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: UpdateEntryInput) => updateEntry({ data: { ...input, organizationId } }),
+    mutationFn: (input: UpdateEntryInput) => updateEntry({ ...input, organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -224,7 +205,7 @@ export function useUpdateEntry({ organizationId }: Keys) {
 export function useDeleteEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: DeleteEntryInput) => deleteEntry({ data: { ...input, organizationId } }),
+    mutationFn: (input: DeleteEntryInput) => deleteEntry({ ...input, organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -242,7 +223,7 @@ export function useDeleteEntry({ organizationId }: Keys) {
 export function useCreateEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (input: CreateEntryInput) => createEntry({ data: { ...input, organizationId } }),
+    mutationFn: (input: CreateEntryInput) => createEntry({ ...input, organizationId }),
     ...optimistic(
       queryClient,
       [

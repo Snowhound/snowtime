@@ -24,8 +24,8 @@ the timer bar stays. Its code is in `src/features/timer/calendar/`, with the tim
   because a deleted row keeps its id. `updateEntry`'s optimistic update moves an entry
   between the cached ranges it leaves and enters, so an entry moved into another week shows
   there at once.
-- The entry popover is the list's, with its fields and validation: no end in the future, and
-  an end at or before the start means the next day. The calendar opens it beside the slot
+- The entry popover is the list's, with its fields and validation: a running entry can't start
+  in the future, and an end at or before the start means the next day. The calendar opens it beside the slot
   or the entry, with Delete for a stopped entry.
 
 ## Date and time fields
@@ -151,3 +151,25 @@ into a ticket's work log or an invoice (task 078). Other durations don't copy ye
   88rem and puts the timer across the summary column, so rows have room for a Ticket column.
   Off, the page keeps the header's width and each row's chip sits at the end of its
   description. The Timer route is `wide` (its `staticData`), so the view sets its own width.
+
+## Adding an issue
+
+The timer and entry form offer Add issue while no issue is attached; Wide page also offers
+it in empty Ticket cells. The picker shows up to six distinct issues from loaded entries,
+newest first, and accepts an issue key or URL. Choosing one changes only the issue, so the
+description and project stay intact. The chip replaces Add issue until the issue is removed.
+
+The picker returns focus to the description with recent-work suggestions closed. Typing or
+an arrow key can open them again. This lets the user continue writing without immediately
+offering to replace the entry with recent work.
+
+## Timer project draft
+
+The timer remembers the last selected project per user and organization in this browser,
+including an explicit No project choice. Starting, selecting recent work, or editing the
+running timer's project updates it. Stopping clears the description and issue, and keeps
+that project for the next timer. A saved project must still be available and active.
+
+This is a browser draft in `localStorage`, rather than a user setting: it reduces repeated
+project selection without adding a server write for an unfinished timer. A running timer
+always shows its own project, including when it runs in another organization.

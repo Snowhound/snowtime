@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/solid-query'
-import { getSignInMethods } from '~/server/auth/auth.functions'
+import { getSignInMethods } from '~/lib/api/auth'
 
 // The environment's sign-in methods, for the sign-in screens and the settings list.
 export const signInMethodsQuery = queryOptions({

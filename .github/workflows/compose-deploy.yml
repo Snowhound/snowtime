@@ -1,8 +1,13 @@
-# Builds the Compose images from the chosen branch, pushes them to GHCR, and deploys them to the
-# Compose server (docs/deployment/compose.md). Runs only when started from the Actions tab.
+# Builds the Compose images, pushes them to GHCR, and deploys them to the Compose server
+# (docs/deployment/compose.md): main's commit after CI passes on it, when the repository variable
+# COMPOSE_AUTO_DEPLOY is true, or the chosen branch when started from the Actions tab.
 name: Compose deploy
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       server:
@@ -20,6 +25,9 @@ concurrency:
 
 jobs:
   images:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && vars.COMPOSE_AUTO_DEPLOY == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -28,10 +36,15 @@ jobs:
     outputs:
       release: ${{ steps.release.outputs.release }}
     steps:
+      # After CI, the commit CI checked; main may have moved on since.
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - id: release
-        run: echo "release=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: echo "release=${SHA::7}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v4
 
@@ -62,6 +75,16 @@ jobs:
           push: true
           tags: ghcr.io/snowhound/snowtime-caddy:${{ steps.release.outputs.release }}
 
+      # The load benchmark's sampler, which only compose.bench.yml runs (perf/README.md).
+      - name: Sampler image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: sampler
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/snowhound/snowtime-sampler:${{ steps.release.outputs.release }}
+
   deploy:
     needs: images
     if: inputs.server != 'skip'
@@ -78,6 +101,8 @@ jobs:
       DEPLOY_PATH: ${{ secrets.COMPOSE_DEPLOY_PATH }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: SSH key
         env:
@@ -91,7 +116,10 @@ jobs:
 
       # The server's Compose files follow the deployed commit; .env and its secrets stay on it.
       - name: Copy Compose files
-        run: scp deploy/compose/compose.yml deploy/compose/compose.import.yml "$DEPLOY_TARGET:$DEPLOY_PATH/"
+        run: |
+          scp deploy/compose/compose.yml deploy/compose/compose.import.yml \
+            deploy/compose/compose.bench.yml "$DEPLOY_TARGET:$DEPLOY_PATH/"
+          scp -r deploy/compose/bench "$DEPLOY_TARGET:$DEPLOY_PATH/"
 
       # The token reaches the server on stdin, so it never shows in a process list.
       - name: Pull images
@@ -106,11 +134,14 @@ jobs:
           cd "$1"
           sed -i "s/^RELEASE=.*/RELEASE=$2/" .env
           docker compose pull
+          # The bench override's variables are unset outside a benchmark, so it pulls directly.
+          docker pull --quiet "ghcr.io/snowhound/snowtime-sampler:$2"
           SCRIPT
 
       # Startup applies migrations, and --wait fails the job unless the app turns healthy.
       - name: Restart
-        if: inputs.server == 'restart'
+        # A run after CI has no inputs, and restarts.
+        if: inputs.server == 'restart' || github.event_name == 'workflow_run'
         run: |
           ssh "$DEPLOY_TARGET" bash -s -- "$DEPLOY_PATH" <<'SCRIPT'
           set -euo pipefail

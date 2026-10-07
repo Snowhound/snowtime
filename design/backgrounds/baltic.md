@@ -16,7 +16,7 @@ The collection folders are `coast` for the `coast-<month>` images and `countrysi
 `land-<month>` images. The version is `02` for the images task 065 replaced (`PHOTO_VERSIONS`
 in `src/lib/scene/scene.ts`) and `01` for the rest: coast January and June, and land January,
 February, and August. Coast February kept its light image and got a new night, so both its
-files are version `02`.
+files are version `02`. Land December is version `03`: a new night in October 2026.
 
 ## Sources
 
@@ -564,10 +564,22 @@ Pick `land-december-b-1007` (task 065).
 
   > Edit <image1>: change only the time of day, to night. Keep the camera, and every building, tree, rock, shoreline and object exactly where it is in <image1>, with the same shapes; add or remove nothing. Keep the season and the ground of <image1> as they are: add no snow, no frost and no ice. The sun and its warm glow are gone. A realistic night photograph, like a long exposure: the sky a deep, clear blue, lighter near the horizon, never electric; trees and dark rocks close to black; snow, ice, sand, pale rock and water catch a cool blue moonlight with soft silver highlights, so the scene reads clearly, and nothing is lit or shaded as if by the sun. Stars are faint and few, with no Milky Way. A December night under a clear, deep blue sky with no moon at all. Soft green northern lights low over the far trees, a few faint stars. The snow is pale blue with a slight glitter, as in a long exposure; the spruces are near black. No pink.
 
+- Dark, version `03` (2026-10-02): the page draws a swaying aurora at the side, so the image
+  has none of its own. An edit of the dark image above, seed 1121 (in
+  `out\nightfix\land-december\`):
+
+  > Edit <image1>: keep this night photograph exactly, the spruces, the road, the snowy field, the far trees, the stars, the exposure and the colours. Remove the northern lights completely: the whole sky is a clean, even deep blue, a little lighter near the horizon, with a few faint stars and no green anywhere. Nothing gets brighter. No moon.
+
+  Kait also tried a faint glow in the middle, under the cards (seed 1101, `aurora-mid1101`),
+  and chose the night with none (2026-10-02).
+
+The light image didn't change; version `03` is the `02` file renamed. Both nights went through
+the finals in `art\snowtime-backgrounds\065\l12_finals.py`, which runs `062\finals.py` into
+`out\finals-l12-<variant>\`, with the color match and no exposure change.
 
 | Theme | Enhance prompt | Enhance seed | Night gamma | Detail | 1920 | 3840 |
 | --- | --- | --- | --- | --- | --- | --- |
 | light | `enhance-plain-062.txt` | 5001 | - | seed 5101, 0.25 | 199 KB | 362 KB |
-| dark | `enhance-plain-night-062.txt` | 5001 | - | seed 5101, 0.25 | 136 KB | 277 KB |
+| dark | `enhance-plain-night-062.txt` | 5001 | - | seed 5101, 0.25 | 131 KB | 263 KB |
 
 

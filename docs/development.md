@@ -16,7 +16,7 @@ bun run db:seed
 bun --bun run dev
 ```
 
-The app runs on http://localhost:3000 against a local SQLite file, `local.db`.
+The app runs on http://localhost:3100 against a local SQLite file, `local.db`.
 `.env.development` sets the database and app URL, and `bun run env:init` adds the one
 variable left, a generated `BETTER_AUTH_SECRET`, to the gitignored `.env.local`. Put other
 local overrides, such as OAuth credentials, there too; `.env.example` lists every variable.
@@ -63,11 +63,12 @@ The sign-in page also lists five of its users, with the same password:
 
 | Command                       | What it does                                                 |
 | ----------------------------- | ------------------------------------------------------------ |
-| `bun --bun run dev`           | Starts the dev server on port 3000                           |
+| `bun --bun run dev`           | Starts the dev server on port 3100                           |
 | `bun run build`               | Builds for production                                        |
 | `bun run build:self-hosted`   | Builds for a self-hosted server, with precompressed files    |
 | `bun run build:binary`        | Compiles self-hosted Linux releases for x64 and Arm64        |
 | `bun run test`                | Runs server tests (`bun test`) and component tests           |
+| `bun run test:conformance`    | Builds the app and tests its JSON API (`conformance/`)       |
 | `bun run lint`                | Runs oxlint                                                  |
 | `bun run format`              | Formats with oxfmt                                           |
 | `bun run env:init`            | Adds a `BETTER_AUTH_SECRET` to `.env.local`                  |

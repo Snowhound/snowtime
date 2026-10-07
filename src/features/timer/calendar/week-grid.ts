@@ -164,13 +164,12 @@ export interface Range {
   stoppedAt: number
 }
 
-// The half-hour cell clicked, up to now; null when it would start in the future. A click
-// just above a cell's top line, within CLICK_SLACK_MINUTES, takes the cell below.
-export function clickRange(slot: Slot, zone: string, now: number): Range | null {
+// The half-hour cell clicked. A click just above a cell's top line, within
+// CLICK_SLACK_MINUTES, takes the cell below.
+export function clickRange(slot: Slot, zone: string): Range {
   const minutes = floorTo(slot.minutes + CLICK_SLACK_MINUTES, CLICK_MINUTES)
   const startedAt = instantAt(slot.date, Math.min(minutes, DAY_MINUTES - CLICK_MINUTES), zone)
-  const stoppedAt = Math.min(startedAt + CLICK_MINUTES * MINUTE, floorTo(now, MINUTE))
-  return stoppedAt > startedAt ? { startedAt, stoppedAt } : null
+  return { startedAt, stoppedAt: startedAt + CLICK_MINUTES * MINUTE }
 }
 
 // Add entry's slot: half an hour from the end of today's last entry, or from an hour ago,
@@ -188,24 +187,21 @@ export type Drag =
   | { kind: 'create'; from: Slot }
   | { kind: 'move' | 'start' | 'end'; from: Slot; startedAt: number; stoppedAt: number | null }
 
-// Why a drop changes nothing: an entry can't end in the future, nor new time start there.
-export type DragError = 'future' | 'add_future'
+// Why a drop changes nothing: a running entry can't start in the future.
+export type DragError = 'running_future'
 
 export type DragRange = Range & { error?: DragError }
 
 // The times a drag from `drag.from` to `to` gives, snapped to 15 minutes. New time stays on
 // the day the drag started. A move keeps the duration and shifts by whole days between
-// columns. An edge changes the start or the end and keeps at least 15 minutes; the end stops
-// at now, and a running entry's start at 15 minutes before now.
+// columns. An edge changes the start or the end and keeps at least 15 minutes; a running
+// entry's start stops at 15 minutes before now.
 export function dragRange(drag: Drag, to: Slot, zone: string, now: number): DragRange {
   if (drag.kind === 'create') {
     const a = instantAt(drag.from.date, snap(drag.from.minutes), zone)
     const b = instantAt(drag.from.date, snap(to.minutes), zone)
     const startedAt = Math.min(a, b)
-    const stoppedAt = Math.min(Math.max(a, b, startedAt + SNAP_MS), floorTo(now, SNAP_MS))
-    return stoppedAt > startedAt
-      ? { startedAt, stoppedAt }
-      : { startedAt, stoppedAt: startedAt, error: 'add_future' }
+    return { startedAt, stoppedAt: Math.max(a, b, startedAt + SNAP_MS) }
   }
   const delta = to.minutes - drag.from.minutes
   const end = drag.stoppedAt ?? now
@@ -213,7 +209,9 @@ export function dragRange(drag: Drag, to: Slot, zone: string, now: number): Drag
     const days = daysBetween(drag.from.date, to.date)
     const startedAt = shiftDays(drag.startedAt, days, zone) + snap(delta) * MINUTE
     const stoppedAt = startedAt + end - drag.startedAt
-    return stoppedAt > now ? { startedAt, stoppedAt, error: 'future' } : { startedAt, stoppedAt }
+    return drag.stoppedAt === null && startedAt > drag.startedAt
+      ? { startedAt, stoppedAt, error: 'running_future' }
+      : { startedAt, stoppedAt }
   }
   if (drag.kind === 'start') {
     const date = localDate(drag.startedAt, zone)
@@ -224,15 +222,13 @@ export function dragRange(drag: Drag, to: Slot, zone: string, now: number): Drag
   const date = localDate(end - 1, zone)
   const minutes = snap(minutesInto(end, date, zone) + delta)
   const stoppedAt = Math.max(instantAt(date, minutes, zone), drag.startedAt + SNAP_MS)
-  return { startedAt: drag.startedAt, stoppedAt: Math.min(stoppedAt, floorTo(now, MINUTE)) }
+  return { startedAt: drag.startedAt, stoppedAt }
 }
 
 // An Alt+arrow key: 15 minutes up or down, or a day left or right; with Shift, the end only.
 export type Nudge = { minutes: number; end: boolean } | { days: number; end: boolean }
 
-export type NudgeResult =
-  | { startedAt?: number; stoppedAt?: number; error?: undefined }
-  | { error: 'future' }
+export type NudgeResult = { startedAt?: number; stoppedAt?: number }
 
 // The entry's new times for the key, or null when the key doesn't apply: a running entry
 // ends at now, so only its start moves, by minutes and up to a minute before now.
@@ -243,18 +239,15 @@ export function nudge(
   now: number,
 ): NudgeResult | null {
   const minutes = 'minutes' in key ? key.minutes * MINUTE : null
-  let result: { startedAt?: number; stoppedAt?: number }
   if (key.end) {
     if (minutes === null || entry.stoppedAt === null) return null
-    result = { stoppedAt: Math.max(entry.stoppedAt + minutes, entry.startedAt + SNAP_MS) }
-  } else if (entry.stoppedAt === null) {
-    if (minutes === null) return null
-    result = { startedAt: Math.min(entry.startedAt + minutes, now - MINUTE) }
-  } else {
-    const shift =
-      minutes ?? shiftDays(entry.startedAt, (key as { days: number }).days, zone) - entry.startedAt
-    result = { startedAt: entry.startedAt + shift, stoppedAt: entry.stoppedAt + shift }
+    return { stoppedAt: Math.max(entry.stoppedAt + minutes, entry.startedAt + SNAP_MS) }
   }
-  if ((result.stoppedAt ?? 0) > now) return { error: 'future' }
-  return result
+  if (entry.stoppedAt === null) {
+    if (minutes === null) return null
+    return { startedAt: Math.min(entry.startedAt + minutes, now - MINUTE) }
+  }
+  const shift =
+    minutes ?? shiftDays(entry.startedAt, (key as { days: number }).days, zone) - entry.startedAt
+  return { startedAt: entry.startedAt + shift, stoppedAt: entry.stoppedAt + shift }
 }

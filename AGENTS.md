@@ -50,12 +50,23 @@ Edit their source files at the paths above so both agents use the same instructi
 - A component gets its own folder, `<name>/<name>.tsx`, once it has subcomponents,
   helpers, or tests that nothing else in the feature uses.
 - Backend code is grouped by domain in `src/server/<domain>/` ("Application rules" in
-  `docs/architecture/README.md`). Client code imports a domain's `*.functions.ts` and
-  `*.schemas.ts`, plus `src/server/errors.ts` and `src/server/schemas.ts`. It never
-  imports `*.server.ts`, not even for a type.
+  `docs/architecture/README.md`). The client reaches it only through the JSON API. A new
+  call adds:
+  - a route in the domain's `<domain>.routes.ts`, whose handler is one call of its rule:
+    `.patch('/entries/:id', input(UpdateEntryInput), (c) => run(c, entries.updateEntry))`;
+  - a function in the domain's client module, `src/lib/api/<domain>.ts`, that sends it with
+    `request(method, path, input, OutputSchema)`, and which queries and mutations import;
+  - its input and output schemas in `<domain>.schemas.ts`, and conformance tests in
+    `conformance/`.
+
+  A GET only reads; a read with a filter object for input is a POST marked `reads` on its
+  route. Only `src/server/auth/` imports Better Auth. Client code imports a domain's
+  `*.schemas.ts`, plus `src/server/errors.ts` and `src/server/schemas.ts`. It never imports
+  `*.server.ts` or `*.routes.ts`, not even for a type.
+
 - Import with a relative path inside the importer's area: one feature folder,
   `src/server/`, or another top-level folder of `src/`. Import anything else through the
-  `~/` alias for `src/` (`~/lib/format`, `~/server/timer/timer.functions`), as
+  `~/` alias for `src/` (`~/lib/format`, `~/server/timer/timer.schemas`), as
   `scripts/` and `datamodel/` do. oxlint checks this: no parent imports where the area is
   flat, and none that climb two levels inside a feature or `src/server/`.
 - Write named functions as `function` declarations, not arrows assigned to a `const`,

@@ -10,8 +10,8 @@ import { useQuery } from '~/lib/queries/use-query'
 import { AppearancePopover } from './appearance-popover'
 
 const fn = vi.hoisted(() => ({ updateSettings: vi.fn(), getAppSession: vi.fn() }))
+vi.mock('~/lib/api/settings', () => fn)
 vi.mock('~/server/settings/settings.functions', () => ({ updateSettings: fn.updateSettings }))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: fn.getAppSession }))
 vi.mock('@tanstack/solid-router', () => ({
   Link: (props: { to: string; children: JSX.Element }) => <a href={props.to}>{props.children}</a>,
 }))
@@ -58,7 +58,9 @@ describe('AppearancePopover', () => {
       'href',
       '/$org/settings',
     )
-    expect(within(dialog).getByText('A few snowflakes.')).toBeVisible()
+    expect(
+      within(dialog).getByText('A few snowflakes by day, twinkling stars at night.'),
+    ).toBeVisible()
   })
 
   test('a refused change goes back and says why', async () => {

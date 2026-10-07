@@ -1,4 +1,5 @@
 import * as v from 'valibot'
+import { Entry } from '../entries/entries.schemas'
 import { Description, Ticket, Uuidv7 } from '../schemas'
 
 export const StartTimerInput = v.object({
@@ -15,3 +16,13 @@ export const StopTimerInput = v.object({
   id: Uuidv7,
 })
 export type StopTimerInput = v.InferOutput<typeof StopTimerInput>
+
+// The running entry, with its project for a timer running in another organization, whose
+// projects the view hasn't loaded.
+export const RunningTimer = v.object({
+  ...Entry.entries,
+  project: v.nullable(
+    v.object({ id: v.string(), name: v.string(), color: v.nullable(v.string()) }),
+  ),
+})
+export type RunningTimer = v.InferOutput<typeof RunningTimer>

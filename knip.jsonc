@@ -4,18 +4,23 @@
   // without TURSO_DATABASE_URL.
   // The compiled release's migrator, which scripts/build-self-hosted.ts compiles by path.
   // The harnesses (perf/README.md); the weather bench's page script loads from its HTML and
-  // its config from createServer.
+  // its config from createServer. The load benchmark's k6 scenario runs in k6's container.
+  // Paraglide's Vite plugin and CLI load its config from the project folder.
   "entry": [
     "src/server-entry.ts",
     "drizzle.config.ts",
+    "project.inlang/paraglide.config.ts",
     "scripts/db-migrate-release.ts",
     "perf/*.ts",
     "perf/weather/bench.ts",
     "perf/weather/vite.config.ts",
+    "perf/stress/scenario.js",
   ],
   "drizzle": false,
   // Static prototypes and design files load their scripts from HTML.
   "ignore": ["prototypes/**", "design/**"],
+  // k6's built-in modules, which the load benchmark's scenario imports inside k6.
+  "ignoreDependencies": ["k6"],
   // macOS's GPU counters, which the weather bench reads (perf/weather/gpu-usage.ts).
   "ignoreBinaries": ["ioreg"],
   "ignoreIssues": {

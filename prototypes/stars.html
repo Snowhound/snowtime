@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Twinkling stars</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="seasons.js"></script>
+    <script src="scene.js"></script>
+    <style type="text/tailwindcss">
+      .glass {
+        @apply rounded-lg border bg-card/70 shadow-xl backdrop-blur-xl;
+      }
+      .seg {
+        @apply inline-flex rounded-md border bg-background/60 p-0.5 text-xs;
+      }
+      .seg button {
+        @apply rounded px-2 py-1 text-muted-foreground;
+      }
+      .seg button[aria-pressed='true'] {
+        @apply bg-primary text-primary-foreground;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <!-- Task 076: twinkling stars over the countryside's November night, with sliders to
+       tune them against the photo, on November and on other night skies they might suit. Slider
+       values are kept per image in this browser (snowtime.prototypeStars); the image is in the
+       URL's hash. -->
+  <body class="min-h-dvh overflow-hidden bg-background text-foreground">
+    <div id="scene-host" class="fixed inset-0"></div>
+    <canvas id="stars" class="pointer-events-none fixed inset-0 h-full w-full"></canvas>
+    <canvas id="marks" class="pointer-events-none fixed inset-0 h-full w-full"></canvas>
+
+    <div id="tune" class="glass fixed right-4 bottom-4 z-10 max-h-[calc(100dvh-2rem)] w-[320px] max-w-[calc(100vw-2rem)] space-y-2 overflow-auto p-4 text-sm">
+      <div class="flex items-center justify-between gap-2">
+        <p class="font-medium">Stars <span class="font-normal text-muted-foreground">dark</span></p>
+        <div class="flex gap-1">
+          <button data-ui="button" data-variant="outline" data-size="sm" id="reset">Reset</button>
+          <button data-ui="button" data-variant="outline" data-size="sm" id="copy">Copy</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button data-ui="button" data-variant="outline" data-size="icon" id="prev" title="Previous image (←)" aria-label="Previous image">‹</button>
+        <select data-ui="select" id="image" class="h-9 min-w-0 flex-1" aria-label="Image"></select>
+        <button data-ui="button" data-variant="outline" data-size="icon" id="next" title="Next image (→)" aria-label="Next image">›</button>
+      </div>
+      <p id="note" class="text-xs text-muted-foreground"></p>
+      <div class="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-xs">
+        <span class="text-muted-foreground">Strength</span>
+        <div class="seg" data-key="strength"><button data-value="dimmed">Dimmed</button><button data-value="full">Full</button></div>
+        <span class="text-muted-foreground">Markers</span>
+        <div class="seg" data-key="marks"><button data-value="off">Off</button><button data-value="on">On</button></div>
+        <span class="text-muted-foreground">Stars</span>
+        <div class="seg" data-key="stars"><button data-value="on">On</button><button data-value="off">Off</button></div>
+        <span class="aurora-only text-muted-foreground">Aurora</span>
+        <div class="aurora-only seg" data-key="aurora"><button data-value="on">On</button><button data-value="off">Off</button></div>
+        <span class="aurora-only self-start pt-1 text-muted-foreground" title="Sets the ray sliders to a version; a slider change after it leaves none picked">Rays</span>
+        <div class="aurora-only seg flex-wrap" data-key="rays"><button data-value="straight" title="Upright rays, the first version">Straight</button><button data-value="varied" title="Bent rays, groups leaning their own way, ragged tops">Varied</button><button data-value="patchy" title="Upright rays, with dimmer stretches along the curtain">A: Patchy</button><button data-value="patchyRagged" title="Upright rays, narrower dim stretches, rays ending at their own heights, a little brighter">B: Patchy, ragged</button><button data-value="converging" title="B, with the rays tilted very slightly toward one point far up, for depth">C: B, converging</button><button data-value="contrast" title="C, with the dim stretches much darker and the bright ones brighter">D: C, more contrast</button></div>
+        <span class="effect-only text-muted-foreground" title="The image's effect besides its stars and aurora, drawn by scene.js under them">Its effect</span>
+        <div class="effect-only seg" data-key="effect"><button data-value="on">On</button><button data-value="off">Off</button></div>
+      </div>
+      <div id="sliders" class="space-y-1.5"></div>
+      <p class="text-xs text-muted-foreground">← → images · H hides the panel · M markers · S stars · A aurora · R rays · E its effect · Space pauses</p>
+    </div>
+
+    <script>
+      // Label, min, max, step, default.
+      const SLIDERS = {
+        count: ['Stars', 1, 60, 1, 60],
+        seed: ['Placement', 1, 99, 1, 91],
+        size: ['Core size (px)', 0.3, 3, 0.05, 0.9],
+        brightness: ['Brightness', 0, 1.5, 0.05, 0.75],
+        spread: ['Bright vs faint', 0, 1, 0.05, 0.6],
+        variety: ['Color variety', 0, 1, 0.05, 0.4],
+        halo: ['Halo', 0, 1, 0.05, 0.2],
+        spikes: ['Spikes', 0, 1, 0.05, 0],
+        depth: ['Twinkle depth', 0, 1, 0.05, 0.4],
+        speed: ['Twinkle speed', 0.1, 4, 0.05, 0.3],
+        hue: ['Color twinkle', 0, 1, 0.05, 0.15],
+        flashes: ['Flashes at once', 0, 4, 0.05, 0.4],
+        flashTime: ['Flash length (s)', 0.2, 4, 0.05, 1.2],
+        flashGain: ['Flash brightness', 1, 5, 0.05, 2.2],
+        flashSize: ['Flash size', 1, 4, 0.05, 1.6],
+        aBright: ['Aurora brightness', 0, 2, 0.05, 0.95],
+        aHeight: ['Curtain height', 0.3, 3, 0.05, 1.4],
+        aRays: ['Ray density', 0.2, 3, 0.05, 1],
+        aRayDepth: ['Ray contrast', 0, 1, 0.05, 0.6],
+        aBend: ['Ray bend', 0, 3, 0.05, 0],
+        aLean: ['Ray lean variety', 0, 3, 0.05, 0],
+        aRagged: ['Ragged tops', 0, 1, 0.05, 0.5],
+        aPatch: ['Dim patches', 0, 1, 0.05, 0.9],
+        aPatchSize: ['Patch size', 0.3, 3, 0.05, 0.6],
+        aConverge: ['Ray convergence', 0, 1.5, 0.05, 0.3],
+        aVanish: ['Converge on x', -0.5, 1, 0.01, 0.15],
+        aDrift: ['Ray drift', 0, 3, 0.05, 0.4],
+        aWave: ['Fold sway', 0, 3, 0.05, 1],
+        aWaveSpeed: ['Sway speed', 0, 3, 0.05, 0.4],
+        aPulse: ['Pulse depth', 0, 1, 0.05, 0.45],
+        aPulseSpeed: ['Pulse speed', 0, 3, 0.05, 0.5],
+        aTop: ['Violet top', 0, 1, 0.05, 0.2],
+      }
+      const AURORA_KEYS = Object.keys(SLIDERS).filter((k) => k.startsWith('a'))
+      // Versions of the rays the Rays switch picks between, as ray slider values.
+      const RAYS = {
+        straight: { aBright: 0.65, aBend: 0, aLean: 0, aRagged: 0, aPatch: 0, aPatchSize: 1, aConverge: 0 },
+        varied: { aBright: 0.65, aBend: 1, aLean: 1, aRagged: 0.6, aPatch: 0, aPatchSize: 1, aConverge: 0 },
+        patchy: { aBright: 0.65, aBend: 0, aLean: 0, aRagged: 0, aPatch: 0.7, aPatchSize: 1, aConverge: 0 },
+        patchyRagged: { aBright: 0.75, aBend: 0, aLean: 0, aRagged: 0.5, aPatch: 0.7, aPatchSize: 0.7, aConverge: 0 },
+        converging: { aBright: 0.75, aBend: 0, aLean: 0, aRagged: 0.5, aPatch: 0.7, aPatchSize: 0.7, aConverge: 0.3 },
+        contrast: { aBright: 0.95, aBend: 0, aLean: 0, aRagged: 0.5, aPatch: 0.9, aPatchSize: 0.6, aConverge: 0.3 },
+      }
+      // The version the ray sliders match, if any.
+      function raysVersion() {
+        return Object.keys(RAYS).find((name) => Object.entries(RAYS[name]).every(([k, v]) => values[k] === v)) ?? ''
+      }
+      // Where stars may go in each image: the open sky as polygons, in fractions of the photo's
+      // width and height, clear of trees, buildings, clouds and the horizon's haze, and a circle
+      // around the moon (x, y, radius in photo heights) that they keep out of. `tuned` is Kait's
+      // pick for the image (2026-10-01), over the sliders' defaults. scene.js's IMAGE_WEATHER holds
+      // the same picks.
+      const SKIES = {
+        'land-november': { note: 'Stars in place of the frost.', tuned: { count: 52, seed: 88, brightness: 0.6 }, sky: [[[0.17, 0.02], [0.86, 0.02], [0.84, 0.3], [0.81, 0.46], [0.17, 0.46]]] },
+        'land-april': { note: 'Over the mist. Moonless sky right of the trees.', tuned: { count: 5, seed: 96 }, sky: [[[0.54, 0.02], [0.99, 0.02], [0.99, 0.46], [0.54, 0.5]]] },
+        'land-may': { note: 'Over the mist. A bright early-summer night.', tuned: { count: 11, seed: 72 }, sky: [[[0.12, 0.02], [0.66, 0.02], [0.58, 0.3], [0.55, 0.55], [0.22, 0.55], [0.12, 0.3]]] },
+        'land-july': { note: 'Over the midges. Bright moon low on the right.', tuned: { count: 50, seed: 75 }, sky: [[[0.23, 0.02], [0.98, 0.02], [0.98, 0.56], [0.29, 0.56], [0.25, 0.2]]], moon: [0.855, 0.48, 0.07] },
+        'land-october': { note: 'Over the leaves. A crescent moon and a few small clouds.', tuned: { count: 10, seed: 7 }, sky: [[[0.02, 0.02], [0.56, 0.02], [0.53, 0.58], [0.25, 0.58], [0.25, 0.44], [0.02, 0.42]]], moon: [0.245, 0.375, 0.05] },
+        'land-december': {
+          tuned: { seed: 90, brightness: 0.5 },
+          note: 'An aurora and stars in place of the snow (task 076, subtask 02).',
+          // Curtains, each one's lower edge, its height in photo heights, its brightness, and how
+          // far its rays lean left: a thin band just over the treeline, a curtain above it whose
+          // edge bends down into a bright hook, a faint arc over the hook, and a faint glow on the
+          // left. scene.js's IMAGE_WEATHER holds the same.
+          aurora: [
+            { base: [[-0.036, 0.704], [0.096, 0.702], [0.204, 0.7], [0.276, 0.698], [0.324, 0.697]], height: 0.035, gain: 0.7 },
+            { base: [[-0.036, 0.673], [0.096, 0.669], [0.192, 0.667], [0.258, 0.669], [0.3, 0.677], [0.326, 0.69], [0.341, 0.699]], height: 0.075, gain: 1, lean: 0.3 },
+            { base: [[0.156, 0.588], [0.216, 0.6], [0.264, 0.614], [0.3, 0.63], [0.319, 0.642]], height: 0.035, gain: 0.28, lean: 0.3 },
+            { base: [[-0.036, 0.648], [0.06, 0.642], [0.156, 0.638], [0.216, 0.64]], height: 0.05, gain: 0.3 },
+          ],
+          sky: [[[0.02, 0.02], [0.7, 0.02], [0.68, 0.15], [0.62, 0.4], [0.57, 0.55], [0.02, 0.55]]] },
+        'coast-march': { note: 'Stars in place of the flurries. A bright moon.', tuned: { count: 24, seed: 89, brightness: 0.6 }, sky: [[[0.02, 0.02], [0.98, 0.02], [0.98, 0.45], [0.9, 0.35], [0.75, 0.28], [0.62, 0.35], [0.6, 0.45], [0.02, 0.45]]], moon: [0.36, 0.29, 0.07] },
+        'coast-april': { note: 'Over the mist. A bright moon on the left.', tuned: { count: 16, seed: 89, brightness: 0.5 }, sky: [[[0.02, 0.02], [0.64, 0.02], [0.66, 0.4], [0.02, 0.4]]], moon: [0.18, 0.36, 0.07] },
+        'coast-may': { note: 'Stars in place of the fine seeds. A bright early-summer night.', tuned: { count: 42, seed: 96, brightness: 0.5, spread: 0.8 }, sky: [[[0.22, 0.02], [0.98, 0.02], [0.98, 0.42], [0.22, 0.42]]] },
+        'coast-july': { note: 'Over the fireflies, fewer and slower. Moonless, low clouds only.', tuned: {}, sky: [[[0.02, 0.02], [0.98, 0.02], [0.98, 0.35], [0.85, 0.3], [0.8, 0.18], [0.65, 0.17], [0.6, 0.45], [0.02, 0.48]]] },
+        'coast-august': { note: 'Over the mist. A small moon over the islet.', tuned: { count: 42, seed: 90, brightness: 0.4 }, sky: [[[0.15, 0.02], [0.98, 0.02], [0.98, 0.3], [0.5, 0.3], [0.5, 0.2], [0.15, 0.2]]], moon: [0.69, 0.345, 0.06] },
+        'coast-october': { note: 'Over the squall. Stars only in the gaps between clouds.', tuned: { count: 10, seed: 85, brightness: 0.45 }, sky: [[[0.03, 0.02], [0.4, 0.02], [0.35, 0.1], [0.15, 0.2], [0.03, 0.2]], [[0.45, 0.01], [0.97, 0.01], [0.97, 0.06], [0.45, 0.06]]], moon: [0.6, 0.43, 0.08] },
+      }
+      const ids = Object.keys(SKIES)
+      const hashImage = location.hash.slice(1)
+      const view = { image: ids.includes(hashImage) ? hashImage : 'land-november', strength: 'dimmed', marks: 'off', stars: 'on', aurora: 'on', effect: 'on' }
+      let paused = false
+
+      const KEY = 'snowtime.prototypeStars'
+      const defaults = Object.fromEntries(Object.entries(SLIDERS).map(([k, s]) => [k, s[4]]))
+      // Changed values by image id.
+      let changes = {}
+      try {
+        changes = JSON.parse(localStorage.getItem(KEY) ?? '{}')
+        // Before the picker, one set of values for November.
+        if ('count' in changes) changes = { 'land-november': changes }
+      } catch {}
+      let values
+      // The image's values before any slider change.
+      function base() {
+        return { ...defaults, ...SKIES[view.image].tuned }
+      }
+      function loadValues() {
+        values = { ...base(), ...changes[view.image] }
+      }
+      function save() {
+        const changed = Object.fromEntries(Object.entries(values).filter(([k, v]) => v !== base()[k]))
+        if (Object.keys(changed).length) changes[view.image] = changed
+        else delete changes[view.image]
+        try {
+          localStorage.setItem(KEY, JSON.stringify(changes))
+        } catch {}
+      }
+      loadValues()
+
+      // The scene draws the image's weather without its stars and aurora, which this page draws.
+      const SKIP = ['stars', 'aurora']
+      const ctl = scene.create({ image: view.image, strength: view.strength, skip: SKIP })
+      // Whether the image's dark weather has an effect besides them, for Its effect.
+      function hasEffect(id) {
+        const weather = scene.weatherFor(id, 'dark')
+        return [weather, weather.also].some((w) => w?.effect && !SKIP.includes(w.effect))
+      }
+      document.getElementById('scene-host').append(ctl.el)
+
+      function inPolygon(poly, [x, y]) {
+        let inside = false
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+          const [xi, yi] = poly[i]
+          const [xj, yj] = poly[j]
+          if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside
+        }
+        return inside
+      }
+      const ASPECT = 1920 / 1084
+      function inSky(p) {
+        const { sky, moon } = SKIES[view.image]
+        if (moon && Math.hypot((p[0] - moon[0]) * ASPECT, p[1] - moon[1]) < moon[2]) return false
+        return sky.some((poly) => inPolygon(poly, p))
+      }
+      function rng(seed) {
+        let s = seed * 2654435761
+        return () => {
+          s = (s + 0x6d2b79f5) | 0
+          let t = Math.imul(s ^ (s >>> 15), 1 | s)
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+        }
+      }
+      // Each star: x, y in the photo, then four random numbers for its brightness, color, twinkle
+      // and flash timing. Kept apart from each other so they don't clump.
+      function placeStars() {
+        const r = rng(values.seed)
+        const stars = []
+        const top = Math.max(...SKIES[view.image].sky.flat().map((p) => p[1]))
+        for (let tries = 0; stars.length < values.count && tries < 5000; tries++) {
+          const p = [r(), r() * top]
+          if (!inSky(p)) continue
+          const gap = 0.35 / Math.sqrt(values.count)
+          if (stars.some((s) => Math.hypot((s[0] - p[0]) * 1.77, s[1] - p[1]) < gap * (tries < 3000 ? 1 : 0.4))) continue
+          stars.push([...p, r(), r(), r(), r()])
+        }
+        return stars
+      }
+
+      const canvas = document.getElementById('stars')
+      const gl = canvas.getContext('webgl2', { premultipliedAlpha: true, alpha: true })
+      const VS = `#version 300 es
+      in vec2 a_pos;
+      in vec4 a_rand;
+      uniform vec2 u_res, u_scale, u_offset;
+      uniform float u_time, u_dpr, u_size, u_brightness, u_spread, u_variety, u_halo, u_spikes;
+      uniform float u_depth, u_speed, u_hue, u_cycle, u_flashTime, u_flashGain, u_flashSize;
+      out float v_alpha, v_core, v_half;
+      out vec3 v_color;
+      void main() {
+        // The photo is drawn with background-size: cover, centered.
+        vec2 px = u_offset + a_pos * u_scale;
+        gl_Position = vec4(px / u_res * vec2(2.0, -2.0) + vec2(-1.0, 1.0), 0.0, 1.0);
+        float r1 = a_rand.x, r2 = a_rand.y, r3 = a_rand.z, r4 = a_rand.w;
+        // A few bright stars and more faint ones.
+        float base = mix(1.0, mix(.25, 1.0, pow(r1, 2.0)), u_spread);
+        // Scintillation: three detuned waves per star, so it never repeats visibly.
+        float t = u_time * u_speed;
+        float n = sin(t * mix(5.0, 9.0, r2) + r3 * 40.0) * .5
+                + sin(t * mix(11.0, 17.0, r3) + r4 * 40.0) * .3
+                + sin(t * mix(2.0, 3.5, r4) + r1 * 40.0) * .4;
+        float scint = clamp(1.0 + u_depth * n * .8, 0.0, 2.0);
+        // Now and then a flash: a quick rise and a slower fade, once a cycle at its own time.
+        float tau = mod(u_time + r4 * u_cycle * 7.13, u_cycle);
+        float x = tau / u_flashTime;
+        float flash = x < 1.0 ? smoothstep(0.0, .15, x) * pow(1.0 - x, 2.0) / .72 : 0.0;
+        flash = min(flash, 1.0);
+        float gain = mix(1.0, u_flashGain, flash);
+        v_alpha = base * scint * gain * u_brightness;
+        // Bluish white to warm white, and a slight color flicker as the atmosphere bends it.
+        vec3 cool = vec3(.82, .9, 1.0), warm = vec3(1.0, .9, .76);
+        float k = clamp(r2 * u_variety + u_hue * sin(t * mix(7.0, 12.0, r1) + r2 * 30.0) * .5, 0.0, 1.0);
+        v_color = mix(cool, warm, k);
+        v_core = u_size * u_dpr * mix(.7, 1.3, base) * mix(1.0, u_flashSize, flash);
+        float reach = max(v_core * mix(2.5, 7.0, u_halo), v_core * (2.0 + u_spikes * 10.0 * mix(.5, 1.0, flash)));
+        v_half = reach;
+        gl_PointSize = v_alpha < .005 ? 0.0 : 2.0 * reach;
+      }`
+      const FS = `#version 300 es
+      precision highp float;
+      uniform float u_halo, u_spikes;
+      in float v_alpha, v_core, v_half;
+      in vec3 v_color;
+      out vec4 outColor;
+      void main() {
+        vec2 p = (gl_PointCoord - .5) * 2.0 * v_half;
+        float r = length(p);
+        float c = v_core * .6;
+        float core = exp(-r * r / (c * c));
+        float halo = u_halo * .35 * exp(-r / (c * 2.5));
+        float len = v_core * (1.0 + u_spikes * 8.0);
+        float spikes = u_spikes * .6 * (exp(-abs(p.x) / (c * .35)) * exp(-abs(p.y) / len * 2.5) + exp(-abs(p.y) / (c * .35)) * exp(-abs(p.x) / len * 2.5));
+        float edge = 1.0 - smoothstep(.85, 1.0, r / v_half);
+        float a = min(1.0, (core + halo + spikes) * v_alpha) * edge;
+        if (a < .003) discard;
+        // White in the middle, the star's color around it.
+        vec3 col = mix(v_color, vec3(1.0), core * .6);
+        outColor = vec4(col * a, a);
+      }`
+      function compile(type, src) {
+        const s = gl.createShader(type)
+        gl.shaderSource(s, src)
+        gl.compileShader(s)
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s))
+        return s
+      }
+      const prog = gl.createProgram()
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS))
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS))
+      gl.linkProgram(prog)
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog))
+      gl.useProgram(prog)
+      const u = new Proxy({}, { get: (cache, name) => (cache[name] ??= gl.getUniformLocation(prog, name)) })
+      const buf = gl.createBuffer()
+      const vao = gl.createVertexArray()
+      gl.bindVertexArray(vao)
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+      const aPos = gl.getAttribLocation(prog, 'a_pos')
+      const aRand = gl.getAttribLocation(prog, 'a_rand')
+      gl.enableVertexAttribArray(aPos)
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 24, 0)
+      gl.enableVertexAttribArray(aRand)
+      gl.vertexAttribPointer(aRand, 4, gl.FLOAT, false, 24, 8)
+      gl.enable(gl.BLEND)
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+
+      // The aurora: each curtain is a triangle strip standing on its lower edge, a Catmull-Rom curve
+      // through the curtain's points. Rays are 1D value noise along the curtain that drifts
+      // sideways; the edge sways slowly, and brightness pulses travel along it.
+      const AURORA_VS = `#version 300 es
+      in vec2 a_base;
+      // Distance along the curtain in photo widths, 0 to 1 along it, 0 at the lower edge to 1 at
+      // the top.
+      in vec3 a_suv;
+      // Height in photo heights, brightness, seed, and how far the rays lean left per unit up.
+      in vec4 a_curtain;
+      // How steeply the lower edge runs on screen, 0 flat to 1 upright. Where a curtain bends
+      // toward the viewer, its rays line up behind each other and it glows brighter.
+      in float a_steep;
+      uniform vec2 u_res, u_scale, u_offset;
+      uniform float u_time, u_aHeight, u_aWave, u_aWaveSpeed, u_aConverge, u_aVanish;
+      out float v_s, v_u, v_v, v_y, v_gain, v_seed;
+      void main() {
+        float s = a_suv.x, v = a_suv.z, seed = a_curtain.z;
+        float t = u_time * u_aWaveSpeed;
+        vec2 p = a_base;
+        p.y += (sin(s * 9.0 + t * .7 + seed) * .006 + sin(s * 23.0 - t * 1.1 + seed * 2.0) * .0025) * u_aWave;
+        p.x += sin(s * 5.0 - t * .5 + seed) * .004 * u_aWave;
+        // Taller and shorter along the curtain, slowly changing.
+        float h = a_curtain.x * u_aHeight * (.75 + .25 * sin(s * 7.0 + t * .4 + seed * 3.0));
+        p.y -= v * h;
+        p.x -= v * h * a_curtain.w / ${ASPECT.toFixed(4)};
+        // Rays seen in perspective: each tilts toward one point far above, at x u_aVanish.
+        p.x += v * h * (u_aVanish - a_base.x) * u_aConverge;
+        vec2 px = u_offset + p * u_scale;
+        gl_Position = vec4(px / u_res * vec2(2.0, -2.0) + vec2(-1.0, 1.0), 0.0, 1.0);
+        v_s = s; v_u = a_suv.y; v_v = v; v_y = p.y; v_gain = a_curtain.y * (1.0 + 2.5 * a_steep); v_seed = seed;
+      }`
+      const AURORA_FS = `#version 300 es
+      precision highp float;
+      uniform float u_time, u_aBright, u_aRays, u_aRayDepth, u_aDrift, u_aPulse, u_aPulseSpeed, u_aTop;
+      uniform float u_aBend, u_aLean, u_aRagged, u_aPatch, u_aPatchSize;
+      in float v_s, v_u, v_v, v_y, v_gain, v_seed;
+      out vec4 outColor;
+      float hash(float n) { return fract(sin(n * 127.1) * 43758.5453); }
+      float noise(float x) {
+        float i = floor(x), f = fract(x);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(hash(i), hash(i + 1.0), f);
+      }
+      void main() {
+        float t = u_time;
+        float x = v_s * 150.0 * u_aRays;
+        // The varied take: rays curve as they rise, bending the same way along a stretch of the
+        // curtain and slowly changing; groups of rays lean their own way; and each ray ends at
+        // its own height. All three are 0 in the straight take.
+        float up = v_v * v_v;
+        x += u_aBend * up * (noise(v_s * 6.0 + v_seed * 3.0 + t * .04) * 2.0 - 1.0) * 14.0;
+        x += u_aLean * v_v * (noise(x * .12 + v_seed * 5.0) * 2.0 - 1.0) * 7.0;
+        float top = mix(.4, 1.05, noise(x * .9 + t * u_aDrift * .6 + v_seed * 11.0));
+        float ragged = mix(1.0, smoothstep(top, top - .3, v_v), u_aRagged);
+        float rays = noise(x + t * u_aDrift * .6 + v_seed * 13.0) * .6 + noise(x * 2.7 - t * u_aDrift + v_seed * 7.0) * .4;
+        rays = mix(1.0, pow(rays, 1.6) * 1.9, u_aRayDepth);
+        // Brightest just above the lower edge, fading upward.
+        float profile = smoothstep(0.0, .22, v_v) * exp(-2.6 * v_v) * (1.0 - v_v);
+        float ends = smoothstep(0.0, .15, v_u) * smoothstep(1.0, .8, v_u);
+        float pulse = 1.0 - u_aPulse * (.5 + .5 * sin(v_u * 9.0 - t * u_aPulseSpeed + v_seed * 5.0));
+        // Hidden behind the treeline.
+        float trees = smoothstep(.73, .72, v_y);
+        // Dimmer stretches along the curtain, drifting slowly, so parts of it fade back while
+        // the rays stay upright.
+        float ps = v_s / u_aPatchSize;
+        float patchNoise = noise(ps * 12.0 + v_seed * 17.0 + t * .05) * .7 + noise(ps * 31.0 - t * .08 + v_seed * 3.0) * .3;
+        float dim = mix(1.0, .15 + .85 * smoothstep(.25, .75, patchNoise), u_aPatch);
+        float a = clamp(profile * ragged * ends * rays * dim * pulse * v_gain * u_aBright * trees * .5, 0.0, 1.0);
+        vec3 green = vec3(.36, 1.0, .62), violet = vec3(.72, .42, 1.0);
+        vec3 col = mix(green, violet, smoothstep(.35, 1.0, v_v) * u_aTop);
+        outColor = vec4(col * a, a);
+      }`
+      const aprog = gl.createProgram()
+      gl.attachShader(aprog, compile(gl.VERTEX_SHADER, AURORA_VS))
+      gl.attachShader(aprog, compile(gl.FRAGMENT_SHADER, AURORA_FS))
+      gl.linkProgram(aprog)
+      if (!gl.getProgramParameter(aprog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(aprog))
+      const au = new Proxy({}, { get: (cache, name) => (cache[name] ??= gl.getUniformLocation(aprog, name)) })
+      const abuf = gl.createBuffer()
+      const avao = gl.createVertexArray()
+      gl.bindVertexArray(avao)
+      gl.bindBuffer(gl.ARRAY_BUFFER, abuf)
+      for (const [name, size, at] of [['a_base', 2, 0], ['a_suv', 3, 8], ['a_curtain', 4, 20], ['a_steep', 1, 36]]) {
+        const loc = gl.getAttribLocation(aprog, name)
+        gl.enableVertexAttribArray(loc)
+        gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 40, at)
+      }
+      gl.bindVertexArray(null)
+      function catmullRom(points, steps) {
+        const out = []
+        const p = [points[0], ...points, points.at(-1)]
+        for (let i = 1; i < p.length - 2; i++) {
+          for (let j = 0; j < steps; j++) {
+            const t = j / steps
+            out.push([0, 1].map((k) => 0.5 * (2 * p[i][k] + (p[i + 1][k] - p[i - 1][k]) * t + (2 * p[i - 1][k] - 5 * p[i][k] + 4 * p[i + 1][k] - p[i + 2][k]) * t * t + (3 * p[i][k] - p[i - 1][k] - 3 * p[i + 1][k] + p[i + 2][k]) * t * t * t)))
+          }
+        }
+        out.push(points.at(-1))
+        return out
+      }
+      // Each curtain's first vertex and count in the buffer.
+      let curtains = []
+      function uploadAurora() {
+        const data = []
+        curtains = []
+        ;(SKIES[view.image].aurora ?? []).forEach(({ base, height, gain, lean = 0 }, c) => {
+          const pts = catmullRom(base, 24)
+          const lengths = [0]
+          for (let i = 1; i < pts.length; i++) lengths.push(lengths[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], (pts[i][1] - pts[i - 1][1]) / ASPECT))
+          const total = lengths.at(-1)
+          curtains.push([data.length / 10, pts.length * 2])
+          pts.forEach((pt, i) => {
+            const [a, b] = [pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]]
+            const dx = (b[0] - a[0]) * ASPECT
+            const dy = b[1] - a[1]
+            const steep = Math.abs(dy) / (Math.hypot(dx, dy) || 1)
+            for (const v of [0, 1]) data.push(pt[0], pt[1], lengths[i], lengths[i] / total, v, height, gain, c * 1.7 + 0.3, lean, steep)
+          })
+        })
+        gl.bindBuffer(gl.ARRAY_BUFFER, abuf)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
+      }
+
+      let stars = []
+      function upload() {
+        stars = placeStars()
+        uploadAurora()
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(stars.flat()), gl.STATIC_DRAW)
+        drawMarks()
+      }
+
+      // Where `cover` puts the photo, in CSS pixels.
+      function cover() {
+        const w = innerWidth
+        const h = innerHeight
+        const shown = Math.max(w, h * ASPECT)
+        const sh = shown / ASPECT
+        return { scale: [shown, sh], offset: [(w - shown) / 2, (h - sh) / 2] }
+      }
+
+      const marks = document.getElementById('marks')
+      function drawMarks() {
+        const dpr = devicePixelRatio || 1
+        marks.width = innerWidth * dpr
+        marks.height = innerHeight * dpr
+        const g = marks.getContext('2d')
+        g.scale(dpr, dpr)
+        if (view.marks !== 'on') return
+        const { scale, offset } = cover()
+        const at = ([x, y]) => [offset[0] + x * scale[0], offset[1] + y * scale[1]]
+        g.strokeStyle = 'rgb(255 200 80 / .6)'
+        g.setLineDash([4, 4])
+        for (const poly of SKIES[view.image].sky) {
+          g.beginPath()
+          poly.forEach((p, i) => g[i ? 'lineTo' : 'moveTo'](...at(p)))
+          g.closePath()
+          g.stroke()
+        }
+        const moon = SKIES[view.image].moon
+        if (moon) {
+          g.beginPath()
+          g.arc(...at(moon), moon[2] * scale[1], 0, Math.PI * 2)
+          g.stroke()
+        }
+        g.strokeStyle = 'rgb(120 255 170 / .7)'
+        for (const { base } of SKIES[view.image].aurora ?? []) {
+          g.beginPath()
+          catmullRom(base, 24).forEach((p, i) => g[i ? 'lineTo' : 'moveTo'](...at(p)))
+          g.stroke()
+        }
+        g.setLineDash([])
+        g.strokeStyle = 'rgb(255 120 80 / .8)'
+        for (const s of stars) {
+          g.beginPath()
+          g.arc(...at(s), 9, 0, Math.PI * 2)
+          g.stroke()
+        }
+      }
+
+
+      let time = 0
+      let last = performance.now()
+      function frame(now) {
+        if (!paused) time += (now - last) / 1000
+        last = now
+        const dpr = devicePixelRatio || 1
+        const w = Math.round(innerWidth * dpr)
+        const h = Math.round(innerHeight * dpr)
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w
+          canvas.height = h
+        }
+        gl.viewport(0, 0, w, h)
+        gl.clearColor(0, 0, 0, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+        const { scale, offset } = cover()
+        if (view.aurora === 'on' && curtains.length) {
+          gl.useProgram(aprog)
+          gl.bindVertexArray(avao)
+          gl.uniform2f(au.u_res, innerWidth, innerHeight)
+          gl.uniform2f(au.u_scale, ...scale)
+          gl.uniform2f(au.u_offset, ...offset)
+          gl.uniform1f(au.u_time, time)
+          for (const k of AURORA_KEYS) gl.uniform1f(au[`u_${k}`], values[k])
+          for (const [first, count] of curtains) gl.drawArrays(gl.TRIANGLE_STRIP, first, count)
+        }
+        if (view.stars === 'on') {
+          gl.useProgram(prog)
+          gl.bindVertexArray(vao)
+          gl.uniform2f(u.u_res, innerWidth, innerHeight)
+          gl.uniform2f(u.u_scale, ...scale)
+          gl.uniform2f(u.u_offset, ...offset)
+          gl.uniform1f(u.u_time, time)
+          gl.uniform1f(u.u_dpr, dpr)
+          for (const k of ['size', 'brightness', 'spread', 'variety', 'halo', 'spikes', 'depth', 'speed', 'hue', 'flashTime', 'flashGain', 'flashSize']) gl.uniform1f(u[`u_${k}`], values[k])
+          // How often each star flashes, so about `flashes` show at once.
+          gl.uniform1f(u.u_cycle, Math.max(values.flashTime, (stars.length * values.flashTime) / Math.max(values.flashes, 0.01)))
+          gl.drawArrays(gl.POINTS, 0, stars.length)
+        }
+        requestAnimationFrame(frame)
+      }
+
+      const sliders = document.getElementById('sliders')
+      function renderSliders() {
+        const aurora = !!SKIES[view.image].aurora
+        for (const el of document.querySelectorAll('.aurora-only')) el.style.display = aurora ? '' : 'none'
+        sliders.innerHTML = Object.entries(SLIDERS)
+          .filter(([key]) => aurora || !AURORA_KEYS.includes(key))
+          .map(([key, [label, min, max, step]]) => {
+            const changed = values[key] !== base()[key]
+            const heading = key === 'count' ? 'Stars' : key === AURORA_KEYS[0] ? 'Aurora' : ''
+            return `${heading ? `<p class="pt-1 text-xs font-medium">${heading}</p>` : ''}<label class="grid grid-cols-[7.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 text-xs"><span class="${changed ? 'font-semibold text-foreground' : 'text-muted-foreground'}">${label}</span><input type="range" data-key="${key}" min="${min}" max="${max}" step="${step}" value="${values[key]}" class="w-full min-w-0 accent-primary" /><output class="text-right tabular-nums">${+(+values[key]).toFixed(2)}</output></label>`
+          })
+          .join('')
+        renderRays()
+      }
+      sliders.addEventListener('input', (event) => {
+        const input = event.target.closest('input')
+        if (!input) return
+        values[input.dataset.key] = +input.value
+        input.nextElementSibling.textContent = +(+input.value).toFixed(2)
+        input.previousElementSibling.className = values[input.dataset.key] !== base()[input.dataset.key] ? 'font-semibold text-foreground' : 'text-muted-foreground'
+        save()
+        renderRays()
+        if (input.dataset.key === 'count' || input.dataset.key === 'seed') upload()
+      })
+      document.getElementById('reset').addEventListener('click', () => {
+        values = base()
+        save()
+        renderSliders()
+        upload()
+      })
+      document.getElementById('copy').addEventListener('click', async (event) => {
+        const text = JSON.stringify(changes, null, 2)
+        try {
+          await navigator.clipboard.writeText(text)
+          event.currentTarget.textContent = 'Copied'
+        } catch {
+          prompt('Copy the values:', text)
+        }
+        setTimeout(() => (document.getElementById('copy').textContent = 'Copy'), 1500)
+      })
+      function renderRays() {
+        const on = raysVersion()
+        for (const b of document.querySelectorAll('.seg[data-key="rays"] button')) b.setAttribute('aria-pressed', String(b.dataset.value === on))
+      }
+      function renderSegs() {
+        for (const seg of document.querySelectorAll('.seg')) {
+          if (seg.dataset.key === 'rays') continue
+          for (const b of seg.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.value === view[seg.dataset.key]))
+        }
+        ctl.set({ strength: view.strength, weather: view.effect === 'on' })
+        drawMarks()
+      }
+      function setRays(name) {
+        Object.assign(values, RAYS[name])
+        save()
+        renderSliders()
+      }
+      for (const seg of document.querySelectorAll('.seg')) {
+        seg.addEventListener('click', (event) => {
+          const b = event.target.closest('button')
+          if (!b) return
+          if (seg.dataset.key === 'rays') setRays(b.dataset.value)
+          else view[seg.dataset.key] = b.dataset.value
+          renderSegs()
+        })
+      }
+      addEventListener('keydown', (event) => {
+        if (event.target.closest('input, select') || event.metaKey || event.ctrlKey || event.altKey) return
+        if (event.key === 'h') document.getElementById('tune').classList.toggle('hidden')
+        else if (event.key === 'm') (view.marks = view.marks === 'on' ? 'off' : 'on'), renderSegs()
+        else if (event.key === 's') (view.stars = view.stars === 'on' ? 'off' : 'on'), renderSegs()
+        else if (event.key === 'a') (view.aurora = view.aurora === 'on' ? 'off' : 'on'), renderSegs()
+        else if (event.key === 'r') {
+          const names = Object.keys(RAYS)
+          setRays(names[(names.indexOf(raysVersion()) + 1) % names.length])
+          renderSegs()
+        }
+        else if (event.key === 'e') (view.effect = view.effect === 'on' ? 'off' : 'on'), renderSegs()
+        else if (event.key === ' ') (paused = !paused), event.preventDefault()
+      })
+      addEventListener('resize', drawMarks)
+
+      const select = document.getElementById('image')
+      select.innerHTML = ids.map((id) => `<option value="${id}">${id.startsWith('coast') ? 'Coast' : 'Countryside'} ${scene.image(id).label}</option>`).join('')
+      function showImage(id) {
+        view.image = id
+        select.value = id
+        document.getElementById('note').textContent = SKIES[id].note
+        history.replaceState(null, '', `#${id}`)
+        for (const el of document.querySelectorAll('.effect-only')) el.style.display = hasEffect(id) ? '' : 'none'
+        ctl.set({ image: id })
+        renderSegs()
+        loadValues()
+        renderSliders()
+        upload()
+      }
+      function step(by) {
+        showImage(ids[(ids.indexOf(view.image) + by + ids.length) % ids.length])
+      }
+      select.addEventListener('change', () => showImage(select.value))
+      document.getElementById('prev').addEventListener('click', () => step(-1))
+      document.getElementById('next').addEventListener('click', () => step(1))
+      addEventListener('keydown', (event) => {
+        if (event.target.closest('input, select') || event.metaKey || event.ctrlKey || event.altKey) return
+        if (event.key === 'ArrowLeft') step(-1)
+        else if (event.key === 'ArrowRight') step(1)
+      })
+
+      renderSegs()
+      showImage(view.image)
+      requestAnimationFrame(frame)
+    </script>
+  </body>
+</html>

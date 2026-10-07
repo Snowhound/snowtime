@@ -12,19 +12,8 @@ const fn = vi.hoisted(() => ({
   stopTimer: vi.fn(),
   listEntries: vi.fn(),
 }))
-vi.mock('~/server/entries/entries.functions', () => ({
-  createEntry: fn.createEntry,
-  listEntries: fn.listEntries,
-  deleteEntry: vi.fn(),
-  getFirstEntryStart: vi.fn(),
-  updateEntry: vi.fn(),
-}))
-vi.mock('~/server/timer/timer.functions', () => ({
-  getRunningTimer: vi.fn(),
-  startTimer: vi.fn(),
-  stopTimer: fn.stopTimer,
-}))
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
+vi.mock('~/lib/api/entries', () => fn)
+vi.mock('~/lib/api/timer', () => fn)
 
 const HOUR = 3_600_000
 const organizationId = newId()

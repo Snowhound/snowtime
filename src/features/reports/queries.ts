@@ -1,29 +1,30 @@
 // The Reports view's queries. Projects, teams and members come from the shared caches in
 // src/lib/.
 import { infiniteQueryOptions, keepPreviousData, queryOptions } from '@tanstack/solid-query'
-import { reportsKey } from '~/lib/queries/query'
 import {
   getReport,
   getReportBreakdown,
   getReportEntries,
   getReportEntryTotals,
-} from '~/server/reports/reports.functions'
+} from '~/lib/api/reports'
+import { reportsKey } from '~/lib/queries/query'
 import type {
+  Report,
+  ReportBreakdown,
+  ReportEntries,
   ReportEntriesInput,
   ReportEntryTotalsInput,
   ReportInput,
 } from '~/server/reports/reports.schemas'
 
-export type Report = Awaited<ReturnType<typeof getReport>>
-export type ReportEntries = Awaited<ReturnType<typeof getReportEntries>>
-export type ReportBreakdown = Awaited<ReturnType<typeof getReportBreakdown>>
+export type { Report, ReportBreakdown, ReportEntries }
 
 // The previous report stays on screen while the next filters load, so the grid doesn't
 // flash empty between them.
 export function reportQuery(organizationId: string, input: ReportInput) {
   return queryOptions({
     queryKey: [...reportsKey, organizationId, input],
-    queryFn: () => getReport({ data: { ...input, organizationId } }),
+    queryFn: () => getReport({ ...input, organizationId }),
     placeholderData: keepPreviousData,
   })
 }
@@ -40,8 +41,7 @@ export function reportEntriesQuery(
 ) {
   return infiniteQueryOptions({
     queryKey: [...reportsKey, organizationId, 'entries', input],
-    queryFn: ({ pageParam }) =>
-      getReportEntries({ data: { ...input, ...pageParam, organizationId } }),
+    queryFn: ({ pageParam }) => getReportEntries({ ...input, ...pageParam, organizationId }),
     initialPageParam: FIRST_PAGE,
     getNextPageParam: (page): EntriesPage | undefined => {
       if (page.next === null) return undefined
@@ -56,7 +56,7 @@ export function reportEntriesQuery(
 export function reportEntryTotalsQuery(organizationId: string, input: ReportEntryTotalsInput) {
   return queryOptions({
     queryKey: [...reportsKey, organizationId, 'entry-totals', input],
-    queryFn: () => getReportEntryTotals({ data: { ...input, organizationId } }),
+    queryFn: () => getReportEntryTotals({ ...input, organizationId }),
     placeholderData: keepPreviousData,
   })
 }
@@ -67,7 +67,7 @@ export function reportBreakdownQuery(organizationId: string, input: ReportInput)
   const { unit: _, ...range } = input
   return queryOptions({
     queryKey: [...reportsKey, organizationId, 'breakdown', range],
-    queryFn: () => getReportBreakdown({ data: { ...range, organizationId } }),
+    queryFn: () => getReportBreakdown({ ...range, organizationId }),
     placeholderData: keepPreviousData,
   })
 }

@@ -9,8 +9,9 @@
 export const projectNote = `
 Data model for Snowtime on Turso (libSQL/SQLite).
 
-Tables in the auth and tenancy groups belong to Better Auth and its organization
-plugin; their shape follows the plugin. Everything else is owned by the app.`
+Auth, organizations, members, and invitations use Better Auth. The app owns team
+rules and stores invitation team choices; their tables retain the inherited shape.
+The tracking and settings tables are owned by the app.`
 
 export interface Group {
   name: string
@@ -32,7 +33,7 @@ export const groups: Group[] = [
   {
     name: 'tenancy',
     color: '#4E79A7',
-    title: 'Tenancy (Better Auth organization plugin, teams enabled)',
+    title: 'Tenancy (Better Auth organizations, app-owned teams)',
     tables: ['organization', 'member', 'team', 'team_member', 'invitation'],
   },
   {
@@ -79,13 +80,13 @@ export const tables: Record<string, TableNotes> = {
     },
   },
   session: {
-    note: 'Better Auth session. Carries the active organization and team, which every server function reads to scope its queries.',
+    note: 'Better Auth session. Carries the active organization; server functions scope queries to the organization named by the caller.',
     columns: {
       token: 'Session token held in the cookie.',
       expires_at: 'Epoch ms, UTC.',
       active_organization_id:
         'Organization plugin. The tenant every query in this session is scoped to.',
-      active_team_id: 'Organization plugin with teams. Optional filter, not an access boundary.',
+      active_team_id: 'Unused legacy team field, retained to avoid a session-table rebuild.',
     },
   },
   account: {
@@ -134,7 +135,7 @@ export const tables: Record<string, TableNotes> = {
   team: {
     note: 'A group of members within an organization. Groups people for access and reporting; it owns no data.',
     columns: {
-      member_count: 'Maintained by Better Auth when members join or leave.',
+      member_count: 'Maintained by the teams domain when members join or leave.',
     },
     indexes: {
       team_id_organization_id_unique:
@@ -144,8 +145,8 @@ export const tables: Record<string, TableNotes> = {
   team_member: {
     note: 'A user in a team. A member can be in several teams of the same organization.',
     columns: {
-      role: 'App-managed. CHECK: lead, member. A lead reads and reports on the time of the team. Better Auth 1.7 has no additional fields on team members, so it never reads or writes this column; new rows get the default.',
-      membership_key: 'Better Auth dedupe key, SHA-256 of team_id and user_id.',
+      role: 'CHECK: lead, member. A lead reads and reports on the time of the team. The teams domain owns memberships; new rows default to member.',
+      membership_key: 'Legacy Better Auth dedupe key. New app memberships leave it null.',
     },
   },
   invitation: {
@@ -218,7 +219,7 @@ export const tables: Record<string, TableNotes> = {
   project_team: {
     note: 'Assigns a project to a team. A project with no rows here is available to everyone in the organization. Rows are inserted and deleted, never updated, so only created_* audit columns.',
     columns: {
-      team_id: 'Deleting a team (Better Auth deletes rows) drops its assignments.',
+      team_id: 'Deleting a team cascades to its project assignments.',
       organization_id:
         'Tenant key. The composite foreign keys to project and team make it equal the organization of both.',
     },

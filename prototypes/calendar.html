@@ -41,11 +41,6 @@
       .cal-day[data-today] {
         background-color: color-mix(in oklab, var(--accent) 35%, transparent);
       }
-      /* Time that hasn't happened yet: entries can't end there. */
-      .cal-future {
-        @apply pointer-events-none absolute inset-x-0 bottom-0;
-        background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--muted-foreground) 10%, transparent) 0 6px, transparent 6px 12px);
-      }
       .cal-now {
         @apply pointer-events-none absolute inset-x-0 z-20 h-0.5 bg-primary;
       }
@@ -454,13 +449,12 @@
           days
             .map((day) => {
               const next = Z.addDays(day, 1, zone())
-              const future = now >= next ? '' : `<div class="cal-future" style="top: ${Math.max(0, minuteOf(now, day)) * unit}px"></div>`
               const nowLine = now >= day && now < next ? `<div class="cal-now" style="top: ${minuteOf(now, day) * unit}px"></div>` : ''
               const blocks = layout(allEntries().flatMap((e) => pieces(e, [day])))
                 .map((p) => block(p, unit))
                 .join('')
               const draft = state.draft ? ghosts(state.draft.start, state.draft.end, day, unit, { p: state.draft.color }) : ''
-              return `<div class="cal-day" data-day="${day}" ${day === today() ? 'data-today' : ''} aria-label="${escapeHtml(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(day))}">${future}${blocks}${draft}${nowLine}</div>`
+              return `<div class="cal-day" data-day="${day}" ${day === today() ? 'data-today' : ''} aria-label="${escapeHtml(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(day))}">${blocks}${draft}${nowLine}</div>`
             })
             .join('')
       }
@@ -933,7 +927,7 @@
         b.addEventListener('click', () => {
           if (b.dataset.view === 'calendar') return
           appFrame.settings.set({ timerView: 'list' })
-          location.href = appFrame.link('timer.html')
+          location.href = appFrame.link('timer.html#list')
         })
       )
       document.addEventListener('click', (event) => {

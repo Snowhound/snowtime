@@ -81,11 +81,11 @@ const Country = v.nullable(v.picklist(COUNTRIES))
 
 // The browser's zone (Intl.DateTimeFormat().resolvedOptions().timeZone) and the supported
 // locale that best matches its languages, used only when the user has no settings yet.
-export const GetSettingsInput = v.object({
+export const CreateSettingsInput = v.object({
   timeZone: TimeZone,
   locale: v.optional(Locale, LOCALES[0]),
 })
-export type GetSettingsInput = v.InferOutput<typeof GetSettingsInput>
+export type CreateSettingsInput = v.InferOutput<typeof CreateSettingsInput>
 
 // A partial patch: the UI saves one field at a time, and only the fields present change.
 export const UpdateSettingsInput = v.object({
@@ -116,3 +116,31 @@ export const UpdateSettingsInput = v.object({
   country: v.optional(Country),
 })
 export type UpdateSettingsInput = v.InferOutput<typeof UpdateSettingsInput>
+
+// The user's settings as the API sends them.
+export const Settings = v.object({
+  timeZone: v.string(),
+  weekStart: WeekStart,
+  locale: Locale,
+  theme: Theme,
+  timerLayout: TimerLayout,
+  showSummary: v.boolean(),
+  compactRows: v.boolean(),
+  wideTimer: v.boolean(),
+  timerView: TimerView,
+  calendarWeekend: v.boolean(),
+  appIcon: AppIcon,
+  sceneCollection: SceneCollection,
+  scenePin: ScenePin,
+  sceneBackground: v.boolean(),
+  sceneStrength: SceneStrength,
+  surfaces: Surfaces,
+  sceneWeather: v.boolean(),
+  sceneIntro: v.boolean(),
+  sceneTagline: v.boolean(),
+  durationFormat: DurationFormat,
+  dateFormat: DateFormat,
+  timeFormat: TimeFormat,
+  country: Country,
+})
+export type Settings = v.InferOutput<typeof Settings>

@@ -1,19 +1,25 @@
-// The Organization view's queries and its optimistic mutations. Members, teams and
-// invitations are written through Better Auth's organization client; team roles through
-// setTeamRole (docs/architecture/data.md, "Tenancy"). Each Better Auth call names the organization
-// the view shows, since the session's active one can change in another tab. Canceling an
-// invitation takes the invitation's organization. Members, teams and projects live in the
-// caches Reports, Projects and the timer read too, so each change shows there as well.
+// The Organization view's queries and its optimistic mutations. Each call names the
+// organization the view shows, since the session's active one can change in another tab.
+// Members, teams and projects live in the caches Reports, Projects and the timer read too, so
+// each change shows there as well.
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import { isServer } from 'solid-js/web'
+import { inviteMember, listInvitations, updateIssueLinks } from '~/lib/api/auth'
+import {
+  addTeamMember,
+  createTeam,
+  deleteTeam,
+  removeTeamMember,
+  renameTeam,
+  setTeamRole,
+} from '~/lib/api/teams'
 import { authClient, unwrap } from '~/lib/auth-client'
 import { type Member, membersQuery } from '~/lib/queries/members'
 import type { Project } from '~/lib/queries/projects'
 import { cacheUpdate, newId, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
 import { type Team, teamsQuery } from '~/lib/queries/teams'
-import { type AppSession, updateIssueLinks } from '~/server/auth/auth.functions'
-import { setTeamRole } from '~/server/teams/teams.functions'
+import type { AppSession, Invitation } from '~/server/auth/auth.schemas'
 import type { SetTeamRoleInput } from '~/server/teams/teams.schemas'
 import type { OrgRole } from './roles'
 
@@ -21,14 +27,7 @@ import type { OrgRole } from './roles'
 const INVITATION_HOURS = 48
 const HOUR = 3_600_000
 
-export interface Invitation {
-  id: string
-  email: string
-  role: OrgRole
-  teamId: string | null
-  inviterId: string
-  expiresAt: Date
-}
+export type { Invitation }
 
 export function isExpired(invitation: Invitation, now = Date.now()) {
   return invitation.expiresAt.getTime() <= now
@@ -38,26 +37,10 @@ export function invitationLink(appUrl: string, id: string) {
   return `${appUrl}/invitation/${id}`
 }
 
-// Open invitations, expired ones included so they can get a new link. They come from the
-// browser: the Better Auth client can't call itself during server rendering.
 export function invitationsQuery(organizationId: string) {
   return queryOptions({
     queryKey: ['invitations', organizationId],
-    queryFn: async (): Promise<Invitation[]> => {
-      const all = await unwrap(
-        authClient.organization.listInvitations({ query: { organizationId } }),
-      )
-      return all
-        .filter((i) => i.status === 'pending')
-        .map((i) => ({
-          id: i.id,
-          email: i.email,
-          role: i.role,
-          teamId: i.teamId ?? null,
-          inviterId: i.inviterId,
-          expiresAt: new Date(i.expiresAt),
-        }))
-    },
+    queryFn: () => listInvitations({ organizationId }),
     enabled: !isServer,
   })
 }
@@ -109,7 +92,7 @@ export interface MemberInput {
   userId: string
 }
 
-// Better Auth deletes the member's team rows too, lead roles included.
+// The removal hook deletes team rows, lead roles included.
 export function useRemoveMember(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
@@ -152,18 +135,16 @@ export function useInviteMember(keys: Keys & { userId: string }) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: async (input: InviteInput) => {
-      const created = await unwrap(
-        authClient.organization.inviteMember({
-          email: input.email,
-          role: input.role,
-          organizationId: keys.organizationId,
-          ...(input.teamId ? { teamId: input.teamId } : {}),
-        }),
-      )
+      const created = await inviteMember({
+        email: input.email,
+        role: input.role,
+        organizationId: keys.organizationId,
+        teamId: input.teamId,
+      })
       if (input.replaces) {
         await unwrap(authClient.organization.cancelInvitation({ invitationId: input.replaces }))
       }
-      return { id: created.id, email: created.email, expiresAt: new Date(created.expiresAt) }
+      return created
     },
     ...optimistic(queryClient, [
       cacheUpdate<Invitation[], InviteInput>(
@@ -200,7 +181,7 @@ export function useCancelInvitation(keys: Keys) {
 
 // --- Teams -----------------------------------------------------------------------------
 
-// Better Auth gives a new team its id; `id` is the optimistic card's stand-in.
+// The server gives a new team its id; `id` is the optimistic card's stand-in.
 export interface CreateTeamInput {
   id: string
   name: string
@@ -211,7 +192,7 @@ export function useCreateTeam(keys: Keys) {
   return useMutation(() => ({
     mutationKey: ['create-team'],
     mutationFn: ({ name }: CreateTeamInput) =>
-      unwrap(authClient.organization.createTeam({ name, organizationId: keys.organizationId })),
+      createTeam({ name, organizationId: keys.organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], CreateTeamInput>(teamsKey(keys.organizationId), (teams, { id, name }) => [
         ...teams,
@@ -230,12 +211,7 @@ export function useRenameTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: ({ teamId, name }: RenameTeamInput) =>
-      unwrap(
-        authClient.organization.updateTeam({
-          teamId,
-          data: { name, organizationId: keys.organizationId },
-        }),
-      ),
+      renameTeam({ teamId, name, organizationId: keys.organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], RenameTeamInput>(teamsKey(keys.organizationId), (teams, input) =>
         teams.map((t) => (t.id === input.teamId ? { ...t, name: input.name } : t)),
@@ -244,13 +220,12 @@ export function useRenameTeam(keys: Keys) {
   }))
 }
 
-// Better Auth deletes the team's members; the database cascades its project rows, so
+// Deleting a team cascades its members; the database cascades its project rows, so
 // projects left without teams open to the whole organization.
 export function useDeleteTeam(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
-    mutationFn: (teamId: string) =>
-      unwrap(authClient.organization.removeTeam({ teamId, organizationId: keys.organizationId })),
+    mutationFn: (teamId: string) => deleteTeam({ teamId, organizationId: keys.organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -307,9 +282,7 @@ export function useAddTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(true)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) =>
-      unwrap(
-        authClient.organization.addTeamMember({ ...input, organizationId: keys.organizationId }),
-      ),
+      addTeamMember({ ...input, organizationId: keys.organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -326,12 +299,7 @@ export function useRemoveTeamMember(keys: Keys) {
   const [teams, members] = withTeamMember(false)
   return useMutation(() => ({
     mutationFn: (input: TeamMemberInput) =>
-      unwrap(
-        authClient.organization.removeTeamMember({
-          ...input,
-          organizationId: keys.organizationId,
-        }),
-      ),
+      removeTeamMember({ ...input, organizationId: keys.organizationId }),
     ...optimistic(
       queryClient,
       [
@@ -347,7 +315,7 @@ export function useSetTeamRole(keys: Keys) {
   const queryClient = useQueryClient()
   return useMutation(() => ({
     mutationFn: (input: SetTeamRoleInput) =>
-      setTeamRole({ data: { ...input, organizationId: keys.organizationId } }),
+      setTeamRole({ ...input, organizationId: keys.organizationId }),
     ...optimistic(queryClient, [
       cacheUpdate<Team[], SetTeamRoleInput>(teamsKey(keys.organizationId), (teams, input) =>
         teams.map((t) =>
@@ -408,7 +376,8 @@ export function useUpdateIssueLinks(keys: Keys) {
   return useMutation(() => ({
     mutationFn: (issueLinks: string | null) =>
       updateIssueLinks({
-        data: { organizationId: keys.organizationId, issueLinks: issueLinks ?? '' },
+        organizationId: keys.organizationId,
+        issueLinks: issueLinks ?? '',
       }),
     ...optimistic(queryClient, [
       cacheUpdate<AppSession | null, string | null>(sessionQuery.queryKey, (session, issueLinks) =>

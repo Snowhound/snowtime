@@ -196,7 +196,7 @@ export interface EntryFormTimes {
   end: string
 }
 
-export type EntryFormError = 'missing' | 'missing_running' | 'future' | 'running_future'
+export type EntryFormError = 'missing' | 'missing_running' | 'running_future'
 
 export type EntryFormResult<Stop = Date | null> =
   | { error: EntryFormError }
@@ -213,8 +213,7 @@ function keep(ms: number, original: Date | null | undefined) {
 
 // Reads the entry popover's date, start, and end (values of date and time inputs) as instants in
 // the zone. A running entry has no end. An end at or before the start means the next day.
-// Neither may lie in the future: a running entry can't start there, and an entry can't
-// end there. The inputs hold whole minutes, so a time left as it was keeps the seconds of
+// A running entry can't start in the future. The inputs hold whole minutes, so a time left as it was keeps the seconds of
 // the `original` entry.
 export function readEntryTimes(
   values: EntryFormTimes,
@@ -241,6 +240,17 @@ export function readEntryTimes(values: EntryFormTimes, options: ReadOptions): En
   if (nextDay) {
     stoppedAt = keep(atLocalTime(addDays(values.date, 1), values.end, zone), original?.stoppedAt)
   }
-  if (stoppedAt > now) return { error: 'future' }
   return { startedAt: new Date(startedAt), stoppedAt: new Date(stoppedAt), nextDay }
+}
+
+// Up to six distinct issues, newest first, for the issue picker.
+export function recentTickets(entries: readonly (EntryTimes & Pick<Work, 'ticket'>)[]) {
+  return [
+    ...new Set(
+      [...entries]
+        .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
+        .map((entry) => entry.ticket)
+        .filter((ticket): ticket is string => !!ticket),
+    ),
+  ].slice(0, 6)
 }

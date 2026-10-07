@@ -7,8 +7,8 @@ import type { Database } from '~/db'
 import { user } from '~/db/schema'
 import { seedIds } from '~/db/seed'
 import { as, createSeededDatabase } from '../testing'
-import { GetSettingsInput, UpdateSettingsInput } from './settings.schemas'
-import { getSettings, updateSettings } from './settings.server'
+import { CreateSettingsInput, UpdateSettingsInput } from './settings.schemas'
+import { createSettings, updateSettings } from './settings.server'
 
 const { users: U } = seedIds
 
@@ -59,22 +59,22 @@ async function newUser() {
   return id
 }
 
-describe('getSettings', () => {
+describe('createSettings', () => {
   test("the first call creates the settings with the browser's zone and locale; later calls keep them", async () => {
     const userId = await newUser()
     const first = await as({ userId }, () =>
-      getSettings(db, userId, { timeZone: 'Asia/Tokyo', locale: 'et' }),
+      createSettings(db, userId, { timeZone: 'Asia/Tokyo', locale: 'et' }),
     )
     expect(first).toEqual({ ...DEFAULTS, timeZone: 'Asia/Tokyo', locale: 'et' })
     const again = await as({ userId }, () =>
-      getSettings(db, userId, { timeZone: 'Europe/Paris', locale: 'en' }),
+      createSettings(db, userId, { timeZone: 'Europe/Paris', locale: 'en' }),
     )
     expect(again).toEqual(first)
   })
 
   test('seeded users get their own settings', async () => {
     const settings = await as({ userId: U.engLead }, () =>
-      getSettings(db, U.engLead, { timeZone: 'UTC', locale: 'et' }),
+      createSettings(db, U.engLead, { timeZone: 'UTC', locale: 'et' }),
     )
     expect(settings).toEqual({ ...DEFAULTS, timeZone: 'America/New_York' })
   })
@@ -96,7 +96,7 @@ describe('updateSettings', () => {
       locale: 'et',
     })
     const other = await as({ userId: U.lead }, () =>
-      getSettings(db, U.lead, { timeZone: 'UTC', locale: 'en' }),
+      createSettings(db, U.lead, { timeZone: 'UTC', locale: 'en' }),
     )
     expect(other).toEqual({ ...DEFAULTS, timeZone: 'Europe/Tallinn' })
   })
@@ -136,7 +136,7 @@ describe('updateSettings', () => {
   test('the country saves, and null brings back the time zone guess', async () => {
     const userId = await newUser()
     await as({ userId }, () =>
-      getSettings(db, userId, { timeZone: 'Europe/Tallinn', locale: 'en' }),
+      createSettings(db, userId, { timeZone: 'Europe/Tallinn', locale: 'en' }),
     )
     const set = await as({ userId }, () => updateSettings(db, userId, { country: 'US' }))
     expect(set.country).toBe('US')
@@ -164,7 +164,7 @@ describe('updateSettings', () => {
   test('choosing a collection clears the pin, and a pin must be in the collection', async () => {
     const userId = await newUser()
     await as({ userId }, () =>
-      getSettings(db, userId, { timeZone: 'Europe/Tallinn', locale: 'en' }),
+      createSettings(db, userId, { timeZone: 'Europe/Tallinn', locale: 'en' }),
     )
     function save(patch: UpdateSettingsInput) {
       return as({ userId }, () => updateSettings(db, userId, patch))
@@ -209,10 +209,10 @@ describe('settings input', () => {
       'UTC',
       'Etc/GMT+2',
     ]) {
-      expect(v.safeParse(GetSettingsInput, { timeZone }).success).toBe(true)
+      expect(v.safeParse(CreateSettingsInput, { timeZone }).success).toBe(true)
     }
     for (const timeZone of ['Mars/Olympus', '+02:00', '', 'Europe/Tallinn; DROP']) {
-      expect(v.safeParse(GetSettingsInput, { timeZone }).success).toBe(false)
+      expect(v.safeParse(CreateSettingsInput, { timeZone }).success).toBe(false)
     }
   })
 
@@ -272,7 +272,7 @@ describe('settings input', () => {
   })
 
   test('the locale is a supported language, English by default', () => {
-    expect(v.parse(GetSettingsInput, { timeZone: 'UTC' }).locale).toBe('en')
+    expect(v.parse(CreateSettingsInput, { timeZone: 'UTC' }).locale).toBe('en')
     expect(v.safeParse(UpdateSettingsInput, { locale: 'et' }).success).toBe(true)
     expect(v.safeParse(UpdateSettingsInput, { locale: 'fi' }).success).toBe(false)
   })

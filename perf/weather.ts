@@ -3,7 +3,8 @@
 // under the glass surfaces of a page. Timings are printed, never gated.
 //
 //   bun perf/weather.ts [--golden | --timing] [--update] [--all] [--layout=<name>] [--dpr=<n>]
-//                       [--only=<text>] [--variant=<name>]... [--headed] [--swiftshader]
+//                       [--only=<text>] [--image=<image>-<theme>]... [--variant=<name>]...
+//                       [--headed] [--swiftshader] [--window=<ms>]
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -25,6 +26,7 @@ const { values: flags } = parseArgs({
     layout: { type: 'string', default: 'timer' },
     dpr: { type: 'string', default: '1.5' },
     only: { type: 'string' },
+    image: { type: 'string', multiple: true },
     variant: { type: 'string', multiple: true },
     headed: { type: 'boolean' },
     swiftshader: { type: 'boolean' },
@@ -71,18 +73,32 @@ type Case = {
   weight: number
 }
 
+// The case an image's weather in a theme belongs to: its preset and features, and the preset of
+// its second effect.
+function caseLabel(image: ImageId, theme: Theme) {
+  const own = IMAGE_WEATHER[image]
+  const entry = 'both' in own ? own.both : own[theme]
+  const features = FEATURES.filter(
+    (key) => entry[key] !== undefined || (key === 'zones' && own.zones),
+  )
+  return [entry.preset, ...features, ...(entry.also ? [`+${entry.also.preset}`] : [])].join(' ')
+}
+
 function cases(): Case[] {
+  if (flags.image) {
+    return flags.image.map((name) => {
+      const theme = name.endsWith('-dark') ? 'dark' : 'light'
+      const image = name.slice(0, -theme.length - 1) as ImageId
+      const effect = weatherFor(image, theme).effect ?? 'none'
+      return { name, label: caseLabel(image, theme), image, theme, effect, weight: 1 }
+    })
+  }
   const groups = new Map<string, Case>()
   for (const image of IMAGE_IDS) {
     for (const theme of THEMES) {
-      const own = IMAGE_WEATHER[image]
-      const entry = 'both' in own ? own.both : own[theme]
       const weather = weatherFor(image, theme)
       if (!weather.effect) continue
-      const features = FEATURES.filter(
-        (key) => entry[key] !== undefined || (key === 'zones' && own.zones),
-      )
-      const label = [entry.preset, ...features].join(' ')
+      const label = caseLabel(image, theme)
       const weight = (weather.amount ?? 1) * (weather.size ?? 1) ** 2
       const known = groups.get(label)
       if (!known || weight > known.weight) {
@@ -203,7 +219,9 @@ function median(values: number[]) {
 type Row = {
   fps: number
   gpu: number
+  mean: number
   cpu: number
+  gpuPerSecond: number
   paced: number
   busy: Record<string, number>
   process: number
@@ -243,7 +261,9 @@ async function timing(base: string, list: Case[], layout: Layout, dpr: number, v
         rows.set(key, {
           fps: sample.cpu.length / sample.seconds,
           gpu: median(sample.gpu),
+          mean: sample.gpu.reduce((sum, ms) => sum + ms, 0) / sample.gpu.length,
           cpu: median(sample.cpu),
+          gpuPerSecond: NaN,
           paced: 0,
           busy: {},
           process: NaN,
@@ -287,6 +307,7 @@ async function timing(base: string, list: Case[], layout: Layout, dpr: number, v
           const to = performance.now()
           const row = rows.get(key)!
           row.paced = sample.cpu.length / sample.seconds
+          row.gpuPerSecond = sample.gpu.reduce((sum, ms) => sum + ms, 0) / sample.seconds
           row.process = (((await gpuProcessSeconds()) - cpuBefore) / ((to - from) / 1000)) * 1000
           row.usage = usage.mean(from + WARM, to)
         }
@@ -302,17 +323,20 @@ async function timing(base: string, list: Case[], layout: Layout, dpr: number, v
 
   console.log(
     `\n[perf] Weather timing: ${layout} layout, pixel ratio ${dpr}, calm pace, ${renderer}\n` +
-      '  Uncapped: frames per second and median ms per frame. Paced: the app’s frame rate, and\n' +
-      '  busy ms per second on the page’s main and compositor threads, viz, and the GPU process,\n' +
-      '  the GPU process’s CPU ms per second (proc), and the GPU’s utilization (macOS only).\n',
+      '  Uncapped: frames per second, median and mean GPU ms per frame, and median CPU ms. Paced:\n' +
+      '  the app’s frame rate, the weather’s GPU ms per second, busy ms per second on the page’s\n' +
+      '  main and compositor threads, viz, and the GPU process, the GPU process’s CPU ms per\n' +
+      '  second (proc), and the GPU’s utilization (macOS only).\n',
   )
   const header = [
-    'case'.padEnd(26),
+    'case'.padEnd(30),
     'preset and features'.padEnd(26),
     'fps'.padStart(6),
     'GPU ms'.padStart(7),
+    'mean'.padStart(7),
     'CPU ms'.padStart(7),
     ' │ fps'.padStart(6),
+    'gpu/s'.padStart(6),
     'main'.padStart(6),
     'comp'.padStart(6),
     'viz'.padStart(6),
@@ -326,12 +350,14 @@ async function timing(base: string, list: Case[], layout: Layout, dpr: number, v
       const row = rows.get(`${c.name}/${variant}`)!
       const name = variant ? `${c.name} [${variant}]` : c.name
       const cells = [
-        name.padEnd(26),
+        name.padEnd(30),
         c.label.padEnd(26),
         row.fps.toFixed(0).padStart(6),
         row.gpu.toFixed(3).padStart(7),
+        row.mean.toFixed(3).padStart(7),
         row.cpu.toFixed(3).padStart(7),
         ` │ ${row.paced.toFixed(0).padStart(3)}`,
+        row.gpuPerSecond.toFixed(1).padStart(6),
         ...['main', 'compositor', 'viz', 'gpu'].map((k) =>
           (row.busy[k] ?? NaN).toFixed(0).padStart(6),
         ),

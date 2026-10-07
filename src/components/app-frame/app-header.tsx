@@ -42,7 +42,7 @@ import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { useQuery } from '~/lib/queries/use-query'
 import { cn, initials } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import type { AppSession } from '~/server/auth/auth.functions'
+import type { AppSession } from '~/server/auth/auth.schemas'
 import { AppearancePopover } from './appearance-popover'
 
 const NAV = [

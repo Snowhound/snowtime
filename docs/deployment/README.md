@@ -20,16 +20,16 @@ variables, and changing the host. The reasons behind the choices are in
 
 ## Choose a target
 
-|                   | Vercel and Turso                                           | Self-hosted                                                      |
-| ----------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |
-| Cost              | Free tiers; Vercel Hobby is non-commercial only            | A fixed monthly price for the server and the backup storage      |
-| Where the data is | Turso's `aws-eu-west-1` (Ireland) at the closest in the EU | On your server, with backups in S3-compatible storage you choose |
-| Page speed        | Every query is a network round trip to Turso               | Queries run in the app's process, with no network hop            |
-| Scaling           | Vercel adds function instances                             | One process on one server; a bigger server is the only way up    |
-| Rate-limit counts | Upstash Redis, shared by the instances                     | The process's memory                                             |
-| Deploys           | CI migrates and deploys on every push to `main`            | A manual deploy: copy the release, migrate, restart (no CI job)  |
-| Backups           | Turso's, as its plan provides                              | Litestream, with point-in-time restore from the bucket           |
-| Operations        | None beyond the vendors' dashboards                        | OS updates, Caddy, Litestream, and watching the disk are yours   |
+|                   | Vercel and Turso                                                 | Self-hosted                                                      |
+| ----------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Cost              | Free tiers; Vercel Hobby is non-commercial only                  | A fixed monthly price for the server and the backup storage      |
+| Where the data is | The Turso region you pick, such as `aws-eu-north-1` (Stockholm)  | On your server, with backups in S3-compatible storage you choose |
+| Page speed        | Every query is a network round trip to Turso                     | Queries run in the app's process, with no network hop            |
+| Scaling           | Vercel adds function instances                                   | One process on one server; a bigger server is the only way up    |
+| Rate-limit counts | Upstash Redis shared by the instances, or each instance's memory | The process's memory                                             |
+| Deploys           | CI migrates and deploys on every push to `main`                  | A manual deploy: copy the release, migrate, restart (no CI job)  |
+| Backups           | Turso's, as its plan provides                                    | Litestream, with point-in-time restore from the bucket           |
+| Operations        | None beyond the vendors' dashboards                              | OS updates, Caddy, Litestream, and watching the disk are yours   |
 
 Pick Vercel and Turso to start at no cost for non-commercial use with nothing to operate.
 Pick self-hosted for commercial use without paying for Vercel Pro, to keep data with a
@@ -63,16 +63,16 @@ Both targets read the same variables. `.env.example` lists them, and `src/env.ts
 them when the app starts and names the variable that is missing or set without its pair.
 Don't prefix a secret with `VITE_`: those variables reach the browser bundle.
 
-| Variable                                             | Value                                                                                                                 |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`             | The Turso database, or `file:<path>` and no token self-hosted                                                         |
-| `BETTER_AUTH_SECRET`                                 | See below                                                                                                             |
-| `BETTER_AUTH_URL`                                    | `https://<host>`, no trailing slash                                                                                   |
-| `<PROVIDER>_CLIENT_ID`, `<PROVIDER>_CLIENT_SECRET`   | [The OAuth apps](#register-the-oauth-apps), both or neither                                                           |
-| `MICROSOFT_TENANT_ID`                                | Optional, restricts Microsoft sign-in                                                                                 |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Vercel only, optional, both or neither                                                                                |
-| `CLIENT_IP_HEADER`                                   | Self-hosted: `cf-connecting-ip`. Unset on Vercel                                                                      |
-| `DEMO_MODE`                                          | `true` enables a local SQLite demo with seeded passwords, no OAuth, and a notice on the sign-in page; default `false` |
+| Variable                                             | Value                                                                                                                       |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`             | The Turso database, or `file:<path>` and no token self-hosted                                                               |
+| `BETTER_AUTH_SECRET`                                 | See below                                                                                                                   |
+| `BETTER_AUTH_URL`                                    | `https://<host>`, no trailing slash. Unset on Vercel previews                                                               |
+| `<PROVIDER>_CLIENT_ID`, `<PROVIDER>_CLIENT_SECRET`   | [The OAuth apps](#register-the-oauth-apps), both or neither                                                                 |
+| `MICROSOFT_TENANT_ID`                                | Optional, restricts Microsoft sign-in                                                                                       |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Vercel only, optional, both or neither                                                                                      |
+| `CLIENT_IP_HEADER`                                   | Self-hosted: `cf-connecting-ip`. Unset on Vercel                                                                            |
+| `DEMO_MODE`                                          | `true` enables a demo on local SQLite or a Vercel preview: seeded passwords, no OAuth, a notice on sign-in; default `false` |
 
 Generate the auth secret once per stack. Better Auth signs sessions with it, so changing it
 later signs everyone out.
@@ -102,7 +102,7 @@ webhook URL and permissions, which sign-in doesn't use. In the OAuth App form:
 
 - Homepage URL: `https://<host>`.
 - Redirect URIs: `https://<host>/api/auth/callback/github`. The form takes up to 10, so
-  one app can also list `http://localhost:3000/api/auth/callback/github` for local
+  one app can also list `http://localhost:3100/api/auth/callback/github` for local
   development.
 - Leave **Allow wildcard matching** and **Enable Device Flow** off. **Expire user access
   tokens** can stay on: the app uses GitHub's token only at sign-in and then keeps its

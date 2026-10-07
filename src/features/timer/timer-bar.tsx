@@ -60,6 +60,8 @@ const COMPACT_FIELD = 'min-h-9 py-0'
 type TimerPatch = { description?: string; ticket?: string | null; projectId?: string | null }
 
 export function TimerBar(props: {
+  organizationId: string
+  userId: string
   layout: Settings['timerLayout']
   compact: boolean
   running: RunningTimer | null
@@ -81,7 +83,36 @@ export function TimerBar(props: {
   const [projectId, setProjectId] = createSignal('')
   let input: HTMLInputElement | undefined
 
-  // The fields show the running entry, and clear when it stops. Only a changed value is
+  function storageKey() {
+    return `snowtime:timer-project:${props.userId}:${props.organizationId}`
+  }
+
+  // The remembered project, if it is still available and active. Browser storage may be
+  // disabled; the timer then starts without one.
+  function rememberedProject() {
+    let saved = ''
+    try {
+      saved = localStorage.getItem(storageKey()) ?? ''
+    } catch {}
+    return props.projects.some((p) => p.id === saved && !p.archivedAt) ? saved : ''
+  }
+
+  function rememberProject(value: string) {
+    try {
+      localStorage.setItem(storageKey(), value)
+    } catch {}
+  }
+
+  createEffect(
+    on(
+      () => props.projects,
+      () => {
+        if (!props.running) setProjectId(rememberedProject())
+      },
+    ),
+  )
+
+  // Stopping clears the text and restores the project. Only changed running values are
   // copied, so a refetch doesn't overwrite what is being typed.
   createEffect(
     on(
@@ -96,9 +127,10 @@ export function TimerBar(props: {
         if (id) {
           draft.reset(text ?? '', ticket ?? null)
           setProjectId(project ?? '')
+          if (!props.elsewhere) rememberProject(project ?? '')
         } else if (previous?.[0]) {
           draft.reset('', null)
-          setProjectId('')
+          setProjectId(rememberedProject())
         }
       },
     ),
@@ -114,12 +146,14 @@ export function TimerBar(props: {
 
   function start() {
     const { description, ticket } = draft.commit()
+    rememberProject(projectId())
     props.onStart(description, projectId() || null, ticket)
   }
 
   function pick(entry: Entry) {
     draft.reset(entry.description, entry.ticket)
     setProjectId(entry.projectId ?? '')
+    rememberProject(entry.projectId ?? '')
     if (props.running) {
       props.onUpdate({
         description: entry.description,
@@ -201,11 +235,15 @@ export function TimerBar(props: {
             ref={(el) => (input = el)}
             onChange={draft.setDescription}
             onPick={pick}
+            onAddTicket={(ticket) => {
+              draft.addTicket(ticket)
+              if (props.running) props.onUpdate({ ticket })
+            }}
             onBlur={saveDescription}
             onKeyDown={(event) => {
               if (event.key !== 'Enter') return
               event.preventDefault()
-              if (props.running) saveDescription()
+              if (props.running) input?.blur()
               else start()
             }}
           />
@@ -220,6 +258,7 @@ export function TimerBar(props: {
             disabled={!!props.elsewhere}
             onChange={(value) => {
               setProjectId(value)
+              rememberProject(value)
               if (props.running) props.onUpdate({ projectId: value || null })
             }}
           />

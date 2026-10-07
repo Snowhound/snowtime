@@ -3,7 +3,7 @@ import { organizationClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/solid'
 
 export const authClient = createAuthClient({
-  plugins: [organizationClient({ teams: { enabled: true } }), passkeyClient()],
+  plugins: [organizationClient(), passkeyClient()],
 })
 
 // Better Auth's client calls resolve to { data, error }; queries and mutations want a

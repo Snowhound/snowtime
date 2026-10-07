@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/solid-router'
 import type { JSX } from 'solid-js'
-import { Match, Switch, useContext } from 'solid-js'
+import { Match, Show, Switch, useContext } from 'solid-js'
 import { AppFrame, InAppFrame } from '~/components/app-frame/app-frame'
 import { AuthHeading, AuthIcon, AuthLayout } from '~/components/auth-layout/auth-layout'
 import { buttonVariants } from '~/components/ui/button'
@@ -13,12 +13,13 @@ import { m } from '~/paraglide/messages.js'
 // the app frame. Elsewhere, such as an unknown path or a failed layout, the page picks the
 // frame: the app frame for a member of an organization, otherwise the auth layout. Both
 // follow the appearance settings, the account's or the device's. Below the page's own
-// actions is the way home.
+// actions is the way home, unless `home` is false.
 export function StatusPage(props: {
   icon: JSX.Element
   title: string
   description: string
   children?: JSX.Element
+  home?: boolean
 }) {
   const session = useQuery(() => sessionQuery)
   const inAppFrame = useContext(InAppFrame)
@@ -47,16 +48,20 @@ export function StatusPage(props: {
       <>
         <AuthIcon>{props.icon}</AuthIcon>
         <AuthHeading title={props.title} description={props.description} />
-        <div class="grid gap-2">
-          {props.children}
-          <Link
-            to={home().to}
-            params={'params' in home() ? home().params : undefined}
-            class={buttonVariants({ variant: 'outline' })}
-          >
-            {home().label}
-          </Link>
-        </div>
+        <Show when={props.children || props.home !== false}>
+          <div class="grid gap-2">
+            {props.children}
+            <Show when={props.home !== false}>
+              <Link
+                to={home().to}
+                params={'params' in home() ? home().params : undefined}
+                class={buttonVariants({ variant: 'outline' })}
+              >
+                {home().label}
+              </Link>
+            </Show>
+          </div>
+        </Show>
       </>
     )
   }

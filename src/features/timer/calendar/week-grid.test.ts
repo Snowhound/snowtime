@@ -131,22 +131,25 @@ test('openingMinute opens at 07:00 or half an hour before the first entry', () =
 describe('clickRange and addRange', () => {
   const now = at('2026-09-29', '12:10')
 
-  test('a click adds its half-hour cell, up to now', () => {
-    expect(clickRange({ date: '2026-09-29', minutes: 9 * 60 + 20 }, zone, now)).toEqual({
+  test('a click adds its half-hour cell, in the future too', () => {
+    expect(clickRange({ date: '2026-09-29', minutes: 9 * 60 + 20 }, zone)).toEqual({
       startedAt: at('2026-09-29', '09:00'),
       stoppedAt: at('2026-09-29', '09:30'),
     })
     // Just above the 09:30 line.
-    expect(clickRange({ date: '2026-09-29', minutes: 9 * 60 + 26 }, zone, now)).toEqual({
+    expect(clickRange({ date: '2026-09-29', minutes: 9 * 60 + 26 }, zone)).toEqual({
       startedAt: at('2026-09-29', '09:30'),
       stoppedAt: at('2026-09-29', '10:00'),
     })
-    expect(clickRange({ date: '2026-09-29', minutes: 12 * 60 + 5 }, zone, now)).toEqual({
+    expect(clickRange({ date: '2026-09-29', minutes: 12 * 60 + 5 }, zone)).toEqual({
       startedAt: at('2026-09-29', '12:00'),
-      stoppedAt: now,
+      stoppedAt: at('2026-09-29', '12:30'),
     })
-    expect(clickRange({ date: '2026-09-29', minutes: 12 * 60 + 40 }, zone, now)).toBeNull()
-    expect(clickRange({ date: '2026-09-28', minutes: 1439 }, zone, now)).toEqual({
+    expect(clickRange({ date: '2026-09-30', minutes: 14 * 60 }, zone)).toEqual({
+      startedAt: at('2026-09-30', '14:00'),
+      stoppedAt: at('2026-09-30', '14:30'),
+    })
+    expect(clickRange({ date: '2026-09-28', minutes: 1439 }, zone)).toEqual({
       startedAt: at('2026-09-28', '23:30'),
       stoppedAt: at('2026-09-29', '00:00'),
     })
@@ -184,16 +187,17 @@ describe('dragRange', () => {
     })
   })
 
-  test('new time stops at now, and can’t start after it', () => {
+  test('new time may run past now and lie in the future', () => {
     const today = { kind: 'create', from: { date: '2026-09-29', minutes: 11 * 60 } } as const
     expect(dragRange(today, { date: '2026-09-29', minutes: 13 * 60 }, zone, now)).toEqual({
       startedAt: at('2026-09-29', '11:00'),
-      stoppedAt: at('2026-09-29', '12:00'),
+      stoppedAt: at('2026-09-29', '13:00'),
     })
-    const later = { kind: 'create', from: { date: '2026-09-29', minutes: 13 * 60 } } as const
-    expect(dragRange(later, { date: '2026-09-29', minutes: 14 * 60 }, zone, now).error).toBe(
-      'add_future',
-    )
+    const later = { kind: 'create', from: { date: '2026-09-30', minutes: 13 * 60 } } as const
+    expect(dragRange(later, { date: '2026-09-30', minutes: 14 * 60 }, zone, now)).toEqual({
+      startedAt: at('2026-09-30', '13:00'),
+      stoppedAt: at('2026-09-30', '14:00'),
+    })
   })
 
   test('a move shifts by days and snapped minutes, keeping the duration', () => {
@@ -206,9 +210,13 @@ describe('dragRange', () => {
       startedAt: at('2026-09-25', '10:00'),
       stoppedAt: at('2026-09-25', '11:30'),
     })
-    expect(dragRange(drag, { date: '2026-09-29', minutes: 12 * 60 }, zone, now)).toMatchObject({
-      startedAt: at('2026-09-29', '11:30'),
-      error: 'future',
+    expect(dragRange(drag, { date: '2026-10-01', minutes: 12 * 60 }, zone, now)).toEqual({
+      startedAt: at('2026-10-01', '11:30'),
+      stoppedAt: at('2026-10-01', '13:00'),
+    })
+    const running = { ...drag, stoppedAt: null }
+    expect(dragRange(running, { date: '2026-09-28', minutes: 10 * 60 }, zone, now)).toMatchObject({
+      error: 'running_future',
     })
   })
 
@@ -225,7 +233,7 @@ describe('dragRange', () => {
     })
   })
 
-  test('the edges change one end, keeping 15 minutes and stopping at now', () => {
+  test('the edges change one end, keeping 15 minutes, the end past now too', () => {
     const from = { date: '2026-09-28', minutes: 600 }
     expect(
       dragRange(
@@ -249,7 +257,7 @@ describe('dragRange', () => {
     const today = { startedAt: at('2026-09-29', '11:00'), stoppedAt: at('2026-09-29', '11:30') }
     expect(
       dragRange({ kind: 'end', from, ...today }, { date: '2026-09-28', minutes: 780 }, zone, now),
-    ).toEqual({ startedAt: today.startedAt, stoppedAt: now })
+    ).toEqual({ startedAt: today.startedAt, stoppedAt: at('2026-09-29', '14:30') })
   })
 
   test('a running entry’s start stops 15 minutes before now', () => {
@@ -285,12 +293,15 @@ describe('nudge', () => {
     expect(nudge(stopped, { days: 1, end: true }, zone, now)).toBeNull()
   })
 
-  test('keeps an entry out of the future and 15 minutes long', () => {
+  test('moves an entry into the future, and keeps it 15 minutes long', () => {
     expect(nudge(stopped, { days: 1, end: false }, zone, now)).toEqual({
       startedAt: at('2026-09-29', '09:00'),
       stoppedAt: at('2026-09-29', '10:30'),
     })
-    expect(nudge(stopped, { days: 2, end: false }, zone, now)).toEqual({ error: 'future' })
+    expect(nudge(stopped, { days: 2, end: false }, zone, now)).toEqual({
+      startedAt: at('2026-09-30', '09:00'),
+      stoppedAt: at('2026-09-30', '10:30'),
+    })
     const short = { startedAt: at('2026-09-28', '09:00'), stoppedAt: at('2026-09-28', '09:15') }
     expect(nudge(short, { minutes: -15, end: true }, zone, now)).toEqual({
       stoppedAt: short.stoppedAt,

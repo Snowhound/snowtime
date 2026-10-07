@@ -58,7 +58,6 @@ interface FormValues {
 const ERRORS: Record<EntryFormError, () => string> = {
   missing: m.entry_error_missing,
   missing_running: m.entry_error_missing_running,
-  future: m.entry_error_future,
   running_future: m.entry_error_running_future,
 }
 
@@ -129,7 +128,9 @@ export function EntryPopover(props: {
         // The buttons that open the popover carry data-entry-trigger, so a click on one while
         // it is open switches or closes it instead of counting as a click outside.
         onInteractOutside={(event: Event) => {
-          if ((event.target as Element | null)?.closest('[data-entry-trigger]')) {
+          if (
+            (event.target as Element | null)?.closest('[data-entry-trigger], [data-issue-picker]')
+          ) {
             event.preventDefault()
           } else interactedOutside = true
         }}
@@ -306,6 +307,7 @@ function EntryForm(props: {
             ref={(el) => (descriptionInput = el)}
             onChange={field().handleChange}
             onBlur={ticketDraft.commit}
+            onAddTicket={(ticket) => ticketDraft.addTicket(ticket)}
             onPick={(picked) => {
               ticketDraft.reset(picked.description, picked.ticket)
               form.setFieldValue('projectId', picked.projectId ?? '')

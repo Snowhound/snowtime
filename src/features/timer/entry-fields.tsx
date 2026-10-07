@@ -27,6 +27,7 @@ import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
 import { changedFields, readEntryTimes } from './entries'
+import { IssuePicker } from './issue-picker'
 import { projectChoices } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
 import { TicketChip } from './ticket-chip'
@@ -94,12 +95,9 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     end: times().end ?? localTime(props.entry.stoppedAt.getTime(), props.zone),
   }))
 
-  function readNow() {
-    return readEntryTimes(values(), { running: false, zone: props.zone, original: props.entry })
-  }
-  // What the row shows. Its future check keeps the time of the last change, so a commit
-  // reads again with `readNow`.
-  const read = createMemo(readNow)
+  const read = createMemo(() =>
+    readEntryTimes(values(), { running: false, zone: props.zone, original: props.entry }),
+  )
 
   // The times' error, on the field it belongs to; `key` is the field being committed.
   function timesError(key: TimeKey, result = read()): { key: TimeKey; message: string } | null {
@@ -107,10 +105,7 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     if (!start) return { key: 'start', message: m.entry_error_missing_start() }
     if (!end) return { key: 'end', message: m.entry_error_missing_end() }
     if (!result.error) return null
-    return {
-      key,
-      message: result.error === 'future' ? m.entry_error_future() : m.entry_error_missing(),
-    }
+    return { key, message: m.entry_error_missing() }
   }
 
   // After a failed commit, the error follows the input until it is fixed.
@@ -132,7 +127,6 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     const { startedAt, stoppedAt } = props.entry
     const start = sameTimeOn(startedAt.getTime(), value, props.zone)
     const stop = start + stoppedAt.getTime() - startedAt.getTime()
-    if (stop > Date.now()) return { error: m.entry_error_future() }
     return { startedAt: new Date(start), stoppedAt: new Date(stop) }
   }
 
@@ -174,7 +168,7 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     },
     commitTimes(key: TimeKey) {
       if (times().start === undefined && times().end === undefined) return
-      const result = readNow()
+      const result = read()
       const error = timesError(key, result)
       if (error) {
         setInvalid(error.key)
@@ -240,7 +234,7 @@ export function DescriptionField(props: { editor: EntryEditor }) {
       onBlur={() => props.editor.commitDescription()}
       onKeyDown={(event) =>
         commitKeys(
-          () => props.editor.commitDescription(),
+          () => event.currentTarget.blur(),
           () => props.editor.resetDescription(),
         )(event)
       }
@@ -272,17 +266,69 @@ export function InlineDescription(props: {
   )
 }
 
-// The row's chip, at the end of the description or in the Wide page's Ticket column; nothing
-// without a ticket.
+// The row's chip, or an Add issue link in an empty Ticket column.
 export function TicketCell(props: {
   editor: EntryEditor
   entry: Entry
   issueLinks: string | null
   inline?: boolean
   class?: string
+  tickets?: readonly string[]
+  active?: boolean
 }) {
+  const [open, setOpen] = createSignal(false)
+  let anchor: HTMLButtonElement | undefined
+  let cell: HTMLElement | null = null
+  let focusChip = false
+
+  // The picked issue's chip replaces Add issue, so focus moves to it once it shows.
+  createEffect(
+    on(
+      () => props.entry.ticket,
+      (ticket) => {
+        if (!ticket || !focusChip) return
+        focusChip = false
+        cell?.querySelector<HTMLElement>('a, button')?.focus()
+      },
+      { defer: true },
+    ),
+  )
+
   return (
-    <Show when={props.entry.ticket}>
+    <Show
+      when={props.entry.ticket}
+      fallback={
+        <Show when={!props.inline}>
+          <Button
+            ref={(el) => (anchor = el)}
+            type="button"
+            variant="link"
+            size="sm"
+            class={cn('text-muted-foreground h-7 px-1 text-xs', props.class)}
+            aria-haspopup="dialog"
+            aria-expanded={open()}
+            onClick={() => {
+              cell = anchor!.parentElement
+              setOpen(true)
+            }}
+          >
+            {m.ticket_add()}
+          </Button>
+          <Show when={props.active || open()}>
+            <IssuePicker
+              open={open()}
+              anchor={anchor}
+              tickets={props.tickets ?? []}
+              onClose={() => setOpen(false)}
+              onPick={(ticket) => {
+                focusChip = true
+                props.editor.save({ ticket })
+              }}
+            />
+          </Show>
+        </Show>
+      }
+    >
       {(ticket) => (
         <TicketChip
           ticket={ticket()}
