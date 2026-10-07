@@ -5,6 +5,7 @@
 // its row.
 import { For, Show } from 'solid-js'
 import { CopyableDuration } from '~/components/copy-duration'
+import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import {
@@ -263,7 +264,10 @@ function ChartTable(props: { report: Report; series: Series[] }) {
                   )}
                 </For>
                 <TableCell class="text-right font-medium tabular-nums">
-                  <CopyableDuration ms={props.report.perBucket[i()]} />
+                  {/* An empty day's 0:00 is read, not copied. */}
+                  <Show when={props.report.perBucket[i()]} fallback={<Duration ms={0} />}>
+                    <CopyableDuration ms={props.report.perBucket[i()]} />
+                  </Show>
                 </TableCell>
               </TableRow>
             )}
