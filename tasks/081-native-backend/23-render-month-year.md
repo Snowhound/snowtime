@@ -13,12 +13,11 @@ as soon as they're verified, each as its own commit.
 
 ## Result
 
-No candidate qualifies in four clean alternating rounds. The shared getter has no
-repeatable V8 win, the timesheet cell rewrite costs both engines, and Lucide's year
-improvement comes with a month regression. All trials are reverted; no app fix needs a
-cherry-pick. [Profiles and results](server-rendering/hot-spots-mac.md#task-08123s-month-and-year-trials)
-record the runs. No code is kept, so the conditional hydration and full-measurement
-repeat do not apply.
+No candidate qualifies. Duration improves both engines in four quick rounds, but its
+longer confirmation costs V8 and Bun shared on month. All seven candidates are reverted;
+no app fix needs a cherry-pick. [Profiles and results](server-rendering/hot-spots-mac.md#task-08123s-additional-candidates)
+record both passes and their raw runs. Router hydration-state serialization and GC
+remain outside this task.
 
 ## Known so far
 

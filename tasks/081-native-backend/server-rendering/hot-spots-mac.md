@@ -163,6 +163,10 @@ helpers, not native JSON-parser frames; the profiles do not establish a JSON-par
 bottleneck or justify a simdjson render trial. Rust JSON handling is a separate
 candidate in [task 081.12](../12-profiling.md).
 
+Follow-up inclusive attribution on the same year profile puts Duration at about 4.5%
+and router hydration-state serialization at about 5.4%. These shares include callees;
+the table above lists self time. They motivate the additional candidates below.
+
 Raw profiles stay ignored under `results/q21/profiles/t23-clean/`; their matching shared
 bundle is `results/q21/bundles/t23-base.js`. Profiled run timings are not used to choose
 changes.
@@ -251,8 +255,9 @@ release image (`native/Dockerfile`) already strips the server.
 
 ## Task 081.23's month and year trials
 
-2026-10-07, `9adb20e`, M1 Pro and Docker Desktop. No candidate qualifies: the getter
-has no repeatable V8 win, the cell rewrite slows both engines, and Lucide's year gain
+First pass, 2026-10-07, `9adb20e`, M1 Pro and Docker Desktop. None of these three
+candidates qualifies: the getter has no repeatable V8 win, the cell rewrite slows both
+engines, and Lucide's year gain
 comes with a month regression. All three are reverted, and no app commit goes to `main`.
 
 Four alternating quick rounds, 500 renders per run, with one CPU and 2 GiB; V8 uses the
@@ -297,9 +302,93 @@ full three-round before/after measurement. `checks.sh` passes before the report 
 13 bundle tests, 8 render tests (2 ignored), and Clippy. An unfiltered app test run
 confirms 464 Bun tests and 184 Vitest tests passing.
 
+## Task 081.23's additional candidates
+
+2026-10-07, `85206c9`, M1 Pro and Docker Desktop. None of the four additional candidates
+qualifies. Duration wins in the four short
+alternating rounds, but month costs V8 and Bun shared in the longer confirmation. The
+clone skip, class joins, and finished Lucide cache fail the quick rounds. All four are
+reverted; no app commit goes to `main`.
+
+Kait confirmed that task 081.17 was idle and cleared this session. An early screen used
+two alternating rounds of 100 renders on V8 shared only. All four candidates then ran
+four alternating rounds of 100 renders on timer, month, and year: V8 shared at a 32 MiB
+semi-space and Bun on both bundles. Containers have one CPU and 2 GiB. Rounds 2 and 4
+reverse the candidate order. Compare only within this table; positive changes cost CPU.
+[Raw runs and bundle hashes](month-year-more-trials-mac.jsonl) include the early screen,
+the four quick rounds, and the final confirmation as separate sessions.
+
+| Trial    | Page  | V8 shared | Bun shared | Bun plain |
+| -------- | ----- | --------: | ---------: | --------: |
+| duration | timer |     -1.5% |      -1.5% |     -5.8% |
+| duration | month |     -3.0% |      -4.0% |     -3.7% |
+| duration | year  |     -4.8% |      -3.6% |     -2.6% |
+| stored   | timer |     -1.2% |      -3.8% |     -7.9% |
+| stored   | month |     -2.1% |      -3.2% |     -3.6% |
+| stored   | year  |     +1.5% |      +0.6% |     -0.7% |
+| classes  | timer |     -4.1% |      -1.2% |     -5.9% |
+| classes  | month |     -3.0% |      -2.1% |     -4.3% |
+| classes  | year  |     +0.9% |      -1.7% |     +1.1% |
+| cache    | timer |     -4.0% |      +1.3% |     -7.5% |
+| cache    | month |     -0.6% |      +3.3% |     +1.4% |
+| cache    | year  |     +2.4% |      +0.5% |     -0.1% |
+
+- **Duration:** a reactive conditional replaces Show, and an array map replaces For in
+  `src/components/duration.tsx`. The unit spans keep their text and classes. The recorded
+  pages use clock format, so the quick-round gain reflects removing Show and its props.
+  The unit parts' regex split remains. A component test
+  switches clock to units and back, changes the amount, and checks the exact spans.
+- **Store clone:** `stored()` skips `structuredClone` on the server. Timer and month
+  improve, but year does not win on V8. The existing clone remains.
+- **Cell classes:** both callers were inspected before replacing `cn()` with joins. The
+  regular row passes no class, and the total row passes only `font-medium`, which
+  conflicts with neither background nor text shade. Year does not win on V8 and Bun
+  plain costs 1.1%, so the existing `cn()` calls remain.
+- **Lucide cache:** a WeakMap on each icon's node holds the completed SVG array by scalar
+  parameter signature, with at most 64 entries per node. Explicit
+  `attributes` or `attributeNames` use the original builder. The compiled Icon avoids
+  an empty rest-attributes object so ordinary calls reach the cache. The trial guards
+  the full Icon module with SHA-256 and preserves its line count. Equivalence tests
+  cover classes, aliases, sizes, stroke modes, accessibility, and attribute overrides.
+  Tests recursively freeze a cached result and render the actual compiled Icon twice
+  without mutation: 6 tests and 67 assertions pass. A build with a changed Icon fails
+  with `Unsupported lucide-solid Icon implementation`. Year regresses on V8 and month
+  costs Bun on both bundles, so the trial is reverted.
+
+Each candidate's shared HTML matches its same-engine plain bundle: exact on V8,
+whitespace-normalized on Bun. Production assets were then rebuilt for Duration, API
+answers and Start HTML recaptured, and baseline and Duration render bundles built
+against the same new client manifest. Three alternating rounds of 500 renders cover
+all four pages, with round 2 reversed. These numbers belong to this final session:
+
+| Page  | V8 CPU, before → Duration | V8 loaded RSS MB | V8 peak RSS MB | Bun plain CPU, before → Duration | Ratio, before → Duration |
+| ----- | ------------------------: | ---------------: | -------------: | -------------------------------: | -----------------------: |
+| timer |             13.44 → 13.19 |      59.5 → 59.9 |      168 → 168 |                    11.13 → 10.81 |              1.21 → 1.22 |
+| week  |               9.27 → 9.49 |      59.6 → 59.4 |      162 → 162 |                      8.11 → 7.71 |              1.14 → 1.23 |
+| month |             12.27 → 12.65 |      60.1 → 60.0 |      165 → 163 |                    10.22 → 10.11 |              1.20 → 1.25 |
+| year  |             15.62 → 15.09 |      60.8 → 60.9 |      175 → 171 |                    12.45 → 12.18 |              1.25 → 1.24 |
+
+The longer session confirms Duration's year gain (V8 −3.4%, Bun shared −2.7%, and Bun
+plain −2.1%), but month costs V8 3.1% and Bun shared 5.1%. Week costs V8 2.3%. There are
+large swings in individual runs; they remain in the averages and raw record. The result
+does not establish a repeatable month win without Bun cost, so Duration is reverted.
+The quick and final sessions are reported separately; their numbers are never pooled.
+
+All final HTML matches each variant's same-engine plain bundle. Units-format renders
+also match on V8 and Bun on all four pages. The candidate component regression test
+passes. No code is kept, so a new hydration check is not required. `checks.sh` passes
+before the report commit: 13 bundle tests, 8 render tests (2 ignored), and Clippy.
+An unfiltered app run confirms 460 Bun tests and 184 Vitest tests on the restored source;
+saved rejected-trial test fixtures are excluded from discovery.
+
+Router hydration-state serialization (`dehydrate` / `crossSerializeStream`, about 5.4%
+inclusive on year) and GC (9.6% month / 11.0% year self samples) are the largest remaining
+costs identified for follow-up. Both are outside this task. Inclusive time overlaps its
+callees, so these shares should not be added.
+
 ## Follow-ups
 
-- **Month and year, and Lucide's icon building**: task 081.23 records the rejected trials above.
+- **Month and year:** task 081.23 records both passes of rejected trials above.
 - **Release image base.** A distroless base in place of `debian:trixie-slim` would make
   the image about 80 MB smaller and change nothing at runtime. The health check would
   need to stop using `curl`. Not worth a task on its own.
