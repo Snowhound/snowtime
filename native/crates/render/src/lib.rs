@@ -76,7 +76,10 @@ pub struct Policy {
     /// generation.
     pub replace_heap_bytes: usize,
     /// The size of each of the young generation's two semi-spaces; `None` keeps V8's
-    /// default, which grows with the heap limit.
+    /// default, which grows with the heap limit. A set size replaces V8's young
+    /// generation, a small part of `heap_limit_bytes`, with three times this size, and
+    /// leaves the old generation's limit as it was: at 128 MiB and 32 MiB the whole heap
+    /// may reach about 212 MiB.
     pub semi_space_bytes: Option<usize>,
     pub deadline: Duration,
     pub queue_capacity: usize,

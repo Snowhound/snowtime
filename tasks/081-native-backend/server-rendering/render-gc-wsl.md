@@ -94,7 +94,9 @@ all pages, and the compiled-props rewrite saves 6–10% on month and year but no
 timer and week.
 The engine-gap report measured that rewrite costing Bun 3–9%. Neither ships. Removing
 promotion at its source needs props without accessors in Solid's server output, which is
-a frontend-framework change. Its benefit is now bounded by the rows above.
+a frontend-framework change. These partial rewrites don't bound what a complete one
+would save: each leaves some accessors behind, and a few dead holders keep much of the
+page.
 
 ## Heap policy
 
@@ -110,7 +112,11 @@ the timer, the other pages within 0.3 ms.
 ## Semi-space size
 
 `Policy::semi_space_bytes` sets V8's initial and maximum young generation to three
-semi-spaces, the size V8 itself uses. It behaves like `--min-semi-space-size` and
+semi-spaces, the size V8 itself uses. The old generation keeps the limit V8 derives from
+`heap_limit_bytes`, so a set semi-space raises the whole heap's limit: at 128 MiB and
+32 MiB it may reach about 212 MiB. Keeping the total at 128 MiB would leave the old
+generation about 30 MiB; the runaway-page guard is the old generation's limit, which
+doesn't change. The semi-space behaves like `--min-semi-space-size` and
 `--max-semi-space-size` with equal values: 157 and 150 scavenges in the same timer run.
 
 One renderer, one CPU:
@@ -171,6 +177,11 @@ CPUs runs four renderers. CPU is per page across the process:
 | year  | 16 MiB     |  21.66 |  46.68 |         335 |     186 |
 | year  | 32 MiB     |  20.68 |  44.15 |         488 |     195 |
 
+A 4 MiB semi-space ran in a separate sweep on 2026-10-07, alternating with its own
+default control. It is within noise of V8's default on all four pages: CPU from −3.4% (week)
+to +0.4% (year), peak RSS within 7 MB. That sweep's default ran 5–8% slower than the one
+above, so its numbers aren't comparable with the table, only with each other.
+
 A 32 MiB semi-space saves 8–11% of CPU at one and at four renderers and adds about 50 MB
 of peak RSS per renderer; 16 MiB saves 3–8% for about 20 MB. Below 16 MiB a page no longer
 fits in the nursery and the savings vanish. At a 32 MiB semi-space the young generation
@@ -183,8 +194,8 @@ collects, not what each page leaves behind.
 The host chooses the size (`crates/host/src/memory.rs`): after sizing the renderers, it
 gives each a 32 MiB semi-space if the planned memory left covers 56 MiB per renderer,
 else 16 MiB if it covers 24 MiB, else V8's default. Four renderers at 32 MiB peak at
-424–488 MB, well inside the 1,536 MiB the host plans to use of 2 GiB. A 1 GiB host with four CPUs gets 32 MiB; 384 and 512 MiB
-hosts get 16 MiB; a 256 MiB host, and a host whose renderer count uses all of its memory,
+424–488 MB, well inside the 1,536 MiB the host plans to use of 2 GiB. A 1 GiB host with
+four CPUs gets 32 MiB; 384 and 512 MiB hosts get 16 MiB; a 256 MiB host, and a host whose renderer count uses all of its memory,
 keep V8's default.
 
 ## Rejected

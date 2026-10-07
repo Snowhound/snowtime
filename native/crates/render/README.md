@@ -67,8 +67,11 @@ The default policy collects after one second idle, or after a page that leaves m
 empties, so a larger nursery doesn't force a full collection after every page.
 `semi_space_bytes` fixes the size of each of the young generation's two semi-spaces; the
 host sets 32 or 16 MiB when its memory allows, and otherwise V8 sizes it from the heap
-limit (task 081.14). A near-limit callback terminates work at the 128 MiB heap limit and grants 16 MiB
-for unwinding. These are heap thresholds, not process RSS limits. After each collection
+limit (task 081.14). A near-limit callback terminates work when the old generation
+reaches its share of the 128 MiB heap limit and grants 16 MiB for unwinding. A set
+semi-space adds three times its size on top, so at 32 MiB the whole heap may reach about
+212 MiB; the host counts that in each renderer's memory. These are heap thresholds, not
+process RSS limits. After each collection
 on glibc, the renderer calls `malloc_trim(0)`: glibc otherwise keeps 55–60 MiB that V8's
 compiler and the page buffers freed, which is most of the gap between a warm renderer's
 RSS and its V8 heap (task 081.01, "Late growth").
