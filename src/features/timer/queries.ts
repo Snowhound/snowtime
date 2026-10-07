@@ -1,6 +1,6 @@
 // The timer view's queries and its optimistic mutations. The running timer and the entry
 // lists are separate caches, since the running timer spans organizations; each mutation
-// updates both before the server answers and rolls both back on error.
+// updates both before the server answers and keeps a refused change pending.
 import { type QueryKey, queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import {
   createEntry,
@@ -81,8 +81,8 @@ function newestFirst(entries: Entry[]) {
 
 // Where the server stops a timer now: at most MAX_ENTRY_HOURS after its start (stopAt in
 // timer.server.ts).
-function stoppedNow(entry: Entry) {
-  return new Date(Math.min(Date.now(), entry.startedAt.getTime() + MAX_ENTRY_MS))
+function stoppedNow(entry: Entry, now: number) {
+  return new Date(Math.min(now, entry.startedAt.getTime() + MAX_ENTRY_MS))
 }
 
 // An entry now starting at `startedAt` may be the earliest.
@@ -113,12 +113,12 @@ export function useStartTimer({ organizationId }: Keys) {
     ...optimistic(
       queryClient,
       [
-        cacheUpdate<Entry[], StartTimerInput>(['entries'], (entries) =>
-          entries.map((e) => (e.stoppedAt ? e : { ...e, stoppedAt: stoppedNow(e) })),
+        cacheUpdate<Entry[], StartTimerInput>(['entries'], (entries, _input, _key, now) =>
+          entries.map((e) => (e.stoppedAt ? e : { ...e, stoppedAt: stoppedNow(e, now) })),
         ),
         cacheUpdate<RunningTimer | null, StartTimerInput>(
           runningTimerQuery.queryKey,
-          (_, input) => {
+          (_, input, _key, now) => {
             const session = queryClient.getQueryData(sessionQuery.queryKey)
             return {
               id: input.id,
@@ -127,7 +127,7 @@ export function useStartTimer({ organizationId }: Keys) {
               projectId: input.projectId ?? null,
               description: input.description.trim(),
               ticket: input.ticket ?? null,
-              startedAt: new Date(),
+              startedAt: new Date(now),
               stoppedAt: null,
               project: null,
             }
@@ -146,8 +146,8 @@ export function useStopTimer() {
     ...optimistic(
       queryClient,
       [
-        cacheUpdate<Entry[], StopTimerInput>(['entries'], (entries, { id }) =>
-          entries.map((e) => (e.id === id ? { ...e, stoppedAt: stoppedNow(e) } : e)),
+        cacheUpdate<Entry[], StopTimerInput>(['entries'], (entries, { id }, _key, now) =>
+          entries.map((e) => (e.id === id ? { ...e, stoppedAt: stoppedNow(e, now) } : e)),
         ),
         cacheUpdate<RunningTimer | null, StopTimerInput>(
           runningTimerQuery.queryKey,

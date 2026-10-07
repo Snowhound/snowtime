@@ -75,6 +75,7 @@
   "page_not_found_title": "Lehte ei leitud",
   "page_not_found_description": "Aadressis võib olla trükiviga või on leht teise kohta viidud.",
   "page_error_title": "Lehte ei õnnestunud avada",
+  "change_pending": "Muudatus on ootel. Server on hõivatud; proovi uuesti, kui oled valmis.",
   "page_error_retry": "Proovi uuesti",
   "maintenance_title": "Hooldus käib",
   "maintenance_description": "Snowtime on varsti tagasi. Leht avaneb siis ise.",

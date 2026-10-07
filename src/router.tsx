@@ -4,16 +4,20 @@ import { setupRouterSsrQueryIntegration } from '@tanstack/solid-router-ssr-query
 import { getGlobalStartContext } from '@tanstack/solid-start'
 import { ErrorPage } from '~/features/errors/error-page'
 import { NotFoundPage } from '~/features/errors/not-found-page'
+import { readRetryDelay } from '~/lib/queries/refusal'
 import { followSession } from '~/lib/queries/session'
 import { routeTree } from './routeTree.gen'
 
 export function getRouter() {
   const queryClient = new QueryClient({
     defaultOptions: {
+      mutations: { retry: false },
       queries: {
         // Data rendered on the server is fresh when the page hydrates; without this the
         // client refetches everything right away.
         staleTime: 30_000,
+        retry: 3,
+        retryDelay: readRetryDelay,
       },
     },
   })

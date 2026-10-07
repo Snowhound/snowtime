@@ -115,3 +115,34 @@ describe('timer mutations', () => {
     await vi.waitFor(() => expect(queryClient.getQueryState(reportKey)?.isInvalidated).toBe(true))
   })
 })
+
+test('a refused stop keeps its original optimistic time across an independent read', async () => {
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
+  try {
+    const { queryClient, wrapper } = setup()
+    const running: Entry = {
+      id: newId(),
+      organizationId,
+      userId,
+      projectId: null,
+      description: 'Working',
+      ticket: null,
+      startedAt: new Date(now - HOUR),
+      stoppedAt: null,
+    }
+    queryClient.setQueryData(entriesQuery(organizationId, userId, today).queryKey, [running])
+    fn.stopTimer.mockRejectedValue({ status: 503, retryAfter: '2' })
+    const { result } = renderHook(() => useStopTimer(), { wrapper })
+    await expect(result.mutateAsync({ id: running.id })).rejects.toMatchObject({ status: 503 })
+    clock.mockReturnValue(now + HOUR)
+    fn.listEntries.mockResolvedValue([running])
+    await queryClient.fetchQuery(entriesQuery(organizationId, userId, today))
+    expect(entriesOf(queryClient, organizationId, userId, today)?.[0].stoppedAt).toEqual(
+      new Date(now),
+    )
+    expect(fn.stopTimer).toHaveBeenCalledTimes(1)
+    queryClient.clear()
+  } finally {
+    clock.mockRestore()
+  }
+})

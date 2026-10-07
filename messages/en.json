@@ -75,6 +75,7 @@
   "page_not_found_title": "Page not found",
   "page_not_found_description": "The address may have a typo, or the page may have moved.",
   "page_error_title": "This page didn't load",
+  "change_pending": "Change pending. The server is busy; try again when you’re ready.",
   "page_error_retry": "Try again",
   "maintenance_title": "Down for maintenance",
   "maintenance_description": "Snowtime will be back shortly. This page opens by itself once it is.",
