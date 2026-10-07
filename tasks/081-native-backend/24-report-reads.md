@@ -2,7 +2,7 @@
 
 Status: done
 
-The native server now serves the Reports page's breakdown, entries, entry totals, and
+The native server serves the Reports page's breakdown, entries, entry totals, and
 export beside `POST /report`. The browser builds CSV and XLSX files from the export's
 JSON pieces, so file generation stays in the shared client.
 
@@ -45,7 +45,7 @@ Patterns for the porting kit (subtask 05):
 - JavaScript's stable sort preserves insertion order when breakdown rows tie on total
   and member. Keep insertion order when accumulating those rows in Rust.
   By description also needs Unicode collation for `localeCompare`; byte ordering
-  differs for case, accents, and punctuation. Both backends now use explicit
+  differs for case, accents, and punctuation. Both backends use explicit
   `en-US` collation, so `LANG` cannot change description ordering. The port uses
   ICU4X 2.3.1. The TypeScript harness starts Bun without `LANG` or `LC_*`; its
   default on this Mac resolves to `en-US`, but the rule no longer depends on it.
@@ -54,22 +54,41 @@ Patterns for the porting kit (subtask 05):
 - CSV and XLSX generation stays in the shared browser client. Port the export's JSON
   pieces, then compare downloaded file contents for the same range and clock.
 
-The ordinary `/report` keeps its precomputed `started_at` lower bound. Only a paged
-day window uses the SQL expression `window_from - MAX_ENTRY_MS`. Row filters distinguish
+The report binds its `started_at` lower bound as a precomputed value. A paged day window
+uses the SQL expression `window_from - MAX_ENTRY_MS`. Row filters distinguish
 all entries, no entries, and a SQL condition explicitly. Pagination builds a narrowed
 aggregation copy without changing the shared report context.
 
-Rust tests now cover whole-day page boundaries, one busy day split across three pages,
+Rust tests cover whole-day page boundaries, one busy day split across three pages,
 whole-day totals on every page, cursor order without duplicate entries, description
 group counts, case and accent ties, and breakdown clipping and stable ties.
 Successful member comparison cases cover every new read, both entry views, and an
-explicit filter on the member's own id. The comparison uses a private copy of the seed,
-with five case/accent descriptions tied on total and 230 further entries on one day.
-It checks that the busy day takes exactly three pages.
+explicit filter on the member's own id.
+
+The entire comparison suite uses a private copy of the seed with 235 additional owner
+entries on October 1, 2024: five case/accent descriptions tied on total and 230 further
+entries on the same day. It checks that the busy day takes exactly three pages.
+All comparison cases use this augmented dataset. A query that includes the owner's
+earliest entry can therefore return the fixture's date. Earlier runs on the plain seed
+can have different response values and byte counts. Report conformance and browser exports use the plain seed.
 
 ## Verification
 
 Verified on macOS ARM64 on 2026-10-07, after Kait paused task 081.17's measurements:
+
+The saved output below comes from that run; it was copied into the repository without
+rerunning verification.
+
+| Check | Saved output |
+| --- | --- |
+| Byte comparison | [compare.txt](report-reads/compare.txt) |
+| Report conformance | [conformance.txt](report-reads/conformance.txt) |
+| Server tests | [server-tests.txt](report-reads/server-tests.txt) |
+| Server tests with `bench` | [server-bench-tests.txt](report-reads/server-bench-tests.txt) |
+| Host tests | [host-tests.txt](report-reads/host-tests.txt) |
+| Handler line counts | [lines.txt](report-reads/lines.txt) |
+
+Results:
 
 - `cargo fmt --all --manifest-path native/Cargo.toml`.
 - Workspace Clippy with `--all-targets -- -D warnings`, with and without `bench`.
@@ -78,7 +97,7 @@ Verified on macOS ARM64 on 2026-10-07, after Kait paused task 081.17's measureme
   `Retry-After: 1`, and admits a signed-in timer GET while the report slot stays held.
 - Frontend build, `bun native/crates/render/bundle/build.ts`, and host tests: 13 pass.
 - `bun native/bench/conformance.ts native/target/release/snowtime-axum
-conformance/reports.conformance.ts`: 7 pass. The harness now resolves supplied
+conformance/reports.conformance.ts`: 7 pass. The harness resolves supplied
   filenames as paths, because Bun treats an unprefixed filename as a test filter.
 - `bun native/bench/compare.ts native/target/release/snowtime-axum`: all 349 calls
   byte-equal. Only the existing clock, sign-in time, and URL masks apply.
@@ -95,7 +114,9 @@ seed. Agent-browser downloaded each file through the page's export menu:
 | Timesheet CSV | 2,700 bytes, identical                                     |
 | XLSX          | All 10 archive parts identical; 620,901 uncompressed bytes |
 
-XLSX comparison reads each ZIP member's bytes, ignoring archive timestamps. Breakdown
+[exports.json](report-reads/exports.json) records the CSV hashes and the XLSX part count
+and uncompressed size. XLSX comparison reads each ZIP member's bytes, ignoring archive
+timestamps. Breakdown
 and both Entries views also work on the native host; the browser reports no errors.
 The browsers and local hosts were stopped after verification. No Docker was used.
 
@@ -125,5 +146,5 @@ collation helper with byte comparison gives this disk-size comparison:
 | Stripped       | 72,759,928 bytes |     71,531,160 bytes |
 
 ICU4X adds 1,228,768 stripped bytes (1.17 MiB), less than 0.1% of the 2 GiB host target.
-This measures file size, not resident memory; this task makes no RSS claim. The temporary
-comparison stub was restored, and the final executable was rebuilt with ICU4X.
+[binary-sizes.json](report-reads/binary-sizes.json) records the measured byte counts.
+Resident memory was not measured.

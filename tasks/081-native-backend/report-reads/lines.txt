@@ -1,0 +1,24 @@
+| Handler | TypeScript | server |
+| --- | --- | --- |
+| report context | 278 | 375 |
+| getReport | 32 | 38 |
+| getReportBreakdown | 9 | 11 |
+| getReportEntries | 23 | 38 |
+| getReportEntryTotals | 24 | 29 |
+| getReportExport | 26 | 30 |
+| report aggregation | 192 | 302 |
+| scope | 50 | 51 |
+| assertUsableProject | 21 | 27 |
+| entry columns | 10 | 17 |
+| entry checks | 49 | 70 |
+| createEntry | 33 | 24 |
+| updateEntry | 49 | 68 |
+| deleteEntry | 9 | 21 |
+| getFirstEntryStart | 12 | 15 |
+| listEntries | 20 | 28 |
+| timer helpers | 29 | 63 |
+| listProjects | 33 | 34 |
+| startTimer | 45 | 48 |
+| stopTimer | 5 | 6 |
+| getRunningTimer | 22 | 21 |
+| Total | 971 | 1316 |
