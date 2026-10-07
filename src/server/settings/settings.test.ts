@@ -147,7 +147,7 @@ describe('updateSettings', () => {
   test('the copy pattern and control save, starting at H:MM:SS and a click', async () => {
     const userId = await newUser()
     const created = await as({ userId }, () =>
-      getSettings(db, userId, { timeZone: 'Europe/Tallinn', locale: 'en' }),
+      createSettings(db, userId, { timeZone: 'Europe/Tallinn', locale: 'en' }),
     )
     expect(created.copyDurationPattern).toBe('H:MM:SS')
     const set = await as({ userId }, () =>

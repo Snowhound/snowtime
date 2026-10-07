@@ -4,7 +4,7 @@
 // scrolls sideways. A column narrows the Entries card to its day or week, and a row's total to
 // its row.
 import { For, Show } from 'solid-js'
-import { Duration } from '~/components/duration'
+import { CopyableDuration } from '~/components/copy-duration'
 import { ProjectDot } from '~/components/project-dot'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import {
@@ -107,7 +107,7 @@ export function Summary(props: {
                           {s.name}
                         </span>
                         <span class="text-muted-foreground tabular-nums">
-                          <Duration ms={s.total} />
+                          <CopyableDuration ms={s.total} />
                         </span>
                       </li>
                     )}
@@ -203,7 +203,7 @@ function Stats(props: { report: Report; range: Range; today: IsoDate; top?: Row 
 function Value(props: { ms: number }) {
   return (
     <span class="text-foreground font-medium tabular-nums">
-      <Duration ms={props.ms} />
+      <CopyableDuration ms={props.ms} />
     </span>
   )
 }
@@ -258,12 +258,12 @@ function ChartTable(props: { report: Report; series: Series[] }) {
                         !s.perBucket[i()] && 'text-muted-foreground',
                       )}
                     >
-                      {s.perBucket[i()] ? <Duration ms={s.perBucket[i()]} /> : '—'}
+                      {s.perBucket[i()] ? <CopyableDuration ms={s.perBucket[i()]} /> : '—'}
                     </TableCell>
                   )}
                 </For>
                 <TableCell class="text-right font-medium tabular-nums">
-                  <Duration ms={props.report.perBucket[i()]} />
+                  <CopyableDuration ms={props.report.perBucket[i()]} />
                 </TableCell>
               </TableRow>
             )}

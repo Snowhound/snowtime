@@ -6,10 +6,11 @@ import CheckIcon from 'lucide-solid/icons/check'
 import CopyIcon from 'lucide-solid/icons/copy'
 import XIcon from 'lucide-solid/icons/x'
 import { type JSX, Show, createSignal, onCleanup } from 'solid-js'
-import { useCopyControl, useCopyPattern } from '~/lib/display-format'
+import { useCopyControl, useCopyPattern, useFormatHours } from '~/lib/display-format'
 import { formatDurationPattern } from '~/lib/duration-pattern'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import { Duration } from './duration'
 
 const SHOWN_MS = 2000
 
@@ -150,5 +151,15 @@ export function CopyDuration(props: {
         <Bubble />
       </span>
     </Show>
+  )
+}
+
+// A total in the user's duration format (Duration), which copies like any other duration.
+export function CopyableDuration(props: { ms: number; side?: 'top' | 'left'; class?: string }) {
+  const formatHours = useFormatHours()
+  return (
+    <CopyDuration ms={props.ms} label={formatHours(props.ms)} side={props.side} class={props.class}>
+      <Duration ms={props.ms} />
+    </CopyDuration>
   )
 }

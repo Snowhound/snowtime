@@ -5,12 +5,12 @@ import ChevronDownIcon from 'lucide-solid/icons/chevron-down'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import MoonIcon from 'lucide-solid/icons/moon'
 import { For, Match, Show, Switch, createMemo } from 'solid-js'
-import { Duration } from '~/components/duration'
+import { CopyableDuration } from '~/components/copy-duration'
 import { ErrorAlert } from '~/components/error-alert'
 import { ProjectDot } from '~/components/project-dot'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
-import { useFormatHours, useHourCycle } from '~/lib/display-format'
+import { useCopyControl, useFormatHours, useHourCycle } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
@@ -95,7 +95,7 @@ export function ReportEntryList(props: {
                           })}
                         </span>
                         <span class="tabular-nums">
-                          <Duration ms={day.total} />
+                          <CopyableDuration ms={day.total} side="left" />
                         </span>
                       </h4>
                       <ul>
@@ -218,6 +218,7 @@ function EntryRow(props: {
 }) {
   const hourCycle = useHourCycle()
   const formatHours = useFormatHours()
+  const copyControl = useCopyControl()
   function clock(at: Date) {
     return formatDateTime(at, props.zone, {
       hour: '2-digit',
@@ -236,9 +237,7 @@ function EntryRow(props: {
     <li
       class={cn(
         'grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5 border-b px-6 py-2.5 text-sm last:border-b-0 sm:items-center',
-        props.many
-          ? 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_minmax(0,9rem)_3.5rem]'
-          : 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_3.5rem]',
+        entryColumns(props.many, copyControl() === 'button'),
         hourCycle() === 'h12' ? '[--time:11.5rem]' : '[--time:9rem]',
       )}
     >
@@ -248,7 +247,7 @@ function EntryRow(props: {
         class="sm:col-start-2 sm:row-start-1"
       />
       <span class="col-start-2 row-start-1 text-right font-medium tabular-nums sm:col-start-auto sm:col-end-[-1]">
-        <Duration ms={props.piece.ms} />
+        <CopyableDuration ms={props.piece.ms} />
       </span>
       <div class="text-muted-foreground col-span-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 sm:contents">
         <span class="flex items-center gap-1.5 whitespace-nowrap tabular-nums sm:col-start-1 sm:row-start-1">
@@ -278,21 +277,40 @@ function EntryRow(props: {
 }
 
 // Column widths shared by the By description header and rows, from 640 px.
-function descriptionColumns(many: boolean) {
-  return many
-    ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,12rem)_4.5rem_3.5rem_3.5rem]'
+// The last column is the total: 3.5rem, or 5.25rem with room for the copy button. The class
+// names are written out whole so Tailwind finds them.
+function entryColumns(many: boolean, copyButton: boolean) {
+  if (many) {
+    return copyButton
+      ? 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_minmax(0,9rem)_5.25rem]'
+      : 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_minmax(0,9rem)_3.5rem]'
+  }
+  return copyButton
+    ? 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_5.25rem]'
+    : 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_3.5rem]'
+}
+
+function descriptionColumns(many: boolean, copyButton: boolean) {
+  if (many) {
+    return copyButton
+      ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,12rem)_4.5rem_3.5rem_5.25rem]'
+      : 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,12rem)_4.5rem_3.5rem_3.5rem]'
+  }
+  return copyButton
+    ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_4.5rem_3.5rem_5.25rem]'
     : 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_4.5rem_3.5rem_3.5rem]'
 }
 
 // Names the columns once instead of on every row. Screen readers get each row's counts as a
 // sentence instead, so the header is hidden from them.
 function DescriptionHeader(props: { many: boolean }) {
+  const copyControl = useCopyControl()
   return (
     <li
       aria-hidden="true"
       class={cn(
         'bg-muted/50 text-muted-foreground hidden gap-x-4 border-b px-6 py-1.5 text-xs font-medium sm:grid',
-        descriptionColumns(props.many),
+        descriptionColumns(props.many, copyControl() === 'button'),
       )}
     >
       <span>{m.reports_entries_col_description()}</span>
@@ -315,11 +333,12 @@ function DescriptionItem(props: {
   project: Project | undefined
   people: string
 }) {
+  const copyControl = useCopyControl()
   return (
     <li
       class={cn(
         'grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5 border-b px-6 py-2.5 text-sm last:border-b-0 sm:items-center',
-        descriptionColumns(props.many),
+        descriptionColumns(props.many, copyControl() === 'button'),
       )}
     >
       <DescriptionText
@@ -328,7 +347,7 @@ function DescriptionItem(props: {
         class="sm:col-start-1 sm:row-start-1"
       />
       <span class="col-start-2 row-start-1 text-right font-medium tabular-nums sm:col-start-auto sm:col-end-[-1]">
-        <Duration ms={props.row.total} />
+        <CopyableDuration ms={props.row.total} />
       </span>
       <div class="text-muted-foreground col-span-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 sm:contents">
         <ProjectLabel project={props.project} class="sm:col-start-2 sm:row-start-1" />

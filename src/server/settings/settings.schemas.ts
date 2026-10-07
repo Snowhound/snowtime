@@ -141,6 +141,10 @@ export const Settings = v.object({
   durationFormat: DurationFormat,
   dateFormat: DateFormat,
   timeFormat: TimeFormat,
+  // Any stored text: the client formats with whatever is saved rather than failing the
+  // whole session over one setting.
+  copyDurationPattern: v.string(),
+  copyDurationControl: CopyDurationControl,
   country: Country,
 })
 export type Settings = v.InferOutput<typeof Settings>

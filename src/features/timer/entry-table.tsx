@@ -3,6 +3,7 @@
 // follows the text, or with the Wide page setting has a column of its own. It scrolls
 // horizontally inside its border on narrow screens. Compact rows pad their cells less.
 import { For, Show } from 'solid-js'
+import { CopyableDuration } from '~/components/copy-duration'
 import { Glass } from '~/components/scene/glass'
 import {
   Table,
@@ -15,7 +16,6 @@ import {
 import { useCopyControl } from '~/lib/display-format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { DayTotal } from './day-total'
 import type { DayGroup } from './entries'
 import {
   DateField,
@@ -107,7 +107,7 @@ export function EntryTable(
                       {dayLabel(date, props.today)}
                     </th>
                     <TableCell class="text-right text-xs tabular-nums">
-                      <DayTotal ms={group()?.total ?? 0} />
+                      <CopyableDuration ms={group()?.total ?? 0} side="left" />
                     </TableCell>
                     <TableCell />
                   </TableRow>

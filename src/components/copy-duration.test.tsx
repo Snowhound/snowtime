@@ -5,7 +5,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { sessionQuery } from '~/lib/queries/session'
 import { CopyAnnouncer, CopyDuration } from './copy-duration'
 
-vi.mock('~/server/auth/auth.functions', () => ({ getAppSession: vi.fn() }))
+vi.mock('~/lib/api/auth', () => ({ getAppSession: vi.fn() }))
 
 const MS = 2 * 3_600_000 + 5 * 60_000 + 9_000
 

@@ -8,6 +8,7 @@ import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'
 import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { For, Show, createEffect, on } from 'solid-js'
+import { CopyableDuration } from '~/components/copy-duration'
 import { PlainButton } from '~/components/plain-button'
 import { Glass } from '~/components/scene/glass'
 import { Button } from '~/components/ui/button'
@@ -24,7 +25,6 @@ import { formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
-import { DayTotal } from './day-total'
 import type { DayGroup } from './entries'
 import { entryName } from './entries'
 import {
@@ -139,7 +139,7 @@ export function EntryList(
               <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
                 <h2 class="font-medium">{dayLabel(date, props.today)}</h2>
                 <span class="text-muted-foreground tabular-nums">
-                  <DayTotal ms={group()?.total ?? 0} />
+                  <CopyableDuration ms={group()?.total ?? 0} side="left" />
                 </span>
               </header>
               <Show

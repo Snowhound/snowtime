@@ -79,9 +79,7 @@ describe('Copied durations', () => {
     expect(screen.getByText('2h 5m 9s')).toBeInTheDocument()
     expect(fn.updateSettings).not.toHaveBeenCalled()
     await userEvent.keyboard('{Enter}')
-    expect(fn.updateSettings).toHaveBeenLastCalledWith({
-      data: { copyDurationPattern: 'Hh Mm Ss' },
-    })
+    expect(fn.updateSettings).toHaveBeenLastCalledWith({ copyDurationPattern: 'Hh Mm Ss' })
   })
 
   test("shows an error for a pattern without a field, and doesn't save it", async () => {
@@ -115,16 +113,14 @@ describe('Copied durations', () => {
   test('an example and Reset save at once', async () => {
     renderCard({ copyDurationPattern: 'HH:MM' })
     await userEvent.click(screen.getByRole('button', { name: 'M:SS' }))
-    expect(fn.updateSettings).toHaveBeenLastCalledWith({ data: { copyDurationPattern: 'M:SS' } })
+    expect(fn.updateSettings).toHaveBeenLastCalledWith({ copyDurationPattern: 'M:SS' })
     await userEvent.click(screen.getByRole('button', { name: 'Reset' }))
-    expect(fn.updateSettings).toHaveBeenLastCalledWith({
-      data: { copyDurationPattern: 'H:MM:SS' },
-    })
+    expect(fn.updateSettings).toHaveBeenLastCalledWith({ copyDurationPattern: 'H:MM:SS' })
   })
 
   test('saves how a duration is copied', async () => {
     renderCard()
     await userEvent.click(screen.getByRole('button', { name: 'A copy button' }))
-    expect(fn.updateSettings).toHaveBeenLastCalledWith({ data: { copyDurationControl: 'button' } })
+    expect(fn.updateSettings).toHaveBeenLastCalledWith({ copyDurationControl: 'button' })
   })
 })
