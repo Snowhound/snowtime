@@ -754,6 +754,14 @@ fields, applied at once. A failed save (the prototype bar's "Fail saves") rolls 
 back and shows an error under the row. Tab moves through description, project, date, start,
 end, continue, and delete.
 
+"Server busy" in the prototype bar has the server refuse every write with 503, as an
+overloaded native server does (task 081.17). The change stays on screen, and an alert above
+the page offers "Try again", which sends the pending changes in order once the server
+answers. Nothing retries on its own, and a change made meanwhile waits behind them. The
+select beside it compares three designs: one alert for all pending changes, an alert per
+change, and one alert with each unsaved row and the timer marked by a muted bar at their
+start.
+
 The entry popover is for Add entry and for the running entry's start. It opens under the Add
 entry button, or under the timer's clock for the running entry. It has description, project,
 date, start, and end, with the validation the rows use, and a live line with the resulting

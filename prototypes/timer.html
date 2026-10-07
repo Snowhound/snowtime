@@ -13,6 +13,13 @@
     <script src="intro.js"></script>
     <script src="app-frame.js"></script>
     <style type="text/tailwindcss">
+      /* "One alert, marked rows": what isn't saved yet carries a muted bar at its start. */
+      body[data-pending-ui='marked'] [data-row][data-pending] {
+        @apply bg-muted/50 shadow-[inset_3px_0_0_var(--muted-foreground)];
+      }
+      body[data-pending-ui='marked'] #timer[data-pending] {
+        @apply shadow-[inset_3px_0_0_var(--muted-foreground)];
+      }
       /* Timer controls share one DOM across designs; only layout changes. */
       body[data-design='bar'] .timer {
         @apply flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center;
@@ -124,7 +131,18 @@
       <label class="flex items-center gap-2 text-sm" title="Prototype only: inline saves fail and roll back">
         <input id="fail-saves" type="checkbox" data-ui="checkbox" />Fail saves
       </label>
+      <label class="flex items-center gap-2 text-sm" title="Prototype only: the server refuses every write with 503 until this is off">
+        <input id="server-busy" type="checkbox" data-ui="checkbox" />Server busy
+      </label>
+      <label for="pending-ui" class="sr-only">Pending changes</label>
+      <select id="pending-ui" data-ui="select" class="h-9 w-48" title="How refused changes show">
+        <option value="one">One alert</option>
+        <option value="each">Alert per change</option>
+        <option value="marked">One alert, marked rows</option>
+      </select>
     </div>
+
+    <div id="pending" class="timer-page mx-auto px-4 sm:px-8"></div>
 
     <div class="timer-page mx-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 pt-6 sm:px-8">
       <h1 class="text-2xl font-semibold tracking-tight">Timer</h1>
@@ -635,6 +653,7 @@
         else if (design === 'focus') el.innerHTML = renderDayCards(groups.slice(0, 3), true)
         else el.innerHTML = renderDayCards(groups, false)
         rendering = false
+        markPending()
         if (focus) {
           const target = el.querySelector(`[data-entry="${focus.entry}"][data-key="${focus.key}"]`)
           target?.focus({ preventScroll: true })
@@ -774,8 +793,10 @@
         state.running = { id: `e${nextId++}`, description, projectId, ticket, startedAt: Date.now() }
         setInputs(description, projectId, ticket)
         renderTimer()
+        refuse(state.running.id, 'Start timer')
       }
       function stopTimer() {
+        refuse(state.running.id, 'Stop timer')
         state.entries.push({ ...state.running, stoppedAt: Date.now() })
         state.running = null
         setInputs('', 'none')
@@ -785,11 +806,13 @@
       function createEntry(values) {
         const id = `e${nextId++}`
         state.entries.push({ id, ...values })
+        refuse(id, 'Add entry')
         inline.flash = id
         renderEntries()
         renderSummary()
       }
       function deleteEntry(id) {
+        refuse(null, 'Delete entry')
         state.entries = state.entries.filter((e) => e.id !== id)
         clearDraft(id, 'description', 'start', 'end')
         delete inline.errors[id]
@@ -912,6 +935,7 @@
       }
 
       function updateEntry(id, patch) {
+        refuse(id === 'running' ? state.running.id : id, 'Edit entry')
         if (id === 'running') {
           Object.assign(state.running, patch)
           setInputs(state.running.description, state.running.projectId, state.running.ticket)
@@ -974,6 +998,7 @@
         const e = find(id)
         const before = Object.fromEntries(Object.keys(patch).map((k) => [k, e[k]]))
         const fail = document.getElementById('fail-saves').checked
+        if (refuse(id, `Edit ${what}`)) return finishSave(id, patch, render)
         if (inline.errors[id]?.kind === 'failed') delete inline.errors[id]
         Object.assign(e, patch)
         if (render) renderEntries()
@@ -1472,6 +1497,68 @@
       document.getElementById('wide-switch').addEventListener('change', (event) => {
         appFrame.settings.set({ wideTimer: event.currentTarget.getAttribute('aria-checked') === 'true' })
       })
+
+      // Server busy: the simulated server refuses every write with 503. The change stays on
+      // screen, pending, until "Try again" sends it while the server answers again. Nothing
+      // retries on its own, and a write made meanwhile waits behind the pending ones.
+      const pending = []
+      let retrying = false
+      const busy = () => document.getElementById('server-busy').checked
+      function refuse(entryId, label) {
+        if (!busy() && !pending.length) return false
+        setTimeout(() => {
+          pending.push({ key: nextId++, entryId, label })
+          renderPending()
+        }, pending.length ? 0 : 600)
+        return true
+      }
+      function finishSave(id, patch, render) {
+        Object.assign(find(id), patch)
+        if (render) renderEntries()
+        else refreshRow(id)
+        renderRecent()
+        renderSummary()
+      }
+      function retryPending(key) {
+        if (retrying) return
+        retrying = true
+        renderPending()
+        setTimeout(() => {
+          retrying = false
+          if (!busy()) {
+            if (key === undefined) pending.length = 0
+            else pending.splice(0, pending.findIndex((p) => p.key === key) + 1)
+          }
+          renderPending()
+        }, 700)
+      }
+      function pendingAlert(text, key) {
+        return `<div data-ui="alert" class="mt-6 -mb-2">${icon('clock')}<div data-ui="alert-description" class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <span role="status">${escapeHtml(text)}</span>
+            <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-retry="${key ?? ''}"${retrying ? ' disabled' : ''}>Try again</button>
+          </div></div>`
+      }
+      function renderPending() {
+        const ui = document.getElementById('pending-ui').value
+        document.body.dataset.pendingUi = ui
+        const el = document.getElementById('pending')
+        if (!pending.length) el.innerHTML = ''
+        else if (ui === 'each')
+          el.innerHTML = pending.map((p) => pendingAlert('Change pending. The server is busy; try again when you’re ready.', p.key)).join('')
+        else el.innerHTML = pendingAlert('Not saved yet: the server is busy. Try again when you’re ready.')
+        markPending()
+      }
+      function markPending() {
+        const ids = new Set(pending.map((p) => p.entryId))
+        document.querySelectorAll('[data-row]').forEach((row) => row.toggleAttribute('data-pending', ids.has(row.dataset.row)))
+        document.getElementById('timer').toggleAttribute('data-pending', !!state.running && ids.has(state.running.id))
+      }
+      document.getElementById('pending').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-retry]')
+        if (button) retryPending(button.dataset.retry ? Number(button.dataset.retry) : undefined)
+      })
+      document.getElementById('pending-ui').addEventListener('change', renderPending)
+
       appFrame.on('settings', applySettings)
 
       ui.ready.then(() => {
