@@ -111,6 +111,10 @@ worked on what.
   the header's 68rem. The chart is drawn to its container's width, so a container that fits
   its content would feed the chart's width back into itself.
 
+By description sorts equal totals by description, ticket, and project id using explicit
+`en-US` Unicode collation in both backends. This keeps case and accent ties independent
+of the host's default locale (`LANG` and `LC_*`).
+
 ## Ticket keys
 
 An entry has at most one ticket key, such as `NBW-412` (task 060, `prototypes/README.md`,

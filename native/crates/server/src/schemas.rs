@@ -41,6 +41,15 @@ pub enum Field {
     NullableId,
     // Uuidv7 or 'none'.
     IdOrNone,
+    TicketOrNone,
+    Discriminator(&'static [&'static str]),
+    RequiredPicklist(&'static [&'static str]),
+    RequiredNumber,
+    Offset,
+    Object {
+        required: bool,
+        check: fn(Value) -> Result<()>,
+    },
     Description,
     Ticket,
     RequiredDate,
@@ -69,11 +78,18 @@ fn received(value: &Value) -> String {
 fn expected(field: Field) -> String {
     match field {
         Field::RequiredDate | Field::Date => "Date".into(),
+        Field::Object { .. } => "Object".into(),
+        Field::RequiredNumber | Field::Offset => "number".into(),
+        Field::TicketOrNone => "(string | \"none\")".into(),
         Field::Bool => "boolean".into(),
         Field::True => "true".into(),
         Field::IdOrNone => "(string | \"none\")".into(),
-        Field::Picklist([one]) => format!("\"{one}\""),
-        Field::Picklist(options) => {
+        Field::Picklist([one]) | Field::RequiredPicklist([one]) | Field::Discriminator([one]) => {
+            format!("\"{one}\"")
+        }
+        Field::Picklist(options)
+        | Field::RequiredPicklist(options)
+        | Field::Discriminator(options) => {
             let quoted: Vec<_> = options.iter().map(|o| format!("\"{o}\"")).collect();
             format!("({})", quoted.join(" | "))
         }
@@ -81,11 +97,22 @@ fn expected(field: Field) -> String {
     }
 }
 
-fn check_field(name: &str, field: Field, value: Option<&Value>) -> Result<()> {
+pub(crate) fn check_field(name: &str, field: Field, value: Option<&Value>) -> Result<()> {
     let Some(value) = value else {
+        if matches!(field, Field::Discriminator(_)) {
+            return invalid(format!(
+                "Invalid type: Expected {} but received undefined",
+                expected(field)
+            ));
+        }
         if matches!(
             field,
-            Field::RequiredId | Field::RequiredDate | Field::RequiredDay
+            Field::RequiredId
+                | Field::RequiredDate
+                | Field::RequiredDay
+                | Field::RequiredNumber
+                | Field::RequiredPicklist(_)
+                | Field::Object { required: true, .. }
         ) {
             return invalid(format!(
                 "Invalid key: Expected \"{name}\" but received undefined"
@@ -93,12 +120,35 @@ fn check_field(name: &str, field: Field, value: Option<&Value>) -> Result<()> {
         }
         return Ok(());
     };
+    if let Field::Object { check, .. } = field
+        && (value.is_object() || value.is_array())
+    {
+        return check(value.clone());
+    }
+    if matches!(field, Field::RequiredNumber | Field::Offset)
+        && let Some(number) = value.as_f64()
+    {
+        if matches!(field, Field::Offset) {
+            if number.fract() != 0.0 {
+                return invalid(format!("Invalid integer: Received {number}"));
+            }
+            if number < 0.0 {
+                return invalid(format!("Invalid value: Expected >=0 but received {number}"));
+            }
+        }
+        return Ok(());
+    }
     let text = value.as_str();
     let typed = match (field, text) {
         (Field::NullableId | Field::Ticket, _) if value.is_null() => return Ok(()),
         (Field::Bool, _) => value.is_boolean() || matches!(text, Some("true" | "false")),
         (Field::True, _) => value == &Value::Bool(true),
-        (Field::Picklist(options), Some(text)) => options.contains(&text),
+        (
+            Field::Picklist(options)
+            | Field::RequiredPicklist(options)
+            | Field::Discriminator(options),
+            Some(text),
+        ) => options.contains(&text),
         (Field::RequiredDate | Field::Date, Some(text)) => {
             if Timestamp::parse(text).is_none() {
                 return invalid("Invalid type: Expected Date but received \"Invalid Date\"");
@@ -106,7 +156,8 @@ fn check_field(name: &str, field: Field, value: Option<&Value>) -> Result<()> {
             true
         }
         (Field::RequiredId | Field::Id | Field::NullableId, Some(id)) => return uuid_v7(id),
-        (Field::IdOrNone, Some("none")) => true,
+        (Field::IdOrNone | Field::TicketOrNone, Some("none")) => true,
+        (Field::TicketOrNone, Some(key)) => return ticket_key(key),
         (Field::IdOrNone, Some(id)) => return uuid_v7(id),
         (Field::Description, Some(text)) => return description_length(text),
         (Field::Ticket, Some(key)) => return ticket_key(key),

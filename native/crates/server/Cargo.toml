@@ -30,6 +30,8 @@ better-auth-core = { version = "=1.0.0-alpha.3", optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
 form_urlencoded.workspace = true
 hmac.workspace = true
+icu_collator.workspace = true
+icu_locale_core.workspace = true
 jiff.workspace = true
 libc = "0.2"
 openssl = { version = "0.10", features = ["vendored"], optional = true }

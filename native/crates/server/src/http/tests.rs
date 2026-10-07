@@ -581,3 +581,44 @@ async fn a_running_report_leaves_readers_and_writer_available_and_keeps_budget_o
     drop(app);
     std::fs::remove_file(path).unwrap();
 }
+
+#[tokio::test]
+async fn full_report_budget_refuses_export_immediately_and_admits_timer() {
+    let mut app = app();
+    Arc::get_mut(&mut app).unwrap().report_gate =
+        crate::admission::Gate::bounded(1, 0, std::time::Duration::from_secs(60));
+    let busy = app.report_gate.acquire().await.unwrap();
+    let cookie = app
+        .session
+        .session_cookie("token")
+        .split(';')
+        .next()
+        .unwrap()
+        .to_owned();
+    let router = router(app);
+    for path in [
+        "report",
+        "report/breakdown",
+        "report/entries",
+        "report/entry-totals",
+        "report/export",
+    ] {
+        let response = tokio::time::timeout(
+            std::time::Duration::from_millis(100),
+            router.clone().oneshot(
+                HttpRequest::builder().method("POST")
+                    .uri(format!("/api/v1/organizations/org/{path}"))
+                    .header("cookie", &cookie)
+                    .body(Body::from(r#"{"report":{"from":"2026-09-21","to":"2026-09-28"},"from":"2026-09-21","to":"2026-09-24"}"#))
+                    .unwrap(),
+            ),
+        ).await.expect("full report budget must refuse before the admission deadline").unwrap();
+        assert_eq!(response.status(), 503, "{path}");
+        assert_eq!(response.headers()[header::RETRY_AFTER], "1");
+    }
+    assert_eq!(
+        answer(router, "GET", "/api/v1/timer", Some(&cookie), None, "").await,
+        (200, "null".into()),
+    );
+    drop(busy);
+}
