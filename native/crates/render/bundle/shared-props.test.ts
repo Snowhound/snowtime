@@ -94,6 +94,37 @@ test('merge and split re-home getters to their source and keep undefined fallbac
   })
 })
 
+test('split of a merge result keeps key order and falls back once keys are added', () => {
+  const { value } = evaluate(`
+    function mergeProps(...sources){}
+    function splitProps(props,...keys){}
+    let latest=1;
+    const merged=mergeProps({b:0,"2":0},{get a(){return latest},b:2,c:3});
+    const [first,second,rest]=splitProps(merged,["c","a","c","x"],["a","b"]);
+    const [inner,innerRest]=splitProps(first,["a"]);
+    const copy={...merged};
+    const [fromCopy]=splitProps(copy,["a"]);
+    const added=mergeProps({a:1});
+    added.extra=5;
+    const [,addedRest]=splitProps(added,["a"]);
+    latest=4;
+    return {first:Object.keys(first),second:Object.keys(second),rest:Object.keys(rest),a:first.a,inner:inner.a,
+      innerRest:Object.keys(innerRest),flags:Object.getOwnPropertyDescriptor(first,"a"),
+      copy:Object.getOwnPropertyDescriptor(fromCopy,"a"),added:{...addedRest}};
+  `)
+  expect(value).toMatchObject({
+    first: ['c', 'a'],
+    second: ['b'],
+    rest: ['2'],
+    a: 4,
+    inner: 4,
+    innerRest: ['c'],
+    flags: { enumerable: true, configurable: false },
+    copy: { value: 1, writable: true },
+    added: { extra: 5 },
+  })
+})
+
 test('ordinary descriptors, proxies, non-enumerable data, and symbols survive split', () => {
   const { value } = evaluate(`
     function splitProps(props,...keys){}

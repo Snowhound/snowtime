@@ -2,6 +2,10 @@
 const renderSharedGetters = new WeakSet()
 const renderSharedMergeSlot = Symbol('merged sources')
 const renderSharedSplitSlot = Symbol('split source')
+// A merge result's own reference and key count. splitProps copies its getters directly
+// unless keys were added to it; a spread copy or an object inheriting it fails the check.
+const renderSharedMergedSlot = Symbol('merge target')
+const renderSharedMergedCountSlot = Symbol('merged keys')
 const renderSharedMerges = new Map()
 const renderSharedSplits = new Map()
 
@@ -59,6 +63,7 @@ function renderSharedSplitDescriptor(key, enumerable, configurable) {
 export function renderSharedMerge(...sources) {
   const target = {}
   target[renderSharedMergeSlot] = sources
+  let count = 0
   let inherited
   for (const key in Object.prototype) (inherited ??= []).push(key)
   for (let i = 0; i < sources.length; i++) {
@@ -69,19 +74,55 @@ export function renderSharedMerge(...sources) {
       // Symbols are never merged, so only names are listed.
       const names = Object.getOwnPropertyNames(Object(source))
       for (let j = 0; j < names.length; j++)
-        if (Object.hasOwn(source, names[j])) renderSharedMergeKey(target, names[j])
+        if (Object.hasOwn(source, names[j])) count += renderSharedMergeKey(target, names[j])
       if (inherited)
         for (const key of inherited)
-          if (!names.includes(key) || !Object.hasOwn(source, key)) renderSharedMergeKey(target, key)
+          if (!names.includes(key) || !Object.hasOwn(source, key))
+            count += renderSharedMergeKey(target, key)
     }
   }
+  target[renderSharedMergedSlot] = target
+  target[renderSharedMergedCountSlot] = count
   return target
 }
 function renderSharedMergeKey(target, key) {
-  if (key === '__proto__' || key === 'constructor' || Object.hasOwn(target, key)) return
+  if (key === '__proto__' || key === 'constructor' || Object.hasOwn(target, key)) return 0
   Object.defineProperty(target, key, renderSharedMergeDescriptor(key))
+  return 1
+}
+// Merge getters are non-configurable, so a merge result whose name count is unchanged has
+// only them. Each part gets the same sources and getters, in splitProps' key order.
+function renderSharedSplitMerged(props, keys) {
+  const names = Object.getOwnPropertyNames(props)
+  if (names.length !== props[renderSharedMergedCountSlot]) return undefined
+  const sources = props[renderSharedMergeSlot]
+  function split(k, all) {
+    const clone = {}
+    let count = 0
+    for (let i = 0; i < k.length; i++) {
+      const key = k[i]
+      const at = all ? i : names.indexOf(key)
+      if (at < 0 || names[at] === undefined) continue
+      if (!count) clone[renderSharedMergeSlot] = sources
+      Object.defineProperty(clone, key, renderSharedMergeDescriptor(key))
+      names[at] = undefined
+      count++
+    }
+    if (count) {
+      clone[renderSharedMergedSlot] = clone
+      clone[renderSharedMergedCountSlot] = count
+    }
+    return clone
+  }
+  const parts = keys.map((k) => split(k, false))
+  parts.push(split(names, true))
+  return parts
 }
 export function renderSharedSplit(props, ...keys) {
+  if (props[renderSharedMergedSlot] === props) {
+    const parts = renderSharedSplitMerged(props, keys)
+    if (parts) return parts
+  }
   const descriptors = Object.getOwnPropertyDescriptors(props)
   function split(k) {
     const clone = {}
