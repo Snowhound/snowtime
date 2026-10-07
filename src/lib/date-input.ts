@@ -9,6 +9,8 @@ type DatePart = 'day' | 'month' | 'year'
 // with them as it renders, and building an Intl formatter is slow.
 const dateFormatters = new Map<string, Intl.DateTimeFormat>()
 const timeFormatters = new Map<string, Intl.DateTimeFormat>()
+// resolvedOptions() builds a new object on every call, and time fields ask on every render.
+const twelveHourLocales = new Map<string, boolean>()
 
 function cached(
   formatters: Map<string, Intl.DateTimeFormat>,
@@ -96,7 +98,12 @@ export function parseDateInput(text: string, locale: string, today: IsoDate): Is
 
 // Whether the locale writes times with AM and PM.
 export function uses12Hours(locale: string): boolean {
-  return timeFormatter(locale).resolvedOptions().hour12 === true
+  let twelve = twelveHourLocales.get(locale)
+  if (twelve === undefined) {
+    twelve = timeFormatter(locale).resolvedOptions().hour12 === true
+    twelveHourLocales.set(locale, twelve)
+  }
+  return twelve
 }
 
 // The 'HH:MM' time as the locale writes it: 09:30 AM in en, 09:30 in et.
