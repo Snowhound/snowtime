@@ -24,7 +24,9 @@ rest:
   and then make it fast, measure against a load model (task 078).
 - Findings that took measurement or failure to learn, such as Start addressing server
   functions by a build hash (task 081.02), what each renderer costs in memory (task
-  081.01), and better-auth-rs hashing passwords with Argon2 where Better Auth uses scrypt.
+  081.01), better-auth-rs hashing passwords with Argon2 where Better Auth uses scrypt, and
+  V8 keeping a bundle's whole source at two bytes per character if one character is above
+  U+00FF, which an ASCII-only minify avoids (task 081.22).
 - The decisions task 081 made, as a catalogue (below), so a session reuses them instead of
   deciding again.
 - Mapping tables from each layer to its port: Drizzle to `rusqlite` with SQL strings, a

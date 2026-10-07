@@ -208,8 +208,8 @@ all four pages.
   alias lists, and attribute spreads, which needs a rewrite of the function rather than a
   small addition to `bundle/lucide-nodes.ts`.
 
-The binary has 24.7 MB of symbol tables (`.symtab` and `.strtab`); stripping them in a
-production build would take it to about 70 MB. Measurement images keep them for profiles.
+`render-bench` keeps 24.7 MB of symbol tables (`.symtab` and `.strtab`) for profiles; the
+release image (`native/Dockerfile`) already strips the server.
 
 ## Follow-ups
 
@@ -217,8 +217,9 @@ production build would take it to about 70 MB. Measurement images keep them for 
   not in merge and split.
 - **Lucide's icon building.** `buildLucideIconNode` and `Icon` remain at about 3% of V8's
   timer: alias and class lists, spreads, and a new node array per icon.
-- **Production image.** Strip the binary and try a distroless runtime base in place of
-  `debian:trixie-slim`.
+- **Release image base.** A distroless base in place of `debian:trixie-slim` would make
+  the image about 80 MB smaller and change nothing at runtime. The health check would
+  need to stop using `curl`. Not worth a task on its own.
 
 ## Validation
 

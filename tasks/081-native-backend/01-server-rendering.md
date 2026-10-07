@@ -479,6 +479,9 @@ with Deno extensions and the policy measured above:
 - [x] A render API in the proof of concept: Rust serves the timer and week report
       server-rendered, and Start's client hydrates them
 - [x] A memory target for the native backend with a renderer, agreed with Kait
+- [ ] Confirmed on the Linux host: the app's peak RSS with one renderer against the
+      guideline, and V8's render CPU against Bun's plain bundle on the four pages, the
+      condition in native-rendering.md
 - [x] The decision recorded in `docs/architecture/` with what was rejected: shells
       (task 079), a separate Bun render process, and the other engines
 - [x] The renderer's harness kept where it can be re-run: `native/crates/render/`,
