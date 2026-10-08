@@ -208,6 +208,36 @@ describe('app invitations with the organization plugin without teams', () => {
 })
 
 describe('member removal hook', () => {
+  test('HTTP validation refusals preserve timers and team memberships', async () => {
+    const signedIn = await headers('admin@example.com')
+    const before = await memberships(U.member)
+    const timer = await db.query.timeEntry.findFirst({ where: { id: seedIds.entries.running } })
+    expect(timer?.stoppedAt).toBeNull()
+    for (const path of ['remove-member', 'leave']) {
+      for (const body of [null, [], {}, { memberIdOrEmail: 3, organizationId: false }]) {
+        for (const cookie of ['', signedIn.get('cookie')!]) {
+          const response = await auth.handler(
+            new Request(`http://localhost:3080/api/auth/organization/${path}`, {
+              method: 'POST',
+              headers: {
+                cookie,
+                origin: 'http://localhost:3080',
+                'content-type': 'application/json',
+              },
+              body: JSON.stringify(body),
+            }),
+          )
+          expect(response.status).toBe(400)
+          expect(await response.json()).toMatchObject({ code: 'VALIDATION_ERROR' })
+        }
+      }
+    }
+    expect(await memberships(U.member)).toEqual(before)
+    expect(
+      (await db.query.timeEntry.findFirst({ where: { id: seedIds.entries.running } }))?.stoppedAt,
+    ).toBeNull()
+  })
+
   test('removal stops a timer and clears only this organization’s team memberships, including leads', async () => {
     const admin = await scopeOf(db, U.admin, O.northwind)
     const signedIn = await headers('admin@example.com')
