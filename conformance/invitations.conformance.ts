@@ -2,8 +2,8 @@
 // Auth creates and accepts them; its refusals keep its status and code.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { v7 as uuidv7 } from 'uuid'
+import { companyIds } from '~/db/seed-company'
 import { COMPANY, USERS } from '../perf/lib/database'
-import { companyIds } from '../src/db/seed-company'
 import {
   type Caller,
   type CallName,
