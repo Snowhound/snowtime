@@ -204,6 +204,10 @@ _code_ means the code and its dependency sources show it, without a run.
 - **Fix:** give the database lanes their own threads, as the hash lane has, or reserve
   separate blocking capacity for file and DNS work, or serve the immutable public files
   from memory. Correct the doc and extend the source test to the host crate.
+- **Decided** (Kait, 2026-10-08): database owner threads, a startup index of the public
+  files' paths, and a fixed 2–4 thread blocking pool for files and DNS; no preloading,
+  because a CDN fronts the host. Recorded in `docs/architecture/native-host.md`; task
+  081.34 builds it.
 
 **M7. Vendored OpenSSL ships in the release binary.**
 
@@ -259,7 +263,8 @@ _code_ means the code and its dependency sources show it, without a run.
   file. The public directory is build output, which limits this today.
 - **Evidence:** reproduced (`probe.ts precompressed`): `/backup.gz` 404, `/backup` with
   `Accept-Encoding: gzip` 200 with the archive's contents.
-- **Fix:** serve a static path only when its base file exists.
+- **Fix:** serve a static path only when its base file exists. M6's file index does this:
+  a variant serves only when its base path is in the index.
 
 ### Low
 

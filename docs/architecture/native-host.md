@@ -6,7 +6,8 @@ after the overload measurements of tasks 081.03 and 081.10, a review of
 [case against async/await for mixed network and CPU work](https://pmbanugo.me/blog/why-async-await-complect-concurrency),
 and an adversarial review of this design the same day. Rendering has its own record in
 [native-rendering.md](native-rendering.md). Items marked _planned_ aren't built yet;
-[task 081.17](../../tasks/081-native-backend/17-bounded-lanes.md) builds them.
+[task 081.17](../../tasks/081-native-backend/17-bounded-lanes.md) built the first set,
+and task 081.34 builds the database owner threads and the file index decided below.
 
 ## Tokio at the edge, lanes behind it
 
@@ -42,11 +43,34 @@ as the V8 renderers are. The contract matters more than the mechanism. A lane ge
 own threads where the shared pool can't keep the contract: password hashing, whose lower
 priority must not carry over to database work on a reused thread.
 
-| Lane             | Built                                                                                                                                                       | _Planned_                         |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                        | Validate capacity and overload    |
-| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                                   | None                              |
-| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar, parked (081.16) |
+_Planned_ (Kait, 2026-10-08, from finding M6 of
+[task 081.30](../../tasks/081-native-backend/30-audit.md)): every lane gets its own
+threads, and Tokio's blocking pool holds no lane. The audit found that the pool, capped at
+readers plus one, also runs `tokio::fs` for static files and reqwest's DNS lookups. On one
+core the writer then shares its only thread with every page's file probes, so admitted
+database work waits behind file work, past its deadline and after its caller left.
+
+- **Database owner threads.** One writer thread and one thread per reader, each owning
+  its connection and fed by a bounded channel, as the hash lane is. The gates keep
+  their count and time bounds, and a worker skips a job whose caller left.
+- **A file index.** At startup the host lists the public directory's paths once and keeps
+  only that set, a few KB. A path outside it goes to pages without touching the disk, so
+  pages and missing-file probes cost no file call. Real files are still read from disk,
+  so memory and `EDGE_STATIC_DIR` stay as they are. A precompressed variant serves only
+  when its base path is in the set.
+- **The blocking pool serves only files and DNS,** with a small fixed cap of its own
+  (2–4) instead of readers plus one. Its queue has no bound, but it holds only CDN misses
+  and the occasional OAuth lookup, and a backlog there no longer delays database work.
+
+Memory-resident static files were rejected: Snowtime runs behind Cloudflare, which caches
+the public files, so preloading them (36 MB) would serve only cache misses. The porting
+kit records when preloading fits ([05](../../tasks/081-native-backend/05-porting-recipes.md)).
+
+| Lane             | Built                                                                                                                                                       | _Planned_                                              |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                        | Owner threads (081.34); validate capacity and overload |
+| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                                   | None                                                   |
+| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar, parked (081.16)                      |
 
 A reader that finds a session due for renewal or expired takes the writer only if the
 writer's gate has a free slot at that moment. Otherwise it answers from the reader, and a
@@ -245,8 +269,11 @@ This share fits inside the render policy's 25% headroom and still needs measurem
 On Linux each dedicated thread increases its inherited niceness by five, capped at 19,
 and verifies the new value before accepting work. Startup fails if a thread cannot get a
 lower priority, except on a host already at 19, which has no lower one. On other systems the dedicated threads keep their inherited priority.
-Only database admission reaches Tokio's blocking pool, capped at readers plus one;
-a source test rejects `spawn_blocking` elsewhere in the server crate.
+Tokio's blocking pool is capped at readers plus one, and a source test rejects
+`spawn_blocking` in the server crate outside database admission. Task 081.30 found that
+static files and DNS use the pool too. _Planned_ (081.34): database work moves to owner
+threads, the pool serves only files and DNS under a fixed cap of 2–4, and the source test
+covers the host crate and rejects `spawn_blocking` in database code.
 
 Task 081.10's provisional whole-host test budgets are 2 GiB for M and 4 GiB for L,
 including the OS, replication, and file cache. They come from a shared Mac VM and await

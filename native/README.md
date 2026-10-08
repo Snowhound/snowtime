@@ -295,7 +295,10 @@ one week under `/backgrounds/` and `/brand/`, and revalidation elsewhere. Unknow
 paths stay on the API router even if the directory contains a matching file. Dotfiles
 and archive or backup probes are refused. Directory indexes are disabled. Any other path
 is a page, which keeps its own `Cache-Control`. The release image copies the render
-bundle's public files to `/app/public` and sets `EDGE_STATIC_DIR` to it.
+bundle's public files to `/app/public` and sets `EDGE_STATIC_DIR` to it. The expected
+setup puts a CDN or caching proxy in front, as Snowtime's Cloudflare does; the host
+serves static files as the fallback for cache misses
+([native-host.md](../docs/architecture/native-host.md), "Tokio at the edge, lanes behind it").
 
 When a proxy supplies the client address, set `CLIENT_IP_HEADER` only on a listener
 whose network access is restricted to that trusted proxy. The native API accepts one
