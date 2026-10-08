@@ -149,10 +149,12 @@ fn apply(db: &mut Connection, migrations: &[Migration]) -> Result<usize, String>
         .map_err(sql)?;
         count += 1;
     }
-    let violation = tx
-        .prepare("PRAGMA foreign_key_check")
-        .and_then(|mut statement| Ok(statement.query([])?.next()?.is_some()))
-        .map_err(|e| format!("Migration failed foreign_key_check: {e}"))?;
+    // Only applied migrations are checked, so rows that predate them can't block startup.
+    let violation = count > 0
+        && tx
+            .prepare("PRAGMA foreign_key_check")
+            .and_then(|mut statement| Ok(statement.query([])?.next()?.is_some()))
+            .map_err(|e| format!("Migration failed foreign_key_check: {e}"))?;
     if violation {
         return Err("Migration failed foreign_key_check".into());
     }
@@ -264,6 +266,33 @@ mod tests {
             0
         );
         assert!(db.execute("insert into child values (2)", []).is_err());
+        std::fs::remove_dir_all(&folder).unwrap();
+    }
+
+    #[test]
+    fn starts_without_pending_migrations_despite_existing_violations() {
+        let folder = std::env::temp_dir().join(format!(
+            "snowtime-migrations-no-pending-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(folder.join("20260101000000_empty")).unwrap();
+        std::fs::write(
+            folder.join("20260101000000_empty/migration.sql"),
+            "SELECT 1;",
+        )
+        .unwrap();
+        let mut db = Connection::open_in_memory().unwrap();
+        db.execute_batch(
+            "CREATE TABLE parent (id integer PRIMARY KEY);
+            CREATE TABLE child (parent_id integer REFERENCES parent(id));",
+        )
+        .unwrap();
+        assert_eq!(migrate(&mut db, &folder), Ok(1));
+        db.execute_batch(
+            "PRAGMA foreign_keys=OFF; INSERT INTO child VALUES (2); PRAGMA foreign_keys=ON;",
+        )
+        .unwrap();
+        assert_eq!(migrate(&mut db, &folder), Ok(0));
         std::fs::remove_dir_all(&folder).unwrap();
     }
 

@@ -10,7 +10,8 @@ source of truth. Kait approved changing the audit probe fixture on 2026-10-08.
 
 - [x] Disable migration foreign keys before the immediate transaction, reject any
       `foreign_key_check` row or error before commit, and restore enforcement after
-      commit or rollback.
+      commit or rollback. The check runs only when a migration was applied, so a startup
+      with nothing pending neither scans the database nor refuses older rows.
 - [x] Test a parent rebuild with cascading children and foreign-key violation rollback.
 - [x] Commit organization creation, removal, leave, invitation insertion with team
       assignment, and acceptance with new-member team assignment atomically.
@@ -67,7 +68,7 @@ Run on 2026-10-08 before the fix commit:
 | `snowtime-host` tests, offline                                                | 17 passed, 0 failed                  |
 | `snowtime-host` build with `--features bench`, offline                        | Passed                               |
 | Every `conformance/*.conformance.ts` through the bench host                   | 49 tests, 511 assertions, 0 failures |
-| `compare.ts` through the bench host                                           | Pending                              |
+| `compare.ts` through the bench host                                           | 1,361 calls, all byte-equal          |
 | `bunx tsc --noEmit`                                                           | Passed                               |
 
 The server tests include four new regressions: preserving cascading children through a
