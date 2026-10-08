@@ -141,6 +141,20 @@ it:
   past count or time bounds. A report budget leaves ordinary readers available under
   a single-organization burst (17). A single connection still delays timers while a
   report runs. Open: valid overload and capacity evidence at the chosen backstop in 27
+- Tokio at the edge, lanes behind it ([native-host.md](../../docs/architecture/native-host.md),
+  2026-10-06; a design guideline for the kit, Kait 2026-10-08). From
+  [Tina](https://github.com/pmbanugo/tina), adopt what fits a Tokio stack: everything
+  bounded, immediate refusal as backpressure, CPU work kept off the event loop,
+  supervised workers with a restart budget, and no work for callers that left. Measured
+  in 081.10 and 081.17: a 40,000-user overload fell from 525 threads and 364 MB to 9
+  threads and 205 MB, and the 20,000-user hold passed with no dropped actions. Reject
+  thread-per-core, no work stealing, and per-core deterministic scheduling: hyper,
+  rustls, and quinn need Tokio, with no measured gain to justify replacing them. The
+  async edge plus separate lanes is the split Tina's author argues against; the shared
+  lane contract is what makes it safe, so the kit names it as a deliberate deviation.
+  Open: seeded, reproducible tests of the lane contract (deadlines, cancellation while
+  waiting, restart budgets) with `tokio::time::pause`, `turmoil`, or `loom`, kept only
+  if they find bugs the current tests miss
 - Better Auth through an app-owned `rusqlite` store on the host's lanes (question 5,
   [auth spike](auth-spike.md), 2026-10-06). The 1,582-line adapter proves storage and
   selected flows without SeaORM or sqlx. Reject a library-owned pool where the host
