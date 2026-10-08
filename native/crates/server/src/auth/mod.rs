@@ -5,6 +5,7 @@
 pub mod app_session;
 pub mod cookie;
 pub mod password;
+pub(crate) mod rate_limit;
 pub mod schemas;
 pub mod session;
 

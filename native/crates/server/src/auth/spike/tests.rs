@@ -29,6 +29,7 @@ fn store_at(deadline: Duration, origin: &str) -> LaneStore {
             password_enabled: true,
             sign_in_page: Default::default(),
             client_ip_header: None,
+            rate_limit: false,
             oauth: vec![],
         },
         0,

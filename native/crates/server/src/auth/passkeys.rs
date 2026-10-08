@@ -338,8 +338,9 @@ fn registration(
         else {
             return Err("authData".into());
         };
-        let len = u16::from_be_bytes([auth[53], auth[54]]) as usize;
-        let pk = &auth[55 + len..];
+        let length = auth.get(53..55).ok_or("credential length")?;
+        let len = u16::from_be_bytes([length[0], length[1]]) as usize;
+        let pk = auth.get(55 + len..).ok_or("credential key")?;
         // Decode one COSE object; extensions can follow it in authenticator data.
         let mut decoder = serde_cbor_2::Deserializer::from_slice(pk);
         let _: serde_cbor_2::Value = serde::Deserialize::deserialize(&mut decoder)?;
@@ -354,7 +355,10 @@ fn registration(
             .unwrap_or_default();
         Ok(Passkey {
             name,
-            public_key: STANDARD.encode(&pk[..decoder.byte_offset()]),
+            public_key: STANDARD.encode(
+                pk.get(..decoder.byte_offset())
+                    .ok_or("credential key length")?,
+            ),
             user_id: user.user_id.clone(),
             credential_id: URL_SAFE_NO_PAD.encode(credential.cred_id.as_slice()),
             counter: credential.counter,
@@ -367,7 +371,7 @@ fn registration(
             backed_up: credential.backup_state,
             transports: Some(transports),
             created_at: Some(Timestamp(clock::now())),
-            aaguid: Some(uuid::Uuid::from_slice(&auth[37..53])?.to_string()),
+            aaguid: Some(uuid::Uuid::from_slice(auth.get(37..53).ok_or("aaguid")?)?.to_string()),
             id: uuid::Uuid::now_v7().to_string(),
         })
     })();
@@ -376,7 +380,7 @@ fn registration(
         Err(error) => {
             eprintln!("[passkey] registration: {error}");
             return Ok(refusal(
-                500,
+                400,
                 "FAILED_TO_VERIFY_REGISTRATION",
                 "Failed to verify registration",
             ));
@@ -559,25 +563,28 @@ fn run(
             return Ok(domain_refusal());
         }
     }
-    let required = matches!(
-        action,
-        Action::RegisterOptions | Action::Register | Action::List | Action::Delete
-    );
-    if required && user.is_none() {
-        return Ok(refusal(401, "UNAUTHORIZED", "Unauthorized"));
+    match action {
+        Action::AuthenticateOptions => return options(db, app, user.as_ref(), false, query),
+        Action::Authenticate => return authentication(db, app, request, body),
+        _ => {}
     }
+    let Some(user) = user else {
+        return Ok(refusal(401, "UNAUTHORIZED", "Unauthorized"));
+    };
     if matches!(action, Action::RegisterOptions | Action::Register)
-        && clock::now() - user.as_ref().unwrap().created_at.0 >= 86400000
+        && clock::now() - user.created_at.0 >= 86400000
     {
         return Ok(refusal(403, "SESSION_NOT_FRESH", "Session is not fresh"));
     }
     match action {
-        Action::RegisterOptions => options(db, app, user.as_ref(), true, query),
-        Action::AuthenticateOptions => options(db, app, user.as_ref(), false, query),
-        Action::Register => registration(db, app, user.as_ref().unwrap(), request, body),
+        Action::RegisterOptions => options(db, app, Some(&user), true, query),
+        Action::Register => registration(db, app, &user, request, body),
+        Action::List => list_passkeys(db, &user.user_id),
+        Action::Delete => {
+            delete_passkey(db, &user.user_id, body["id"].as_str().unwrap_or_default())
+        }
+        Action::AuthenticateOptions => options(db, app, Some(&user), false, query),
         Action::Authenticate => authentication(db, app, request, body),
-        Action::List => list_passkeys(db, &user.unwrap().user_id),
-        Action::Delete => delete_passkey(db, &user.unwrap().user_id, body["id"].as_str().unwrap()),
     }
 }
 fn list_passkeys(db: &Connection, user_id: &str) -> rusqlite::Result<Response> {
@@ -665,6 +672,7 @@ mod tests {
             password_enabled: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
+            rate_limit: false,
             oauth: vec![],
         })
         .unwrap();

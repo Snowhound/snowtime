@@ -143,6 +143,8 @@ export async function oauthFlow(
       throw new Error('Encoded callback provider path changed')
     if (label === 'callback non-ASCII location' && location !== '/ä')
       throw new Error('Latin-1 redirect header changed')
+    if (label === 'callback percent-encoded Unicode location' && location !== '/%E9%9B%AA')
+      throw new Error('Unicode redirect was not percent-encoded')
     observe({
       label,
       status: response.status,
@@ -225,10 +227,10 @@ export async function oauthFlow(
   await begin('google', { callbackURL: '/雪' })
   const wideCode = await issue(profile(USERS.admin.email))
   await call(
-    'callback non-ByteString location',
+    'callback percent-encoded Unicode location',
     `/callback/google?state=${state}&code=${wideCode}`,
     undefined,
-    500,
+    302,
   )
   cookie = ''
   await call('signed out accounts', '/list-accounts', undefined, 401)

@@ -76,6 +76,10 @@ pub fn from_env() -> Result<Config, String> {
                 || var("DEMO_MODE").as_deref() == Some("true"),
             sign_in_page: sign_in_page_config(&var)?,
             client_ip_header: var("CLIENT_IP_HEADER").map(|h| h.to_lowercase()),
+            rate_limit: snowtime_server::rate_limit::enabled(
+                var("NODE_ENV").as_deref(),
+                var("RATE_LIMIT").as_deref(),
+            )?,
             app_url: url::Url::parse(&app_url)
                 .expect("validated app origin")
                 .origin()

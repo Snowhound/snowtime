@@ -1,0 +1,10 @@
+{
+  "id": "VuHQyWmV6dQFQIr1UeQwk4Hi0F94UkLdqWzPzwWIv-E",
+  "rawId": "VuHQyWmV6dQFQIr1UeQwk4Hi0F94UkLdqWzPzwWIv-E",
+  "type": "public-key",
+  "response": {
+    "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiZml4dHVyZSIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
+    "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVikSZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NBAAAAAAAAAAAAAAAAAAAAAAAAAAAAIFbh0MlplenUBUCK9VHkMJOB4tBfeFJC3alsz88FiL_hpQECAyYgASFYIGkF67f8iu1KE9mBU9bZnMXjI63gEXHMMNOHWqKyWX0lIlggFE0Ce8XPLnah7bQxmdPiRXV1pkyrNtOyyDeogaOxzH8",
+    "transports": ["internal"]
+  }
+}

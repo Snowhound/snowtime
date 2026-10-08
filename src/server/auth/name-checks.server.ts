@@ -45,6 +45,12 @@ export const organizationHooks = {
     checkSlug(organization.slug)
   },
   beforeUpdateOrganization: async ({ organization }) => {
+    if (Object.keys(organization).length === 0) {
+      throw new APIError('BAD_REQUEST', {
+        code: 'NO_FIELDS_TO_UPDATE',
+        message: 'No fields to update',
+      })
+    }
     if (organization.slug !== undefined) refuse('SLUG_READ_ONLY')
     if (organization.name !== undefined) checkName(organization.name)
   },

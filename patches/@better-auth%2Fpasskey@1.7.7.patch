@@ -1,0 +1,14 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 723ce75155576ab5940e9eb843d16966b717a7a3..f671f53aaf5a5b74b93191f3a88c84e5b68608a2 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -353,6 +353,9 @@ const verifyPasskeyRegistration = (options) => {
+ 				expectedOrigin: origin,
+ 				expectedRPID: getRpID(options, typeof ctx.context.options.baseURL === "string" ? ctx.context.options.baseURL : void 0),
+ 				requireUserVerification: false
++			}).catch((error) => {
++				if (error instanceof APIError) throw error;
++				throw APIError.from("BAD_REQUEST", PASSKEY_ERROR_CODES.FAILED_TO_VERIFY_REGISTRATION);
+ 			});
+ 			const { verified, registrationInfo } = verification;
+ 			if (!verified || !registrationInfo) throw APIError.from("BAD_REQUEST", PASSKEY_ERROR_CODES.FAILED_TO_VERIFY_REGISTRATION);

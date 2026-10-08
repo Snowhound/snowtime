@@ -291,9 +291,28 @@ is a page, which keeps its own `Cache-Control`. The release image copies the ren
 bundle's public files to `/app/public` and sets `EDGE_STATIC_DIR` to it.
 
 When a proxy supplies the client address, set `CLIENT_IP_HEADER` only on a listener
-whose network access is restricted to that trusted proxy. The native API reads that
-header as configured; the host does not authenticate arbitrary forwarded headers.
+whose network access is restricted to that trusted proxy. The native API accepts one
+valid address from that header, rejects chains, and ignores other forwarded headers. Without it, all listener
+modes use `axum_server` connect info for the TCP peer. Sessions and rate-limit keys
+normalize IPv4-mapped IPv6 to IPv4 and group IPv6 by `/64`, as Better Auth does.
 The direct benchmark trusts its isolated generator network for simulated user IPs.
+
+`RATE_LIMIT` defaults to on unless `NODE_ENV=development`. Set `RATE_LIMIT=on` to
+exercise limits in development, or `RATE_LIMIT=off` for perf and stress runs. It
+controls both per-IP auth limits and API per-user write limits. Startup logs show
+whether it is enabled; `/readyz` includes `rate_limit`. Auth limits use in-memory
+`governor` GCRA quotas through `tower_governor`, with Better Auth's 429 JSON body,
+`Content-Type: application/json`, and `X-Retry-After` (rounded-up seconds until the
+next token). Idle keys are pruned every minute. TLS and ACME remain opt-in.
+
+Verify production auth limits and session IPs with
+`bun native/bench/hardening-compare.ts native/target/debug/snowtime-axum`. The ordinary
+byte comparison runs in development and cannot exercise TypeScript's auth limiter.
+Before `bunx tsc --noEmit`, install the isolated benchmark dependencies with
+`bun install --frozen-lockfile` in `native/bench/auth-spike` and
+`native/crates/render/bundle/bench`, and run `bun run i18n:compile` in the repository
+root. The API-key spike deliberately keeps its pinned Better Auth version separate
+from the app's version.
 
 For a local edge comparison, first run the normal benchmark once to create its Caddy
 certificate, then add `--direct` to `perf:stress --app=native --recording=<file>`.

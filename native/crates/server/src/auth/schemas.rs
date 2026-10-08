@@ -425,10 +425,12 @@ pub(crate) fn oauth_issues(
             }
             continue;
         }
-        if !check(&mut issues, name, value, expected, true) || value.is_none() {
+        if !check(&mut issues, name, value, expected, true) {
             continue;
         }
-        let value = value.unwrap();
+        let Some(value) = value else {
+            continue;
+        };
         if *name == "idToken" {
             for (field, ty) in [
                 ("token", "string"),
@@ -488,7 +490,7 @@ pub(crate) fn oauth_issues(
                 }
             }
         } else if *name == "scopes" {
-            for (i, v) in value.as_array().unwrap().iter().enumerate() {
+            for (i, v) in value.as_array().into_iter().flatten().enumerate() {
                 check(
                     &mut issues,
                     &format!("scopes.{i}"),
@@ -511,8 +513,8 @@ pub(crate) fn oauth_issues(
             if valid
                 && value
                     .as_object()
-                    .unwrap()
-                    .keys()
+                    .into_iter()
+                    .flat_map(serde_json::Map::keys)
                     .any(|k| super::oauth::RESERVED.contains(&k.as_str()))
             {
                 issues.push(format!("[body.additionalParams] additionalParams cannot include reserved OAuth parameters: {}",super::oauth::RESERVED.join(", ")));

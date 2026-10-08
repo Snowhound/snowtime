@@ -139,6 +139,30 @@ export async function passkeyFlow(
     body: { id: '' },
     cookie: admin.cookie,
   })
+  for (const length of [0, 36, 53, 54, 55, 86, 65535]) {
+    const options = await call(
+      `truncated attestation ${length} options`,
+      'generate-register-options',
+      200,
+      { cookie: admin.cookie, generated: true },
+    )
+    const response = authenticators[0].registration(
+      options.body.challenge,
+      server.url,
+      1,
+      (data) => {
+        if (length !== 65535) return data.subarray(0, length)
+        const invalid = Buffer.from(data)
+        invalid.writeUInt16BE(65535, 53)
+        return invalid
+      },
+    )
+    await call(`truncated attestation ${length}`, 'verify-registration', 400, {
+      method: 'POST',
+      cookie: `${admin.cookie}; ${options.cookie}`,
+      body: { response },
+    })
+  }
   for (const [i, authenticator] of authenticators.entries()) {
     const flags = i === 1 ? 1 | 8 | 16 : 1 // UV false, plus a backed-up multi-device credential.
     const register = await call(

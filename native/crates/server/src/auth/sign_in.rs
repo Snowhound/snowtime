@@ -210,7 +210,10 @@ impl App {
         let (Some(body), true) = (body, issues.is_empty()) else {
             return refusal(400, "VALIDATION_ERROR", &issues.join("; "));
         };
-        let body: SignInBody = serde_json::from_value(body).expect("the body was checked");
+        let body: SignInBody = match serde_json::from_value(body) {
+            Ok(body) => body,
+            Err(error) => return refusal(400, "VALIDATION_ERROR", &error.to_string()),
+        };
         if let Err(refused) = fetch.validate_form(app_origin) {
             return refused;
         }
@@ -278,7 +281,14 @@ impl App {
                 "Invalid email or password",
             );
         }
-        let user = found.expect("a verified hash has a user").user;
+        let Some(credentials) = found else {
+            return refusal(
+                401,
+                "INVALID_EMAIL_OR_PASSWORD",
+                "Invalid email or password",
+            );
+        };
+        let user = credentials.user;
         let user_id = user.id.clone();
         #[cfg(feature = "bench")]
         let session_trace = trace.clone();

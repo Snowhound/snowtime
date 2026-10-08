@@ -146,7 +146,7 @@ pub async fn serve(
             axum_server::bind(address)
                 .acceptor(axum_server::accept::NoDelayAcceptor::new())
                 .handle(handle)
-                .serve(router.into_make_service())
+                .serve(router.into_make_service_with_connect_info::<std::net::SocketAddr>())
                 .await
         }
         Tls::Files { certificate, key } => {
@@ -157,7 +157,7 @@ pub async fn serve(
             axum_server::bind(address)
                 .acceptor(acceptor)
                 .handle(handle)
-                .serve(router.into_make_service())
+                .serve(router.into_make_service_with_connect_info::<std::net::SocketAddr>())
                 .await
         }
         Tls::Acme {
@@ -189,7 +189,7 @@ pub async fn serve(
             let result = axum_server::bind(address)
                 .acceptor(accept::HandshakeTimeout(acceptor))
                 .handle(handle)
-                .serve(router.into_make_service())
+                .serve(router.into_make_service_with_connect_info::<std::net::SocketAddr>())
                 .await;
             poll.abort();
             result

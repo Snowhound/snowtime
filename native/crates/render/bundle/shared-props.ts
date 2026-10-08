@@ -1,4 +1,10 @@
-import { parse, type Node } from 'acorn'
+import {
+  parse,
+  type AnyNode,
+  type ObjectExpression,
+  type Property,
+  type SpreadElement,
+} from 'acorn'
 import { readFileSync } from 'node:fs'
 import type { Plugin } from 'vite'
 
@@ -9,36 +15,18 @@ const runtime = readFileSync(new URL('./shared-runtime.js', import.meta.url), 'u
   '',
 )
 
-type Ast = Node & {
-  [key: string]: unknown
-  name: string
-  value: unknown
-  computed: boolean
-  method: boolean
-  kind: string
-  key: Ast
-  body: Ast & { body: Ast[] }
-  callee: Ast & { object: Ast; property: Ast }
-  arguments: Ast[]
-  properties: Ast[]
-  params: Ast[]
-  left: Ast
-  id: Ast
-  init: Ast
-  argument: Ast
-}
 type Edit = { start: number; end: number; text: string }
 
-function walk(node: Ast, visit: (node: Ast) => void) {
+function walk(node: AnyNode, visit: (node: AnyNode) => void) {
   visit(node)
   for (const value of Object.values(node)) {
     if (Array.isArray(value)) {
       for (const child of value)
-        if (child && typeof child === 'object' && 'type' in child) walk(child as Ast, visit)
-    } else if (value && typeof value === 'object' && 'type' in value) walk(value as Ast, visit)
+        if (child && typeof child === 'object' && 'type' in child) walk(child as AnyNode, visit)
+    } else if (value && typeof value === 'object' && 'type' in value) walk(value as AnyNode, visit)
   }
 }
-function unsafeGetter(node: Ast) {
+function unsafeGetter(node: AnyNode) {
   let unsafe = false
   walk(node, (child) => {
     if (
@@ -51,8 +39,8 @@ function unsafeGetter(node: Ast) {
   })
   return unsafe
 }
-function propertyKey(property: Ast): string | undefined {
-  if (!property.key) return undefined
+function propertyKey(property: Property | SpreadElement): string | undefined {
+  if (property.type !== 'Property') return undefined
   if (!property.computed && property.key.type === 'Identifier') return property.key.name
   if (property.key.type === 'Literal' && ['string', 'number'].includes(typeof property.key.value))
     return String(property.key.value)
@@ -60,7 +48,7 @@ function propertyKey(property: Ast): string | undefined {
 }
 
 // Getter literals passed as props, with the reason a site keeps its literal.
-function propsSites(node: Ast) {
+function propsSites(node: AnyNode) {
   if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier') return []
   const name = node.callee.name
   const candidates =
@@ -71,23 +59,26 @@ function propsSites(node: Ast) {
         : []
   return candidates
     .filter(
-      (object) =>
-        object?.type === 'ObjectExpression' && object.properties.some((p: Ast) => p.kind === 'get'),
+      (object): object is ObjectExpression =>
+        object?.type === 'ObjectExpression' &&
+        object.properties.some((p) => p.type === 'Property' && p.kind === 'get'),
     )
     .map((object) => {
-      const properties: Ast[] = object.properties
+      const properties = object.properties
       const keys = properties.map(propertyKey)
       const reason = properties.some((p) => p.type === 'SpreadElement')
         ? 'spread'
-        : properties.some((p) => p.kind === 'set')
+        : properties.some((p) => p.type === 'Property' && p.kind === 'set')
           ? 'setter'
-          : properties.some((p) => p.method)
+          : properties.some((p) => p.type === 'Property' && p.method)
             ? 'method'
             : keys.some((key) => key === undefined || key === '__proto__' || key === 'constructor')
               ? 'key'
               : new Set(keys).size !== keys.length
                 ? 'duplicate'
-                : properties.some((p) => p.kind === 'get' && unsafeGetter(p.value))
+                : properties.some(
+                      (p) => p.type === 'Property' && p.kind === 'get' && unsafeGetter(p.value),
+                    )
                   ? 'receiver'
                   : undefined
       return { object, properties, keys, reason }
@@ -97,7 +88,7 @@ function propsSites(node: Ast) {
 export function rewriteSharedProps(code: string) {
   if (code.includes('renderShared') || /SharedProps\$\d/.test(code))
     throw new Error('Shared props generated-name collision')
-  const ast = parse(code, { ecmaVersion: 'latest', sourceType: 'script' }) as Ast
+  const ast = parse(code, { ecmaVersion: 'latest', sourceType: 'script' })
   const edits: Edit[] = []
   const declarations: string[] = []
   const descriptors = new Map<string, string>()
@@ -133,11 +124,14 @@ export function rewriteSharedProps(code: string) {
       }
       const id = 'SharedProps$' + rewritten++
       const body = properties.map((property, index) => {
+        if (property.type !== 'Property') throw new Error('Unexpected spread in shared props')
         const key = JSON.stringify(keys[index])
         if (property.kind !== 'get') {
           edit(property.start, property.value.start, '')
           return 'this[' + key + ']=v' + index + ';'
         }
+        if (property.value.type !== 'FunctionExpression')
+          throw new Error('Expected a getter function')
         edit(property.start, property.value.body.start, '() => ')
         const shared = descriptor(keys[index]!)
         return (
@@ -171,6 +165,7 @@ export function rewriteSharedProps(code: string) {
   walk(ast, (node) => {
     if (
       node.type === 'FunctionDeclaration' &&
+      node.id &&
       ['mergeProps', 'splitProps'].includes(node.id.name)
     ) {
       edits.splice(

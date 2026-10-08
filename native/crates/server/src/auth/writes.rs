@@ -503,7 +503,11 @@ fn update(
         .iter()
         .all(|k| data.get(*k).is_none())
     {
-        return Ok(empty(500));
+        return Ok(hook_error(
+            400,
+            "NO_FIELDS_TO_UPDATE",
+            "No fields to update",
+        ));
     }
     let metadata = serde_json::from_slice::<OrderedJson>(&request.body)
         .ok()
