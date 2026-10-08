@@ -144,7 +144,7 @@ mod tests {
         // A manifest that isn't JSON makes each renderer panic as it starts; with no restart
         // budget the first crash takes the lane down.
         let pool = Pool::start(
-            crate::pages::in_process(api.clone()),
+            crate::pages::in_process(api.clone(), None),
             "{",
             snowtime_render::Policy {
                 restart_budget: 0,
@@ -163,6 +163,7 @@ mod tests {
             .with_state(Arc::new(crate::pages::Pages {
                 pool: pool.clone(),
                 app_url: "http://snowtime.test".into(),
+                client_ip_header: None,
             }));
         let router = api
             .clone()

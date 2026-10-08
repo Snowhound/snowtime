@@ -9,11 +9,11 @@ import { startInstance } from '~/start'
 import { installClock } from './clock'
 import type { PageInput, StartServerProps } from './contract'
 
-let context: PageInput | undefined
 let locale: PageInput['locale']
+// The host adds the page's cookie and client address to each call, and drops other headers
+// but Content-Type and Accept.
 setSend(async (path, init) => {
   const headers = new Headers(init.headers)
-  if (context?.cookie) headers.set('cookie', context.cookie)
   const answer = await Deno.core.ops.op_send({
     method: init.method ?? 'GET',
     path,
@@ -29,7 +29,6 @@ overwriteGetLocale(() => locale ?? 'en')
 
 globalThis.renderPage = async function (input: PageInput) {
   installClock(input.now)
-  context = input
   globalThis.renderContext = input
   const request = new Request(input.url, { method: input.method ?? 'GET', headers: input.headers })
   // The cookie, then Accept-Language, as Start's paraglideMiddleware reads them.
@@ -67,7 +66,6 @@ globalThis.renderPage = async function (input: PageInput) {
       reader.releaseLock()
     }
   }
-  context = undefined
   locale = undefined
   globalThis.renderContext = undefined
   // Solid's server render leaves its context set, which would keep this page's whole graph

@@ -40,6 +40,7 @@ async fn serve(config: config::Config) {
         .next()
         .expect("HOST has an address");
     let origin = config.server.app_url.clone();
+    let client_ip_header = config.server.client_ip_header.clone();
     let rate_limit = config.server.rate_limit;
     tracing::info!(enabled = rate_limit, "rate limits");
     if !rate_limit {
@@ -77,7 +78,7 @@ async fn serve(config: config::Config) {
         "sized the renderers"
     );
     let pool = snowtime_render::Pool::start(
-        pages::in_process(api.clone()),
+        pages::in_process(api.clone(), client_ip_header.clone()),
         snowtime_render::MANIFEST,
         policy,
     )
@@ -105,6 +106,7 @@ async fn serve(config: config::Config) {
         .with_state(Arc::new(pages::Pages {
             pool,
             app_url: origin.clone(),
+            client_ip_header,
         }));
 
     let router = edge::router(api.merge(health), pages, &config.edge, &origin);

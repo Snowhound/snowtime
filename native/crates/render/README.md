@@ -14,12 +14,19 @@ never holds it. The current year fixture, the largest page, is about 379 kB; `ma
 page above 8 MiB. One page renders at a time per isolate, so cookies, locale, and query
 caches cannot overlap.
 
-`SendApi` is an `Arc` callback returning a `Send` future. It receives method, path
-(including the query string), headers, and body bytes, and returns status, headers, and
-body bytes. The bundle installs it with `setSend` and adds the page's cookie to each call;
-API data reaches the query cache through the same schema decoder as browser requests.
-Response bytes move into a V8 `Uint8Array` without a JavaScript array of numbers. The host
-passes the API router's `oneshot`.
+`SendApi` is an `Arc` callback returning a `Send` future. It receives the method, path
+(including the query string), headers, and body bytes that page JavaScript chose, plus the
+page's cookie and client address and the most bytes the answer may hold, which the
+renderer adds. It returns status, headers, and body bytes. The bundle installs it with
+`setSend`; API data reaches the query cache through the same schema decoder as browser
+requests. Response bytes move into a V8 `Uint8Array` without a JavaScript array of
+numbers. The host passes the API router's `oneshot`, allows only reads, and keeps only
+`Content-Type` and `Accept` from the page's headers (`crates/host/src/pages.rs`).
+
+An answer may hold at most `max_api_response_bytes` (4 MiB), and a page's answers together
+`max_api_bytes` (16 MiB); the largest answer the seeded pages read is about 19 kB. A call
+the host refuses or can't answer within those limits fails the page with 500, even when
+its JavaScript catches the error.
 
 The host supplies the absolute URL, request headers, cookie, and a fresh CSP nonce. The
 bundle reads the locale from the cookie and `Accept-Language`, as Start's paraglide
@@ -38,7 +45,9 @@ the new build no longer has.
 All renderers take pages from one bounded queue. `render` refuses a page as `Busy` when
 the queue is full, and a renderer refuses one that waited longer than `max_queue_wait`;
 the host answers both with 503 and `Retry-After`. A renderer skips a page whose caller
-has gone, such as one whose connection closed.
+has gone, such as one whose connection closed. A page whose caller leaves after a renderer
+took it renders to its end or its deadline, and its answer is dropped; stopping it would
+replace the isolate and lose its compiled code.
 
 The pool starts `min_renderers`. While pages wait, it adds one renderer at a time, up to
 `max_renderers`; an extra renderer idle for `retire_after` stops. `set_pressure(true)`
@@ -46,12 +55,23 @@ makes renderers collect after every page, stops extra ones, and adds none. The h
 the counts, heap limits, and semi-space size from the memory it may use and reports pressure from its RSS
 (`crates/host/src/memory.rs`).
 
+A supervisor replaces a renderer thread that panics, within `restart_budget` panics in
+`restart_window`. Past that the pool is down and answers `Down`, and after `down_retry`
+(60 seconds) it starts its renderers again. `health()` is degraded after a recent panic,
+or while a renderer has been on one page longer than `stuck_after` (10 seconds): such a
+renderer is blocked outside JavaScript, in an op or in V8, where neither deadline reaches.
+
 ## Web APIs and collection
 
-Deno's MIT extension crates supply URL parsing, text encoding, structured cloning,
-Request/Response, and streams. Their stream machinery is JavaScript backed by native
-ops, as Deno implements it. The isolate's `fetch` throws; app reads go through the host
-callback. The isolated SSR build replaces Solid's `mergeProps` descriptor-map enumeration with
+Deno's MIT extension crates `deno_web` and `deno_webidl` supply URL parsing, text
+encoding, structured cloning, and streams. Their stream machinery is JavaScript backed by
+native ops, as Deno implements it. Headers, Request, and Response are deno_fetch 0.276.0's
+scripts, copied into `vendor/deno_fetch` without the crate, whose ops and `deno_net`'s
+open sockets, resolve DNS, and speak TLS. Only `22_http_client.js` differs: it keeps the
+class `Request` checks `init.client` against and drops `createHttpClient`. No network op
+is registered (`no_network_op_is_registered`), the isolate's `fetch` throws, and app reads
+go through the host callback. To update the scripts, copy them from the matching
+deno_fetch release. The isolated SSR build replaces Solid's `mergeProps` descriptor-map enumeration with
 own-key enumeration. It preserves descriptor traps, non-enumerable props, lazy getters,
 and inherited descriptor-map keys. The adapter fails the build if the upstream helper
 changes. Browser sources and the production client are unchanged. Task 081.13 records
@@ -68,7 +88,15 @@ empties, so a larger nursery doesn't force a full collection after every page.
 `semi_space_bytes` fixes the size of each of the young generation's two semi-spaces; the
 host sets 32 or 16 MiB when its memory allows, and otherwise V8 sizes it from the heap
 limit (task 081.14). A near-limit callback terminates work when the old generation
-reaches its share of the 128 MiB heap limit and grants 16 MiB for unwinding. A set
+reaches its share of the 128 MiB heap limit, and grants 1 GiB once, the size of V8's
+largest object, so the allocation that crossed the limit completes or fails with a
+`RangeError` inside the isolate instead of aborting the process. The page then fails, and
+the isolate is replaced. The grant is address space: a page uses it only if it allocates
+that much before the termination stops it. Two near-limit cases still abort the process:
+a builtin that makes several allocations of close to 1 GiB before checking for
+termination, such as `new Array(1.3e8).fill(1.5)`, and one that builds an array of more
+than 2^27 elements, such as `split('')` on a longer string, which V8 refuses as a fatal
+"invalid size" at any heap size (task 081.36). A set
 semi-space adds three times its size on top, so at 32 MiB the whole heap may reach about
 212 MiB; the host counts that in each renderer's memory. These are heap thresholds, not
 process RSS limits. After each collection
@@ -77,8 +105,11 @@ compiler and the page buffers freed, which is most of the gap between a warm ren
 RSS and its V8 heap (task 081.01, "Late growth").
 
 A watchdog interrupts synchronous JavaScript at five seconds, and a Tokio deadline also
-covers host futures. A thrown, timed-out, or oversized render fails the page, and the
-renderer replaces its isolate. The old isolate is disposed before the replacement is
+covers host futures. A termination the watchdog requested as the page finished is
+cancelled, so it can't fail the next page. A thrown, timed-out, or oversized render fails
+the page, and the renderer replaces its isolate. It also replaces it after a served page
+that left API calls or timers pending, which would otherwise run during the next page with
+that page's cookie. The old isolate is disposed before the replacement is
 created; overlapping their lifetimes on one thread violates V8's scope ordering.
 
 ## Reproduce

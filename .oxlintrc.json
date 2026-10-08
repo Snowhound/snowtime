@@ -77,7 +77,8 @@
     "prototypes/**",
     ".output/**",
     "native/crates/render/bundle/bench/**",
-    "native/crates/render/bundle/*.js"
+    "native/crates/render/bundle/*.js",
+    "native/crates/render/vendor/**"
   ],
   "overrides": [
     {

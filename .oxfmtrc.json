@@ -25,6 +25,7 @@
     "bun.lock",
     "prototypes/**",
     "design/**",
-    "perf/baselines/**"
+    "perf/baselines/**",
+    "native/crates/render/vendor/**"
   ]
 }

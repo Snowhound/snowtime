@@ -21,8 +21,6 @@ deno_core = "0.405"
 deno_error = "0.7"
 deno_web = "0.283"
 deno_webidl = "0.252"
-deno_fetch = "0.276"
-deno_net = "0.244"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "time", "macros"] }
@@ -33,6 +31,4 @@ libc = "0.2"
 deno_core = "0.405"
 deno_web = "0.283"
 deno_webidl = "0.252"
-deno_fetch = "0.276"
-deno_net = "0.244"
 tokio = { version = "1", features = ["rt", "time"] }

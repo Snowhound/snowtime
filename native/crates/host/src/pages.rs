@@ -3,7 +3,7 @@
 use axum::{
     Router,
     body::{Body, to_bytes},
-    extract::{Request, State},
+    extract::{ConnectInfo, Request, State},
     http::{HeaderValue, Method, StatusCode, header},
     response::{IntoResponse, Response},
 };
@@ -11,24 +11,57 @@ use base64::Engine;
 use rand::RngExt;
 use snowtime_render::{ApiResponse, PageRequest, Pool, RenderError, SendApi};
 use snowtime_server::ServiceExt;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Instant;
 
-/// The render isolate's API calls, through the API router as the browser's would go, with
-/// the page's cookie, which the bundle adds to each. A call runs on the host's runtime and
-/// is aborted when the page drops it, as when the page is cancelled or times out.
-pub fn in_process(api: Router) -> SendApi {
+// The only headers a page's JavaScript may set on an API call; the host adds the cookie and
+// the client's address itself.
+const PAGE_HEADERS: [header::HeaderName; 2] = [header::CONTENT_TYPE, header::ACCEPT];
+
+/// The render isolate's API calls, through the API router as the browser's would go. A page
+/// may only read: GET under `/api/v1`, or POST to the report calls, which read with a filter
+/// body. It sets only the method, path, body, and `PAGE_HEADERS`; the call carries the page's
+/// cookie and client address as the renderer gives them, so it can't pass as another origin
+/// or address. A call runs on the host's runtime and is aborted when the page drops it, as
+/// when the page fails or times out, and its answer is read only up to the page's limit.
+pub fn in_process(api: Router, client_ip_header: Option<String>) -> SendApi {
     let runtime = tokio::runtime::Handle::current();
     Arc::new(move |call| {
         let api = api.clone();
         let runtime = runtime.clone();
+        let client_ip_header = client_ip_header.clone();
         Box::pin(async move {
+            let path = call
+                .path
+                .split_once('?')
+                .map_or(&*call.path, |(path, _)| path);
+            if !page_may_call(&call.method, path) {
+                return Err(format!(
+                    "A page may only read the API: {} {path}",
+                    call.method
+                ));
+            }
             let mut task = AbortOnDrop(runtime.spawn(async move {
                 let mut request = Request::builder()
                     .method(call.method.as_str())
                     .uri(call.path);
                 for (name, value) in call.headers {
-                    request = request.header(name, value);
+                    if PAGE_HEADERS
+                        .iter()
+                        .any(|allowed| name.eq_ignore_ascii_case(allowed.as_str()))
+                    {
+                        request = request.header(name, value);
+                    }
+                }
+                if !call.cookie.is_empty() {
+                    request = request.header(header::COOKIE, call.cookie);
+                }
+                if let Some(client) = call.client {
+                    if let Some(name) = &client_ip_header {
+                        request = request.header(name, client.to_string());
+                    }
+                    request = request.extension(ConnectInfo(SocketAddr::new(client, 0)));
                 }
                 let request = request
                     .body(Body::from(call.body))
@@ -40,9 +73,9 @@ pub fn in_process(api: Router) -> SendApi {
                     .iter()
                     .filter_map(|(n, v)| Some((n.to_string(), v.to_str().ok()?.to_owned())))
                     .collect();
-                let body = to_bytes(response.into_body(), usize::MAX)
+                let body = to_bytes(response.into_body(), call.max_body_bytes)
                     .await
-                    .map_err(|e| e.to_string())?
+                    .map_err(|_| "The API answer is larger than the page's limit".to_owned())?
                     .to_vec();
                 Ok(ApiResponse {
                     status,
@@ -53,6 +86,34 @@ pub fn in_process(api: Router) -> SendApi {
             (&mut task.0).await.map_err(|e| e.to_string())?
         })
     })
+}
+
+// Reads only; the report calls take their filters as a body (server/src/reports/routes.rs).
+fn page_may_call(method: &str, path: &str) -> bool {
+    let Some(rest) = path.strip_prefix("/api/v1/") else {
+        return false;
+    };
+    let segments: Vec<&str> = rest.split('/').collect();
+    if segments
+        .iter()
+        .any(|s| s.is_empty() || *s == "." || *s == "..")
+    {
+        return false;
+    }
+    match method {
+        "GET" => true,
+        "POST" => matches!(
+            segments.as_slice(),
+            ["organizations", _, "report"]
+                | [
+                    "organizations",
+                    _,
+                    "report",
+                    "breakdown" | "entries" | "entry-totals" | "export"
+                ]
+        ),
+        _ => false,
+    }
 }
 
 // Dropping a Tokio JoinHandle detaches its task; this aborts it instead.
@@ -67,6 +128,8 @@ pub struct Pages {
     pub pool: Pool,
     // The public URL; behind a proxy the request's own URL may differ.
     pub app_url: String,
+    // CLIENT_IP_HEADER, for the address the page's API calls carry.
+    pub client_ip_header: Option<String>,
 }
 
 // A fresh CSP nonce per page (newNonce in src/server/csp.server.ts).
@@ -88,6 +151,11 @@ pub async fn page(State(pages): State<Arc<Pages>>, request: Request) -> Response
         return refused;
     }
     let cookie = snowtime_server::http::cookies(request.headers()).unwrap_or_default();
+    let client = snowtime_server::client_ip::resolve(
+        request.headers(),
+        request.extensions(),
+        pages.client_ip_header.as_deref(),
+    );
     // One Cookie header, however HTTP/2 split it.
     let mut headers: Vec<(String, String)> = request
         .headers()
@@ -110,6 +178,7 @@ pub async fn page(State(pages): State<Arc<Pages>>, request: Request) -> Response
             nonce: nonce(),
             locale: None,
             now: snowtime_server::clock::is_shifted().then(snowtime_server::clock::now),
+            client,
         })
         .await;
     match rendered {
@@ -194,7 +263,7 @@ mod tests {
             }
         });
         let pool = Pool::start(
-            in_process(api),
+            in_process(api, None),
             snowtime_render::MANIFEST,
             Default::default(),
         )
@@ -202,6 +271,7 @@ mod tests {
         let router = Router::new().fallback(page).with_state(Arc::new(Pages {
             pool,
             app_url: "http://snowtime.test".into(),
+            client_ip_header: None,
         }));
         let response = router
             .oneshot(
@@ -228,7 +298,7 @@ mod tests {
         }
         let (events, mut received) = mpsc::unbounded_channel();
         let api = Router::new().route(
-            "/stuck",
+            "/api/v1/stuck",
             axum::routing::get(move || {
                 let events = events.clone();
                 async move {
@@ -238,12 +308,7 @@ mod tests {
                 }
             }),
         );
-        let call = in_process(api)(ApiRequest {
-            method: "GET".into(),
-            path: "/stuck".into(),
-            headers: vec![],
-            body: vec![],
-        });
+        let call = in_process(api, None)(call("GET", "/api/v1/stuck"));
         let call = tokio::spawn(call);
         assert_eq!(
             tokio::time::timeout(Duration::from_secs(1), received.recv())
@@ -258,5 +323,97 @@ mod tests {
                 .unwrap(),
             Some("dropped")
         );
+    }
+
+    fn call(method: &str, path: &str) -> ApiRequest {
+        ApiRequest {
+            method: method.into(),
+            path: path.into(),
+            headers: vec![],
+            body: vec![],
+            cookie: String::new(),
+            client: None,
+            max_body_bytes: 1 << 20,
+        }
+    }
+
+    // L8 of task 081.30: page JavaScript chooses only what a read needs.
+    #[tokio::test]
+    async fn a_page_may_only_read_and_the_host_sets_who_is_calling() {
+        async fn echo(request: Request) -> String {
+            if request.uri().path().ends_with("large") {
+                return "x".repeat(2 << 20);
+            }
+            let headers = request.headers();
+            let header = |name: &str| headers.get(name).map(|v| v.to_str().unwrap().to_owned());
+            let peer = request
+                .extensions()
+                .get::<ConnectInfo<SocketAddr>>()
+                .map(|info| info.0.ip().to_string());
+            format!(
+                "{} {:?} {:?} {:?} {:?} {:?}",
+                request.uri(),
+                header("cookie"),
+                header("x-client-ip"),
+                header("content-type"),
+                header("origin")
+                    .or(header("host"))
+                    .or(header("x-forwarded-for")),
+                peer,
+            )
+        }
+        let api = Router::new().fallback(echo);
+        let send = in_process(api, Some("x-client-ip".into()));
+        let answer = |request| {
+            let send = send.clone();
+            async move {
+                send(request)
+                    .await
+                    .map(|r| String::from_utf8(r.body).unwrap())
+            }
+        };
+
+        let page = ApiRequest {
+            headers: [
+                ("content-type", "application/json"),
+                ("cookie", "session=javascript"),
+                ("origin", "https://elsewhere.example"),
+                ("host", "elsewhere.example"),
+                ("x-client-ip", "198.51.100.1"),
+                ("x-forwarded-for", "198.51.100.2"),
+            ]
+            .map(|(n, v)| (n.into(), v.into()))
+            .into(),
+            cookie: "session=page".into(),
+            client: Some("203.0.113.5".parse().unwrap()),
+            ..call("GET", "/api/v1/timer?at=1")
+        };
+        assert_eq!(
+            answer(page).await.unwrap(),
+            r#"/api/v1/timer?at=1 Some("session=page") Some("203.0.113.5") Some("application/json") None Some("203.0.113.5")"#
+        );
+        assert!(
+            answer(call("POST", "/api/v1/organizations/o/report/entries"))
+                .await
+                .is_ok()
+        );
+        for (method, path) in [
+            ("POST", "/api/v1/organizations/o/entries"),
+            ("PATCH", "/api/v1/organizations/o/report"),
+            ("DELETE", "/api/v1/timer"),
+            ("GET", "/api/auth/get-session"),
+            ("GET", "/api/v1/../auth/get-session"),
+            ("GET", "/api/v1//timer"),
+            ("GET", "/livez"),
+        ] {
+            let refused = answer(call(method, path)).await;
+            assert!(
+                matches!(&refused, Err(e) if e.starts_with("A page may only read")),
+                "{method} {path}: {refused:?}"
+            );
+        }
+        // The answer is read only up to the page's limit.
+        let refused = answer(call("GET", "/api/v1/large")).await;
+        assert!(matches!(refused, Err(e) if e.contains("limit")));
     }
 }
