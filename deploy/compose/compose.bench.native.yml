@@ -6,6 +6,7 @@ services:
     image: snowtime-native:bench
     environment:
       RATE_LIMIT: 'off'
+      RENDERERS: ${BENCH_RENDERERS:-}
       EDGE_COMPRESSION: 'false'
       EDGE_ACCESS_LOG: 'off'
       EDGE_HEADERS: 'false'

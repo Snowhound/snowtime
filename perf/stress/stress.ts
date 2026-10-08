@@ -1135,6 +1135,18 @@ try {
   await main()
 } finally {
   if (!target.remote && outputDirectory) {
+    if (app === 'native') {
+      const status = spawnSync(
+        'docker',
+        ['exec', 'snowtime-bench-app-1', 'cat', '/proc/1/status'],
+        {
+          encoding: 'utf8',
+        },
+      )
+      writeFileSync(join(outputDirectory, 'app.proc-status.txt'), status.stdout + status.stderr)
+      const config = spawnSync('docker', ['inspect', 'snowtime-bench-app-1'], { encoding: 'utf8' })
+      writeFileSync(join(outputDirectory, 'app.inspect.json'), config.stdout)
+    }
     for (const service of [
       'app',
       'caddy',

@@ -11,6 +11,7 @@ services:
       # --smol, for an A/B run (perf:stress --smol).
       BUN_OPTIONS: ${BENCH_BUN_OPTIONS:-}
     cpuset: '${BENCH_APP_CPUSET:-1}'
+    cpus: '${BENCH_APP_CPUS:-0}'
     mem_limit: ${BENCH_APP_MEMORY:-1792m}
     memswap_limit: ${BENCH_APP_MEMORY:-1792m}
   caddy:

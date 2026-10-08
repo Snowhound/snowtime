@@ -1,11 +1,16 @@
 # 081.27: Capacity and overload at the deadline-led queue bound
 
-Status: todo
+Status: deferred until the port and porting-kit refactor are complete
 
 Re-measure the capacity figures for the porting kit after 081.17's 4,096-waiter
 backstop and renderer-reuse fix. Kait moved these runs out of 081.17 on 2026-10-08;
 they do not block its merge. Use task 10's runner and preserve raw output and input
 hashes. The older 32/128 results remain evidence of those settings.
+
+Kait deferred all work in this task on 2026-10-08 until the port and porting-kit
+refactor are complete. No remote or LAN measurements run now. The Ryzen/WSL
+baseline in [081.01](01-server-rendering.md#baseline-before-the-kit-refactor) is for
+refactor regression checks; it does not satisfy this task's acceptance criteria.
 
 ## Acceptance criteria
 
