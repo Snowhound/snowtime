@@ -11,6 +11,7 @@ import * as schema from '~/db/schema'
 import { SEED_PASSWORD, seedIds } from '~/db/seed'
 import { createTeam, deleteTeam } from '../teams/teams.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
+import { invitationAcceptanceHooks } from './invitation-acceptance.server'
 import { invitationLimit } from './invitation-limit.server'
 import { acceptInvitation, inviteMember, listInvitations } from './invitations.server'
 import { memberRemovalHook } from './member-removal.server'
@@ -19,7 +20,8 @@ const { users: U, orgs: O, teams: T } = seedIds
 let db: Database
 let cleanup: () => Promise<void>
 let auth: ReturnType<typeof instance>
-function instance() {
+function instance(fixed = true) {
+  const acceptance = invitationAcceptanceHooks(db)
   const removalHook = memberRemovalHook(db)
   return betterAuth({
     baseURL: 'http://localhost:3080',
@@ -28,7 +30,11 @@ function instance() {
     advanced: { database: { generateId: () => uuidv7() } },
     emailAndPassword: { enabled: true },
     hooks: {
+      ...(fixed && {
+        before: createAuthMiddleware((ctx) => acceptance.before({ ...ctx, returnHeaders: false })),
+      }),
       after: createAuthMiddleware(async (ctx) => {
+        if (fixed) await acceptance.after(ctx)
         await removalHook(ctx)
       }),
     },
@@ -299,4 +305,116 @@ describe('member removal hook', () => {
     await auth.api.leaveOrganization({ headers: signedIn, body: { organizationId: O.northwind } })
     expect(await memberships(U.member)).toEqual([{ teamId: T.delivery, role: 'member' }])
   })
+})
+
+test('regression: a recipient who joined after the invitation hits the unique membership index', async () => {
+  auth = instance(false)
+  const created = await invite()
+  await db.insert(schema.member).values({
+    id: uuidv7(),
+    organizationId: O.harbor,
+    userId: U.loner,
+    role: 'admin',
+    createdAt: new Date(),
+  })
+  const recipient = await headers('noah@example.com')
+  const response = await auth.handler(
+    new Request('http://localhost:3080/api/auth/organization/accept-invitation', {
+      method: 'POST',
+      headers: {
+        cookie: recipient.get('cookie')!,
+        origin: 'http://localhost:3080',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ invitationId: created.id }),
+    }),
+  )
+  expect(response.status).toBe(500)
+  expect((await db.query.invitation.findFirst({ where: { id: created.id } }))?.status).toBe(
+    'pending',
+  )
+})
+
+test('acceptance reuses a membership, preserves its role, applies the team, and closes the link', async () => {
+  const created = await invite()
+  await db.insert(schema.member).values({
+    id: uuidv7(),
+    organizationId: O.harbor,
+    userId: U.loner,
+    role: 'admin',
+    createdAt: new Date(),
+  })
+  const recipient = await headers('noah@example.com')
+  const result = await auth.api.acceptInvitation({
+    headers: recipient,
+    body: { invitationId: created.id },
+  })
+  expect(result.member).toMatchObject({ userId: U.loner, role: 'admin' })
+  expect(result.invitation.status).toBe('accepted')
+  expect(await memberships(U.loner)).toEqual([{ teamId: T.delivery, role: 'member' }])
+  expect(
+    (await db.query.session.findFirst({ where: { userId: U.loner } }))?.activeOrganizationId,
+  ).toBe(O.harbor)
+  await expect(
+    auth.api.acceptInvitation({ headers: recipient, body: { invitationId: created.id } }),
+  ).rejects.toMatchObject({ statusCode: 400, body: { code: 'INVITATION_NOT_FOUND' } })
+})
+
+test('the direct Better Auth path applies a new member team assignment', async () => {
+  const created = await invite()
+  const recipient = await headers('noah@example.com')
+  const result = await auth.api.acceptInvitation({
+    headers: recipient,
+    body: { invitationId: created.id },
+  })
+  expect(result.invitation.status).toBe('accepted')
+  expect(await memberships(U.loner)).toEqual([{ teamId: T.delivery, role: 'member' }])
+})
+
+test('existing membership never bypasses recipient, verification, expiry, or status checks', async () => {
+  const created = await invite()
+  await db.insert(schema.member).values({
+    id: uuidv7(),
+    organizationId: O.harbor,
+    userId: U.loner,
+    role: 'owner',
+    createdAt: new Date(),
+  })
+  const recipient = await headers('noah@example.com')
+  await expect(
+    auth.api.acceptInvitation({
+      headers: await headers('lead@example.com'),
+      body: { invitationId: created.id },
+    }),
+  ).rejects.toMatchObject({
+    statusCode: 403,
+    body: { code: 'YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION' },
+  })
+  await db.update(schema.user).set({ emailVerified: false }).where(eq(schema.user.id, U.loner))
+  await expect(
+    auth.api.acceptInvitation({ headers: recipient, body: { invitationId: created.id } }),
+  ).rejects.toMatchObject({
+    statusCode: 403,
+    body: { code: 'EMAIL_VERIFICATION_REQUIRED_BEFORE_ACCEPTING_OR_REJECTING_INVITATION' },
+  })
+  await db.update(schema.user).set({ emailVerified: true }).where(eq(schema.user.id, U.loner))
+  await db
+    .update(schema.invitation)
+    .set({ expiresAt: new Date(0) })
+    .where(eq(schema.invitation.id, created.id))
+  await expect(
+    auth.api.acceptInvitation({ headers: recipient, body: { invitationId: created.id } }),
+  ).rejects.toMatchObject({ statusCode: 400, body: { code: 'INVITATION_NOT_FOUND' } })
+  await db
+    .update(schema.invitation)
+    .set({ expiresAt: new Date(Date.now() + 3600000), status: 'canceled' })
+    .where(eq(schema.invitation.id, created.id))
+  await expect(
+    auth.api.acceptInvitation({ headers: recipient, body: { invitationId: created.id } }),
+  ).rejects.toMatchObject({ statusCode: 400, body: { code: 'INVITATION_NOT_FOUND' } })
+  expect((await db.query.invitation.findFirst({ where: { id: created.id } }))?.status).toBe(
+    'canceled',
+  )
+  expect(await memberships(U.loner)).toEqual([])
+  expect((await scopeOf(db, U.loner, O.harbor)).orgRole).toBe('owner')
 })
