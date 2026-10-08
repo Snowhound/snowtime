@@ -103,5 +103,8 @@
       "esbuild",
       "lightningcss"
     ]
+  },
+  "patchedDependencies": {
+    "@better-auth/passkey@1.7.7": "patches/@better-auth%2Fpasskey@1.7.7.patch"
   }
 }
