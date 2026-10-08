@@ -27,7 +27,10 @@ rustls = { version = "0.23", features = ["aws_lc_rs"] }
 rustls-acme = { version = "0.15", features = ["axum"] }
 tokio-stream = "0.1"
 http-body = "1"
+hyper-util = { version = "0.1", features = ["server-auto", "tokio"] }
+tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.7", features = [
+  "catch-panic",
   "compression-gzip",
   "compression-zstd",
   "fs",
@@ -43,6 +46,5 @@ percent-encoding = "2"
 [dev-dependencies]
 tempfile = "3"
 tokio = { workspace = true, features = ["test-util"] }
-tower = { version = "0.5", features = ["util"] }
 rcgen = "0.14"
 tokio-rustls = "0.26"

@@ -289,6 +289,8 @@ which records the edge measurements.
   verification cleanup from the audit (done)
 - [33](33-sql.md): migration foreign-key checks, atomic auth writes, immediate
   transactions, and static SQL literals (done)
+- [34](34-edge.md): edge connection limits, rate-limit keys, database owner threads, and
+  the public file index from the audit
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

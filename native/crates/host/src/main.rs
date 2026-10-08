@@ -123,12 +123,9 @@ async fn serve(config: config::Config) {
         listener
             .set_nonblocking(true)
             .expect("nonblocking redirect listener");
+        let edge = config.edge.clone();
         tokio::spawn(async move {
-            axum_server::from_tcp(listener)
-                .expect("the redirect listener initializes")
-                .acceptor(axum_server::accept::NoDelayAcceptor::new())
-                .handle(handle)
-                .serve(edge::redirects(origin).into_make_service())
+            edge::serve_redirects(listener, origin, &edge, handle)
                 .await
                 .expect("the HTTP redirect listener runs");
         })

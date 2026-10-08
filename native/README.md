@@ -236,6 +236,19 @@ and HTTP/2. The application library still binds no socket. The edge can wrap a r
 page router as well: it preserves an existing CSP, including the renderer's nonce.
 HTTP/3 remains outside this proof of concept. TLS handshakes expire after 10 seconds.
 
+Every listener, the redirect listener included, bounds its connections. A request's
+headers must arrive within `EDGE_HEADER_TIMEOUT_SECONDS`; on HTTP/1, hyper runs the same
+timer while a kept-alive connection waits for its next request. A connection with no
+request in flight for `EDGE_IDLE_TIMEOUT_SECONDS` closes, which covers HTTP/2 and a
+connection that never sends a byte. HTTP/2 connections are pinged every 20 seconds and
+closed when a ping goes unanswered for 20 seconds. An HTTP/1 request head and read buffer
+take at most 64 KiB; a larger head gets 431. Past `EDGE_MAX_CONNECTIONS` in all, or
+`EDGE_MAX_CONNECTIONS_PER_ADDRESS` from one client address, the acceptor closes a new
+connection without an answer, before its TLS handshake. Both caps count per listener;
+keep the total below the process's file-descriptor limit. The per-address cap groups
+IPv6 addresses by /64, as rate limits do. Behind a proxy every connection comes from the
+proxy, so with `CLIENT_IP_HEADER` set the per-address cap defaults to off.
+
 Without certificate configuration, `snowtime-axum` serves plain HTTP. Configure a
 certificate pair to serve HTTPS, or use ACME to obtain and renew certificates:
 
@@ -260,23 +273,31 @@ that terminates TLS prevents the challenge from reaching it. Behind such a proxy
 use plain HTTP on a private connection or provision an origin certificate through
 the certificate-file mode. Wildcard certificates are unsupported.
 
-| Variable                        | Default      | Behavior                                                                     |
-| ------------------------------- | ------------ | ---------------------------------------------------------------------------- |
-| `TLS_CERT_FILE`, `TLS_KEY_FILE` | unset        | PEM certificate chain and private key; both required                         |
-| `ACME_DOMAINS`                  | unset        | Comma-separated DNS names, including the app URL's hostname                  |
-| `ACME_EMAIL`                    | unset        | ACME account contact email                                                   |
-| `ACME_CACHE_DIR`                | `/data/acme` | Persistent account and certificate cache                                     |
-| `ACME_STAGING`                  | `false`      | Use Let's Encrypt's staging service instead of production                    |
-| `HTTP_REDIRECT_PORT`            | unset        | Separate HTTP listener issuing 308 redirects to the configured app origin    |
-| `EDGE_COMPRESSION`              | `true`       | Gzip and zstd for compressible responses of at least 1024 bytes              |
-| `EDGE_ACCESS_LOG`               | `all`        | JSON access events on stdout: `all`, `sampled`, or `off`                     |
-| `EDGE_HEADERS`                  | `true`       | Security headers, CSP fallback, and private no-store fallback                |
-| `EDGE_STATIC_DIR`               | unset        | Serve this public build directory, with `.br`, `.zst`, and `.gz` variants    |
-| `EDGE_TIMEOUT_SECONDS`          | `30`         | Response-header timeout; zero disables this host layer                       |
-| `EDGE_BODY_LIMIT_BYTES`         | `2097152`    | Request-body limit; zero disables this host layer, leaving API limits intact |
-| `EDGE_BENCH_LOG`                | unset        | Complete JSON benchmark log for the sampler                                  |
+| Variable                           | Default                               | Behavior                                                                                       |
+| ---------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `TLS_CERT_FILE`, `TLS_KEY_FILE`    | unset                                 | PEM certificate chain and private key; both required                                           |
+| `ACME_DOMAINS`                     | unset                                 | Comma-separated DNS names, including the app URL's hostname                                    |
+| `ACME_EMAIL`                       | unset                                 | ACME account contact email                                                                     |
+| `ACME_CACHE_DIR`                   | `/data/acme`                          | Persistent account and certificate cache                                                       |
+| `ACME_STAGING`                     | `false`                               | Use Let's Encrypt's staging service instead of production                                      |
+| `HTTP_REDIRECT_PORT`               | unset                                 | Separate HTTP listener issuing 308 redirects to the configured app origin                      |
+| `EDGE_COMPRESSION`                 | `true`                                | Gzip and zstd for compressible responses of at least 1024 bytes                                |
+| `EDGE_ACCESS_LOG`                  | `all`                                 | JSON access events on stdout: `all`, `sampled`, or `off`                                       |
+| `EDGE_HEADERS`                     | `true`                                | Security headers, CSP fallback, and private no-store fallback                                  |
+| `EDGE_STATIC_DIR`                  | unset                                 | Serve this public build directory, with `.br`, `.zst`, and `.gz` variants                      |
+| `EDGE_TIMEOUT_SECONDS`             | `30`                                  | Response-header timeout, answered with 503 and `Retry-After: 1`; zero disables this host layer |
+| `EDGE_HEADER_TIMEOUT_SECONDS`      | `30`                                  | Time to receive a request's headers, and on HTTP/1 to wait for the next request                |
+| `EDGE_IDLE_TIMEOUT_SECONDS`        | `60`                                  | Close a connection with no request in flight for this long                                     |
+| `EDGE_MAX_CONNECTIONS`             | `4096`                                | Open connections per listener, TLS handshakes included; zero disables                          |
+| `EDGE_MAX_CONNECTIONS_PER_ADDRESS` | `256`, or `0` with `CLIENT_IP_HEADER` | Open connections per listener from one client address; zero disables                           |
+| `EDGE_BODY_LIMIT_BYTES`            | `2097152`                             | Request-body limit; zero disables this host layer, leaving API limits intact                   |
+| `EDGE_BENCH_LOG`                   | unset                                 | Complete JSON benchmark log for the sampler                                                    |
 
-Boolean switches accept `true` or `false`. `BETTER_AUTH_URL` must be an HTTP(S) origin,
+Boolean switches accept `true` or `false`. The two connection timeouts take a positive
+number of seconds. A request past `EDGE_TIMEOUT_SECONDS` gets 503 rather than 408, which
+browsers may resend on their own while the first attempt's write still commits; on `/api`
+paths the body is the API's JSON refusal. A panic in a handler answers 500: the API's
+JSON on its routes and in-process calls, plain text elsewhere. `BETTER_AUTH_URL` must be an HTTP(S) origin,
 with no credentials, path, query, or fragment. The host normalizes its scheme, hostname,
 and default port. TLS requires an HTTPS origin. Redirects
 use that origin rather than the request's Host header.

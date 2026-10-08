@@ -4929,6 +4929,7 @@ dependencies = [
  "axum-server",
  "base64 0.23.1",
  "http-body",
+ "hyper-util",
  "libc",
  "percent-encoding",
  "rand 0.10.3",
@@ -5001,6 +5002,7 @@ dependencies = [
  "sha2 0.11.0",
  "tokio",
  "tower",
+ "tower-http 0.7.1",
  "tower_governor",
  "unicode-normalization",
  "url",
@@ -5572,6 +5574,7 @@ dependencies = [
  "tokio-util",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration};
 
 #[derive(Clone, Debug)]
 pub enum Tls {
@@ -30,6 +30,8 @@ pub struct Config {
     pub static_dir: Option<PathBuf>,
     pub timeout_seconds: u64,
     pub body_limit: usize,
+    pub header_timeout: Duration,
+    pub connections: super::connections::Limits,
     pub bench_log: Option<PathBuf>,
 }
 impl Config {
@@ -61,6 +63,13 @@ impl Config {
             Some(value) => value
                 .parse::<u64>()
                 .map_err(|_| format!("{name} is a nonnegative integer.")),
+        };
+        let seconds = |name, default| match number(name, default)? {
+            0 => Err(format!("{name} is a positive integer.")),
+            n => Ok(Duration::from_secs(n)),
+        };
+        let count = |name, default| {
+            usize::try_from(number(name, default)?).map_err(|_| format!("{name} is too large."))
         };
         let domains = var("ACME_DOMAINS");
         let tls = match (var("TLS_CERT_FILE"), var("TLS_KEY_FILE"), domains) {
@@ -126,8 +135,21 @@ impl Config {
             headers: flag("EDGE_HEADERS", true)?,
             static_dir: var("EDGE_STATIC_DIR").map(PathBuf::from),
             timeout_seconds: number("EDGE_TIMEOUT_SECONDS", 30)?,
-            body_limit: usize::try_from(number("EDGE_BODY_LIMIT_BYTES", 2 * 1024 * 1024)?)
-                .map_err(|_| "EDGE_BODY_LIMIT_BYTES is too large.".to_owned())?,
+            body_limit: count("EDGE_BODY_LIMIT_BYTES", 2 * 1024 * 1024)?,
+            header_timeout: seconds("EDGE_HEADER_TIMEOUT_SECONDS", 30)?,
+            connections: super::connections::Limits {
+                total: count("EDGE_MAX_CONNECTIONS", 4096)?,
+                // Behind a proxy every connection comes from the proxy's address.
+                per_address: count(
+                    "EDGE_MAX_CONNECTIONS_PER_ADDRESS",
+                    if var("CLIENT_IP_HEADER").is_some() {
+                        0
+                    } else {
+                        256
+                    },
+                )?,
+                idle: seconds("EDGE_IDLE_TIMEOUT_SECONDS", 60)?,
+            },
             bench_log: var("EDGE_BENCH_LOG").map(PathBuf::from),
         })
     }
