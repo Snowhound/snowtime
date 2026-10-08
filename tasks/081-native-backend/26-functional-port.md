@@ -35,9 +35,9 @@ verification pattern. The TypeScript server remains the source of truth.
 
 ### 4. Team writes
 
-- [ ] Create, update, delete, and member PUT, PATCH, and DELETE routes preserve the
+- [x] Create, update, delete, and member PUT, PATCH, and DELETE routes preserve the
       TypeScript role rules and validation
-- [ ] Team conformance passes; comparison covers valid and malformed input,
+- [x] Team conformance passes; comparison covers valid and malformed input,
       member refusals, and every owner/member difference
 
 ### 5. Invitations and issue links
@@ -101,6 +101,35 @@ Patterns for subtask 05:
   An empty patch reads without updating audit columns. Writes set the actor explicitly.
 
 ## Verification
+
+### Step 4
+
+Verified on Ubuntu x64 in WSL on 2026-10-08:
+
+- `cargo fmt` and both workspace Clippy configurations pass.
+- Server tests: 59 pass without `bench`, and 59 with it. Host tests: 15 pass.
+- Project and team conformance: 8 pass, 34 assertions (4 tests per domain).
+- All 754 comparison calls are byte-equal. Team cases include organization admins,
+  owners, members, and signed-out callers. Membership writes and member counts run
+  in transactions. Unit tests check repeat PUT preserves a lead's role and increments
+  the count once, repeat DELETE refuses without decrementing again, the team limit,
+  and deleting the last team with cascading membership removal.
+- Generated team IDs are checked as UUIDv7, paired under an explicit alias, and reused
+  through later requests. Only those paired generated IDs are normalized in answers;
+  supplied IDs stay exact. Every domain sequence still uses independent fresh copies.
+- Names share ordered validation for trimming, required text, and UTF-16 length.
+
+Saved outputs are in [functional-port/step4](functional-port/step4/).
+
+| Handler or helper  | TypeScript | Rust |
+| ------------------ | ---------: | ---: |
+| Team write helpers |         31 |   53 |
+| `createTeam`       |         25 |   32 |
+| `renameTeam`       |         14 |   23 |
+| `deleteTeam`       |          9 |   13 |
+| `addTeamMember`    |         17 |   23 |
+| `removeTeamMember` |         16 |   28 |
+| `setTeamRole`      |         11 |   26 |
 
 ### Step 3
 

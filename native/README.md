@@ -45,8 +45,8 @@ reports and export pieces take the report budget before database admission.
 The sign-in page's reads (sign-in methods, deployment, seeded users), password sign-in,
 and Better Auth sign-out are also ported. `/sign-in` renders signed out.
 Of the other writes, the timer's, the entries', settings PUT/PATCH, and project writes
-(including team assignments) are ported.
-Not ported: team and organization writes; invitations; passkey registration,
+(including team assignments) and team writes (including membership and roles) are ported.
+Not ported: organization writes; invitations; passkey registration,
 sign-in, and management; and Google/OAuth sign-in. The sign-in method list includes
 passkey for TypeScript parity, but the native host has no passkey endpoints yet.
 

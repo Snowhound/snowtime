@@ -1,0 +1,3 @@
+   Compiling snowtime-server v0.1.0 (/root/snowtime-functional-port/native/crates/server)
+   Compiling snowtime-host v0.1.0 (/root/snowtime-functional-port/native/crates/host)
+    Finished `dev` profile [unoptimized] target(s) in 6.15s

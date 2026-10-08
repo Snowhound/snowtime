@@ -10,6 +10,55 @@ import { ROOT } from '../../perf/lib/database'
 // TypeScript [file, names] against Rust [module, names], per row.
 const PAIRS: [string, string, string[], string, string[]][] = [
   [
+    'team write helpers',
+    'src/server/teams/teams.server.ts',
+    ['assertAdmin', 'assertTeamInScope', 'nameFailure', 'insertTeamMember'],
+    'teams/mod.rs',
+    ['assert_admin', 'assert_team_in_scope', 'name_failure', 'insert_team_member'],
+  ],
+  [
+    'createTeam',
+    'src/server/teams/teams.server.ts',
+    ['createTeam'],
+    'teams/mod.rs',
+    ['create_team'],
+  ],
+  [
+    'renameTeam',
+    'src/server/teams/teams.server.ts',
+    ['renameTeam'],
+    'teams/mod.rs',
+    ['rename_team'],
+  ],
+  [
+    'deleteTeam',
+    'src/server/teams/teams.server.ts',
+    ['deleteTeam'],
+    'teams/mod.rs',
+    ['delete_team'],
+  ],
+  [
+    'addTeamMember',
+    'src/server/teams/teams.server.ts',
+    ['addTeamMember'],
+    'teams/mod.rs',
+    ['add_team_member'],
+  ],
+  [
+    'removeTeamMember',
+    'src/server/teams/teams.server.ts',
+    ['removeTeamMember'],
+    'teams/mod.rs',
+    ['remove_team_member'],
+  ],
+  [
+    'setTeamRole',
+    'src/server/teams/teams.server.ts',
+    ['setTeamRole'],
+    'teams/mod.rs',
+    ['set_team_role'],
+  ],
+  [
     'project write helpers',
     'src/server/projects/projects.server.ts',
     ['assertAdmin', 'findProject', 'assertTeamInScope'],

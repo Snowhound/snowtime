@@ -1,16 +1,5 @@
 use crate::schemas::*;
 
-pub(crate) fn name(text: &str) -> Result<()> {
-    let mut text = text.to_owned();
-    trim(&mut text);
-    if text.is_empty() {
-        return invalid("Enter a name.");
-    }
-    if text.encode_utf16().count() > 100 {
-        return invalid("Use at most 100 characters.");
-    }
-    Ok(())
-}
 fn color(text: &str) -> Result<()> {
     if text.len() != 7
         || !text.starts_with('#')

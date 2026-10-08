@@ -249,6 +249,18 @@ fn description_length(text: &str) -> Result<()> {
     }
     Ok(())
 }
+pub(crate) fn name(text: &str) -> Result<()> {
+    let mut text = text.to_owned();
+    trim(&mut text);
+    if text.is_empty() {
+        return invalid("Enter a name.");
+    }
+    if text.encode_utf16().count() > 100 {
+        return invalid("Use at most 100 characters.");
+    }
+    Ok(())
+}
+
 pub(crate) fn trim(text: &mut String) {
     let trimmed = trimmed(text);
     if trimmed.len() != text.len() {

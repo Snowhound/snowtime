@@ -68,6 +68,7 @@ interface Options {
   origin?: false
   // Keys whose values differ by server: its clock, or when the caller signed in.
   mask?: string[]
+  capture?: string
 }
 
 let differences = 0
@@ -106,28 +107,75 @@ function tokenOnly(credentials: Record<string, string>) {
   }
 }
 
-type WriteCase = [string, CallName, unknown, Who, number, Options?]
+type WriteCase = [string, CallName, unknown, Who | 'orgAdmin', number, Options?]
+async function orgAdminHeaders(server: Server) {
+  const response = await fetch(`${server.url}/api/auth/sign-in/email`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', origin: server.url },
+    body: JSON.stringify({ email: 'jonas@lumen.example.com', password: USERS.admin.password }),
+  })
+  if (!response.ok) throw new Error(`Organization admin sign-in failed: ${response.status}`)
+  return {
+    cookie: response.headers
+      .getSetCookie()
+      .map((header) => header.split(';')[0])
+      .join('; '),
+  }
+}
 async function compareWrites(domain: string, cases: WriteCase[]) {
   const a = await startApp({ database })
   let b: Awaited<ReturnType<typeof startNative>> | undefined
   try {
     b = await startNative(binary, database)
     const credentials = {
-      ts: { admin: await signInHeaders(a, 'admin'), member: await signInHeaders(a, 'member') },
-      native: { admin: await signInHeaders(b, 'admin'), member: await signInHeaders(b, 'member') },
+      ts: {
+        admin: await signInHeaders(a, 'admin'),
+        member: await signInHeaders(a, 'member'),
+        orgAdmin: await orgAdminHeaders(a),
+      },
+      native: {
+        admin: await signInHeaders(b, 'admin'),
+        member: await signInHeaders(b, 'member'),
+        orgAdmin: await orgAdminHeaders(b),
+      },
     }
+    const identities = { ts: new Map<string, string>(), native: new Map<string, string>() }
     for (const [label, name, input, who, expected, options] of cases) {
-      async function call(server: Server, headers: Record<string, string>) {
-        const route = requestOf(CALLS[name], input)
+      async function call(
+        server: Server,
+        headers: Record<string, string>,
+        ids: Map<string, string>,
+      ) {
+        const supplied =
+          input === undefined
+            ? input
+            : JSON.parse(
+                JSON.stringify(input, (_, value) =>
+                  typeof value === 'string' ? (ids.get(value) ?? value) : value,
+                ),
+              )
+        const route = requestOf(CALLS[name], supplied)
         const response = await fetch(`${server.url}${route.path}`, {
           method: CALLS[name].method,
           headers: { ...headers, origin: server.url, 'content-type': 'application/json' },
           body: options?.body ?? route.body,
         })
-        return { status: response.status, text: masked(await response.text(), options?.mask) }
+        let text = await response.text()
+        if (options?.capture && response.ok) {
+          const { id } = JSON.parse(text) as { id: unknown }
+          if (
+            typeof id !== 'string' ||
+            !/^[\da-f]{8}-[\da-f]{4}-7[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(id)
+          )
+            throw new Error(`${label}: generated id isn't UUIDv7`)
+          ids.set(options.capture, id)
+        }
+        for (const [alias, id] of ids)
+          text = text.replaceAll(JSON.stringify(id), JSON.stringify(alias))
+        return { status: response.status, text: masked(text, options?.mask) }
       }
-      const left = await call(a, who ? credentials.ts[who] : {})
-      const right = await call(b, who ? credentials.native[who] : {})
+      const left = await call(a, who ? credentials.ts[who] : {}, identities.ts)
+      const right = await call(b, who ? credentials.native[who] : {}, identities.native)
       judge(`${domain}: ${label}`, left, right)
       if (left.status !== expected || right.status !== expected)
         throw new Error(
@@ -1067,6 +1115,117 @@ try {
     )
   }
   await compareWrites('projects', projectCases)
+  const team = { organizationId, teamId: '$functionalTeam' }
+  const membership = { ...team, userId: memberId }
+  const teamCases: WriteCase[] = []
+  for (const [name, input] of [
+    ['createTeam', { organizationId, name: 'Functional team' }],
+    ['renameTeam', { organizationId, teamId: companyIds.teams.design, name: 'Renamed' }],
+    ['deleteTeam', { organizationId, teamId: companyIds.teams.design }],
+    ['addTeamMember', { organizationId, teamId: companyIds.teams.design, userId: memberId }],
+    ['removeTeamMember', { organizationId, teamId: companyIds.teams.design, userId: memberId }],
+    [
+      'setTeamRole',
+      { organizationId, teamId: companyIds.teams.design, userId: memberId, role: 'lead' },
+    ],
+  ] as [CallName, unknown][]) {
+    teamCases.push(
+      [`${name} member refusal`, name, input, 'member', 403],
+      [`${name} signed out`, name, input, null, 401],
+      [`${name} malformed JSON`, name, input, 'admin', 400, { body: '{' }],
+    )
+  }
+  for (const value of [undefined, null, 3, [], '', ' ', 'x'.repeat(101), '😀'.repeat(51)]) {
+    teamCases.push([
+      `create name ${JSON.stringify(value)}`,
+      'createTeam',
+      { organizationId, name: value },
+      'admin',
+      400,
+    ])
+  }
+  teamCases.push(
+    [
+      'create and trim',
+      'createTeam',
+      { organizationId, name: ' Functional team ' },
+      'admin',
+      200,
+      { capture: '$functionalTeam' },
+    ],
+    ['name conflict', 'createTeam', { organizationId, name: 'Functional team' }, 'orgAdmin', 409],
+    ['rename conflict', 'renameTeam', { ...team, name: 'Design' }, 'admin', 409],
+    ['rename', 'renameTeam', { ...team, name: 'Renamed functional team' }, 'orgAdmin', 200],
+    ['add member', 'addTeamMember', membership, 'orgAdmin', 200],
+    ['repeat add', 'addTeamMember', membership, 'admin', 200],
+    ['promote to lead', 'setTeamRole', { ...membership, role: 'lead' }, 'orgAdmin', 200],
+    ['repeat add preserves lead', 'addTeamMember', membership, 'admin', 200],
+    ['roles in team list', 'listTeams', { organizationId }, 'member', 200],
+    ['roles in member list', 'listMembers', { organizationId }, 'member', 200],
+    ['return to member', 'setTeamRole', { ...membership, role: 'member' }, 'admin', 200],
+    ['unknown member', 'addTeamMember', { ...team, userId: unknown }, 'admin', 404],
+    [
+      'missing team before member',
+      'addTeamMember',
+      { organizationId, teamId: unknown, userId: unknown },
+      'admin',
+      404,
+    ],
+    [
+      'missing membership role',
+      'setTeamRole',
+      { ...team, userId: unknown, role: 'lead' },
+      'admin',
+      404,
+    ],
+    ['remove member', 'removeTeamMember', membership, 'orgAdmin', 200],
+    ['repeat remove', 'removeTeamMember', membership, 'admin', 404],
+    ['delete', 'deleteTeam', team, 'orgAdmin', 200],
+    ['repeat delete', 'deleteTeam', team, 'admin', 404],
+    [
+      'create as organization admin',
+      'createTeam',
+      { organizationId, name: 'Admin team' },
+      'orgAdmin',
+      200,
+      { capture: '$adminTeam' },
+    ],
+    ['delete as owner', 'deleteTeam', { organizationId, teamId: '$adminTeam' }, 'admin', 200],
+    ['list after deletion', 'listTeams', { organizationId }, 'member', 200],
+  )
+  for (const role of [undefined, null, [], 'owner', 'Lead'])
+    teamCases.push([
+      `invalid role ${JSON.stringify(role)}`,
+      'setTeamRole',
+      { organizationId, teamId: companyIds.teams.design, userId: memberId, role },
+      'admin',
+      400,
+    ])
+  for (const name of [
+    'renameTeam',
+    'deleteTeam',
+    'addTeamMember',
+    'removeTeamMember',
+    'setTeamRole',
+  ] as const) {
+    teamCases.push(
+      [
+        `${name} unknown team`,
+        name,
+        { organizationId, teamId: unknown, userId: memberId, role: 'lead', name: 'X' },
+        'admin',
+        404,
+      ],
+      [
+        `${name} bad team id`,
+        name,
+        { organizationId, teamId: 'bad', userId: memberId, role: 'lead', name: 'X' },
+        'admin',
+        400,
+      ],
+    )
+  }
+  await compareWrites('teams', teamCases)
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {
   await Promise.all([ts.stop(), native.stop()])

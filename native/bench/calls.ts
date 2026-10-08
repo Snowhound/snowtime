@@ -56,6 +56,21 @@ export const CALLS = {
   },
   getReportExport: { method: 'POST', path: '/api/v1/organizations/:organizationId/report/export' },
   listTeams: { method: 'GET', path: '/api/v1/organizations/:organizationId/teams' },
+  createTeam: { method: 'POST', path: '/api/v1/organizations/:organizationId/teams' },
+  renameTeam: { method: 'PATCH', path: '/api/v1/organizations/:organizationId/teams/:teamId' },
+  deleteTeam: { method: 'DELETE', path: '/api/v1/organizations/:organizationId/teams/:teamId' },
+  addTeamMember: {
+    method: 'PUT',
+    path: '/api/v1/organizations/:organizationId/teams/:teamId/members/:userId',
+  },
+  removeTeamMember: {
+    method: 'DELETE',
+    path: '/api/v1/organizations/:organizationId/teams/:teamId/members/:userId',
+  },
+  setTeamRole: {
+    method: 'PATCH',
+    path: '/api/v1/organizations/:organizationId/teams/:teamId/members/:userId',
+  },
   listMembers: { method: 'GET', path: '/api/v1/organizations/:organizationId/members' },
 } as const
 
