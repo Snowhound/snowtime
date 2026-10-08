@@ -10,6 +10,62 @@ import { ROOT } from '../../perf/lib/database'
 // TypeScript [file, names] against Rust [module, names], per row.
 const PAIRS: [string, string, string[], string, string[]][] = [
   [
+    'project write helpers',
+    'src/server/projects/projects.server.ts',
+    ['assertAdmin', 'findProject', 'assertTeamInScope'],
+    'projects/mod.rs',
+    ['assert_admin', 'project_of', 'find_project', 'assert_team_in_scope'],
+  ],
+  [
+    'createProject',
+    'src/server/projects/projects.server.ts',
+    ['createProject'],
+    'projects/mod.rs',
+    ['create_project'],
+  ],
+  [
+    'updateProject',
+    'src/server/projects/projects.server.ts',
+    ['updateProject'],
+    'projects/mod.rs',
+    ['update_project'],
+  ],
+  [
+    'archiveProject',
+    'src/server/projects/projects.server.ts',
+    ['archiveProject', 'setArchived'],
+    'projects/mod.rs',
+    ['archive_project', 'set_archived'],
+  ],
+  [
+    'unarchiveProject',
+    'src/server/projects/projects.server.ts',
+    ['unarchiveProject'],
+    'projects/mod.rs',
+    ['unarchive_project'],
+  ],
+  [
+    'deleteProject',
+    'src/server/projects/projects.server.ts',
+    ['deleteProject'],
+    'projects/mod.rs',
+    ['delete_project'],
+  ],
+  [
+    'assignProjectToTeam',
+    'src/server/projects/projects.server.ts',
+    ['assignProjectToTeam'],
+    'projects/mod.rs',
+    ['assign_project_to_team'],
+  ],
+  [
+    'unassignProjectFromTeam',
+    'src/server/projects/projects.server.ts',
+    ['unassignProjectFromTeam'],
+    'projects/mod.rs',
+    ['unassign_project_from_team'],
+  ],
+  [
     'createSettings',
     'src/server/settings/settings.server.ts',
     ['createSettings'],

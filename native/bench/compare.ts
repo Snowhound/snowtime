@@ -106,6 +106,40 @@ function tokenOnly(credentials: Record<string, string>) {
   }
 }
 
+type WriteCase = [string, CallName, unknown, Who, number, Options?]
+async function compareWrites(domain: string, cases: WriteCase[]) {
+  const a = await startApp({ database })
+  let b: Awaited<ReturnType<typeof startNative>> | undefined
+  try {
+    b = await startNative(binary, database)
+    const credentials = {
+      ts: { admin: await signInHeaders(a, 'admin'), member: await signInHeaders(a, 'member') },
+      native: { admin: await signInHeaders(b, 'admin'), member: await signInHeaders(b, 'member') },
+    }
+    for (const [label, name, input, who, expected, options] of cases) {
+      async function call(server: Server, headers: Record<string, string>) {
+        const route = requestOf(CALLS[name], input)
+        const response = await fetch(`${server.url}${route.path}`, {
+          method: CALLS[name].method,
+          headers: { ...headers, origin: server.url, 'content-type': 'application/json' },
+          body: options?.body ?? route.body,
+        })
+        return { status: response.status, text: masked(await response.text(), options?.mask) }
+      }
+      const left = await call(a, who ? credentials.ts[who] : {})
+      const right = await call(b, who ? credentials.native[who] : {})
+      judge(`${domain}: ${label}`, left, right)
+      if (left.status !== expected || right.status !== expected)
+        throw new Error(
+          `${domain}: ${label}: expected ${expected}, got ${left.status}/${right.status}`,
+        )
+    }
+  } finally {
+    await a.stop()
+    await b?.stop()
+  }
+}
+
 try {
   const sessions = {
     ts: { admin: await signInHeaders(ts, 'admin'), member: await signInHeaders(ts, 'member') },
@@ -912,6 +946,127 @@ try {
       await b?.stop()
     }
   }
+  const projectId = '01900000-0000-7000-8010-000000000001'
+  const duplicateId = '01900000-0000-7000-8010-000000000002'
+  const project = { organizationId, id: projectId }
+  const assigned = { organizationId, projectId, teamId: companyIds.teams.design }
+  const projectCases: WriteCase[] = []
+  for (const [name, input] of [
+    ['createProject', { ...project, name: 'Functional project' }],
+    ['updateProject', { ...project, name: 'Renamed' }],
+    ['archiveProject', project],
+    ['unarchiveProject', project],
+    ['deleteProject', project],
+    ['assignProjectToTeam', assigned],
+    ['unassignProjectFromTeam', assigned],
+  ] as [CallName, unknown][]) {
+    projectCases.push(
+      [`${name} member refusal`, name, input, 'member', 403],
+      [`${name} signed out`, name, input, null, 401],
+      [`${name} malformed body`, name, input, 'admin', 400, { body: '{' }],
+    )
+  }
+  for (const value of [undefined, null, 3, [], '', ' ', 'x'.repeat(101), '😀'.repeat(51)]) {
+    projectCases.push([
+      `create name ${JSON.stringify(value)}`,
+      'createProject',
+      { ...project, name: value },
+      'admin',
+      400,
+    ])
+  }
+  for (const value of [3, [], '#123', '#gggggg', ' #112233']) {
+    projectCases.push([
+      `create color ${JSON.stringify(value)}`,
+      'createProject',
+      { ...project, name: 'Valid', color: value },
+      'admin',
+      400,
+    ])
+  }
+  projectCases.push(
+    [
+      'create trims name and defaults color',
+      'createProject',
+      { ...project, name: '\ufeff Functional project ' },
+      'admin',
+      200,
+    ],
+    ['id conflict', 'createProject', { ...project, name: 'Other name' }, 'admin', 409],
+    [
+      'name conflict',
+      'createProject',
+      { ...project, id: duplicateId, name: 'Functional project' },
+      'admin',
+      409,
+    ],
+    [
+      'create second project',
+      'createProject',
+      { ...project, id: duplicateId, name: 'Other name', color: '#aBcDeF' },
+      'admin',
+      200,
+    ],
+    ['update name conflict', 'updateProject', { ...project, name: 'Other name' }, 'admin', 409],
+    ['update name', 'updateProject', { ...project, name: ' Renamed ' }, 'admin', 200],
+    ['update color', 'updateProject', { ...project, color: '#112233' }, 'admin', 200],
+    ['update clears color', 'updateProject', { ...project, color: null }, 'admin', 200],
+    ['update empty', 'updateProject', project, 'admin', 200],
+    ['archive', 'archiveProject', project, 'admin', 200, { mask: ['archivedAt'] }],
+    ['repeat archive', 'archiveProject', project, 'admin', 200, { mask: ['archivedAt'] }],
+    [
+      'rename archived',
+      'updateProject',
+      { ...project, name: 'Archived rename' },
+      'admin',
+      200,
+      { mask: ['archivedAt'] },
+    ],
+    ['unarchive', 'unarchiveProject', project, 'admin', 200],
+    ['repeat unarchive', 'unarchiveProject', project, 'admin', 200],
+    ['assign', 'assignProjectToTeam', assigned, 'admin', 200],
+    ['repeat assign', 'assignProjectToTeam', assigned, 'admin', 200],
+    ['member visibility after assignment', 'listProjects', { organizationId }, 'member', 200],
+    ['missing team', 'assignProjectToTeam', { ...assigned, teamId: unknown }, 'admin', 404],
+    [
+      'missing project checked first',
+      'assignProjectToTeam',
+      { ...assigned, projectId: unknown, teamId: unknown },
+      'admin',
+      404,
+    ],
+    ['unassign', 'unassignProjectFromTeam', assigned, 'admin', 200],
+    ['repeat unassign', 'unassignProjectFromTeam', assigned, 'admin', 200],
+    ['reassign before delete', 'assignProjectToTeam', assigned, 'admin', 200],
+    ['delete removes assignments', 'deleteProject', project, 'admin', 200],
+    ['repeat delete', 'deleteProject', project, 'admin', 404],
+    [
+      'reuse deleted name',
+      'createProject',
+      { ...project, id: '01900000-0000-7000-8010-000000000003', name: 'Archived rename' },
+      'admin',
+      200,
+    ],
+    [
+      'used project refuses delete',
+      'deleteProject',
+      { organizationId, id: '01900000-0000-7000-8001-000000003000' },
+      'admin',
+      409,
+    ],
+  )
+  for (const name of [
+    'updateProject',
+    'archiveProject',
+    'unarchiveProject',
+    'deleteProject',
+  ] as const) {
+    projectCases.push(
+      [`${name} missing`, name, { organizationId, id: unknown, name: 'X' }, 'admin', 404],
+      [`${name} invalid id`, name, { organizationId, id: 'bad', name: 'X' }, 'admin', 400],
+    )
+  }
+  await compareWrites('projects', projectCases)
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {
   await Promise.all([ts.stop(), native.stop()])

@@ -471,8 +471,9 @@ with Deno extensions and the policy measured above:
 - Confirm on the Linux deployment host. These measurements are Docker on this Mac: the
   stress runs on dataset M with Caddy on the app's core, the renderer runs on the Lumen
   Works seed with recorded answers.
-- Finish the functional port ([task 081.26](26-functional-port.md)): project and team
-  writes, invitations, and issue links, after Kait reviews the settings port on localhost.
+- Finish the functional port ([task 081.26](26-functional-port.md)): team
+  writes, invitations, and issue links. Kait reviewed the settings port and resumed
+  the work on 2026-10-08; project writes are ported and verified.
   Google/OAuth sign-in stays a follow-up.
 - Bring the 161 MiB warmup peak down if the target needs it: it comes before the first
   trim, while V8 optimizes the bundle.

@@ -22,6 +22,25 @@ export const CALLS = {
   updateEntry: { method: 'PATCH', path: '/api/v1/organizations/:organizationId/entries/:id' },
   deleteEntry: { method: 'DELETE', path: '/api/v1/organizations/:organizationId/entries/:id' },
   listProjects: { method: 'GET', path: '/api/v1/organizations/:organizationId/projects' },
+  createProject: { method: 'POST', path: '/api/v1/organizations/:organizationId/projects' },
+  updateProject: { method: 'PATCH', path: '/api/v1/organizations/:organizationId/projects/:id' },
+  archiveProject: {
+    method: 'POST',
+    path: '/api/v1/organizations/:organizationId/projects/:id/archive',
+  },
+  unarchiveProject: {
+    method: 'POST',
+    path: '/api/v1/organizations/:organizationId/projects/:id/unarchive',
+  },
+  deleteProject: { method: 'DELETE', path: '/api/v1/organizations/:organizationId/projects/:id' },
+  assignProjectToTeam: {
+    method: 'PUT',
+    path: '/api/v1/organizations/:organizationId/projects/:projectId/teams/:teamId',
+  },
+  unassignProjectFromTeam: {
+    method: 'DELETE',
+    path: '/api/v1/organizations/:organizationId/projects/:projectId/teams/:teamId',
+  },
   getReport: { method: 'POST', path: '/api/v1/organizations/:organizationId/report' },
   getReportBreakdown: {
     method: 'POST',

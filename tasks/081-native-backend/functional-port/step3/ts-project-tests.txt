@@ -1,0 +1,30 @@
+bun test v1.4.2 (744846f84)
+
+src/server/projects/projects.test.ts:
+(pass) an empty project patch returns the existing fields without changing its audit [4.44ms]
+(pass) listProjects > members see unassigned projects and those of their teams [3.38ms]
+(pass) listProjects > admins and owners see every project, never deleted ones or other organizations [2.07ms]
+(pass) listProjects > archived projects only on request, with the same visibility [1.11ms]
+(pass) listProjects > each project carries its team ids [0.50ms]
+(pass) listProjects > each project says whether it has live time entries [2.54ms]
+(pass) listProjects > assertUsableProject follows the same visibility [1.23ms]
+(pass) createProject > admins and owners create projects; others are forbidden [1.42ms]
+(pass) createProject > names are unique among non-deleted projects of the organization [1.55ms]
+(pass) createProject > a reused id is a conflict [0.87ms]
+(pass) updateProject > admins rename and recolor; the name stays unique [1.80ms]
+(pass) updateProject > members cannot update; deleted and other organizations’ projects are not found [0.49ms]
+(pass) archiveProject and unarchiveProject > archiving hides the project from lists and new time; unarchiving restores it [4.37ms]
+(pass) archiveProject and unarchiveProject > only admins and owners archive or unarchive [0.12ms]
+(pass) assignProjectToTeam and unassignProjectFromTeam > assigning restricts visibility to the team; unassigning the last team opens it again [5.17ms]
+(pass) assignProjectToTeam and unassignProjectFromTeam > only admins and owners assign; a team lead cannot assign to their own team [0.16ms]
+(pass) assignProjectToTeam and unassignProjectFromTeam > teams and projects of another organization are not found [0.92ms]
+(pass) deleteProject > deletes the project and its team assignments, and frees the name [3.13ms]
+(pass) deleteProject > a project with time on it is a conflict and stays as it was [2.43ms]
+(pass) deleteProject > the database refuses to delete a project with live entries [1.06ms]
+(pass) deleteProject > only admins and owners delete; other organizations’ projects are not found [1.09ms]
+(pass) project limit > an organization at the limit refuses new projects [23.49ms]
+
+ 22 pass
+ 0 fail
+ 66 expect() calls
+Ran 22 tests across 1 file. [242.00ms]

@@ -149,7 +149,7 @@ async fn checks_known_origin_session_scope_then_input() {
     let router = router(app.clone());
     for (method, path) in [
         ("PUT", "/api/v1/session"),
-        ("POST", "/api/v1/organizations/o/projects"),
+        ("PUT", "/api/v1/organizations/o/projects"),
         ("POST", "/api/v1/timer"),
     ] {
         assert_eq!(

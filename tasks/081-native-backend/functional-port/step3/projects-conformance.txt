@@ -1,0 +1,14 @@
+{"timestamp":"2026-10-08T03:48:20.033564Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T03:48:20.034193Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3443","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/projects.conformance.ts:
+(pass) projects > the list sends only the contract fields, archived projects on request [41.20ms]
+(pass) projects > a member may not create projects [1.06ms]
+(pass) projects > a project is created, edited, archived, assigned, and deleted [117.17ms]
+(pass) projects > a project with entries is not deleted [13.48ms]
+
+ 4 pass
+ 0 fail
+ 18 expect() calls
+Ran 4 tests across 1 file. [868.00ms]

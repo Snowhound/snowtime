@@ -1,6 +1,6 @@
 # 081.26: Port the remaining functional calls
 
-Status: in-progress (steps 1–2 done; waiting for Kait's localhost review)
+Status: in-progress (steps 1–2 reviewed; continuing steps 3–5)
 
 Port the sign-in page and settings writes first, then project and team writes,
 invitations, and issue links. Follow subtask 24's route, schema, comparison, and
@@ -28,9 +28,9 @@ verification pattern. The TypeScript server remains the source of truth.
 
 ### 3. Project writes
 
-- [ ] Create, update, archive, unarchive, delete, and project-team PUT and DELETE
+- [x] Create, update, archive, unarchive, delete, and project-team PUT and DELETE
       routes preserve the TypeScript role rules and validation
-- [ ] Project conformance passes; comparison covers valid and malformed input,
+- [x] Project conformance passes; comparison covers valid and malformed input,
       member refusals, and every owner/member difference
 
 ### 4. Team writes
@@ -101,6 +101,42 @@ Patterns for subtask 05:
   An empty patch reads without updating audit columns. Writes set the actor explicitly.
 
 ## Verification
+
+### Step 3
+
+Verified on Ubuntu x64 in WSL on 2026-10-08:
+
+- `cargo fmt` and workspace Clippy with `--all-targets -- -D warnings` pass, with
+  and without `bench`.
+- Server tests: 56 pass without `bench`, and 56 with it. Host tests: 15 pass.
+- Projects conformance: 4 pass, 18 assertions. TypeScript project tests: 22 pass,
+  66 assertions. All 692 comparison calls are byte-equal.
+- Each domain write sequence starts new hosts on independent fixture copies, so it
+  doesn't inherit settings writes or their rate counters. The harness also checks
+  expected statuses, so matching rate-limit refusals cannot hide an intended success.
+- Archive comparisons mask `archivedAt`, another value of each server's advancing
+  clock. Repeated-archive stability is checked directly in Rust and conformance.
+- Empty project PATCH originally raised Drizzle's "No values to set" and HTTP 500.
+  Kait authorized a successful no-op in both servers on 2026-10-08. Both check admin
+  access and existence first, then return the existing project without audit changes.
+  The TypeScript regression test and `docs/architecture/data.md` record this fix.
+- Project deletion uses a transaction for the entry check, assignment removal, and
+  logical delete. A refusal rolls back the assignment removal. Audit actors stay explicit.
+- The native README records environment-only configuration and dotenv loading as a
+  possible future option. Passkey endpoints remain unported despite the method list.
+
+Saved outputs are in [functional-port/step3](functional-port/step3/).
+
+| Handler or helper                         | TypeScript | Rust |
+| ----------------------------------------- | ---------: | ---: |
+| Project write helpers                     |         20 |   40 |
+| `createProject`                           |         28 |   44 |
+| `updateProject`                           |         19 |   37 |
+| `archiveProject`, including `setArchived` |         15 |   26 |
+| `unarchiveProject`                        |          3 |    3 |
+| `deleteProject`                           |         35 |   51 |
+| `assignProjectToTeam`                     |         16 |   22 |
+| `unassignProjectFromTeam`                 |         17 |   19 |
 
 The first commit, `5c09da23`, records the task only. Step 1 runs on Ubuntu x64 in WSL
 on 2026-10-07, using a debug host binary and separate fixed-clock seeded copies.

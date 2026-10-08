@@ -44,8 +44,11 @@ breakdown, entries, entry totals, and export). Each report read uses `run_report
 reports and export pieces take the report budget before database admission.
 The sign-in page's reads (sign-in methods, deployment, seeded users), password sign-in,
 and Better Auth sign-out are also ported. `/sign-in` renders signed out.
-Of the other writes, the timer's, the entries', and settings PUT/PATCH are ported.
-Not ported: team, project, and organization writes; invitations; and Google/OAuth sign-in.
+Of the other writes, the timer's, the entries', settings PUT/PATCH, and project writes
+(including team assignments) are ported.
+Not ported: team and organization writes; invitations; passkey registration,
+sign-in, and management; and Google/OAuth sign-in. The sign-in method list includes
+passkey for TypeScript parity, but the native host has no passkey endpoints yet.
 
 [Task 081.26](../tasks/081-native-backend/26-functional-port.md#local-review) gives
 localhost commands for separate seeded TypeScript and native hosts.
@@ -165,6 +168,11 @@ and reports the median of at least 20 measured hashes. On macOS, vendored OpenSS
 Perl and make. The optional Docker stage installs those and `linux-perf` for profiling.
 
 ## Run it
+
+The native host reads inherited environment variables only. It doesn't load `.env`
+files or accept configuration through command-line arguments. Loading a dotenv file,
+with inherited variables taking precedence, is a possible future option; it isn't
+implemented.
 
 The server reads the TypeScript server's environment variables: `TURSO_DATABASE_URL` (a
 `file:` URL of a migrated database), `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `HOST`,

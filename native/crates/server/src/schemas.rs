@@ -61,6 +61,7 @@ pub enum Field {
         required: bool,
         check: fn(&str) -> Result<()>,
     },
+    NullableCheckedString(fn(&str) -> Result<()>),
     NullablePicklist(&'static [&'static str]),
     True,
     Picklist(&'static [&'static str]),
@@ -152,8 +153,10 @@ pub(crate) fn check_field(name: &str, field: Field, value: Option<&Value>) -> Re
     let typed = match (field, text) {
         (Field::NullableId | Field::Ticket, _) if value.is_null() => return Ok(()),
         (Field::NullablePicklist(_), _) if value.is_null() => return Ok(()),
+        (Field::NullableCheckedString(_), _) if value.is_null() => return Ok(()),
         (Field::Bool, _) => value.is_boolean() || matches!(text, Some("true" | "false")),
         (Field::CheckedString { check, .. }, Some(text)) => return check(text),
+        (Field::NullableCheckedString(check), Some(text)) => return check(text),
         (Field::True, _) => value == &Value::Bool(true),
         (
             Field::Picklist(options)
