@@ -22,6 +22,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 pub struct Request {
     pub method: String,
+    pub path: String,
     pub query: Option<String>,
     pub cookie: Option<String>,
     pub user_agent: Option<String>,
@@ -35,6 +36,7 @@ impl Request {
     pub(crate) fn auth_fixture(cookie: String) -> Self {
         Self {
             method: "POST".into(),
+            path: String::new(),
             query: None,
             cookie: Some(cookie),
             user_agent: None,
@@ -248,6 +250,7 @@ async fn extract(
         .map_err(|_| Response::from(failure(413, "Request body too large.")))?;
     Ok(Request {
         method: parts.method.to_string(),
+        path: parts.uri.path().to_owned(),
         query: parts.uri.query().map(str::to_owned),
         cookie: cookies(&parts.headers),
         user_agent: text(&parts.headers, "user-agent"),
@@ -632,6 +635,9 @@ impl FromRequest<Arc<App>> for AuthCall {
     }
 }
 impl AuthCall {
+    pub(crate) async fn auth_write(self, action: crate::auth::writes::Action) -> Response {
+        self.0.auth_write(self.1, self.2, action).await
+    }
     pub(crate) async fn oauth(
         self,
         action: crate::auth::oauth::Action,

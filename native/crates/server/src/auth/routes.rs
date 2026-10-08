@@ -50,6 +50,15 @@ async fn issue_links(call: InOrganization<UpdateIssueLinksInput>) -> Response {
 // Better Auth's own routes, under /api/auth.
 pub fn better_auth_routes() -> Router<Arc<App>> {
     Router::new()
+        .route("/api/auth/organization/leave", post(leave))
+        .route("/api/auth/update-user", post(profile))
+        .route("/api/auth/organization/set-active", post(set_active))
+        .route("/api/auth/organization/check-slug", post(check_slug))
+        .route("/api/auth/organization/create", post(create))
+        .route("/api/auth/organization/update", post(update))
+        .route("/api/auth/organization/update-member-role", post(role))
+        .route("/api/auth/organization/remove-member", post(remove))
+        .route("/api/auth/organization/cancel-invitation", post(cancel))
         .route("/api/auth/sign-in/social", post(social))
         .route("/api/auth/link-social", post(link_social))
         .route("/api/auth/list-accounts", get(accounts))
@@ -133,4 +142,40 @@ async fn unlink(call: AuthCall) -> axum::response::Response {
 }
 async fn callback(call: AuthCall) -> axum::response::Response {
     call.oauth(super::oauth::Action::Callback).await
+}
+
+async fn profile(call: AuthCall) -> Response {
+    call.auth_write(super::writes::Action::Profile).await
+}
+
+async fn set_active(call: AuthCall) -> Response {
+    call.auth_write(super::writes::Action::SetActive).await
+}
+
+async fn check_slug(call: AuthCall) -> Response {
+    call.auth_write(super::writes::Action::CheckSlug).await
+}
+
+async fn create(call: AuthCall) -> Response {
+    call.auth_write(super::writes::Action::Create).await
+}
+
+async fn update(call: AuthCall) -> Response {
+    call.auth_write(super::writes::Action::Update).await
+}
+
+async fn role(call: AuthCall) -> Response {
+    call.auth_write(super::writes::Action::Role).await
+}
+
+async fn remove(call: AuthCall) -> Response {
+    call.auth_write(super::writes::Action::Remove).await
+}
+
+async fn cancel(call: AuthCall) -> Response {
+    call.auth_write(super::writes::Action::Cancel).await
+}
+
+async fn leave(call: AuthCall) -> Response {
+    call.auth_write(super::writes::Action::Leave).await
 }

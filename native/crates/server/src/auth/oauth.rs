@@ -53,10 +53,16 @@ impl IntoResponse for Answer {
     fn into_response(self) -> axum::response::Response {
         let mut response = self.response.into_response();
         if let Some(location) = self.location {
-            response.headers_mut().insert(
-                header::LOCATION,
-                location.parse().expect("validated OAuth location"),
-            );
+            // Fetch headers use ByteString (Latin-1), rather than UTF-8.
+            let bytes: Option<Vec<u8>> = location
+                .chars()
+                .map(|c| u8::try_from(c as u32).ok())
+                .collect();
+            let value = bytes.and_then(|bytes| axum::http::HeaderValue::from_bytes(&bytes).ok());
+            let Some(value) = value else {
+                return axum::http::StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            };
+            response.headers_mut().insert(header::LOCATION, value);
         }
         response
     }
@@ -966,8 +972,9 @@ impl App {
                     }
                 }
                 return redirect(format!(
-                    "{}?{}",
-                    callback_uri(&self.config, request.param("id")),
+                    "{}{}?{}",
+                    self.config.app_origin(),
+                    request.path,
                     params.finish()
                 ))
                 .into_response();
@@ -1102,6 +1109,17 @@ mod tests {
         app.db()
             .query_row("select count(*) from verification", [], |r| r.get(0))
             .unwrap()
+    }
+    #[test]
+    fn redirect_headers_use_fetch_bytes_and_refuse_invalid_values_without_panicking() {
+        let response = redirect("/ä".into()).into_response();
+        assert_eq!(response.status(), 302);
+        assert_eq!(response.headers()[header::LOCATION].as_bytes(), b"/\xe4");
+        let response = redirect("/\n".into()).into_response();
+        assert_eq!(response.status(), 500);
+        assert!(!response.headers().contains_key(header::LOCATION));
+        let response = redirect("/雪".into()).into_response();
+        assert_eq!(response.status(), 500);
     }
     #[test]
     fn state_mismatch_keeps_the_pending_flow_and_expiry_consumes_it() {

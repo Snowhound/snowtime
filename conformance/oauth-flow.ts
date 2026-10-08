@@ -139,6 +139,10 @@ export async function oauthFlow(
       text = text.replaceAll(session.signedInAt, '$signedInAt')
     }
     const location = response.headers.get('location')
+    if (label === 'callback newline provider' && location !== `${app.url}/api/auth/callback/%0A?`)
+      throw new Error('Encoded callback provider path changed')
+    if (label === 'callback non-ASCII location' && location !== '/ä')
+      throw new Error('Latin-1 redirect header changed')
     observe({
       label,
       status: response.status,
@@ -208,6 +212,25 @@ export async function oauthFlow(
     { code: 3, error: false, state: null },
     400,
   )
+  await call('callback newline provider', '/callback/%0A', {}, 302)
+  await begin('google', { callbackURL: '/ä' })
+  const unicodeCode = await issue(profile(USERS.admin.email))
+  await call(
+    'callback non-ASCII location',
+    `/callback/google?state=${state}&code=${unicodeCode}`,
+    undefined,
+    302,
+  )
+  cookie = ''
+  await begin('google', { callbackURL: '/雪' })
+  const wideCode = await issue(profile(USERS.admin.email))
+  await call(
+    'callback non-ByteString location',
+    `/callback/google?state=${state}&code=${wideCode}`,
+    undefined,
+    500,
+  )
+  cookie = ''
   await call('signed out accounts', '/list-accounts', undefined, 401)
   await call('signed out link', '/link-social', { provider: 'google' }, 401)
   await call('signed out unlink', '/unlink-account', { accountId: 'missing' }, 401)

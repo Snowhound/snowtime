@@ -1,0 +1,6 @@
+TypeScript at 0d26e18, before the isolated memberRemovalHook fix.
+{"label":"signed out organization/remove-member null","status":500,"expected":400,"text":""}
+{"label":"signed out organization/remove-member []","status":500,"expected":400,"text":""}
+{"label":"signed out organization/remove-member {}","status":500,"expected":400,"text":""}
+{"label":"signed out organization/remove-member {\"memberIdOrEmail\":\"missing\"}","status":401,"expected":401,"text":"{\"message\":\"Unauthorized\",\"code\":\"UNAUTHORIZED\"}"}
+{"label":"ordered organization/remove-member","status":500,"expected":400,"text":""}

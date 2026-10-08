@@ -12,6 +12,7 @@ import { buildApp, signInHeaders, startApp } from '../../perf/lib/app'
 import { CACHE, COMPANY, SEED_NOW, USERS, seededDatabase } from '../../perf/lib/database'
 import { companyIds } from '../../src/db/seed-company'
 import { COLLECTION_IMAGES } from '../../src/lib/scene/images'
+import { compareAuthWrites } from './auth-writes-compare'
 import { CALLS, type CallName, requestOf } from './calls'
 import { startNative } from './native'
 import { compareOAuth } from './oauth-compare'
@@ -1666,6 +1667,7 @@ try {
     ])
   await comparePasskeys(binary, database, judge)
   await compareOAuth(binary, database, judge)
+  await compareAuthWrites(binary, database, judge)
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {
   await Promise.all([ts.stop(), native.stop()])

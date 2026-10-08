@@ -564,3 +564,244 @@ pub(crate) fn oauth_callback_issues(body: &serde_json::Value, empty: bool) -> Ve
     })
     .collect()
 }
+
+pub(crate) fn auth_write_issues(
+    action: super::writes::Action,
+    body: &serde_json::Value,
+    empty: bool,
+) -> Vec<String> {
+    use super::writes::Action;
+    use serde_json::Value;
+    fn kind(value: Option<&Value>) -> &'static str {
+        match value {
+            None => "undefined",
+            Some(Value::Null) => "null",
+            Some(Value::Bool(_)) => "boolean",
+            Some(Value::Number(_)) => "number",
+            Some(Value::String(_)) => "string",
+            Some(Value::Array(_)) => "array",
+            Some(Value::Object(_)) => "object",
+        }
+    }
+    fn check(
+        issues: &mut Vec<String>,
+        path: &str,
+        value: Option<&Value>,
+        ty: &str,
+        optional: bool,
+        nullable: bool,
+        nonempty: bool,
+    ) {
+        if optional && value.is_none() || nullable && value == Some(&Value::Null) {
+            return;
+        }
+        let valid = match ty {
+            "record" | "object" => value.is_some_and(Value::is_object),
+            "role" => value.is_some_and(|v| {
+                v.is_string() || v.as_array().is_some_and(|a| a.iter().all(Value::is_string))
+            }),
+            _ => kind(value) == ty,
+        };
+        if !valid {
+            issues.push(if ty == "role" {
+                format!("[body.{path}] Invalid input")
+            } else {
+                format!(
+                    "[body.{path}] Invalid input: expected {ty}, received {}",
+                    kind(value)
+                )
+            });
+        } else if nonempty && value.and_then(Value::as_str) == Some("") {
+            issues.push(format!(
+                "[body.{path}] Too small: expected string to have >=1 characters"
+            ));
+        }
+    }
+    if !body.is_object() {
+        return vec![format!(
+            "[body] Invalid input: expected {}, received {}",
+            if matches!(action, Action::Profile) {
+                "record"
+            } else {
+                "object"
+            },
+            kind((!empty).then_some(body))
+        )];
+    }
+    let mut issues = vec![];
+    match action {
+        Action::Profile => (),
+        Action::SetActive => {
+            check(
+                &mut issues,
+                "organizationId",
+                body.get("organizationId"),
+                "string",
+                true,
+                true,
+                false,
+            );
+            check(
+                &mut issues,
+                "organizationSlug",
+                body.get("organizationSlug"),
+                "string",
+                true,
+                false,
+                false,
+            );
+        }
+        Action::CheckSlug => check(
+            &mut issues,
+            "slug",
+            body.get("slug"),
+            "string",
+            false,
+            false,
+            false,
+        ),
+        Action::Create | Action::Update => {
+            let data = if matches!(action, Action::Update) {
+                check(
+                    &mut issues,
+                    "data",
+                    body.get("data"),
+                    "object",
+                    false,
+                    false,
+                    false,
+                );
+                &body["data"]
+            } else {
+                body
+            };
+            if data.is_object() {
+                let prefix = if matches!(action, Action::Update) {
+                    "data."
+                } else {
+                    ""
+                };
+                for field in ["name", "slug"] {
+                    check(
+                        &mut issues,
+                        &format!("{prefix}{field}"),
+                        data.get(field),
+                        "string",
+                        matches!(action, Action::Update),
+                        false,
+                        true,
+                    );
+                }
+                // userId is coerced by Zod and ignored for HTTP callers.
+                check(
+                    &mut issues,
+                    &format!("{prefix}logo"),
+                    data.get("logo"),
+                    "string",
+                    true,
+                    true,
+                    false,
+                );
+                check(
+                    &mut issues,
+                    &format!("{prefix}metadata"),
+                    data.get("metadata"),
+                    "record",
+                    true,
+                    false,
+                    false,
+                );
+                if matches!(action, Action::Create) {
+                    check(
+                        &mut issues,
+                        "keepCurrentActiveOrganization",
+                        body.get("keepCurrentActiveOrganization"),
+                        "boolean",
+                        true,
+                        false,
+                        false,
+                    );
+                }
+            }
+            if matches!(action, Action::Update) {
+                check(
+                    &mut issues,
+                    "organizationId",
+                    body.get("organizationId"),
+                    "string",
+                    true,
+                    false,
+                    false,
+                );
+            }
+        }
+        Action::Role => {
+            check(
+                &mut issues,
+                "role",
+                body.get("role"),
+                "role",
+                false,
+                false,
+                false,
+            );
+            check(
+                &mut issues,
+                "memberId",
+                body.get("memberId"),
+                "string",
+                false,
+                false,
+                false,
+            );
+            check(
+                &mut issues,
+                "organizationId",
+                body.get("organizationId"),
+                "string",
+                true,
+                false,
+                false,
+            );
+        }
+        Action::Remove => {
+            check(
+                &mut issues,
+                "memberIdOrEmail",
+                body.get("memberIdOrEmail"),
+                "string",
+                false,
+                false,
+                false,
+            );
+            check(
+                &mut issues,
+                "organizationId",
+                body.get("organizationId"),
+                "string",
+                true,
+                false,
+                false,
+            );
+        }
+        Action::Leave => check(
+            &mut issues,
+            "organizationId",
+            body.get("organizationId"),
+            "string",
+            false,
+            false,
+            false,
+        ),
+        Action::Cancel => check(
+            &mut issues,
+            "invitationId",
+            body.get("invitationId"),
+            "string",
+            false,
+            false,
+            false,
+        ),
+    }
+    issues
+}

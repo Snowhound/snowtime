@@ -1,6 +1,6 @@
 # 081.28: Complete the native auth port
 
-Status: in-progress
+Status: done
 
 Close the functional gaps so a native-only host serves every call the app makes.
 TypeScript and installed Better Auth 1.7.7 remain the source of truth. Follow
@@ -25,24 +25,24 @@ TypeScript and installed Better Auth 1.7.7 remain the source of truth. Follow
    - [x] Match Better Auth's state, PKCE, callback, and account-linking behavior.
    - [x] Use a local fake provider for both comparison servers; record what it cannot prove.
 4. Remaining client calls:
-   - [ ] Show Kait the audited missing-route list below before porting this step.
-   - [ ] Port every remaining organization write and profile update in that list.
+   - [x] Show Kait the audited missing-route list below before porting this step.
+   - [x] Port every remaining organization write and profile update in that list.
 
 For every step:
 
-- [ ] Read the TypeScript domain and installed Better Auth source before porting.
+- [x] Read the TypeScript domain and installed Better Auth source before porting.
       Ask Kait about suspect rules. A TypeScript behavior change requires a decision
       in `docs/architecture/`; don't change it silently.
-- [ ] Put routes in the domain's `routes.rs`, with one rule call per handler.
+- [x] Put routes in the domain's `routes.rs`, with one rule call per handler.
       Validate in Valibot or Zod order, with matching messages, before deserialization.
-- [ ] Add byte-equal comparisons to `native/bench/compare.ts`, conformance in
+- [x] Add byte-equal comparisons to `native/bench/compare.ts`, conformance in
       `conformance/`, and handler rows in `native/bench/lines.ts`.
 - [x] Centralize Rust's invitation and team caps to mirror `limits.server.ts`.
-- [ ] Before implementation commits, run `cargo fmt`; workspace Clippy
+- [x] Before implementation commits, run `cargo fmt`; workspace Clippy
       `--all-targets -- -D warnings`, with and without `--features bench`; server tests
       with and without `bench`; host tests; affected files through
       `native/bench/conformance.ts`; and `compare.ts`.
-- [ ] Record counts and save output under `auth-port/stepN/` here. Update the ported
+- [x] Record counts and save output under `auth-port/stepN/` here. Update the ported
       and not-ported list in `native/README.md` and the Open notes in subtask 01.
 
 No Docker, load, or stress runs. Don't push, rebase, or merge without Kait's approval.
@@ -58,7 +58,7 @@ The only application API route without a Rust counterpart is
 
 At the base commit, the following Better Auth paths under `/api/auth` returned 404.
 Steps 1–3 now cover acceptance, the six passkey endpoints, and OAuth/account management.
-Step 4 remains open.
+Step 4 is now implemented.
 
 | Method   | Path                                     | Client use                                 | Step |
 | -------- | ---------------------------------------- | ------------------------------------------ | ---- |
@@ -385,6 +385,92 @@ providers share the native profile rule.
 | OAuth ordered Zod validation           |         98 |  234 |
 | OAuth HTTP and redirects               |          6 |  174 |
 
+### Step 4
+
+Verified on macOS arm64 on 2026-10-08. Kait approved the missing-route list and asked to
+stop after step 4. All eight remaining client calls are ported. The native leave route
+also supports the requested malformed-body comparison and shares member-removal cleanup.
+No schema or migration changes.
+
+Read the client's profile and organization calls, Snowtime's name, login-domain, and
+member-removal hooks, and installed Better Auth 1.7.7 organization routes, adapter,
+permissions, and profile update before porting. Names keep their supplied whitespace after
+the hooks validate trimmed length. Slugs stay immutable. Permission, owner safeguards,
+organization caps, active-organization changes, duplicate roles, response field order,
+and metadata encoding follow TypeScript. An update with no recognized organization fields
+retains TypeScript's empty HTTP 500 response.
+
+Kait requested an isolated TypeScript bug fix for `memberRemovalHook`: act only when the
+returned member or leave result has string `userId` and `organizationId` fields. Better
+Auth can pass validation responses to this hook as objects rather than `APIError`s.
+The old hook sent undefined IDs to SQL and turned malformed removal bodies into empty
+HTTP 500s. The fix is `b8d93c8`, with a regression for signed-in and signed-out
+malformed bodies on both removal paths. It contains no native code or architecture change
+and can be applied separately to `main`.
+
+Member removal and leaving stop only the removed user's live timer in that organization,
+with the source's minimum 1 ms duration and maximum entry length. Entries remain readable
+by an administrator. Team cleanup removes that organization's memberships, including lead
+roles, and decrements each affected team's member count. Timers and memberships elsewhere
+remain intact. The hook runs after the organization membership is deleted, as in TypeScript.
+
+The step 3 review fix preserves the raw percent-encoded callback path and writes Fetch's
+Latin-1 header bytes. TypeScript and native both return 302 for
+`POST /api/auth/callback/%0A`, with `Location: <origin>/api/auth/callback/%0A?`, and for
+`callbackURL: "/ä"`, with `Location: /ä`. A character outside ByteString, such as `雪`,
+returns TypeScript's empty HTTP 500 without a Rust panic. Rust response tests, HTTP
+conformance, and `compare.ts` include these cases. The auth `expect()`/`unwrap()` audit
+found no other unguarded request-derived value: ordered schemas guard body conversions,
+explicit checks guard sessions and callback codes, and remaining assertions concern
+serialization, fixed patterns, configuration, or database invariants. The saved grep
+includes test assertions separately from the production findings described here.
+
+Checks and outputs are in [auth-port/step4](auth-port/step4/):
+
+- Formatting and workspace Clippy, all targets with warnings denied, pass without and
+  with `bench`. Server tests: 75 pass in each configuration. Host tests: 17 pass.
+- Native OAuth, passkey, invitation, session, and team conformance: 19 pass, 280 assertions.
+  Auth write conformance runs on a fresh host: 1 pass, 137 assertions. TypeScript OAuth and
+  auth write conformance: 2 pass, 239 assertions. TypeScript auth regression tests:
+  30 pass, 135 assertions.
+- Comparison: 1,346 calls are byte-equal, including 114 OAuth calls and 161 auth
+  write calls. The latter cover all eight audited routes and leaving, with malformed
+  removal and leave bodies, owner/admin/member permissions, immutable slugs, names,
+  organization caps, invitation cancellation, active organization, retained stopped entries,
+  and team cleanup. Imported sessions cover stale, expired, and blocked-domain cases on
+  fresh independent copies. These checks use the development fixture hosts.
+- Only checked generated UUIDv7 IDs and advancing timestamps are masked in the new write
+  sequence. Seeded IDs and dates, supplied timer IDs, names, roles, metadata, refusal bodies,
+  and response key order remain exact. The callback comparison retains redirect headers.
+- Changed-file lint and all three Knip configurations pass. Full `tsc --noEmit` retains
+  the existing benchmark dependency, fake-provider inference, and shared-props AST errors;
+  no changed file has a type error.
+
+Run from the worktree root, sequentially for TypeScript harness builds:
+
+```sh
+cargo fmt --all --manifest-path native/Cargo.toml
+cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --offline -- -D warnings
+cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --features bench --offline -- -D warnings
+cargo test --manifest-path native/Cargo.toml -p snowtime-server --offline
+cargo test --manifest-path native/Cargo.toml -p snowtime-server --features bench --offline
+cargo test --manifest-path native/Cargo.toml -p snowtime-host --offline
+cargo build --manifest-path native/Cargo.toml -p snowtime-host --features bench --offline
+bun native/bench/conformance.ts native/target/debug/snowtime-axum conformance/oauth.conformance.ts conformance/passkeys.conformance.ts conformance/invitations.conformance.ts conformance/session.conformance.ts conformance/teams.conformance.ts
+bun native/bench/conformance.ts native/target/debug/snowtime-axum conformance/auth-writes.conformance.ts
+bun test ./conformance/oauth.conformance.ts
+bun test ./conformance/auth-writes.conformance.ts
+bun test src/server/auth/team-invitations.test.ts src/server/auth/invitations.test.ts src/server/auth/auth.schemas.test.ts src/server/auth/login-policy.test.ts
+bun native/bench/compare.ts native/target/debug/snowtime-axum
+bun native/bench/auth-writes-compare.ts native/target/debug/snowtime-axum
+bun native/bench/lines.ts
+```
+
+The full required Rust and HTTP verification ran before each commit. The first run is
+saved under `removal-fix-verification/`; top-level logs record the final native run.
+Handler rows are in `native/bench/lines.ts`. No Docker, load, or stress runs; no push,
+rebase, or merge. Work stops after step 4.
+
 ## Local review
 
 The worktree's independent review copies are already prepared at
@@ -434,9 +520,7 @@ Open the same path on `http://localhost:3100` and `http://127.0.0.1:3200`:
 
 Both use password `snowtime-local`. Different hostnames keep cookies separate.
 Accept each link, reload the organization view to check the membership and Design team,
-and reopen the invitation to check that it is closed. The native invitation page still
-calls the unported `organization/set-active` endpoint after acceptance; acceptance itself
-already activates the organization, and step 4 ports that client call.
+and reopen the invitation to check that it is closed. The native invitation page's `organization/set-active` call is now ported in step 4.
 
 ## Passkey review
 

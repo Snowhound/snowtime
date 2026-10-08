@@ -14,7 +14,7 @@ libraries bind no listening socket.
 
 ```text
 crates/server/src/
-  auth/          app_session, acceptance, cookie, oauth, passkeys, password, session, sign_in, schemas, routes
+  auth/          app_session, acceptance, cookie, oauth, passkeys, password, session, sign_in, writes, schemas, routes
   availability/  mod, routes
   entries/       mod (rules), schemas, routes
   projects/      mod (rules), schemas, routes
@@ -57,7 +57,10 @@ challenge state lives in the shared verification table.
 Google, GitHub, and Microsoft redirect sign-in, account linking, listing, and removal
 are ported in task 081.28. OAuth state is signed, stored in the verification table,
 and bound to PKCE; provider HTTP calls run without holding the database.
-Not ported: the remaining organization writes and profile update listed in that task.
+The audited organization writes and profile update are also ported: active organization,
+slug checks, creation and renaming, member roles and removal, invitation cancellation,
+and profile names. Leaving an organization shares the removal cleanup. Malformed removal
+and leave bodies preserve Better Auth's validation refusals.
 Better Auth's direct ID-token sign-in is outside the app-used redirect flows and remains
 unported, as do its other endpoints that the client does not call.
 

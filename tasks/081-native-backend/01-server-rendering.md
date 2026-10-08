@@ -465,19 +465,17 @@ with Deno extensions and the policy measured above:
 
 ## Open
 
+[Task 081.28](28-auth-port.md) completes the audited client auth calls after
+[task 081.26](26-functional-port.md): invitation acceptance, passkeys, OAuth and account
+management, profile updates, and organization writes. Removal and leaving preserve timer
+stopping and team cleanup.
+
 - Check the memory target on Linux ([Memory target](#memory-target)). V8 is the engine
   since 2026-10-07, and task 081.22's minified bundle took 7–9 MB off a renderer's loaded
   RSS and 7–13 MB off its peak.
 - Confirm on the Linux deployment host. These measurements are Docker on this Mac: the
   stress runs on dataset M with Caddy on the app's core, the renderer runs on the Lumen
   Works seed with recorded answers.
-- Extend the functional port after [task 081.26](26-functional-port.md), which finishes
-  sign-in reads/sign-out, settings, project and team writes, invitations, and issue links
-  with 880 byte-equal calls. [Task 081.28](28-auth-port.md) adds invitation acceptance
-  through the application API and Better Auth, including team assignments and existing
-  members, then passkey registration, sign-in, listing, and removal. Google, GitHub, and
-  Microsoft redirect sign-in and account management are also ported. The audited remaining
-  client profile and organization writes stay follow-ups.
 - Bring the 161 MiB warmup peak down if the target needs it: it comes before the first
   trim, while V8 optimizes the bundle.
 

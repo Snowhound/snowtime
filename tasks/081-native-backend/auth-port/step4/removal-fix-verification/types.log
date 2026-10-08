@@ -1,0 +1,15 @@
+conformance/oauth-provider.ts(26,9): error TS7022: 'server' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+conformance/oauth-provider.ts(29,11): error TS7023: 'fetch' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
+native/bench/auth-spike/verify-key.ts(1,42): error TS2307: Cannot find module '@better-auth/api-key' or its corresponding type declarations.
+native/crates/render/bundle/bench/js-encoding.ts(1,27): error TS2307: Cannot find module 'text-encoding' or its corresponding type declarations.
+native/crates/render/bundle/bench/polyfills.ts(3,42): error TS2307: Cannot find module 'text-encoding' or its corresponding type declarations.
+native/crates/render/bundle/bench/polyfills.ts(10,8): error TS2307: Cannot find module 'web-streams-polyfill' or its corresponding type declarations.
+native/crates/render/bundle/bench/polyfills.ts(28,14): error TS2307: Cannot find module 'core-js/actual/url/index.js' or its corresponding type declarations.
+native/crates/render/bundle/bench/polyfills.ts(29,14): error TS2307: Cannot find module 'core-js/actual/url-search-params/index.js' or its corresponding type declarations.
+native/crates/render/bundle/bench/polyfills.ts(64,28): error TS2307: Cannot find module '@remix-run/web-fetch' or its corresponding type declarations.
+native/crates/render/bundle/shared-props.ts(90,75): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Ast'.
+  Type 'unknown' is not assignable to type 'Node'.
+native/crates/render/bundle/shared-props.ts(100,15): error TS2352: Conversion of type 'Program' to type 'Ast' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Program' is missing the following properties from type '{ [key: string]: unknown; name: string; value: unknown; computed: boolean; method: boolean; kind: string; key: Ast; body: Node & ... & { body: Ast[]; }; callee: Node & ... & { object: Ast; property: Ast; }; ... 6 more ...; argument: Ast; }': name, value, computed, method, and 10 more.
+native/crates/render/bundle/shared-props.ts(138,32): error TS18046: 'property.value' is of type 'unknown'.
+native/crates/render/bundle/shared-props.ts(141,30): error TS18046: 'property.value' is of type 'unknown'.
