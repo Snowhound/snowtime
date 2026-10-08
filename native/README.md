@@ -48,12 +48,17 @@ Of the other writes, the timer's, the entries', settings PUT/PATCH, and project 
 (including team assignments) and team writes (including membership and roles) are ported.
 Invitation preview/list/create and issue-link writes are also ported, with all 880
 functional comparison calls byte-equal in task 081.26.
-Not ported: other organization writes; invitation acceptance; passkey registration,
+Invitation acceptance through the application API and Better Auth is ported in
+[task 081.28](../tasks/081-native-backend/28-auth-port.md), including team assignment
+and acceptance by an existing member without changing their role.
+Not ported: the remaining organization writes and profile update listed in that task; passkey registration,
 sign-in, and management; and Google/OAuth sign-in. The sign-in method list includes
 passkey for TypeScript parity, but the native host has no passkey endpoints yet.
 
 [Task 081.26](../tasks/081-native-backend/26-functional-port.md#local-review) gives
 localhost commands for separate seeded TypeScript and native hosts.
+[Task 081.28](../tasks/081-native-backend/28-auth-port.md#local-review) gives acceptance
+review commands and links for a new member and an existing member.
 
 Pages call the API in process: the renderer's host callback sends each call through
 `router.oneshot` with the page request's cookie, as `src/lib/api/request.ts` sends it.

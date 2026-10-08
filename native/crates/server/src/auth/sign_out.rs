@@ -16,7 +16,11 @@ fn truthy(value: &Value) -> bool {
     }
 }
 
-fn check_urls(request: &Request, body: Option<&Value>, origin: &str) -> Result<(), Response> {
+pub(super) fn check_urls(
+    request: &Request,
+    body: Option<&Value>,
+    origin: &str,
+) -> Result<(), Response> {
     for (field, label, code, message) in [
         (
             "callbackURL",

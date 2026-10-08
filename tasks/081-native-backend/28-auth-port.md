@@ -3,19 +3,19 @@
 Status: in-progress
 
 Close the functional gaps so a native-only host serves every call the app makes.
-TypeScript and installed Better Auth 1.7.6 remain the source of truth. Follow
+TypeScript and installed Better Auth 1.7.7 remain the source of truth. Follow
 [081.26](26-functional-port.md). Work on `081-auth-port`, from `081-native-poc` at
 `6e8a18b`, in `/private/tmp/snowtime-081-auth-port`.
 
 ## Steps and acceptance criteria
 
 1. Invitation acceptance:
-   - [ ] Port `POST /api/v1/invitations/:id/accept` and Better Auth's
+   - [x] Port `POST /api/v1/invitations/:id/accept` and Better Auth's
          `POST /api/auth/organization/accept-invitation`.
-   - [ ] Run invitation conformance without the acceptance exclusion.
-   - [ ] Compare fresh database copies, including success, optional team assignment,
+   - [x] Run invitation conformance without the acceptance exclusion.
+   - [x] Compare fresh database copies, including success, optional team assignment,
          wrong recipient, expired, canceled, and already-member cases.
-   - [ ] Stop after step 1. Give Kait the commit range, verification counts, and commands
+   - [x] Stop after step 1. Give Kait the commit range, verification counts, and commands
          for two local hosts with separate seeded database copies.
 2. Passkeys:
    - [ ] Port registration, sign-in, listing, and removal as the app uses them.
@@ -37,7 +37,7 @@ For every step:
       Validate in Valibot or Zod order, with matching messages, before deserialization.
 - [ ] Add byte-equal comparisons to `native/bench/compare.ts`, conformance in
       `conformance/`, and handler rows in `native/bench/lines.ts`.
-- [ ] Centralize Rust's invitation and team caps to mirror `limits.server.ts`.
+- [x] Centralize Rust's invitation and team caps to mirror `limits.server.ts`.
 - [ ] Before implementation commits, run `cargo fmt`; workspace Clippy
       `--all-targets -- -D warnings`, with and without `--features bench`; server tests
       with and without `bench`; host tests; affected files through
@@ -87,4 +87,130 @@ production calls to reject invitations, leave/delete organizations, or update pa
 
 ## Verification
 
-Pending step 1.
+### Step 1
+
+Verified on macOS arm64 on 2026-10-08. Step 1 is complete; steps 2–4 are pending.
+Kait approved fixing the TypeScript already-member crash with the recorded option 2
+in [the auth decision](../../docs/architecture/auth.md#invitation-acceptance-after-joining).
+The scope commit is `2583c0c`; the isolated TypeScript fix is `1222cf2`. Applying
+that fix to `main` requires Kait's review and approval.
+
+- `cargo fmt` and workspace Clippy, both without and with `bench`, pass.
+- Server tests: 66 pass without `bench`, and 66 with it. Host tests: 16 pass.
+- Invitation, session, and team conformance: 17 pass, 51 assertions. No name filter is set;
+  invitation conformance alone has 6 tests and 16 assertions, including the restored
+  recipient-refusal test and a new acceptance/team-assignment test.
+- TypeScript invitation, team-invitation, and auth-schema tests: 24 pass, 77 assertions.
+  The saved upstream reproduction confirms HTTP 500 and the restored pending state.
+  Regressions cover preserving the existing role, closing the link, active organization,
+  team assignment on the direct Better Auth path, and all recipient/state safeguards.
+- Comparison: all 934 calls are byte-equal, including 54 acceptance calls. Both endpoint
+  sequences use fresh independent database copies, covering wrong recipient, expired,
+  canceled, already accepted, existing member, new member, repeat click, origin, session,
+  malformed JSON, and ordered Zod string validation. Reads check closed previews,
+  organization roles, team membership, and active organization after each acceptance.
+- Frontend and render-bundle builds, changed-file lint, and all three Knip configurations
+  pass. Full `tsc --noEmit` still reports existing native benchmark dependency and
+  shared-props AST errors; it reports no errors in changed files. See `types.log`.
+
+Saved outputs are in [auth-port/step1](auth-port/step1/). Run from the worktree root:
+
+```sh
+cargo fmt --all --manifest-path native/Cargo.toml
+cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --offline -- -D warnings
+cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --features bench --offline -- -D warnings
+cargo test --manifest-path native/Cargo.toml -p snowtime-server --offline
+cargo test --manifest-path native/Cargo.toml -p snowtime-server --features bench --offline
+cargo test --manifest-path native/Cargo.toml -p snowtime-host --offline
+cargo build --manifest-path native/Cargo.toml -p snowtime-host --offline
+bun test src/server/auth/team-invitations.test.ts src/server/auth/invitations.test.ts src/server/auth/auth.schemas.test.ts
+bun native/bench/conformance.ts native/target/debug/snowtime-axum conformance/invitations.conformance.ts conformance/session.conformance.ts conformance/teams.conformance.ts
+bun native/bench/compare.ts native/target/debug/snowtime-axum
+bun native/bench/lines.ts
+```
+
+The `*-verified.log` files contain the final Rust and HTTP checks. `already-member-before.log`
+records the installed Better Auth failure before the fix. No Docker, load, or stress runs.
+
+Patterns for subtask 05:
+
+- Application acceptance validates its path ID with Valibot rules after the session and
+  write-rate checks. Better Auth validates `invitationId` as a Zod string, without UUID
+  validation, before session middleware; it retains Better Auth's unwrapped refusal shape.
+- A nested Better Auth middleware can return a headers envelope when the outer hook sets
+  `returnHeaders`. Pass `returnHeaders: false` when forwarding its response from a composed
+  before hook. Otherwise a signed-out session read can receive that envelope as its result.
+- Existing members keep their organization and team roles, and acceptance does not add
+  another member or consume another slot. The existing-member transition includes team
+  assignment in one transaction. A new member follows Better Auth's acceptance, then the
+  app's separate team-assignment transaction. A failed latter step can leave the organization
+  membership accepted; an admin repairs the team, as the existing TypeScript contract records.
+- Pair generated membership IDs explicitly, including when the application wrapper returns
+  only the invitation ID. Check UUIDv7 before pairing. Mask only advancing-clock fields
+  (`createdAt`, `joinedAt`), while supplied IDs, roles, statuses, and key order remain exact.
+- Native account caps are centralized in `native/crates/server/src/limits.rs`, mirroring
+  `src/server/limits.server.ts`; invitation, team, and acceptance membership checks use them.
+
+| Handler or helper                                   | TypeScript | Rust |
+| --------------------------------------------------- | ---------: | ---: |
+| Application acceptance wrapper                      |         16 |   10 |
+| Better Auth acceptance rule / native full rule      |        105 |  153 |
+| App acceptance hooks (included in native full rule) |         70 |    0 |
+| Better Auth schema / native HTTP entry              |          1 |   49 |
+| Better Auth schema / native ordered validation      |          1 |   26 |
+
+The installed Better Auth version is 1.7.7, matching this branch's package manifest.
+The spike still documents its earlier target version; crate adoption belongs to step 2.
+
+## Local review
+
+The worktree's independent review copies are already prepared at
+`perf/.cache/auth-review-ts.db` and `perf/.cache/auth-review-native.db`. On a fresh checkout,
+prepare them once with `bun native/bench/prepare-auth-review.ts`. The script refuses to
+replace an existing copy. It adds two 48-hour pending invitations to each seeded copy:
+Noah joins Lumen Works and its Design team; Kristiina already belongs to Lumen Works as
+owner and accepts a member invitation without losing her role.
+
+Build the frontend and render bundle if needed:
+
+```sh
+bun run i18n:compile
+bun run build
+bun native/crates/render/bundle/build.ts
+cargo build --manifest-path native/Cargo.toml -p snowtime-host --offline
+```
+
+In one terminal:
+
+```sh
+cd /private/tmp/snowtime-081-auth-port
+NODE_ENV=development HOST=127.0.0.1 PORT=3100 \
+  BETTER_AUTH_SECRET=localhost-review-secret-081-auth-port \
+  BETTER_AUTH_URL=http://localhost:3100 \
+  TURSO_DATABASE_URL=file:/private/tmp/snowtime-081-auth-port/perf/.cache/auth-review-ts.db \
+  bun .output/server/index.mjs
+```
+
+In another:
+
+```sh
+cd /private/tmp/snowtime-081-auth-port
+NODE_ENV=development HOST=127.0.0.1 PORT=3200 RENDERERS=1 \
+  BETTER_AUTH_SECRET=localhost-review-secret-081-auth-port \
+  BETTER_AUTH_URL=http://127.0.0.1:3200 \
+  TURSO_DATABASE_URL=file:/private/tmp/snowtime-081-auth-port/perf/.cache/auth-review-native.db \
+  EDGE_STATIC_DIR=native/crates/render/bundle/dist/public \
+  native/target/debug/snowtime-axum
+```
+
+Open the same path on `http://localhost:3100` and `http://127.0.0.1:3200`:
+
+- `/invitation/01900000-0000-7000-8031-000000000001`: sign in as `noah@example.com`.
+- `/invitation/01900000-0000-7000-8031-000000000002`: sign in as
+  `kristiina@lumen.example.com`.
+
+Both use password `snowtime-local`. Different hostnames keep cookies separate.
+Accept each link, reload the organization view to check the membership and Design team,
+and reopen the invitation to check that it is closed. The native invitation page still
+calls the unported `organization/set-active` endpoint after acceptance; acceptance itself
+already activates the organization, and step 4 ports that client call.

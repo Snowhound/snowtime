@@ -1,5 +1,5 @@
 use super::schemas::*;
-use crate::http::{App, AuthCall, InOrganization, Public, Response};
+use crate::http::{App, AsUser, AuthCall, InOrganization, Public, Response};
 use crate::schemas::Empty;
 use axum::{
     Router,
@@ -15,6 +15,7 @@ pub fn routes() -> Router<Arc<App>> {
         .route("/deployment", get(deployment))
         .route("/dev-users", get(dev_users))
         .route("/invitations/{id}", get(invitation))
+        .route("/invitations/{id}/accept", post(accept))
 }
 async fn sign_in_methods(call: Public<Empty>) -> Response {
     call.with_config(super::sign_in_page::sign_in_methods).await
@@ -51,10 +52,21 @@ pub fn better_auth_routes() -> Router<Arc<App>> {
     Router::new()
         .route("/api/auth/sign-in/email", post(sign_in))
         .route("/api/auth/sign-out", post(sign_out))
+        .route(
+            "/api/auth/organization/accept-invitation",
+            post(auth_accept),
+        )
 }
 async fn sign_out(call: AuthCall) -> Response {
     call.sign_out().await
 }
 async fn sign_in(call: AuthCall) -> Response {
     call.sign_in().await
+}
+
+async fn accept(call: AsUser<GetInvitationInput>) -> Response {
+    call.with_auth(super::acceptance::accept_invitation).await
+}
+async fn auth_accept(call: AuthCall) -> Response {
+    call.accept_invitation().await
 }

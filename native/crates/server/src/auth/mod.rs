@@ -11,6 +11,7 @@ pub mod session;
 pub use session::{Credentials, SessionConfig, create_session, find_credentials, signed_in_user};
 pub(crate) use sign_in::FetchHeaders;
 
+mod acceptance;
 mod invitations;
 mod organization;
 pub mod routes;

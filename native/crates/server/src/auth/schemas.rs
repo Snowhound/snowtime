@@ -234,3 +234,30 @@ pub struct AppSession {
     pub invitation_id: Option<String>,
     pub app_url: String,
 }
+
+pub(super) fn accept_body_issue(body: &serde_json::Value, absent: bool) -> Option<String> {
+    use serde_json::Value;
+    fn kind(value: &Value) -> &'static str {
+        match value {
+            Value::Null => "null",
+            Value::Bool(_) => "boolean",
+            Value::Number(_) => "number",
+            Value::String(_) => "string",
+            Value::Array(_) => "array",
+            Value::Object(_) => "object",
+        }
+    }
+    if !body.is_object() {
+        return Some(format!(
+            "[body] Invalid input: expected object, received {}",
+            if absent { "undefined" } else { kind(body) }
+        ));
+    }
+    match body.get("invitationId") {
+        Some(Value::String(_)) => None,
+        value => Some(format!(
+            "[body.invitationId] Invalid input: expected string, received {}",
+            value.map_or("undefined", kind)
+        )),
+    }
+}

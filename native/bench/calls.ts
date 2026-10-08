@@ -3,6 +3,8 @@
 // rest as a GET's query string or a JSON body, as src/lib/api/request.ts sends them.
 
 export const CALLS = {
+  acceptInvitation: { method: 'POST', path: '/api/v1/invitations/:id/accept' },
+  authAcceptInvitation: { method: 'POST', path: '/api/auth/organization/accept-invitation' },
   getAppSession: { method: 'GET', path: '/api/v1/session' },
   getSignInMethods: { method: 'GET', path: '/api/v1/sign-in-methods' },
   getDeployment: { method: 'GET', path: '/api/v1/deployment' },

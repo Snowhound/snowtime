@@ -1,0 +1,86 @@
+bun test v1.4.2 (744846f84)
+
+src/server/auth/team-invitations.test.ts:
+(pass) the invitation cap counts live pending rows beyond expired rows [347.41ms]
+(pass) app invitations with the organization plugin without teams > composing the removal hook preserves session responses [138.90ms]
+(pass) app invitations with the organization plugin without teams > stores and lists the app team; accepting adds the new member with the default role [198.85ms]
+(pass) app invitations with the organization plugin without teams > an organization-only invitation and an invitation whose team was deleted still work [316.14ms]
+(pass) app invitations with the organization plugin without teams > foreign or missing teams and non-admin invitations are refused before calling auth [77.53ms]
+(pass) app invitations with the organization plugin without teams > Better Auth checks the recipient, verification, expiry, status and invitation role [312.75ms]
+(pass) app invitations with the organization plugin without teams > a team deleted during invitation creation leaves an organization-only link [136.97ms]
+(pass) member removal hook > removal stops a timer and clears only this organization’s team memberships, including leads [140.61ms]
+(pass) member removal hook > leaving clears memberships; a rejected removal leaves them alone [140.19ms]
+2026-10-08T06:32:09.499Z ERROR [Better Auth]: DrizzleQueryError 94 | 			}
+95 | 			if (!mapper) return res;
+96 | 			return mapper(res);
+97 | 		}
+98 | 		const res = fastPath ? executors.all(params).catch((e) => {
+99 | 			throw new DrizzleQueryError(sql, params, e);
+              ^
+DrizzleQueryError: Failed query: insert into "member" ("id", "organization_id", "user_id", "role", "created_at") values (?, ?, ?, ?, ?) returning "id", "organization_id", "user_id", "role", "created_at"
+params: 01a11a36-5019-7296-af92-6176f04c639e,01900000-0000-7000-8000-000000000202,01900000-0000-7000-8000-000000000107,member,1791441129497
+  query: "insert into \"member\" (\"id\", \"organization_id\", \"user_id\", \"role\", \"created_at\") values (?, ?, ?, ?, ?) returning \"id\", \"organization_id\", \"user_id\", \"role\", \"created_at\"",
+ params: [
+  "01a11a36-5019-7296-af92-6176f04c639e", "01900000-0000-7000-8000-000000000202", "01900000-0000-7000-8000-000000000107",
+  "member", 1791441129497
+],
+
+      at <anonymous> (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/drizzle-orm/sqlite-core/async/session.js:99:10)
+
+648 | }
+649 | function mapSqliteError(e) {
+650 |     if (e instanceof Database.SqliteError) {
+651 |         const extendedCode = e.code;
+652 |         const code = mapToBaseCode(e.rawCode);
+653 |         return new LibsqlError(e.message, code, extendedCode, e.rawCode, e);
+                     ^
+LibsqlError: SQLITE_CONSTRAINT: UNIQUE constraint failed: member.organization_id, member.user_id
+ extendedCode: "SQLITE_CONSTRAINT_UNIQUE",
+    rawCode: 2067,
+       code: "SQLITE_CONSTRAINT"
+
+      at mapSqliteError (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/@libsql/client/lib-esm/sqlite3.js:653:16)
+      at executeStmt (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/@libsql/client/lib-esm/sqlite3.js:556:15)
+      at execute (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/@libsql/client/lib-esm/sqlite3.js:245:20)
+      at async inTurn (/private/tmp/snowtime-081-auth-port/src/db/connection.ts:36:20)
+
+# SERVER_ERROR:  94 | 			}
+95 | 			if (!mapper) return res;
+96 | 			return mapper(res);
+97 | 		}
+98 | 		const res = fastPath ? executors.all(params).catch((e) => {
+99 | 			throw new DrizzleQueryError(sql, params, e);
+              ^
+DrizzleQueryError: Failed query: insert into "member" ("id", "organization_id", "user_id", "role", "created_at") values (?, ?, ?, ?, ?) returning "id", "organization_id", "user_id", "role", "created_at"
+params: 01a11a36-5019-7296-af92-6176f04c639e,01900000-0000-7000-8000-000000000202,01900000-0000-7000-8000-000000000107,member,1791441129497
+  query: "insert into \"member\" (\"id\", \"organization_id\", \"user_id\", \"role\", \"created_at\") values (?, ?, ?, ?, ?) returning \"id\", \"organization_id\", \"user_id\", \"role\", \"created_at\"",
+ params: [
+  "01a11a36-5019-7296-af92-6176f04c639e", "01900000-0000-7000-8000-000000000202", "01900000-0000-7000-8000-000000000107",
+  "member", 1791441129497
+],
+
+      at <anonymous> (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/drizzle-orm/sqlite-core/async/session.js:99:10)
+
+648 | }
+649 | function mapSqliteError(e) {
+650 |     if (e instanceof Database.SqliteError) {
+651 |         const extendedCode = e.code;
+652 |         const code = mapToBaseCode(e.rawCode);
+653 |         return new LibsqlError(e.message, code, extendedCode, e.rawCode, e);
+                     ^
+LibsqlError: SQLITE_CONSTRAINT: UNIQUE constraint failed: member.organization_id, member.user_id
+ extendedCode: "SQLITE_CONSTRAINT_UNIQUE",
+    rawCode: 2067,
+       code: "SQLITE_CONSTRAINT"
+
+      at mapSqliteError (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/@libsql/client/lib-esm/sqlite3.js:653:16)
+      at executeStmt (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/@libsql/client/lib-esm/sqlite3.js:556:15)
+      at execute (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/@libsql/client/lib-esm/sqlite3.js:245:20)
+      at async inTurn (/private/tmp/snowtime-081-auth-port/src/db/connection.ts:36:20)
+
+(pass) regression: a recipient who joined after the invitation hits the unique membership index [198.91ms]
+
+ 10 pass
+ 0 fail
+ 32 expect() calls
+Ran 10 tests across 1 file. [2.13s]

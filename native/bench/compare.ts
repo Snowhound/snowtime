@@ -84,6 +84,8 @@ interface Options {
   origin?: false
   // Keys whose values differ by server: its clock, or when the caller signed in.
   mask?: string[]
+  captureMembership?: string
+  captureMember?: string
   capture?: string
 }
 
@@ -184,7 +186,11 @@ async function compareWrites(domain: string, cases: WriteCase[], sql: string[] =
         const route = requestOf(CALLS[name], supplied)
         const response = await fetch(`${server.url}${route.path}`, {
           method: CALLS[name].method,
-          headers: { ...headers, origin: server.url, 'content-type': 'application/json' },
+          headers: {
+            ...headers,
+            ...(options?.origin === false ? {} : { origin: server.url }),
+            'content-type': 'application/json',
+          },
           body: options?.body ?? route.body,
         })
         let text = await response.text()
@@ -196,6 +202,29 @@ async function compareWrites(domain: string, cases: WriteCase[], sql: string[] =
           )
             throw new Error(`${label}: generated id isn't UUIDv7`)
           ids.set(options.capture, id)
+        }
+        if (options?.captureMember && response.ok) {
+          const id = JSON.parse(text).member.id
+          if (
+            typeof id !== 'string' ||
+            !/^[\da-f]{8}-[\da-f]{4}-7[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(id)
+          )
+            throw new Error(`${label}: member id is not UUIDv7`)
+          ids.set(options.captureMember, id)
+        }
+        if (options?.captureMembership && response.ok) {
+          const members = await (
+            await fetch(`${server.url}/api/v1/organizations/${organizationId}/members`, { headers })
+          ).json()
+          const id = members.find(
+            (member: { userId: string }) => member.userId === options.captureMembership,
+          )?.memberId
+          if (
+            typeof id !== 'string' ||
+            !/^[\da-f]{8}-[\da-f]{4}-7[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(id)
+          )
+            throw new Error(`${label}: member id is not UUIDv7`)
+          ids.set('$acceptedMember', id)
         }
         for (const [alias, id] of ids)
           text = text.replaceAll(JSON.stringify(id), JSON.stringify(alias))
@@ -943,7 +972,7 @@ try {
   ]
   for (const [label, who, headersOf, body] of signOuts) {
     async function call(server: Server, credentials: Record<string, string>) {
-      const headers = {
+      const headers: Record<string, string> = {
         ...(who
           ? { cookie: `${tokenOnly(credentials).cookie}; better-auth.session_data=cached` }
           : credentials),
@@ -1540,6 +1569,100 @@ try {
       `with recursive n(x) as (select 1 union all select x+1 from n where x<100) insert into invitation (id,email,organization_id,inviter_id,status,expires_at,created_at) select 'limit-invite-'||x,'limit'||x||'@example.com','${organizationId}',(select user_id from member where organization_id='${organizationId}' and role='owner' limit 1),'pending',${SEED_NOW.getTime() + DAY},0 from n`,
     ],
   )
+  const acceptId = '01900000-0000-7000-8030-000000000001'
+  function acceptanceFixture(
+    email: string,
+    status = 'pending',
+    expires = SEED_NOW.getTime() + DAY,
+  ) {
+    return `insert into invitation (id,email,role,organization_id,inviter_id,status,expires_at,created_at,team_id) values ('${acceptId}','${email}','admin','${organizationId}',(select id from user where email='${USERS.admin.email}'),'${status}',${expires},0,'${companyIds.teams.design}')`
+  }
+  for (const name of ['acceptInvitation', 'authAcceptInvitation'] as const) {
+    const input = name === 'acceptInvitation' ? { id: acceptId } : { invitationId: acceptId }
+    const closed = name === 'acceptInvitation' ? { id: unknown } : { invitationId: unknown }
+    await compareWrites(
+      `${name} refusals`,
+      [
+        ['wrong recipient', name, input, 'member', 403],
+        ['unknown invitation', name, closed, 'admin', 400],
+        ['signed out', name, input, null, 401],
+        ['malformed JSON', name, input, 'admin', 400, { body: '{' }],
+        ['origin refusal', name, input, 'admin', 403, { origin: false }],
+        ['refusals preserve pending state', 'getInvitation', { id: acceptId }, null, 200],
+      ],
+      [acceptanceFixture(USERS.admin.email)],
+    )
+    for (const [label, status, expires] of [
+      ['expired', 'pending', SEED_NOW.getTime() - 1000],
+      ['canceled', 'canceled', SEED_NOW.getTime() + DAY],
+      ['accepted', 'accepted', SEED_NOW.getTime() + DAY],
+    ] as const)
+      await compareWrites(
+        `${name} ${label}`,
+        [
+          [label, name, input, 'admin', 400],
+          ['preview unchanged', 'getInvitation', { id: acceptId }, null, 200],
+        ],
+        [acceptanceFixture(USERS.admin.email, status, expires)],
+      )
+    await compareWrites(
+      `${name} existing member`,
+      [
+        ['reuse owner without demotion', name, input, 'admin', 200],
+        ['closed preview', 'getInvitation', { id: acceptId }, null, 200],
+        ['repeat refuses', name, input, 'admin', 400],
+        ['roles and counts', 'listMembers', { organizationId }, 'admin', 200],
+        ['team assignment', 'listTeams', { organizationId }, 'admin', 200],
+        [
+          'active organization',
+          'getAppSession',
+          undefined,
+          'admin',
+          200,
+          { mask: ['signedInAt', 'appUrl'] },
+        ],
+      ],
+      [acceptanceFixture(USERS.admin.email)],
+    )
+    const newInput = name === 'acceptInvitation' ? { id: acceptId } : { invitationId: acceptId }
+    await compareWrites(
+      `${name} new member`,
+      [
+        [
+          'accept adds member',
+          name,
+          newInput,
+          'member',
+          200,
+          name === 'authAcceptInvitation'
+            ? { captureMember: '$acceptedMember', mask: ['createdAt'] }
+            : { captureMembership: memberId },
+        ],
+        ['closed preview', 'getInvitation', { id: acceptId }, null, 200],
+        ['member role', 'listMembers', { organizationId }, 'member', 200, { mask: ['joinedAt'] }],
+        ['team assignment', 'listTeams', { organizationId }, 'member', 200],
+        ['repeat refuses', name, newInput, 'member', 400],
+        [
+          'active organization',
+          'getAppSession',
+          undefined,
+          'member',
+          200,
+          { mask: ['signedInAt', 'appUrl'] },
+        ],
+      ],
+      [
+        `delete from team_member where user_id='${memberId}' and team_id in (select id from team where organization_id='${organizationId}')`,
+        `update team set member_count=(select count(*) from team_member where team_id=team.id) where organization_id='${organizationId}'`,
+        `delete from member where user_id='${memberId}' and organization_id='${organizationId}'`,
+        acceptanceFixture(USERS.member.email),
+      ],
+    )
+  }
+  for (const value of [undefined, null, 3, [], {}, true])
+    await compareWrites(`auth acceptance schema ${JSON.stringify(value)}`, [
+      ['Zod string', 'authAcceptInvitation', { invitationId: value }, 'admin', 400],
+    ])
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {
   await Promise.all([ts.stop(), native.stop()])

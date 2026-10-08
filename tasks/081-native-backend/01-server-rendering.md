@@ -473,8 +473,10 @@ with Deno extensions and the policy measured above:
   Works seed with recorded answers.
 - Extend the functional port after [task 081.26](26-functional-port.md), which finishes
   sign-in reads/sign-out, settings, project and team writes, invitations, and issue links
-  with 880 byte-equal calls. Invitation acceptance, passkey endpoints, Google/OAuth,
-  and other organization writes stay follow-ups.
+  with 880 byte-equal calls. [Task 081.28](28-auth-port.md) adds invitation acceptance
+  through the application API and Better Auth, including team assignments and existing
+  members. Passkey endpoints, Google/OAuth, and the audited remaining client auth and
+  organization writes stay follow-ups.
 - Bring the 161 MiB warmup peak down if the target needs it: it comes before the first
   trim, while V8 optimizes the bundle.
 

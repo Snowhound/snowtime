@@ -499,6 +499,29 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> InOrgani
     }
 }
 impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> AsUser<T, READ> {
+    pub async fn with_auth<O: Serialize + 'static>(
+        self,
+        rule: fn(&Connection, &str, T, &Config, Option<&str>) -> Result<O>,
+    ) -> Response {
+        answer(
+            self.0,
+            self.1,
+            READ,
+            false,
+            move |app, db, request, timer| {
+                let user = app.caller(db, request, READ, timer)?;
+                Ok(ok(&rule(
+                    db,
+                    &user,
+                    decode(input(request)?)?,
+                    &app.config,
+                    request.cookie.as_deref(),
+                )?))
+            },
+        )
+        .await
+    }
+
     pub async fn run<O: Serialize + 'static>(
         self,
         rule: fn(&Connection, &str, T) -> Result<O>,
@@ -581,6 +604,9 @@ impl FromRequest<Arc<App>> for AuthCall {
     }
 }
 impl AuthCall {
+    pub(crate) async fn accept_invitation(self) -> Response {
+        self.0.better_auth_accept_invitation(self.1, self.2).await
+    }
     pub(crate) async fn sign_in(self) -> Response {
         self.0.sign_in(self.1, self.2).await
     }

@@ -10,6 +10,41 @@ import { ROOT } from '../../perf/lib/database'
 // TypeScript [file, names] against Rust [module, names], per row.
 const PAIRS: [string, string, string[], string, string[]][] = [
   [
+    'acceptInvitation Zod validation',
+    'node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs',
+    ['acceptInvitationBodySchema'],
+    'auth/schemas.rs',
+    ['accept_body_issue'],
+  ],
+  [
+    'acceptInvitation app wrapper',
+    'src/server/auth/invitations.server.ts',
+    ['acceptInvitation'],
+    'auth/acceptance.rs',
+    ['accept_invitation'],
+  ],
+  [
+    'acceptInvitation Better Auth rule',
+    'node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs',
+    ['acceptInvitation'],
+    'auth/acceptance.rs',
+    ['accept', 'denied'],
+  ],
+  [
+    'acceptInvitation app hooks',
+    'src/server/auth/invitation-acceptance.server.ts',
+    ['invitationAcceptanceHooks'],
+    'auth/acceptance.rs',
+    [],
+  ],
+  [
+    'acceptInvitation HTTP',
+    'node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs',
+    ['acceptInvitationBodySchema'],
+    'auth/acceptance.rs',
+    ['better_auth_accept_invitation'],
+  ],
+  [
     'invitationPreview',
     'src/server/auth/invitations.server.ts',
     ['invitationPreview'],
