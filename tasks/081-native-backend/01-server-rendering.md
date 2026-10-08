@@ -473,6 +473,18 @@ stopping and team cleanup.
 - Check the memory target on Linux ([Memory target](#memory-target)). V8 is the engine
   since 2026-10-07, and task 081.22's minified bundle took 7–9 MB off a renderer's loaded
   RSS and 7–13 MB off its peak.
+- Resolve client IPs and add auth rate limits before a native host faces the internet;
+  the in-process edge is the default deployment ([task 07](07-edge-in-process.md)).
+  The host reads only `CLIENT_IP_HEADER`, so direct-mode sessions store an empty IP and
+  per-IP limits have no address key. Use `axum_server` connect info for the TCP peer,
+  retaining the header only for a trusted proxy. Plan Better Auth's `/api/auth` defaults,
+  sign-in special rule, and organization custom rules with `tower_governor`, keyed by
+  that address and returning Better Auth's 429 body and headers. A shared `RATE_LIMIT`
+  switch must also govern API per-user write limits: on unless `NODE_ENV=development`,
+  with `RATE_LIMIT=off` for perf and stress runs, startup logging and health output when
+  off. Keep TLS and ACME off unless configured. Development-mode byte comparisons cannot
+  detect missing limits because TypeScript applies them only in production. See
+  [081.28's follow-up](28-auth-port.md#follow-up) for the custom-rule paths and source.
 - Confirm on the Linux deployment host. These measurements are Docker on this Mac: the
   stress runs on dataset M with Caddy on the app's core, the renderer runs on the Lumen
   Works seed with recorded answers.

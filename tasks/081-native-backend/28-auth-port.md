@@ -2,6 +2,8 @@
 
 Status: done
 
+Kait reviewed and approved step 4 on 2026-10-08. All four steps are complete.
+
 Close the functional gaps so a native-only host serves every call the app makes.
 TypeScript and installed Better Auth 1.7.7 remain the source of truth. Follow
 [081.26](26-functional-port.md). Work on `081-auth-port`, from `081-native-poc` at
@@ -442,9 +444,10 @@ Checks and outputs are in [auth-port/step4](auth-port/step4/):
 - Only checked generated UUIDv7 IDs and advancing timestamps are masked in the new write
   sequence. Seeded IDs and dates, supplied timer IDs, names, roles, metadata, refusal bodies,
   and response key order remain exact. The callback comparison retains redirect headers.
-- Changed-file lint and all three Knip configurations pass. Full `tsc --noEmit` retains
-  the existing benchmark dependency, fake-provider inference, and shared-props AST errors;
-  no changed file has a type error.
+- Changed-file lint and all three Knip configurations pass. The saved `tsc --noEmit`
+  output includes two fake-provider inference errors introduced by this task. The step 4
+  review fix adds an explicit request-handler return type to resolve both. The remaining
+  type errors concern optional benchmark dependencies and shared-props AST types.
 
 Run from the worktree root, sequentially for TypeScript harness builds:
 
@@ -470,6 +473,32 @@ The full required Rust and HTTP verification ran before each commit. The first r
 saved under `removal-fix-verification/`; top-level logs record the final native run.
 Handler rows are in `native/bench/lines.ts`. No Docker, load, or stress runs; no push,
 rebase, or merge. Work stops after step 4.
+
+The review fix repeats the full required Rust and HTTP verification, with the same test
+counts and 1,346 byte-equal comparisons. Outputs are in
+[review-fix-verification](auth-port/step4/review-fix-verification/), including the type check
+that confirms both fake-provider errors are resolved.
+
+## Follow-up
+
+Both items are required before a native host faces the internet. The in-process edge is
+the default deployment ([task 07](07-edge-in-process.md)).
+
+- [ ] Read the TCP peer address through `axum_server` connect info. The host currently
+      derives `client_ip` only from `CLIENT_IP_HEADER` in `native/crates/server/src/http.rs`.
+      In direct mode, sessions store an empty IP and per-IP limits have no address key.
+      Use the peer address in direct mode; keep `CLIENT_IP_HEADER` only for a trusted
+      proxy in front of the host.
+- [ ] Port Better Auth's per-IP limits on `/api/auth` with `tower_governor`, keyed by
+      the address resolved above. Include the installed library's defaults and sign-in
+      special rule, plus the `/organization/create` and `/organization/invite-member`
+      `customRules` in `src/server/auth/better-auth.server.ts`. Match Better Auth's 429
+      body and headers. Add a `RATE_LIMIT` variable: on by default unless
+      `NODE_ENV=development`, with `RATE_LIMIT=off` for perf and stress runs. Put the API's
+      per-user write limit under the same switch. Log at startup and show in health output
+      when limits are off. Keep TLS and ACME off unless configured. Verify limits in
+      production mode: TypeScript applies them only in production, so development-mode
+      byte comparisons cannot detect missing limits.
 
 ## Local review
 

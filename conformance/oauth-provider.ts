@@ -26,7 +26,7 @@ export function startOAuthProvider() {
   const server = Bun.serve({
     hostname: '127.0.0.1',
     port: 0,
-    async fetch(request) {
+    async fetch(request): Promise<Response> {
       const url = new URL(request.url)
       if (url.pathname === '/issue') {
         const { authorizationURL, profile, scopes } = (await request.json()) as {
