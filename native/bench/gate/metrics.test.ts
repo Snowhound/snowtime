@@ -34,3 +34,13 @@ test('RSS uses the larger of five percent and four MiB', () => {
     expect(compareMetric([200, 200], [211, 211], metric).flagged).toBe(true)
   }
 })
+
+test('Server-Timing tolerates one resolution step above zero', () => {
+  for (const metric of ['api/session/session_ms', 'api/session/db_ms']) {
+    expect(compareMetric([0, 0], [0.1, 0.1], metric).flagged).toBe(false)
+    expect(compareMetric([0, 0], [0.2, 0.2], metric).flagged).toBe(true)
+    expect(compareMetric([1, 1], [1.1, 1.1], metric).flagged).toBe(false)
+    expect(compareMetric([10, 10], [10.5, 10.5], metric).flagged).toBe(false)
+    expect(compareMetric([10, 10], [10.6, 10.6], metric).flagged).toBe(true)
+  }
+})

@@ -432,15 +432,18 @@ binary from running require a new matched baseline; keep the original evidence.
 The gate prints and saves a table of baseline/current means, deltas, observed noise
 bands, and flags. Each band is the larger of `abs(A1 - A2)` and its minimum floor:
 
-| Metric                                | Minimum floor, relative to mean(A) |
-| ------------------------------------- | ---------------------------------- |
-| CPU                                   | 5%                                 |
-| p95 latency                           | 10%                                |
-| p50 latency and Server-Timing medians | 5%                                 |
-| RSS                                   | Larger of 5% and 4 MiB             |
-| Binary and bundle sizes               | 5%                                 |
+| Metric                  | Minimum floor, relative to mean(A) |
+| ----------------------- | ---------------------------------- |
+| CPU                     | 5%                                 |
+| p95 latency             | 10%                                |
+| p50 latency             | 5%                                 |
+| Server-Timing medians   | Larger of 5% and 0.1 ms            |
+| RSS                     | Larger of 5% and 4 MiB             |
+| Binary and bundle sizes | 5%                                 |
 
-A regression is `mean(B) - mean(A) > band`. Lower values are better for every metric.
+A regression is `mean(B) - mean(A) > band`. Server-Timing's absolute floor matches
+`timing.rs`'s one-decimal resolution, so a 0.0 to 0.1 ms change stays within the band.
+Lower values are better for every metric.
 This two-round band is a quick review rule, not
 a statistical confidence interval. Short p95 samples can be noisy; investigate a
 flag with a repeat in an idle session before attributing it to the refactor.

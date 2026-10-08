@@ -10,7 +10,12 @@ export function compareMetric(baseline: number[], current: number[], metric: str
   if (metric.endsWith('/cpu_ms') && a === 0)
     throw new Error('CPU is below /proc resolution; increase API repeats')
   const rss = metric.endsWith('/peak_rss_mb') || metric.endsWith('/peak_rss_mib')
-  const floor = Math.max(a * (metric.endsWith('/p95_ms') ? 0.1 : 0.05), rss ? 4 : 0)
+  const serverTiming = metric.endsWith('/session_ms') || metric.endsWith('/db_ms')
+  const floor = Math.max(
+    a * (metric.endsWith('/p95_ms') ? 0.1 : 0.05),
+    rss ? 4 : 0,
+    serverTiming ? 0.1 : 0,
+  )
   const band = Math.max(Math.abs(baseline[0] - baseline[1]), floor)
   return {
     baseline: a,
