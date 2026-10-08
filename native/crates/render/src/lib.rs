@@ -301,11 +301,12 @@ impl Renderer {
                 headers,
                 body: output.body,
             }),
-            (result, _) => Err(RenderError::Failed(
-                result
-                    .err()
-                    .map_or("The page sent no head".into(), |e| e.to_string()),
-            )),
+            (Ok(()), None) => {
+                // A page that settles without a head is broken in a way the host can't see.
+                self.reset();
+                Err(RenderError::Failed("The page sent no head".into()))
+            }
+            (Err(error), _) => Err(RenderError::Failed(error.to_string())),
         }
     }
 }
@@ -888,6 +889,35 @@ mod tests {
                 "reset.js",
                 r#"
             if (globalThis.warmth !== undefined) throw Error('the failed render kept its isolate');
+        "#,
+            )
+            .unwrap();
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn a_page_without_a_head_fails_and_resets() {
+        let send: SendApi = Arc::new(|_| unreachable!("the page sends no API calls"));
+        let mut renderer = Renderer::new(send, r#"{"routes":{}}"#.into(), Policy::default());
+        renderer
+            .js()
+            .execute_script(
+                "headless.js",
+                r#"
+            globalThis.warmth = 42;
+            renderPage = async () => {};
+        "#,
+            )
+            .unwrap();
+        assert!(matches!(
+            renderer.render(&page(), std::future::pending()).await,
+            Err(RenderError::Failed(message)) if message == "The page sent no head"
+        ));
+        renderer
+            .js()
+            .execute_script(
+                "reset.js",
+                r#"
+            if (globalThis.warmth !== undefined) throw Error('the headless render kept its isolate');
         "#,
             )
             .unwrap();
