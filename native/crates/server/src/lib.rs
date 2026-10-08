@@ -30,7 +30,7 @@ pub mod timer;
 pub mod timestamp;
 mod timing;
 pub mod wire;
-pub use config::{Config, SignInPageConfig};
+pub use config::{Config, OAuthProvider, SignInPageConfig};
 pub use errors::{AppError, Code, Error, Key, Result, refuse};
 pub use http::{App, router};
 pub use timestamp::Timestamp;

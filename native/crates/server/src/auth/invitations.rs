@@ -185,6 +185,7 @@ mod tests {
             password_enabled: true,
             sign_in_page: Default::default(),
             client_ip_header: None,
+            oauth: vec![],
         }
     }
     fn input(email: &str) -> InviteMemberInput {

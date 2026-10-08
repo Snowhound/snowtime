@@ -4891,6 +4891,7 @@ dependencies = [
  "openssl",
  "rand 0.10.3",
  "regex",
+ "reqwest",
  "rusqlite",
  "rustc-hash",
  "scrypt",

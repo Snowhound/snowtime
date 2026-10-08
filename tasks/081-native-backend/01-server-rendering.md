@@ -475,8 +475,9 @@ with Deno extensions and the policy measured above:
   sign-in reads/sign-out, settings, project and team writes, invitations, and issue links
   with 880 byte-equal calls. [Task 081.28](28-auth-port.md) adds invitation acceptance
   through the application API and Better Auth, including team assignments and existing
-  members, then passkey registration, sign-in, listing, and removal. Google/OAuth and
-  the audited remaining client auth and organization writes stay follow-ups.
+  members, then passkey registration, sign-in, listing, and removal. Google, GitHub, and
+  Microsoft redirect sign-in and account management are also ported. The audited remaining
+  client profile and organization writes stay follow-ups.
 - Bring the 161 MiB warmup peak down if the target needs it: it comes before the first
   trim, while V8 optimizes the bundle.
 

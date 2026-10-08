@@ -355,7 +355,7 @@ extractor!(AsUser);
 extractor!(Public);
 
 impl Request {
-    fn param(&self, name: &str) -> &str {
+    pub(crate) fn param(&self, name: &str) -> &str {
         self.params
             .iter()
             .find(|(k, _)| k == name)
@@ -615,10 +615,29 @@ impl FromRequest<Arc<App>> for AuthCall {
         app: &Arc<App>,
     ) -> std::result::Result<Self, Response> {
         let fetch = crate::auth::FetchHeaders::of(request.headers());
-        Ok(Self(app.clone(), extract(request, app, true).await?, fetch))
+        let form = request
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .is_some_and(|v| v.starts_with("application/x-www-form-urlencoded"));
+        let mut request = extract(request, app, true).await?;
+        if form {
+            let mut fields = serde_json::Map::new();
+            for (k, v) in form_urlencoded::parse(&request.body) {
+                fields.insert(k.into_owned(), Value::String(v.into_owned()));
+            }
+            request.body = serde_json::to_vec(&fields).unwrap();
+        }
+        Ok(Self(app.clone(), request, fetch))
     }
 }
 impl AuthCall {
+    pub(crate) async fn oauth(
+        self,
+        action: crate::auth::oauth::Action,
+    ) -> axum::response::Response {
+        self.0.oauth(self.1, self.2, action).await
+    }
     pub(crate) async fn passkey(self, action: crate::auth::passkeys::Action) -> Response {
         self.0.passkey(self.1, self.2, action).await
     }

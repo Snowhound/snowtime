@@ -333,6 +333,6 @@ once; reload to check persistence, then sign out through the account menu.
 
 - Invitation acceptance (including the app's optional team assignment): completed in 081.28
 - Passkey registration, sign-in, listing, and removal: completed in 081.28
-- Google/OAuth sign-in parity
+- Google, GitHub, and Microsoft redirect sign-in and account management: completed in 081.28
 - Remaining organization writes and client auth calls: [081.28](28-auth-port.md)
 - Native Windows builds and verification

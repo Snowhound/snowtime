@@ -133,6 +133,7 @@ mod tests {
             password_enabled: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
+            oauth: vec![],
         })
         .unwrap();
         let api = snowtime_server::router(app);

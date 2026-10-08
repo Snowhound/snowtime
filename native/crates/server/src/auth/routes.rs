@@ -50,6 +50,11 @@ async fn issue_links(call: InOrganization<UpdateIssueLinksInput>) -> Response {
 // Better Auth's own routes, under /api/auth.
 pub fn better_auth_routes() -> Router<Arc<App>> {
     Router::new()
+        .route("/api/auth/sign-in/social", post(social))
+        .route("/api/auth/link-social", post(link_social))
+        .route("/api/auth/list-accounts", get(accounts))
+        .route("/api/auth/unlink-account", post(unlink))
+        .route("/api/auth/callback/{id}", get(callback).post(callback))
         .route(
             "/api/auth/passkey/generate-register-options",
             get(passkey_register_options),
@@ -112,4 +117,20 @@ async fn passkey_list(call: AuthCall) -> Response {
 
 async fn passkey_delete(call: AuthCall) -> Response {
     call.passkey(super::passkeys::Action::Delete).await
+}
+
+async fn social(call: AuthCall) -> axum::response::Response {
+    call.oauth(super::oauth::Action::SignIn).await
+}
+async fn link_social(call: AuthCall) -> axum::response::Response {
+    call.oauth(super::oauth::Action::Link).await
+}
+async fn accounts(call: AuthCall) -> axum::response::Response {
+    call.oauth(super::oauth::Action::List).await
+}
+async fn unlink(call: AuthCall) -> axum::response::Response {
+    call.oauth(super::oauth::Action::Unlink).await
+}
+async fn callback(call: AuthCall) -> axum::response::Response {
+    call.oauth(super::oauth::Action::Callback).await
 }

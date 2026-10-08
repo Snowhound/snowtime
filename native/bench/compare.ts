@@ -1,11 +1,10 @@
+import { createClient } from '@libsql/client'
 // Sends the same calls to the TypeScript build and a native server, each on its own copy of
 // the benchmark database at SEED_NOW, and reports where the answers differ: in status, in
 // content, or only in bytes (key order). Writes run in the same order on both copies. Fields that
 // hold each server's own clock or sign-in time are masked.
 //
 //   bun native/bench/compare.ts native/target/release/snowtime-axum
-
-import { createClient } from '@libsql/client'
 import { cpSync, mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
@@ -15,6 +14,7 @@ import { companyIds } from '../../src/db/seed-company'
 import { COLLECTION_IMAGES } from '../../src/lib/scene/images'
 import { CALLS, type CallName, requestOf } from './calls'
 import { startNative } from './native'
+import { compareOAuth } from './oauth-compare'
 import { comparePasskeys } from './passkey-compare'
 
 const [binary] = process.argv.slice(2)
@@ -1665,6 +1665,7 @@ try {
       ['Zod string', 'authAcceptInvitation', { invitationId: value }, 'admin', 400],
     ])
   await comparePasskeys(binary, database, judge)
+  await compareOAuth(binary, database, judge)
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {
   await Promise.all([ts.stop(), native.stop()])

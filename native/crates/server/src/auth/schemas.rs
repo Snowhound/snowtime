@@ -328,3 +328,239 @@ pub(crate) fn passkey_issues(
         })
         .collect()
 }
+
+pub(crate) fn oauth_issues(
+    action: super::oauth::Action,
+    body: &serde_json::Value,
+    empty: bool,
+    parameters: &[(String, serde_json::Value)],
+) -> Vec<String> {
+    use super::oauth::Action;
+    use serde_json::Value;
+    fn kind(v: Option<&Value>) -> &'static str {
+        match v {
+            None => "undefined",
+            Some(Value::Null) => "null",
+            Some(Value::Bool(_)) => "boolean",
+            Some(Value::Number(_)) => "number",
+            Some(Value::String(_)) => "string",
+            Some(Value::Array(_)) => "array",
+            Some(Value::Object(_)) => "object",
+        }
+    }
+    fn check(
+        issues: &mut Vec<String>,
+        path: &str,
+        value: Option<&Value>,
+        expected: &str,
+        optional: bool,
+    ) -> bool {
+        let valid = optional && value.is_none()
+            || match expected {
+                "record" | "object" => value.is_some_and(Value::is_object),
+                "array" => value.is_some_and(Value::is_array),
+                _ => kind(value) == expected,
+            };
+        if !valid {
+            issues.push(format!(
+                "[body.{path}] Invalid input: expected {expected}, received {}",
+                kind(value)
+            ));
+        }
+        valid
+    }
+    if matches!(action, Action::List | Action::Callback) {
+        return vec![];
+    }
+    if !body.is_object() {
+        return vec![format!(
+            "[body] Invalid input: expected object, received {}",
+            kind((!empty).then_some(body))
+        )];
+    }
+    let mut issues = vec![];
+    if matches!(action, Action::Unlink) {
+        check(
+            &mut issues,
+            "accountId",
+            body.get("accountId"),
+            "string",
+            false,
+        );
+        return issues;
+    }
+    let fields: &[(&str, &str)] = if matches!(action, Action::Link) {
+        &[
+            ("callbackURL", "string"),
+            ("provider", "provider"),
+            ("idToken", "object"),
+            ("requestSignUp", "boolean"),
+            ("scopes", "array"),
+            ("errorCallbackURL", "string"),
+            ("disableRedirect", "boolean"),
+            ("loginHint", "string"),
+            ("additionalParams", "record"),
+            ("additionalData", "record"),
+        ]
+    } else {
+        &[
+            ("callbackURL", "string"),
+            ("newUserCallbackURL", "string"),
+            ("errorCallbackURL", "string"),
+            ("provider", "provider"),
+            ("disableRedirect", "boolean"),
+            ("idToken", "object"),
+            ("scopes", "array"),
+            ("requestSignUp", "boolean"),
+            ("loginHint", "string"),
+            ("additionalParams", "record"),
+            ("additionalData", "record"),
+        ]
+    };
+    for (name, expected) in fields {
+        let value = body.get(*name);
+        if *expected == "provider" {
+            if !value.is_some_and(Value::is_string) {
+                issues.push("[body.provider] Invalid input".into());
+            }
+            continue;
+        }
+        if !check(&mut issues, name, value, expected, true) || value.is_none() {
+            continue;
+        }
+        let value = value.unwrap();
+        if *name == "idToken" {
+            for (field, ty) in [
+                ("token", "string"),
+                ("nonce", "string"),
+                ("accessToken", "string"),
+                ("refreshToken", "string"),
+            ] {
+                check(
+                    &mut issues,
+                    &format!("idToken.{field}"),
+                    value.get(field),
+                    ty,
+                    field != "token",
+                );
+            }
+            if matches!(action, Action::SignIn) {
+                check(
+                    &mut issues,
+                    "idToken.expiresAt",
+                    value.get("expiresAt"),
+                    "number",
+                    true,
+                );
+                if check(
+                    &mut issues,
+                    "idToken.user",
+                    value.get("user"),
+                    "object",
+                    true,
+                ) && let Some(user) = value.get("user")
+                {
+                    if check(
+                        &mut issues,
+                        "idToken.user.name",
+                        user.get("name"),
+                        "object",
+                        true,
+                    ) && let Some(name) = user.get("name")
+                    {
+                        for field in ["firstName", "lastName"] {
+                            check(
+                                &mut issues,
+                                &format!("idToken.user.name.{field}"),
+                                name.get(field),
+                                "string",
+                                true,
+                            );
+                        }
+                    }
+                    check(
+                        &mut issues,
+                        "idToken.user.email",
+                        user.get("email"),
+                        "string",
+                        true,
+                    );
+                }
+            }
+        } else if *name == "scopes" {
+            for (i, v) in value.as_array().unwrap().iter().enumerate() {
+                check(
+                    &mut issues,
+                    &format!("scopes.{i}"),
+                    Some(v),
+                    "string",
+                    false,
+                );
+            }
+        } else if *name == "additionalParams" {
+            let mut valid = true;
+            for (k, v) in parameters {
+                valid &= check(
+                    &mut issues,
+                    &format!("additionalParams.{k}"),
+                    Some(v),
+                    "string",
+                    false,
+                );
+            }
+            if valid
+                && value
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .any(|k| super::oauth::RESERVED.contains(&k.as_str()))
+            {
+                issues.push(format!("[body.additionalParams] additionalParams cannot include reserved OAuth parameters: {}",super::oauth::RESERVED.join(", ")));
+            }
+        }
+    }
+    issues
+}
+
+pub(crate) fn oauth_callback_issues(body: &serde_json::Value, empty: bool) -> Vec<String> {
+    if empty {
+        return vec![];
+    }
+    let Some(body) = body.as_object() else {
+        return vec![format!(
+            "[body] Invalid input: expected object, received {}",
+            match body {
+                serde_json::Value::Null => "null",
+                serde_json::Value::Array(_) => "array",
+                serde_json::Value::Bool(_) => "boolean",
+                serde_json::Value::Number(_) => "number",
+                _ => "string",
+            }
+        )];
+    };
+    [
+        "code",
+        "error",
+        "device_id",
+        "error_description",
+        "state",
+        "user",
+        "iss",
+    ]
+    .into_iter()
+    .filter_map(|field| {
+        body.get(field).filter(|v| !v.is_string()).map(|v| {
+            format!(
+                "[body.{field}] Invalid input: expected string, received {}",
+                match v {
+                    serde_json::Value::Null => "null",
+                    serde_json::Value::Array(_) => "array",
+                    serde_json::Value::Bool(_) => "boolean",
+                    serde_json::Value::Number(_) => "number",
+                    _ => "object",
+                }
+            )
+        })
+    })
+    .collect()
+}

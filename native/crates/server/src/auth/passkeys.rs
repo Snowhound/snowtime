@@ -665,6 +665,7 @@ mod tests {
             password_enabled: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
+            oauth: vec![],
         })
         .unwrap();
         app.db().execute_batch("create table user (id text primary key,email text); insert into user values ('alice','alice@example.com');

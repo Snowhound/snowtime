@@ -5,7 +5,7 @@
   // The compiled release's migrator, which scripts/build-self-hosted.ts compiles by path.
   // The harnesses (perf/README.md); the weather bench's page script loads from its HTML and
   // its config from createServer. The load benchmark's k6 scenario runs in k6's container.
-  // The native backend's harnesses (native/README.md).
+  // The native backend's harnesses (native/README.md), including the OAuth fetch preload.
   // Paraglide's Vite plugin and CLI load its config from the project folder.
   "entry": [
     "src/server-entry.ts",
@@ -13,6 +13,7 @@
     "project.inlang/paraglide.config.ts",
     "scripts/db-migrate-release.ts",
     "perf/*.ts",
+    "conformance/oauth-preload.ts",
     "perf/weather/bench.ts",
     "perf/weather/vite.config.ts",
     "perf/stress/scenario.js",

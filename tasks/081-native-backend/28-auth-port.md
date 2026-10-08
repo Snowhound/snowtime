@@ -22,8 +22,8 @@ TypeScript and installed Better Auth 1.7.7 remain the source of truth. Follow
    - [x] Start from [the auth spike](auth-spike.md), branch `081-auth-spike`; record
          the chosen crates and reasons. The method list already advertises passkeys.
 3. Google/OAuth:
-   - [ ] Match Better Auth's state, PKCE, callback, and account-linking behavior.
-   - [ ] Use a local fake provider for both comparison servers; record what it cannot prove.
+   - [x] Match Better Auth's state, PKCE, callback, and account-linking behavior.
+   - [x] Use a local fake provider for both comparison servers; record what it cannot prove.
 4. Remaining client calls:
    - [ ] Show Kait the audited missing-route list below before porting this step.
    - [ ] Port every remaining organization write and profile update in that list.
@@ -57,7 +57,8 @@ The only application API route without a Rust counterpart is
 `POST /api/v1/invitations/:id/accept` (step 1).
 
 At the base commit, the following Better Auth paths under `/api/auth` returned 404.
-Steps 1 and 2 now cover acceptance and the six passkey endpoints; steps 3 and 4 remain open.
+Steps 1–3 now cover acceptance, the six passkey endpoints, and OAuth/account management.
+Step 4 remains open.
 
 | Method   | Path                                     | Client use                                 | Step |
 | -------- | ---------------------------------------- | ------------------------------------------ | ---- |
@@ -269,6 +270,121 @@ sequentially: their builds replace the same harness cache. The final `*-client-s
 outputs check the response shape with `clientExtensionResults` omitted. No Docker,
 load, or stress runs.
 
+Kait reviewed and approved step 2 on 2026-10-08. Manual registration, sign-in, and removal
+passed with a macOS fingerprint passkey on separate accounts on both hosts.
+
+### Step 3
+
+Verified on macOS arm64 on 2026-10-08. Kait approved passkeys and asked to stop after
+Google/OAuth. The app's Google, GitHub, and Microsoft redirect flows and account management
+are ported. Step 4 remains pending. No TypeScript authentication behavior changes.
+
+Read `better-auth.server.ts`, `sign-in.server.ts`, login-domain and name hooks, the client's
+sign-in/settings calls, and the installed Better Auth 1.7.7 social sign-in, callback,
+state, account, and provider sources before porting. The spike's OAuth tests demonstrate
+storage compatibility; the published Rust alpha remains unmounted because this port needs
+the installed TypeScript library's state-cookie binding, refusals, and account policies.
+`reqwest =0.12.28`, already present in the spike dependency graph, supplies async HTTPS
+with Rustls. No new schema, migration, provider configuration variable, or TypeScript
+provider override is needed for production.
+
+Behavior:
+
+- Social sign-in and linking create a random 32-character state, a 128-character PKCE
+  verifier, a signed five-minute state cookie, and a ten-minute verification row.
+  Internal state fields override client `additionalData`. Authorization URL parameter
+  order, default scopes, additional scopes, login hints, and callback URLs follow Better Auth.
+- Callbacks bind the persisted state to the signed cookie and consume valid state before
+  exchanging the code. Missing/forged cookies leave the pending flow available. Expiry,
+  provider denial, missing code, and exchange failure follow Better Auth's redirects.
+  JSON and form POST callbacks redirect to the GET callback, with query values taking priority.
+- Provider HTTP calls run after releasing database admission and before reacquiring the
+  writer for account/session changes. Requests have a 15-second timeout. Google and
+  Microsoft token exchanges refuse redirects; GitHub follows the installed provider's
+  fetch behavior, with the same 20-redirect bound. Google and Microsoft profiles follow the token endpoint's ID token;
+  GitHub reads its profile and verified email list. Microsoft's app-specific verification
+  claims include consumer accounts and `xms_edov`.
+- Verified existing email addresses link implicitly without changing profile or organization
+  roles. Unverified local accounts refuse implicit linking. Explicit linking requires a live
+  session, matching email, and a verified provider address; existing links merge scopes.
+  Sign-in refreshes tokens without replacing stored scopes. Listing hides tokens; removal
+  requires a fresh session and refuses the last account, following Better Auth even when
+  the user has a passkey. Sessions use the native-compatible signed session cookie.
+- The app uses redirect OAuth. Better Auth's direct `idToken` sign-in/linking mode remains
+  outside this port; native refuses direct tokens. Other unused Better Auth endpoints also
+  remain outside the audited client-call scope.
+
+The local fake provider is shared by both test hosts. TypeScript's preload redirects only
+known providers' outbound fetches to it; native's transport override exists only with the
+`bench` feature and requires loopback HTTP. Production authorization URLs and provider
+configuration stay unchanged. The fake validates client credentials, callback binding,
+single-use codes, and S256 PKCE on real HTTP token requests. It returns synthetic profiles
+and ID tokens; these tests cannot prove live consent screens, registered redirect URLs,
+provider-issued claims/signatures, TLS interoperability, or actual Google/GitHub/Microsoft
+account policy. They make no claim of direct ID-token verification.
+
+Checks and outputs are in [auth-port/step3](auth-port/step3/):
+
+- Formatting and workspace Clippy with all targets and warnings denied pass, without
+  and with `bench`.
+- Server tests: 72 pass without `bench`, and 72 with it. Host tests: 17 pass.
+- Native OAuth, passkey, invitation, session, and team conformance: 19 pass, 275 assertions.
+  TypeScript OAuth conformance: 1 pass, 97 assertions.
+- Comparison: all 1,180 calls answer with the same bytes, including 109 OAuth calls.
+  Cases cover the three providers, sign-up and repeat sign-in, implicit and explicit linking,
+  profile/membership preservation, scope merging, listing/removal, ordered schemas, callback
+  POST forms, state/cookie tampering and replay, expired state, stale sessions, imported
+  accounts, login-domain rules, Microsoft verified-address claims, and token redirect policy.
+- Changed-file lint and all three Knip configurations pass. Full `tsc --noEmit` retains
+  the existing optional benchmark dependency and shared-props AST errors, with no errors
+  in changed files.
+
+Run from the worktree root, sequentially for the TypeScript harness builds:
+
+```sh
+cargo fmt --all --manifest-path native/Cargo.toml
+cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --offline -- -D warnings
+cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --features bench --offline -- -D warnings
+cargo test --manifest-path native/Cargo.toml -p snowtime-server --offline
+cargo test --manifest-path native/Cargo.toml -p snowtime-server --features bench --offline
+cargo test --manifest-path native/Cargo.toml -p snowtime-host --offline
+cargo build --manifest-path native/Cargo.toml -p snowtime-host --features bench --offline
+bun native/bench/conformance.ts native/target/debug/snowtime-axum conformance/oauth.conformance.ts conformance/passkeys.conformance.ts conformance/invitations.conformance.ts conformance/session.conformance.ts conformance/teams.conformance.ts
+bun test ./conformance/oauth.conformance.ts
+bun native/bench/compare.ts native/target/debug/snowtime-axum
+bun native/bench/oauth-compare.ts native/target/debug/snowtime-axum
+bun native/bench/lines.ts
+```
+
+The focused OAuth comparison uses the same flow and fixture checks included in `compare.ts`.
+Its imported-account, expired-state, stale-session, and login-domain cases run on fresh
+independent database copies and fresh hosts. Comparisons retain body bytes and redirect
+locations without reserializing JSON. They mask checked random state/PKCE/code values,
+paired UUIDv7 IDs, new account dates, the new session clock, and host origins. Seeded dates,
+profile names, email addresses, roles, scopes, and response field order remain exact.
+State cookies are checked for their signature, binding, and max age; successful callbacks
+must yield a session usable through `/api/v1/session`. No Docker, load, or stress runs.
+
+Handler rows are in `native/bench/lines.ts`; shared implementation is counted once on the
+first row that uses it. The account-link entry shares the authorization rule, and all three
+providers share the native profile rule.
+
+| Handler or helper                      | TypeScript | Rust |
+| -------------------------------------- | ---------: | ---: |
+| OAuth sign-in and shared authorization |        123 |  191 |
+| OAuth account-link entry               |        185 |    0 |
+| OAuth state                            |         94 |   86 |
+| OAuth callback and account writes      |        188 |  218 |
+| OAuth account-link/sign-in helpers     |        367 |    0 |
+| OAuth token exchange                   |         66 |   63 |
+| OAuth Google profile                   |         87 |  118 |
+| OAuth GitHub profile                   |         84 |    0 |
+| OAuth Microsoft profile                |        135 |    0 |
+| OAuth account list                     |         58 |    7 |
+| OAuth unlink                           |         23 |   26 |
+| OAuth ordered Zod validation           |         98 |  234 |
+| OAuth HTTP and redirects               |          6 |  174 |
+
 ## Local review
 
 The worktree's independent review copies are already prepared at
@@ -346,5 +462,4 @@ for that host's database, then return to Settings and remove it. Reopen Settings
 check that the row is gone. Both hosts share the `localhost` relying party; their
 databases and sessions remain separate.
 
-The native settings page still calls the unported OAuth account-list endpoint; that
-error remains until step 3. The passkey endpoints work independently of it.
+The OAuth account-list endpoint used by Settings is also ported in step 3.

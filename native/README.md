@@ -1,7 +1,7 @@
 # Native backend
 
 The proof of concept of task 081: the JSON API that the timer and the reports read, in
-Rust, on the same SQLite schema as the TypeScript backend, with its own email sign-in, and
+Rust, on the same SQLite schema as the TypeScript backend, with its own authentication, and
 those pages rendered by the app's own server bundle in V8. Subtask 03
 (`tasks/081-native-backend/03-port-libraries.md`) records the API's measurements and
 subtask 01 (`01-server-rendering.md`) the renderer's.
@@ -14,7 +14,7 @@ libraries bind no listening socket.
 
 ```text
 crates/server/src/
-  auth/          app_session, acceptance, cookie, passkeys, password, session, sign_in, schemas, routes
+  auth/          app_session, acceptance, cookie, oauth, passkeys, password, session, sign_in, schemas, routes
   availability/  mod, routes
   entries/       mod (rules), schemas, routes
   projects/      mod (rules), schemas, routes
@@ -54,8 +54,12 @@ and acceptance by an existing member without changing their role.
 Passkey registration, sign-in, listing, and removal are also ported in task 081.28.
 The native verifier uses the spike's pinned WebAuthn core and the existing COSE columns;
 challenge state lives in the shared verification table.
-Not ported: Google/OAuth sign-in, and the remaining organization writes and profile
-update listed in that task.
+Google, GitHub, and Microsoft redirect sign-in, account linking, listing, and removal
+are ported in task 081.28. OAuth state is signed, stored in the verification table,
+and bound to PKCE; provider HTTP calls run without holding the database.
+Not ported: the remaining organization writes and profile update listed in that task.
+Better Auth's direct ID-token sign-in is outside the app-used redirect flows and remains
+unported, as do its other endpoints that the client does not call.
 
 [Task 081.26](../tasks/081-native-backend/26-functional-port.md#local-review) gives
 localhost commands for separate seeded TypeScript and native hosts.

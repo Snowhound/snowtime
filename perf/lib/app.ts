@@ -113,7 +113,15 @@ export async function startApp({
   writeFileSync(log, '')
   const [command, ...args] = executable
     ? [executable]
-    : ['bun', '--preload', join(ROOT, 'perf/lib/clock.ts'), join(build, 'server/index.mjs')]
+    : [
+        'bun',
+        '--preload',
+        join(ROOT, 'perf/lib/clock.ts'),
+        ...(env.OAUTH_FAKE_PROVIDER
+          ? ['--preload', join(ROOT, 'conformance/oauth-preload.ts')]
+          : []),
+        join(build, 'server/index.mjs'),
+      ]
   const server: ChildProcess = spawn(command, args, {
     cwd,
     stdio: ['ignore', 'pipe', 'pipe'],
