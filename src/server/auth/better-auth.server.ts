@@ -12,6 +12,7 @@ import { limits, rateLimits } from '../limits.server'
 import { createRateLimitStore } from '../rate-limit.server'
 import { time } from '../timing.server'
 import { invitationAcceptanceHooks } from './invitation-acceptance.server'
+import { invitationLimit } from './invitation-limit.server'
 import {
   loginDomainHooks,
   loginDomainMiddleware,
@@ -108,7 +109,7 @@ export const auth = betterAuth({
     organization({
       organizationLimit: limits.organizationsPerUser,
       membershipLimit: limits.membersPerOrganization,
-      invitationLimit: limits.pendingInvitationsPerOrganization,
+      invitationLimit: invitationLimit(db),
       // Admins share invitation links themselves; a link works for 48 hours
       // (docs/architecture/auth.md, "Sign-in methods").
       invitationExpiresIn: 48 * 60 * 60,

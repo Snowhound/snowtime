@@ -12,6 +12,7 @@ import { SEED_PASSWORD, seedIds } from '~/db/seed'
 import { createTeam, deleteTeam } from '../teams/teams.server'
 import { as, createSeededDatabase, scopeOf } from '../testing'
 import { invitationAcceptanceHooks } from './invitation-acceptance.server'
+import { invitationLimit } from './invitation-limit.server'
 import { acceptInvitation, inviteMember, listInvitations } from './invitations.server'
 import { memberRemovalHook } from './member-removal.server'
 
@@ -37,7 +38,12 @@ function instance(fixed = true) {
         await removalHook(ctx)
       }),
     },
-    plugins: [organization({ requireEmailVerificationOnInvitation: true })],
+    plugins: [
+      organization({
+        requireEmailVerificationOnInvitation: true,
+        invitationLimit: invitationLimit(db),
+      }),
+    ],
   })
 }
 beforeEach(async () => {
@@ -45,6 +51,57 @@ beforeEach(async () => {
   auth = instance()
 })
 afterEach(() => cleanup())
+
+test('the invitation cap counts live pending rows beyond expired rows', async () => {
+  const now = new Date()
+  const base = { organizationId: O.harbor, role: 'member', inviterId: U.admin, createdAt: now }
+  await db.insert(schema.invitation).values([
+    ...Array.from({ length: 100 }, (_, i) => ({
+      ...base,
+      id: uuidv7(),
+      email: `expired-${i}@example.com`,
+      status: 'pending',
+      expiresAt: new Date(now.getTime() - 1000),
+    })),
+    ...Array.from({ length: 99 }, (_, i) => ({
+      ...base,
+      id: uuidv7(),
+      email: `live-${i}@example.com`,
+      status: 'pending',
+      expiresAt: new Date(now.getTime() + 86400000),
+    })),
+    {
+      ...base,
+      id: uuidv7(),
+      email: 'accepted@example.com',
+      status: 'accepted',
+      expiresAt: new Date(now.getTime() + 86400000),
+    },
+    {
+      ...base,
+      id: uuidv7(),
+      organizationId: O.northwind,
+      email: 'other@example.com',
+      status: 'pending',
+      expiresAt: new Date(now.getTime() + 86400000),
+    },
+  ])
+  expect(await invite('last-slot@example.com', null)).toMatchObject({
+    email: 'last-slot@example.com',
+  })
+  await expect(invite('over-limit@example.com', null)).rejects.toMatchObject({
+    statusCode: 403,
+    body: { code: 'INVITATION_LIMIT_REACHED', message: 'Invitation limit reached' },
+  })
+  await expect(invite('last-slot@example.com', null)).rejects.toMatchObject({
+    statusCode: 400,
+    body: { code: 'USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION' },
+  })
+  await expect(invite('admin@example.com', null)).rejects.toMatchObject({
+    statusCode: 400,
+    body: { code: 'USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION' },
+  })
+})
 async function headers(email: string) {
   const response = await auth.api.signInEmail({
     body: { email, password: SEED_PASSWORD },
