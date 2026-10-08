@@ -84,11 +84,7 @@ from [Cloudflare's list](https://www.cloudflare.com/ips/).
 Caddy answers common scanner probes itself: `TRACE` and `TRACK` get 405, and paths such
 as `/wp-admin`, dotfiles other than `/.well-known/`, and backup archives get 404. Its
 JSON access log leaves out TLS details, response headers, and request headers nobody
-reads. For each severity and message, it keeps the first 10 access logs per second,
-then one in every 100. Remove the `sampling` block in the site's `log` directive
-when diagnosis needs every request. Task 081.07 records the CPU comparison for both
-backends; the benchmark keeps a full log for its latency windows.
-Its metrics stay inside the container:
+reads. Its metrics stay inside the container:
 `docker compose exec caddy wget -qO- localhost:2019/metrics`.
 
 For the bypass rule, use this custom expression and choose **Bypass cache**:

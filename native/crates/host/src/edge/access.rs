@@ -50,8 +50,7 @@ pub fn init(config: &Config) -> Option<tracing_appender::non_blocking::WorkerGua
     guard
 }
 
-// As Caddy samples its access log (deploy/compose/Caddyfile): the first 10 events each
-// second, then one in 100.
+// As Caddy's log `sampling` directive does: the first 10 events each second, then one in 100.
 #[derive(Default)]
 struct Sampler {
     second: AtomicU64,

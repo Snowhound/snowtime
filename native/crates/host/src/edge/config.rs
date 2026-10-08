@@ -118,10 +118,10 @@ impl Config {
             redirect_port,
             compression: flag("EDGE_COMPRESSION", true)?,
             access_log: match var("EDGE_ACCESS_LOG").as_deref() {
-                None | Some("sampled") => AccessLog::Sampled,
-                Some("all") => AccessLog::All,
+                None | Some("all") => AccessLog::All,
+                Some("sampled") => AccessLog::Sampled,
                 Some("off") => AccessLog::Off,
-                _ => return Err("EDGE_ACCESS_LOG is sampled, all, or off.".into()),
+                _ => return Err("EDGE_ACCESS_LOG is all, sampled, or off.".into()),
             },
             headers: flag("EDGE_HEADERS", true)?,
             static_dir: var("EDGE_STATIC_DIR").map(PathBuf::from),

@@ -224,6 +224,13 @@ worktree at `/private/tmp/snowtime-081-edge/perf/.cache/stress/edge/`.
 - Both production Caddyfiles sample access logs: first 10 per second for each severity
   and message, then one in 100. Removing the block restores full logs. This trades
   complete access history for a modest CPU saving; database audit records are unchanged.
+
+  Kait, 2026-10-08: reverted. The saving shows only under benchmark load, and the
+  deployments serve about 20 people, where sampling would still drop requests from a
+  single page load's burst. Production keeps complete access logs. The native edge
+  defaults to `EDGE_ACCESS_LOG=all`, with `sampled` as an option for a busy host; the
+  benchmark configurations keep their own settings, so the results above stand.
+
 - The benchmark's `bench` logger is selected only for `X-Bench-Kind` requests, with
   `no_hostname` and `log_name`, so requests no longer also go to production stdout.
   Its file log remains complete for server latency windows. Earlier measurements above
