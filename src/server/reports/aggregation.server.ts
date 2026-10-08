@@ -258,8 +258,8 @@ export function mergeByDescription(pieces: ReportEntryPiece[]): DescriptionRow[]
     .sort(
       (a, b) =>
         b.total - a.total ||
-        a.description.localeCompare(b.description) ||
-        (a.ticket ?? '').localeCompare(b.ticket ?? '') ||
-        (a.projectId ?? '').localeCompare(b.projectId ?? ''),
+        a.description.localeCompare(b.description, 'en-US') ||
+        (a.ticket ?? '').localeCompare(b.ticket ?? '', 'en-US') ||
+        (a.projectId ?? '').localeCompare(b.projectId ?? '', 'en-US'),
     )
 }
