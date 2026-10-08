@@ -62,6 +62,8 @@ pub struct Page {
 pub enum RenderError {
     /// The queue was full, or the page waited in it longer than the policy allows.
     Busy,
+    /// An API dependency refused this page; preserve its retry interval.
+    ApiRefused { retry_after: String },
     /// The render threw, ran past its deadline, or outgrew the page limit.
     Failed(String),
     /// Renderers crashed past the restart budget; the pool takes no more pages.
@@ -125,6 +127,7 @@ struct Output {
     head: Option<(u16, Headers)>,
     body: Vec<u8>,
     limit: usize,
+    retry_after: Option<String>,
 }
 #[derive(Serialize)]
 struct JsApiResponse {
@@ -140,6 +143,14 @@ async fn op_send(
 ) -> Result<JsApiResponse, JsErrorBox> {
     let send = state.borrow().borrow::<SendApi>().clone();
     let answer = send(request).await.map_err(JsErrorBox::generic)?;
+    if answer.status == 503 {
+        let retry_after = answer
+            .headers
+            .iter()
+            .find(|(name, _)| name.eq_ignore_ascii_case("retry-after"))
+            .map_or_else(|| "1".into(), |(_, value)| value.clone());
+        state.borrow_mut().borrow_mut::<Output>().retry_after = Some(retry_after);
+    }
     Ok(JsApiResponse {
         status: answer.status,
         headers: answer.headers,
@@ -242,7 +253,7 @@ impl Renderer {
         &mut self,
         request: &PageRequest,
         cancelled: impl Future<Output = ()>,
-    ) -> Result<Page, String> {
+    ) -> Result<Page, RenderError> {
         if let Some(profile) = &mut self.profile {
             profile.before();
         }
@@ -275,6 +286,12 @@ impl Renderer {
             profile.after();
         }
         let output = self.js().op_state().borrow_mut().take::<Output>();
+        if let Some(retry_after) = output.retry_after {
+            // A framework may catch the dependency error and emit a 500 or partial page.
+            // The host still owes the caller the dependency's admission refusal.
+            self.reset();
+            return Err(RenderError::ApiRefused { retry_after });
+        }
         match (result, output.head) {
             (Ok(()), Some((status, headers))) => Ok(Page {
                 status,
@@ -284,9 +301,11 @@ impl Renderer {
             (result, _) => {
                 // A failed render may leave locale, timers, or query work behind.
                 self.reset();
-                Err(result
-                    .err()
-                    .map_or("The page sent no head".into(), |e| e.to_string()))
+                Err(RenderError::Failed(
+                    result
+                        .err()
+                        .map_or("The page sent no head".into(), |e| e.to_string()),
+                ))
             }
         }
     }
@@ -732,7 +751,7 @@ async fn run_renderer(shared: Arc<Shared>) {
             p
         });
         drop(busy);
-        let _ = reply.send(page.map_err(RenderError::Failed));
+        let _ = reply.send(page);
         dirty = true;
         idle_since = Instant::now();
         let pressure = shared.pressure.load(Ordering::Relaxed);
@@ -859,13 +878,10 @@ mod tests {
                 "renderPage = async () => { await Deno.core.ops.op_send({method:'GET',path:'/pending',headers:[],body:[]}) }",
             )
             .unwrap();
-        assert!(
-            renderer
-                .render(&page(), std::future::pending())
-                .await
-                .unwrap_err()
-                .contains("deadline")
-        );
+        assert!(matches!(
+            renderer.render(&page(), std::future::pending()).await,
+            Err(RenderError::Failed(message)) if message.contains("deadline")
+        ));
 
         let recovered = "renderPage = async () => Deno.core.ops.op_head(204, [])";
         for failing in [
