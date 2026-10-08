@@ -11,9 +11,11 @@ COPY native native
 COPY src/lib/holidays/ee.json src/lib/holidays/ee.json
 ARG BIN=snowtime-axum
 ARG CARGO_FEATURES=
+# Worktrees share this target cache; rebuild local crates to avoid stale source mtimes.
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/native/target \
-    cd native && cargo build --release --locked --bin ${BIN} --features "${CARGO_FEATURES}" \
+    cd native && cargo clean --release -p snowtime-server -p snowtime-render -p snowtime-host \
+    && cargo build --release --locked --bin ${BIN} --features "${CARGO_FEATURES}" \
     && cp target/release/${BIN} /server && strip /server
 
 # Optional measurement image: OpenSSL is vendored, so its build also needs Perl and make.

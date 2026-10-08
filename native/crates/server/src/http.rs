@@ -536,7 +536,7 @@ impl App {
     pub fn bench_stats(&self) -> serde_json::Value {
         let writer = self.db.try_lock().ok().map(|db| crate::bench::sqlite(&db));
         let readers = self.readers.as_ref().map(|r| r.stats());
-        serde_json::json!({ "read_admission": self.read_gate.as_ref().map(|g| g.stats()), "write_admission": self.write_gate.stats(), "hash_admission": self.hash_gate.stats(), "writer": writer, "readers": readers,
+        serde_json::json!({ "read_admission": self.read_gate.as_ref().map(|g| g.stats()), "write_admission": self.write_gate.stats(), "hash_admission": self.hash_gate.stats(), "report_admission": self.report_gate.stats(), "writer": writer, "readers": readers,
             "sqlite_busy_errors": crate::bench::SQLITE_BUSY_ERRORS.load(std::sync::atomic::Ordering::Relaxed),
             "blocking_threads": crate::bench::BLOCKING_THREADS.load(std::sync::atomic::Ordering::Relaxed),
             "blocking_threads_peak": crate::bench::BLOCKING_THREADS_PEAK.load(std::sync::atomic::Ordering::Relaxed),

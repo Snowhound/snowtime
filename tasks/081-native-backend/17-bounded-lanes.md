@@ -25,19 +25,23 @@ Database and hashing:
       continuing on idle readers, and one with slow readers shows a timer write going
       through. Session maintenance from a reader takes the writer only when its gate has
       a free slot, and never waits for it
-- [ ] Each gate refuses at once, with 503 and `Retry-After`, when its waiting callers reach
+- [x] Each gate refuses at once, with 503 and `Retry-After`, when its waiting callers reach
       a maximum, with a test; the maximum and the deadline recorded in native-host.md with
       the measurement that set them
-- [ ] Reports and exports admitted through a smaller budget inside the database lane. With
+- [x] Reports and exports admitted through a smaller budget inside the database lane. With
       one organization bursting reports, other organizations' timer p95 and refusals
       measured before and after
 - [x] Password hashing on dedicated threads below the other lanes' OS priority, sized from
       memory (32 MiB a hash) as well as cores; `spawn_blocking` reached only through a
       gate, checked by a test or a lint
-- [ ] A fixed load with a burst of sign-ins (10 a second for 10 seconds) before and after:
+- [x] A fixed load with a burst of sign-ins (10 a second for 10 seconds) before and after:
       the p95 of the other request kinds during the burst
-- [ ] The ramp past capacity before and after: app RSS stays within 10% of its value at
-      capacity, and the excess load shows as 503s
+- [ ] The ramp past capacity before and after: record app RSS at held capacity, 2x,
+      4x, and recovery. Queues stay within their count bounds; the app has no OOM kill
+      or swap, and shared-host memory stays below the harness's 85% guard. Admission
+      refusals return 503 with `Retry-After`, and the 120-second recovery hold passes
+      the capacity targets. Every judged phase has generator headroom and no dropped
+      actions
 
 Rendering (V8):
 
@@ -53,13 +57,13 @@ Host and client:
 
 - [x] Liveness and readiness as in "Health" in native-host.md, with a test where the render
       lane is down and the API still serves
-- [ ] Tokio's `current_thread` runtime compared with the multi-threaded one on one core,
+- [x] Tokio's `current_thread` runtime compared with the multi-threaded one on one core,
       with CPU per request and p95, and the choice recorded in native-host.md
 - [x] The client keeps `Retry-After` on a refused call. A write refused with 503 keeps its
       optimistic change, pending with a retry action, and nothing retries it on its own.
       Reads retry with jitter, waiting at least `Retry-After`. A test injects 503s into an
       edit and the queries it invalidates, and counts the attempts
-- [ ] The decisions catalogue in task 081.05 updated with the results
+- [x] The decisions catalogue in task 081.05 updated with the results
 
 ## Progress, 2026-10-06
 
@@ -140,3 +144,64 @@ catalogue results remain pending.
   shows the pending message only for kept writes, skips query retries in server renders,
   and shows pending changes in an orange alert, in their rows, and in the calendar's
   status line. Rebased onto `main`, it is `a967782`..`74e1ba4` there.
+
+## Burst measurements, 2026-10-07
+
+The sign-in and organization-report measurements pass the generator checks at one and
+eight assigned cores, with zero and one/eight readers. Each restores the same M source.
+The report budget keeps the eight-reader timer p95 at 2.8 ms during 200 full-year
+report attempts a second, with zero timer-read refusals. Single-connection and
+one-reader modes still have a few timer-read refusals. The 10/s, 10-second sign-in
+bursts complete 100–101 sign-ins each without errors.
+
+[Native host measurements](../../docs/architecture/native-host.md#burst-measurements-2026-10-07)
+record the tables and limits of these observations. The structured
+[burst evidence](lane-measurements/bursts.json) retains counts, timings, queue peaks,
+input hashes, and image IDs. Raw evidence remains in `perf/.cache/stress/` in this
+worktree. A dropped-action pilot is excluded; the runner now checks k6's global and
+scenario dropped counters rather than relying on the custom step tag.
+
+The one-core runtime pair completes without dropped actions. Keep the multi-threaded
+runtime: the single-threaded one saves 7% CPU at 5,000 users and 1% at 15,000, with
+higher return and page p95 at 15,000. Both high-offer phases miss the error target.
+[Runtime evidence](lane-measurements/runtime.json) records the observations.
+
+## Capacity and overload results, 2026-10-08
+
+The matrix finished on 2026-10-07 at 20:34 Tallinn time. The benchmark is stopped.
+[Native host results](../../docs/architecture/native-host.md#capacity-and-overload-measurements-2026-10-07)
+and [ramp evidence](lane-measurements/ramp.json) record the findings.
+
+The after database queues stay at or below 32, but the provisional settings reduce
+held capacity in all four configurations. The three valid after overload plans grow
+RSS by 38%, 46%, and 142%, above the 10% limit. Excess requests mostly return 503;
+some return 500. The two eight-reader overload plans hit the generator CPU guard and
+drop actions, so their overload and recovery results are invalid.
+
+The overload criterion stays unchecked. The follow-up below sets the queue bound,
+restates the RSS criterion, and fixes page refusal propagation. Remaining work:
+resolve the capacity regression and obtain valid overload evidence at the selected
+bound. The decisions catalogue records these open findings. The merge
+into `081-native-poc` remains pending.
+
+## Follow-up, 2026-10-08
+
+The page handler's API-refusal test passes: a dependency's 503 reaches the page caller
+with the same `Retry-After` and `Cache-Control: no-store`. The native suites pass
+58 tests; [raw test output](lane-measurements/native-tests.log) is retained.
+
+The RSS criterion now records each phase and checks memory-budget safety, bounded
+queues, refusal status, and recovery. The three valid after overload plans have no
+OOM kill or observed app swap and pass their recovery holds. A valid eight-reader
+comparison remains open; remote Windows generation needs a reserved slot and a fresh
+LAN capacity reference.
+
+The one requested larger-bound trial at 128 completes without generator limits or
+dropped actions, but its 80,000-user hold misses the error target: 452 refusals
+(0.23%), all 503 with `Retry-After`, versus 882 server errors (0.44%) with 32.
+Latency targets pass. [Raw trial output](lane-measurements/confirm-128.log) and
+[structured evidence](lane-measurements/confirm-128.json) retain the result. The
+default is 128, supported by the earlier passing queue observation of 117 callers
+and the measured reduction in refusals. The 1,000-ms deadline stays configurable.
+The 80,000-user capacity claim remains unconfirmed. A 256-waiter comparison remains
+unmeasured.

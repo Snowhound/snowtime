@@ -44,8 +44,8 @@ priority must not carry over to database work on a reused thread.
 
 | Lane             | Built                                                                                                                                                       | _Planned_                         |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                        | Measure and tune the bounds       |
-| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                                   | Measure the sign-in burst         |
+| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                        | Validate capacity and overload    |
+| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                                   | None                              |
 | Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar, parked (081.16) |
 
 A reader that finds a session due for renewal or expired takes the writer only if the
@@ -72,9 +72,9 @@ Reasons:
   24–29 ms (task 081.08), but a burst of sign-ins still competes with every request.
   Each hash also holds a 32 MiB buffer, so the hash lane's size follows memory as well as
   cores. Task 081.10's eight-core holds peaked at three hashes at once.
-- **One core gains nothing from work stealing.** The smallest host has one core, where a
-  multi-threaded runtime adds threads and context switches without parallelism. Task
-  081.17 compares Tokio's `current_thread` runtime against the multi-threaded one there.
+- **The one-core runtime follows measurements.** `current_thread` removes a thread,
+  but the measured high-offer return and page p95 increase. Keep the multi-threaded
+  default; the runtime comparison below records the CPU and latency trade-off.
 
 Rejected:
 
@@ -84,19 +84,119 @@ Rejected:
 - **Running SQLite calls on the async workers.** Most calls take under a millisecond, but
   a report or export query would stall every connection on that worker.
 
-The database and hash gates allow 32 waiting callers each by default
+The database and hash gates allow 128 waiting callers each by default
 (`WORK_QUEUE_MAX_WAITING`), and wait at most 1,000 ms (`WORK_QUEUE_TIMEOUT_MS`).
 An idle worker starts a call without counting it as waiting. A cancelled waiter frees
-its place, and running work keeps its permits when its caller leaves. These bounds are
-provisional: task 081.10 measured 117 waiting callers in a passing eight-core hold and
-872 under overload, but neither run tested the count bound. Task 081.17 still needs the
-measurements that set the final limits.
+its place, and running work keeps its permits when its caller leaves. The count follows
+081.10's passing queue observation of 117 callers and 081.17's larger-bound trial:
+128 reduces the 80,000-user hold's server error rate from 0.44% to 0.23%, with latency
+targets passing. That hold still fails the 0.1% error target, so 80,000-user capacity
+is unconfirmed. The 1,000-ms deadline retains the observed timeout bound from the
+before-overload runs; the larger-bound trial does not select a shorter deadline.
+Both settings stay configurable. The measurements below record the trade-off.
 
 Reports take at most `max(1, readers / 4)` workers and allow four waiting callers. They
 take that budget before database admission, so waiting reports hold no connection, and
 both waits share one deadline, so a report is admitted or refused within it. The report route uses `run_report`; exports must use it when ported.
 Without readers, a running report still shares the only connection with ordinary calls.
-The worker share and waiting limit are provisional and await the organization-burst test.
+The worker share and waiting limit follow the burst measurements below.
+
+## Burst measurements, 2026-10-07
+
+Keep the report budget at `max(1, readers / 4)` workers and four waiting callers. With
+8 readers it leaves 6 readers available to ordinary calls. A full-year report burst
+from one organization reduces other organizations' timer-read p95 from 1,005 ms to
+2.8 ms, with no timer-read refusals in the bounded run. With only one database
+connection, a running report still delays ordinary calls and a few timers refuse.
+These measurements do not require a per-organization limit.
+
+The M source contains 1,192,801 entries, 63 organizations, and 1,049 seeded sessions.
+The source date is 2026-10-04; sessions are renewal-eligible. Every cell restores the
+same source. `9adb20e` supplies the before host, with split database gates but no
+waiting-count bound, report budget, or dedicated hash workers. The after host uses
+`ea67d42`'s lane code, a runtime selector, and a report-budget counter. Both images use
+the same render bundle. The native TLS edge serves gzip directly, with no replication.
+The Docker VM has 10 vCPUs and 8.57 GB RAM. The app gets core 1 or cores 0–7;
+k6 gets cores 2–9 or 8–9. These are single observations on a shared Mac VM.
+The 8-core app cap is 15,872 MiB, above the VM's RAM; the shared-memory guard remains
+active. This tests lane contention, not a deployable memory allocation for that VM.
+
+The runner is task 081.10's `perf/stress/stress.ts`, with overlapping `--plan` scenarios.
+Steady traffic represents 5,000 active users and excludes the bursting organization.
+The report burst offers 200 full-year reports a second for 30 seconds, from the owner
+of `bench-1` (188 current members). It requests 2025-10-01 through 2026-10-05 in weeks.
+All eight final report cells have zero dropped actions and generator headroom. The
+initial 150-VU pilot dropped 56 actions; the final cells preallocate 250 VUs. Validation
+checks the global dropped counter as well as scenario counters, because k6's dropped
+iterations do not carry the custom step tag.
+
+Timer p95 below is k6's duration for `GET /api/v1/timer` during return actions, in ms.
+Refusals count all timer reads during that phase. Report refusals all carry
+`Retry-After: 1`. Their server-side p95 is 0.062–0.073 ms after the change, against
+1,002–1,004 ms before it. The sampled report queue never exceeds four; the before
+read/write queues peak at 307–328. The global 32-caller bound and 1,000-ms deadline
+remain provisional until the capacity and overload measurements.
+
+| Cores / readers | Timer p95 before | After | Timer 503s before |    After | Report 503s after |
+| --------------- | ---------------: | ----: | ----------------: | -------: | ----------------: |
+| 1 / 0           |           1007.9 | 146.1 |         637 / 648 |  3 / 643 |       5776 / 6000 |
+| 1 / 1           |           1009.3 | 139.7 |         635 / 644 | 10 / 631 |       5775 / 6001 |
+| 8 / 0           |           1002.5 | 110.7 |         616 / 631 |  2 / 625 |       5738 / 6000 |
+| 8 / 8           |           1004.8 |   2.8 |         592 / 629 |  0 / 631 |       5501 / 6001 |
+
+The sign-in burst is configured at 10 sign-ins a second for 10 seconds. k6 completes
+100–101 sign-ins per cell, all with 200, with no dropped actions or other request
+errors during the burst. The table records server access-log p95 for the other request
+kinds, in ms; timer reads use the k6 measure above. `start` includes the mutation and
+its subsequent reads. Rare report kinds have too few samples for a gain claim; their
+counts and p95 remain in the evidence. The one-core changes are small, and these
+single runs do not establish a material latency gain from the dedicated workers.
+
+| Cores / readers | Host   | Sign-ins | Timer read | Return API | Start API | Edit API | Open page |
+| --------------- | ------ | -------: | ---------: | ---------: | --------: | -------: | --------: |
+| 1 / 0           | Before |      100 |       18.4 |       18.2 |      10.4 |     10.1 |      70.9 |
+| 1 / 0           | After  |      101 |       17.4 |       16.1 |      10.1 |      8.0 |      42.3 |
+| 1 / 1           | Before |      101 |       20.0 |       19.9 |      13.3 |     17.9 |      75.6 |
+| 1 / 1           | After  |      101 |       16.8 |       16.3 |      10.0 |      9.3 |      50.7 |
+| 8 / 0           | Before |      100 |        6.4 |        6.0 |       2.0 |      1.8 |      27.8 |
+| 8 / 0           | After  |      101 |        5.7 |        5.5 |       2.4 |      1.8 |      36.5 |
+| 8 / 8           | Before |      101 |        1.5 |        3.2 |       2.1 |      1.8 |      28.8 |
+| 8 / 8           | After  |      101 |        1.1 |        3.3 |       1.9 |      1.8 |      32.1 |
+
+Input hashes, image IDs, per-kind counts, timer-call timings, 503 timings, queue peaks,
+and generator checks are recorded in
+[bursts.json](../../tasks/081-native-backend/lane-measurements/bursts.json).
+Raw requests, samples, k6 summaries, settings, commands, and logs remain in the
+`081-lanes` worktree's `perf/.cache/stress/runs/*08117*` and `perf/.cache/stress/08117/`.
+Capacity and overload results are recorded below; queue tuning and the RSS criterion remain open.
+
+## One-core runtime measurement, 2026-10-07
+
+Keep `multi_thread` as the default. `current_thread` removes one thread and uses 7% less
+CPU per HTTP attempt at 5,000 users, but only 1% less at 15,000. At the higher offer,
+its return and page p95 increase and both runtimes refuse calls. One run per runtime
+with a random action mix does not establish a gain worth selecting a different default.
+`TOKIO_RUNTIME=current_thread` keeps the alternative available for a later repeat.
+
+Each runtime uses the same after image and M source, with no readers on core 1.
+A 30-second, 5,000-user warmup precedes two 120-second offers. Both runs have zero
+dropped actions and generator headroom. Both 5,000-user phases meet the targets;
+15,000 users miss the error target (0.51% and 0.61%), so neither is a capacity hold.
+CPU is the mixed process cost per HTTP attempt, including the native TLS edge and
+refusals. Timer p95 uses the k6 measure above; return and page p95 use server logs.
+Latency columns are milliseconds. These observations need a repeat before a causal
+CPU claim, particularly at the higher offer with differing refusals.
+
+| Runtime          | Users | CPU ms / HTTP | Timer p95 | Return API p95 | Open page p95 | 503s / HTTP | Peak threads |
+| ---------------- | ----: | ------------: | --------: | -------------: | ------------: | ----------: | -----------: |
+| `multi_thread`   |  5000 |          1.79 |      11.0 |           14.9 |          57.0 |   0 / 12361 |            9 |
+| `multi_thread`   | 15000 |          1.20 |      14.7 |           17.1 |          49.1 | 191 / 37234 |            9 |
+| `current_thread` |  5000 |          1.66 |       6.5 |           14.1 |          45.8 |   0 / 12502 |            8 |
+| `current_thread` | 15000 |          1.18 |      12.1 |           19.9 |          61.1 | 228 / 37250 |            8 |
+
+[Runtime evidence](../../tasks/081-native-backend/lane-measurements/runtime.json) retains
+counts, timings, counters, samples' process summaries, and the raw result locations.
+The capacity and overload measurements below leave RSS and final queue bounds open.
 
 ## Overload policy
 
@@ -153,3 +253,116 @@ a source test rejects `spawn_blocking` elsewhere in the server crate.
 Task 081.10's provisional whole-host test budgets are 2 GiB for M and 4 GiB for L,
 including the OS, replication, and file cache. They come from a shared Mac VM and await
 the dedicated-host repeat.
+
+## Capacity and overload measurements, 2026-10-07
+
+The original 32-waiter limit caps the sampled database queues at 32,
+but the measured capacity falls and the overload RSS requirement fails. These runs
+do not establish a final count bound or a new deadline. The later larger-bound trial
+sets 128 as the default. The 1,000-ms deadline stays
+configurable; the bounded runs mostly refuse because the queue is full before that
+deadline expires.
+
+Each cell restores the same M source and render bundle as the burst runs, uses
+Tokio's multi-threaded runtime, ramps in 60-second steps, and holds a passing offer
+for 120 seconds. The same warm process then receives twice and four times that
+offer for 60 seconds each, followed by 120 seconds at the held offer. Capacity means
+passing that hold's latency, error, and generator checks. It is one observation per
+cell, without repeats.
+
+| App cores / readers | Before held users | After held users |
+| ------------------- | ----------------: | ---------------: |
+| 1 / 0               |            20,000 |            8,000 |
+| 1 / 1               |            30,000 |           10,000 |
+| 8 / 0               |            40,000 |           12,500 |
+| 8 / 8               |            80,000 |           65,000 |
+
+The comparison changes the queue bound, report budget, and hash workers together.
+It shows a regression with those settings; it does not isolate which setting causes
+it. The larger-bound trial below replaces the 32-waiter default with 128.
+
+Three after cells complete overload and recovery with zero dropped actions and
+adequate generator headroom. None meets the RSS limit:
+
+| App cores / readers | RSS at held capacity (MB) | Peak overload RSS (MB) | Growth | 4x offer: 503 / 500 |
+| ------------------- | ------------------------: | ---------------------: | -----: | ------------------: |
+| 1 / 0               |                     248.8 |                  343.4 |    38% |           3,253 / 9 |
+| 1 / 1               |                     251.4 |                  366.3 |    46% |          4,694 / 39 |
+| 8 / 0               |                     355.2 |                  859.9 |   142% |          6,004 / 56 |
+
+RSS is sampled process resident memory in decimal MB. It excludes the database's
+page cache counted in cgroup memory. A bound on database waiters does not by itself
+keep total app RSS within 10%. Most excess requests receive 503, but the 500 responses
+also leave the refusal requirement open.
+
+Both eight-reader overload plans exceed the generator's CPU guard and abort. They
+also drop actions: 3,403 before and 249 after. Their 2x/4x figures and recovery phases
+are invalid and cannot establish an RSS or refusal result. The before eight-core,
+zero-reader overload plan drops 87 actions; its passing capacity hold remains usable,
+but its combined overload and recovery plan is invalid. These are generator limits,
+not evidence of a server capacity or memory limit.
+
+The Docker VM has ten CPUs and 8.57 GB RAM. The eight-core app leaves two separate
+cores for k6; its configured 15,872 MiB container limit exceeds the VM's physical RAM.
+The shared-host memory guard remains enabled. A valid eight-reader overload run
+needs more generator headroom or lower-cost instrumentation with equivalent checks.
+
+[Structured ramp evidence](../../tasks/081-native-backend/lane-measurements/ramp.json)
+records the capacities, per-step validity, status counts, timings, sampled RSS, queue
+peaks, image IDs, and input hashes. Task 081.17 remains open for valid overload runs and the unresolved capacity
+regression. The later sections record the memory criterion and tested refusal fix.
+
+## Overload memory criterion, 2026-10-08
+
+Record app RSS at held capacity, twice and four times that offer, and recovery.
+Require bounded queues, no app OOM kill or swap, and shared-host memory below the
+harness's 85% guard. Admission refusals must return 503 with `Retry-After`; a
+120-second hold back at capacity must pass the normal latency and error targets.
+A judged phase needs generator headroom and no dropped actions.
+
+This replaces task 081.17's requirement that overload RSS stay within 10% of the
+capacity sample. Process RSS includes V8 heaps, allocator retention, TLS, and warmed
+application state, beyond the gate's waiting callers. The valid runs cap database
+queues while RSS still grows 38–142%. A ratio to one capacity sample does not
+establish whether those allocations fit the deployment's memory budget. The budget
+and recovery checks retain that requirement without treating all warm-state growth
+as a queue leak. A passing run establishes safety for its tested duration and offer;
+it does not prove that memory stays bounded over an indefinite overload.
+
+The existing valid after overload plans recover within their 120-second holds and
+have no OOM kill or observed swap. The eight-reader overload comparison still needs
+a valid run. A remote k6 generator on Windows could supply headroom, but its LAN
+path would require a fresh capacity reference and would compete with the port work.
+Reserve that machine for the measurement before using it. The local invalid runs
+remain excluded.
+
+The page handler propagates an in-process API's 503 and `Retry-After`, including when
+the rendering framework catches the dependency error and emits a 500 or partial page.
+Refusal state belongs to one render and its isolate is replaced before reuse. A host
+test renders through a refused API router and verifies 503, the original retry interval,
+and `Cache-Control: no-store`. This fix has unit-test evidence; the earlier overload
+status counts describe the pre-fix image.
+
+## Larger-bound capacity trial, 2026-10-08
+
+A single eight-core, eight-reader run at 128 waiting callers warms at 40,000 users
+for 30 seconds and holds 80,000 users for 120 seconds. It uses the same M source and
+recording as the ramp, with the page-refusal fix included. The generator drops no
+actions and has headroom. Every latency target passes, but 452 of 198,970 logged
+requests return 503 (0.23%), above the 0.1% error target. All 452 carry `Retry-After`;
+none returns 500. The 27 stop-timer 404s are expected under concurrent actions.
+
+The 32-waiter hold at this offer had 882 server errors (0.44%). The larger-bound trial
+reduces refusals but does not confirm 80,000-user capacity. Its sampled read queue
+peaks at 89 and writer queue at four; one-second samples can miss the instantaneous
+queue peak. Peak hold RSS is 1,134 MB, with no observed app swap or OOM kill.
+Choose 128 as the default because it covers the earlier passing queue observation
+and reduces refusals in this trial. The failed error target leaves capacity open;
+this choice does not claim that 128 restores the baseline capacity.
+
+[Trial evidence](../../tasks/081-native-backend/lane-measurements/confirm-128.json),
+[raw k6 summary](../../tasks/081-native-backend/lane-measurements/confirm-128-k6-summary.json),
+and [runner output](../../tasks/081-native-backend/lane-measurements/confirm-128.log)
+retain the observations. [Native test output](../../tasks/081-native-backend/lane-measurements/native-tests.log)
+records 14 host, eight renderer, and 36 server tests passing, including API-refusal
+propagation through a rendered page.

@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-08",
+  "nativeCommand": "cargo test --manifest-path native/Cargo.toml -p snowtime-host -p snowtime-render -p snowtime-server --features bench",
+  "platform": "macOS aarch64",
+  "nativeTests": {
+    "host": 14,
+    "render": 8,
+    "server": 36,
+    "failed": 0
+  },
+  "harnessCommand": "bun test perf/stress/metrics.test.ts",
+  "harnessTests": {
+    "passed": 2,
+    "assertions": 3,
+    "failed": 0
+  },
+  "checks": [
+    "targeted oxlint passed",
+    "bun run knip passed",
+    "cargo fmt --all passed",
+    "git diff --check passed"
+  ],
+  "releaseImage": "snowtime-native:08117-confirm built successfully on Linux, with explicit queue override 128 for the trial",
+  "limits": "native unit tests are macOS; the release image was built on Linux; no further overload run verifies the final default"
+}

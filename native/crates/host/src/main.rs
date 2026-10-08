@@ -16,7 +16,12 @@ async fn shutdown() {
 fn main() {
     snowtime_server::clock::init_from_env();
     let config = config::from_env().unwrap_or_else(|message| panic!("{message}"));
-    let runtime = tokio::runtime::Builder::new_multi_thread()
+    let mut builder = match std::env::var("TOKIO_RUNTIME").as_deref() {
+        Ok("current_thread") => tokio::runtime::Builder::new_current_thread(),
+        Ok("multi_thread") | Err(_) => tokio::runtime::Builder::new_multi_thread(),
+        Ok(_) => panic!("TOKIO_RUNTIME is current_thread or multi_thread."),
+    };
+    let runtime = builder
         // A thread per reader and one for the writer; hashes have dedicated threads.
         .max_blocking_threads(config.read_connections + 1)
         .enable_all()
