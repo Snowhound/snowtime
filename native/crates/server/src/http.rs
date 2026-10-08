@@ -22,12 +22,29 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 pub struct Request {
     pub method: String,
+    pub path: String,
     pub query: Option<String>,
     pub cookie: Option<String>,
     pub user_agent: Option<String>,
     pub client_ip: Option<String>,
     pub body: Vec<u8>,
     params: Vec<(String, String)>,
+}
+
+#[cfg(test)]
+impl Request {
+    pub(crate) fn auth_fixture(cookie: String) -> Self {
+        Self {
+            method: "POST".into(),
+            path: String::new(),
+            query: None,
+            cookie: Some(cookie),
+            user_agent: None,
+            client_ip: None,
+            body: vec![],
+            params: vec![],
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -233,6 +250,7 @@ async fn extract(
         .map_err(|_| Response::from(failure(413, "Request body too large.")))?;
     Ok(Request {
         method: parts.method.to_string(),
+        path: parts.uri.path().to_owned(),
         query: parts.uri.query().map(str::to_owned),
         cookie: cookies(&parts.headers),
         user_agent: text(&parts.headers, "user-agent"),
@@ -340,7 +358,7 @@ extractor!(AsUser);
 extractor!(Public);
 
 impl Request {
-    fn param(&self, name: &str) -> &str {
+    pub(crate) fn param(&self, name: &str) -> &str {
         self.params
             .iter()
             .find(|(k, _)| k == name)
@@ -499,6 +517,29 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> InOrgani
     }
 }
 impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> AsUser<T, READ> {
+    pub async fn with_auth<O: Serialize + 'static>(
+        self,
+        rule: fn(&Connection, &str, T, &Config, Option<&str>) -> Result<O>,
+    ) -> Response {
+        answer(
+            self.0,
+            self.1,
+            READ,
+            false,
+            move |app, db, request, timer| {
+                let user = app.caller(db, request, READ, timer)?;
+                Ok(ok(&rule(
+                    db,
+                    &user,
+                    decode(input(request)?)?,
+                    &app.config,
+                    request.cookie.as_deref(),
+                )?))
+            },
+        )
+        .await
+    }
+
     pub async fn run<O: Serialize + 'static>(
         self,
         rule: fn(&Connection, &str, T) -> Result<O>,
@@ -577,10 +618,38 @@ impl FromRequest<Arc<App>> for AuthCall {
         app: &Arc<App>,
     ) -> std::result::Result<Self, Response> {
         let fetch = crate::auth::FetchHeaders::of(request.headers());
-        Ok(Self(app.clone(), extract(request, app, true).await?, fetch))
+        let form = request
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .is_some_and(|v| v.starts_with("application/x-www-form-urlencoded"));
+        let mut request = extract(request, app, true).await?;
+        if form {
+            let mut fields = serde_json::Map::new();
+            for (k, v) in form_urlencoded::parse(&request.body) {
+                fields.insert(k.into_owned(), Value::String(v.into_owned()));
+            }
+            request.body = serde_json::to_vec(&fields).unwrap();
+        }
+        Ok(Self(app.clone(), request, fetch))
     }
 }
 impl AuthCall {
+    pub(crate) async fn auth_write(self, action: crate::auth::writes::Action) -> Response {
+        self.0.auth_write(self.1, self.2, action).await
+    }
+    pub(crate) async fn oauth(
+        self,
+        action: crate::auth::oauth::Action,
+    ) -> axum::response::Response {
+        self.0.oauth(self.1, self.2, action).await
+    }
+    pub(crate) async fn passkey(self, action: crate::auth::passkeys::Action) -> Response {
+        self.0.passkey(self.1, self.2, action).await
+    }
+    pub(crate) async fn accept_invitation(self) -> Response {
+        self.0.better_auth_accept_invitation(self.1, self.2).await
+    }
     pub(crate) async fn sign_in(self) -> Response {
         self.0.sign_in(self.1, self.2).await
     }

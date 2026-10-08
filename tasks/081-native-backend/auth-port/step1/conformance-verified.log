@@ -1,0 +1,31 @@
+{"timestamp":"2026-10-08T07:03:23.284868Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T07:03:23.291449Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:58207","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/invitations.conformance.ts:
+(pass) invitations > an admin invites by address, and the link shows the invitation signed out [7.18ms]
+(pass) invitations > an unknown link shows nothing [0.62ms]
+(pass) invitations > a member may not invite [0.62ms]
+(pass) invitations > Better Auth's create refusal keeps its status and code [0.60ms]
+(pass) invitations > Better Auth's acceptance refusal checks the recipient [1.27ms]
+(pass) a verified recipient accepts a team invitation and a repeated click is closed [288.47ms]
+
+conformance/session.conformance.ts:
+(pass) the session > signed out, the session is null [0.89ms]
+(pass) the session > signed in, it has the user, their organizations and settings, and the app URL [4.53ms]
+(pass) the session > reading it sets no language cookie, even in another language than the account's [4.68ms]
+(pass) signed-out reads > the app says it can serve pages [0.55ms]
+(pass) signed-out reads > the sign-in methods, the deployment, and the seeded users [1.72ms]
+(pass) issue links > an admin sets and clears them, and the session shows them [3.08ms]
+(pass) issue links > a member may not set them, and an address without {key} is refused [1.16ms]
+
+conformance/teams.conformance.ts:
+(pass) members and teams > the members list each with their role and teams [1.93ms]
+(pass) members and teams > the teams list each with its members and their team roles [2.78ms]
+(pass) members and teams > a member may not change teams [0.87ms]
+(pass) members and teams > a team is created, renamed, given a lead, and deleted [11.68ms]
+
+ 17 pass
+ 0 fail
+ 51 expect() calls
+Ran 17 tests across 3 files. [2.05s]

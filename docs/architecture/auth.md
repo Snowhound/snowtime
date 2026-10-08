@@ -295,3 +295,19 @@ storage and supplies a signed-cookie boundary and app policies; it does not moun
 new production routes. A pinned release or reviewed patch must pass the upstream
 compatibility harness and the app's HTTP conformance suite before mounting it.
 The native per-request cookie check and AWS-LC password sign-in stay in app code.
+
+## Invitation acceptance after joining
+
+Kait, 2026-10-08: a verified recipient who joined after an invitation was sent accepts
+that still-live invitation using the existing membership. Keep its organization role,
+mark the invitation accepted, activate the organization, and apply the invitation's
+optional team assignment. Existing members do not consume another membership slot.
+Recipient, verification, expiry, and status checks still apply; a repeated click refuses
+as a closed invitation. Both the application wrapper and Better Auth endpoint use this rule.
+
+Better Auth 1.7.7 inserts a member without checking existing membership. Snowtime's unique
+index rejects that insert with HTTP 500 and Better Auth restores the invitation to pending.
+The regression in `team-invitations.test.ts` confirms the repeated-failure path. Rejecting
+and canceling would be smaller, but accepting takes a legitimate member where the valid
+link promised. The app's before hook handles this case; new members keep Better Auth's
+normal acceptance. An after hook applies team assignments to either path.

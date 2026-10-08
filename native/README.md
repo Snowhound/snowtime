@@ -1,7 +1,7 @@
 # Native backend
 
 The proof of concept of task 081: the JSON API that the timer and the reports read, in
-Rust, on the same SQLite schema as the TypeScript backend, with its own email sign-in, and
+Rust, on the same SQLite schema as the TypeScript backend, with its own authentication, and
 those pages rendered by the app's own server bundle in V8. Subtask 03
 (`tasks/081-native-backend/03-port-libraries.md`) records the API's measurements and
 subtask 01 (`01-server-rendering.md`) the renderer's.
@@ -14,7 +14,7 @@ libraries bind no listening socket.
 
 ```text
 crates/server/src/
-  auth/          app_session, cookie, password, session, sign_in, schemas, routes
+  auth/          app_session, acceptance, cookie, oauth, passkeys, password, session, sign_in, writes, schemas, routes
   availability/  mod, routes
   entries/       mod (rules), schemas, routes
   projects/      mod (rules), schemas, routes
@@ -48,12 +48,26 @@ Of the other writes, the timer's, the entries', settings PUT/PATCH, and project 
 (including team assignments) and team writes (including membership and roles) are ported.
 Invitation preview/list/create and issue-link writes are also ported, with all 880
 functional comparison calls byte-equal in task 081.26.
-Not ported: other organization writes; invitation acceptance; passkey registration,
-sign-in, and management; and Google/OAuth sign-in. The sign-in method list includes
-passkey for TypeScript parity, but the native host has no passkey endpoints yet.
+Invitation acceptance through the application API and Better Auth is ported in
+[task 081.28](../tasks/081-native-backend/28-auth-port.md), including team assignment
+and acceptance by an existing member without changing their role.
+Passkey registration, sign-in, listing, and removal are also ported in task 081.28.
+The native verifier uses the spike's pinned WebAuthn core and the existing COSE columns;
+challenge state lives in the shared verification table.
+Google, GitHub, and Microsoft redirect sign-in, account linking, listing, and removal
+are ported in task 081.28. OAuth state is signed, stored in the verification table,
+and bound to PKCE; provider HTTP calls run without holding the database.
+The audited organization writes and profile update are also ported: active organization,
+slug checks, creation and renaming, member roles and removal, invitation cancellation,
+and profile names. Leaving an organization shares the removal cleanup. Malformed removal
+and leave bodies preserve Better Auth's validation refusals.
+Better Auth's direct ID-token sign-in is outside the app-used redirect flows and remains
+unported, as do its other endpoints that the client does not call.
 
 [Task 081.26](../tasks/081-native-backend/26-functional-port.md#local-review) gives
 localhost commands for separate seeded TypeScript and native hosts.
+[Task 081.28](../tasks/081-native-backend/28-auth-port.md#local-review) gives acceptance
+review commands and links for a new member and an existing member.
 
 Pages call the API in process: the renderer's host callback sends each call through
 `router.oneshot` with the page request's cookie, as `src/lib/api/request.ts` sends it.

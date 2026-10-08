@@ -1,0 +1,55 @@
+{"timestamp":"2026-10-08T10:32:32.886207Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":1,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T10:32:32.894259Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:64562","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/oauth.conformance.ts:
+(pass) OAuth redirect sign-in, PKCE, state, linking, and account management contracts [412.92ms]
+
+conformance/passkeys.conformance.ts:
+{"timestamp":"2026-10-08T10:32:33.892902Z","level":"INFO","fields":{"message":"bench counters","renderers":1,"render_queued":0,"render_busy_answers":0,"database":"{\"read_admission\":{\"active\":0,\"queued\":0,\"limit\":10},\"write_admission\":{\"active\":0,\"queued\":0,\"limit\":1},\"hash_admission\":{\"active\":1,\"queued\":0,\"limit\":10},\"report_admission\":{\"active\":0,\"queued\":0,\"limit\":2},\"writer\":{\"cache_bytes\":83456,\"statement_bytes\":16240,\"cache_hits\":981,\"cache_misses\":22,\"cache_writes\":303},\"readers\":{\"idle\":10,\"connections\":[{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":39936,\"statement_bytes\":36592,\"cache_hits\":21,\"cache_misses\":54,\"cache_writes\":0}]},\"sqlite_busy_errors\":0,\"blocking_threads\":1,\"blocking_threads_peak\":1,\"blocking_active\":0,\"blocking_queued\":0,\"scrypt_active\":1,\"scrypt_peak\":1}"},"target":"snowtime_axum"}
+[passkey] authentication: The credential may have be compromised and should be inspected
+[passkey] authentication: client origin
+[passkey] authentication: A JSON parser failure has occurred
+[passkey] authentication: Authentication has failed
+[passkey] authentication: The user present bit is not set, and required
+[passkey] authentication: The credential may have be compromised and should be inspected
+[passkey] authentication: client origin
+[passkey] authentication: A JSON parser failure has occurred
+[passkey] authentication: Authentication has failed
+[passkey] authentication: The user present bit is not set, and required
+[passkey] authentication: The credential may have be compromised and should be inspected
+[passkey] authentication: client origin
+[passkey] authentication: A JSON parser failure has occurred
+[passkey] authentication: Authentication has failed
+[passkey] authentication: The user present bit is not set, and required
+(pass) passkey registration, sign-in, listing, removal, and refusal contracts [764.64ms]
+
+conformance/invitations.conformance.ts:
+(pass) invitations > an admin invites by address, and the link shows the invitation signed out [8.09ms]
+(pass) invitations > an unknown link shows nothing [0.66ms]
+(pass) invitations > a member may not invite [0.69ms]
+(pass) invitations > Better Auth's create refusal keeps its status and code [0.56ms]
+(pass) invitations > Better Auth's acceptance refusal checks the recipient [1.53ms]
+{"timestamp":"2026-10-08T10:32:34.895348Z","level":"INFO","fields":{"message":"bench counters","renderers":1,"render_queued":0,"render_busy_answers":0,"database":"{\"read_admission\":{\"active\":0,\"queued\":0,\"limit\":10},\"write_admission\":{\"active\":0,\"queued\":0,\"limit\":1},\"hash_admission\":{\"active\":1,\"queued\":0,\"limit\":10},\"report_admission\":{\"active\":0,\"queued\":0,\"limit\":2},\"writer\":{\"cache_bytes\":144384,\"statement_bytes\":73552,\"cache_hits\":2279,\"cache_misses\":36,\"cache_writes\":596},\"readers\":{\"idle\":10,\"connections\":[{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":61696,\"statement_bytes\":54544,\"cache_hits\":42,\"cache_misses\":67,\"cache_writes\":0}]},\"sqlite_busy_errors\":0,\"blocking_threads\":1,\"blocking_threads_peak\":1,\"blocking_active\":0,\"blocking_queued\":0,\"scrypt_active\":1,\"scrypt_peak\":1}"},"target":"snowtime_axum"}
+(pass) a verified recipient accepts a team invitation and a repeated click is closed [278.90ms]
+
+conformance/session.conformance.ts:
+(pass) the session > signed out, the session is null [0.73ms]
+(pass) the session > signed in, it has the user, their organizations and settings, and the app URL [1.89ms]
+(pass) the session > reading it sets no language cookie, even in another language than the account's [4.23ms]
+(pass) signed-out reads > the app says it can serve pages [0.54ms]
+(pass) signed-out reads > the sign-in methods, the deployment, and the seeded users [1.63ms]
+(pass) issue links > an admin sets and clears them, and the session shows them [2.96ms]
+(pass) issue links > a member may not set them, and an address without {key} is refused [1.10ms]
+
+conformance/teams.conformance.ts:
+{"timestamp":"2026-10-08T10:32:35.897268Z","level":"INFO","fields":{"message":"bench counters","renderers":1,"render_queued":0,"render_busy_answers":0,"database":"{\"read_admission\":{\"active\":0,\"queued\":0,\"limit\":10},\"write_admission\":{\"active\":0,\"queued\":0,\"limit\":1},\"hash_admission\":{\"active\":1,\"queued\":0,\"limit\":10},\"report_admission\":{\"active\":0,\"queued\":0,\"limit\":2},\"writer\":{\"cache_bytes\":196608,\"statement_bytes\":140480,\"cache_hits\":2444,\"cache_misses\":46,\"cache_writes\":631},\"readers\":{\"idle\":10,\"connections\":[{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":26880,\"statement_bytes\":0,\"cache_hits\":1,\"cache_misses\":6,\"cache_writes\":0},{\"cache_bytes\":113920,\"statement_bytes\":68160,\"cache_hits\":83,\"cache_misses\":171,\"cache_writes\":0}]},\"sqlite_busy_errors\":0,\"blocking_threads\":1,\"blocking_threads_peak\":1,\"blocking_active\":0,\"blocking_queued\":0,\"scrypt_active\":1,\"scrypt_peak\":1}"},"target":"snowtime_axum"}
+(pass) members and teams > the members list each with their role and teams [1.85ms]
+(pass) members and teams > the teams list each with its members and their team roles [2.49ms]
+(pass) members and teams > a member may not change teams [0.68ms]
+(pass) members and teams > a team is created, renamed, given a lead, and deleted [8.24ms]
+
+ 19 pass
+ 0 fail
+ 280 expect() calls
+Ran 19 tests across 5 files. [3.19s]

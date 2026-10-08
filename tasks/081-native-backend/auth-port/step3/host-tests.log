@@ -1,0 +1,28 @@
+   Compiling snowtime-server v0.1.0 (/private/tmp/snowtime-081-auth-port/native/crates/server)
+   Compiling snowtime-host v0.1.0 (/private/tmp/snowtime-081-auth-port/native/crates/host)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.90s
+     Running unittests src/main.rs (native/target/debug/deps/snowtime_axum-86e718e7d44df88b)
+
+running 17 tests
+test config::tests::auto_gives_one_core_no_readers ... ok
+test edge::access::tests::samples_like_caddy ... ok
+test config::tests::oauth_credentials_follow_provider_pairs_tenant_and_demo_mode ... ok
+test config::tests::sign_in_page_normalizes_domains_and_keeps_provider_order ... ok
+test config::tests::sign_in_page_refuses_incomplete_providers_and_demo_domain_policy ... ok
+test memory::tests::sizes_renderers_from_memory ... ok
+test edge::tests::tls_modes_and_redirects_are_explicit ... ok
+test edge::accept::tests::stalled_handshake_expires ... ok
+test pages::tests::dropping_a_call_aborts_it_on_the_host_runtime ... ok
+test edge::tests::timeout_covers_the_handler_and_errors_keep_security_headers ... ok
+test edge::tests::body_limit_rejects_oversized_requests ... ok
+test edge::tests::headers_preserve_the_renderers_nonce_and_redirects_ignore_host ... ok
+test edge::tests::compression_and_headers_can_be_disabled ... ok
+test edge::tests::static_files_keep_cache_and_precompression_and_pages_without_exposing_api_or_dotfiles ... ok
+TypeError: Cannot use 'in' operator to search for 'key' in The server is busy. Try again.
+    at request (render.js:6:152109)
+test edge::tests::tls_serves_with_pem_files_and_a_cached_acme_certificate ... ok
+test pages::tests::a_refused_api_dependency_refuses_the_page_and_keeps_retry_after ... ok
+test health::tests::the_api_serves_while_the_render_lane_is_down ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+

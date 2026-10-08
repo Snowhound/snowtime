@@ -118,7 +118,7 @@ pub fn invite_member(
         now
     )
     .query_row(db, |r| r.get(0))?;
-    if count >= 100 {
+    if count >= crate::limits::PENDING_INVITATIONS_PER_ORGANIZATION {
         return auth_refusal(403, "INVITATION_LIMIT_REACHED", "Invitation limit reached");
     }
     let id = uuid::Uuid::now_v7().to_string();
@@ -185,6 +185,7 @@ mod tests {
             password_enabled: true,
             sign_in_page: Default::default(),
             client_ip_header: None,
+            oauth: vec![],
         }
     }
     fn input(email: &str) -> InviteMemberInput {

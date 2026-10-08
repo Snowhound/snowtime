@@ -1,0 +1,7 @@
+cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --features bench --offline -- -D warnings
+   Compiling snowtime-render v0.1.0 (/private/tmp/snowtime-081-auth-port/native/crates/render)
+    Checking snowtime-server v0.1.0 (/private/tmp/snowtime-081-auth-port/native/crates/server)
+    Checking snowtime-host v0.1.0 (/private/tmp/snowtime-081-auth-port/native/crates/host)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.37s
+Exit code: 0
+

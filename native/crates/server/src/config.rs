@@ -2,6 +2,7 @@
 
 pub struct Config {
     pub database_path: String,
+    pub oauth: Vec<OAuthProvider>,
     // BETTER_AUTH_URL: the app's public URL, whose origin writes must come from.
     pub app_url: String,
     pub secret: String,
@@ -35,4 +36,12 @@ impl Config {
     pub fn is_app_origin(&self, origin: Option<&str>) -> bool {
         origin == Some(self.app_origin())
     }
+}
+
+#[derive(Clone)]
+pub struct OAuthProvider {
+    pub id: String,
+    pub client_id: String,
+    pub client_secret: String,
+    pub tenant: String,
 }

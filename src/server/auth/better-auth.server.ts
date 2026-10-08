@@ -11,6 +11,7 @@ import { appUrl as appUrlString, env, trustedOrigins } from '~/env'
 import { limits, rateLimits } from '../limits.server'
 import { createRateLimitStore } from '../rate-limit.server'
 import { time } from '../timing.server'
+import { invitationAcceptanceHooks } from './invitation-acceptance.server'
 import { invitationLimit } from './invitation-limit.server'
 import {
   loginDomainHooks,
@@ -26,6 +27,7 @@ import { passwordEnabled, refuseUnverifiedSignUp, socialProviders } from './sign
 const appUrl = new URL(appUrlString)
 const domains = env.ALLOWED_LOGIN_DOMAINS ?? []
 const removalHook = memberRemovalHook(db)
+const acceptanceHooks = invitationAcceptanceHooks(db)
 const domainHooks = loginDomainHooks(domains, (id) =>
   db.query.user.findFirst({ columns: { email: true }, where: { id } }),
 )
@@ -85,13 +87,18 @@ export const auth = betterAuth({
     session: domainHooks.session,
   },
   hooks: {
-    before: loginDomainMiddleware(domains),
+    before: createAuthMiddleware(async (ctx) => {
+      await loginDomainMiddleware(domains)(ctx)
+      // The outer hook owns the headers envelope; return only the nested hook's response.
+      return acceptanceHooks.before({ ...ctx, returnHeaders: false })
+    }),
     // A member removed from an organization, or leaving it, loses access to its entries, so
     // their running timer there stops now (docs/architecture/data.md, "Tenancy"). The plugin's
     // afterRemoveMember hook misses /organization/leave, so this hook watches both.
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path === '/get-session' && !loginDomainSessionAllowed(domains, ctx.context.returned))
         return ctx.json(null)
+      await acceptanceHooks.after(ctx)
       await removalHook(ctx)
       return undefined
     }),

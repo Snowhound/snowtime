@@ -1,0 +1,3 @@
+cargo fmt --all --manifest-path native/Cargo.toml
+Exit code: 0
+

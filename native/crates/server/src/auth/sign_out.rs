@@ -6,7 +6,7 @@ use crate::http::{App, Request, Response};
 use serde_json::Value;
 use std::sync::Arc;
 
-fn truthy(value: &Value) -> bool {
+pub(super) fn truthy(value: &Value) -> bool {
     match value {
         Value::Null => false,
         Value::Bool(value) => *value,
@@ -16,7 +16,11 @@ fn truthy(value: &Value) -> bool {
     }
 }
 
-fn check_urls(request: &Request, body: Option<&Value>, origin: &str) -> Result<(), Response> {
+pub(super) fn check_urls(
+    request: &Request,
+    body: Option<&Value>,
+    origin: &str,
+) -> Result<(), Response> {
     for (field, label, code, message) in [
         (
             "callbackURL",

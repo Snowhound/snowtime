@@ -20,7 +20,28 @@ fn config() -> Config {
         password_enabled: false,
         sign_in_page: Default::default(),
         client_ip_header: None,
+        oauth: vec![],
     }
+}
+
+#[tokio::test]
+async fn oauth_post_callback_preserves_the_encoded_provider_path() {
+    let response = router(app())
+        .oneshot(
+            HttpRequest::builder()
+                .method("POST")
+                .uri("/api/auth/callback/%0A")
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 302);
+    assert_eq!(
+        response.headers()[header::LOCATION],
+        "http://snowtime.test/api/auth/callback/%0A?"
+    );
 }
 
 #[tokio::test]
@@ -514,6 +535,7 @@ async fn slow_readers_leave_the_writer_to_writes() {
 
 fn lane_request() -> Request {
     Request {
+        path: String::new(),
         method: "GET".into(),
         query: None,
         cookie: None,

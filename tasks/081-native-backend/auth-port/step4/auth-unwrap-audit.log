@@ -1,0 +1,134 @@
+native/crates/server/src/auth/sign_in.rs:32:    let body = serde_json::to_vec(&Refusal { message, code }).expect("the refusal serializes");
+native/crates/server/src/auth/sign_in.rs:213:        let body: SignInBody = serde_json::from_value(body).expect("the body was checked");
+native/crates/server/src/auth/sign_in.rs:281:        let user = found.expect("a verified hash has a user").user;
+native/crates/server/src/auth/sign_in.rs:315:            .expect("the answer serializes"),
+native/crates/server/src/auth/schemas.rs:17:    let pattern = PATTERN.get_or_init(|| regex::Regex::new(r"^[a-zA-Z0-9_+-]+(?:\.[a-zA-Z0-9_+-]+)*@[0-9a-zA-Z]+(?:[.-][0-9a-zA-Z]+)*\.[a-zA-Z]{2,}$").expect("Valibot email pattern"));
+native/crates/server/src/auth/schemas.rs:431:        let value = value.unwrap();
+native/crates/server/src/auth/schemas.rs:491:            for (i, v) in value.as_array().unwrap().iter().enumerate() {
+native/crates/server/src/auth/schemas.rs:514:                    .unwrap()
+native/crates/server/src/auth/cookie.rs:9:    let mut mac = Hmac::<Sha256>::new_from_slice(secret.as_bytes()).expect("HMAC takes any key");
+native/crates/server/src/auth/cookie.rs:105:        let cookie = find(&header, "better-auth.session_token").unwrap();
+native/crates/server/src/auth/writes.rs:31:        body: serde_json::to_vec(&body).expect("auth response serializes"),
+native/crates/server/src/auth/writes.rs:442:    db.execute("insert into organization(id,name,slug,logo,metadata,created_at) values (?1,?2,?3,?4,?5,?6)",params![id,name.as_str(),slug,body["logo"].as_str(),metadata.as_ref().map(|v|serde_json::to_string(v).expect("metadata serializes")),now])?;
+native/crates/server/src/auth/writes.rs:511:    db.execute("update organization set name=case when ?1 then ?2 else name end,logo=case when ?3 then ?4 else logo end,metadata=case when ?5 then ?6 else metadata end where id=?7",params![data.get("name").is_some(),data["name"].as_str(),data.get("logo").is_some(),data["logo"].as_str(),data.get("metadata").is_some(),metadata.as_ref().map(|v|serde_json::to_string(v).expect("metadata serializes")),actor.organization_id])?;
+native/crates/server/src/auth/writes.rs:767:        let db = Connection::open_in_memory().unwrap();
+native/crates/server/src/auth/writes.rs:772:            insert into team_member values ('a','removed'),('a','remaining'),('b','removed');").unwrap();
+native/crates/server/src/auth/writes.rs:791:            .unwrap();
+native/crates/server/src/auth/writes.rs:793:        stop_removed_timer(&db, "removed", "org", "actor").unwrap();
+native/crates/server/src/auth/writes.rs:794:        remove_teams(&db, "removed", "org").unwrap();
+native/crates/server/src/auth/writes.rs:797:            .unwrap()
+native/crates/server/src/auth/writes.rs:799:            .unwrap()
+native/crates/server/src/auth/writes.rs:801:            .unwrap();
+native/crates/server/src/auth/writes.rs:818:                .unwrap(),
+native/crates/server/src/auth/writes.rs:824:                .unwrap(),
+native/crates/server/src/auth/writes.rs:830:                .unwrap(),
+native/crates/server/src/auth/oauth.rs:73:        body: serde_json::to_vec(&body).unwrap(),
+native/crates/server/src/auth/oauth.rs:221:    let mut url = url::Url::parse(&endpoint).unwrap();
+native/crates/server/src/auth/oauth.rs:248:            query.append_pair(key, value.as_str().unwrap());
+native/crates/server/src/auth/oauth.rs:282:        Action::List => return list_accounts(db, &user.unwrap().user_id),
+native/crates/server/src/auth/oauth.rs:283:        Action::Unlink => return unlink(db, &user.unwrap(), body["accountId"].as_str().unwrap()),
+native/crates/server/src/auth/oauth.rs:306:            let user = user.unwrap();
+native/crates/server/src/auth/oauth.rs:342:            .unwrap()
+native/crates/server/src/auth/oauth.rs:344:            .unwrap()
+native/crates/server/src/auth/oauth.rs:503:        let url = url::Url::parse(&base).expect("fake provider URL");
+native/crates/server/src/auth/oauth.rs:521:        .expect("OAuth HTTP client")
+native/crates/server/src/auth/oauth.rs:539:        ("code", query["code"].as_str().unwrap()),
+native/crates/server/src/auth/oauth.rs:1074:        .unwrap();
+native/crates/server/src/auth/oauth.rs:1075:        app.db().execute_batch("create table verification(id text,identifier text,value text,expires_at integer,created_at integer,updated_at integer);").unwrap();
+native/crates/server/src/auth/oauth.rs:1095:                    serde_json::to_string(&data).unwrap(),
+native/crates/server/src/auth/oauth.rs:1099:            .unwrap();
+native/crates/server/src/auth/oauth.rs:1111:            .unwrap()
+native/crates/server/src/auth/oauth.rs:1135:        .unwrap()
+native/crates/server/src/auth/oauth.rs:1137:        .unwrap();
+native/crates/server/src/auth/oauth.rs:1150:        .unwrap()
+native/crates/server/src/auth/oauth.rs:1152:        .unwrap();
+native/crates/server/src/auth/oauth.rs:1171:            .unwrap()
+native/crates/server/src/auth/oauth.rs:1182:        .unwrap()
+native/crates/server/src/auth/oauth.rs:1184:        .unwrap();
+native/crates/server/src/auth/oauth.rs:1200:            .unwrap()
+native/crates/server/src/auth/oauth.rs:1225:        let url = url::Url::parse(&url).unwrap();
+native/crates/server/src/auth/sign_out.rs:72:                .unwrap(),
+native/crates/server/src/auth/invitations.rs:75:    if !EMAIL.get_or_init(||regex::Regex::new(r"^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$").expect("Zod email pattern")).is_match(&input.email) {
+native/crates/server/src/auth/invitations.rs:163:        let mut db = Connection::open_in_memory().unwrap();
+native/crates/server/src/auth/invitations.rs:168:        .unwrap();
+native/crates/server/src/auth/invitations.rs:169:        db.execute_batch("insert into user (id,name,email,email_verified,created_at,updated_at) values ('alice','Alice','alice@example.com',1,0,0); insert into organization (id,name,slug,created_at) values ('org','Org','org',0); insert into member (id,user_id,organization_id,role,created_at) values ('member','alice','org','owner',0)").unwrap();
+native/crates/server/src/auth/invitations.rs:205:            invite_member(&db, &scope, input("new@example.com"), &config, &rates).unwrap();
+native/crates/server/src/auth/invitations.rs:214:                .unwrap(),
+native/crates/server/src/auth/invitations.rs:216:            .unwrap()
+native/crates/server/src/auth/invitations.rs:221:            .unwrap();
+native/crates/server/src/auth/invitations.rs:227:            .unwrap();
+native/crates/server/src/auth/invitations.rs:236:            .unwrap()
+native/crates/server/src/auth/invitations.rs:247:            invite_member(&db, &scope, input("new@example.com"), &config, &rates).unwrap();
+native/crates/server/src/auth/invitations.rs:263:            .unwrap();
+native/crates/server/src/auth/invitations.rs:264:        let next = invite_member(&db, &scope, input("new@example.com"), &config, &rates).unwrap();
+native/crates/server/src/auth/invitations.rs:266:        assert_eq!(list_invitations(&db, &scope, Empty {}).unwrap().len(), 2);
+native/crates/server/src/auth/invitations.rs:268:        db.execute("update member set role = 'admin'", []).unwrap();
+native/crates/server/src/auth/invitations.rs:304:        db.execute_batch("with recursive n(x) as (select 1 union all select x+1 from n where x<100) insert into invitation (id,email,organization_id,inviter_id,status,expires_at,created_at) select 'i'||x,'i'||x||'@example.com','org','alice','pending',9000000000000,0 from n").unwrap();
+native/crates/server/src/auth/invitations.rs:314:            .unwrap();
+native/crates/server/src/auth/invitations.rs:329:            .unwrap()
+native/crates/server/src/auth/invitations.rs:341:            decode(json!({"issueLinks":" https://example.com/{key} "})).unwrap(),
+native/crates/server/src/auth/invitations.rs:343:        .unwrap()
+native/crates/server/src/auth/invitations.rs:344:        .unwrap();
+native/crates/server/src/auth/invitations.rs:354:                decode(json!({"issueLinks":""})).unwrap()
+native/crates/server/src/auth/invitations.rs:361:                .unwrap(),
+native/crates/server/src/auth/acceptance.rs:231:        let id = body["invitationId"].as_str().unwrap().to_owned();
+native/crates/server/src/auth/acceptance.rs:264:        let db = Connection::open_in_memory().unwrap();
+native/crates/server/src/auth/acceptance.rs:272:            create table session (token text,active_organization_id text); insert into session values ('token',null);").unwrap();
+native/crates/server/src/auth/acceptance.rs:296:                .unwrap();
+native/crates/server/src/auth/acceptance.rs:302:            let accepted = accept(&db, "recipient", "invite", &config, Some(&header)).unwrap();
+native/crates/server/src/auth/acceptance.rs:310:                    .unwrap(),
+native/crates/server/src/auth/acceptance.rs:315:                    .unwrap(),
+native/crates/server/src/auth/acceptance.rs:321:                    .unwrap(),
+native/crates/server/src/auth/acceptance.rs:329:                .unwrap(),
+native/crates/server/src/auth/acceptance.rs:352:            .unwrap();
+native/crates/server/src/auth/acceptance.rs:364:            db.execute(sql, []).unwrap();
+native/crates/server/src/auth/acceptance.rs:375:                .unwrap(),
+native/crates/server/src/auth/acceptance.rs:380:                .unwrap(),
+native/crates/server/src/auth/acceptance.rs:392:        .unwrap();
+native/crates/server/src/auth/acceptance.rs:399:        .unwrap();
+native/crates/server/src/auth/acceptance.rs:410:                .unwrap(),
+native/crates/server/src/auth/sign_in_page.rs:85:        let db = Connection::open_in_memory().unwrap();
+native/crates/server/src/auth/sign_in_page.rs:89:            sign_in_methods(&db, &config).unwrap(),
+native/crates/server/src/auth/sign_in_page.rs:94:            sign_in_methods(&db, &config).unwrap(),
+native/crates/server/src/auth/sign_in_page.rs:98:        assert_eq!(sign_in_methods(&db, &config).unwrap(), ["passkey"]);
+native/crates/server/src/auth/sign_in_page.rs:99:        assert!(get_dev_users(&db, &config).unwrap().is_empty());
+native/crates/server/src/auth/sign_in_page.rs:104:        let db = Connection::open_in_memory().unwrap();
+native/crates/server/src/auth/sign_in_page.rs:105:        db.execute_batch("create table user (email text, name text); insert into user values ('marta@lumen.example.com', 'Changed'), ('kristiina@lumen.example.com', 'Changed');").unwrap();
+native/crates/server/src/auth/sign_in_page.rs:106:        let users = get_dev_users(&db, &config()).unwrap();
+native/crates/server/src/auth/passkeys.rs:32:        body: serde_json::to_vec(&value).expect("auth response serializes"),
+native/crates/server/src/auth/passkeys.rs:67:    let url = url::Url::parse(config.app_origin()).expect("configured origin");
+native/crates/server/src/auth/passkeys.rs:70:        url.host_str().unwrap(),
+native/crates/server/src/auth/passkeys.rs:171:        .unwrap()
+native/crates/server/src/auth/passkeys.rs:173:        .unwrap()
+native/crates/server/src/auth/passkeys.rs:392:        let key_json = serde_json::to_string(&key).unwrap();
+native/crates/server/src/auth/passkeys.rs:393:        let session_json = String::from_utf8(response.body).unwrap();
+native/crates/server/src/auth/passkeys.rs:424:            serde_json::to_string(&user.created_at).unwrap(),
+native/crates/server/src/auth/passkeys.rs:428:            serde_json::to_string(&user.updated_at).unwrap(),
+native/crates/server/src/auth/passkeys.rs:512:    .unwrap()
+native/crates/server/src/auth/passkeys.rs:536:        ("session", serde_json::to_string(&session).unwrap()),
+native/crates/server/src/auth/passkeys.rs:570:        && clock::now() - user.as_ref().unwrap().created_at.0 >= 86400000
+native/crates/server/src/auth/passkeys.rs:577:        Action::Register => registration(db, app, user.as_ref().unwrap(), request, body),
+native/crates/server/src/auth/passkeys.rs:579:        Action::List => list_passkeys(db, &user.unwrap().user_id),
+native/crates/server/src/auth/passkeys.rs:580:        Action::Delete => delete_passkey(db, &user.unwrap().user_id, body["id"].as_str().unwrap()),
+native/crates/server/src/auth/passkeys.rs:670:        .unwrap();
+native/crates/server/src/auth/passkeys.rs:674:            create table passkey (id text,name text,public_key text,user_id text,credential_id text,counter integer,device_type text,backed_up integer,transports text,created_at integer,aaguid text);").unwrap();
+native/crates/server/src/auth/passkeys.rs:680:            .unwrap();
+native/crates/server/src/auth/passkeys.rs:710:            .unwrap();
+native/crates/server/src/auth/passkeys.rs:714:                .unwrap()
+native/crates/server/src/auth/passkeys.rs:719:                .unwrap()
+native/crates/server/src/auth/passkeys.rs:726:                .unwrap()
+native/crates/server/src/auth/passkeys.rs:731:                .unwrap()
+native/crates/server/src/auth/passkeys.rs:736:                .unwrap()
+native/crates/server/src/auth/passkeys.rs:742:                .unwrap(),
+native/crates/server/src/auth/passkeys.rs:755:        .unwrap();
+native/crates/server/src/auth/passkeys.rs:765:            .unwrap();
+native/crates/server/src/auth/passkeys.rs:769:                    .unwrap()
+native/crates/server/src/auth/passkeys.rs:782:            .unwrap()
+native/crates/server/src/auth/passkeys.rs:786:        db.execute("insert into passkey values ('key',null,'key','alice','credential',0,'singleDevice',0,'internal',0,null)",[]).unwrap();
+native/crates/server/src/auth/passkeys.rs:796:            .unwrap()
+native/crates/server/src/auth/passkeys.rs:814:        .unwrap();
+native/crates/server/src/auth/passkeys.rs:815:        let body: Value = serde_json::from_slice(&response.body).unwrap();
+native/crates/server/src/auth/passkeys.rs:818:                .decode(body["challenge"].as_str().unwrap())
+native/crates/server/src/auth/passkeys.rs:819:                .unwrap()
+native/crates/server/src/auth/passkeys.rs:834:            .unwrap();
+native/crates/server/src/auth/passkeys.rs:835:        let persisted: Value = serde_json::from_str(&persisted).unwrap();

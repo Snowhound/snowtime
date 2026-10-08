@@ -46,7 +46,7 @@ pub fn create_team(db: &Connection, scope: &Scope, input: CreateTeamInput) -> Re
         &scope.organization_id
     )
     .query_row(&tx, |r| r.get(0))?;
-    if count >= 100 {
+    if count >= crate::limits::TEAMS_PER_ORGANIZATION {
         return refuse(Code::LimitReached, Key::TeamLimit);
     }
     let row = crate::sql!(

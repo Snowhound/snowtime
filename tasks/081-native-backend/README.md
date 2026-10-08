@@ -279,6 +279,9 @@ which records the edge measurements.
 - [27](27-capacity-overload.md): the capacity matrix at the deadline-led queue bound
   and a valid eight-reader overload comparison; follows 17 without blocking its merge
 
+- [28](28-auth-port.md): invitation acceptance, passkeys, Google/OAuth, and the
+  remaining client auth and organization calls
+
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
 per domain (Kait, 2026-10-04). On `main`, task 090 fixes `perf:stress`, and task 091 looks

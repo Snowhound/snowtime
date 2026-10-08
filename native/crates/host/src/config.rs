@@ -70,6 +70,7 @@ pub fn from_env() -> Result<Config, String> {
             .transpose()?,
         server: ServerConfig {
             database_path,
+            oauth: oauth_config(&var),
             secret: required("BETTER_AUTH_SECRET")?,
             password_enabled: var("NODE_ENV").as_deref() == Some("development")
                 || var("DEMO_MODE").as_deref() == Some("true"),
@@ -81,6 +82,27 @@ pub fn from_env() -> Result<Config, String> {
                 .ascii_serialization(),
         },
     })
+}
+
+fn oauth_config(var: &impl Fn(&str) -> Option<String>) -> Vec<snowtime_server::OAuthProvider> {
+    if var("DEMO_MODE").as_deref() == Some("true") {
+        return vec![];
+    }
+    [
+        ("GOOGLE", "google"),
+        ("GITHUB", "github"),
+        ("MICROSOFT", "microsoft"),
+    ]
+    .into_iter()
+    .filter_map(|(prefix, id)| {
+        Some(snowtime_server::OAuthProvider {
+            id: id.into(),
+            client_id: var(&format!("{prefix}_CLIENT_ID"))?,
+            client_secret: var(&format!("{prefix}_CLIENT_SECRET"))?,
+            tenant: var("MICROSOFT_TENANT_ID").unwrap_or_else(|| "common".into()),
+        })
+    })
+    .collect()
 }
 
 fn sign_in_page_config(
@@ -193,6 +215,37 @@ mod tests {
                 .is_err()
             );
         }
+    }
+
+    #[test]
+    fn oauth_credentials_follow_provider_pairs_tenant_and_demo_mode() {
+        let vars = [
+            ("GOOGLE_CLIENT_ID", "google-id"),
+            ("GOOGLE_CLIENT_SECRET", "google-secret"),
+            ("MICROSOFT_CLIENT_ID", "microsoft-id"),
+            ("MICROSOFT_CLIENT_SECRET", "microsoft-secret"),
+            ("MICROSOFT_TENANT_ID", "tenant"),
+        ];
+        let read = |name: &str| {
+            vars.iter()
+                .find(|(key, _)| *key == name)
+                .map(|(_, value)| (*value).into())
+        };
+        let providers = super::oauth_config(&read);
+        assert_eq!(providers.len(), 2);
+        assert_eq!(providers[0].id, "google");
+        assert_eq!(providers[0].client_id, "google-id");
+        assert_eq!(providers[0].client_secret, "google-secret");
+        assert_eq!(providers[1].id, "microsoft");
+        assert_eq!(providers[1].tenant, "tenant");
+        assert!(
+            super::oauth_config(&|name| if name == "DEMO_MODE" {
+                Some("true".into())
+            } else {
+                read(name)
+            })
+            .is_empty()
+        );
     }
 
     #[test]

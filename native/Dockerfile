@@ -5,7 +5,7 @@
 #
 #   docker build -f native/Dockerfile --build-arg BIN=snowtime-axum -t snowtime-native:bench .
 FROM rust:1.99-trixie AS build
-RUN apt-get update && apt-get install -y --no-install-recommends clang && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends clang perl make && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY native native
 COPY src/lib/holidays/ee.json src/lib/holidays/ee.json
@@ -20,10 +20,10 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     && cargo build --release --locked --bin ${BIN} --features "${CARGO_FEATURES}" \
     && cp target/release/${BIN} /server && strip /server
 
-# Optional measurement image: OpenSSL is vendored, so its build also needs Perl and make.
+# Optional measurement image: the shared build already vendors OpenSSL.
 FROM build AS scrypt-bench
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends perl make linux-perf \
+    && apt-get install -y --no-install-recommends linux-perf \
     && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/native/target \

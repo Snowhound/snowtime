@@ -1,0 +1,11 @@
+{"timestamp":"2026-10-08T09:55:33.341331Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T09:55:33.342148Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:63549","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/auth-writes.conformance.ts:
+(pass) organization writes, profile updates, and removal hooks [634.27ms]
+
+ 1 pass
+ 0 fail
+ 137 expect() calls
+Ran 1 test across 1 file. [695.00ms]

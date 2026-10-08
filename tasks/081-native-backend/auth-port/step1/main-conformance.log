@@ -1,0 +1,14 @@
+bun test v1.4.2 (744846f84)
+
+conformance/invitations.conformance.ts:
+[perf] Built in 6 s
+(pass) invitations > an admin invites by address, and the link shows the invitation signed out [16.85ms]
+(pass) invitations > an unknown link shows nothing [1.19ms]
+(pass) invitations > a member may not invite [1.83ms]
+(pass) invitations > Better Auth's refusals keep its status and code [8.50ms]
+(pass) a verified recipient accepts a team invitation and a repeated click is closed [91.05ms]
+
+ 5 pass
+ 0 fail
+ 16 expect() calls
+Ran 5 tests across 1 file. [11.71s]

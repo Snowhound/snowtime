@@ -2,6 +2,7 @@
 // Auth creates and accepts them; its refusals keep its status and code.
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { v7 as uuidv7 } from 'uuid'
+import { companyIds } from '~/db/seed-company'
 import { COMPANY, USERS } from '../perf/lib/database'
 import {
   type Caller,
@@ -86,4 +87,43 @@ describe('invitations', () => {
       error: { code: 'YOU_ARE_NOT_THE_RECIPIENT_OF_THE_INVITATION' },
     })
   })
+})
+
+test('a verified recipient accepts a team invitation and a repeated click is closed', async () => {
+  const invitation = await admin('inviteMember', {
+    organizationId,
+    email: 'noah@example.com',
+    role: 'member',
+    teamId: companyIds.teams.design,
+  })
+  const response = await fetch(`${server.url}/api/auth/sign-in/email`, {
+    method: 'POST',
+    headers: { origin: server.url, 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'noah@example.com', password: USERS.admin.password }),
+  })
+  expect(response.status).toBe(200)
+  const recipient = {
+    origin: server.url,
+    cookie: response.headers
+      .getSetCookie()
+      .map((v) => v.split(';')[0])
+      .join('; '),
+  }
+  expect(await send('acceptInvitation', { id: invitation.id }, recipient)).toEqual({
+    status: 200,
+    body: { id: invitation.id },
+  })
+  expect(await send('getInvitation', { id: invitation.id }, {})).toEqual({
+    status: 200,
+    body: { id: invitation.id, state: 'closed' },
+  })
+  expect(await send('acceptInvitation', { id: invitation.id }, recipient)).toMatchObject({
+    status: 400,
+    body: { error: { code: 'INVITATION_NOT_FOUND' } },
+  })
+  const session = await caller(server.url, recipient)('getAppSession', undefined)
+  expect(session?.activeOrganizationId).toBe(organizationId)
+  const teams = await caller(server.url, recipient)('listTeams', { organizationId })
+  const joined = teams.find((t) => t.id === companyIds.teams.design)
+  expect(joined?.members.some((m) => m.userId === session?.user.id)).toBe(true)
 })
