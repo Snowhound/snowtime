@@ -1,0 +1,31 @@
+// Temporary tests appended to native/crates/render/src/lib.rs's `tests` module for task
+// 081.30, run one at a time, then removed:
+//   cargo test -p snowtime-render --lib --offline <name> -- --nocapture
+// render.log holds the output.
+
+    async fn audit_render(script: &str) -> String {
+        let send: SendApi = Arc::new(|_| Box::pin(async { Err("no api".into()) }));
+        let policy = Policy { heap_limit_bytes: 64 << 20, deadline: Duration::from_secs(10), ..Default::default() };
+        let mut renderer = Renderer::new(send, r#"{"routes":{}}"#.into(), policy);
+        renderer.js().execute_script("audit.js", script.to_string()).unwrap();
+        let result = renderer.render(&page(), std::future::pending()).await;
+        let text = format!("{:?}", result.as_ref().map(|p| p.status));
+        eprintln!("AUDIT RESULT {text}");
+        text
+    }
+    #[tokio::test(flavor = "current_thread")]
+    async fn audit_heap_gradual() {
+        audit_render("renderPage = async () => { const a = []; for (;;) a.push(new Array(1e5).fill(1.5)); }").await;
+    }
+    #[tokio::test(flavor = "current_thread")]
+    async fn audit_heap_large_allocation() {
+        audit_render("renderPage = async () => { const a = new Array(3e7).fill(1.5); Deno.core.ops.op_head(200, []); }").await;
+    }
+    #[tokio::test(flavor = "current_thread")]
+    async fn audit_heap_large_string() {
+        audit_render("renderPage = async () => { const s = 'x'.repeat(1 << 27) + 'y'; const t = s.split('').join(','); Deno.core.ops.op_head(200, []); }").await;
+    }
+    #[tokio::test(flavor = "current_thread")]
+    async fn audit_net_connect() {
+        audit_render("renderPage = async () => { const names = Object.keys(Deno.core.ops).filter(n => /net|fetch|dns|tls/.test(n)); console.log('OPS', JSON.stringify(names)); await Deno.core.ops.op_net_connect_tcp({ hostname: '127.0.0.1', port: 9 }, null, null); Deno.core.ops.op_head(200, []); }").await;
+    }

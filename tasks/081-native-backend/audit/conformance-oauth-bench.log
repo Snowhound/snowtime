@@ -1,0 +1,10 @@
+{"timestamp":"2026-10-08T13:17:51.656245Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:17:51.658101Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:17:51.684593Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":1,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:17:51.691937Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52813","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+ 1 pass
+ 0 fail
+ 102 expect() calls
+Ran 1 test across 1 file. [521.00ms]

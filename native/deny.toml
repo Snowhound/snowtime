@@ -1,0 +1,57 @@
+# cargo-deny for the native workspace (task 081.30). Run from native/:
+#   cargo deny check
+#   cargo deny --all-features check
+# Vulnerability advisories stay unignored; the audit records each one and its fix.
+
+[graph]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu", "aarch64-apple-darwin"]
+
+[advisories]
+yanked = "deny"
+unmaintained = "all"
+ignore = [
+  { id = "RUSTSEC-2024-0436", reason = "paste is a proc-macro of v8; no replacement upstream" },
+  { id = "RUSTSEC-2025-0134", reason = "rustls-pemfile comes from deno_native_certs; no replacement upstream" },
+  { id = "RUSTSEC-2025-0141", reason = "bincode 1 comes from deno_core; no replacement upstream" },
+]
+
+[licenses]
+confidence-threshold = 0.93
+allow = ["MIT", "Apache-2.0", "Apache-2.0 WITH LLVM-exception", "ISC", "BSD-3-Clause", "Unicode-3.0", "Zlib"]
+exceptions = [
+  # File-level copyleft, used unmodified from crates.io.
+  { allow = ["MPL-2.0"], crate = "webauthn-rs-core" },
+  { allow = ["MPL-2.0"], crate = "webauthn-rs-proto" },
+  { allow = ["MPL-2.0"], crate = "webauthn-attestation-ca" },
+  { allow = ["MPL-2.0"], crate = "webauthn-rs" },
+  { allow = ["MPL-2.0"], crate = "base64urlsafedata" },
+  { allow = ["MPL-2.0"], crate = "cssparser" },
+  { allow = ["MPL-2.0"], crate = "cssparser-macros" },
+  { allow = ["MPL-2.0"], crate = "dtoa-short" },
+  { allow = ["MPL-2.0"], crate = "cooked-waker" },
+  # Mozilla's root certificate data.
+  { allow = ["CDLA-Permissive-2.0"], crate = "webpki-roots" },
+]
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+deny = [
+  { crate = "rustls", deny-multiple-versions = true },
+  { crate = "aws-lc-sys", deny-multiple-versions = true },
+  { crate = "aws-lc-rs", deny-multiple-versions = true },
+  { crate = "hyper", deny-multiple-versions = true },
+  { crate = "h2", deny-multiple-versions = true },
+  { crate = "tokio", deny-multiple-versions = true },
+  { crate = "openssl-sys", deny-multiple-versions = true },
+  { crate = "native-tls" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

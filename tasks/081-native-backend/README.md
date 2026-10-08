@@ -283,6 +283,8 @@ which records the edge measurements.
   remaining client auth and organization calls
 - [29](29-hardening.md): client IPs, rate limits, request panic checks, and clean native
   TypeScript before the full port audit
+- [30](30-audit.md): the whole-port audit before the repository split: three high and
+  eleven medium findings, and the feature level that matches `main` at `c8ffa84`
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

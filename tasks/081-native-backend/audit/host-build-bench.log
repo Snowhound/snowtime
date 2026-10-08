@@ -1,0 +1,4 @@
+   Compiling snowtime-render v0.1.0 (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/crates/render)
+   Compiling snowtime-server v0.1.0 (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/crates/server)
+   Compiling snowtime-host v0.1.0 (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/crates/host)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.34s

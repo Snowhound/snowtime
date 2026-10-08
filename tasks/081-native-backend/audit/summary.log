@@ -1,0 +1,34 @@
+a20713fb766e12337e005ab19605f9bd10221f1a
+=== i18n
+exit 0
+=== frontend-build
+exit 0
+=== bundle-build
+exit 0
+=== fmt
+exit 0
+=== clippy
+exit 0
+=== clippy-bench
+exit 0
+=== server-tests
+exit 0
+=== server-tests-bench
+exit 0
+=== host-tests
+exit 0
+=== host-build
+exit 0
+### exit 0 conformance/auth-writes.conformance.ts
+### exit 0 conformance/invitations.conformance.ts
+### exit 1 conformance/oauth.conformance.ts
+### exit 0 conformance/passkeys.conformance.ts
+### exit 0 conformance/projects.conformance.ts
+### exit 0 conformance/reports.conformance.ts
+### exit 0 conformance/session.conformance.ts
+### exit 0 conformance/settings.conformance.ts
+### exit 0 conformance/teams.conformance.ts
+### exit 0 conformance/timer.conformance.ts
+=== compare
+exit 1
+DONE

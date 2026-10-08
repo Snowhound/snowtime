@@ -1,0 +1,25 @@
+### audit_heap_gradual
+AUDIT RESULT Err(Failed("Uncaught Error: execution terminated"))
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.05s
+exit 0
+### audit_heap_large_allocation
+# Fatal JavaScript out of memory: Reached heap limit
+    2   snowtime_render-8b4fc0421a8b5ce3    0x00000001059103e0 v8::base::FatalOOM(v8::base::OOMType, char const*) + 68
+    3   snowtime_render-8b4fc0421a8b5ce3    0x00000001059ae00c v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) + 352
+error: test failed, to rerun pass `-p snowtime-render --lib`
+  process didn't exit successfully: `/Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/target/debug/deps/snowtime_render-8b4fc0421a8b5ce3 audit_heap_large_allocation --nocapture` (signal: 5, SIGTRAP: trace/breakpoint trap)
+exit 101
+### audit_heap_large_string
+# Fatal error with no security impact:
+# Fatal JavaScript invalid size error 134217729 (see crbug.com/1201626)
+    2   snowtime_render-8b4fc0421a8b5ce3    0x0000000105d88460 v8::base::FatalNoSecurityImpact(char const*, ...) + 80
+error: test failed, to rerun pass `-p snowtime-render --lib`
+  process didn't exit successfully: `/Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/target/debug/deps/snowtime_render-8b4fc0421a8b5ce3 audit_heap_large_string --nocapture` (signal: 5, SIGTRAP: trace/breakpoint trap)
+exit 101
+### audit_net_connect
+OPS ["op_net_accept_tcp","op_net_get_ips_from_perm_token","op_net_connect_tcp","op_net_listen_tcp","op_net_listen_udp","op_node_unstable_net_listen_udp","op_net_recv_udp","op_net_send_udp","op_net_join_multi_v4_udp","op_net_join_multi_v6_udp","op_net_leave_multi_v4_udp","op_net_leave_multi_v6_udp","op_net_set_multi_loopback_udp","op_net_set_multi_ttl_udp","op_net_set_broadcast_udp","op_net_validate_multicast","op_dns_resolve","op_net_get_system_dns_servers","op_net_listen_vsock","op_net_accept_vsock","op_net_connect_vsock","op_net_listen_tunnel","op_net_accept_tunnel","op_tls_key_null","op_tls_key_static","op_tls_cert_resolver_create","op_tls_cert_resolver_poll","op_tls_cert_resolver_resolve","op_tls_cert_resolver_resolve_error","op_tls_start","op_net_connect_tls","op_net_listen_tls","op_net_accept_tls","op_tls_handshake","op_net_accept_unix","op_net_connect_unix","op_net_listen_unix","op_net_listen_unixpacket","op_node_unstable_net_listen_unixpacket","op_net_recv_unixpacket","op_net_send_unixpacket","op_fetch","op_fetch_send","op_fetch_custom_client","op_fetch_promise_is_settled"]
+thread 'tests::audit_net_connect' (18369928) panicked at /Users/kaitkasak/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/deno_core-0.405.0/gotham_state.rs:74:3:
+thread 'tests::audit_net_connect' (18369928) panicked at /rustc/b940084d7eb6a299eb4bfeb8e34901bc051e7ac4/library/core/src/panicking.rs:225:5:
+error: test failed, to rerun pass `-p snowtime-render --lib`
+  process didn't exit successfully: `/Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/target/debug/deps/snowtime_render-8b4fc0421a8b5ce3 audit_net_connect --nocapture` (signal: 6, SIGABRT: process abort signal)
+exit 101

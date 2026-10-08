@@ -1,0 +1,41 @@
+domains: existing session GET /api/v1/timer -> 200
+domains: GET /api/v1/session -> 200 {"user":{"id":"01900000-0000-7000-8001-000000001000","name":"Kristiina Kask","em
+domains: POST project with blocked-domain session -> 400
+domains: password sign-in with blocked domain -> 200 {"redirect":false,"token":"kf0LH3Ryu1Alonk9Nnoy7W25iKF88mTM","user":{"id":"01900
+orderedjson: 10000 keys, 108 KiB -> 200 in 425 ms
+orderedjson: 25000 keys, 269 KiB -> 200 in 2372 ms
+orderedjson: 50000 keys, 537 KiB -> 200 in 9957 ms
+orderedjson: 100000 keys, 1074 KiB -> 408 in 30005 ms
+orderedjson: concurrent PATCH /settings -> 503 1 1005 ms {"error":{"message":"The server is busy. Try again."}}
+errorpage: GET /api/auth/error -> 404 {"error":{"message":"No such call."}}
+precompressed: GET /backup.gz -> 404
+precompressed: GET /backup with gzip -> 200 gzip "secret backup contents\n"
+secret: BETTER_AUTH_SECRET=x -> host starts and serves
+secret: sign-in with 1-character secret -> 200
+renewal: two days later GET /api/v1/session -> 200 set-cookie: [] row expires 2026-11-01T07:30:00.097Z
+migrations: before team_member 27, project_team 26
+migrations: after native MIGRATE_ON_START team_member 0, project_team 0
+migrations: FAILED  8 | }
+ 9 | export function expandConfig(config, preferHttp) {
+10 |     if (typeof config !== "object") {
+11 |         // produce a reasonable error message in the common case where users type
+12 |         // `createClient("libsql://...")` instead of `createClient({url: "libsql://..."})`
+13 |         throw new TypeError(`Expected client configuration as object, got ${typeof config}`);
+                       ^
+TypeError: Expected client configuration as object, got undefined
+      at expandConfig (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/@libsql/core/lib-esm/config.js:13:19)
+      at createClient (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/@libsql/client/lib-esm/node.js:11:26)
+      at drizzle (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/node_modules/drizzle-orm/libsql/driver.js:9:88)
+      at migrations (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/temp/audit-probe/probe.ts:312:19)
+
+verification: rows 0 -> 50 after 50 unauthenticated authenticate-options
+verification: unauthenticated sign-in/social with 1.5 MB additionalData -> 200; largest row 1500249 bytes
+verification: an hour later, expired rows still stored: 51
+migrations: before team_member 27, project_team 26
+migrations: after native MIGRATE_ON_START team_member 0, project_team 0
+migrations: after drizzle-orm libsql migrator team_member 27, project_team 26
+slowloris: partial headers -> still open after 45003 ms
+slowloris: idle keep-alive after one response -> still open after 45003 ms
+ratekeys: unknown long path -> 404
+ratekeys: RSS 53024 KiB -> 118352 KiB after 2000 unique 30 KB paths (+63.8 MiB)
+ratekeys: control, same path 2000 times: 118352 -> 118416 KiB

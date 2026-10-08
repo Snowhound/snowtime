@@ -1,0 +1,2632 @@
+warning[license-exception-not-encountered]: license exception was not encountered
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/deny.toml:26:35
+   │
+26 │   { allow = ["MPL-2.0"], crate = "webauthn-rs" },
+   │                                   ━━━━━━━━━━━ unmatched license exception
+
+warning[duplicate]: found 2 duplicate entries for crate 'alloc-no-stdlib'
+  ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:3:1
+  │  
+3 │ ╭ alloc-no-stdlib 2.0.4 registry+https://github.com/rust-lang/crates.io-index
+4 │ │ alloc-no-stdlib 3.0.0 registry+https://github.com/rust-lang/crates.io-index
+  │ ╰───────────────────────────────────────────────────────────────────────────┘ lock entries
+  │  
+  ├ alloc-no-stdlib v2.0.4
+    ├── alloc-stdlib v0.2.4
+    │   ├── brotli v6.0.0
+    │   │   └── deno_web v0.283.0
+    │   │       └── (build) snowtime-render v0.1.0
+    │   │           └── snowtime-host v0.1.0
+    │   └── brotli-decompressor v4.0.3
+    │       └── brotli v6.0.0 (*)
+    ├── brotli v6.0.0 (*)
+    └── brotli-decompressor v4.0.3 (*)
+  ├ alloc-no-stdlib v3.0.0
+    ├── alloc-stdlib v0.3.0
+    │   ├── brotli v9.0.0
+    │   │   └── compression-codecs v0.4.45
+    │   │       └── async-compression v0.4.50
+    │   │           ├── deno_fetch v0.276.0
+    │   │           │   └── (build) snowtime-render v0.1.0
+    │   │           │       └── snowtime-host v0.1.0
+    │   │           └── tower-http v0.7.1
+    │   │               └── snowtime-host v0.1.0 (*)
+    │   └── brotli-decompressor v6.0.1
+    │       └── brotli v9.0.0 (*)
+    ├── brotli v9.0.0 (*)
+    └── brotli-decompressor v6.0.1 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'alloc-stdlib'
+  ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:5:1
+  │  
+5 │ ╭ alloc-stdlib 0.2.4 registry+https://github.com/rust-lang/crates.io-index
+6 │ │ alloc-stdlib 0.3.0 registry+https://github.com/rust-lang/crates.io-index
+  │ ╰────────────────────────────────────────────────────────────────────────┘ lock entries
+  │  
+  ├ alloc-stdlib v0.2.4
+    ├── brotli v6.0.0
+    │   └── deno_web v0.283.0
+    │       └── (build) snowtime-render v0.1.0
+    │           └── snowtime-host v0.1.0
+    └── brotli-decompressor v4.0.3
+        └── brotli v6.0.0 (*)
+  ├ alloc-stdlib v0.3.0
+    ├── brotli v9.0.0
+    │   └── compression-codecs v0.4.45
+    │       └── async-compression v0.4.50
+    │           ├── deno_fetch v0.276.0
+    │           │   └── (build) snowtime-render v0.1.0
+    │           │       └── snowtime-host v0.1.0
+    │           └── tower-http v0.7.1
+    │               └── snowtime-host v0.1.0 (*)
+    └── brotli-decompressor v6.0.1
+        └── brotli v9.0.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'asn1-rs'
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:10:1
+   │  
+10 │ ╭ asn1-rs 0.6.2 registry+https://github.com/rust-lang/crates.io-index
+11 │ │ asn1-rs 0.7.2 registry+https://github.com/rust-lang/crates.io-index
+   │ ╰───────────────────────────────────────────────────────────────────┘ lock entries
+   │  
+   ├ asn1-rs v0.6.2
+     ├── der-parser v9.0.0
+     │   ├── webauthn-rs-core v0.5.5
+     │   │   └── snowtime-server v0.1.0
+     │   │       └── snowtime-host v0.1.0
+     │   └── x509-parser v0.16.0
+     │       └── webauthn-rs-core v0.5.5 (*)
+     ├── oid-registry v0.7.1
+     │   └── x509-parser v0.16.0 (*)
+     └── x509-parser v0.16.0 (*)
+   ├ asn1-rs v0.7.2
+     ├── der-parser v10.0.0
+     │   └── x509-parser v0.18.1
+     │       └── rustls-acme v0.15.4
+     │           └── snowtime-host v0.1.0
+     ├── oid-registry v0.8.1
+     │   └── x509-parser v0.18.1 (*)
+     └── x509-parser v0.18.1 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'asn1-rs-derive'
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:12:1
+   │  
+12 │ ╭ asn1-rs-derive 0.5.1 registry+https://github.com/rust-lang/crates.io-index
+13 │ │ asn1-rs-derive 0.6.0 registry+https://github.com/rust-lang/crates.io-index
+   │ ╰──────────────────────────────────────────────────────────────────────────┘ lock entries
+   │  
+   ├ asn1-rs-derive v0.5.1
+     └── asn1-rs v0.6.2
+         ├── der-parser v9.0.0
+         │   ├── webauthn-rs-core v0.5.5
+         │   │   └── snowtime-server v0.1.0
+         │   │       └── snowtime-host v0.1.0
+         │   └── x509-parser v0.16.0
+         │       └── webauthn-rs-core v0.5.5 (*)
+         ├── oid-registry v0.7.1
+         │   └── x509-parser v0.16.0 (*)
+         └── x509-parser v0.16.0 (*)
+   ├ asn1-rs-derive v0.6.0
+     └── asn1-rs v0.7.2
+         ├── der-parser v10.0.0
+         │   └── x509-parser v0.18.1
+         │       └── rustls-acme v0.15.4
+         │           └── snowtime-host v0.1.0
+         ├── oid-registry v0.8.1
+         │   └── x509-parser v0.18.1 (*)
+         └── x509-parser v0.18.1 (*)
+
+warning[duplicate]: found 3 duplicate entries for crate 'base64'
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:31:1
+   │  
+31 │ ╭ base64 0.21.7 registry+https://github.com/rust-lang/crates.io-index
+32 │ │ base64 0.22.1 registry+https://github.com/rust-lang/crates.io-index
+33 │ │ base64 0.23.1 registry+https://github.com/rust-lang/crates.io-index
+   │ ╰───────────────────────────────────────────────────────────────────┘ lock entries
+   │  
+   ├ base64 v0.21.7
+     ├── base64urlsafedata v0.5.5
+     │   ├── webauthn-attestation-ca v0.5.5
+     │   │   └── webauthn-rs-core v0.5.5
+     │   │       └── snowtime-server v0.1.0
+     │   │           └── snowtime-host v0.1.0
+     │   ├── webauthn-rs-core v0.5.5 (*)
+     │   └── webauthn-rs-proto v0.5.5
+     │       └── webauthn-rs-core v0.5.5 (*)
+     ├── webauthn-rs-core v0.5.5 (*)
+     └── webauthn-rs-proto v0.5.5 (*)
+   ├ base64 v0.22.1
+     ├── deno_core v0.405.0
+     │   ├── deno_features v0.49.0
+     │   │   └── deno_net v0.244.0
+     │   │       └── (build) snowtime-render v0.1.0
+     │   │           └── snowtime-host v0.1.0
+     │   ├── deno_fetch v0.276.0
+     │   │   └── (build) snowtime-render v0.1.0 (*)
+     │   ├── deno_fs v0.162.0
+     │   │   └── deno_fetch v0.276.0 (*)
+     │   ├── deno_io v0.162.0
+     │   │   ├── deno_fetch v0.276.0 (*)
+     │   │   └── deno_fs v0.162.0 (*)
+     │   ├── deno_net v0.244.0 (*)
+     │   ├── deno_tls v0.239.0
+     │   │   ├── deno_fetch v0.276.0 (*)
+     │   │   └── deno_net v0.244.0 (*)
+     │   ├── deno_web v0.283.0
+     │   │   └── (build) snowtime-render v0.1.0 (*)
+     │   ├── deno_webidl v0.252.0
+     │   │   └── (build) snowtime-render v0.1.0 (*)
+     │   └── (build) snowtime-render v0.1.0 (*)
+     ├── deno_fetch v0.276.0 (*)
+     ├── pem v3.0.6
+     │   ├── rcgen v0.13.2
+     │   │   └── rustls-acme v0.15.4
+     │   │       └── snowtime-host v0.1.0 (*)
+     │   └── rustls-acme v0.15.4 (*)
+     ├── reqwest v0.12.28
+     │   └── snowtime-server v0.1.0
+     │       └── snowtime-host v0.1.0 (*)
+     └── rustls-acme v0.15.4 (*)
+   ├ base64 v0.23.1
+     ├── hyper-util v0.1.21
+     │   ├── axum v0.8.9
+     │   │   ├── snowtime-host v0.1.0
+     │   │   ├── snowtime-server v0.1.0
+     │   │   │   └── snowtime-host v0.1.0 (*)
+     │   │   └── tower_governor v0.8.0
+     │   │       └── snowtime-server v0.1.0 (*)
+     │   ├── axum-server v0.8.0
+     │   │   ├── rustls-acme v0.15.4
+     │   │   │   └── snowtime-host v0.1.0 (*)
+     │   │   └── snowtime-host v0.1.0 (*)
+     │   ├── deno_fetch v0.276.0
+     │   │   └── (build) snowtime-render v0.1.0
+     │   │       └── snowtime-host v0.1.0 (*)
+     │   ├── hyper-rustls v0.27.10
+     │   │   ├── deno_fetch v0.276.0 (*)
+     │   │   └── reqwest v0.12.28
+     │   │       └── snowtime-server v0.1.0 (*)
+     │   └── reqwest v0.12.28 (*)
+     ├── pem v4.0.0
+     │   └── rcgen v0.14.10
+     │       └── (dev) snowtime-host v0.1.0 (*)
+     ├── snowtime-host v0.1.0 (*)
+     └── snowtime-server v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'block-buffer'
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:42:1
+   │  
+42 │ ╭ block-buffer 0.10.4 registry+https://github.com/rust-lang/crates.io-index
+43 │ │ block-buffer 0.12.1 registry+https://github.com/rust-lang/crates.io-index
+   │ ╰─────────────────────────────────────────────────────────────────────────┘ lock entries
+   │  
+   ├ block-buffer v0.10.4
+     └── digest v0.10.7
+         └── sha2 v0.10.9
+             └── deno_net v0.244.0
+                 └── (build) snowtime-render v0.1.0
+                     └── snowtime-host v0.1.0
+   ├ block-buffer v0.12.1
+     └── digest v0.11.3
+         ├── hmac v0.13.0
+         │   └── snowtime-server v0.1.0
+         │       └── snowtime-host v0.1.0
+         └── sha2 v0.11.0
+             └── snowtime-server v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'brotli'
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:46:1
+   │  
+46 │ ╭ brotli 6.0.0 registry+https://github.com/rust-lang/crates.io-index
+47 │ │ brotli 9.0.0 registry+https://github.com/rust-lang/crates.io-index
+   │ ╰──────────────────────────────────────────────────────────────────┘ lock entries
+   │  
+   ├ brotli v6.0.0
+     └── deno_web v0.283.0
+         └── (build) snowtime-render v0.1.0
+             └── snowtime-host v0.1.0
+   ├ brotli v9.0.0
+     └── compression-codecs v0.4.45
+         └── async-compression v0.4.50
+             ├── deno_fetch v0.276.0
+             │   └── (build) snowtime-render v0.1.0
+             │       └── snowtime-host v0.1.0
+             └── tower-http v0.7.1
+                 └── snowtime-host v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'brotli-decompressor'
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:48:1
+   │  
+48 │ ╭ brotli-decompressor 4.0.3 registry+https://github.com/rust-lang/crates.io-index
+49 │ │ brotli-decompressor 6.0.1 registry+https://github.com/rust-lang/crates.io-index
+   │ ╰───────────────────────────────────────────────────────────────────────────────┘ lock entries
+   │  
+   ├ brotli-decompressor v4.0.3
+     └── brotli v6.0.0
+         └── deno_web v0.283.0
+             └── (build) snowtime-render v0.1.0
+                 └── snowtime-host v0.1.0
+   ├ brotli-decompressor v6.0.1
+     └── brotli v9.0.0
+         └── compression-codecs v0.4.45
+             └── async-compression v0.4.50
+                 ├── deno_fetch v0.276.0
+                 │   └── (build) snowtime-render v0.1.0
+                 │       └── snowtime-host v0.1.0
+                 └── tower-http v0.7.1
+                     └── snowtime-host v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'const-oid'
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:66:1
+   │  
+66 │ ╭ const-oid 0.9.6 registry+https://github.com/rust-lang/crates.io-index
+67 │ │ const-oid 0.10.2 registry+https://github.com/rust-lang/crates.io-index
+   │ ╰──────────────────────────────────────────────────────────────────────┘ lock entries
+   │  
+   ├ const-oid v0.9.6
+     └── digest v0.10.7
+         └── sha2 v0.10.9
+             └── deno_net v0.244.0
+                 └── (build) snowtime-render v0.1.0
+                     └── snowtime-host v0.1.0
+   ├ const-oid v0.10.2
+     └── digest v0.11.3
+         ├── hmac v0.13.0
+         │   └── snowtime-server v0.1.0
+         │       └── snowtime-host v0.1.0
+         └── sha2 v0.11.0
+             └── snowtime-server v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'cpufeatures'
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:72:1
+   │  
+72 │ ╭ cpufeatures 0.2.17 registry+https://github.com/rust-lang/crates.io-index
+73 │ │ cpufeatures 0.3.1 registry+https://github.com/rust-lang/crates.io-index
+   │ ╰───────────────────────────────────────────────────────────────────────┘ lock entries
+   │  
+   ├ cpufeatures v0.2.17
+     └── sha2 v0.10.9
+         └── deno_net v0.244.0
+             └── (build) snowtime-render v0.1.0
+                 └── snowtime-host v0.1.0
+   ├ cpufeatures v0.3.1
+     ├── chacha20 v0.10.2
+     │   └── rand v0.10.3
+     │       ├── quinn-proto v0.11.19
+     │       │   └── quinn v0.11.12
+     │       │       ├── deno_net v0.244.0
+     │       │       │   └── (build) snowtime-render v0.1.0
+     │       │       │       └── snowtime-host v0.1.0
+     │       │       └── deno_tunnel v0.8.1
+     │       │           └── deno_net v0.244.0 (*)
+     │       ├── snowtime-host v0.1.0 (*)
+     │       └── snowtime-server v0.1.0
+     │           └── snowtime-host v0.1.0 (*)
+     └── sha2 v0.11.0
+         └── snowtime-server v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'crypto-common'
+   ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:80:1
+   │  
+80 │ ╭ crypto-common 0.1.7 registry+https://github.com/rust-lang/crates.io-index
+81 │ │ crypto-common 0.2.2 registry+https://github.com/rust-lang/crates.io-index
+   │ ╰─────────────────────────────────────────────────────────────────────────┘ lock entries
+   │  
+   ├ crypto-common v0.1.7
+     └── digest v0.10.7
+         └── sha2 v0.10.9
+             └── deno_net v0.244.0
+                 └── (build) snowtime-render v0.1.0
+                     └── snowtime-host v0.1.0
+   ├ crypto-common v0.2.2
+     └── digest v0.11.3
+         ├── hmac v0.13.0
+         │   └── snowtime-server v0.1.0
+         │       └── snowtime-host v0.1.0
+         └── sha2 v0.11.0
+             └── snowtime-server v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'der-parser'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:109:1
+    │  
+109 │ ╭ der-parser 9.0.0 registry+https://github.com/rust-lang/crates.io-index
+110 │ │ der-parser 10.0.0 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰───────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ der-parser v9.0.0
+      ├── webauthn-rs-core v0.5.5
+      │   └── snowtime-server v0.1.0
+      │       └── snowtime-host v0.1.0
+      └── x509-parser v0.16.0
+          └── webauthn-rs-core v0.5.5 (*)
+    ├ der-parser v10.0.0
+      └── x509-parser v0.18.1
+          └── rustls-acme v0.15.4
+              └── snowtime-host v0.1.0
+
+warning[duplicate]: found 2 duplicate entries for crate 'digest'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:114:1
+    │  
+114 │ ╭ digest 0.10.7 registry+https://github.com/rust-lang/crates.io-index
+115 │ │ digest 0.11.3 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰───────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ digest v0.10.7
+      └── sha2 v0.10.9
+          └── deno_net v0.244.0
+              └── (build) snowtime-render v0.1.0
+                  └── snowtime-host v0.1.0
+    ├ digest v0.11.3
+      ├── hmac v0.13.0
+      │   └── snowtime-server v0.1.0
+      │       └── snowtime-host v0.1.0
+      └── sha2 v0.11.0
+          └── snowtime-server v0.1.0 (*)
+
+warning[duplicate]: found 3 duplicate entries for crate 'getrandom'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:164:1
+    │  
+164 │ ╭ getrandom 0.2.17 registry+https://github.com/rust-lang/crates.io-index
+165 │ │ getrandom 0.3.4 registry+https://github.com/rust-lang/crates.io-index
+166 │ │ getrandom 0.4.3 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰─────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ getrandom v0.2.17
+      ├── rand_core v0.6.4
+      │   ├── rand v0.8.5
+      │   │   ├── deno_fs v0.162.0
+      │   │   │   └── deno_fetch v0.276.0
+      │   │   │       └── (build) snowtime-render v0.1.0
+      │   │   │           └── snowtime-host v0.1.0
+      │   │   └── num-bigint v0.4.8
+      │   │       ├── deno_core v0.405.0
+      │   │       │   ├── deno_features v0.49.0
+      │   │       │   │   └── deno_net v0.244.0
+      │   │       │   │       └── (build) snowtime-render v0.1.0 (*)
+      │   │       │   ├── deno_fetch v0.276.0 (*)
+      │   │       │   ├── deno_fs v0.162.0 (*)
+      │   │       │   ├── deno_io v0.162.0
+      │   │       │   │   ├── deno_fetch v0.276.0 (*)
+      │   │       │   │   └── deno_fs v0.162.0 (*)
+      │   │       │   ├── deno_net v0.244.0 (*)
+      │   │       │   ├── deno_tls v0.239.0
+      │   │       │   │   ├── deno_fetch v0.276.0 (*)
+      │   │       │   │   └── deno_net v0.244.0 (*)
+      │   │       │   ├── deno_web v0.283.0
+      │   │       │   │   └── (build) snowtime-render v0.1.0 (*)
+      │   │       │   ├── deno_webidl v0.252.0
+      │   │       │   │   └── (build) snowtime-render v0.1.0 (*)
+      │   │       │   └── (build) snowtime-render v0.1.0 (*)
+      │   │       ├── der-parser v10.0.0
+      │   │       │   └── x509-parser v0.18.1
+      │   │       │       └── rustls-acme v0.15.4
+      │   │       │           └── snowtime-host v0.1.0 (*)
+      │   │       ├── der-parser v9.0.0
+      │   │       │   ├── webauthn-rs-core v0.5.5
+      │   │       │   │   └── snowtime-server v0.1.0
+      │   │       │   │       └── snowtime-host v0.1.0 (*)
+      │   │       │   └── x509-parser v0.16.0
+      │   │       │       └── webauthn-rs-core v0.5.5 (*)
+      │   │       └── serde_v8 v0.314.0
+      │   │           └── deno_core v0.405.0 (*)
+      │   └── rand_chacha v0.3.1
+      │       └── rand v0.8.5 (*)
+      └── ring v0.17.14
+          ├── rcgen v0.14.10
+          │   └── (dev) snowtime-host v0.1.0 (*)
+          ├── rustls v0.23.40
+          │   ├── axum-server v0.8.0
+          │   │   ├── rustls-acme v0.15.4 (*)
+          │   │   └── snowtime-host v0.1.0 (*)
+          │   ├── deno_tls v0.239.0 (*)
+          │   ├── futures-rustls v0.26.0
+          │   │   ├── async-web-client v0.6.3
+          │   │   │   └── rustls-acme v0.15.4 (*)
+          │   │   └── rustls-acme v0.15.4 (*)
+          │   ├── hyper-rustls v0.27.10
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── reqwest v0.12.28
+          │   │       └── snowtime-server v0.1.0 (*)
+          │   ├── quinn v0.11.12
+          │   │   ├── deno_net v0.244.0 (*)
+          │   │   └── deno_tunnel v0.8.1
+          │   │       └── deno_net v0.244.0 (*)
+          │   ├── quinn-proto v0.11.19
+          │   │   └── quinn v0.11.12 (*)
+          │   ├── reqwest v0.12.28 (*)
+          │   ├── rustls-tokio-stream v0.8.0
+          │   │   ├── deno_net v0.244.0 (*)
+          │   │   └── deno_tls v0.239.0 (*)
+          │   ├── snowtime-host v0.1.0 (*)
+          │   └── tokio-rustls v0.26.6
+          │       ├── axum-server v0.8.0 (*)
+          │       ├── deno_fetch v0.276.0 (*)
+          │       ├── hyper-rustls v0.27.10 (*)
+          │       ├── reqwest v0.12.28 (*)
+          │       └── (dev) snowtime-host v0.1.0 (*)
+          └── rustls-webpki v0.103.15
+              ├── deno_fetch v0.276.0 (*)
+              ├── deno_tls v0.239.0 (*)
+              └── rustls v0.23.40 (*)
+    ├ getrandom v0.3.4
+      ├── governor v0.10.4
+      │   ├── snowtime-server v0.1.0
+      │   │   └── snowtime-host v0.1.0
+      │   └── tower_governor v0.8.0
+      │       └── snowtime-server v0.1.0 (*)
+      └── rand_core v0.9.5
+          ├── rand v0.9.5
+          │   ├── governor v0.10.4 (*)
+          │   ├── hickory-proto v0.25.2
+          │   │   ├── deno_net v0.244.0
+          │   │   │   └── (build) snowtime-render v0.1.0
+          │   │   │       └── snowtime-host v0.1.0 (*)
+          │   │   └── hickory-resolver v0.25.2
+          │   │       ├── deno_fetch v0.276.0
+          │   │       │   └── (build) snowtime-render v0.1.0 (*)
+          │   │       └── deno_net v0.244.0 (*)
+          │   ├── hickory-resolver v0.25.2 (*)
+          │   └── webauthn-rs-core v0.5.5
+          │       └── snowtime-server v0.1.0 (*)
+          └── rand_chacha v0.9.0
+              ├── rand v0.9.5 (*)
+              └── webauthn-rs-core v0.5.5 (*)
+    ├ getrandom v0.4.3
+      ├── rand v0.10.3
+      │   ├── quinn-proto v0.11.19
+      │   │   └── quinn v0.11.12
+      │   │       ├── deno_net v0.244.0
+      │   │       │   └── (build) snowtime-render v0.1.0
+      │   │       │       └── snowtime-host v0.1.0
+      │   │       └── deno_tunnel v0.8.1
+      │   │           └── deno_net v0.244.0 (*)
+      │   ├── snowtime-host v0.1.0 (*)
+      │   └── snowtime-server v0.1.0
+      │       └── snowtime-host v0.1.0 (*)
+      ├── tempfile v3.27.0
+      │   └── (dev) snowtime-host v0.1.0 (*)
+      └── uuid v1.27.0
+          ├── debugid v0.8.0
+          │   └── sourcemap v9.3.2
+          │       └── deno_core v0.405.0
+          │           ├── deno_features v0.49.0
+          │           │   └── deno_net v0.244.0 (*)
+          │           ├── deno_fetch v0.276.0
+          │           │   └── (build) snowtime-render v0.1.0 (*)
+          │           ├── deno_fs v0.162.0
+          │           │   └── deno_fetch v0.276.0 (*)
+          │           ├── deno_io v0.162.0
+          │           │   ├── deno_fetch v0.276.0 (*)
+          │           │   └── deno_fs v0.162.0 (*)
+          │           ├── deno_net v0.244.0 (*)
+          │           ├── deno_tls v0.239.0
+          │           │   ├── deno_fetch v0.276.0 (*)
+          │           │   └── deno_net v0.244.0 (*)
+          │           ├── deno_web v0.283.0
+          │           │   └── (build) snowtime-render v0.1.0 (*)
+          │           ├── deno_webidl v0.252.0
+          │           │   └── (build) snowtime-render v0.1.0 (*)
+          │           └── (build) snowtime-render v0.1.0 (*)
+          ├── deno_io v0.162.0 (*)
+          ├── deno_web v0.283.0 (*)
+          ├── moka v0.12.16
+          │   └── hickory-resolver v0.25.2
+          │       ├── deno_fetch v0.276.0 (*)
+          │       └── deno_net v0.244.0 (*)
+          ├── snowtime-server v0.1.0 (*)
+          ├── webauthn-attestation-ca v0.5.5
+          │   └── webauthn-rs-core v0.5.5
+          │       └── snowtime-server v0.1.0 (*)
+          └── webauthn-rs-core v0.5.5 (*)
+
+warning[duplicate]: found 3 duplicate entries for crate 'hashbrown'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:172:1
+    │  
+172 │ ╭ hashbrown 0.14.5 registry+https://github.com/rust-lang/crates.io-index
+173 │ │ hashbrown 0.16.1 registry+https://github.com/rust-lang/crates.io-index
+174 │ │ hashbrown 0.17.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰──────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ hashbrown v0.14.5
+      └── dashmap v6.2.1
+          └── governor v0.10.4
+              ├── snowtime-server v0.1.0
+              │   └── snowtime-host v0.1.0
+              └── tower_governor v0.8.0
+                  └── snowtime-server v0.1.0 (*)
+    ├ hashbrown v0.16.1
+      └── governor v0.10.4
+          ├── snowtime-server v0.1.0
+          │   └── snowtime-host v0.1.0
+          └── tower_governor v0.8.0
+              └── snowtime-server v0.1.0 (*)
+    ├ hashbrown v0.17.1
+      ├── hashlink v0.12.2
+      │   └── rusqlite v0.40.2
+      │       ├── snowtime-host v0.1.0
+      │       └── snowtime-server v0.1.0
+      │           └── snowtime-host v0.1.0 (*)
+      └── indexmap v2.14.2
+          ├── deno_core v0.405.0
+          │   ├── deno_features v0.49.0
+          │   │   └── deno_net v0.244.0
+          │   │       └── (build) snowtime-render v0.1.0
+          │   │           └── snowtime-host v0.1.0 (*)
+          │   ├── deno_fetch v0.276.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_fs v0.162.0
+          │   │   └── deno_fetch v0.276.0 (*)
+          │   ├── deno_io v0.162.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_fs v0.162.0 (*)
+          │   ├── deno_net v0.244.0 (*)
+          │   ├── deno_tls v0.239.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_net v0.244.0 (*)
+          │   ├── deno_web v0.283.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_webidl v0.252.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   └── (build) snowtime-render v0.1.0 (*)
+          ├── deno_ops v0.281.0
+          │   └── deno_core v0.405.0 (*)
+          ├── h2 v0.4.19
+          │   ├── deno_fetch v0.276.0 (*)
+          │   └── hyper v1.11.1
+          │       ├── axum v0.8.9
+          │       │   ├── snowtime-host v0.1.0 (*)
+          │       │   ├── snowtime-server v0.1.0 (*)
+          │       │   └── tower_governor v0.8.0
+          │       │       └── snowtime-server v0.1.0 (*)
+          │       ├── axum-server v0.8.0
+          │       │   ├── rustls-acme v0.15.4
+          │       │   │   └── snowtime-host v0.1.0 (*)
+          │       │   └── snowtime-host v0.1.0 (*)
+          │       ├── deno_fetch v0.276.0 (*)
+          │       ├── hyper-rustls v0.27.10
+          │       │   ├── deno_fetch v0.276.0 (*)
+          │       │   └── reqwest v0.12.28
+          │       │       └── snowtime-server v0.1.0 (*)
+          │       ├── hyper-util v0.1.21
+          │       │   ├── axum v0.8.9 (*)
+          │       │   ├── axum-server v0.8.0 (*)
+          │       │   ├── deno_fetch v0.276.0 (*)
+          │       │   ├── hyper-rustls v0.27.10 (*)
+          │       │   └── reqwest v0.12.28 (*)
+          │       └── reqwest v0.12.28 (*)
+          └── serde_json v1.0.151
+              ├── axum v0.8.9 (*)
+              ├── deno_core v0.405.0 (*)
+              ├── deno_error v0.7.1
+              │   ├── deno_core v0.405.0 (*)
+              │   ├── deno_fetch v0.276.0 (*)
+              │   ├── deno_fs v0.162.0 (*)
+              │   ├── deno_io v0.162.0 (*)
+              │   ├── deno_net v0.244.0 (*)
+              │   ├── deno_path_util v0.6.4
+              │   │   ├── deno_core v0.405.0 (*)
+              │   │   ├── deno_fetch v0.276.0 (*)
+              │   │   ├── deno_fs v0.162.0 (*)
+              │   │   └── deno_permissions v0.111.0
+              │   │       ├── deno_fetch v0.276.0 (*)
+              │   │       ├── deno_fs v0.162.0 (*)
+              │   │       ├── deno_io v0.162.0 (*)
+              │   │       └── deno_net v0.244.0 (*)
+              │   ├── deno_permissions v0.111.0 (*)
+              │   ├── deno_tls v0.239.0 (*)
+              │   ├── deno_web v0.283.0 (*)
+              │   ├── serde_v8 v0.314.0
+              │   │   └── deno_core v0.405.0 (*)
+              │   ├── snowtime-render v0.1.0 (*)
+              │   └── wasm_dep_analyzer v0.4.0
+              │       └── deno_core v0.405.0 (*)
+              ├── deno_fetch v0.276.0 (*)
+              ├── deno_permissions v0.111.0 (*)
+              ├── deno_tunnel v0.8.1
+              │   └── deno_net v0.244.0 (*)
+              ├── reqwest v0.12.28 (*)
+              ├── rustls-acme v0.15.4 (*)
+              ├── snowtime-render v0.1.0 (*)
+              ├── snowtime-server v0.1.0 (*)
+              ├── sourcemap v9.3.2
+              │   └── deno_core v0.405.0 (*)
+              ├── tracing-subscriber v0.3.23
+              │   ├── snowtime-host v0.1.0 (*)
+              │   └── tracing-appender v0.2.5
+              │       └── snowtime-host v0.1.0 (*)
+              ├── webauthn-rs-core v0.5.5
+              │   └── snowtime-server v0.1.0 (*)
+              └── webauthn-rs-proto v0.5.5
+                  └── webauthn-rs-core v0.5.5 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'linux-raw-sys'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:224:1
+    │  
+224 │ ╭ linux-raw-sys 0.4.15 registry+https://github.com/rust-lang/crates.io-index
+225 │ │ linux-raw-sys 0.12.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰──────────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ linux-raw-sys v0.4.15
+      └── rustix v0.38.44
+          └── which v6.0.3
+              └── (build) v8 v149.4.0
+                  ├── deno_core v0.405.0
+                  │   ├── deno_features v0.49.0
+                  │   │   └── deno_net v0.244.0
+                  │   │       └── (build) snowtime-render v0.1.0
+                  │   │           └── snowtime-host v0.1.0
+                  │   ├── deno_fetch v0.276.0
+                  │   │   └── (build) snowtime-render v0.1.0 (*)
+                  │   ├── deno_fs v0.162.0
+                  │   │   └── deno_fetch v0.276.0 (*)
+                  │   ├── deno_io v0.162.0
+                  │   │   ├── deno_fetch v0.276.0 (*)
+                  │   │   └── deno_fs v0.162.0 (*)
+                  │   ├── deno_net v0.244.0 (*)
+                  │   ├── deno_tls v0.239.0
+                  │   │   ├── deno_fetch v0.276.0 (*)
+                  │   │   └── deno_net v0.244.0 (*)
+                  │   ├── deno_web v0.283.0
+                  │   │   └── (build) snowtime-render v0.1.0 (*)
+                  │   ├── deno_webidl v0.252.0
+                  │   │   └── (build) snowtime-render v0.1.0 (*)
+                  │   └── (build) snowtime-render v0.1.0 (*)
+                  └── serde_v8 v0.314.0
+                      └── deno_core v0.405.0 (*)
+    ├ linux-raw-sys v0.12.1
+      └── rustix v1.1.5
+          ├── async-io v2.6.0
+          │   ├── async-net v2.0.0
+          │   │   └── async-web-client v0.6.3
+          │   │       └── rustls-acme v0.15.4
+          │   │           └── snowtime-host v0.1.0
+          │   └── rustls-acme v0.15.4 (*)
+          ├── polling v3.11.0
+          │   └── async-io v2.6.0 (*)
+          └── tempfile v3.27.0
+              └── (dev) snowtime-host v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'miniz_oxide'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:236:1
+    │  
+236 │ ╭ miniz_oxide 0.8.9 registry+https://github.com/rust-lang/crates.io-index
+237 │ │ miniz_oxide 0.9.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰───────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ miniz_oxide v0.8.9
+      └── (build) v8 v149.4.0
+          ├── deno_core v0.405.0
+          │   ├── deno_features v0.49.0
+          │   │   └── deno_net v0.244.0
+          │   │       └── (build) snowtime-render v0.1.0
+          │   │           └── snowtime-host v0.1.0
+          │   ├── deno_fetch v0.276.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_fs v0.162.0
+          │   │   └── deno_fetch v0.276.0 (*)
+          │   ├── deno_io v0.162.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_fs v0.162.0 (*)
+          │   ├── deno_net v0.244.0 (*)
+          │   ├── deno_tls v0.239.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_net v0.244.0 (*)
+          │   ├── deno_web v0.283.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_webidl v0.252.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   └── (build) snowtime-render v0.1.0 (*)
+          └── serde_v8 v0.314.0
+              └── deno_core v0.405.0 (*)
+    ├ miniz_oxide v0.9.1
+      └── flate2 v1.1.10
+          ├── compression-codecs v0.4.45
+          │   └── async-compression v0.4.50
+          │       ├── deno_fetch v0.276.0
+          │       │   └── (build) snowtime-render v0.1.0
+          │       │       └── snowtime-host v0.1.0
+          │       └── tower-http v0.7.1
+          │           └── snowtime-host v0.1.0 (*)
+          └── deno_web v0.283.0
+              └── (build) snowtime-render v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'nix'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:240:1
+    │  
+240 │ ╭ nix 0.30.1 registry+https://github.com/rust-lang/crates.io-index
+241 │ │ nix 0.31.3 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ nix v0.30.1
+      ├── deno_fs v0.162.0
+      │   └── deno_fetch v0.276.0
+      │       └── (build) snowtime-render v0.1.0
+      │           └── snowtime-host v0.1.0
+      ├── deno_io v0.162.0
+      │   ├── deno_fetch v0.276.0 (*)
+      │   └── deno_fs v0.162.0 (*)
+      └── deno_permissions v0.111.0
+          ├── deno_fetch v0.276.0 (*)
+          ├── deno_fs v0.162.0 (*)
+          ├── deno_io v0.162.0 (*)
+          └── deno_net v0.244.0
+              └── (build) snowtime-render v0.1.0 (*)
+    ├ nix v0.31.3
+      └── vsock v0.5.4
+          └── tokio-vsock v0.7.2
+              ├── deno_fetch v0.276.0
+              │   └── (build) snowtime-render v0.1.0
+              │       └── snowtime-host v0.1.0
+              └── deno_net v0.244.0
+                  └── (build) snowtime-render v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'oid-registry'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:250:1
+    │  
+250 │ ╭ oid-registry 0.7.1 registry+https://github.com/rust-lang/crates.io-index
+251 │ │ oid-registry 0.8.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰────────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ oid-registry v0.7.1
+      └── x509-parser v0.16.0
+          └── webauthn-rs-core v0.5.5
+              └── snowtime-server v0.1.0
+                  └── snowtime-host v0.1.0
+    ├ oid-registry v0.8.1
+      └── x509-parser v0.18.1
+          └── rustls-acme v0.15.4
+              └── snowtime-host v0.1.0
+
+warning[duplicate]: found 3 duplicate entries for crate 'rand'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:290:1
+    │  
+290 │ ╭ rand 0.8.5 registry+https://github.com/rust-lang/crates.io-index
+291 │ │ rand 0.9.5 registry+https://github.com/rust-lang/crates.io-index
+292 │ │ rand 0.10.3 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰─────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ rand v0.8.5
+      ├── deno_fs v0.162.0
+      │   └── deno_fetch v0.276.0
+      │       └── (build) snowtime-render v0.1.0
+      │           └── snowtime-host v0.1.0
+      └── num-bigint v0.4.8
+          ├── deno_core v0.405.0
+          │   ├── deno_features v0.49.0
+          │   │   └── deno_net v0.244.0
+          │   │       └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_fetch v0.276.0 (*)
+          │   ├── deno_fs v0.162.0 (*)
+          │   ├── deno_io v0.162.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_fs v0.162.0 (*)
+          │   ├── deno_net v0.244.0 (*)
+          │   ├── deno_tls v0.239.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_net v0.244.0 (*)
+          │   ├── deno_web v0.283.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_webidl v0.252.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   └── (build) snowtime-render v0.1.0 (*)
+          ├── der-parser v10.0.0
+          │   └── x509-parser v0.18.1
+          │       └── rustls-acme v0.15.4
+          │           └── snowtime-host v0.1.0 (*)
+          ├── der-parser v9.0.0
+          │   ├── webauthn-rs-core v0.5.5
+          │   │   └── snowtime-server v0.1.0
+          │   │       └── snowtime-host v0.1.0 (*)
+          │   └── x509-parser v0.16.0
+          │       └── webauthn-rs-core v0.5.5 (*)
+          └── serde_v8 v0.314.0
+              └── deno_core v0.405.0 (*)
+    ├ rand v0.9.5
+      ├── governor v0.10.4
+      │   ├── snowtime-server v0.1.0
+      │   │   └── snowtime-host v0.1.0
+      │   └── tower_governor v0.8.0
+      │       └── snowtime-server v0.1.0 (*)
+      ├── hickory-proto v0.25.2
+      │   ├── deno_net v0.244.0
+      │   │   └── (build) snowtime-render v0.1.0
+      │   │       └── snowtime-host v0.1.0 (*)
+      │   └── hickory-resolver v0.25.2
+      │       ├── deno_fetch v0.276.0
+      │       │   └── (build) snowtime-render v0.1.0 (*)
+      │       └── deno_net v0.244.0 (*)
+      ├── hickory-resolver v0.25.2 (*)
+      └── webauthn-rs-core v0.5.5
+          └── snowtime-server v0.1.0 (*)
+    ├ rand v0.10.3
+      ├── quinn-proto v0.11.19
+      │   └── quinn v0.11.12
+      │       ├── deno_net v0.244.0
+      │       │   └── (build) snowtime-render v0.1.0
+      │       │       └── snowtime-host v0.1.0
+      │       └── deno_tunnel v0.8.1
+      │           └── deno_net v0.244.0 (*)
+      ├── snowtime-host v0.1.0 (*)
+      └── snowtime-server v0.1.0
+          └── snowtime-host v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'rand_chacha'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:293:1
+    │  
+293 │ ╭ rand_chacha 0.3.1 registry+https://github.com/rust-lang/crates.io-index
+294 │ │ rand_chacha 0.9.0 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰───────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ rand_chacha v0.3.1
+      └── rand v0.8.5
+          ├── deno_fs v0.162.0
+          │   └── deno_fetch v0.276.0
+          │       └── (build) snowtime-render v0.1.0
+          │           └── snowtime-host v0.1.0
+          └── num-bigint v0.4.8
+              ├── deno_core v0.405.0
+              │   ├── deno_features v0.49.0
+              │   │   └── deno_net v0.244.0
+              │   │       └── (build) snowtime-render v0.1.0 (*)
+              │   ├── deno_fetch v0.276.0 (*)
+              │   ├── deno_fs v0.162.0 (*)
+              │   ├── deno_io v0.162.0
+              │   │   ├── deno_fetch v0.276.0 (*)
+              │   │   └── deno_fs v0.162.0 (*)
+              │   ├── deno_net v0.244.0 (*)
+              │   ├── deno_tls v0.239.0
+              │   │   ├── deno_fetch v0.276.0 (*)
+              │   │   └── deno_net v0.244.0 (*)
+              │   ├── deno_web v0.283.0
+              │   │   └── (build) snowtime-render v0.1.0 (*)
+              │   ├── deno_webidl v0.252.0
+              │   │   └── (build) snowtime-render v0.1.0 (*)
+              │   └── (build) snowtime-render v0.1.0 (*)
+              ├── der-parser v10.0.0
+              │   └── x509-parser v0.18.1
+              │       └── rustls-acme v0.15.4
+              │           └── snowtime-host v0.1.0 (*)
+              ├── der-parser v9.0.0
+              │   ├── webauthn-rs-core v0.5.5
+              │   │   └── snowtime-server v0.1.0
+              │   │       └── snowtime-host v0.1.0 (*)
+              │   └── x509-parser v0.16.0
+              │       └── webauthn-rs-core v0.5.5 (*)
+              └── serde_v8 v0.314.0
+                  └── deno_core v0.405.0 (*)
+    ├ rand_chacha v0.9.0
+      ├── rand v0.9.5
+      │   ├── governor v0.10.4
+      │   │   ├── snowtime-server v0.1.0
+      │   │   │   └── snowtime-host v0.1.0
+      │   │   └── tower_governor v0.8.0
+      │   │       └── snowtime-server v0.1.0 (*)
+      │   ├── hickory-proto v0.25.2
+      │   │   ├── deno_net v0.244.0
+      │   │   │   └── (build) snowtime-render v0.1.0
+      │   │   │       └── snowtime-host v0.1.0 (*)
+      │   │   └── hickory-resolver v0.25.2
+      │   │       ├── deno_fetch v0.276.0
+      │   │       │   └── (build) snowtime-render v0.1.0 (*)
+      │   │       └── deno_net v0.244.0 (*)
+      │   ├── hickory-resolver v0.25.2 (*)
+      │   └── webauthn-rs-core v0.5.5
+      │       └── snowtime-server v0.1.0 (*)
+      └── webauthn-rs-core v0.5.5 (*)
+
+warning[duplicate]: found 3 duplicate entries for crate 'rand_core'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:295:1
+    │  
+295 │ ╭ rand_core 0.6.4 registry+https://github.com/rust-lang/crates.io-index
+296 │ │ rand_core 0.9.5 registry+https://github.com/rust-lang/crates.io-index
+297 │ │ rand_core 0.10.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰──────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ rand_core v0.6.4
+      ├── rand v0.8.5
+      │   ├── deno_fs v0.162.0
+      │   │   └── deno_fetch v0.276.0
+      │   │       └── (build) snowtime-render v0.1.0
+      │   │           └── snowtime-host v0.1.0
+      │   └── num-bigint v0.4.8
+      │       ├── deno_core v0.405.0
+      │       │   ├── deno_features v0.49.0
+      │       │   │   └── deno_net v0.244.0
+      │       │   │       └── (build) snowtime-render v0.1.0 (*)
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   ├── deno_fs v0.162.0 (*)
+      │       │   ├── deno_io v0.162.0
+      │       │   │   ├── deno_fetch v0.276.0 (*)
+      │       │   │   └── deno_fs v0.162.0 (*)
+      │       │   ├── deno_net v0.244.0 (*)
+      │       │   ├── deno_tls v0.239.0
+      │       │   │   ├── deno_fetch v0.276.0 (*)
+      │       │   │   └── deno_net v0.244.0 (*)
+      │       │   ├── deno_web v0.283.0
+      │       │   │   └── (build) snowtime-render v0.1.0 (*)
+      │       │   ├── deno_webidl v0.252.0
+      │       │   │   └── (build) snowtime-render v0.1.0 (*)
+      │       │   └── (build) snowtime-render v0.1.0 (*)
+      │       ├── der-parser v10.0.0
+      │       │   └── x509-parser v0.18.1
+      │       │       └── rustls-acme v0.15.4
+      │       │           └── snowtime-host v0.1.0 (*)
+      │       ├── der-parser v9.0.0
+      │       │   ├── webauthn-rs-core v0.5.5
+      │       │   │   └── snowtime-server v0.1.0
+      │       │   │       └── snowtime-host v0.1.0 (*)
+      │       │   └── x509-parser v0.16.0
+      │       │       └── webauthn-rs-core v0.5.5 (*)
+      │       └── serde_v8 v0.314.0
+      │           └── deno_core v0.405.0 (*)
+      └── rand_chacha v0.3.1
+          └── rand v0.8.5 (*)
+    ├ rand_core v0.9.5
+      ├── rand v0.9.5
+      │   ├── governor v0.10.4
+      │   │   ├── snowtime-server v0.1.0
+      │   │   │   └── snowtime-host v0.1.0
+      │   │   └── tower_governor v0.8.0
+      │   │       └── snowtime-server v0.1.0 (*)
+      │   ├── hickory-proto v0.25.2
+      │   │   ├── deno_net v0.244.0
+      │   │   │   └── (build) snowtime-render v0.1.0
+      │   │   │       └── snowtime-host v0.1.0 (*)
+      │   │   └── hickory-resolver v0.25.2
+      │   │       ├── deno_fetch v0.276.0
+      │   │       │   └── (build) snowtime-render v0.1.0 (*)
+      │   │       └── deno_net v0.244.0 (*)
+      │   ├── hickory-resolver v0.25.2 (*)
+      │   └── webauthn-rs-core v0.5.5
+      │       └── snowtime-server v0.1.0 (*)
+      └── rand_chacha v0.9.0
+          ├── rand v0.9.5 (*)
+          └── webauthn-rs-core v0.5.5 (*)
+    ├ rand_core v0.10.1
+      ├── chacha20 v0.10.2
+      │   └── rand v0.10.3
+      │       ├── quinn-proto v0.11.19
+      │       │   └── quinn v0.11.12
+      │       │       ├── deno_net v0.244.0
+      │       │       │   └── (build) snowtime-render v0.1.0
+      │       │       │       └── snowtime-host v0.1.0
+      │       │       └── deno_tunnel v0.8.1
+      │       │           └── deno_net v0.244.0 (*)
+      │       ├── snowtime-host v0.1.0 (*)
+      │       └── snowtime-server v0.1.0
+      │           └── snowtime-host v0.1.0 (*)
+      ├── getrandom v0.4.3
+      │   ├── rand v0.10.3 (*)
+      │   ├── tempfile v3.27.0
+      │   │   └── (dev) snowtime-host v0.1.0 (*)
+      │   └── uuid v1.27.0
+      │       ├── debugid v0.8.0
+      │       │   └── sourcemap v9.3.2
+      │       │       └── deno_core v0.405.0
+      │       │           ├── deno_features v0.49.0
+      │       │           │   └── deno_net v0.244.0 (*)
+      │       │           ├── deno_fetch v0.276.0
+      │       │           │   └── (build) snowtime-render v0.1.0 (*)
+      │       │           ├── deno_fs v0.162.0
+      │       │           │   └── deno_fetch v0.276.0 (*)
+      │       │           ├── deno_io v0.162.0
+      │       │           │   ├── deno_fetch v0.276.0 (*)
+      │       │           │   └── deno_fs v0.162.0 (*)
+      │       │           ├── deno_net v0.244.0 (*)
+      │       │           ├── deno_tls v0.239.0
+      │       │           │   ├── deno_fetch v0.276.0 (*)
+      │       │           │   └── deno_net v0.244.0 (*)
+      │       │           ├── deno_web v0.283.0
+      │       │           │   └── (build) snowtime-render v0.1.0 (*)
+      │       │           ├── deno_webidl v0.252.0
+      │       │           │   └── (build) snowtime-render v0.1.0 (*)
+      │       │           └── (build) snowtime-render v0.1.0 (*)
+      │       ├── deno_io v0.162.0 (*)
+      │       ├── deno_web v0.283.0 (*)
+      │       ├── moka v0.12.16
+      │       │   └── hickory-resolver v0.25.2
+      │       │       ├── deno_fetch v0.276.0 (*)
+      │       │       └── deno_net v0.244.0 (*)
+      │       ├── snowtime-server v0.1.0 (*)
+      │       ├── webauthn-attestation-ca v0.5.5
+      │       │   └── webauthn-rs-core v0.5.5
+      │       │       └── snowtime-server v0.1.0 (*)
+      │       └── webauthn-rs-core v0.5.5 (*)
+      ├── rand v0.10.3 (*)
+      └── rand_pcg v0.10.2
+          └── quinn-proto v0.11.19 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'rustix'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:314:1
+    │  
+314 │ ╭ rustix 0.38.44 registry+https://github.com/rust-lang/crates.io-index
+315 │ │ rustix 1.1.5 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰──────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ rustix v0.38.44
+      └── which v6.0.3
+          └── (build) v8 v149.4.0
+              ├── deno_core v0.405.0
+              │   ├── deno_features v0.49.0
+              │   │   └── deno_net v0.244.0
+              │   │       └── (build) snowtime-render v0.1.0
+              │   │           └── snowtime-host v0.1.0
+              │   ├── deno_fetch v0.276.0
+              │   │   └── (build) snowtime-render v0.1.0 (*)
+              │   ├── deno_fs v0.162.0
+              │   │   └── deno_fetch v0.276.0 (*)
+              │   ├── deno_io v0.162.0
+              │   │   ├── deno_fetch v0.276.0 (*)
+              │   │   └── deno_fs v0.162.0 (*)
+              │   ├── deno_net v0.244.0 (*)
+              │   ├── deno_tls v0.239.0
+              │   │   ├── deno_fetch v0.276.0 (*)
+              │   │   └── deno_net v0.244.0 (*)
+              │   ├── deno_web v0.283.0
+              │   │   └── (build) snowtime-render v0.1.0 (*)
+              │   ├── deno_webidl v0.252.0
+              │   │   └── (build) snowtime-render v0.1.0 (*)
+              │   └── (build) snowtime-render v0.1.0 (*)
+              └── serde_v8 v0.314.0
+                  └── deno_core v0.405.0 (*)
+    ├ rustix v1.1.5
+      ├── async-io v2.6.0
+      │   ├── async-net v2.0.0
+      │   │   └── async-web-client v0.6.3
+      │   │       └── rustls-acme v0.15.4
+      │   │           └── snowtime-host v0.1.0
+      │   └── rustls-acme v0.15.4 (*)
+      ├── polling v3.11.0
+      │   └── async-io v2.6.0 (*)
+      └── tempfile v3.27.0
+          └── (dev) snowtime-host v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'sha2'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:337:1
+    │  
+337 │ ╭ sha2 0.10.9 registry+https://github.com/rust-lang/crates.io-index
+338 │ │ sha2 0.11.0 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰─────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ sha2 v0.10.9
+      └── deno_net v0.244.0
+          └── (build) snowtime-render v0.1.0
+              └── snowtime-host v0.1.0
+    ├ sha2 v0.11.0
+      └── snowtime-server v0.1.0
+          └── snowtime-host v0.1.0
+
+warning[duplicate]: found 2 duplicate entries for crate 'shlex'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:340:1
+    │  
+340 │ ╭ shlex 1.3.0 registry+https://github.com/rust-lang/crates.io-index
+341 │ │ shlex 2.0.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰─────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ shlex v1.3.0
+      └── bindgen v0.72.1
+          └── (build) v8 v149.4.0
+              ├── deno_core v0.405.0
+              │   ├── deno_features v0.49.0
+              │   │   └── deno_net v0.244.0
+              │   │       └── (build) snowtime-render v0.1.0
+              │   │           └── snowtime-host v0.1.0
+              │   ├── deno_fetch v0.276.0
+              │   │   └── (build) snowtime-render v0.1.0 (*)
+              │   ├── deno_fs v0.162.0
+              │   │   └── deno_fetch v0.276.0 (*)
+              │   ├── deno_io v0.162.0
+              │   │   ├── deno_fetch v0.276.0 (*)
+              │   │   └── deno_fs v0.162.0 (*)
+              │   ├── deno_net v0.244.0 (*)
+              │   ├── deno_tls v0.239.0
+              │   │   ├── deno_fetch v0.276.0 (*)
+              │   │   └── deno_net v0.244.0 (*)
+              │   ├── deno_web v0.283.0
+              │   │   └── (build) snowtime-render v0.1.0 (*)
+              │   ├── deno_webidl v0.252.0
+              │   │   └── (build) snowtime-render v0.1.0 (*)
+              │   └── (build) snowtime-render v0.1.0 (*)
+              └── serde_v8 v0.314.0
+                  └── deno_core v0.405.0 (*)
+    ├ shlex v2.0.1
+      └── cc v1.6.0
+          ├── (build) aws-lc-sys v0.45.0
+          │   ├── aws-lc-rs v1.18.1
+          │   │   ├── quinn-proto v0.11.19
+          │   │   │   └── quinn v0.11.12
+          │   │   │       ├── deno_net v0.244.0
+          │   │   │       │   └── (build) snowtime-render v0.1.0
+          │   │   │       │       └── snowtime-host v0.1.0
+          │   │   │       └── deno_tunnel v0.8.1
+          │   │   │           └── deno_net v0.244.0 (*)
+          │   │   ├── rcgen v0.13.2
+          │   │   │   └── rustls-acme v0.15.4
+          │   │   │       └── snowtime-host v0.1.0 (*)
+          │   │   ├── rustls v0.23.40
+          │   │   │   ├── axum-server v0.8.0
+          │   │   │   │   ├── rustls-acme v0.15.4 (*)
+          │   │   │   │   └── snowtime-host v0.1.0 (*)
+          │   │   │   ├── deno_tls v0.239.0
+          │   │   │   │   ├── deno_fetch v0.276.0
+          │   │   │   │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   │   │   │   └── deno_net v0.244.0 (*)
+          │   │   │   ├── futures-rustls v0.26.0
+          │   │   │   │   ├── async-web-client v0.6.3
+          │   │   │   │   │   └── rustls-acme v0.15.4 (*)
+          │   │   │   │   └── rustls-acme v0.15.4 (*)
+          │   │   │   ├── hyper-rustls v0.27.10
+          │   │   │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   │   │   └── reqwest v0.12.28
+          │   │   │   │       └── snowtime-server v0.1.0
+          │   │   │   │           └── snowtime-host v0.1.0 (*)
+          │   │   │   ├── quinn v0.11.12 (*)
+          │   │   │   ├── quinn-proto v0.11.19 (*)
+          │   │   │   ├── reqwest v0.12.28 (*)
+          │   │   │   ├── rustls-tokio-stream v0.8.0
+          │   │   │   │   ├── deno_net v0.244.0 (*)
+          │   │   │   │   └── deno_tls v0.239.0 (*)
+          │   │   │   ├── snowtime-host v0.1.0 (*)
+          │   │   │   └── tokio-rustls v0.26.6
+          │   │   │       ├── axum-server v0.8.0 (*)
+          │   │   │       ├── deno_fetch v0.276.0 (*)
+          │   │   │       ├── hyper-rustls v0.27.10 (*)
+          │   │   │       ├── reqwest v0.12.28 (*)
+          │   │   │       └── (dev) snowtime-host v0.1.0 (*)
+          │   │   ├── rustls-acme v0.15.4 (*)
+          │   │   └── rustls-webpki v0.103.15
+          │   │       ├── deno_fetch v0.276.0 (*)
+          │   │       ├── deno_tls v0.239.0 (*)
+          │   │       └── rustls v0.23.40 (*)
+          │   └── snowtime-server v0.1.0 (*)
+          ├── cmake v0.1.58
+          │   └── (build) aws-lc-sys v0.45.0 (*)
+          ├── (build) libsqlite3-sys v0.38.2
+          │   └── rusqlite v0.40.2
+          │       ├── snowtime-host v0.1.0 (*)
+          │       └── snowtime-server v0.1.0 (*)
+          ├── openssl-src v300.6.1+3.6.3
+          │   └── (build) openssl-sys v0.9.117
+          │       ├── openssl v0.10.81
+          │       │   ├── snowtime-server v0.1.0 (*)
+          │       │   ├── webauthn-attestation-ca v0.5.5
+          │       │   │   └── webauthn-rs-core v0.5.5
+          │       │   │       └── snowtime-server v0.1.0 (*)
+          │       │   └── webauthn-rs-core v0.5.5 (*)
+          │       ├── webauthn-attestation-ca v0.5.5 (*)
+          │       └── webauthn-rs-core v0.5.5 (*)
+          ├── (build) openssl-sys v0.9.117 (*)
+          ├── (build) ring v0.17.14
+          │   ├── rcgen v0.14.10
+          │   │   └── (dev) snowtime-host v0.1.0 (*)
+          │   ├── rustls v0.23.40 (*)
+          │   └── rustls-webpki v0.103.15 (*)
+          └── (build) zstd-sys v2.1.0+zstd.1.5.7
+              └── zstd-safe v8.0.0
+                  ├── compression-codecs v0.4.45
+                  │   └── async-compression v0.4.50
+                  │       ├── deno_fetch v0.276.0 (*)
+                  │       └── tower-http v0.7.1
+                  │           └── snowtime-host v0.1.0 (*)
+                  └── zstd v0.14.0
+                      └── compression-codecs v0.4.45 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'socket2'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:351:1
+    │  
+351 │ ╭ socket2 0.5.10 registry+https://github.com/rust-lang/crates.io-index
+352 │ │ socket2 0.6.5 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰───────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ socket2 v0.5.10
+      ├── deno_net v0.244.0
+      │   └── (build) snowtime-render v0.1.0
+      │       └── snowtime-host v0.1.0
+      └── rustls-tokio-stream v0.8.0
+          ├── deno_net v0.244.0 (*)
+          └── deno_tls v0.239.0
+              ├── deno_fetch v0.276.0
+              │   └── (build) snowtime-render v0.1.0 (*)
+              └── deno_net v0.244.0 (*)
+    ├ socket2 v0.6.5
+      ├── deno_tunnel v0.8.1
+      │   └── deno_net v0.244.0
+      │       └── (build) snowtime-render v0.1.0
+      │           └── snowtime-host v0.1.0
+      ├── hyper-util v0.1.21
+      │   ├── axum v0.8.9
+      │   │   ├── snowtime-host v0.1.0 (*)
+      │   │   ├── snowtime-server v0.1.0
+      │   │   │   └── snowtime-host v0.1.0 (*)
+      │   │   └── tower_governor v0.8.0
+      │   │       └── snowtime-server v0.1.0 (*)
+      │   ├── axum-server v0.8.0
+      │   │   ├── rustls-acme v0.15.4
+      │   │   │   └── snowtime-host v0.1.0 (*)
+      │   │   └── snowtime-host v0.1.0 (*)
+      │   ├── deno_fetch v0.276.0
+      │   │   └── (build) snowtime-render v0.1.0 (*)
+      │   ├── hyper-rustls v0.27.10
+      │   │   ├── deno_fetch v0.276.0 (*)
+      │   │   └── reqwest v0.12.28
+      │   │       └── snowtime-server v0.1.0 (*)
+      │   └── reqwest v0.12.28 (*)
+      ├── quinn v0.11.12
+      │   ├── deno_net v0.244.0 (*)
+      │   └── deno_tunnel v0.8.1 (*)
+      ├── quinn-udp v0.5.16
+      │   └── quinn v0.11.12 (*)
+      └── tokio v1.53.2
+          ├── async-compression v0.4.50
+          │   ├── deno_fetch v0.276.0 (*)
+          │   └── tower-http v0.7.1
+          │       └── snowtime-host v0.1.0 (*)
+          ├── axum v0.8.9 (*)
+          ├── axum-server v0.8.0 (*)
+          ├── deno_core v0.405.0
+          │   ├── deno_features v0.49.0
+          │   │   └── deno_net v0.244.0 (*)
+          │   ├── deno_fetch v0.276.0 (*)
+          │   ├── deno_fs v0.162.0
+          │   │   └── deno_fetch v0.276.0 (*)
+          │   ├── deno_io v0.162.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_fs v0.162.0 (*)
+          │   ├── deno_net v0.244.0 (*)
+          │   ├── deno_tls v0.239.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_net v0.244.0 (*)
+          │   ├── deno_web v0.283.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_webidl v0.252.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   └── (build) snowtime-render v0.1.0 (*)
+          ├── deno_error v0.7.1
+          │   ├── deno_core v0.405.0 (*)
+          │   ├── deno_fetch v0.276.0 (*)
+          │   ├── deno_fs v0.162.0 (*)
+          │   ├── deno_io v0.162.0 (*)
+          │   ├── deno_net v0.244.0 (*)
+          │   ├── deno_path_util v0.6.4
+          │   │   ├── deno_core v0.405.0 (*)
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   ├── deno_fs v0.162.0 (*)
+          │   │   └── deno_permissions v0.111.0
+          │   │       ├── deno_fetch v0.276.0 (*)
+          │   │       ├── deno_fs v0.162.0 (*)
+          │   │       ├── deno_io v0.162.0 (*)
+          │   │       └── deno_net v0.244.0 (*)
+          │   ├── deno_permissions v0.111.0 (*)
+          │   ├── deno_tls v0.239.0 (*)
+          │   ├── deno_web v0.283.0 (*)
+          │   ├── serde_v8 v0.314.0
+          │   │   └── deno_core v0.405.0 (*)
+          │   ├── snowtime-render v0.1.0 (*)
+          │   └── wasm_dep_analyzer v0.4.0
+          │       └── deno_core v0.405.0 (*)
+          ├── deno_fetch v0.276.0 (*)
+          ├── deno_fs v0.162.0 (*)
+          ├── deno_io v0.162.0 (*)
+          ├── deno_net v0.244.0 (*)
+          ├── deno_signals v0.43.0
+          │   └── deno_net v0.244.0 (*)
+          ├── deno_tls v0.239.0 (*)
+          ├── deno_tunnel v0.8.1 (*)
+          ├── deno_unsync v0.4.4
+          │   ├── deno_core v0.405.0 (*)
+          │   └── deno_permissions v0.111.0 (*)
+          ├── deno_web v0.283.0 (*)
+          ├── derive-io v0.4.1
+          │   └── rustls-tokio-stream v0.8.0
+          │       ├── deno_net v0.244.0 (*)
+          │       └── deno_tls v0.239.0 (*)
+          ├── fs-err v3.3.2
+          │   └── axum-server v0.8.0 (*)
+          ├── h2 v0.4.19
+          │   ├── deno_fetch v0.276.0 (*)
+          │   └── hyper v1.11.1
+          │       ├── axum v0.8.9 (*)
+          │       ├── axum-server v0.8.0 (*)
+          │       ├── deno_fetch v0.276.0 (*)
+          │       ├── hyper-rustls v0.27.10 (*)
+          │       ├── hyper-util v0.1.21 (*)
+          │       └── reqwest v0.12.28 (*)
+          ├── hickory-proto v0.25.2
+          │   ├── deno_net v0.244.0 (*)
+          │   └── hickory-resolver v0.25.2
+          │       ├── deno_fetch v0.276.0 (*)
+          │       └── deno_net v0.244.0 (*)
+          ├── hickory-resolver v0.25.2 (*)
+          ├── hyper v1.11.1 (*)
+          ├── hyper-rustls v0.27.10 (*)
+          ├── hyper-util v0.1.21 (*)
+          ├── quinn v0.11.12 (*)
+          ├── reqwest v0.12.28 (*)
+          ├── rustls-acme v0.15.4 (*)
+          ├── rustls-tokio-stream v0.8.0 (*)
+          ├── (dev) snowtime-host v0.1.0 (*)
+          ├── (build) snowtime-render v0.1.0 (*)
+          ├── snowtime-server v0.1.0 (*)
+          ├── tokio-rustls v0.26.6
+          │   ├── axum-server v0.8.0 (*)
+          │   ├── deno_fetch v0.276.0 (*)
+          │   ├── hyper-rustls v0.27.10 (*)
+          │   ├── reqwest v0.12.28 (*)
+          │   └── (dev) snowtime-host v0.1.0 (*)
+          ├── tokio-socks v0.5.3
+          │   └── deno_fetch v0.276.0 (*)
+          ├── tokio-stream v0.1.19
+          │   └── snowtime-host v0.1.0 (*)
+          ├── tokio-util v0.7.19
+          │   ├── deno_fetch v0.276.0 (*)
+          │   ├── h2 v0.4.19 (*)
+          │   ├── rustls-acme v0.15.4 (*)
+          │   └── tower-http v0.7.1 (*)
+          ├── tokio-vsock v0.7.2
+          │   ├── deno_fetch v0.276.0 (*)
+          │   └── deno_net v0.244.0 (*)
+          ├── tower v0.5.3
+          │   ├── axum v0.8.9 (*)
+          │   ├── deno_fetch v0.276.0 (*)
+          │   ├── reqwest v0.12.28 (*)
+          │   ├── (dev) snowtime-host v0.1.0 (*)
+          │   ├── snowtime-server v0.1.0 (*)
+          │   ├── tower-http v0.6.11
+          │   │   └── reqwest v0.12.28 (*)
+          │   └── tower_governor v0.8.0 (*)
+          └── tower-http v0.7.1 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'syn'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:363:1
+    │  
+363 │ ╭ syn 2.0.119 registry+https://github.com/rust-lang/crates.io-index
+364 │ │ syn 3.0.6 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰───────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ syn v2.0.119
+      ├── asn1-rs-derive v0.5.1
+      │   └── asn1-rs v0.6.2
+      │       ├── der-parser v9.0.0
+      │       │   ├── webauthn-rs-core v0.5.5
+      │       │   │   └── snowtime-server v0.1.0
+      │       │   │       └── snowtime-host v0.1.0
+      │       │   └── x509-parser v0.16.0
+      │       │       └── webauthn-rs-core v0.5.5 (*)
+      │       ├── oid-registry v0.7.1
+      │       │   └── x509-parser v0.16.0 (*)
+      │       └── x509-parser v0.16.0 (*)
+      ├── asn1-rs-derive v0.6.0
+      │   └── asn1-rs v0.7.2
+      │       ├── der-parser v10.0.0
+      │       │   └── x509-parser v0.18.1
+      │       │       └── rustls-acme v0.15.4
+      │       │           └── snowtime-host v0.1.0 (*)
+      │       ├── oid-registry v0.8.1
+      │       │   └── x509-parser v0.18.1 (*)
+      │       └── x509-parser v0.18.1 (*)
+      ├── asn1-rs-impl v0.2.0
+      │   ├── asn1-rs v0.6.2 (*)
+      │   └── asn1-rs v0.7.2 (*)
+      ├── bindgen v0.72.1
+      │   └── (build) v8 v149.4.0
+      │       ├── deno_core v0.405.0
+      │       │   ├── deno_features v0.49.0
+      │       │   │   └── deno_net v0.244.0
+      │       │   │       └── (build) snowtime-render v0.1.0
+      │       │   │           └── snowtime-host v0.1.0 (*)
+      │       │   ├── deno_fetch v0.276.0
+      │       │   │   └── (build) snowtime-render v0.1.0 (*)
+      │       │   ├── deno_fs v0.162.0
+      │       │   │   └── deno_fetch v0.276.0 (*)
+      │       │   ├── deno_io v0.162.0
+      │       │   │   ├── deno_fetch v0.276.0 (*)
+      │       │   │   └── deno_fs v0.162.0 (*)
+      │       │   ├── deno_net v0.244.0 (*)
+      │       │   ├── deno_tls v0.239.0
+      │       │   │   ├── deno_fetch v0.276.0 (*)
+      │       │   │   └── deno_net v0.244.0 (*)
+      │       │   ├── deno_web v0.283.0
+      │       │   │   └── (build) snowtime-render v0.1.0 (*)
+      │       │   ├── deno_webidl v0.252.0
+      │       │   │   └── (build) snowtime-render v0.1.0 (*)
+      │       │   └── (build) snowtime-render v0.1.0 (*)
+      │       └── serde_v8 v0.314.0
+      │           └── deno_core v0.405.0 (*)
+      ├── boxed_error v0.2.3
+      │   ├── deno_core v0.405.0 (*)
+      │   └── deno_fs v0.162.0 (*)
+      ├── capacity_builder_macros v0.3.0
+      │   └── capacity_builder v0.5.0
+      │       ├── deno_core v0.405.0 (*)
+      │       └── deno_permissions v0.111.0
+      │           ├── deno_fetch v0.276.0 (*)
+      │           ├── deno_fs v0.162.0 (*)
+      │           ├── deno_io v0.162.0 (*)
+      │           └── deno_net v0.244.0 (*)
+      ├── cssparser-macros v0.6.1
+      │   └── cssparser v0.36.0
+      │       └── deno_web v0.283.0 (*)
+      ├── deno_error_macro v0.7.1
+      │   └── deno_error v0.7.1
+      │       ├── deno_core v0.405.0 (*)
+      │       ├── deno_fetch v0.276.0 (*)
+      │       ├── deno_fs v0.162.0 (*)
+      │       ├── deno_io v0.162.0 (*)
+      │       ├── deno_net v0.244.0 (*)
+      │       ├── deno_path_util v0.6.4
+      │       │   ├── deno_core v0.405.0 (*)
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   ├── deno_fs v0.162.0 (*)
+      │       │   └── deno_permissions v0.111.0 (*)
+      │       ├── deno_permissions v0.111.0 (*)
+      │       ├── deno_tls v0.239.0 (*)
+      │       ├── deno_web v0.283.0 (*)
+      │       ├── serde_v8 v0.314.0 (*)
+      │       ├── snowtime-render v0.1.0 (*)
+      │       └── wasm_dep_analyzer v0.4.0
+      │           └── deno_core v0.405.0 (*)
+      ├── deno_ops v0.281.0
+      │   └── deno_core v0.405.0 (*)
+      ├── dlopen2_derive v0.4.3
+      │   ├── deno_native_certs v0.3.1
+      │   │   └── deno_tls v0.239.0 (*)
+      │   └── dlopen2 v0.7.0
+      │       └── deno_native_certs v0.3.1 (*)
+      ├── enum-as-inner v0.6.1
+      │   └── hickory-proto v0.25.2
+      │       ├── deno_net v0.244.0 (*)
+      │       └── hickory-resolver v0.25.2
+      │           ├── deno_fetch v0.276.0 (*)
+      │           └── deno_net v0.244.0 (*)
+      ├── openssl-macros v0.1.1
+      │   └── openssl v0.10.81
+      │       ├── snowtime-server v0.1.0 (*)
+      │       ├── webauthn-attestation-ca v0.5.5
+      │       │   └── webauthn-rs-core v0.5.5 (*)
+      │       └── webauthn-rs-core v0.5.5 (*)
+      ├── phf_macros v0.13.1
+      │   └── phf v0.13.1
+      │       └── cssparser v0.36.0 (*)
+      ├── pin-project-internal v1.1.13
+      │   └── pin-project v1.1.13
+      │       ├── deno_core v0.405.0 (*)
+      │       ├── deno_io v0.162.0 (*)
+      │       ├── deno_net v0.244.0 (*)
+      │       ├── deno_tunnel v0.8.1
+      │       │   └── deno_net v0.244.0 (*)
+      │       └── tower_governor v0.8.0
+      │           └── snowtime-server v0.1.0 (*)
+      ├── prettyplease v0.2.37
+      │   └── bindgen v0.72.1 (*)
+      ├── strum_macros v0.27.2
+      │   ├── deno_ops v0.281.0 (*)
+      │   └── strum v0.27.2
+      │       └── deno_ops v0.281.0 (*)
+      ├── syn-match v0.3.1
+      │   └── deno_ops v0.281.0 (*)
+      ├── synstructure v0.13.2
+      │   ├── asn1-rs-derive v0.5.1 (*)
+      │   └── asn1-rs-derive v0.6.0 (*)
+      ├── sys_traits_macros v0.1.0
+      │   └── sys_traits v0.1.29
+      │       ├── deno_core v0.405.0 (*)
+      │       ├── deno_path_util v0.6.4 (*)
+      │       └── deno_permissions v0.111.0 (*)
+      ├── thiserror-impl v1.0.69
+      │   └── thiserror v1.0.69
+      │       ├── asn1-rs v0.6.2 (*)
+      │       ├── async-web-client v0.6.3
+      │       │   └── rustls-acme v0.15.4 (*)
+      │       ├── forwarded-header-value v0.1.1
+      │       │   └── tower_governor v0.8.0 (*)
+      │       ├── tokio-socks v0.5.3
+      │       │   └── deno_fetch v0.276.0 (*)
+      │       ├── webauthn-rs-core v0.5.5 (*)
+      │       └── x509-parser v0.16.0 (*)
+      ├── tracing-attributes v0.1.31
+      │   └── tracing v0.1.44
+      │       ├── axum v0.8.9
+      │       │   ├── snowtime-host v0.1.0 (*)
+      │       │   ├── snowtime-server v0.1.0 (*)
+      │       │   └── tower_governor v0.8.0 (*)
+      │       ├── axum-core v0.5.6
+      │       │   └── axum v0.8.9 (*)
+      │       ├── deno_tunnel v0.8.1 (*)
+      │       ├── h2 v0.4.19
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   └── hyper v1.11.1
+      │       │       ├── axum v0.8.9 (*)
+      │       │       ├── axum-server v0.8.0
+      │       │       │   ├── rustls-acme v0.15.4 (*)
+      │       │       │   └── snowtime-host v0.1.0 (*)
+      │       │       ├── deno_fetch v0.276.0 (*)
+      │       │       ├── hyper-rustls v0.27.10
+      │       │       │   ├── deno_fetch v0.276.0 (*)
+      │       │       │   └── reqwest v0.12.28
+      │       │       │       └── snowtime-server v0.1.0 (*)
+      │       │       ├── hyper-util v0.1.21
+      │       │       │   ├── axum v0.8.9 (*)
+      │       │       │   ├── axum-server v0.8.0 (*)
+      │       │       │   ├── deno_fetch v0.276.0 (*)
+      │       │       │   ├── hyper-rustls v0.27.10 (*)
+      │       │       │   └── reqwest v0.12.28 (*)
+      │       │       └── reqwest v0.12.28 (*)
+      │       ├── hickory-proto v0.25.2 (*)
+      │       ├── hickory-resolver v0.25.2 (*)
+      │       ├── hyper-util v0.1.21 (*)
+      │       ├── quinn v0.11.12
+      │       │   ├── deno_net v0.244.0 (*)
+      │       │   └── deno_tunnel v0.8.1 (*)
+      │       ├── quinn-proto v0.11.19
+      │       │   └── quinn v0.11.12 (*)
+      │       ├── quinn-udp v0.5.16
+      │       │   └── quinn v0.11.12 (*)
+      │       ├── snowtime-host v0.1.0 (*)
+      │       ├── tower v0.5.3
+      │       │   ├── axum v0.8.9 (*)
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   ├── reqwest v0.12.28 (*)
+      │       │   ├── (dev) snowtime-host v0.1.0 (*)
+      │       │   ├── snowtime-server v0.1.0 (*)
+      │       │   ├── tower-http v0.6.11
+      │       │   │   └── reqwest v0.12.28 (*)
+      │       │   └── tower_governor v0.8.0 (*)
+      │       ├── tower_governor v0.8.0 (*)
+      │       ├── webauthn-attestation-ca v0.5.5 (*)
+      │       └── webauthn-rs-core v0.5.5 (*)
+      └── zerocopy-derive v0.8.59
+          └── zerocopy v0.8.59
+              ├── half v2.7.1
+              │   └── serde_cbor_2 v0.13.0
+              │       ├── snowtime-server v0.1.0 (*)
+              │       └── webauthn-rs-core v0.5.5 (*)
+              └── ppv-lite86 v0.2.21
+                  ├── rand_chacha v0.3.1
+                  │   └── rand v0.8.5
+                  │       ├── deno_fs v0.162.0 (*)
+                  │       └── num-bigint v0.4.8
+                  │           ├── deno_core v0.405.0 (*)
+                  │           ├── der-parser v10.0.0 (*)
+                  │           ├── der-parser v9.0.0 (*)
+                  │           └── serde_v8 v0.314.0 (*)
+                  └── rand_chacha v0.9.0
+                      ├── rand v0.9.5
+                      │   ├── governor v0.10.4
+                      │   │   ├── snowtime-server v0.1.0 (*)
+                      │   │   └── tower_governor v0.8.0 (*)
+                      │   ├── hickory-proto v0.25.2 (*)
+                      │   ├── hickory-resolver v0.25.2 (*)
+                      │   └── webauthn-rs-core v0.5.5 (*)
+                      └── webauthn-rs-core v0.5.5 (*)
+    ├ syn v3.0.6
+      ├── async-trait v0.1.92
+      │   ├── deno_fs v0.162.0
+      │   │   └── deno_fetch v0.276.0
+      │   │       └── (build) snowtime-render v0.1.0
+      │   │           └── snowtime-host v0.1.0
+      │   ├── deno_io v0.162.0
+      │   │   ├── deno_fetch v0.276.0 (*)
+      │   │   └── deno_fs v0.162.0 (*)
+      │   ├── deno_web v0.283.0
+      │   │   └── (build) snowtime-render v0.1.0 (*)
+      │   ├── hickory-proto v0.25.2
+      │   │   ├── deno_net v0.244.0
+      │   │   │   └── (build) snowtime-render v0.1.0 (*)
+      │   │   └── hickory-resolver v0.25.2
+      │   │       ├── deno_fetch v0.276.0 (*)
+      │   │       └── deno_net v0.244.0 (*)
+      │   └── rustls-acme v0.15.4
+      │       └── snowtime-host v0.1.0 (*)
+      ├── diplomat v0.16.1
+      │   └── temporal_capi v0.2.6
+      │       └── v8 v149.4.0
+      │           ├── deno_core v0.405.0
+      │           │   ├── deno_features v0.49.0
+      │           │   │   └── deno_net v0.244.0 (*)
+      │           │   ├── deno_fetch v0.276.0 (*)
+      │           │   ├── deno_fs v0.162.0 (*)
+      │           │   ├── deno_io v0.162.0 (*)
+      │           │   ├── deno_net v0.244.0 (*)
+      │           │   ├── deno_tls v0.239.0
+      │           │   │   ├── deno_fetch v0.276.0 (*)
+      │           │   │   └── deno_net v0.244.0 (*)
+      │           │   ├── deno_web v0.283.0 (*)
+      │           │   ├── deno_webidl v0.252.0
+      │           │   │   └── (build) snowtime-render v0.1.0 (*)
+      │           │   └── (build) snowtime-render v0.1.0 (*)
+      │           └── serde_v8 v0.314.0
+      │               └── deno_core v0.405.0 (*)
+      ├── diplomat_core v0.16.1
+      │   └── diplomat v0.16.1 (*)
+      ├── displaydoc v0.2.7
+      │   ├── asn1-rs v0.6.2
+      │   │   ├── der-parser v9.0.0
+      │   │   │   ├── webauthn-rs-core v0.5.5
+      │   │   │   │   └── snowtime-server v0.1.0
+      │   │   │   │       └── snowtime-host v0.1.0 (*)
+      │   │   │   └── x509-parser v0.16.0
+      │   │   │       └── webauthn-rs-core v0.5.5 (*)
+      │   │   ├── oid-registry v0.7.1
+      │   │   │   └── x509-parser v0.16.0 (*)
+      │   │   └── x509-parser v0.16.0 (*)
+      │   ├── asn1-rs v0.7.2
+      │   │   ├── der-parser v10.0.0
+      │   │   │   └── x509-parser v0.18.1
+      │   │   │       └── rustls-acme v0.15.4 (*)
+      │   │   ├── oid-registry v0.8.1
+      │   │   │   └── x509-parser v0.18.1 (*)
+      │   │   └── x509-parser v0.18.1 (*)
+      │   ├── calendrical_calculations v0.2.4
+      │   │   ├── icu_calendar v2.3.0
+      │   │   │   ├── temporal_capi v0.2.6 (*)
+      │   │   │   └── temporal_rs v0.2.6
+      │   │   │       └── temporal_capi v0.2.6 (*)
+      │   │   ├── temporal_rs v0.2.6 (*)
+      │   │   └── zoneinfo64 v0.3.0
+      │   │       ├── temporal_capi v0.2.6 (*)
+      │   │       └── timezone_provider v0.2.6
+      │   │           ├── temporal_capi v0.2.6 (*)
+      │   │           └── temporal_rs v0.2.6 (*)
+      │   ├── der-parser v10.0.0 (*)
+      │   ├── der-parser v9.0.0 (*)
+      │   ├── icu_calendar v2.3.0 (*)
+      │   ├── icu_collections v2.3.0
+      │   │   ├── icu_collator v2.3.1
+      │   │   │   └── snowtime-server v0.1.0 (*)
+      │   │   ├── icu_normalizer v2.3.0
+      │   │   │   ├── icu_collator v2.3.1 (*)
+      │   │   │   └── idna_adapter v1.2.2
+      │   │   │       └── idna v1.1.0
+      │   │   │           ├── hickory-proto v0.25.2 (*)
+      │   │   │           └── url v2.5.8
+      │   │   │               ├── deno_core v0.405.0 (*)
+      │   │   │               ├── deno_error v0.7.1
+      │   │   │               │   ├── deno_core v0.405.0 (*)
+      │   │   │               │   ├── deno_fetch v0.276.0 (*)
+      │   │   │               │   ├── deno_fs v0.162.0 (*)
+      │   │   │               │   ├── deno_io v0.162.0 (*)
+      │   │   │               │   ├── deno_net v0.244.0 (*)
+      │   │   │               │   ├── deno_path_util v0.6.4
+      │   │   │               │   │   ├── deno_core v0.405.0 (*)
+      │   │   │               │   │   ├── deno_fetch v0.276.0 (*)
+      │   │   │               │   │   ├── deno_fs v0.162.0 (*)
+      │   │   │               │   │   └── deno_permissions v0.111.0
+      │   │   │               │   │       ├── deno_fetch v0.276.0 (*)
+      │   │   │               │   │       ├── deno_fs v0.162.0 (*)
+      │   │   │               │   │       ├── deno_io v0.162.0 (*)
+      │   │   │               │   │       └── deno_net v0.244.0 (*)
+      │   │   │               │   ├── deno_permissions v0.111.0 (*)
+      │   │   │               │   ├── deno_tls v0.239.0 (*)
+      │   │   │               │   ├── deno_web v0.283.0 (*)
+      │   │   │               │   ├── serde_v8 v0.314.0 (*)
+      │   │   │               │   ├── snowtime-render v0.1.0 (*)
+      │   │   │               │   └── wasm_dep_analyzer v0.4.0
+      │   │   │               │       └── deno_core v0.405.0 (*)
+      │   │   │               ├── deno_net v0.244.0 (*)
+      │   │   │               ├── deno_path_util v0.6.4 (*)
+      │   │   │               ├── deno_permissions v0.111.0 (*)
+      │   │   │               ├── hickory-proto v0.25.2 (*)
+      │   │   │               ├── reqwest v0.12.28
+      │   │   │               │   └── snowtime-server v0.1.0 (*)
+      │   │   │               ├── snowtime-host v0.1.0 (*)
+      │   │   │               ├── snowtime-server v0.1.0 (*)
+      │   │   │               ├── sourcemap v9.3.2
+      │   │   │               │   └── deno_core v0.405.0 (*)
+      │   │   │               ├── tower-http v0.6.11
+      │   │   │               │   └── reqwest v0.12.28 (*)
+      │   │   │               ├── urlpattern v0.4.2
+      │   │   │               │   └── deno_web v0.283.0 (*)
+      │   │   │               ├── web-transport-proto v0.2.8
+      │   │   │               │   └── deno_net v0.244.0 (*)
+      │   │   │               ├── webauthn-rs-core v0.5.5 (*)
+      │   │   │               └── webauthn-rs-proto v0.5.5
+      │   │   │                   └── webauthn-rs-core v0.5.5 (*)
+      │   │   └── icu_properties v2.3.0
+      │   │       ├── icu_collator v2.3.1 (*)
+      │   │       ├── idna_adapter v1.2.2 (*)
+      │   │       └── urlpattern v0.4.2 (*)
+      │   ├── icu_locale_core v2.3.0
+      │   │   ├── icu_calendar v2.3.0 (*)
+      │   │   ├── icu_collator v2.3.1 (*)
+      │   │   ├── icu_locale_fallback v2.3.0
+      │   │   │   ├── icu_calendar v2.3.0 (*)
+      │   │   │   └── icu_collator v2.3.1 (*)
+      │   │   ├── icu_properties v2.3.0 (*)
+      │   │   ├── icu_provider v2.3.1
+      │   │   │   ├── icu_calendar v2.3.0 (*)
+      │   │   │   ├── icu_collator v2.3.1 (*)
+      │   │   │   ├── icu_locale_fallback v2.3.0 (*)
+      │   │   │   ├── icu_normalizer v2.3.0 (*)
+      │   │   │   └── icu_properties v2.3.0 (*)
+      │   │   ├── snowtime-server v0.1.0 (*)
+      │   │   ├── temporal_capi v0.2.6 (*)
+      │   │   ├── temporal_rs v0.2.6 (*)
+      │   │   └── zoneinfo64 v0.3.0 (*)
+      │   ├── icu_properties v2.3.0 (*)
+      │   ├── icu_provider v2.3.1 (*)
+      │   ├── tinystr v0.8.4
+      │   │   ├── icu_calendar v2.3.0 (*)
+      │   │   ├── icu_locale_core v2.3.0 (*)
+      │   │   ├── icu_locale_fallback v2.3.0 (*)
+      │   │   ├── temporal_rs v0.2.6 (*)
+      │   │   └── timezone_provider v0.2.6 (*)
+      │   └── zerotrie v0.2.5
+      │       ├── icu_properties v2.3.0 (*)
+      │       ├── icu_provider v2.3.1 (*)
+      │       └── timezone_provider v0.2.6 (*)
+      ├── futures-macro v0.3.34
+      │   └── futures-util v0.3.34
+      │       ├── axum v0.8.9
+      │       │   ├── snowtime-host v0.1.0 (*)
+      │       │   ├── snowtime-server v0.1.0 (*)
+      │       │   └── tower_governor v0.8.0
+      │       │       └── snowtime-server v0.1.0 (*)
+      │       ├── deno_unsync v0.4.4
+      │       │   ├── deno_core v0.405.0 (*)
+      │       │   └── deno_permissions v0.111.0 (*)
+      │       ├── futures v0.3.34
+      │       │   ├── async-http-codec v0.8.0
+      │       │   │   └── async-web-client v0.6.3
+      │       │   │       └── rustls-acme v0.15.4 (*)
+      │       │   ├── async-web-client v0.6.3 (*)
+      │       │   ├── deno_core v0.405.0 (*)
+      │       │   ├── deno_web v0.283.0 (*)
+      │       │   ├── rustls-acme v0.15.4 (*)
+      │       │   ├── rustls-tokio-stream v0.8.0
+      │       │   │   ├── deno_net v0.244.0 (*)
+      │       │   │   └── deno_tls v0.239.0 (*)
+      │       │   └── tokio-vsock v0.7.2
+      │       │       ├── deno_fetch v0.276.0 (*)
+      │       │       └── deno_net v0.244.0 (*)
+      │       ├── futures-executor v0.3.34
+      │       │   └── futures v0.3.34 (*)
+      │       ├── governor v0.10.4
+      │       │   ├── snowtime-server v0.1.0 (*)
+      │       │   └── tower_governor v0.8.0 (*)
+      │       ├── hickory-proto v0.25.2 (*)
+      │       ├── hickory-resolver v0.25.2 (*)
+      │       ├── hyper-util v0.1.21
+      │       │   ├── axum v0.8.9 (*)
+      │       │   ├── axum-server v0.8.0
+      │       │   │   ├── rustls-acme v0.15.4 (*)
+      │       │   │   └── snowtime-host v0.1.0 (*)
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   ├── hyper-rustls v0.27.10
+      │       │   │   ├── deno_fetch v0.276.0 (*)
+      │       │   │   └── reqwest v0.12.28 (*)
+      │       │   └── reqwest v0.12.28 (*)
+      │       ├── tokio-socks v0.5.3
+      │       │   └── deno_fetch v0.276.0 (*)
+      │       ├── tower v0.5.3
+      │       │   ├── axum v0.8.9 (*)
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   ├── reqwest v0.12.28 (*)
+      │       │   ├── (dev) snowtime-host v0.1.0 (*)
+      │       │   ├── snowtime-server v0.1.0 (*)
+      │       │   ├── tower-http v0.6.11 (*)
+      │       │   └── tower_governor v0.8.0 (*)
+      │       ├── tower-http v0.6.11 (*)
+      │       └── tower-http v0.7.1
+      │           └── snowtime-host v0.1.0 (*)
+      ├── serde_derive v1.0.229
+      │   ├── serde v1.0.229
+      │   │   ├── async-web-client v0.6.3 (*)
+      │   │   ├── base64urlsafedata v0.5.5
+      │   │   │   ├── webauthn-attestation-ca v0.5.5
+      │   │   │   │   └── webauthn-rs-core v0.5.5 (*)
+      │   │   │   ├── webauthn-rs-core v0.5.5 (*)
+      │   │   │   └── webauthn-rs-proto v0.5.5 (*)
+      │   │   ├── bincode v1.3.3
+      │   │   │   └── deno_core v0.405.0 (*)
+      │   │   ├── chrono v0.4.45
+      │   │   │   ├── deno_permissions v0.111.0 (*)
+      │   │   │   └── rustls-acme v0.15.4 (*)
+      │   │   ├── debugid v0.8.0
+      │   │   │   └── sourcemap v9.3.2 (*)
+      │   │   ├── deno_core v0.405.0 (*)
+      │   │   ├── deno_error v0.7.1 (*)
+      │   │   ├── deno_fs v0.162.0 (*)
+      │   │   ├── deno_net v0.244.0 (*)
+      │   │   ├── deno_permissions v0.111.0 (*)
+      │   │   ├── deno_tls v0.239.0 (*)
+      │   │   ├── deno_tunnel v0.8.1
+      │   │   │   └── deno_net v0.244.0 (*)
+      │   │   ├── deno_web v0.283.0 (*)
+      │   │   ├── diplomat_core v0.16.1 (*)
+      │   │   ├── hickory-proto v0.25.2 (*)
+      │   │   ├── hickory-resolver v0.25.2 (*)
+      │   │   ├── reqwest v0.12.28 (*)
+      │   │   ├── rustls-acme v0.15.4 (*)
+      │   │   ├── serde_cbor_2 v0.13.0
+      │   │   │   ├── snowtime-server v0.1.0 (*)
+      │   │   │   └── webauthn-rs-core v0.5.5 (*)
+      │   │   ├── serde_urlencoded v0.7.1
+      │   │   │   ├── axum v0.8.9 (*)
+      │   │   │   └── reqwest v0.12.28 (*)
+      │   │   ├── serde_v8 v0.314.0 (*)
+      │   │   ├── snowtime-host v0.1.0 (*)
+      │   │   ├── snowtime-render v0.1.0 (*)
+      │   │   ├── snowtime-server v0.1.0 (*)
+      │   │   ├── sourcemap v9.3.2 (*)
+      │   │   ├── tracing-serde v0.2.0
+      │   │   │   └── tracing-subscriber v0.3.23
+      │   │   │       ├── snowtime-host v0.1.0 (*)
+      │   │   │       └── tracing-appender v0.2.5
+      │   │   │           └── snowtime-host v0.1.0 (*)
+      │   │   ├── tracing-subscriber v0.3.23 (*)
+      │   │   ├── url v2.5.8 (*)
+      │   │   ├── urlpattern v0.4.2 (*)
+      │   │   ├── webauthn-attestation-ca v0.5.5 (*)
+      │   │   ├── webauthn-rs-core v0.5.5 (*)
+      │   │   ├── webauthn-rs-proto v0.5.5 (*)
+      │   │   └── zoneinfo64 v0.3.0 (*)
+      │   └── url v2.5.8 (*)
+      ├── synstructure v0.14.0
+      │   ├── yoke-derive v0.8.4
+      │   │   └── yoke v0.8.3
+      │   │       ├── icu_collections v2.3.0 (*)
+      │   │       ├── icu_provider v2.3.1 (*)
+      │   │       ├── zerotrie v0.2.5 (*)
+      │   │       └── zerovec v0.11.8
+      │   │           ├── icu_calendar v2.3.0 (*)
+      │   │           ├── icu_collator v2.3.1 (*)
+      │   │           ├── icu_collections v2.3.0 (*)
+      │   │           ├── icu_locale_core v2.3.0 (*)
+      │   │           ├── icu_locale_fallback v2.3.0 (*)
+      │   │           ├── icu_normalizer v2.3.0 (*)
+      │   │           ├── icu_properties v2.3.0 (*)
+      │   │           ├── icu_provider v2.3.1 (*)
+      │   │           ├── potential_utf v0.1.6
+      │   │           │   ├── icu_collections v2.3.0 (*)
+      │   │           │   ├── icu_locale_fallback v2.3.0 (*)
+      │   │           │   ├── resb v0.1.2
+      │   │           │   │   └── zoneinfo64 v0.3.0 (*)
+      │   │           │   └── zoneinfo64 v0.3.0 (*)
+      │   │           ├── timezone_provider v0.2.6 (*)
+      │   │           └── tinystr v0.8.4 (*)
+      │   └── zerofrom-derive v0.1.8
+      │       └── zerofrom v0.1.8
+      │           ├── icu_collections v2.3.0 (*)
+      │           ├── icu_provider v2.3.1 (*)
+      │           ├── yoke v0.8.3 (*)
+      │           ├── zerotrie v0.2.5 (*)
+      │           └── zerovec v0.11.8 (*)
+      ├── thiserror-impl v2.0.21
+      │   └── thiserror v2.0.21
+      │       ├── asn1-rs v0.7.2 (*)
+      │       ├── deno_core v0.405.0 (*)
+      │       ├── deno_fetch v0.276.0 (*)
+      │       ├── deno_fs v0.162.0 (*)
+      │       ├── deno_net v0.244.0 (*)
+      │       ├── deno_ops v0.281.0
+      │       │   └── deno_core v0.405.0 (*)
+      │       ├── deno_path_util v0.6.4 (*)
+      │       ├── deno_permissions v0.111.0 (*)
+      │       ├── deno_signals v0.43.0
+      │       │   └── deno_net v0.244.0 (*)
+      │       ├── deno_tls v0.239.0 (*)
+      │       ├── deno_tunnel v0.8.1 (*)
+      │       ├── deno_web v0.283.0 (*)
+      │       ├── hickory-proto v0.25.2 (*)
+      │       ├── hickory-resolver v0.25.2 (*)
+      │       ├── quinn v0.11.12
+      │       │   ├── deno_net v0.244.0 (*)
+      │       │   └── deno_tunnel v0.8.1 (*)
+      │       ├── quinn-proto v0.11.19
+      │       │   └── quinn v0.11.12 (*)
+      │       ├── rustls-acme v0.15.4 (*)
+      │       ├── serde_v8 v0.314.0 (*)
+      │       ├── tower_governor v0.8.0 (*)
+      │       ├── tracing-appender v0.2.5 (*)
+      │       ├── wasm_dep_analyzer v0.4.0 (*)
+      │       ├── web-transport-proto v0.2.8 (*)
+      │       └── x509-parser v0.18.1 (*)
+      ├── tokio-macros v2.7.2
+      │   └── tokio v1.53.2
+      │       ├── async-compression v0.4.50
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   └── tower-http v0.7.1 (*)
+      │       ├── axum v0.8.9 (*)
+      │       ├── axum-server v0.8.0 (*)
+      │       ├── deno_core v0.405.0 (*)
+      │       ├── deno_error v0.7.1 (*)
+      │       ├── deno_fetch v0.276.0 (*)
+      │       ├── deno_fs v0.162.0 (*)
+      │       ├── deno_io v0.162.0 (*)
+      │       ├── deno_net v0.244.0 (*)
+      │       ├── deno_signals v0.43.0 (*)
+      │       ├── deno_tls v0.239.0 (*)
+      │       ├── deno_tunnel v0.8.1 (*)
+      │       ├── deno_unsync v0.4.4 (*)
+      │       ├── deno_web v0.283.0 (*)
+      │       ├── derive-io v0.4.1
+      │       │   └── rustls-tokio-stream v0.8.0 (*)
+      │       ├── fs-err v3.3.2
+      │       │   └── axum-server v0.8.0 (*)
+      │       ├── h2 v0.4.19
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   └── hyper v1.11.1
+      │       │       ├── axum v0.8.9 (*)
+      │       │       ├── axum-server v0.8.0 (*)
+      │       │       ├── deno_fetch v0.276.0 (*)
+      │       │       ├── hyper-rustls v0.27.10 (*)
+      │       │       ├── hyper-util v0.1.21 (*)
+      │       │       └── reqwest v0.12.28 (*)
+      │       ├── hickory-proto v0.25.2 (*)
+      │       ├── hickory-resolver v0.25.2 (*)
+      │       ├── hyper v1.11.1 (*)
+      │       ├── hyper-rustls v0.27.10 (*)
+      │       ├── hyper-util v0.1.21 (*)
+      │       ├── quinn v0.11.12 (*)
+      │       ├── reqwest v0.12.28 (*)
+      │       ├── rustls-acme v0.15.4 (*)
+      │       ├── rustls-tokio-stream v0.8.0 (*)
+      │       ├── (dev) snowtime-host v0.1.0 (*)
+      │       ├── (build) snowtime-render v0.1.0 (*)
+      │       ├── snowtime-server v0.1.0 (*)
+      │       ├── tokio-rustls v0.26.6
+      │       │   ├── axum-server v0.8.0 (*)
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   ├── hyper-rustls v0.27.10 (*)
+      │       │   ├── reqwest v0.12.28 (*)
+      │       │   └── (dev) snowtime-host v0.1.0 (*)
+      │       ├── tokio-socks v0.5.3 (*)
+      │       ├── tokio-stream v0.1.19
+      │       │   └── snowtime-host v0.1.0 (*)
+      │       ├── tokio-util v0.7.19
+      │       │   ├── deno_fetch v0.276.0 (*)
+      │       │   ├── h2 v0.4.19 (*)
+      │       │   ├── rustls-acme v0.15.4 (*)
+      │       │   └── tower-http v0.7.1 (*)
+      │       ├── tokio-vsock v0.7.2 (*)
+      │       ├── tower v0.5.3 (*)
+      │       └── tower-http v0.7.1 (*)
+      ├── yoke-derive v0.8.4 (*)
+      ├── zerofrom-derive v0.1.8 (*)
+      └── zerovec-derive v0.11.6
+          └── zerovec v0.11.8 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'synstructure'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:367:1
+    │  
+367 │ ╭ synstructure 0.13.2 registry+https://github.com/rust-lang/crates.io-index
+368 │ │ synstructure 0.14.0 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰─────────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ synstructure v0.13.2
+      ├── asn1-rs-derive v0.5.1
+      │   └── asn1-rs v0.6.2
+      │       ├── der-parser v9.0.0
+      │       │   ├── webauthn-rs-core v0.5.5
+      │       │   │   └── snowtime-server v0.1.0
+      │       │   │       └── snowtime-host v0.1.0
+      │       │   └── x509-parser v0.16.0
+      │       │       └── webauthn-rs-core v0.5.5 (*)
+      │       ├── oid-registry v0.7.1
+      │       │   └── x509-parser v0.16.0 (*)
+      │       └── x509-parser v0.16.0 (*)
+      └── asn1-rs-derive v0.6.0
+          └── asn1-rs v0.7.2
+              ├── der-parser v10.0.0
+              │   └── x509-parser v0.18.1
+              │       └── rustls-acme v0.15.4
+              │           └── snowtime-host v0.1.0 (*)
+              ├── oid-registry v0.8.1
+              │   └── x509-parser v0.18.1 (*)
+              └── x509-parser v0.18.1 (*)
+    ├ synstructure v0.14.0
+      ├── yoke-derive v0.8.4
+      │   └── yoke v0.8.3
+      │       ├── icu_collections v2.3.0
+      │       │   ├── icu_collator v2.3.1
+      │       │   │   └── snowtime-server v0.1.0
+      │       │   │       └── snowtime-host v0.1.0
+      │       │   ├── icu_normalizer v2.3.0
+      │       │   │   ├── icu_collator v2.3.1 (*)
+      │       │   │   └── idna_adapter v1.2.2
+      │       │   │       └── idna v1.1.0
+      │       │   │           ├── hickory-proto v0.25.2
+      │       │   │           │   ├── deno_net v0.244.0
+      │       │   │           │   │   └── (build) snowtime-render v0.1.0
+      │       │   │           │   │       └── snowtime-host v0.1.0 (*)
+      │       │   │           │   └── hickory-resolver v0.25.2
+      │       │   │           │       ├── deno_fetch v0.276.0
+      │       │   │           │       │   └── (build) snowtime-render v0.1.0 (*)
+      │       │   │           │       └── deno_net v0.244.0 (*)
+      │       │   │           └── url v2.5.8
+      │       │   │               ├── deno_core v0.405.0
+      │       │   │               │   ├── deno_features v0.49.0
+      │       │   │               │   │   └── deno_net v0.244.0 (*)
+      │       │   │               │   ├── deno_fetch v0.276.0 (*)
+      │       │   │               │   ├── deno_fs v0.162.0
+      │       │   │               │   │   └── deno_fetch v0.276.0 (*)
+      │       │   │               │   ├── deno_io v0.162.0
+      │       │   │               │   │   ├── deno_fetch v0.276.0 (*)
+      │       │   │               │   │   └── deno_fs v0.162.0 (*)
+      │       │   │               │   ├── deno_net v0.244.0 (*)
+      │       │   │               │   ├── deno_tls v0.239.0
+      │       │   │               │   │   ├── deno_fetch v0.276.0 (*)
+      │       │   │               │   │   └── deno_net v0.244.0 (*)
+      │       │   │               │   ├── deno_web v0.283.0
+      │       │   │               │   │   └── (build) snowtime-render v0.1.0 (*)
+      │       │   │               │   ├── deno_webidl v0.252.0
+      │       │   │               │   │   └── (build) snowtime-render v0.1.0 (*)
+      │       │   │               │   └── (build) snowtime-render v0.1.0 (*)
+      │       │   │               ├── deno_error v0.7.1
+      │       │   │               │   ├── deno_core v0.405.0 (*)
+      │       │   │               │   ├── deno_fetch v0.276.0 (*)
+      │       │   │               │   ├── deno_fs v0.162.0 (*)
+      │       │   │               │   ├── deno_io v0.162.0 (*)
+      │       │   │               │   ├── deno_net v0.244.0 (*)
+      │       │   │               │   ├── deno_path_util v0.6.4
+      │       │   │               │   │   ├── deno_core v0.405.0 (*)
+      │       │   │               │   │   ├── deno_fetch v0.276.0 (*)
+      │       │   │               │   │   ├── deno_fs v0.162.0 (*)
+      │       │   │               │   │   └── deno_permissions v0.111.0
+      │       │   │               │   │       ├── deno_fetch v0.276.0 (*)
+      │       │   │               │   │       ├── deno_fs v0.162.0 (*)
+      │       │   │               │   │       ├── deno_io v0.162.0 (*)
+      │       │   │               │   │       └── deno_net v0.244.0 (*)
+      │       │   │               │   ├── deno_permissions v0.111.0 (*)
+      │       │   │               │   ├── deno_tls v0.239.0 (*)
+      │       │   │               │   ├── deno_web v0.283.0 (*)
+      │       │   │               │   ├── serde_v8 v0.314.0
+      │       │   │               │   │   └── deno_core v0.405.0 (*)
+      │       │   │               │   ├── snowtime-render v0.1.0 (*)
+      │       │   │               │   └── wasm_dep_analyzer v0.4.0
+      │       │   │               │       └── deno_core v0.405.0 (*)
+      │       │   │               ├── deno_net v0.244.0 (*)
+      │       │   │               ├── deno_path_util v0.6.4 (*)
+      │       │   │               ├── deno_permissions v0.111.0 (*)
+      │       │   │               ├── hickory-proto v0.25.2 (*)
+      │       │   │               ├── reqwest v0.12.28
+      │       │   │               │   └── snowtime-server v0.1.0 (*)
+      │       │   │               ├── snowtime-host v0.1.0 (*)
+      │       │   │               ├── snowtime-server v0.1.0 (*)
+      │       │   │               ├── sourcemap v9.3.2
+      │       │   │               │   └── deno_core v0.405.0 (*)
+      │       │   │               ├── tower-http v0.6.11
+      │       │   │               │   └── reqwest v0.12.28 (*)
+      │       │   │               ├── urlpattern v0.4.2
+      │       │   │               │   └── deno_web v0.283.0 (*)
+      │       │   │               ├── web-transport-proto v0.2.8
+      │       │   │               │   └── deno_net v0.244.0 (*)
+      │       │   │               ├── webauthn-rs-core v0.5.5
+      │       │   │               │   └── snowtime-server v0.1.0 (*)
+      │       │   │               └── webauthn-rs-proto v0.5.5
+      │       │   │                   └── webauthn-rs-core v0.5.5 (*)
+      │       │   └── icu_properties v2.3.0
+      │       │       ├── icu_collator v2.3.1 (*)
+      │       │       ├── idna_adapter v1.2.2 (*)
+      │       │       └── urlpattern v0.4.2 (*)
+      │       ├── icu_provider v2.3.1
+      │       │   ├── icu_calendar v2.3.0
+      │       │   │   ├── temporal_capi v0.2.6
+      │       │   │   │   └── v8 v149.4.0
+      │       │   │   │       ├── deno_core v0.405.0 (*)
+      │       │   │   │       └── serde_v8 v0.314.0 (*)
+      │       │   │   └── temporal_rs v0.2.6
+      │       │   │       └── temporal_capi v0.2.6 (*)
+      │       │   ├── icu_collator v2.3.1 (*)
+      │       │   ├── icu_locale_fallback v2.3.0
+      │       │   │   ├── icu_calendar v2.3.0 (*)
+      │       │   │   └── icu_collator v2.3.1 (*)
+      │       │   ├── icu_normalizer v2.3.0 (*)
+      │       │   └── icu_properties v2.3.0 (*)
+      │       ├── zerotrie v0.2.5
+      │       │   ├── icu_properties v2.3.0 (*)
+      │       │   ├── icu_provider v2.3.1 (*)
+      │       │   └── timezone_provider v0.2.6
+      │       │       ├── temporal_capi v0.2.6 (*)
+      │       │       └── temporal_rs v0.2.6 (*)
+      │       └── zerovec v0.11.8
+      │           ├── icu_calendar v2.3.0 (*)
+      │           ├── icu_collator v2.3.1 (*)
+      │           ├── icu_collections v2.3.0 (*)
+      │           ├── icu_locale_core v2.3.0
+      │           │   ├── icu_calendar v2.3.0 (*)
+      │           │   ├── icu_collator v2.3.1 (*)
+      │           │   ├── icu_locale_fallback v2.3.0 (*)
+      │           │   ├── icu_properties v2.3.0 (*)
+      │           │   ├── icu_provider v2.3.1 (*)
+      │           │   ├── snowtime-server v0.1.0 (*)
+      │           │   ├── temporal_capi v0.2.6 (*)
+      │           │   ├── temporal_rs v0.2.6 (*)
+      │           │   └── zoneinfo64 v0.3.0
+      │           │       ├── temporal_capi v0.2.6 (*)
+      │           │       └── timezone_provider v0.2.6 (*)
+      │           ├── icu_locale_fallback v2.3.0 (*)
+      │           ├── icu_normalizer v2.3.0 (*)
+      │           ├── icu_properties v2.3.0 (*)
+      │           ├── icu_provider v2.3.1 (*)
+      │           ├── potential_utf v0.1.6
+      │           │   ├── icu_collections v2.3.0 (*)
+      │           │   ├── icu_locale_fallback v2.3.0 (*)
+      │           │   ├── resb v0.1.2
+      │           │   │   └── zoneinfo64 v0.3.0 (*)
+      │           │   └── zoneinfo64 v0.3.0 (*)
+      │           ├── timezone_provider v0.2.6 (*)
+      │           └── tinystr v0.8.4
+      │               ├── icu_calendar v2.3.0 (*)
+      │               ├── icu_locale_core v2.3.0 (*)
+      │               ├── icu_locale_fallback v2.3.0 (*)
+      │               ├── temporal_rs v0.2.6 (*)
+      │               └── timezone_provider v0.2.6 (*)
+      └── zerofrom-derive v0.1.8
+          └── zerofrom v0.1.8
+              ├── icu_collections v2.3.0 (*)
+              ├── icu_provider v2.3.1 (*)
+              ├── yoke v0.8.3 (*)
+              ├── zerotrie v0.2.5 (*)
+              └── zerovec v0.11.8 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'thiserror'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:377:1
+    │  
+377 │ ╭ thiserror 1.0.69 registry+https://github.com/rust-lang/crates.io-index
+378 │ │ thiserror 2.0.21 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰──────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ thiserror v1.0.69
+      ├── asn1-rs v0.6.2
+      │   ├── der-parser v9.0.0
+      │   │   ├── webauthn-rs-core v0.5.5
+      │   │   │   └── snowtime-server v0.1.0
+      │   │   │       └── snowtime-host v0.1.0
+      │   │   └── x509-parser v0.16.0
+      │   │       └── webauthn-rs-core v0.5.5 (*)
+      │   ├── oid-registry v0.7.1
+      │   │   └── x509-parser v0.16.0 (*)
+      │   └── x509-parser v0.16.0 (*)
+      ├── async-web-client v0.6.3
+      │   └── rustls-acme v0.15.4
+      │       └── snowtime-host v0.1.0 (*)
+      ├── forwarded-header-value v0.1.1
+      │   └── tower_governor v0.8.0
+      │       └── snowtime-server v0.1.0 (*)
+      ├── tokio-socks v0.5.3
+      │   └── deno_fetch v0.276.0
+      │       └── (build) snowtime-render v0.1.0
+      │           └── snowtime-host v0.1.0 (*)
+      ├── webauthn-rs-core v0.5.5 (*)
+      └── x509-parser v0.16.0 (*)
+    ├ thiserror v2.0.21
+      ├── asn1-rs v0.7.2
+      │   ├── der-parser v10.0.0
+      │   │   └── x509-parser v0.18.1
+      │   │       └── rustls-acme v0.15.4
+      │   │           └── snowtime-host v0.1.0
+      │   ├── oid-registry v0.8.1
+      │   │   └── x509-parser v0.18.1 (*)
+      │   └── x509-parser v0.18.1 (*)
+      ├── deno_core v0.405.0
+      │   ├── deno_features v0.49.0
+      │   │   └── deno_net v0.244.0
+      │   │       └── (build) snowtime-render v0.1.0
+      │   │           └── snowtime-host v0.1.0 (*)
+      │   ├── deno_fetch v0.276.0
+      │   │   └── (build) snowtime-render v0.1.0 (*)
+      │   ├── deno_fs v0.162.0
+      │   │   └── deno_fetch v0.276.0 (*)
+      │   ├── deno_io v0.162.0
+      │   │   ├── deno_fetch v0.276.0 (*)
+      │   │   └── deno_fs v0.162.0 (*)
+      │   ├── deno_net v0.244.0 (*)
+      │   ├── deno_tls v0.239.0
+      │   │   ├── deno_fetch v0.276.0 (*)
+      │   │   └── deno_net v0.244.0 (*)
+      │   ├── deno_web v0.283.0
+      │   │   └── (build) snowtime-render v0.1.0 (*)
+      │   ├── deno_webidl v0.252.0
+      │   │   └── (build) snowtime-render v0.1.0 (*)
+      │   └── (build) snowtime-render v0.1.0 (*)
+      ├── deno_fetch v0.276.0 (*)
+      ├── deno_fs v0.162.0 (*)
+      ├── deno_net v0.244.0 (*)
+      ├── deno_ops v0.281.0
+      │   └── deno_core v0.405.0 (*)
+      ├── deno_path_util v0.6.4
+      │   ├── deno_core v0.405.0 (*)
+      │   ├── deno_fetch v0.276.0 (*)
+      │   ├── deno_fs v0.162.0 (*)
+      │   └── deno_permissions v0.111.0
+      │       ├── deno_fetch v0.276.0 (*)
+      │       ├── deno_fs v0.162.0 (*)
+      │       ├── deno_io v0.162.0 (*)
+      │       └── deno_net v0.244.0 (*)
+      ├── deno_permissions v0.111.0 (*)
+      ├── deno_signals v0.43.0
+      │   └── deno_net v0.244.0 (*)
+      ├── deno_tls v0.239.0 (*)
+      ├── deno_tunnel v0.8.1
+      │   └── deno_net v0.244.0 (*)
+      ├── deno_web v0.283.0 (*)
+      ├── hickory-proto v0.25.2
+      │   ├── deno_net v0.244.0 (*)
+      │   └── hickory-resolver v0.25.2
+      │       ├── deno_fetch v0.276.0 (*)
+      │       └── deno_net v0.244.0 (*)
+      ├── hickory-resolver v0.25.2 (*)
+      ├── quinn v0.11.12
+      │   ├── deno_net v0.244.0 (*)
+      │   └── deno_tunnel v0.8.1 (*)
+      ├── quinn-proto v0.11.19
+      │   └── quinn v0.11.12 (*)
+      ├── rustls-acme v0.15.4 (*)
+      ├── serde_v8 v0.314.0
+      │   └── deno_core v0.405.0 (*)
+      ├── tower_governor v0.8.0
+      │   └── snowtime-server v0.1.0
+      │       └── snowtime-host v0.1.0 (*)
+      ├── tracing-appender v0.2.5
+      │   └── snowtime-host v0.1.0 (*)
+      ├── wasm_dep_analyzer v0.4.0
+      │   └── deno_core v0.405.0 (*)
+      ├── web-transport-proto v0.2.8
+      │   └── deno_net v0.244.0 (*)
+      └── x509-parser v0.18.1 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'thiserror-impl'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:379:1
+    │  
+379 │ ╭ thiserror-impl 1.0.69 registry+https://github.com/rust-lang/crates.io-index
+380 │ │ thiserror-impl 2.0.21 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰───────────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ thiserror-impl v1.0.69
+      └── thiserror v1.0.69
+          ├── asn1-rs v0.6.2
+          │   ├── der-parser v9.0.0
+          │   │   ├── webauthn-rs-core v0.5.5
+          │   │   │   └── snowtime-server v0.1.0
+          │   │   │       └── snowtime-host v0.1.0
+          │   │   └── x509-parser v0.16.0
+          │   │       └── webauthn-rs-core v0.5.5 (*)
+          │   ├── oid-registry v0.7.1
+          │   │   └── x509-parser v0.16.0 (*)
+          │   └── x509-parser v0.16.0 (*)
+          ├── async-web-client v0.6.3
+          │   └── rustls-acme v0.15.4
+          │       └── snowtime-host v0.1.0 (*)
+          ├── forwarded-header-value v0.1.1
+          │   └── tower_governor v0.8.0
+          │       └── snowtime-server v0.1.0 (*)
+          ├── tokio-socks v0.5.3
+          │   └── deno_fetch v0.276.0
+          │       └── (build) snowtime-render v0.1.0
+          │           └── snowtime-host v0.1.0 (*)
+          ├── webauthn-rs-core v0.5.5 (*)
+          └── x509-parser v0.16.0 (*)
+    ├ thiserror-impl v2.0.21
+      └── thiserror v2.0.21
+          ├── asn1-rs v0.7.2
+          │   ├── der-parser v10.0.0
+          │   │   └── x509-parser v0.18.1
+          │   │       └── rustls-acme v0.15.4
+          │   │           └── snowtime-host v0.1.0
+          │   ├── oid-registry v0.8.1
+          │   │   └── x509-parser v0.18.1 (*)
+          │   └── x509-parser v0.18.1 (*)
+          ├── deno_core v0.405.0
+          │   ├── deno_features v0.49.0
+          │   │   └── deno_net v0.244.0
+          │   │       └── (build) snowtime-render v0.1.0
+          │   │           └── snowtime-host v0.1.0 (*)
+          │   ├── deno_fetch v0.276.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_fs v0.162.0
+          │   │   └── deno_fetch v0.276.0 (*)
+          │   ├── deno_io v0.162.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_fs v0.162.0 (*)
+          │   ├── deno_net v0.244.0 (*)
+          │   ├── deno_tls v0.239.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_net v0.244.0 (*)
+          │   ├── deno_web v0.283.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_webidl v0.252.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   └── (build) snowtime-render v0.1.0 (*)
+          ├── deno_fetch v0.276.0 (*)
+          ├── deno_fs v0.162.0 (*)
+          ├── deno_net v0.244.0 (*)
+          ├── deno_ops v0.281.0
+          │   └── deno_core v0.405.0 (*)
+          ├── deno_path_util v0.6.4
+          │   ├── deno_core v0.405.0 (*)
+          │   ├── deno_fetch v0.276.0 (*)
+          │   ├── deno_fs v0.162.0 (*)
+          │   └── deno_permissions v0.111.0
+          │       ├── deno_fetch v0.276.0 (*)
+          │       ├── deno_fs v0.162.0 (*)
+          │       ├── deno_io v0.162.0 (*)
+          │       └── deno_net v0.244.0 (*)
+          ├── deno_permissions v0.111.0 (*)
+          ├── deno_signals v0.43.0
+          │   └── deno_net v0.244.0 (*)
+          ├── deno_tls v0.239.0 (*)
+          ├── deno_tunnel v0.8.1
+          │   └── deno_net v0.244.0 (*)
+          ├── deno_web v0.283.0 (*)
+          ├── hickory-proto v0.25.2
+          │   ├── deno_net v0.244.0 (*)
+          │   └── hickory-resolver v0.25.2
+          │       ├── deno_fetch v0.276.0 (*)
+          │       └── deno_net v0.244.0 (*)
+          ├── hickory-resolver v0.25.2 (*)
+          ├── quinn v0.11.12
+          │   ├── deno_net v0.244.0 (*)
+          │   └── deno_tunnel v0.8.1 (*)
+          ├── quinn-proto v0.11.19
+          │   └── quinn v0.11.12 (*)
+          ├── rustls-acme v0.15.4 (*)
+          ├── serde_v8 v0.314.0
+          │   └── deno_core v0.405.0 (*)
+          ├── tower_governor v0.8.0
+          │   └── snowtime-server v0.1.0
+          │       └── snowtime-host v0.1.0 (*)
+          ├── tracing-appender v0.2.5
+          │   └── snowtime-host v0.1.0 (*)
+          ├── wasm_dep_analyzer v0.4.0
+          │   └── deno_core v0.405.0 (*)
+          ├── web-transport-proto v0.2.8
+          │   └── deno_net v0.244.0 (*)
+          └── x509-parser v0.18.1 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'tower-http'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:396:1
+    │  
+396 │ ╭ tower-http 0.6.11 registry+https://github.com/rust-lang/crates.io-index
+397 │ │ tower-http 0.7.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰──────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ tower-http v0.6.11
+      └── reqwest v0.12.28
+          └── snowtime-server v0.1.0
+              └── snowtime-host v0.1.0
+    ├ tower-http v0.7.1
+      └── snowtime-host v0.1.0
+
+warning[duplicate]: found 2 duplicate entries for crate 'webpki-roots'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:432:1
+    │  
+432 │ ╭ webpki-roots 0.26.11 registry+https://github.com/rust-lang/crates.io-index
+433 │ │ webpki-roots 1.0.9 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰────────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ webpki-roots v0.26.11
+      ├── async-web-client v0.6.3
+      │   └── rustls-acme v0.15.4
+      │       └── snowtime-host v0.1.0
+      └── deno_tls v0.239.0
+          ├── deno_fetch v0.276.0
+          │   └── (build) snowtime-render v0.1.0
+          │       └── snowtime-host v0.1.0 (*)
+          └── deno_net v0.244.0
+              └── (build) snowtime-render v0.1.0 (*)
+    ├ webpki-roots v1.0.9
+      ├── hyper-rustls v0.27.10
+      │   ├── deno_fetch v0.276.0
+      │   │   └── (build) snowtime-render v0.1.0
+      │   │       └── snowtime-host v0.1.0
+      │   └── reqwest v0.12.28
+      │       └── snowtime-server v0.1.0
+      │           └── snowtime-host v0.1.0 (*)
+      ├── reqwest v0.12.28 (*)
+      ├── rustls-acme v0.15.4
+      │   └── snowtime-host v0.1.0 (*)
+      └── webpki-roots v0.26.11
+          ├── async-web-client v0.6.3
+          │   └── rustls-acme v0.15.4 (*)
+          └── deno_tls v0.239.0
+              ├── deno_fetch v0.276.0 (*)
+              └── deno_net v0.244.0
+                  └── (build) snowtime-render v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'which'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:434:1
+    │  
+434 │ ╭ which 6.0.3 registry+https://github.com/rust-lang/crates.io-index
+435 │ │ which 8.0.6 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰─────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ which v6.0.3
+      └── (build) v8 v149.4.0
+          ├── deno_core v0.405.0
+          │   ├── deno_features v0.49.0
+          │   │   └── deno_net v0.244.0
+          │   │       └── (build) snowtime-render v0.1.0
+          │   │           └── snowtime-host v0.1.0
+          │   ├── deno_fetch v0.276.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_fs v0.162.0
+          │   │   └── deno_fetch v0.276.0 (*)
+          │   ├── deno_io v0.162.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_fs v0.162.0 (*)
+          │   ├── deno_net v0.244.0 (*)
+          │   ├── deno_tls v0.239.0
+          │   │   ├── deno_fetch v0.276.0 (*)
+          │   │   └── deno_net v0.244.0 (*)
+          │   ├── deno_web v0.283.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   ├── deno_webidl v0.252.0
+          │   │   └── (build) snowtime-render v0.1.0 (*)
+          │   └── (build) snowtime-render v0.1.0 (*)
+          └── serde_v8 v0.314.0
+              └── deno_core v0.405.0 (*)
+    ├ which v8.0.6
+      └── deno_permissions v0.111.0
+          ├── deno_fetch v0.276.0
+          │   └── (build) snowtime-render v0.1.0
+          │       └── snowtime-host v0.1.0
+          ├── deno_fs v0.162.0
+          │   └── deno_fetch v0.276.0 (*)
+          ├── deno_io v0.162.0
+          │   ├── deno_fetch v0.276.0 (*)
+          │   └── deno_fs v0.162.0 (*)
+          └── deno_net v0.244.0
+              └── (build) snowtime-render v0.1.0 (*)
+
+warning[duplicate]: found 2 duplicate entries for crate 'x509-parser'
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:439:1
+    │  
+439 │ ╭ x509-parser 0.16.0 registry+https://github.com/rust-lang/crates.io-index
+440 │ │ x509-parser 0.18.1 registry+https://github.com/rust-lang/crates.io-index
+    │ ╰────────────────────────────────────────────────────────────────────────┘ lock entries
+    │  
+    ├ x509-parser v0.16.0
+      └── webauthn-rs-core v0.5.5
+          └── snowtime-server v0.1.0
+              └── snowtime-host v0.1.0
+    ├ x509-parser v0.18.1
+      └── rustls-acme v0.15.4
+          └── snowtime-host v0.1.0
+
+error[vulnerability]: NSEC3 closest-encloser proof validation enters unbounded loop on cross-zone responses
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:178:1
+    │
+178 │ hickory-proto 0.25.2 registry+https://github.com/rust-lang/crates.io-index
+    │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ security vulnerability detected
+    │
+    ├ ID: RUSTSEC-2026-0118
+    ├ Advisory: https://rustsec.org/advisories/RUSTSEC-2026-0118
+    ├ The NSEC3 closest-encloser proof validation in `hickory-proto`'s
+      `DnssecDnsHandle` walks from the QNAME up to the SOA owner name, building a
+      list of candidate encloser names. The iterator used assumes the
+      QNAME is a descendant of the SOA owner, terminating only when the current
+      candidate equals the SOA name. When the SOA in a response's authority section
+      is not an ancestor of the QNAME, the loop stalls at the DNS root and never
+      terminates, repeatedly calling `Name::base_name()` and pushing newly allocated
+      `Name` and hashed-name entries into the candidate `Vec`.
+      
+      The bug is reachable by any caller of `DnssecDnsHandle` — including the
+      resolver, recursor, and client — when built with the `dnssec-ring` or
+      `dnssec-aws-lc-rs` feature and configured to perform DNSSEC validation. It is
+      triggered while validating a NoData or NXDomain response whose authority
+      section contains an SOA record from a zone other than an ancestor of the
+      QNAME, on a code path that requires NSEC3 closest-encloser proof. In practice
+      this can be reached through an insecure CNAME chain that crosses zone
+      boundaries into a DNSSEC-signed zone returning NoData, but the minimum
+      condition is just a mismatched SOA owner on a response requiring NSEC3
+      validation.
+      
+      A `debug_assert_ne!(name, Name::root())` guards the loop body, so debug builds
+      abort with a panic on the first iteration past the root. Release builds
+      compile the assertion out and run the loop unbounded, allocating until the
+      process exhausts available memory (OOM). A reachable upstream attacker who
+      can return such a response can therefore crash a debug-built validator or
+      exhaust memory on a release-built one.
+      
+      The affected code was migrated from `hickory-proto` to `hickory-net` as part of
+      the 0.26.0 release. The `hickory-proto` 0.26.x release no longer offers
+      `DnssecDnsHandle` and so we recommend all affected users update to `hickory-net`
+      0.26.1 when the implementation of that type is required.
+    ├ Announcement: https://github.com/hickory-dns/hickory-dns/security/advisories/GHSA-3v94-mw7p-v465
+    ├ Solution: No safe upgrade is available!
+    ├ hickory-proto v0.25.2
+      ├── deno_net v0.244.0
+      │   └── (build) snowtime-render v0.1.0
+      │       └── snowtime-host v0.1.0
+      └── hickory-resolver v0.25.2
+          ├── deno_fetch v0.276.0
+          │   └── (build) snowtime-render v0.1.0 (*)
+          └── deno_net v0.244.0 (*)
+
+error[vulnerability]: CPU exhaustion during message encoding due to O(n²) name compression
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:178:1
+    │
+178 │ hickory-proto 0.25.2 registry+https://github.com/rust-lang/crates.io-index
+    │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ security vulnerability detected
+    │
+    ├ ID: RUSTSEC-2026-0119
+    ├ Advisory: https://rustsec.org/advisories/RUSTSEC-2026-0119
+    ├ During message encoding, `hickory-proto`'s `BinEncoder` stores pointers to
+      labels that are candidates for name compression in a `Vec<(usize, Vec<u8>)>`.
+      The name compression logic then searches for matches with a linear scan.
+      
+      A malicious message with many records can both introduce many candidate labels,
+      and invoke this linear scan many times. This can amplify CPU exhaustion in DoS
+      attacks.
+      
+      This is similar to
+      [CVE-2024-8508](https://www.nlnetlabs.nl/downloads/unbound/CVE-2024-8508.txt).
+      
+      We recommend all affected users update to `hickory-proto` 0.26.1 for the fix.
+    ├ Announcement: https://github.com/hickory-dns/hickory-dns/security/advisories/GHSA-q2qq-hmj6-3wpp
+    ├ Solution: Upgrade to >=0.26.1 (try `cargo update -p hickory-proto`)
+    ├ hickory-proto v0.25.2
+      ├── deno_net v0.244.0
+      │   └── (build) snowtime-render v0.1.0
+      │       └── snowtime-host v0.1.0
+      └── hickory-resolver v0.25.2
+          ├── deno_fetch v0.276.0
+          │   └── (build) snowtime-render v0.1.0 (*)
+          └── deno_net v0.244.0 (*)
+
+error[vulnerability]: TLS 1.3 handshake messages incorrectly accepted across encryption level boundaries
+    ┌─ /Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/Cargo.lock:316:1
+    │
+316 │ rustls 0.23.40 registry+https://github.com/rust-lang/crates.io-index
+    │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ security vulnerability detected
+    │
+    ├ ID: RUSTSEC-2026-0285
+    ├ Advisory: https://rustsec.org/advisories/RUSTSEC-2026-0285
+    ├ Rustls accepted TLS 1.3 handshake messages sent at the wrong encryption level
+      when they followed a key-changing message in the same record. For example,
+      a plaintext `EncryptedExtensions` message packed into the same record as the
+      `ServerHello` was accepted.
+      
+      RFC 8446 section 5.1 requires that handshake messages do not span key changes,
+      and that implementations terminate the connection with an "unexpected_message"
+      alert if they do.
+      
+      The handshake transcript is still authenticated, so a network-position attacker
+      cannot use this to alter or complete a handshake; the practical effect is that
+      a peer could send handshake messages that should be encrypted in plaintext
+      without rustls rejecting the connection.
+      
+      This is functionally the same bug as Go's
+      [GO-2026-4340](https://pkg.go.dev/vuln/GO-2026-4340) (CVE-2025-61730).
+    ├ Announcement: https://github.com/rustls/rustls/security/advisories/GHSA-2mjx-qc3c-rqvc
+    ├ Solution: Upgrade to >=0.23.45 (try `cargo update -p rustls`)
+    ├ rustls v0.23.40
+      ├── axum-server v0.8.0
+      │   ├── rustls-acme v0.15.4
+      │   │   └── snowtime-host v0.1.0
+      │   └── snowtime-host v0.1.0 (*)
+      ├── deno_tls v0.239.0
+      │   ├── deno_fetch v0.276.0
+      │   │   └── (build) snowtime-render v0.1.0
+      │   │       └── snowtime-host v0.1.0 (*)
+      │   └── deno_net v0.244.0
+      │       └── (build) snowtime-render v0.1.0 (*)
+      ├── futures-rustls v0.26.0
+      │   ├── async-web-client v0.6.3
+      │   │   └── rustls-acme v0.15.4 (*)
+      │   └── rustls-acme v0.15.4 (*)
+      ├── hyper-rustls v0.27.10
+      │   ├── deno_fetch v0.276.0 (*)
+      │   └── reqwest v0.12.28
+      │       └── snowtime-server v0.1.0
+      │           └── snowtime-host v0.1.0 (*)
+      ├── quinn v0.11.12
+      │   ├── deno_net v0.244.0 (*)
+      │   └── deno_tunnel v0.8.1
+      │       └── deno_net v0.244.0 (*)
+      ├── quinn-proto v0.11.19
+      │   └── quinn v0.11.12 (*)
+      ├── reqwest v0.12.28 (*)
+      ├── rustls-tokio-stream v0.8.0
+      │   ├── deno_net v0.244.0 (*)
+      │   └── deno_tls v0.239.0 (*)
+      ├── snowtime-host v0.1.0 (*)
+      └── tokio-rustls v0.26.6
+          ├── axum-server v0.8.0 (*)
+          ├── deno_fetch v0.276.0 (*)
+          ├── hyper-rustls v0.27.10 (*)
+          ├── reqwest v0.12.28 (*)
+          └── (dev) snowtime-host v0.1.0 (*)
+
+advisories FAILED, bans ok, licenses ok, sources ok

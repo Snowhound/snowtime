@@ -1,0 +1,36 @@
+   Compiling deno_error v0.7.1
+   Compiling h2 v0.4.19
+   Compiling tower v0.5.3
+   Compiling tokio-rustls v0.26.6
+   Compiling hickory-proto v0.25.2
+   Compiling rustls-tokio-stream v0.8.0
+   Compiling quinn v0.11.12
+   Compiling deno_path_util v0.6.4
+   Compiling wasm_dep_analyzer v0.4.0
+   Compiling serde_v8 v0.314.0
+   Compiling deno_permissions v0.111.0
+   Compiling deno_tunnel v0.8.1
+   Compiling deno_core v0.405.0
+   Compiling tower-http v0.6.11
+   Compiling async-web-client v0.6.3
+   Compiling hyper v1.11.1
+   Compiling hickory-resolver v0.25.2
+   Compiling hyper-util v0.1.21
+   Compiling hyper-rustls v0.27.10
+   Compiling axum v0.8.9
+   Compiling axum-server v0.8.0
+   Compiling reqwest v0.12.28
+   Compiling rustls-acme v0.15.4
+   Compiling deno_tls v0.239.0
+   Compiling deno_io v0.162.0
+   Compiling deno_features v0.49.0
+   Compiling deno_web v0.283.0
+   Compiling deno_webidl v0.252.0
+   Compiling deno_fs v0.162.0
+   Compiling deno_net v0.244.0
+   Compiling tower_governor v0.8.0
+   Compiling snowtime-server v0.1.0 (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/crates/server)
+   Compiling deno_fetch v0.276.0
+   Compiling snowtime-render v0.1.0 (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/crates/render)
+   Compiling snowtime-host v0.1.0 (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/native/crates/host)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 26.67s

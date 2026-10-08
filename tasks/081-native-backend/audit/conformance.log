@@ -1,0 +1,166 @@
+### conformance/auth-writes.conformance.ts
+{"timestamp":"2026-10-08T13:13:26.894728Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:26.896626Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:26.920443Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:26.926532Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52460","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+ 1 pass
+ 0 fail
+ 137 expect() calls
+Ran 1 test across 1 file. [718.00ms]
+### exit 0 conformance/auth-writes.conformance.ts
+### conformance/invitations.conformance.ts
+{"timestamp":"2026-10-08T13:13:27.788458Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:27.788528Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:27.797553Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:27.798165Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52465","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+ 6 pass
+ 0 fail
+ 16 expect() calls
+Ran 6 tests across 1 file. [925.00ms]
+### exit 0 conformance/invitations.conformance.ts
+### conformance/oauth.conformance.ts
+{"timestamp":"2026-10-08T13:13:28.901332Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:28.901409Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:28.910227Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":1,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:28.910770Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52470","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/oauth.conformance.ts:
+140 |     }
+141 |     const location = response.headers.get('location')
+142 |     if (label === 'callback newline provider' && location !== `${app.url}/api/auth/callback/%0A?`)
+143 |       throw new Error('Encoded callback provider path changed')
+144 |     if (label === 'callback non-ASCII location' && location !== '/ä')
+145 |       throw new Error('Latin-1 redirect header changed')
+                      ^
+error: Latin-1 redirect header changed
+      at call (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/conformance/oauth-flow.ts:145:17)
+      at async oauthFlow (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/conformance/oauth-flow.ts:220:9)
+      at async <anonymous> (/Users/kaitkasak/projects/snowtime/snowtime-081-poc/conformance/oauth.conformance.ts:23:9)
+(fail) OAuth redirect sign-in, PKCE, state, linking, and account management contracts [139.28ms]
+
+ 0 pass
+ 1 fail
+ 14 expect() calls
+Ran 1 test across 1 file. [197.00ms]
+### exit 1 conformance/oauth.conformance.ts
+### conformance/passkeys.conformance.ts
+{"timestamp":"2026-10-08T13:13:29.293408Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:29.293483Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:29.302167Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:29.302712Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52476","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+{"timestamp":"2026-10-08T13:13:30.054335Z","level":"ERROR","fields":{"message":"try_from authenticator_data_parser","e":"Error(Error { input: [], code: Eof })"},"target":"webauthn_rs_core::internals"}
+[passkey] registration: A NOM parser failure has occurred
+{"timestamp":"2026-10-08T13:13:30.056609Z","level":"ERROR","fields":{"message":"try_from authenticator_data_parser","e":"Error(Error { input: [0, 0, 0], code: Eof })"},"target":"webauthn_rs_core::internals"}
+[passkey] registration: A NOM parser failure has occurred
+{"timestamp":"2026-10-08T13:13:30.058764Z","level":"ERROR","fields":{"message":"try_from authenticator_data_parser","e":"Error(Error { input: [], code: Eof })"},"target":"webauthn_rs_core::internals"}
+[passkey] registration: A NOM parser failure has occurred
+{"timestamp":"2026-10-08T13:13:30.060191Z","level":"ERROR","fields":{"message":"try_from authenticator_data_parser","e":"Error(Error { input: [0], code: Eof })"},"target":"webauthn_rs_core::internals"}
+[passkey] registration: A NOM parser failure has occurred
+{"timestamp":"2026-10-08T13:13:30.061579Z","level":"WARN","fields":{"message":"cred_id_len (32) is larger than remaining number of bytes to parse (0)."},"target":"webauthn_rs_core::internals"}
+{"timestamp":"2026-10-08T13:13:30.061620Z","level":"ERROR","fields":{"message":"try_from authenticator_data_parser","e":"Error(Error { input: [], code: Eof })"},"target":"webauthn_rs_core::internals"}
+[passkey] registration: A NOM parser failure has occurred
+{"timestamp":"2026-10-08T13:13:30.062908Z","level":"WARN","fields":{"message":"cred_id_len (32) is larger than remaining number of bytes to parse (31)."},"target":"webauthn_rs_core::internals"}
+{"timestamp":"2026-10-08T13:13:30.062927Z","level":"ERROR","fields":{"message":"try_from authenticator_data_parser","e":"Error(Error { input: [3, 247, 109, 193, 101, 71, 49, 6, 236, 202, 60, 58, 47, 142, 136, 90, 184, 75, 45, 103, 35, 41, 208, 43, 24, 211, 235, 93, 31, 130, 188], code: Eof })"},"target":"webauthn_rs_core::internals"}
+[passkey] registration: A NOM parser failure has occurred
+{"timestamp":"2026-10-08T13:13:30.064303Z","level":"WARN","fields":{"message":"cred_id_len (65535) is larger than remaining number of bytes to parse (109)."},"target":"webauthn_rs_core::internals"}
+{"timestamp":"2026-10-08T13:13:30.064321Z","level":"ERROR","fields":{"message":"try_from authenticator_data_parser","e":"Error(Error { input: [3, 247, 109, 193, 101, 71, 49, 6, 236, 202, 60, 58, 47, 142, 136, 90, 184, 75, 45, 103, 35, 41, 208, 43, 24, 211, 235, 93, 31, 130, 188, 19, 165, 1, 2, 3, 38, 32, 1, 33, 88, 32, 253, 184, 59, 18, 245, 245, 191, 125, 238, 71, 128, 124, 92, 245, 158, 217, 164, 116, 57, 129, 58, 56, 77, 13, 26, 28, 230, 103, 206, 222, 54, 109, 34, 88, 32, 69, 219, 31, 124, 82, 84, 249, 82, 91, 147, 7, 5, 116, 91, 2, 197, 31, 91, 88, 71, 152, 48, 15, 54, 168, 17, 6, 38, 211, 189, 25, 155], code: Eof })"},"target":"webauthn_rs_core::internals"}
+[passkey] registration: A NOM parser failure has occurred
+[passkey] authentication: The credential may have be compromised and should be inspected
+[passkey] authentication: client origin
+[passkey] authentication: A JSON parser failure has occurred
+[passkey] authentication: Authentication has failed
+[passkey] authentication: The user present bit is not set, and required
+[passkey] authentication: The credential may have be compromised and should be inspected
+[passkey] authentication: client origin
+[passkey] authentication: A JSON parser failure has occurred
+[passkey] authentication: Authentication has failed
+[passkey] authentication: The user present bit is not set, and required
+[passkey] authentication: The credential may have be compromised and should be inspected
+[passkey] authentication: client origin
+[passkey] authentication: A JSON parser failure has occurred
+[passkey] authentication: Authentication has failed
+[passkey] authentication: The user present bit is not set, and required
+
+ 1 pass
+ 0 fail
+ 141 expect() calls
+Ran 1 test across 1 file. [814.00ms]
+### exit 0 conformance/passkeys.conformance.ts
+### conformance/projects.conformance.ts
+{"timestamp":"2026-10-08T13:13:30.306637Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:30.306721Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:30.315344Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:30.315884Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52480","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+ 4 pass
+ 0 fail
+ 18 expect() calls
+Ran 4 tests across 1 file. [734.00ms]
+### exit 0 conformance/projects.conformance.ts
+### conformance/reports.conformance.ts
+{"timestamp":"2026-10-08T13:13:31.231364Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:31.231446Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:31.240274Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:31.240926Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52484","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+ 7 pass
+ 0 fail
+ 20 expect() calls
+Ran 7 tests across 1 file. [671.00ms]
+### exit 0 conformance/reports.conformance.ts
+### conformance/session.conformance.ts
+{"timestamp":"2026-10-08T13:13:32.095420Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:32.095501Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:32.104399Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:32.104963Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52488","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+ 7 pass
+ 0 fail
+ 19 expect() calls
+Ran 7 tests across 1 file. [629.00ms]
+### exit 0 conformance/session.conformance.ts
+### conformance/settings.conformance.ts
+{"timestamp":"2026-10-08T13:13:32.913767Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:32.913841Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:32.922744Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:32.923269Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52492","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+ 5 pass
+ 0 fail
+ 12 expect() calls
+Ran 5 tests across 1 file. [348.00ms]
+### exit 0 conformance/settings.conformance.ts
+### conformance/teams.conformance.ts
+{"timestamp":"2026-10-08T13:13:33.451542Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:33.451624Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:33.460274Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:33.460847Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52497","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+ 4 pass
+ 0 fail
+ 16 expect() calls
+Ran 4 tests across 1 file. [632.00ms]
+### exit 0 conformance/teams.conformance.ts
+### conformance/timer.conformance.ts
+{"timestamp":"2026-10-08T13:13:34.275419Z","level":"INFO","fields":{"message":"rate limits","enabled":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:34.275498Z","level":"WARN","fields":{"message":"rate limits are off"},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:34.284130Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T13:13:34.284670Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:52501","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+ 13 pass
+ 0 fail
+ 30 expect() calls
+Ran 13 tests across 1 file. [635.00ms]
+### exit 0 conformance/timer.conformance.ts

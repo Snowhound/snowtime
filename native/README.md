@@ -6,6 +6,12 @@ those pages rendered by the app's own server bundle in V8. Subtask 03
 (`tasks/081-native-backend/03-port-libraries.md`) records the API's measurements and
 subtask 01 (`01-server-rendering.md`) the renderer's.
 
+Feature level: matches snowtime main c8ffa84. The branch's TypeScript app (`src/`) is
+identical to that commit, and against it the native host passes all 49 conformance
+tests (511 assertions, 10 files) and all 1,361 `compare.ts` calls byte for byte.
+[Task 081.30](../tasks/081-native-backend/30-audit.md#parity-record) records the run
+and the audit's findings.
+
 ## Crates
 
 `server` is the library of application rules and their Axum router. `render` embeds V8
