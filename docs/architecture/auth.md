@@ -274,3 +274,19 @@ passes it to Start as request context, and sets the header; the policy itself is
 The cost is one 16-byte random value and a header, about 2 µs per page. A per-page nonce
 rules out caching the HTML in a shared cache, which none of the app's pages can do
 anyway, since each one renders the signed-in user's session.
+
+## Invitation acceptance after joining
+
+Kait, 2026-10-08: a verified recipient who joined after an invitation was sent accepts
+that still-live invitation using the existing membership. Keep its organization role,
+mark the invitation accepted, activate the organization, and apply the invitation's
+optional team assignment. Existing members do not consume another membership slot.
+Recipient, verification, expiry, and status checks still apply; a repeated click refuses
+as a closed invitation. Both the application wrapper and Better Auth endpoint use this rule.
+
+Better Auth 1.7.7 inserts a member without checking existing membership. Snowtime's unique
+index rejects that insert with HTTP 500 and Better Auth restores the invitation to pending.
+The regression in `team-invitations.test.ts` confirms the repeated-failure path. Rejecting
+and canceling would be smaller, but accepting takes a legitimate member where the valid
+link promised. The app's before hook handles this case; new members keep Better Auth's
+normal acceptance. An after hook applies team assignments to either path.
