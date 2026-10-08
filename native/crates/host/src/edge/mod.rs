@@ -2,6 +2,7 @@ mod accept;
 mod access;
 mod config;
 mod connections;
+mod files;
 pub use access::init as init_logs;
 pub use config::{AccessLog, Config, Tls};
 
@@ -25,17 +26,27 @@ use tower_http::{
 };
 
 // The API's routes, then a public file, then a page. Unknown API paths, dotfiles, and
-// archives keep the API's refusal even if a file exists.
+// archives keep the API's refusal even if a file exists. Only paths in the startup index
+// of the public directory reach the disk.
 pub fn router(api: Router, pages: Router, config: &Config, app_url: &str) -> Router {
     let site = match &config.static_dir {
-        Some(directory) => Router::new().fallback_service(
-            ServeDir::new(directory)
-                .fallback(pages)
-                .append_index_html_on_directories(false)
-                .precompressed_br()
-                .precompressed_zstd()
-                .precompressed_gzip(),
-        ),
+        Some(directory) => {
+            let index = files::Index::list(directory).expect("EDGE_STATIC_DIR is readable");
+            tracing::info!(files = index.len(), "indexed the public files");
+            Router::new()
+                .fallback_service(
+                    ServeDir::new(directory)
+                        .fallback(pages.clone())
+                        .append_index_html_on_directories(false)
+                        .precompressed_br()
+                        .precompressed_zstd()
+                        .precompressed_gzip(),
+                )
+                .layer(middleware::from_fn_with_state(
+                    std::sync::Arc::new((index, pages)),
+                    indexed,
+                ))
+        }
         None => pages,
     };
     let mut router = api
@@ -70,6 +81,19 @@ pub fn router(api: Router, pages: Router, config: &Config, app_url: &str) -> Rou
         ));
     }
     access::layer(router, config)
+}
+
+async fn indexed(
+    State(site): State<std::sync::Arc<(files::Index, Router)>>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let (index, pages) = &*site;
+    if index.contains(request.uri().path()) {
+        next.run(request).await
+    } else {
+        pages.clone().oneshot(request).await.unwrap()
+    }
 }
 
 fn is_api(path: &str) -> bool {

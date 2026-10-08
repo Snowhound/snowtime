@@ -1,4 +1,4 @@
-//! Admission happens asynchronously, before a call can occupy a blocking thread.
+//! Admission happens asynchronously, before a call can occupy a lane's thread.
 use crate::http::Response;
 use crate::wire::failure;
 use std::sync::Arc;
@@ -83,32 +83,6 @@ impl Gate {
         serde_json::json!({ "active": self.capacity-self.slots.available_permits(),
             "queued": self.waiting.load(std::sync::atomic::Ordering::Relaxed), "limit": self.capacity })
     }
-    pub async fn run<T: Send + 'static>(
-        &self,
-        call: impl FnOnce() -> T + Send + 'static,
-    ) -> Result<T, Response> {
-        let permit = self.acquire().await?;
-        Self::run_admitted(permit, call).await
-    }
-    pub(crate) async fn run_admitted<T: Send + 'static>(
-        permit: Permit,
-        call: impl FnOnce() -> T + Send + 'static,
-    ) -> Result<T, Response> {
-        #[cfg(feature = "bench")]
-        let queued = crate::bench::Active::new(&crate::bench::QUEUED);
-        tokio::task::spawn_blocking(move || {
-            let _permit = permit;
-            #[cfg(feature = "bench")]
-            drop(queued);
-            #[cfg(feature = "bench")]
-            let _active = crate::bench::Active::new(&crate::bench::BLOCKING);
-            #[cfg(feature = "bench")]
-            crate::bench::mark_blocking_thread();
-            call()
-        })
-        .await
-        .map_err(|_| failure(500, "Internal error.").into())
-    }
 }
 
 struct Waiting<'a>(&'a std::sync::atomic::AtomicUsize);
@@ -178,25 +152,26 @@ mod tests {
         assert!(start.elapsed() < Duration::from_millis(300));
     }
     #[test]
-    fn blocking_work_is_only_spawned_by_admission() {
-        fn check(path: &std::path::Path) {
+    fn no_lane_uses_the_blocking_pool() {
+        // Built at run time, so this file doesn't match itself.
+        let calls = [concat!("spawn", "_blocking"), concat!("block", "_in_place")];
+        fn check(path: &std::path::Path, calls: &[&str]) {
             for entry in std::fs::read_dir(path).unwrap() {
                 let path = entry.unwrap().path();
                 if path.is_dir() {
-                    check(&path);
-                } else if path.extension().is_some_and(|ext| ext == "rs")
-                    && path.file_name().unwrap() != "admission.rs"
-                {
+                    check(&path, calls);
+                } else if path.extension().is_some_and(|ext| ext == "rs") {
                     let source = std::fs::read_to_string(&path).unwrap();
-                    assert!(
-                        !source.contains("spawn_blocking"),
-                        "ungated blocking work: {}",
-                        path.display()
-                    );
+                    for call in calls {
+                        assert!(!source.contains(call), "{call} in {}", path.display());
+                    }
                 }
             }
         }
-        check(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src"));
+        check(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
+            &calls,
+        );
     }
     #[tokio::test]
     async fn rejects_queue_timeout_and_releases_a_completed_slot() {
@@ -210,28 +185,6 @@ mod tests {
             "1"
         );
         drop(permit);
-        assert_eq!(gate.run(|| 42).await.unwrap(), 42);
-        assert!(gate.acquire().await.is_ok());
-    }
-    #[tokio::test]
-    async fn cancelling_a_caller_does_not_release_running_work() {
-        let gate = Arc::new(Gate::new(1, Duration::from_millis(20)));
-        let (started, began) = tokio::sync::oneshot::channel();
-        let (finish, wait) = std::sync::mpsc::channel();
-        let worker_gate = gate.clone();
-        let task = tokio::spawn(async move {
-            worker_gate
-                .run(move || {
-                    started.send(()).unwrap();
-                    wait.recv().unwrap();
-                })
-                .await
-        });
-        began.await.unwrap();
-        task.abort();
-        assert!(gate.acquire().await.is_err());
-        finish.send(()).unwrap();
-        tokio::time::sleep(Duration::from_millis(10)).await;
         assert!(gate.acquire().await.is_ok());
     }
 }

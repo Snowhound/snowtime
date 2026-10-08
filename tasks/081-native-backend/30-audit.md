@@ -201,6 +201,9 @@ Fixed in 081.31 ([input bounds](31-input-bounds.md)): size bound and cleanup on 
 
 **M6. Static files and DNS share the database's blocking threads.**
 
+Fixed in 081.34 ([edge](34-edge.md)): database owner threads, a startup file index, and a
+four-thread blocking pool for files and DNS.
+
 - **Where:** `native/crates/host/src/main.rs:26` caps Tokio's blocking pool at
   `readers + 1`; `ServeDir` (`host/src/edge/mod.rs:31`) uses `tokio::fs`, which runs on that
   pool, as does reqwest's resolver. `docs/architecture/native-host.md` says only database
@@ -265,6 +268,8 @@ Fixed in 081.31 ([input bounds](31-input-bounds.md)): size bound and cleanup on 
   (`MICROSOFT_TENANT_ID` without a client, unknown `NODE_ENV` or `DEMO_MODE` values).
 
 **M11. A precompressed file serves without its base file.**
+
+Fixed in 081.34 ([edge](34-edge.md)): only paths in the startup file index are served.
 
 - **Where:** `native/crates/host/src/edge/mod.rs:31-36`; tower-http opens `path.gz`,
   `.br`, or `.zst` without checking that `path` exists.

@@ -99,26 +99,28 @@ all requests on the writer.
 The host uses WAL in both modes. Each reader has a 2 MiB page-cache budget and caches
 64 prepared statements; these caches fill on demand.
 
-GETs and POST routes marked as reads lease a reader. The renderer's in-process calls
-use the same router and pool. Other calls and sign-in writes use the writer. Session
+GETs and POST routes marked as reads run on a reader. The renderer's in-process calls
+use the same router and readers. Other calls and sign-in writes use the writer. Session
 checks can renew expiry or delete expired sessions; these operations take the writer
 after the session SELECT has finished, even when the calling rule uses a reader.
 Maintenance rechecks the session under the writer lock before changing it. A
 request already using the writer reuses that lock.
-Readers cannot mutate the database. A lease returns its connection on early errors
-and normal completion. The pool remains opt-in: measured benefits depend on the
+Readers cannot mutate the database. The pool remains opt-in: measured benefits depend on the
 workload and core allocation. [Subtask 10](../tasks/081-native-backend/10-load-and-scaling.md)
 records the paired results, memory costs, and reasons for retaining the default.
 
-DB calls acquire async admission before entering Tokio's blocking pool. Each connection
-class has its own gate: reads wait for one of the `DB_READ_CONNECTIONS` readers when the
-read pool is on, and everything else waits for the writer's single slot. A reader renews
+DB calls acquire async admission, then run on a database owner thread: one writer
+thread, and one thread per reader that owns its connection, each fed by a bounded
+channel. Each connection class has its own gate: reads wait for one of the
+`DB_READ_CONNECTIONS` readers when the read pool is on, and everything else waits for
+the writer's single slot. A job whose caller left before a thread took it doesn't run. A reader renews
 or deletes a session only when the writer's gate has a free slot, and otherwise leaves it
 to a later request.
 `SCRYPT_CONCURRENCY` defaults to available cores. `WORK_QUEUE_TIMEOUT_MS` defaults to
-1,000 ms. Admission expiry returns 503 with `Retry-After: 1`. The blocking thread limit is
-the readers, plus one for the writer, plus the hash concurrency. Sign-in holds no DB
-permit while hashing. Renderer reads use the host runtime.
+1,000 ms. Admission expiry returns 503 with `Retry-After: 1`. Tokio's blocking pool has a
+fixed four threads and serves only public files and DNS lookups; source tests in both
+crates refuse `spawn_blocking` and `block_in_place`. Sign-in holds no DB permit while
+hashing. Renderer reads use the host runtime.
 
 `/livez` answers 200 while the API can serve, and `/readyz` reports each lane
 ([native-host.md](../docs/architecture/native-host.md), "Health").
@@ -127,8 +129,8 @@ Ramp-first whole-server runs and the two-machine repeat protocol are in
 [`bench/scaling/README.md`](bench/scaling/README.md).
 
 The optional `bench` Cargo feature adds connection wait/hold, blocking queue and CPU,
-and renderer queue timings, plus one-second SQLite cache, live DB/hash blocking
-worker counts, blocking concurrency,
+and renderer queue timings, plus one-second SQLite cache, live database and password
+lane thread counts, lane concurrency,
 scrypt concurrency, and render-pool counters. New diagnostics are compiled out of the
 default build. Thread CPU measurements work on Linux; macOS reports zero for those
 fields. Build a benchmark image with `--build-arg CARGO_FEATURES=bench`, or set
@@ -312,6 +314,12 @@ logging cost shows. `EDGE_BENCH_LOG` writes a separate,
 complete, buffered file of the requests that carry `X-Bench-Kind`; set
 `EDGE_ACCESS_LOG=off` when only that file is needed. The benchmark file has no
 rotation and belongs only in the benchmark stack.
+
+At startup the host lists the paths in `EDGE_STATIC_DIR` once. A request for a path
+outside that list goes to pages without a file call, and a precompressed variant
+serves only beside its base file, as Caddy requires. Files added after startup aren't
+served until a restart. Symbolic links to files are listed; links to directories
+aren't followed. The files themselves are read from disk when served.
 
 Static files get the Caddy cache policy: one year and immutable under `/assets/`,
 one week under `/backgrounds/` and `/brand/`, and revalidation elsewhere. Unknown API

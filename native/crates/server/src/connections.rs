@@ -1,73 +1,17 @@
-//! Bounded read-only WAL connections; a lease returns its connection on every exit.
+//! Read-only WAL connections, each owned by one reader thread.
 use rusqlite::{Connection, OpenFlags};
-use std::ops::Deref;
-use std::sync::{Condvar, Mutex};
 
-pub(crate) struct Readers {
-    idle: Mutex<Vec<Connection>>,
-    available: Condvar,
-}
-impl Readers {
-    pub fn open(path: &str, count: usize) -> rusqlite::Result<Self> {
-        let mut idle = Vec::with_capacity(count);
-        for _ in 0..count {
-            let db = Connection::open_with_flags(
-                path,
-                OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-            )?;
-            db.busy_timeout(std::time::Duration::from_secs(5))?;
-            db.pragma_update(None, "query_only", true)?;
-            db.pragma_update(None, "cache_size", -2048)?;
-            db.set_prepared_statement_cache_capacity(64);
-            crate::timing::install(&db);
-            idle.push(db);
-        }
-        Ok(Self {
-            idle: Mutex::new(idle),
-            available: Condvar::new(),
-        })
-    }
-    #[cfg(feature = "bench")]
-    pub fn stats(&self) -> serde_json::Value {
-        match self.idle.try_lock() {
-            Ok(idle) => {
-                serde_json::json!({ "idle": idle.len(), "connections": idle.iter().map(crate::bench::sqlite).collect::<Vec<_>>() })
-            }
-            Err(_) => serde_json::Value::Null,
-        }
-    }
-    pub fn acquire(&self) -> ReadLease<'_> {
-        let mut idle = self.idle.lock().unwrap_or_else(|e| e.into_inner());
-        loop {
-            if let Some(db) = idle.pop() {
-                return ReadLease {
-                    pool: self,
-                    db: Some(db),
-                };
-            }
-            idle = self.available.wait(idle).unwrap_or_else(|e| e.into_inner());
-        }
-    }
-}
-pub(crate) struct ReadLease<'a> {
-    pool: &'a Readers,
-    db: Option<Connection>,
-}
-impl Deref for ReadLease<'_> {
-    type Target = Connection;
-    fn deref(&self) -> &Connection {
-        self.db.as_ref().unwrap()
-    }
-}
-impl Drop for ReadLease<'_> {
-    fn drop(&mut self) {
-        self.pool
-            .idle
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .push(self.db.take().unwrap());
-        self.pool.available.notify_one();
-    }
+pub(crate) fn open_reader(path: &str) -> rusqlite::Result<Connection> {
+    let db = Connection::open_with_flags(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    )?;
+    db.busy_timeout(std::time::Duration::from_secs(5))?;
+    db.pragma_update(None, "query_only", true)?;
+    db.pragma_update(None, "cache_size", -2048)?;
+    db.set_prepared_statement_cache_capacity(64);
+    crate::timing::install(&db);
+    Ok(db)
 }
 
 #[cfg(test)]
@@ -75,6 +19,7 @@ mod tests {
     use super::*;
     use crate::admission::Gate;
     use crate::auth::session::{EXPIRES_IN_S, SessionConfig, find_session_with_writer};
+    use std::sync::Mutex;
     use std::time::Duration;
 
     #[test]
@@ -144,10 +89,9 @@ mod tests {
             )
             .unwrap();
         let writer = Mutex::new(writer);
-        let readers = Readers::open(path.to_str().unwrap(), 2).unwrap();
         let gate = Gate::new(1, Duration::from_secs(1));
-        let first = readers.acquire();
-        let second = readers.acquire();
+        let first = open_reader(path.to_str().unwrap()).unwrap();
+        let second = open_reader(path.to_str().unwrap()).unwrap();
         assert!(first.execute("delete from session", []).is_err());
         let config = SessionConfig {
             secret: "test-secret".into(),
@@ -215,9 +159,6 @@ mod tests {
         assert_eq!(count, 0);
         drop(first);
         drop(second);
-        // A returned lease can be acquired again without opening another connection.
-        drop(readers.acquire());
-        drop(readers);
         drop(writer);
         std::fs::remove_file(path).unwrap();
     }

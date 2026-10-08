@@ -538,3 +538,112 @@ async fn tls_serves_with_pem_files_and_a_cached_acme_certificate() {
         server.await.unwrap().unwrap();
     }
 }
+
+// Opening a FIFO blocks until a writer opens it, so each request for one holds a thread of
+// Tokio's blocking pool, as a slow disk would.
+struct Fifos(Vec<std::path::PathBuf>);
+impl Drop for Fifos {
+    // Opens each for writing, so the readers return even when an assertion fails; otherwise
+    // dropping the runtime would wait for them.
+    fn drop(&mut self) {
+        use std::os::unix::fs::OpenOptionsExt;
+        for fifo in &self.0 {
+            let _ = std::fs::OpenOptions::new()
+                .write(true)
+                .custom_flags(libc::O_NONBLOCK)
+                .open(fifo);
+        }
+    }
+}
+#[test]
+fn file_reads_holding_every_blocking_thread_leave_database_calls_running() {
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .max_blocking_threads(crate::BLOCKING_THREADS)
+        .enable_all()
+        .build()
+        .unwrap();
+    runtime.block_on(async {
+        let directory = tempfile::tempdir().unwrap();
+        std::fs::write(directory.path().join("plain.txt"), "plain").unwrap();
+        let fifos = Fifos(
+            (0..crate::BLOCKING_THREADS)
+                .map(|i| {
+                    let path = directory.path().join(format!("stuck-{i}.js"));
+                    let name = std::ffi::CString::new(path.to_str().unwrap()).unwrap();
+                    assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+                    path
+                })
+                .collect(),
+        );
+        let app = snowtime_server::App::open(snowtime_server::Config {
+            database_path: ":memory:".into(),
+            app_url: "http://snowtime.test".into(),
+            secret: "test-secret".into(),
+            password_enabled: false,
+            sign_in_page: Default::default(),
+            client_ip_header: None,
+            rate_limit: false,
+            oauth: vec![],
+        })
+        .unwrap();
+        let pages = Router::new().fallback(|| async { "page" });
+        let edge = router(
+            snowtime_server::router(app),
+            pages,
+            &config(&[("EDGE_STATIC_DIR", directory.path().to_str().unwrap())]),
+            "http://snowtime.test",
+        );
+        let get = |path: &str| {
+            edge.clone().oneshot(
+                HttpRequest::builder()
+                    .uri(path)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+        };
+        let stuck: Vec<_> = (0..crate::BLOCKING_THREADS)
+            .map(|i| tokio::spawn(get(&format!("/stuck-{i}.js"))))
+            .collect();
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        let plain = tokio::spawn(get("/plain.txt"));
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        assert!(!plain.is_finished(), "the blocking pool is full");
+        let answer = tokio::time::timeout(Duration::from_secs(2), get("/api/v1/availability"))
+            .await
+            .expect("a database call doesn't wait for file work")
+            .unwrap();
+        assert_eq!(answer.status(), StatusCode::OK);
+        drop(fifos);
+        for request in stuck {
+            assert_eq!(request.await.unwrap().unwrap().status(), StatusCode::OK);
+        }
+        assert_eq!(plain.await.unwrap().unwrap().status(), StatusCode::OK);
+    });
+}
+
+#[tokio::test]
+async fn a_precompressed_file_serves_only_beside_its_base_file() {
+    let directory = tempfile::tempdir().unwrap();
+    std::fs::write(directory.path().join("backup.gz"), "archive").unwrap();
+    let api = Router::new().fallback(|| async { (StatusCode::NOT_FOUND, "API refusal") });
+    let pages = Router::new().fallback(|| async { "page" });
+    let config = config(&[("EDGE_STATIC_DIR", directory.path().to_str().unwrap())]);
+    let answer = router(api, pages, &config, "https://snowtime.test")
+        .oneshot(
+            HttpRequest::builder()
+                .uri("/backup")
+                .header(header::ACCEPT_ENCODING, "gzip")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert!(!answer.headers().contains_key(header::CONTENT_ENCODING));
+    assert_eq!(
+        axum::body::to_bytes(answer.into_body(), 1024)
+            .await
+            .unwrap(),
+        "page"
+    );
+}

@@ -712,3 +712,29 @@ async fn a_panicking_async_handler_answers_the_apis_500() {
         r#"{"error":{"message":"Internal error."}}"#
     );
 }
+
+#[tokio::test]
+async fn database_calls_run_on_the_lanes_own_threads_with_their_own_connections() {
+    let file = TempDb::new();
+    let app = pooled_app(&file.0);
+    let name = || std::thread::current().name().unwrap_or("").to_owned();
+    assert_eq!(app.write_gate.run(name).await.unwrap(), "db-writer-0");
+    let readers = app.read_gate.as_ref().unwrap();
+    let (thread, read_only) = readers
+        .run_with(move |db| (name(), db.is_readonly(rusqlite::MAIN_DB).unwrap()))
+        .await
+        .unwrap();
+    assert!(thread.starts_with("db-reader-"), "{thread}");
+    assert!(read_only);
+    // A read through the router runs on a reader too.
+    let response = router(app.clone())
+        .oneshot(
+            HttpRequest::builder()
+                .uri("/api/v1/availability")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+}
