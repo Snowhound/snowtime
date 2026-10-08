@@ -102,6 +102,7 @@
     sceneWeather: true,
     sceneIntro: true, // play the intro on the sign-in page's first visit and once a season in the app
     appIcon: appIcon.DEFAULT, // '01' to '12', see app-icon.js
+    copyDurationPattern: 'H:MM:SS', // user_settings.copy_duration_pattern; see copy-durations.html
   }
   const darkQuery = matchMedia('(prefers-color-scheme: dark)')
   const readSettings = () => {

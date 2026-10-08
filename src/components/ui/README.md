@@ -5,8 +5,8 @@ These files are copies of the Solid-UI registry at `stefan-karger/solid-ui` @ `2
 changes a copy where every use needs the change, so call sites don't repeat it. Record each
 change here, with its reason, in the same commit.
 
-Copies not listed are unchanged apart from formatting and import order: `alert`, `avatar`,
-`badge`, `checkbox`, `label`, `separator`, `switch`, `table`, `tabs`, and `toggle`.
+Copies not listed are unchanged apart from formatting and import order: `avatar`, `badge`,
+`checkbox`, `label`, `separator`, `switch`, `table`, `tabs`, and `toggle`.
 
 ## Shared changes
 
@@ -27,6 +27,9 @@ Copies not listed are unchanged apart from formatting and import order: `alert`,
 
 ## Per component
 
+- `alert.tsx`: adds a `warning` variant in the orange `--warning` color, for what needs the
+  user but hasn't failed for good, such as changes the busy server hasn't saved yet. Its
+  text passes 4.5:1 in both themes, over an opaque tint, so it reads over the scene.
 - `button.tsx`: sets `data-variant` on the button, so the seasonal scene can give outline
   buttons a page-colored fill (`src/styles.css`).
 - `card.tsx`: adds the `surface` class, so the seasonal scene can style cards as glass or

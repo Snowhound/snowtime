@@ -19,6 +19,7 @@ import { errorMessage } from '~/lib/errors'
 import { formatDateTime, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
+import { isPendingChange, usePendingChanges } from '~/lib/queries/refusal'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
@@ -189,8 +190,11 @@ export function TimerCalendar(props: {
   const saveSettings = useUpdateSettings()
 
   const [status, setStatus] = createSignal<Status | null>(null)
+  // A change the busy server refused stays on the grid; the status line says it's pending.
+  const pending = usePendingChanges()
   function failed(error: unknown) {
-    setStatus({ text: m.entry_save_failed({ error: errorMessage(error) }), error: true })
+    if (isPendingChange(error)) setStatus(null)
+    else setStatus({ text: m.entry_save_failed({ error: errorMessage(error) }), error: true })
   }
   const handlers = { onError: failed }
   createEffect(() => {
@@ -537,7 +541,12 @@ export function TimerCalendar(props: {
           </For>
         </div>
       </div>
-      <CalendarStatus status={status()} onUndo={undo} />
+      <CalendarStatus
+        status={status()}
+        pending={pending.count() > 0}
+        onUndo={undo}
+        onRetry={() => pending.retry()}
+      />
       <EntryPopover
         target={editor()?.target ?? null}
         anchor={anchor()}

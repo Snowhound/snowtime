@@ -127,7 +127,12 @@
       <label class="flex items-center gap-2 text-sm" title="Prototype only: saves fail and roll back">
         <input id="fail-saves" type="checkbox" data-ui="checkbox" />Fail saves
       </label>
+      <label class="flex items-center gap-2 text-sm" title="Prototype only: the server refuses every write with 503 until this is off">
+        <input id="server-busy" type="checkbox" data-ui="checkbox" />Server busy
+      </label>
     </div>
+
+    <div id="pending" class="mx-auto max-w-6xl px-4 sm:px-8"></div>
 
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 pt-6 sm:px-8">
       <h1 class="text-2xl font-semibold tracking-tight">Timer</h1>
@@ -513,7 +518,44 @@
       // --- Mutations (updateEntry, createEntry, deleteEntry) -----------------------------------
       const status = (html) => (document.getElementById('cal-status').innerHTML = html)
 
+      // Server busy: a refused change stays on the grid, pending, and the status line offers
+      // "Try again" where Undo would be. The page's alert says the same for every page.
+      const pending = { count: 0, retrying: false }
+      const busy = () => document.getElementById('server-busy').checked
+      function renderPending() {
+        const disabled = pending.retrying ? ' disabled' : ''
+        document.getElementById('pending').innerHTML = pending.count
+          ? `<div data-ui="alert" data-variant="warning" class="mt-6 -mb-2 flex items-center gap-3 py-3 [&>svg]:static [&>svg]:shrink-0 [&>svg+div]:translate-y-0 [&>svg~*]:pl-0">${icon('clock')}<div data-ui="alert-description" class="flex flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <span role="status">Not saved yet: the server is busy. Try again when you’re ready.</span>
+              <button type="button" data-ui="button" data-variant="outline" data-size="sm" class="border-warning/50 text-warning hover:bg-warning/10 hover:text-warning" data-retry${disabled}>Try again</button>
+            </div></div>`
+          : ''
+        if (pending.count)
+          status(`<span class="inline-flex items-center gap-x-2 text-warning"><span class="inline-flex items-center gap-1.5">${icon('clock', 'size-3.5')}Not saved yet: the server is busy.</span><button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-warning" data-retry${disabled}>Try again</button></span>`)
+      }
+      function retryPending() {
+        if (pending.retrying) return
+        pending.retrying = true
+        renderPending()
+        setTimeout(() => {
+          pending.retrying = false
+          if (!busy()) {
+            pending.count = 0
+            status('Saved.')
+          }
+          renderPending()
+        }, 700)
+      }
+
       function save(apply, undo, message) {
+        if (busy() || pending.count) {
+          apply()
+          state.undo = null
+          pending.count++
+          renderPending()
+          render()
+          return true
+        }
         if (document.getElementById('fail-saves').checked) {
           status(`<span class="text-destructive">Couldn't save. The entry is back as it was.</span>`)
           render()
@@ -927,10 +969,11 @@
         b.addEventListener('click', () => {
           if (b.dataset.view === 'calendar') return
           appFrame.settings.set({ timerView: 'list' })
-          location.href = appFrame.link('timer.html')
+          location.href = appFrame.link('timer.html#list')
         })
       )
       document.addEventListener('click', (event) => {
+        if (event.target.closest('[data-retry]')) retryPending()
         if (event.target.closest('#undo') && state.undo) {
           const undo = state.undo
           state.undo = null

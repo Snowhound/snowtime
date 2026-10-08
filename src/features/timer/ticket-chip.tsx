@@ -9,14 +9,14 @@ import { issueUrl } from '~/lib/tickets'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 
-// A row's × shows on hover and focus, like the row's actions.
+// A row's × stays visible and brightens on hover and focus without changing the chip's width.
 const ROW_REMOVE =
-  'sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100'
+  'sm:opacity-50 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100'
 
 export function TicketChip(props: {
   ticket: string
   issueLinks: string | null
-  // In a row: the × shows on hover and focus, keeping its room so the key doesn't move.
+  // In a row: the × is muted until hover or focus.
   // `inline` at the end of the description cell, where the chip takes at most 60% of it.
   row?: boolean
   inline?: boolean

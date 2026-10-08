@@ -52,6 +52,26 @@ fn time_zone(name: &str) -> Result<()> {
     Ok(())
 }
 
+// validDurationPattern (src/lib/duration-pattern-settings.ts): at most 40 UTF-16 units, with
+// H, M, or S outside a backslash escape.
+fn copy_duration_pattern(pattern: &str) -> Result<()> {
+    let mut chars = pattern.chars();
+    let mut field = false;
+    while let Some(c) = chars.next() {
+        match c {
+            '\\' => {
+                chars.next();
+            }
+            'H' | 'M' | 'S' => field = true,
+            _ => {}
+        }
+    }
+    if !field || pattern.encode_utf16().count() > 40 {
+        return invalid("Use H, M, or S, in at most 40 characters.");
+    }
+    Ok(())
+}
+
 fn default_locale() -> String {
     "en".into()
 }
@@ -109,6 +129,8 @@ pub struct UpdateSettingsInput {
     pub duration_format: Option<String>,
     pub date_format: Option<String>,
     pub time_format: Option<String>,
+    pub copy_duration_pattern: Option<String>,
+    pub copy_duration_control: Option<String>,
     pub country: Patch<String>,
 }
 impl Validate for UpdateSettingsInput {
@@ -146,6 +168,14 @@ impl Validate for UpdateSettingsInput {
         ("durationFormat", Field::Picklist(&["clock", "units"])),
         ("dateFormat", Field::Picklist(&["dmy", "mdy"])),
         ("timeFormat", Field::Picklist(&["24h", "12h"])),
+        (
+            "copyDurationPattern",
+            Field::CheckedString {
+                required: false,
+                check: copy_duration_pattern,
+            },
+        ),
+        ("copyDurationControl", Field::Picklist(&["text", "button"])),
         ("country", Field::NullablePicklist(&["EE", "US", "other"])),
     ];
 }
@@ -167,6 +197,29 @@ mod tests {
         assert_eq!(patch.scene_pin, Patch::Null);
         assert_eq!(patch.country, Patch::Null);
         assert!(decode::<UpdateSettingsInput>(json!({"showSummary": null})).is_err());
+    }
+
+    #[test]
+    fn copy_patterns_need_a_field_outside_escapes_in_40_utf16_units() {
+        let long = format!("H{}", " ".repeat(39));
+        for pattern in ["H:MM:SS", "Hh Mm Ss", "S", "\\HH", "H\\", long.as_str()] {
+            assert!(decode::<UpdateSettingsInput>(json!({"copyDurationPattern": pattern})).is_ok());
+        }
+        let too_long = format!("H{}", " ".repeat(40));
+        // 41 UTF-16 units in 21 chars.
+        let astral = format!("H{}", "😀".repeat(20));
+        for pattern in ["", "hms", "\\H", too_long.as_str(), astral.as_str()] {
+            let result = decode::<UpdateSettingsInput>(json!({"copyDurationPattern": pattern}));
+            assert!(
+                matches!(result, Err(Error::Invalid(message)) if message == "Use H, M, or S, in at most 40 characters."),
+                "{pattern}"
+            );
+        }
+        for control in [json!("icon"), json!(""), json!(null)] {
+            assert!(
+                decode::<UpdateSettingsInput>(json!({"copyDurationControl": control})).is_err()
+            );
+        }
     }
 
     #[test]
@@ -220,5 +273,7 @@ pub struct Settings {
     pub duration_format: String,
     pub date_format: String,
     pub time_format: String,
+    pub copy_duration_pattern: String,
+    pub copy_duration_control: String,
     pub country: Option<String>,
 }

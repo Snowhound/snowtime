@@ -1,6 +1,8 @@
 import { useQueryClient } from '@tanstack/solid-query'
 import { useMatches } from '@tanstack/solid-router'
 import { type ParentProps, createContext, onMount } from 'solid-js'
+import { CopyAnnouncer } from '~/components/copy-announcer'
+import { PendingChanges } from '~/components/pending-changes'
 import { Intro, IntroPage } from '~/components/scene/intro'
 import { SceneLayer } from '~/components/scene/scene-layer'
 import { createSettings } from '~/lib/api/settings'
@@ -74,6 +76,7 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
             <main class={cn('mx-auto w-full flex-1 px-4 py-6 sm:px-8', !wide() && 'max-w-6xl')}>
               {/* At the header's width, also on a wide page. */}
               <div class="mx-auto max-w-6xl">
+                <PendingChanges />
                 <PasskeyPrompt signedInAt={props.session.signedInAt} />
               </div>
               <InAppFrame.Provider value={organizationId}>{props.children}</InAppFrame.Provider>
@@ -82,6 +85,8 @@ export function AppFrame(props: ParentProps<{ session: AppSession; organizationI
         </SeasonProvider>
       </IntroPage>
       <div id={LAYERS_ID} />
+      {/* Outside IntroPage, which the intro hides from screen readers while it plays. */}
+      <CopyAnnouncer />
       <Intro />
     </div>
   )

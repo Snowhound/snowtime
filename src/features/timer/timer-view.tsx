@@ -29,13 +29,21 @@ import { errorMessage } from '~/lib/errors'
 import { formatIsoDate } from '~/lib/format'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
+import { isPendingChange, usePendingChanges } from '~/lib/queries/refusal'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { runningTimerQuery } from '~/lib/queries/timer'
 import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { type CalendarControls, TimerCalendar } from './calendar/timer-calendar'
-import { RECENT_DAYS, groupByDay, recentRange, recentWork, summarize } from './entries'
+import {
+  RECENT_DAYS,
+  groupByDay,
+  recentRange,
+  recentWork,
+  recentTickets,
+  summarize,
+} from './entries'
 import type { EntryPatch } from './entry-fields'
 import { EmptyState, EntryList } from './entry-list'
 import { EntryPopover, type EntryPopoverTarget, type EntryPopoverValues } from './entry-popover'
@@ -227,8 +235,9 @@ export function TimerView(props: {
     })
   })
 
+  // A change the busy server refused stays pending, with the page's alert instead of an error.
   function showError(e: unknown) {
-    setError(errorMessage(e))
+    if (!isPendingChange(e)) setError(errorMessage(e))
   }
   const options = { onError: showError }
 
@@ -287,6 +296,7 @@ export function TimerView(props: {
   // Rows whose save the server confirmed a moment ago; they show "Saved" (EntryActions).
   // Kept here, not in the row, because a new date moves the entry to another day's row.
   const [savedIds, setSavedIds] = createSignal<ReadonlySet<string>>(new Set())
+  const pending = usePendingChanges()
   const savedTimers = new Map<string, ReturnType<typeof setTimeout>>()
   onCleanup(() => savedTimers.forEach(clearTimeout))
 
@@ -307,6 +317,9 @@ export function TimerView(props: {
   }
 
   const listProps = {
+    get tickets() {
+      return recentTickets(stopped())
+    },
     get projects() {
       return projects.data ?? []
     },
@@ -335,6 +348,8 @@ export function TimerView(props: {
       markSaved(entry.id)
     },
     justSaved: (id: string) => savedIds().has(id),
+    pending: (id: string) => pending.has(id),
+    onRetry: () => pending.retry(),
     onContinue: (entry: Entry) => start(entry.description, entry.projectId, entry.ticket),
     onDelete: remove,
   }
@@ -402,6 +417,8 @@ export function TimerView(props: {
         >
           <ErrorAlert message={error()} />
           <TimerBar
+            organizationId={props.organizationId}
+            userId={props.userId}
             layout={layout()}
             compact={props.settings.compactRows}
             running={running.data ?? null}

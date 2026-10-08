@@ -2168,6 +2168,40 @@
           "scale": null,
           "default": "0",
           "comments": "Boolean 0/1 (CHECK), default 0. The calendar shows Saturday and Sunday even when they have no time."
+        },
+        {
+          "id": "t10f29",
+          "name": "copy_duration_pattern",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "'H:MM:SS'",
+          "comments": null
+        },
+        {
+          "id": "t10f30",
+          "name": "copy_duration_control",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "'text'",
+          "comments": null
         }
       ],
       "indexes": [],

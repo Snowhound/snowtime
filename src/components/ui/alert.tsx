@@ -14,6 +14,8 @@ const alertVariants = cva(
         default: 'bg-background text-foreground',
         destructive:
           'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
+        warning:
+          'border-warning/50 bg-[color-mix(in_oklab,var(--warning)_8%,var(--background))] text-warning [&>svg]:text-warning',
       },
     },
     defaultVariants: {

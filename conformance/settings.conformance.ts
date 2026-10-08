@@ -35,6 +35,32 @@ describe('settings', () => {
     expect(await member('updateSettings', { weekStart: before.weekStart })).toEqual(before)
   })
 
+  test('the copy settings come back with the rest, and a pattern needs a field', async () => {
+    const before = await member('createSettings', { timeZone: 'UTC' })
+    expect(typeof before.copyDurationPattern).toBe('string')
+    expect(['text', 'button']).toContain(before.copyDurationControl)
+    const after = await member('updateSettings', {
+      copyDurationPattern: 'Hh Mm Ss',
+      copyDurationControl: 'button',
+    })
+    expect(after).toEqual({
+      ...before,
+      copyDurationPattern: 'Hh Mm Ss',
+      copyDurationControl: 'button',
+    })
+    const { status } = await send(
+      server.url,
+      'updateSettings',
+      { copyDurationPattern: 'hms' },
+      headers,
+    )
+    expect(status).toBe(400)
+    await member('updateSettings', {
+      copyDurationPattern: before.copyDurationPattern,
+      copyDurationControl: before.copyDurationControl,
+    })
+  })
+
   test('a pinned image must be in the collection', async () => {
     const [image] = COLLECTION_IMAGES.coast
     expect(

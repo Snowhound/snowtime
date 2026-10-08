@@ -3,6 +3,7 @@ import { redirect } from '@tanstack/solid-router'
 import { getAppSession } from '~/lib/api/auth'
 import { isAppPage } from '~/lib/app-paths'
 import type { AppSession } from '~/server/auth/auth.schemas'
+import { clearPending } from './refusal'
 
 // The signed-in user, their organizations and settings, or null when signed out. The root
 // route loads it before every page; changes to the session (switching organization,
@@ -30,10 +31,12 @@ export function followSession(queryClient: QueryClient) {
   return queryClient.getQueryCache().subscribe(({ query }) => {
     if (!isSession(query)) return
     const session = query.state.data as AppSession | null | undefined
+    if (session === null) clearPending(queryClient)
     if (!session) return
     const previous = cachedUser.get(queryClient)
     cachedUser.set(queryClient, session.user.id)
     if (previous && previous !== session.user.id) {
+      clearPending(queryClient)
       void queryClient.resetQueries({ predicate: (other) => !isSession(other) })
     }
   })

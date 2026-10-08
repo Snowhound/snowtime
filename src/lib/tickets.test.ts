@@ -1,7 +1,27 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from 'bun:test'
-import { detectTicket, issueUrl, keysIn, TICKET_PATTERN, untick } from './tickets'
+import { detectTicket, issueUrl, keysIn, parseTicket, TICKET_PATTERN, untick } from './tickets'
+
+describe('parseTicket', () => {
+  test('accepts a key or supported issue URL, ignoring case and surrounding space', () => {
+    expect(parseTicket(' snow-161 ')).toBe('SNOW-161')
+    expect(parseTicket('https://acme.atlassian.net/browse/snow-161')).toBe('SNOW-161')
+    expect(parseTicket('https://linear.app/acme/issue/snow-161/title')).toBe('SNOW-161')
+  })
+
+  test('rejects empty values, malformed keys, and descriptions containing a key', () => {
+    for (const value of [
+      '',
+      'SNOW-0',
+      'SNOW-',
+      'Fix SNOW-161',
+      'https://example.com/other/SNOW-161',
+    ]) {
+      expect(parseTicket(value)).toBeNull()
+    }
+  })
+})
 
 const none = new Set<string>()
 

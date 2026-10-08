@@ -4,6 +4,7 @@
 // field saves on its own, with only what changed; an error shows under the row.
 import CalendarIcon from 'lucide-solid/icons/calendar'
 import { For, Show, createEffect, createMemo, createSignal, createUniqueId, on } from 'solid-js'
+import { CopyDuration } from '~/components/copy-duration'
 import { DatePicker } from '~/components/date-time/date-picker'
 import { TimeInput } from '~/components/date-time/time-input'
 import { PlainButton } from '~/components/plain-button'
@@ -22,10 +23,12 @@ import { type WeekStart, localDate, localTime, sameTimeOn } from '~/lib/calendar
 import { errorMessage } from '~/lib/errors'
 import { formatClock, formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
+import { isPendingChange } from '~/lib/queries/refusal'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
 import { changedFields, readEntryTimes } from './entries'
+import { IssuePicker } from './issue-picker'
 import { projectChoices } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
 import { TicketChip } from './ticket-chip'
@@ -114,9 +117,10 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
 
   function save(patch: EntryPatch) {
     setFailed(null)
-    props
-      .onSave(props.entry, patch)
-      .catch((error: unknown) => setFailed(m.entry_save_failed({ error: errorMessage(error) })))
+    props.onSave(props.entry, patch).catch((error: unknown) => {
+      // A change the busy server refused stays, marked in the row's actions.
+      if (!isPendingChange(error)) setFailed(m.entry_save_failed({ error: errorMessage(error) }))
+    })
   }
 
   // Moves the entry to `value`, keeping its times of day, seconds, and duration.
@@ -232,7 +236,7 @@ export function DescriptionField(props: { editor: EntryEditor }) {
       onBlur={() => props.editor.commitDescription()}
       onKeyDown={(event) =>
         commitKeys(
-          () => props.editor.commitDescription(),
+          () => event.currentTarget.blur(),
           () => props.editor.resetDescription(),
         )(event)
       }
@@ -264,17 +268,69 @@ export function InlineDescription(props: {
   )
 }
 
-// The row's chip, at the end of the description or in the Wide page's Ticket column; nothing
-// without a ticket.
+// The row's chip, or an Add issue link in an empty Ticket column.
 export function TicketCell(props: {
   editor: EntryEditor
   entry: Entry
   issueLinks: string | null
   inline?: boolean
   class?: string
+  tickets?: readonly string[]
+  active?: boolean
 }) {
+  const [open, setOpen] = createSignal(false)
+  let anchor: HTMLButtonElement | undefined
+  let cell: HTMLElement | null = null
+  let focusChip = false
+
+  // The picked issue's chip replaces Add issue, so focus moves to it once it shows.
+  createEffect(
+    on(
+      () => props.entry.ticket,
+      (ticket) => {
+        if (!ticket || !focusChip) return
+        focusChip = false
+        cell?.querySelector<HTMLElement>('a, button')?.focus()
+      },
+      { defer: true },
+    ),
+  )
+
   return (
-    <Show when={props.entry.ticket}>
+    <Show
+      when={props.entry.ticket}
+      fallback={
+        <Show when={!props.inline}>
+          <Button
+            ref={(el) => (anchor = el)}
+            type="button"
+            variant="link"
+            size="sm"
+            class={cn('text-muted-foreground h-7 px-1 text-xs', props.class)}
+            aria-haspopup="dialog"
+            aria-expanded={open()}
+            onClick={() => {
+              cell = anchor!.parentElement
+              setOpen(true)
+            }}
+          >
+            {m.ticket_add()}
+          </Button>
+          <Show when={props.active || open()}>
+            <IssuePicker
+              open={open()}
+              anchor={anchor}
+              tickets={props.tickets ?? []}
+              onClose={() => setOpen(false)}
+              onPick={(ticket) => {
+                focusChip = true
+                props.editor.save({ ticket })
+              }}
+            />
+          </Show>
+        </Show>
+      }
+    >
       {(ticket) => (
         <TicketChip
           ticket={ticket()}
@@ -505,11 +561,17 @@ export function DateField(props: {
   )
 }
 
-// Read-only: start and end set it, and it follows them while the user types.
+// Start and end set it, and it follows them while the user types. A click copies it.
 export function EntryDuration(props: { editor: EntryEditor; class?: string }) {
+  function text() {
+    const ms = props.editor.duration()
+    return ms === null ? '—' : formatClock(ms)
+  }
   return (
     <span class={props.class}>
-      {props.editor.duration() === null ? '—' : formatClock(props.editor.duration()!)}
+      <CopyDuration ms={props.editor.duration()} label={text()}>
+        {text()}
+      </CopyDuration>
     </span>
   )
 }

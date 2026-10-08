@@ -49,12 +49,21 @@ export async function request<S extends v.GenericSchema>(
     headers: body ? { 'content-type': 'application/json' } : {},
     body,
   })
-  const json: unknown = await response.json()
+  let json: unknown
+  try {
+    json = await response.json()
+  } catch (error) {
+    if (response.ok) throw error
+  }
   if (response.ok) return decode(output, json)
   const error = isRecord(json) ? (json.error as WireError | undefined) : undefined
-  if (error && 'key' in error) throw new AppError(error.code, error.key)
-  throw Object.assign(new Error(error?.message ?? `HTTP ${response.status}`), {
+  const thrown =
+    error && 'key' in error
+      ? new AppError(error.code, error.key)
+      : new Error(error?.message ?? `HTTP ${response.status}`)
+  throw Object.assign(thrown, {
     status: response.status,
     code: error?.code,
+    retryAfter: response.headers.get('retry-after'),
   })
 }

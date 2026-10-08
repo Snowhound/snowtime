@@ -8,7 +8,7 @@ use crate::{Code, Key, Result, refuse};
 use rusqlite::{Connection, OptionalExtension};
 
 pub fn find_settings(db: &Connection, user_id: &str) -> Result<Option<Settings>> {
-    let settings = crate::sql!("select time_zone, week_start, locale, theme, timer_layout, show_summary, compact_rows, wide_timer, timer_view, calendar_weekend, app_icon, scene_collection, scene_pin, scene_background, scene_strength, surfaces, scene_weather, scene_intro, scene_tagline, duration_format, date_format, time_format, country from user_settings where user_id = ",
+    let settings = crate::sql!("select time_zone, week_start, locale, theme, timer_layout, show_summary, compact_rows, wide_timer, timer_view, calendar_weekend, app_icon, scene_collection, scene_pin, scene_background, scene_strength, surfaces, scene_weather, scene_intro, scene_tagline, duration_format, date_format, time_format, copy_duration_pattern, copy_duration_control, country from user_settings where user_id = ",
         user_id)
     .query_row(db, |row| {
         Ok(Settings {
@@ -34,7 +34,9 @@ pub fn find_settings(db: &Connection, user_id: &str) -> Result<Option<Settings>>
             duration_format: row.get(19)?,
             date_format: row.get(20)?,
             time_format: row.get(21)?,
-            country: row.get(22)?,
+            copy_duration_pattern: row.get(22)?,
+            copy_duration_control: row.get(23)?,
+            country: row.get(24)?,
         })
     })
     .optional()?;
@@ -101,6 +103,8 @@ pub fn update_settings(
     assignments.set_optional("duration_format", input.duration_format);
     assignments.set_optional("date_format", input.date_format);
     assignments.set_optional("time_format", input.time_format);
+    assignments.set_optional("copy_duration_pattern", input.copy_duration_pattern);
+    assignments.set_optional("copy_duration_control", input.copy_duration_control);
     assignments.set("country", input.country);
     let fields = assignments.finish();
     if !fields.text().is_empty() {

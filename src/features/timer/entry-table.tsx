@@ -3,7 +3,7 @@
 // follows the text, or with the Wide page setting has a column of its own. It scrolls
 // horizontally inside its border on narrow screens. Compact rows pad their cells less.
 import { For, Show } from 'solid-js'
-import { Duration } from '~/components/duration'
+import { CopyableDuration } from '~/components/copy-duration'
 import { Glass } from '~/components/scene/glass'
 import {
   Table,
@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
+import { useCopyControl } from '~/lib/display-format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'
@@ -49,6 +50,7 @@ export function EntryTable(
   },
 ) {
   const lazyDay = createLazyDays(() => props.groups)
+  const copyControl = useCopyControl()
   // Rows' heights as rendered, for a day's placeholder until it mounts (lazy-days.ts).
   function rowHeight() {
     return props.compact ? 37 : 57
@@ -68,7 +70,8 @@ export function EntryTable(
           <col class="w-40" />
           <col class="w-40" />
           <col class="w-36" />
-          <col class="w-24" />
+          {/* The duration, with room for the copy button when it shows. */}
+          <col class={copyControl() === 'button' ? 'w-28' : 'w-24'} />
           <col class="w-24" />
         </colgroup>
         <TableHeader>
@@ -104,7 +107,7 @@ export function EntryTable(
                       {dayLabel(date, props.today)}
                     </th>
                     <TableCell class="text-right text-xs tabular-nums">
-                      <Duration ms={group()?.total ?? 0} />
+                      <CopyableDuration ms={group()?.total ?? 0} side="left" />
                     </TableCell>
                     <TableCell />
                   </TableRow>
@@ -170,7 +173,13 @@ function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
         <Show when={props.wide}>
           <TableCell class="max-w-0">
             <div class="flex">
-              <TicketCell editor={editor} entry={props.entry} issueLinks={props.issueLinks} />
+              <TicketCell
+                editor={editor}
+                entry={props.entry}
+                issueLinks={props.issueLinks}
+                tickets={props.tickets}
+                active={activation.active()}
+              />
             </div>
           </TableCell>
         </Show>
@@ -206,10 +215,12 @@ function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
           <EntryActions
             entry={props.entry}
             saved={props.justSaved(props.entry.id)}
+            pending={props.pending(props.entry.id)}
             compact={props.compact}
             active={activation.active()}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
+            onRetry={props.onRetry}
           />
         </TableCell>
       </TableRow>

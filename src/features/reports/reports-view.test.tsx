@@ -398,6 +398,16 @@ describe('ReportsView', () => {
     expect(within(rows[1]).getAllByRole('cell')[2]).not.toHaveClass('bg-muted/50')
   })
 
+  test('the timesheet’s total copies with seconds, and its cells stay picks', async () => {
+    const user = userEvent.setup()
+    renderView()
+    const grid = await screen.findByRole('table')
+    // The total shows rounded to the minute and copies in the default pattern, H:MM:SS.
+    await user.click(within(grid).getByRole('button', { name: 'Copy duration 7:15' }))
+    expect(await navigator.clipboard.readText()).toBe('7:15:00')
+    expect(within(grid).queryByRole('button', { name: /Copy duration 6:30/ })).toBeNull()
+  })
+
   test('team leads choose among their teams and those teams’ members', async () => {
     server.lead = true
     server.rows.push({ kind: 'team', id: platform.id, ms: [2.5 * HOUR] })
@@ -900,7 +910,8 @@ describe('ReportsView', () => {
       'Max Member (you)62%4:00',
       'Kadri Tamm38%2:30',
     ])
-    expect(within(members[0]).queryByRole('button')).not.toBeInTheDocument()
+    // A member's total doesn't pick; its only button copies it.
+    expect(within(members[0]).getByRole('button')).toHaveAccessibleName('Copy duration 4:00')
 
     await userEvent.click(within(snowtimeRow).getByRole('button', { name: '6:30' }))
     await waitFor(() =>

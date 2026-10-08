@@ -1,6 +1,6 @@
 // The Preferences card of the settings page (prototypes/settings.html): language and
-// region, appearance with the app icon, and the scenery. Each field saves on change as a
-// one-field updateSettings patch.
+// region, copying durations, appearance with the app icon, and the scenery. Each field saves
+// on change as a one-field updateSettings patch.
 import CheckIcon from 'lucide-solid/icons/check'
 import CircleAlertIcon from 'lucide-solid/icons/circle-alert'
 import { Show, createSignal, onCleanup } from 'solid-js'
@@ -8,6 +8,7 @@ import { SceneryFields } from '~/components/scene/scenery-fields'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
 import { errorMessage } from '~/lib/errors'
+import { isPendingChange } from '~/lib/queries/refusal'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { playIntro } from '~/lib/scene/intro'
 import { useSeason } from '~/lib/scene/seasons'
@@ -15,6 +16,7 @@ import { m } from '~/paraglide/messages.js'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
 import { SceneryPicker } from '../scenery-picker/scenery-picker'
 import { AppearanceFields } from './appearance-fields'
+import { CopyFields } from './copy-fields'
 import { RegionFields } from './region-fields'
 
 export function PreferencesCard(props: { settings: Settings }) {
@@ -42,7 +44,8 @@ export function PreferencesCard(props: { settings: Settings }) {
           <CardDescription>{m.settings_preferences_description()}</CardDescription>
         </div>
         <p class="text-muted-foreground flex items-center gap-1.5 text-sm" aria-live="polite">
-          <Show when={save.isError}>
+          {/* A change the busy server refused stays pending, with the page's alert. */}
+          <Show when={save.isError && !isPendingChange(save.error)}>
             <span class="text-destructive flex items-center gap-1.5">
               <CircleAlertIcon class="size-4" aria-hidden="true" />
               {errorMessage(save.error)}
@@ -56,6 +59,8 @@ export function PreferencesCard(props: { settings: Settings }) {
       </CardHeader>
       <CardContent class="@container grid grid-cols-[minmax(0,1fr)] gap-6">
         <RegionFields settings={props.settings} onChange={update} />
+        <Separator />
+        <CopyFields settings={props.settings} onChange={update} />
         <Separator />
         <AppearanceFields settings={props.settings} onChange={update} />
         <Separator />

@@ -31,6 +31,8 @@ const columns = {
   durationFormat: userSettings.durationFormat,
   dateFormat: userSettings.dateFormat,
   timeFormat: userSettings.timeFormat,
+  copyDurationPattern: userSettings.copyDurationPattern,
+  copyDurationControl: userSettings.copyDurationControl,
   country: userSettings.country,
 }
 

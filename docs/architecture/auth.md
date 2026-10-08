@@ -197,7 +197,7 @@ the database, and the Turso quotas in `docs/hosting.md`, without bound. The valu
   teams per organization.
 - `createProject` caps projects per organization, archived ones included.
 - The invitation limit callback counts all live pending invitations in SQL. Better Auth
-  1.7.6 fetches at most 100 pending rows before excluding expired ones, so its default
+  1.7.7 fetches at most 100 pending rows before excluding expired ones, so its default
   count can admit invitations beyond the cap. The callback runs at the plugin's limit
   check, preserving earlier permission, existing-member, and duplicate refusals.
   Kait approved this correction for both servers on 2026-10-08.

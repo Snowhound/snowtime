@@ -1,3 +1,4 @@
+import { isPendingChange } from '~/lib/queries/refusal'
 import { m } from '~/paraglide/messages.js'
 import { NAME_MAX_LENGTH, SLUG_MAX_LENGTH } from '~/server/auth/auth.schemas'
 import { AppError, type AppErrorKey } from '~/server/errors'
@@ -79,6 +80,7 @@ function authErrorCode(error: unknown): string | undefined {
 // AppError from a newer server than this client falls back to the server's English
 // message; anything else is unexpected and gets a generic message instead of internals.
 export function errorMessage(error: unknown): string {
+  if (isPendingChange(error)) return m.change_pending()
   if (error instanceof AppError) return errorText[error.key]?.() ?? error.message
   // Better Auth's rate limiter answers 429 without a code.
   if (typeof error === 'object' && error !== null && 'status' in error && error.status === 429) {

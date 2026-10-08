@@ -12,6 +12,7 @@ import {
   onCleanup,
   onMount,
 } from 'solid-js'
+import { CopyableDuration } from '~/components/copy-duration'
 import { Duration } from '~/components/duration'
 import { ProjectDot } from '~/components/project-dot'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '~/components/ui/table'
@@ -223,7 +224,7 @@ export function Timesheet(props: {
                 )}
               </For>
               <td class={ROW_TOTAL}>
-                <Duration ms={props.report.total} />
+                <CopyableDuration ms={props.report.total} />
               </td>
             </tr>
           </TableBody>

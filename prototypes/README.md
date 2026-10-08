@@ -85,6 +85,9 @@ original `class` is what gets re-merged. Start page scripts from `ui.ready`.
 When a prototype needs another component, copy its class strings verbatim from the Solid-UI
 registry into `ui.js`, keeping the commit noted at the top of the file. Badge variants
 `success` / `warning` / `error` are left out because their tokens are not in `src/styles.css`.
+The alert's `warning` variant is Snowtime's own, on a proposed `--warning` token in
+`prototype.css`, an orange whose text passes 4.5:1 in both themes. The timer and calendar
+prototypes use it for pending changes.
 
 The app changes its copies in `src/components/ui/` where every use needs the change, and lists
 each change in [`src/components/ui/README.md`](../src/components/ui/README.md).
@@ -754,6 +757,15 @@ fields, applied at once. A failed save (the prototype bar's "Fail saves") rolls 
 back and shows an error under the row. Tab moves through description, project, date, start,
 end, continue, and delete.
 
+"Server busy" in the prototype bar has the server refuse every write with 503, as an
+overloaded native server does (task 081.17). The change stays on screen, and an alert above
+the page offers "Try again", which sends the pending changes in order once the server
+answers. Nothing retries on its own, and a change made meanwhile waits behind them. The
+alert uses the warning variant, orange, with its icon centered on the row and its text and
+button in the same color. Each pending row also shows "Not saved" over "Try again" where a
+saved row shows "Saved". Changes without a row, such as starting the timer
+or a delete, show only in the alert.
+
 The entry popover is for Add entry and for the running entry's start. It opens under the Add
 entry button, or under the timer's clock for the running entry. It has description, project,
 date, start, and end, with the validation the rows use, and a live line with the resulting
@@ -815,13 +827,13 @@ Decisions:
   `COVID-` numbers stay text.
 - **A chip's × turns the key back into text**, at the start of the description, and it isn't
   found again: only keys an edit adds are found. That fixes a false match such as `Q3-2026`
-  without losing what was typed; a wrong ticket is then deleted as text. In rows the × shows
-  on hover and focus, like the row's actions.
+  without losing what was typed; a wrong ticket is then deleted as text. In rows the × stays
+  faintly visible and brightens on hover and focus.
 - **The ticket goes after the description**, so the text starts in the same place with or
   without one. At the standard width the description's input fills the cell and the chip
   sits at its end, taking at most 60% of the cell, so every row's chip lines up and the
-  input gets the room the chip doesn't need. Its × keeps its room and shows on hover or
-  focus, so the key doesn't move. With Wide page on, rows have an 8rem Ticket column between
+  input gets the room the chip doesn't need. Its × keeps its room, so the key doesn't move
+  on hover or focus. With Wide page on, rows have an 8rem Ticket column between
   the description and the project from 1280 px, empty without a ticket; below 1280 px the
   summary or the window leaves no room for the column, so the chip stays at the end of the
   description, and below 768 px it joins the project on the row's second line. A long key is
@@ -928,6 +940,10 @@ Decided on 2026-09-29:
   Alt+Right by a day; Shift+Alt+Up and Shift+Alt+Down change its end. They go through
   `updateEntry` with Undo like a drag, and focus stays on the entry. Alt+Left is the
   browser's Back on Windows and Linux, so the page prevents it on an entry.
+- "Server busy" in the prototype bar has the server refuse every write, as in the timer
+  prototype. The change stays on the grid, the page shows the pending-change alert, and the
+  status line under the grid says "Not saved yet" in orange with "Try again" where Undo
+  would be.
 
 ### [auth.html](auth.html) — Sign-in flows
 
@@ -1230,3 +1246,48 @@ presets changed, with each overlay: every effect compiles and draws, glitter sta
 horizon, the bands sit where set, the mist leaves the tagline and cards readable, and there are
 no browser errors. Screenshots show single frames, so the motion, the gusts, the snow's arc,
 and how visible the day glitter, spray, and dust are need a look on a real screen.
+
+### [copy-durations.html](copy-durations.html) — Copy durations
+
+Decision: how a click on a duration shows what it copied (task 078). The page has the Timer
+page's day cards and table, simplified to the fields around the duration, and the "Copied
+durations" settings field beside them. Each entry's duration and each day's total is a button
+that reads as text. A click formats the raw milliseconds with the user's pattern
+(`copyDurationPattern` in the frame's settings) and writes it to the clipboard.
+
+- **Pattern**: `H`, `M`, and `S` are hours, minutes, and seconds, and a run of one letter sets
+  the minimum digits (`HH` gives `09`). A backslash copies the next character as typed, and
+  any other character is copied as typed. The first unit in the pattern holds the whole
+  duration, so `M:SS` copies 2:05:09 as `125:09`. The default is `H:MM:SS`.
+- **Settings field**: a live preview of 2:05:09, a key to the letters, example patterns, and
+  Reset. It saves on blur or Enter; an empty pattern or one without a field shows an error
+  and isn't saved, and Escape returns to the saved one.
+- **Feedback**: the prototype bar's **Feedback** select compares a bubble above the duration
+  ("Copied 2h 0m 0s") with the text swapping in place. A screen reader hears the same text
+  from a live region. **Refuse clipboard** shows "Couldn't copy".
+- **Prototype only**: "Last copied" and a paste box under the field, to check the clipboard
+  without leaving the page.
+
+Fixtures: populated, long durations (just under 24 hours), an invalid row whose duration is
+disabled, and empty. Checked on 2026-10-02 in the app's browser pane at 1440 and 390 px, light
+and dark, in both layouts, both feedback variants, and every fixture: no horizontal page
+scroll and no failed requests. In the table at 390 px, the duration column and its bubble sit
+in the table's own horizontal scroll, as the timer's table does.
+
+Decided on 2026-10-02: the bubble. Swapping the text in place made a list row grow from 68 to
+88 px at 390 px, where "11h 15m 10s" wrapped in the duration's column.
+
+The app later added what this page doesn't show: a copy button as an alternative to a click on
+the duration (the `copyDurationControl` setting), a field colored by token with a warning
+about a field inside a word, and a fifth example, `H \Hours M \Minutes`.
+`docs/architecture/timer.md`, "Copying durations", describes the app's behavior.
+
+## Adding issues to tracker entries
+
+`timer.html` and the app have an Add issue link in empty Ticket cells in Wide page, a button at the
+right of the timer description, and an Add issue action below its recent-work suggestions.
+The picker offers up to six distinct issue keys from loaded entries, newest first, or a
+custom key or issue URL. Picking an issue keeps the description and project unchanged.
+Once an issue is attached, only its chip shows. Removing it restores Add issue. The description
+gets focus after the picker closes, with recent-work suggestions closed until typing or an
+arrow key opens them. Typed keys and pasted issue URLs still work in the description.

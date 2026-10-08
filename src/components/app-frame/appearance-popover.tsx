@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover
 import { Separator } from '~/components/ui/separator'
 import { appIcon } from '~/lib/app-icon'
 import { errorMessage } from '~/lib/errors'
+import { isPendingChange } from '~/lib/queries/refusal'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import {
   collection,
@@ -74,9 +75,12 @@ export function AppearancePopover(props: { settings: Settings; organizationSlug:
           <h2 id="appearance-title" class="text-sm font-semibold">
             {m.settings_appearance()}
           </h2>
-          {/* A refused change goes back at once; this says why. */}
+          {/* A failed change goes back at once; this says why. One the busy server refused
+              stays pending, with the page's alert. */}
           <p class="text-destructive text-xs empty:hidden" aria-live="polite">
-            <Show when={save.isError}>{errorMessage(save.error)}</Show>
+            <Show when={save.isError && !isPendingChange(save.error)}>
+              {errorMessage(save.error)}
+            </Show>
           </p>
           <ThemeToggle value={props.settings.theme} onChange={(theme) => save.mutate({ theme })} />
           <div class="mb-2 flex items-center justify-between gap-3">

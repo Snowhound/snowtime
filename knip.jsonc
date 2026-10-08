@@ -6,9 +6,11 @@
   // The harnesses (perf/README.md); the weather bench's page script loads from its HTML and
   // its config from createServer. The load benchmark's k6 scenario runs in k6's container.
   // The native backend's harnesses (native/README.md).
+  // Paraglide's Vite plugin and CLI load its config from the project folder.
   "entry": [
     "src/server-entry.ts",
     "drizzle.config.ts",
+    "project.inlang/paraglide.config.ts",
     "scripts/db-migrate-release.ts",
     "perf/*.ts",
     "perf/weather/bench.ts",

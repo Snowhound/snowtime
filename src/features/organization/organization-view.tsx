@@ -13,6 +13,7 @@ import { errorMessage } from '~/lib/errors'
 import { type Member, membersQuery } from '~/lib/queries/members'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
+import { isPendingChange } from '~/lib/queries/refusal'
 import { type Team, teamsQuery } from '~/lib/queries/teams'
 import { useQuery } from '~/lib/queries/use-query'
 import { m } from '~/paraglide/messages.js'
@@ -98,8 +99,9 @@ export function OrganizationView(props: {
   const [teamDialog, setTeamDialog] = createSignal<TeamDialogTarget | null>(null)
   const [confirmation, setConfirmation] = createSignal<Confirmation | null>(null)
 
+  // A change the busy server refused stays pending, with the page's alert instead of an error.
   function showError(e: unknown) {
-    setError(errorMessage(e))
+    if (!isPendingChange(e)) setError(errorMessage(e))
   }
   const options = { onError: showError }
   function run<T>(mutate: (input: T, opts: typeof options) => void, input: T) {

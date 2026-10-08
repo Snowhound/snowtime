@@ -8,7 +8,7 @@ import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'
 import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { For, Show, createEffect, on } from 'solid-js'
-import { Duration } from '~/components/duration'
+import { CopyableDuration } from '~/components/copy-duration'
 import { PlainButton } from '~/components/plain-button'
 import { Glass } from '~/components/scene/glass'
 import { Button } from '~/components/ui/button'
@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { type WeekStart, addDays } from '~/lib/calendar'
+import { useCopyControl } from '~/lib/display-format'
 import { formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
@@ -51,6 +52,7 @@ export function dayLabel(date: string, today: string) {
 }
 
 export interface EntryRowProps {
+  tickets: readonly string[]
   projects: readonly Project[]
   zone: string
   weekStart: WeekStart
@@ -63,6 +65,9 @@ export interface EntryRowProps {
   onSave: SaveEntry
   // Whether the entry's last save was confirmed a moment ago.
   justSaved: (id: string) => boolean
+  // Whether a change to the entry waits for the busy server, and the retry that sends it.
+  pending: (id: string) => boolean
+  onRetry: () => void
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
 }
@@ -137,7 +142,7 @@ export function EntryList(
               <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
                 <h2 class="font-medium">{dayLabel(date, props.today)}</h2>
                 <span class="text-muted-foreground tabular-nums">
-                  <Duration ms={group()?.total ?? 0} />
+                  <CopyableDuration ms={group()?.total ?? 0} side="left" />
                 </span>
               </header>
               <Show
@@ -168,6 +173,7 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
   const editor = createEntryEditor(props)
   const activation = createRowActivation()
   const ref = revealWhenSaved(props)
+  const copyControl = useCopyControl()
   return (
     <li
       ref={(el) => {
@@ -194,7 +200,13 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
         <div class="-ml-2 flex min-w-0 items-center gap-2 md:contents">
           <Show when={props.wide}>
             <div class="order-last flex min-w-0 shrink-0 md:hidden xl:order-none xl:flex xl:w-32">
-              <TicketCell editor={editor} entry={props.entry} issueLinks={props.issueLinks} />
+              <TicketCell
+                editor={editor}
+                entry={props.entry}
+                issueLinks={props.issueLinks}
+                tickets={props.tickets}
+                active={activation.active()}
+              />
             </div>
           </Show>
           <div class="min-w-0 md:w-36 md:shrink-0">
@@ -221,16 +233,22 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
         </div>
         <EntryDuration
           editor={editor}
-          class="row-start-3 w-16 shrink-0 text-right text-sm tabular-nums"
+          class={cn(
+            'row-start-3 shrink-0 text-right text-sm tabular-nums',
+            // Room for the copy button, the same in every row so the times line up.
+            copyControl() === 'button' ? 'w-22' : 'w-16',
+          )}
         />
         <div class="col-start-2 row-start-2 justify-self-end">
           <EntryActions
             entry={props.entry}
             saved={props.justSaved(props.entry.id)}
+            pending={props.pending(props.entry.id)}
             compact={props.compact}
             active={activation.active()}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
+            onRetry={props.onRetry}
           />
         </div>
       </div>
@@ -240,15 +258,18 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
 }
 
 // The row's continue and more actions. After a confirmed save, "Saved" takes their place for
-// a moment; they stay mounted underneath, so a button being tabbed to keeps its focus.
-// Compact buttons match the fields' height. The menu mounts while the row is `active`.
+// a moment, and while the busy server hasn't saved a change, "Not saved" over "Try again"
+// does. They stay mounted underneath, so a button being tabbed to keeps its focus. Compact
+// buttons match the fields' height. The menu mounts while the row is `active`.
 export function EntryActions(props: {
   entry: Entry
   saved: boolean
+  pending: boolean
   compact: boolean
   active: boolean
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
+  onRetry: () => void
 }) {
   function description() {
     return entryName(props.entry)
@@ -272,7 +293,7 @@ export function EntryActions(props: {
           'flex items-center gap-1',
           REVEAL,
           'sm:has-data-expanded:opacity-100',
-          props.saved &&
+          (props.saved || props.pending) &&
             'pointer-events-none opacity-0 sm:opacity-0 sm:group-focus-within:opacity-0 sm:group-hover:opacity-0',
         )}
       >
@@ -317,14 +338,30 @@ export function EntryActions(props: {
         role="status"
         class={cn(
           'text-primary pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 text-xs font-medium whitespace-nowrap transition-opacity duration-300',
-          props.saved ? 'opacity-100' : 'opacity-0',
+          props.saved && !props.pending ? 'opacity-100' : 'opacity-0',
         )}
       >
-        <Show when={props.saved}>
+        <Show when={props.saved && !props.pending}>
           <CheckIcon class="size-3.5" aria-hidden="true" />
           {m.timer_entry_saved()}
         </Show>
       </p>
+      <Show when={props.pending}>
+        <div class="text-warning absolute inset-y-0 right-0 flex items-center gap-1.5 text-xs font-medium whitespace-nowrap">
+          <ClockIcon class="size-3.5" aria-hidden="true" />
+          <div class="flex flex-col items-start leading-4">
+            <span role="status">{m.timer_entry_not_saved()}</span>
+            <Button
+              variant="link"
+              size="sm"
+              class="text-warning h-auto p-0 text-xs leading-4"
+              onClick={() => props.onRetry()}
+            >
+              {m.page_error_retry()}
+            </Button>
+          </div>
+        </div>
+      </Show>
     </div>
   )
 }

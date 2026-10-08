@@ -1,10 +1,12 @@
 // The user's display formats (the durationFormat, dateFormat, and timeFormat settings) for
-// the formatters in format.ts and date-input.ts. Signed out, before the settings load, or
-// outside a query client, the defaults apply: 11:10, 30.09.2026, and 15:30.
+// the formatters in format.ts and date-input.ts, and the pattern copied durations take.
+// Signed out, before the settings load, or outside a query client, the defaults apply:
+// 11:10, 30.09.2026, 15:30, and H:MM:SS.
 import { type QueryClient, QueryClientContext, hashKey } from '@tanstack/solid-query'
 import { createSignal, useContext } from 'solid-js'
 import { getLocale } from '~/paraglide/runtime.js'
 import type { DateFormat, TimeFormat } from '~/server/settings/settings.schemas'
+import { DEFAULT_COPY_PATTERN } from './duration-pattern-settings'
 import { formatHours } from './format'
 import { sessionQuery } from './queries/session'
 import type { Settings } from './queries/settings'
@@ -41,6 +43,18 @@ function useSettings(): SettingsSignal {
 export function useDurationFormat() {
   const settings = useSettings()
   return () => settings()?.durationFormat ?? 'clock'
+}
+
+// The pattern a copied duration is formatted with, which ignores the duration format.
+export function useCopyPattern() {
+  const settings = useSettings()
+  return () => settings()?.copyDurationPattern ?? DEFAULT_COPY_PATTERN
+}
+
+// Whether a duration copies on a click on it, or from a button beside it.
+export function useCopyControl() {
+  const settings = useSettings()
+  return () => settings()?.copyDurationControl ?? 'text'
 }
 
 export function useFormatHours() {
