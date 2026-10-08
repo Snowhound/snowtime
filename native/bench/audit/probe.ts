@@ -3,7 +3,7 @@
 //   bun native/bench/audit/probe.ts native/target/debug/snowtime-axum [experiment...]
 import { createClient } from '@libsql/client'
 import { spawn, execSync } from 'node:child_process'
-import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { connect } from 'node:net'
 import { join } from 'node:path'
 import { freePort } from '../../../perf/lib/app'
@@ -392,6 +392,40 @@ const run: Record<string, () => Promise<void>> = {
     rmSync(dir, { recursive: true, force: true })
     cpSync('drizzle', dir, { recursive: true })
     mkdirSync(join(dir, '20270101000000_rebuild_team'))
+    const initial = readFileSync('drizzle/20260924113130_initial_schema/migration.sql', 'utf8')
+    const teamTable = initial.match(/CREATE TABLE team \([\s\S]*?\n\);/)![0]
+    const teamIndexes = initial.match(/CREATE UNIQUE INDEX [^;]+ ON team \([^;]+;/g)!
+    writeFileSync(
+      join(dir, '20270101000000_rebuild_team/migration.sql'),
+      [
+        'PRAGMA foreign_keys=OFF;',
+        teamTable.replace(/^(CREATE TABLE\s+)(?:"team"|`team`|team)/i, '$1`__new_team`'),
+        'INSERT INTO `__new_team` SELECT * FROM `team`;',
+        'DROP TABLE `team`;',
+        'ALTER TABLE `__new_team` RENAME TO `team`;',
+        ...teamIndexes,
+        'PRAGMA foreign_keys=ON;',
+      ].join('\n--> statement-breakpoint\n'),
+    )
+    const nativeDb = await copyDb('migrate-native')
+    log('migrations: before', await counts(nativeDb))
+    const app = await start(nativeDb, { MIGRATE_ON_START: 'true', MIGRATIONS_DIR: dir })
+    await app.stop()
+    const nativeCounts = await counts(nativeDb)
+    if (nativeCounts !== 'team_member 27, project_team 26')
+      throw new Error(`valid native rebuild lost child rows: ${nativeCounts}`)
+    log('migrations: after native MIGRATE_ON_START', nativeCounts)
+    const tsDb = await copyDb('migrate-ts')
+    const { drizzle } = await import('drizzle-orm/libsql')
+    const { migrate } = await import('drizzle-orm/libsql/migrator')
+    const client = createClient({ url: `file:${tsDb}` })
+    await migrate(drizzle({ client }), { migrationsFolder: dir })
+    client.close()
+    const drizzleCounts = await counts(tsDb)
+    if (drizzleCounts !== 'team_member 27, project_team 26')
+      throw new Error(`valid drizzle rebuild lost child rows: ${drizzleCounts}`)
+    log('migrations: after drizzle-orm libsql migrator', drizzleCounts)
+
     writeFileSync(
       join(dir, '20270101000000_rebuild_team/migration.sql'),
       [
@@ -402,18 +436,30 @@ const run: Record<string, () => Promise<void>> = {
         'PRAGMA foreign_keys=ON;',
       ].join('\n--> statement-breakpoint\n'),
     )
-    const nativeDb = await copyDb('migrate-native')
-    log('migrations: before', await counts(nativeDb))
-    const app = await start(nativeDb, { MIGRATE_ON_START: 'true', MIGRATIONS_DIR: dir })
-    await app.stop()
-    log('migrations: after native MIGRATE_ON_START', await counts(nativeDb))
-    const tsDb = await copyDb('migrate-ts')
-    const { drizzle } = await import('drizzle-orm/libsql')
-    const { migrate } = await import('drizzle-orm/libsql/migrator')
-    const client = createClient({ url: `file:${tsDb}` })
-    await migrate(drizzle({ client }), { migrationsFolder: dir })
-    client.close()
-    log('migrations: after drizzle-orm libsql migrator', await counts(tsDb))
+    const invalidDb = await copyDb('migrate-invalid-native')
+    const before = createClient({ url: `file:${invalidDb}` })
+    const previous = (await before.execute('select * from __drizzle_migrations order by id')).rows
+    before.close()
+    const rejected = await start(invalidDb, { MIGRATE_ON_START: 'true', MIGRATIONS_DIR: dir }, true)
+    await rejected.stop()
+    if (rejected.exited === null || !rejected.output.includes('foreign_key_check'))
+      throw new Error(`invalid rebuild was not refused at foreign_key_check: ${rejected.output}`)
+    const after = createClient({ url: `file:${invalidDb}` })
+    const remaining = (await after.execute('select * from __drizzle_migrations order by id')).rows
+    if ((await after.execute('PRAGMA foreign_key_check')).rows.length)
+      throw new Error('invalid rebuild left foreign-key violations after rollback')
+    after.close()
+    if (JSON.stringify(previous) !== JSON.stringify(remaining))
+      throw new Error('invalid rebuild changed the migration ledger')
+    const kept = await counts(invalidDb)
+    if (kept !== 'team_member 27, project_team 26')
+      throw new Error(`invalid rebuild lost child rows: ${kept}`)
+    log('migrations: invalid AS SELECT refused at foreign_key_check; ledger unchanged;', kept)
+    const invalidTsDb = await copyDb('migrate-invalid-ts')
+    const invalidClient = createClient({ url: `file:${invalidTsDb}` })
+    await migrate(drizzle({ client: invalidClient }), { migrationsFolder: dir })
+    invalidClient.close()
+    log('migrations: invalid AS SELECT applied by drizzle;', await counts(invalidTsDb))
   },
 }
 

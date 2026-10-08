@@ -285,9 +285,10 @@ which records the edge measurements.
   TypeScript before the full port audit
 - [30](30-audit.md): the whole-port audit before the repository split: three high and
   eleven medium findings, and the feature level that matches `main` at `c8ffa84`
-
 - [31](31-input-bounds.md): auth input bounds, ordered metadata parsing, and expired
-  verification cleanup from the audit
+  verification cleanup from the audit (done)
+- [33](33-sql.md): migration foreign-key checks, atomic auth writes, immediate
+  transactions, and static SQL literals (done)
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

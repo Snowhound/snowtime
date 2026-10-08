@@ -438,11 +438,13 @@ fn create(
     let id = uuid::Uuid::now_v7().to_string();
     let mid = uuid::Uuid::now_v7().to_string();
     let now = clock::now();
-    db.execute("insert into organization(id,name,slug,logo,metadata,created_at) values (?1,?2,?3,?4,?5,?6)",params![id,name.as_str(),slug,body["logo"].as_str(),metadata.as_ref().map(|v|serde_json::to_string(v).expect("metadata serializes")),now])?;
-    db.execute("insert into member(id,organization_id,user_id,role,created_at) values (?1,?2,?3,'owner',?4)",params![mid,id,user.user_id,now])?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
+    tx.execute("insert into organization(id,name,slug,logo,metadata,created_at) values (?1,?2,?3,?4,?5,?6)",params![id,name.as_str(),slug,body["logo"].as_str(),metadata.as_ref().map(|v|serde_json::to_string(v).expect("metadata serializes")),now])?;
+    tx.execute("insert into member(id,organization_id,user_id,role,created_at) values (?1,?2,?3,'owner',?4)",params![mid,id,user.user_id,now])?;
     if body["keepCurrentActiveOrganization"] != true {
-        set_active(db, app, request, Some(&id))?;
+        set_active(&tx, app, request, Some(&id))?;
     }
+    tx.commit()?;
     #[derive(Serialize)]
     struct Created {
         #[serde(flatten)]
@@ -637,15 +639,17 @@ fn remove(
     if key.contains('@') {
         target.user = Some(removed_user);
     }
-    db.execute("delete from member where id=?1", [&target.id])?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
+    tx.execute("delete from member where id=?1", [&target.id])?;
     if user.user_id == target.user_id
         && user.active_organization_id.as_deref() == Some(&target.organization_id)
     {
-        set_active(db, app, request, None)?;
+        set_active(&tx, app, request, None)?;
     }
     // The app's after hook runs after Better Auth deletes the membership.
-    stop_removed_timer(db, &target.user_id, &target.organization_id, &user.user_id)?;
-    remove_teams(db, &target.user_id, &target.organization_id)?;
+    stop_removed_timer(&tx, &target.user_id, &target.organization_id, &user.user_id)?;
+    remove_teams(&tx, &target.user_id, &target.organization_id)?;
+    tx.commit()?;
     #[derive(Serialize)]
     struct Removed<'a> {
         member: &'a Member,
@@ -669,12 +673,14 @@ fn leave(
         ));
     }
     member.user = member_user(db, &member.user_id)?;
-    db.execute("delete from member where id=?1", [&member.id])?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
+    tx.execute("delete from member where id=?1", [&member.id])?;
     if user.active_organization_id.as_deref() == Some(org) {
-        set_active(db, app, request, None)?;
+        set_active(&tx, app, request, None)?;
     }
-    stop_removed_timer(db, &user.user_id, org, &user.user_id)?;
-    remove_teams(db, &user.user_id, org)?;
+    stop_removed_timer(&tx, &user.user_id, org, &user.user_id)?;
+    remove_teams(&tx, &user.user_id, org)?;
+    tx.commit()?;
     Ok(answer(member))
 }
 fn stop_removed_timer(db: &Connection, user: &str, org: &str, actor: &str) -> rusqlite::Result<()> {
@@ -682,11 +688,11 @@ fn stop_removed_timer(db: &Connection, user: &str, org: &str, actor: &str) -> ru
     Ok(())
 }
 fn remove_teams(db: &Connection, user: &str, org: &str) -> rusqlite::Result<()> {
-    let tx = db.unchecked_transaction()?;
-    tx.execute("update team set member_count=member_count-1 where organization_id=?1 and id in (select team_id from team_member where user_id=?2)",params![org,user])?;
-    tx.execute("delete from team_member where user_id=?1 and team_id in (select id from team where organization_id=?2)",params![user,org])?;
-    tx.commit()
+    db.execute("update team set member_count=member_count-1 where organization_id=?1 and id in (select team_id from team_member where user_id=?2)",params![org,user])?;
+    db.execute("delete from team_member where user_id=?1 and team_id in (select id from team where organization_id=?2)",params![user,org])?;
+    Ok(())
 }
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Invitation {

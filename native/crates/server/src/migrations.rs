@@ -63,6 +63,14 @@ fn read(folder: &Path) -> Result<Vec<Migration>, String> {
 pub fn migrate(db: &mut Connection, folder: &Path) -> Result<usize, String> {
     let migrations = read(folder)?;
     let sql = |e: rusqlite::Error| e.to_string();
+    db.pragma_update(None, "foreign_keys", false).map_err(sql)?;
+    let result = apply(db, &migrations);
+    db.pragma_update(None, "foreign_keys", true).map_err(sql)?;
+    result
+}
+
+fn apply(db: &mut Connection, migrations: &[Migration]) -> Result<usize, String> {
+    let sql = |e: rusqlite::Error| e.to_string();
     let tx = db
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .map_err(sql)?;
@@ -141,6 +149,13 @@ pub fn migrate(db: &mut Connection, folder: &Path) -> Result<usize, String> {
         .map_err(sql)?;
         count += 1;
     }
+    let violation = tx
+        .prepare("PRAGMA foreign_key_check")
+        .and_then(|mut statement| Ok(statement.query([])?.next()?.is_some()))
+        .map_err(|e| format!("Migration failed foreign_key_check: {e}"))?;
+    if violation {
+        return Err("Migration failed foreign_key_check".into());
+    }
     tx.commit().map_err(sql)?;
     Ok(count)
 }
@@ -180,6 +195,76 @@ mod tests {
             .unwrap();
         let error = migrate(&mut db, &folder).unwrap_err();
         assert!(error.contains("edited after it was applied"), "{error}");
+    }
+
+    #[test]
+    fn rebuilds_a_parent_without_deleting_children_and_restores_foreign_keys() {
+        let folder = std::env::temp_dir().join(format!(
+            "snowtime-migrations-rebuild-{}",
+            std::process::id()
+        ));
+        let migration = folder.join("20260101000000_rebuild");
+        std::fs::create_dir_all(&migration).unwrap();
+        std::fs::write(
+            migration.join("migration.sql"),
+            "PRAGMA foreign_keys=OFF;
+             CREATE TABLE new_parent (id integer PRIMARY KEY);
+             INSERT INTO new_parent SELECT * FROM parent;
+             DROP TABLE parent;
+             ALTER TABLE new_parent RENAME TO parent;
+             PRAGMA foreign_keys=ON;",
+        )
+        .unwrap();
+        let mut db = Connection::open_in_memory().unwrap();
+        db.execute_batch(
+            "PRAGMA foreign_keys=ON;
+            CREATE TABLE parent (id integer PRIMARY KEY);
+            CREATE TABLE child (parent_id integer REFERENCES parent(id) ON DELETE CASCADE);
+            INSERT INTO parent VALUES (1); INSERT INTO child VALUES (1);",
+        )
+        .unwrap();
+        assert_eq!(migrate(&mut db, &folder), Ok(1));
+        assert_eq!(
+            db.query_row("select count(*) from child", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+        assert!(db.execute("insert into child values (2)", []).is_err());
+        std::fs::remove_dir_all(&folder).unwrap();
+    }
+
+    #[test]
+    fn rolls_back_foreign_key_violations_and_restores_foreign_keys() {
+        let folder = std::env::temp_dir().join(format!(
+            "snowtime-migrations-foreign-key-{}",
+            std::process::id()
+        ));
+        let migration = folder.join("20260101000000_invalid_child");
+        std::fs::create_dir_all(&migration).unwrap();
+        std::fs::write(
+            migration.join("migration.sql"),
+            "INSERT INTO child VALUES (2);",
+        )
+        .unwrap();
+        let mut db = Connection::open_in_memory().unwrap();
+        db.execute_batch(
+            "PRAGMA foreign_keys=ON;
+            CREATE TABLE parent (id integer PRIMARY KEY);
+            CREATE TABLE child (parent_id integer REFERENCES parent(id));",
+        )
+        .unwrap();
+        assert!(
+            migrate(&mut db, &folder)
+                .unwrap_err()
+                .contains("foreign_key_check")
+        );
+        assert_eq!(
+            db.query_row("select count(*) from child", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+        assert!(db.execute("insert into child values (2)", []).is_err());
+        std::fs::remove_dir_all(&folder).unwrap();
     }
 
     #[test]

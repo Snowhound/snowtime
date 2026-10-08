@@ -155,7 +155,7 @@ pub fn delete_project(
 ) -> Result<ProjectIdInput> {
     assert_admin(scope)?;
     let existing = find_project(db, scope, &input.id)?;
-    let tx = db.unchecked_transaction()?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
     let used = crate::sql!(
         "select id from time_entry where project_id = ",
         &existing.id,

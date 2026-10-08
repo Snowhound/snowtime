@@ -40,7 +40,7 @@ fn name_failure(error: rusqlite::Error) -> Error {
 }
 pub fn create_team(db: &Connection, scope: &Scope, input: CreateTeamInput) -> Result<TeamName> {
     assert_admin(scope)?;
-    let tx = db.unchecked_transaction()?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
     let count: i64 = crate::sql!(
         "select count(*) from team where organization_id = ",
         &scope.organization_id
@@ -135,7 +135,7 @@ pub fn add_team_member(
     input: TeamMemberInput,
 ) -> Result<TeamMemberInput> {
     assert_admin(scope)?;
-    let tx = db.unchecked_transaction()?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
     assert_team_in_scope(&tx, scope, &input.team_id)?;
     let found = crate::sql!(
         "select id from member where organization_id = ",
@@ -158,7 +158,7 @@ pub fn remove_team_member(
     input: TeamMemberInput,
 ) -> Result<TeamMemberInput> {
     assert_admin(scope)?;
-    let tx = db.unchecked_transaction()?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
     assert_team_in_scope(&tx, scope, &input.team_id)?;
     let removed = crate::sql!(
         "delete from team_member where team_id = ",

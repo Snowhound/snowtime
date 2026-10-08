@@ -43,7 +43,7 @@ impl Sql {
         part.append(self);
     }
     #[doc(hidden)]
-    pub fn literal(&mut self, literal: impl Literal) {
+    pub(crate) fn literal(&mut self, literal: impl Literal) {
         literal.append_literal(self);
     }
 }
@@ -77,10 +77,10 @@ impl Part for &Sql {
     }
 }
 #[doc(hidden)]
-pub trait Literal {
+pub(crate) trait Literal {
     fn append_literal(self, sql: &mut Sql);
 }
-impl Literal for &str {
+impl Literal for &'static str {
     fn append_literal(self, sql: &mut Sql) {
         sql.text.push_str(self);
     }

@@ -96,7 +96,7 @@ struct Passkey {
     aaguid: Option<String>,
     id: String,
 }
-fn keys(db: &Connection, column: &str, value: &str) -> rusqlite::Result<Vec<Passkey>> {
+fn keys(db: &Connection, column: &'static str, value: &str) -> rusqlite::Result<Vec<Passkey>> {
     let sql = format!(
         "select name,public_key,user_id,credential_id,counter,device_type,backed_up,transports,created_at,aaguid,id from passkey where {column} = ?1"
     );
@@ -259,7 +259,7 @@ fn consume(
         .and_then(|h| cookie::find(h, &challenge_cookie(app)))
         .and_then(|v| cookie::verify(&v, &app.session.secret).map(str::to_owned));
     let Some(token) = token else { return Ok(None) };
-    let tx = db.unchecked_transaction()?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
     let data: Option<(String, i64)> = tx
         .query_row(
             "select value,expires_at from verification where identifier=?1 order by created_at desc limit 1",
@@ -390,7 +390,7 @@ fn registration(
             ));
         }
     };
-    let tx = db.unchecked_transaction()?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
     tx.execute("insert into passkey (id,name,public_key,user_id,credential_id,counter,device_type,backed_up,transports,created_at,aaguid) values (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)",params![key.id,key.name,key.public_key,key.user_id,key.credential_id,key.counter,key.device_type,key.backed_up,key.transports,key.created_at,key.aaguid])?;
     let response = if body["createSession"] == true {
         let mut response = new_session(&tx, app, request, &key.user_id)?;
