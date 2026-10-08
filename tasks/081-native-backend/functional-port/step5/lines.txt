@@ -4,6 +4,7 @@
 | listInvitations | 16 | 4 |
 | inviteMember | 19 | 129 |
 | inviteMember app wrapper | 26 | 0 |
+| invitationLimit callback | 20 | 0 |
 | updateIssueLinks | 9 | 24 |
 | team write helpers | 31 | 53 |
 | createTeam | 25 | 32 |
@@ -49,4 +50,4 @@
 | startTimer | 45 | 48 |
 | stopTimer | 5 | 6 |
 | getRunningTimer | 22 | 21 |
-| Total | 1556 | 2269 |
+| Total | 1576 | 2269 |

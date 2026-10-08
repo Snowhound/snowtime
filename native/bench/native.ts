@@ -5,6 +5,7 @@ import { createClient } from '@libsql/client'
 import { spawn } from 'node:child_process'
 import { cpSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
+import { freePort } from '../../perf/lib/app'
 import { CACHE, SEED_NOW } from '../../perf/lib/database'
 
 export async function startNative(
@@ -12,7 +13,7 @@ export async function startNative(
   database: string,
   env: Record<string, string> = {},
 ) {
-  const port = 3390 + Math.floor(Math.random() * 100)
+  const port = await freePort()
   const url = `http://127.0.0.1:${port}`
   const copy = join(CACHE, `native-${port}.db`)
   cpSync(database, copy)

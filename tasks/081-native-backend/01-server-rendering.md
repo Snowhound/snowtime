@@ -471,11 +471,10 @@ with Deno extensions and the policy measured above:
 - Confirm on the Linux deployment host. These measurements are Docker on this Mac: the
   stress runs on dataset M with Caddy on the app's core, the renderer runs on the Lumen
   Works seed with recorded answers.
-- Finish the functional port ([task 081.26](26-functional-port.md)): the invitation
-  limit has one TypeScript/native mismatch pending Kait's decision. Project and team
-  writes are ported and verified. Invitation previews, lists, ordinary creation, and
-  issue-link writes pass conformance and comparison; the full comparison still fails.
-  Google/OAuth sign-in stays a follow-up.
+- Extend the functional port after [task 081.26](26-functional-port.md), which finishes
+  sign-in reads/sign-out, settings, project and team writes, invitations, and issue links
+  with 880 byte-equal calls. Invitation acceptance, passkey endpoints, Google/OAuth,
+  and other organization writes stay follow-ups.
 - Bring the 161 MiB warmup peak down if the target needs it: it comes before the first
   trim, while V8 optimizes the bundle.
 

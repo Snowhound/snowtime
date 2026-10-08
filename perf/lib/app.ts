@@ -53,7 +53,7 @@ export async function buildApp(): Promise<string> {
   })
 }
 
-async function freePort(): Promise<number> {
+export async function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = createServer()
     server.unref()

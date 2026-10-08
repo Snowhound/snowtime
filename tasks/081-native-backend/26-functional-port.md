@@ -1,6 +1,6 @@
 # 081.26: Port the remaining functional calls
 
-Status: in-progress (steps 1–4 done; step 5 waits for the invitation-limit decision)
+Status: done
 
 Port the sign-in page and settings writes first, then project and team writes,
 invitations, and issue links. Follow subtask 24's route, schema, comparison, and
@@ -42,24 +42,24 @@ verification pattern. The TypeScript server remains the source of truth.
 
 ### 5. Invitations and issue links
 
-- [ ] `GET /invitations/:id`, `GET /invitations`, `POST /invitations`, and
+- [x] `GET /invitations/:id`, `GET /invitations`, `POST /invitations`, and
       `PATCH /issue-links` preserve the TypeScript role rules and validation
-- [ ] Invitation conformance passes; comparison covers valid and malformed input,
+- [x] Invitation conformance passes; comparison covers valid and malformed input,
       member refusals, and every owner/member difference
 
 ### Each step
 
-- [ ] Each route lives in its domain's `routes.rs`, with a handler that calls its rule
-- [ ] Ordered schema validation matches Valibot's messages before deserialization
-- [ ] Each write comparison uses fresh state or an ordered sequence that leaves both
+- [x] Each route lives in its domain's `routes.rs`, with a handler that calls its rule
+- [x] Ordered schema validation matches Valibot's messages before deserialization
+- [x] Each write comparison uses fresh state or an ordered sequence that leaves both
       servers in the same state; every comparison call is byte-equal
-- [ ] Before each implementation commit, run `cargo fmt`, workspace Clippy with
+- [x] Before each implementation commit, run `cargo fmt`, workspace Clippy with
       `--all-targets -- -D warnings` with and without `--features bench`, server tests
       with and without `bench`, host tests, domain conformance, and `compare.ts`;
       record counts and saved output here
-- [ ] Add handler rows to `native/bench/lines.ts`; record counts and new porting
+- [x] Add handler rows to `native/bench/lines.ts`; record counts and new porting
       patterns for subtask 05
-- [ ] Update `native/README.md`'s ported/unported list and subtask 01's notes
+- [x] Update `native/README.md`'s ported/unported list and subtask 01's notes
 
 ## Porting notes
 
@@ -102,11 +102,12 @@ Patterns for subtask 05:
 
 ## Verification
 
-### Step 5: partial verification
+### Step 5
 
-Verified on Ubuntu x64 in WSL on 2026-10-08. This step is not complete: the invitation
-limit differs from TypeScript, and Kait's requested decision is still pending. See the
-[temporary handoff](TEMPORARY-functional-port-handoff.md), to remove after resolution.
+Verified on Ubuntu x64 in WSL on 2026-10-08. Kait approved fixing TypeScript's invitation
+limit to count all live pending rows. Both servers now enforce it. The earlier partial
+commit recorded 877 equal calls and one limit mismatch; Kait authorized that partial push.
+The temporary handoff is removed after the completed verification below.
 
 - `cargo fmt` and both workspace Clippy configurations pass.
 - Server tests: 63 pass without `bench`, and 63 with it. Host tests: 15 pass.
@@ -114,13 +115,12 @@ limit differs from TypeScript, and Kait's requested decision is still pending. S
 - Invitation conformance: 4 pass, 8 assertions, 1 acceptance test filtered out. The
   original combined Better Auth refusal test is split without changing its assertions,
   so creation runs independently of acceptance, which is outside this task's scope.
-- TypeScript invitation, team-invitation, auth-schema, and team tests: 26 pass,
-  77 assertions.
-- Comparison: 877 calls byte-equal, 1 different, and the final 2 invitation-limit
-  cases not reached. The saved command exits nonzero. Both project and team limits,
-  invitation previews in all states, normal creation and role refusals, the invitation
-  rate limit, and issue-link writes pass. The mismatch is owner creation at the pending
-  invitation limit when expired rows are present: TypeScript sends 200, native sends 403.
+- TypeScript invitation, team-invitation, auth-schema, and team tests: 27 pass,
+  81 assertions. The regression covers expired rows ahead of live ones, the final slot,
+  refusal at the cap, and earlier duplicate and existing-member refusals.
+- Comparison: all 880 calls byte-equal, including project, team, and invitation limits,
+  invitation previews in all states, creation and role refusals, the invitation rate
+  limit, and issue-link writes. The saved command exits zero.
 - Chrome creates, edits, assigns, archives, restores, and deletes a temporary project.
   It creates and renames a temporary team, adds a member, promotes them to lead,
   verifies the role after reload, removes them, and deletes the team. Console and
@@ -140,8 +140,11 @@ Patterns for subtask 05:
   is another advancing-clock field, masked in creation and subsequent list comparisons.
 - Shared trimming uses JavaScript's whitespace set, including BOM and excluding U+0085.
   Nullable required IDs distinguish a missing key from explicit null.
-- No TypeScript invitation-limit fix is authorized yet. Native currently counts all
-  live pending invitations; Better Auth fetches at most 100 rows before filtering expiry.
+- Better Auth's invitation-limit callback counts all live pending rows in SQL and retains
+  the plugin's refusal status and code. It runs at the existing limit check, preserving
+  earlier refusals. The approved correction is recorded in `docs/architecture/auth.md`.
+- Both comparison servers request a free port. Native's earlier random port could collide
+  with another comparison server and send calls to its database and rate-limit state.
 
 Saved outputs are in [functional-port/step5](functional-port/step5/).
 
@@ -151,6 +154,7 @@ Saved outputs are in [functional-port/step5](functional-port/step5/).
 | `listInvitations`                                     |         16 |    4 |
 | `inviteMember` API wrapper / native full rule         |         19 |  129 |
 | App invitation wrapper (included in native full rule) |         26 |    0 |
+| Invitation-limit callback (included in native rule)   |         20 |    0 |
 | `updateIssueLinks`                                    |          9 |   24 |
 
 The TypeScript invitation wrapper counts exclude Better Auth's installed

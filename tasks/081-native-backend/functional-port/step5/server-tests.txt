@@ -1,32 +1,31 @@
-   Compiling snowtime-server v0.1.0 (/root/snowtime-functional-port/native/crates/server)
-    Finished `test` profile [unoptimized] target(s) in 1.88s
+    Finished `test` profile [unoptimized] target(s) in 0.11s
      Running unittests src/lib.rs (/root/snowtime/native/target/debug/deps/snowtime_server-2c930e8a8536e95e)
 
 running 63 tests
-test admission::tests::count_bound_refuses_immediately_and_cancellation_frees_waiting ... ok
 test auth::cookie::tests::signs_as_better_call_does ... ok
-test auth::sign_in_page::tests::methods_follow_provider_order_and_demo_hides_providers ... ok
+test admission::tests::count_bound_refuses_immediately_and_cancellation_frees_waiting ... ok
 test calendar::tests::reads_iso_dates_and_weekdays ... ok
+test auth::sign_in_page::tests::methods_follow_provider_order_and_demo_hides_providers ... ok
 test admission::tests::blocking_work_is_only_spawned_by_admission ... ok
 test hash_lane::tests::cancellation_keeps_the_running_hash_permit ... ok
 test hash_lane::tests::hashes_are_bounded_by_memory_and_cores ... ok
 test auth::sign_in_page::tests::seed_names_and_order_are_static_and_company_users_require_a_row ... ok
-test hash_lane::tests::dedicated_worker_survives_a_job_panic ... ok
 test calendar::tests::starts_days_across_clock_changes ... ok
+test hash_lane::tests::dedicated_worker_survives_a_job_panic ... ok
 test holidays::tests::counts_days_off ... ok
 test hash_lane::tests::linux_priority_is_applied_only_to_password_threads ... ok
 test connections::tests::session_maintenance_on_the_writer_does_not_relock_it ... ok
-test connections::tests::readers_see_committed_writes_and_session_maintenance_uses_writer ... ok
 test http::tests::a_running_report_leaves_readers_and_writer_available_and_keeps_budget_on_cancel ... ok
-test http::tests::authenticates_cookies_split_across_http2_fields ... ok
-test http::tests::forwards_page_cookie_through_oneshot ... ok
-test http::tests::checks_known_origin_session_scope_then_input ... ok
+test connections::tests::readers_see_committed_writes_and_session_maintenance_uses_writer ... ok
 test admission::tests::rejects_queue_timeout_and_releases_a_completed_slot ... ok
+test http::tests::authenticates_cookies_split_across_http2_fields ... ok
+test http::tests::checks_known_origin_session_scope_then_input ... ok
+test http::tests::forwards_page_cookie_through_oneshot ... ok
+test admission::tests::cancelling_a_caller_does_not_release_running_work ... ok
 test http::tests::full_report_budget_refuses_export_immediately_and_admits_timer ... ok
 test migrations::tests::reads_folder_timestamps_as_drizzle_does ... ok
 test http::tests::sign_out_expires_cookies_and_deletes_only_the_signed_session ... ok
 test migrations::tests::rolls_back_a_failing_migration ... ok
-test admission::tests::cancelling_a_caller_does_not_release_running_work ... ok
 test projects::tests::project_validation_orders_fields_and_counts_utf16 ... ok
 test queries::tests::assignments_preserve_absent_null_and_value ... ok
 test queries::tests::binds_values_and_splices_nested_fragments ... ok
@@ -51,8 +50,8 @@ test http::tests::a_slow_writer_leaves_reads_to_idle_readers ... ok
 test teams::tests::role_schema_checks_ids_before_role ... ok
 test timestamp::tests::reads_what_date_reads ... ok
 test timestamp::tests::round_trips ... ok
-test auth::invitations::tests::invitation_and_issue_link_schemas_match_order_and_normalization ... ok
 test auth::invitations::tests::rate_limit_precedes_permission_and_pending_limit_ignores_expired ... ok
+test auth::invitations::tests::invitation_and_issue_link_schemas_match_order_and_normalization ... ok
 test auth::invitations::tests::preview_hides_closed_and_expired_fields ... ok
 test auth::invitations::tests::pending_duplicates_expired_reinvite_and_role_refusals_match_auth ... ok
 test migrations::tests::applies_the_repository_migrations_once_and_refuses_edits ... ok
@@ -67,7 +66,7 @@ test auth::password::tests::verifies_better_auths_hashes ... ok
 test auth::password::tests::verifies_its_own_hashes ... ok
 test auth::password::tests::verifies_normalized_password_with_nul ... ok
 
-test result: ok. 63 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.06s
+test result: ok. 63 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.09s
 
    Doc-tests snowtime_server
 

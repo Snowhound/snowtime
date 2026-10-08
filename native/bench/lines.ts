@@ -38,6 +38,13 @@ const PAIRS: [string, string, string[], string, string[]][] = [
     [],
   ],
   [
+    'invitationLimit callback',
+    'src/server/auth/invitation-limit.server.ts',
+    ['invitationLimit'],
+    'auth/invitations.rs',
+    [],
+  ],
+  [
     'updateIssueLinks',
     'src/server/auth/organization.server.ts',
     ['updateIssueLinks'],

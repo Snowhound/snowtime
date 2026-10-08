@@ -1,6 +1,6 @@
 [perf] Built in 5 s
-{"timestamp":"2026-10-08T04:12:35.730540Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:12:35.731208Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3433","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:03.200534Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:03.201284Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:35399","tls":false},"target":"snowtime_axum"}
 same bytes                 session, admin (200, 1085 bytes)
 same bytes                 session, member (200, 1076 bytes)
 same bytes                 session, signed out (200, 4 bytes)
@@ -616,23 +616,23 @@ same bytes                 sign-out, owner (200, 327 bytes)
 same bytes                 sign-out, member and cached chunks (200, 473 bytes)
 same bytes                 session after admin signs out (200, 4 bytes)
 same bytes                 session after member signs out (200, 4 bytes)
-{"timestamp":"2026-10-08T04:12:41.508928Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:12:41.509752Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3411","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:08.953580Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:08.954221Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:36969","tls":false},"target":"snowtime_axum"}
 same bytes                 production, getSignInMethods (200, 11 bytes)
 same bytes                 production, getDeployment (200, 38 bytes)
 same bytes                 production, getDevUsers (200, 2 bytes)
-{"timestamp":"2026-10-08T04:12:43.030490Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:12:43.031116Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3457","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:10.526853Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:10.527588Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:46305","tls":false},"target":"snowtime_axum"}
 same bytes                 demo, getSignInMethods (200, 22 bytes)
 same bytes                 demo, getDeployment (200, 37 bytes)
 same bytes                 demo, getDevUsers (200, 976 bytes)
-{"timestamp":"2026-10-08T04:12:48.395724Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:12:48.396358Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3462","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:15.849867Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:15.850488Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:32941","tls":false},"target":"snowtime_axum"}
 same bytes                 providers and domains, getSignInMethods (200, 41 bytes)
 same bytes                 providers and domains, getDeployment (200, 71 bytes)
 same bytes                 providers and domains, getDevUsers (200, 2 bytes)
-{"timestamp":"2026-10-08T04:12:50.583792Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:12:50.584399Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3452","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:17.354766Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:17.355400Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:44899","tls":false},"target":"snowtime_axum"}
 same bytes                 projects: createProject member refusal (403, 57 bytes)
 same bytes                 projects: createProject signed out (401, 61 bytes)
 same bytes                 projects: createProject malformed body (400, 45 bytes)
@@ -701,12 +701,12 @@ same bytes                 projects: unarchiveProject missing (404, 56 bytes)
 same bytes                 projects: unarchiveProject invalid id (400, 35 bytes)
 same bytes                 projects: deleteProject missing (404, 56 bytes)
 same bytes                 projects: deleteProject invalid id (400, 35 bytes)
-{"timestamp":"2026-10-08T04:12:55.459092Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:12:55.459713Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3454","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:22.764444Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:22.765104Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:44801","tls":false},"target":"snowtime_axum"}
 same bytes                 project limit: owner at limit (422, 56 bytes)
 same bytes                 project limit: member permission before limit (403, 57 bytes)
-{"timestamp":"2026-10-08T04:13:00.805863Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:13:00.806471Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3429","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:28.119270Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:28.119909Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:39179","tls":false},"target":"snowtime_axum"}
 same bytes                 teams: createTeam member refusal (403, 54 bytes)
 same bytes                 teams: createTeam signed out (401, 61 bytes)
 same bytes                 teams: createTeam malformed JSON (400, 45 bytes)
@@ -769,12 +769,12 @@ same bytes                 teams: removeTeamMember unknown team (404, 53 bytes)
 same bytes                 teams: removeTeamMember bad team id (400, 35 bytes)
 same bytes                 teams: setTeamRole unknown team (404, 53 bytes)
 same bytes                 teams: setTeamRole bad team id (400, 35 bytes)
-{"timestamp":"2026-10-08T04:13:06.401367Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:13:06.402004Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3458","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:33.693226Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:33.694219Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:44577","tls":false},"target":"snowtime_axum"}
 same bytes                 team limit: owner at limit (422, 53 bytes)
 same bytes                 team limit: member permission before limit (403, 54 bytes)
-{"timestamp":"2026-10-08T04:13:11.830224Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:13:11.830861Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3480","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:39.017184Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:39.017865Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:41943","tls":false},"target":"snowtime_axum"}
 same bytes                 invitations: list as owner (200, 828 bytes)
 same bytes                 invitations: list as member (200, 828 bytes)
 same bytes                 invitations: list signed out (401, 61 bytes)
@@ -814,8 +814,8 @@ same bytes                 invitations: preview has team and inviter (200, 233 b
 same bytes                 invitations: list after create as member (200, 1085 bytes)
 same bytes                 invitations: organization admin can invite admin (200, 73 bytes)
 same bytes                 invitations: owner can invite owner (200, 73 bytes)
-{"timestamp":"2026-10-08T04:13:17.162489Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:13:17.163113Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3477","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:44.351179Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:44.351802Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:43135","tls":false},"target":"snowtime_axum"}
 same bytes                 invitation rate: admin invitation request 1 (400, 124 bytes)
 same bytes                 invitation rate: admin invitation request 2 (400, 124 bytes)
 same bytes                 invitation rate: admin invitation request 3 (400, 124 bytes)
@@ -878,8 +878,8 @@ same bytes                 invitation rate: member invitation request 28 (403, 6
 same bytes                 invitation rate: member invitation request 29 (403, 61 bytes)
 same bytes                 invitation rate: member invitation request 30 (403, 61 bytes)
 same bytes                 invitation rate: member invitation request 31 (429, 54 bytes)
-{"timestamp":"2026-10-08T04:13:22.525580Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:13:22.526221Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3446","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:49.709469Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:49.710110Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:36901","tls":false},"target":"snowtime_axum"}
 same bytes                 issue links: member refused (403, 61 bytes)
 same bytes                 issue links: signed out (401, 61 bytes)
 same bytes                 issue links: malformed JSON (400, 45 bytes)
@@ -898,19 +898,9 @@ same bytes                 issue links: session exposes saved links (200, 1085 b
 same bytes                 issue links: set as organization admin (200, 92 bytes)
 same bytes                 issue links: clear links (200, 63 bytes)
 same bytes                 issue links: session exposes cleared links (200, 1038 bytes)
-{"timestamp":"2026-10-08T04:13:27.978008Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:13:27.978635Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3463","tls":false},"target":"snowtime_axum"}
-DIFFERENT                  invitation limit: owner at limit (200, 116 bytes)
-  ts:     200 {"id":"01a0f138-6b15-77a8-ae30-3c5e889acf0c","email":"limit-new@example.com","expiresAt":"2026-10-02T07:30:01.621Z"}
-  native: 403 {"error":{"code":"INVITATION_LIMIT_REACHED","message":"Invitation limit reached"}}
-203 |       }
-204 |       const left = await call(a, who ? credentials.ts[who] : {}, identities.ts)
-205 |       const right = await call(b, who ? credentials.native[who] : {}, identities.native)
-206 |       judge(`${domain}: ${label}`, left, right)
-207 |       if (left.status !== expected || right.status !== expected)
-208 |         throw new Error(
-                        ^
-error: invitation limit: owner at limit: expected 403, got 200/403
-      at compareWrites (/root/snowtime-functional-port/native/bench/compare.ts:208:19)
-
-Bun v1.4.2 (Linux x64)
+{"timestamp":"2026-10-08T04:24:55.140143Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:24:55.140778Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:46609","tls":false},"target":"snowtime_axum"}
+same bytes                 invitation limit: owner at limit (403, 82 bytes)
+same bytes                 invitation limit: member permission before limit (403, 61 bytes)
+same bytes                 invitation limit: existing member before limit (400, 124 bytes)
+Every call answers the same

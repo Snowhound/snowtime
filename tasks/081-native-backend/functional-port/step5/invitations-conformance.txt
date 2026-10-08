@@ -1,15 +1,15 @@
-{"timestamp":"2026-10-08T04:12:29.276707Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
-{"timestamp":"2026-10-08T04:12:29.277361Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3469","tls":false},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:23:56.628912Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:23:56.629619Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:34609","tls":false},"target":"snowtime_axum"}
 bun test v1.4.2 (744846f84)
 
 conformance/invitations.conformance.ts:
-(pass) invitations > an admin invites by address, and the link shows the invitation signed out [8.22ms]
-(pass) invitations > an unknown link shows nothing [0.76ms]
-(pass) invitations > a member may not invite [0.82ms]
-(pass) invitations > Better Auth's create refusal keeps its status and code [0.87ms]
+(pass) invitations > an admin invites by address, and the link shows the invitation signed out [9.82ms]
+(pass) invitations > an unknown link shows nothing [1.08ms]
+(pass) invitations > a member may not invite [1.31ms]
+(pass) invitations > Better Auth's create refusal keeps its status and code [1.04ms]
 
  4 pass
  1 filtered out
  0 fail
  8 expect() calls
-Ran 4 tests across 1 file. [711.00ms]
+Ran 4 tests across 1 file. [718.00ms]

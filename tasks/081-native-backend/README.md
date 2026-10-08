@@ -275,8 +275,7 @@ which records the edge measurements.
 - [25](25-router-state.md): the router's hydration state per page, measured by bytes and
   allocations rather than timing alone
 - [26](26-functional-port.md): sign-in reads and sign-out, settings, project and team
-  writes, invitations, and issue links; steps 1–4 verified and reviewed on localhost,
-  step 5 waits for the invitation-limit decision
+  writes, invitations, and issue links; done with 880 byte-equal comparison calls
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

@@ -2,39 +2,40 @@ bun test v1.4.2 (744846f84)
 
 src/server/auth/auth.schemas.test.ts:
 (pass) CreateOrganizationForm > refuses a slug the app uses as a path or a page [0.67ms]
-(pass) slugify > lowercases, drops accents, and joins words with single dashes [5.38ms]
-(pass) slugify > a name without letters or digits gives an empty short name, which the form rejects [0.10ms]
+(pass) slugify > lowercases, drops accents, and joins words with single dashes [0.15ms]
+(pass) slugify > a name without letters or digits gives an empty short name, which the form rejects [0.08ms]
 (pass) slugify > stays within the 48 characters the form allows, without a trailing dash [0.05ms]
-(pass) safeRedirect > keeps paths on this site [0.08ms]
-(pass) safeRedirect > falls back for other origins and missing targets [0.04ms]
+(pass) safeRedirect > keeps paths on this site [0.07ms]
+(pass) safeRedirect > falls back for other origins and missing targets [0.03ms]
 
 src/server/auth/team-invitations.test.ts:
-(pass) app invitations with the organization plugin without teams > composing the removal hook preserves session responses [203.60ms]
-(pass) app invitations with the organization plugin without teams > stores and lists the app team; accepting adds the new member with the default role [193.80ms]
-(pass) app invitations with the organization plugin without teams > an organization-only invitation and an invitation whose team was deleted still work [279.40ms]
-(pass) app invitations with the organization plugin without teams > foreign or missing teams and non-admin invitations are refused before calling auth [75.21ms]
-(pass) app invitations with the organization plugin without teams > Better Auth checks the recipient, verification, expiry, status and invitation role [256.50ms]
-(pass) app invitations with the organization plugin without teams > a team deleted during invitation creation leaves an organization-only link [142.29ms]
-(pass) member removal hook > removal stops a timer and clears only this organization’s team memberships, including leads [120.72ms]
-(pass) member removal hook > leaving clears memberships; a rejected removal leaves them alone [118.97ms]
+(pass) the invitation cap counts live pending rows beyond expired rows [344.84ms]
+(pass) app invitations with the organization plugin without teams > composing the removal hook preserves session responses [136.40ms]
+(pass) app invitations with the organization plugin without teams > stores and lists the app team; accepting adds the new member with the default role [173.88ms]
+(pass) app invitations with the organization plugin without teams > an organization-only invitation and an invitation whose team was deleted still work [268.31ms]
+(pass) app invitations with the organization plugin without teams > foreign or missing teams and non-admin invitations are refused before calling auth [83.58ms]
+(pass) app invitations with the organization plugin without teams > Better Auth checks the recipient, verification, expiry, status and invitation role [258.22ms]
+(pass) app invitations with the organization plugin without teams > a team deleted during invitation creation leaves an organization-only link [127.92ms]
+(pass) member removal hook > removal stops a timer and clears only this organization’s team memberships, including leads [133.05ms]
+(pass) member removal hook > leaving clears memberships; a rejected removal leaves them alone [119.87ms]
 
 src/server/auth/invitations.test.ts:
-(pass) invitationPreview > names the organization, team, inviter, role, and invited address [1.24ms]
+(pass) invitationPreview > names the organization, team, inviter, role, and invited address [1.13ms]
 (pass) invitationPreview > an invitation without a team or role joins as a member [0.60ms]
-(pass) invitationPreview > an expired invitation names only its inviter and organization [0.54ms]
+(pass) invitationPreview > an expired invitation names only its inviter and organization [0.49ms]
 (pass) invitationPreview > accepted, rejected, and canceled invitations are closed and show nothing [1.40ms]
-(pass) invitationPreview > an unknown id returns null [0.30ms]
+(pass) invitationPreview > an unknown id returns null [0.29ms]
 
 src/server/teams/teams.test.ts:
-(pass) listTeams > the organization's teams by name, with members and team roles [0.65ms]
-(pass) listMembers > every member of the organization, with org role and teams; none from other organizations [0.71ms]
-(pass) listMembers > names come sorted, for pickers [0.42ms]
-(pass) setTeamRole > an admin makes a member a lead, who then reads the team; and back [1.81ms]
-(pass) setTeamRole > a team can have several leads [1.02ms]
-(pass) setTeamRole > members and team leads cannot change team roles, not even in their own team [0.17ms]
-(pass) setTeamRole > the user must be on the team, and the team in the organization [0.50ms]
+(pass) listTeams > the organization's teams by name, with members and team roles [0.64ms]
+(pass) listMembers > every member of the organization, with org role and teams; none from other organizations [0.83ms]
+(pass) listMembers > names come sorted, for pickers [0.43ms]
+(pass) setTeamRole > an admin makes a member a lead, who then reads the team; and back [1.53ms]
+(pass) setTeamRole > a team can have several leads [0.99ms]
+(pass) setTeamRole > members and team leads cannot change team roles, not even in their own team [0.14ms]
+(pass) setTeamRole > the user must be on the team, and the team in the organization [0.45ms]
 
- 26 pass
+ 27 pass
  0 fail
- 77 expect() calls
-Ran 26 tests across 4 files. [1.87s]
+ 81 expect() calls
+Ran 27 tests across 4 files. [2.05s]
