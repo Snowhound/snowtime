@@ -165,7 +165,7 @@ and generator checks are recorded in
 [bursts.json](../../tasks/081-native-backend/lane-measurements/bursts.json).
 Raw requests, samples, k6 summaries, settings, commands, and logs remain in the
 `081-lanes` worktree's `perf/.cache/stress/runs/*08117*` and `perf/.cache/stress/08117/`.
-Capacity and overload results are recorded below; the remaining matrix is task 081.26.
+Capacity and overload results are recorded below; the remaining matrix is task 081.27.
 
 ## One-core runtime measurement, 2026-10-07
 
@@ -194,7 +194,7 @@ CPU claim, particularly at the higher offer with differing refusals.
 
 [Runtime evidence](../../tasks/081-native-backend/lane-measurements/runtime.json) retains
 counts, timings, counters, samples' process summaries, and the raw result locations.
-The queue decision is recorded below. Task 081.26 holds the remaining capacity and overload runs.
+The queue decision is recorded below. Task 081.27 holds the remaining capacity and overload runs.
 
 ## Overload policy
 
@@ -307,7 +307,7 @@ needs more generator headroom or lower-cost instrumentation with equivalent chec
 
 [Structured ramp evidence](../../tasks/081-native-backend/lane-measurements/ramp.json)
 records the capacities, per-step validity, status counts, timings, sampled RSS, queue
-peaks, image IDs, and input hashes. Task 081.26 holds the remaining valid overload and capacity matrix. The later
+peaks, image IDs, and input hashes. Task 081.27 holds the remaining valid overload and capacity matrix. The later
 sections record the memory criterion, queue choice, and tested refusal fix.
 
 ## Overload memory criterion, 2026-10-08
@@ -321,7 +321,7 @@ targets. A judged phase needs generator headroom and no dropped actions.
 Kait agrees to drop the flat 10% RSS rule. Task 081.10's whole-host budget includes
 OS, replication, and filesystem cache; app RSS alone cannot validate a standalone
 2-GiB deployment. The shared-host 85% guard remains a harness safety stop and is not
-an acceptance budget. Task 081.26 carries the remaining overload measurements under
+an acceptance budget. Task 081.27 carries the remaining overload measurements under
 this criterion, including a valid eight-reader run with enough generator headroom.
 
 The page handler propagates an in-process API's 503 and `Retry-After`, including when
@@ -376,7 +376,7 @@ small inputs, and allocator overhead. This planning estimate is 128 MiB per gate
 or 384 MiB if the reader, writer, and hash gates all fill. It is not a measured
 allocation or an enforced per-request byte limit. Large request bodies, running
 scrypt buffers, renderer heaps, and filesystem cache need their own allowance in
-the provisional 2-GiB whole-host M budget. Task 081.26 validates overload memory;
+the provisional 2-GiB whole-host M budget. Task 081.27 validates overload memory;
 the count alone does not prove that budget.
 
 The requested one-core, zero-reader confirmation warms at 10,000 users for 30 seconds

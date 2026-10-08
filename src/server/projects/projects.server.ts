@@ -135,6 +135,7 @@ export async function createProject(db: Database, scope: Scope, input: CreatePro
 export async function updateProject(db: Database, scope: Scope, input: UpdateProjectInput) {
   assertAdmin(scope)
   const existing = await findProject(db, scope, input.id)
+  if (input.name === undefined && input.color === undefined) return existing
   try {
     const [updated] = await db
       .update(project)

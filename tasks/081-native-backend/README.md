@@ -274,7 +274,9 @@ which records the edge measurements.
   server, through the report budget
 - [25](25-router-state.md): the router's hydration state per page, measured by bytes and
   allocations rather than timing alone
-- [26](26-capacity-overload.md): the capacity matrix at the deadline-led queue bound
+- [26](26-functional-port.md): sign-in reads and sign-out, settings, project and team
+  writes, invitations, and issue links; done with 880 byte-equal comparison calls
+- [27](27-capacity-overload.md): the capacity matrix at the deadline-led queue bound
   and a valid eight-reader overload comparison; follows 17 without blocking its merge
 
 Task 084 moved the TypeScript app from server functions to the same API, through one

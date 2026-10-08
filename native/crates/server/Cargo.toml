@@ -30,10 +30,13 @@ better-auth-core = { version = "=1.0.0-alpha.3", optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
 form_urlencoded.workspace = true
 hmac.workspace = true
+icu_collator.workspace = true
+icu_locale_core.workspace = true
 jiff.workspace = true
 libc = "0.2"
 openssl = { version = "0.10", features = ["vendored"], optional = true }
 rand.workspace = true
+regex = "1"
 rusqlite.workspace = true
 rustc-hash.workspace = true
 scrypt = { workspace = true, optional = true }
@@ -44,6 +47,7 @@ sha2.workspace = true
 tokio = { workspace = true, features = ["sync", "time"] }
 tower = { version = "0.5", features = ["util"] }
 unicode-normalization.workspace = true
+url = "2"
 uuid.workspace = true
 webauthn-rs-core = { version = "=0.5.5", optional = true }
 

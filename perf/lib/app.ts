@@ -53,7 +53,7 @@ export async function buildApp(): Promise<string> {
   })
 }
 
-async function freePort(): Promise<number> {
+export async function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = createServer()
     server.unref()
@@ -87,11 +87,13 @@ export async function startApp({
   build = BUILD,
   scene = false,
   executable,
+  env = {},
 }: {
   database: string
   build?: string
   scene?: boolean
   executable?: string
+  env?: Record<string, string>
 }): Promise<RunningApp> {
   if (!executable && !existsSync(join(build, 'server/index.mjs'))) {
     throw new Error(`[perf] No build in ${build}`)
@@ -125,6 +127,7 @@ export async function startApp({
       TURSO_DATABASE_URL: `file:${copy}`,
       BETTER_AUTH_SECRET: 'perf-harness-secret-perf-harness-secret',
       BETTER_AUTH_URL: url,
+      ...env,
     },
   })
   const output: string[] = []

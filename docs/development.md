@@ -21,6 +21,11 @@ The app runs on http://localhost:3100 against a local SQLite file, `local.db`.
 variable left, a generated `BETTER_AUTH_SECRET`, to the gitignored `.env.local`. Put other
 local overrides, such as OAuth credentials, there too; `.env.example` lists every variable.
 
+If the optimized glass cards show rendering artifacts on your machine, set
+`VITE_GLASS_OPTIMIZATION=false` in `.env.local` to use live backdrop blur. The optimization
+is on by default. Restart the dev server after changing this variable; production builds
+read it at build time.
+
 ## Seeded users
 
 `bun run db:seed` fills the local database with demo data (`src/db/seed.ts`). It refuses

@@ -122,6 +122,9 @@ pub fn list<T: ToSql>(values: &[T]) -> Sql {
 #[derive(Default)]
 pub struct Assignments(Sql);
 impl Assignments {
+    pub fn set_optional<T: ToSql>(&mut self, column: &'static str, value: Option<T>) {
+        self.set(column, value.map_or(Patch::Absent, Patch::Value));
+    }
     pub fn set<T: ToSql>(&mut self, column: &'static str, patch: Patch<T>) {
         let v = match patch {
             Patch::Absent => return,

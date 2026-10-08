@@ -73,12 +73,71 @@ pub fn from_env() -> Result<Config, String> {
             secret: required("BETTER_AUTH_SECRET")?,
             password_enabled: var("NODE_ENV").as_deref() == Some("development")
                 || var("DEMO_MODE").as_deref() == Some("true"),
+            sign_in_page: sign_in_page_config(&var)?,
             client_ip_header: var("CLIENT_IP_HEADER").map(|h| h.to_lowercase()),
             app_url: url::Url::parse(&app_url)
                 .expect("validated app origin")
                 .origin()
                 .ascii_serialization(),
         },
+    })
+}
+
+fn sign_in_page_config(
+    var: &impl Fn(&str) -> Option<String>,
+) -> Result<snowtime_server::SignInPageConfig, String> {
+    let demo_mode = var("DEMO_MODE").as_deref() == Some("true");
+    let mut allowed_domains = Vec::new();
+    if let Some(value) = var("ALLOWED_LOGIN_DOMAINS") {
+        for domain in value.split(',') {
+            let domain = domain.trim().to_lowercase();
+            let domain = domain.strip_prefix('@').unwrap_or(&domain).to_owned();
+            let labels: Vec<_> = domain.split('.').collect();
+            if domain.len() > 253
+                || labels.len() < 2
+                || labels.iter().any(|label| {
+                    label.is_empty()
+                        || label.len() > 63
+                        || !label.as_bytes()[0].is_ascii_alphanumeric()
+                        || !label.as_bytes()[label.len() - 1].is_ascii_alphanumeric()
+                        || !label
+                            .bytes()
+                            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+                })
+            {
+                return Err(
+                    "ALLOWED_LOGIN_DOMAINS must contain comma-separated email domains.".into(),
+                );
+            }
+            if !allowed_domains.contains(&domain) {
+                allowed_domains.push(domain);
+            }
+        }
+    }
+    if demo_mode && !allowed_domains.is_empty() {
+        return Err("DEMO_MODE signs in seeded users; unset ALLOWED_LOGIN_DOMAINS.".into());
+    }
+    let mut providers = Vec::new();
+    for (prefix, method) in [
+        ("GOOGLE", "google"),
+        ("GITHUB", "github"),
+        ("MICROSOFT", "microsoft"),
+    ] {
+        let id = var(&format!("{prefix}_CLIENT_ID")).is_some();
+        let secret = var(&format!("{prefix}_CLIENT_SECRET")).is_some();
+        if id != secret {
+            return Err(format!(
+                "Set both {prefix}_CLIENT_ID and {prefix}_CLIENT_SECRET, or neither."
+            ));
+        }
+        if id {
+            providers.push(method.into());
+        }
+    }
+    Ok(snowtime_server::SignInPageConfig {
+        demo_mode,
+        allowed_domains,
+        providers,
     })
 }
 
@@ -90,6 +149,52 @@ fn auto_readers(cpus: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn sign_in_page_normalizes_domains_and_keeps_provider_order() {
+        let vars = [
+            (
+                "ALLOWED_LOGIN_DOMAINS",
+                "@Example.com, lumen.example.com, example.com",
+            ),
+            ("GOOGLE_CLIENT_ID", "fixture"),
+            ("GOOGLE_CLIENT_SECRET", "fixture"),
+        ];
+        let config = super::sign_in_page_config(&|name| {
+            vars.iter()
+                .find(|(key, _)| *key == name)
+                .map(|(_, value)| (*value).into())
+        })
+        .unwrap();
+        assert_eq!(config.allowed_domains, ["example.com", "lumen.example.com"]);
+        assert_eq!(config.providers, ["google"]);
+    }
+
+    #[test]
+    fn sign_in_page_refuses_incomplete_providers_and_demo_domain_policy() {
+        assert!(
+            super::sign_in_page_config(
+                &|name| (name == "GOOGLE_CLIENT_ID").then(|| "fixture".into())
+            )
+            .is_err()
+        );
+        assert!(
+            super::sign_in_page_config(&|name| match name {
+                "DEMO_MODE" => Some("true".into()),
+                "ALLOWED_LOGIN_DOMAINS" => Some("example.com".into()),
+                _ => None,
+            })
+            .is_err()
+        );
+        for invalid in ["localhost", "-x.example", "x..example", "@", ""] {
+            assert!(
+                super::sign_in_page_config(
+                    &|name| (name == "ALLOWED_LOGIN_DOMAINS").then(|| invalid.into())
+                )
+                .is_err()
+            );
+        }
+    }
+
     #[test]
     fn auto_gives_one_core_no_readers() {
         assert_eq!(super::auto_readers(1), 0);

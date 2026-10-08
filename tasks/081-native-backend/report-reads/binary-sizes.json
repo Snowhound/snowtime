@@ -1,0 +1,4 @@
+{
+  "with_collation": { "binary_bytes": 94295536, "stripped_bytes": 72759928 },
+  "without_collation": { "binary_bytes": 93006192, "stripped_bytes": 71531160 }
+}

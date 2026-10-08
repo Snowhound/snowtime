@@ -1,0 +1,35 @@
+{"timestamp":"2026-10-08T04:23:53.859523Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":15956,"source":"physical memory","cpus":16,"renderers":16,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T04:23:53.860200Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:38863","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/projects.conformance.ts:
+(pass) projects > the list sends only the contract fields, archived projects on request [39.45ms]
+(pass) projects > a member may not create projects [0.97ms]
+(pass) projects > a project is created, edited, archived, assigned, and deleted [111.37ms]
+(pass) projects > a project with entries is not deleted [13.79ms]
+
+conformance/teams.conformance.ts:
+(pass) members and teams > the members list each with their role and teams [2.14ms]
+(pass) members and teams > the teams list each with its members and their team roles [2.73ms]
+(pass) members and teams > a member may not change teams [0.82ms]
+(pass) members and teams > a team is created, renamed, given a lead, and deleted [42.95ms]
+
+conformance/settings.conformance.ts:
+(pass) settings > creating settings the user already has returns them unchanged [1.63ms]
+(pass) settings > a patch changes only its fields [9.14ms]
+(pass) settings > a pinned image must be in the collection [0.70ms]
+(pass) settings > a write from the app without a session is refused [0.54ms]
+
+conformance/session.conformance.ts:
+(pass) the session > signed out, the session is null [0.87ms]
+(pass) the session > signed in, it has the user, their organizations and settings, and the app URL [2.69ms]
+(pass) the session > reading it sets no language cookie, even in another language than the account's [9.65ms]
+(pass) signed-out reads > the app says it can serve pages [0.60ms]
+(pass) signed-out reads > the sign-in methods, the deployment, and the seeded users [1.65ms]
+(pass) issue links > an admin sets and clears them, and the session shows them [12.19ms]
+(pass) issue links > a member may not set them, and an address without {key} is refused [1.34ms]
+
+ 19 pass
+ 0 fail
+ 61 expect() calls
+Ran 19 tests across 4 files. [2.51s]

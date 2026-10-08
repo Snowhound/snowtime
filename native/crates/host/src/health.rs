@@ -131,6 +131,7 @@ mod tests {
             app_url: "http://snowtime.test".into(),
             secret: "test-secret".into(),
             password_enabled: false,
+            sign_in_page: Default::default(),
             client_ip_header: None,
         })
         .unwrap();

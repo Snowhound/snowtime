@@ -39,8 +39,18 @@ pub enum Field {
     RequiredId,
     Id,
     NullableId,
+    RequiredNullableId,
     // Uuidv7 or 'none'.
     IdOrNone,
+    TicketOrNone,
+    Discriminator(&'static [&'static str]),
+    RequiredPicklist(&'static [&'static str]),
+    RequiredNumber,
+    Offset,
+    Object {
+        required: bool,
+        check: fn(Value) -> Result<()>,
+    },
     Description,
     Ticket,
     RequiredDate,
@@ -48,6 +58,12 @@ pub enum Field {
     // An ISO calendar day (IsoDate).
     RequiredDay,
     Bool,
+    CheckedString {
+        required: bool,
+        check: fn(&str) -> Result<()>,
+    },
+    NullableCheckedString(fn(&str) -> Result<()>),
+    NullablePicklist(&'static [&'static str]),
     True,
     Picklist(&'static [&'static str]),
 }
@@ -69,23 +85,47 @@ fn received(value: &Value) -> String {
 fn expected(field: Field) -> String {
     match field {
         Field::RequiredDate | Field::Date => "Date".into(),
+        Field::Object { .. } => "Object".into(),
+        Field::RequiredNumber | Field::Offset => "number".into(),
+        Field::TicketOrNone => "(string | \"none\")".into(),
         Field::Bool => "boolean".into(),
         Field::True => "true".into(),
         Field::IdOrNone => "(string | \"none\")".into(),
-        Field::Picklist([one]) => format!("\"{one}\""),
-        Field::Picklist(options) => {
+        Field::Picklist([one])
+        | Field::RequiredPicklist([one])
+        | Field::Discriminator([one])
+        | Field::NullablePicklist([one]) => {
+            format!("\"{one}\"")
+        }
+        Field::Picklist(options)
+        | Field::RequiredPicklist(options)
+        | Field::Discriminator(options) => {
             let quoted: Vec<_> = options.iter().map(|o| format!("\"{o}\"")).collect();
             format!("({})", quoted.join(" | "))
         }
+        Field::NullablePicklist(options) => expected(Field::Picklist(options)),
         _ => "string".into(),
     }
 }
 
-fn check_field(name: &str, field: Field, value: Option<&Value>) -> Result<()> {
+pub(crate) fn check_field(name: &str, field: Field, value: Option<&Value>) -> Result<()> {
     let Some(value) = value else {
+        if matches!(field, Field::Discriminator(_)) {
+            return invalid(format!(
+                "Invalid type: Expected {} but received undefined",
+                expected(field)
+            ));
+        }
         if matches!(
             field,
-            Field::RequiredId | Field::RequiredDate | Field::RequiredDay
+            Field::RequiredId
+                | Field::RequiredNullableId
+                | Field::RequiredDate
+                | Field::RequiredDay
+                | Field::RequiredNumber
+                | Field::RequiredPicklist(_)
+                | Field::Object { required: true, .. }
+                | Field::CheckedString { required: true, .. }
         ) {
             return invalid(format!(
                 "Invalid key: Expected \"{name}\" but received undefined"
@@ -93,20 +133,54 @@ fn check_field(name: &str, field: Field, value: Option<&Value>) -> Result<()> {
         }
         return Ok(());
     };
+    if let Field::Object { check, .. } = field
+        && (value.is_object() || value.is_array())
+    {
+        return check(value.clone());
+    }
+    if matches!(field, Field::RequiredNumber | Field::Offset)
+        && let Some(number) = value.as_f64()
+    {
+        if matches!(field, Field::Offset) {
+            if number.fract() != 0.0 {
+                return invalid(format!("Invalid integer: Received {number}"));
+            }
+            if number < 0.0 {
+                return invalid(format!("Invalid value: Expected >=0 but received {number}"));
+            }
+        }
+        return Ok(());
+    }
     let text = value.as_str();
     let typed = match (field, text) {
-        (Field::NullableId | Field::Ticket, _) if value.is_null() => return Ok(()),
+        (Field::NullableId | Field::RequiredNullableId | Field::Ticket, _) if value.is_null() => {
+            return Ok(());
+        }
+        (Field::NullablePicklist(_), _) if value.is_null() => return Ok(()),
+        (Field::NullableCheckedString(_), _) if value.is_null() => return Ok(()),
         (Field::Bool, _) => value.is_boolean() || matches!(text, Some("true" | "false")),
+        (Field::CheckedString { check, .. }, Some(text)) => return check(text),
+        (Field::NullableCheckedString(check), Some(text)) => return check(text),
         (Field::True, _) => value == &Value::Bool(true),
-        (Field::Picklist(options), Some(text)) => options.contains(&text),
+        (
+            Field::Picklist(options)
+            | Field::RequiredPicklist(options)
+            | Field::Discriminator(options)
+            | Field::NullablePicklist(options),
+            Some(text),
+        ) => options.contains(&text),
         (Field::RequiredDate | Field::Date, Some(text)) => {
             if Timestamp::parse(text).is_none() {
                 return invalid("Invalid type: Expected Date but received \"Invalid Date\"");
             }
             true
         }
-        (Field::RequiredId | Field::Id | Field::NullableId, Some(id)) => return uuid_v7(id),
-        (Field::IdOrNone, Some("none")) => true,
+        (
+            Field::RequiredId | Field::Id | Field::NullableId | Field::RequiredNullableId,
+            Some(id),
+        ) => return uuid_v7(id),
+        (Field::IdOrNone | Field::TicketOrNone, Some("none")) => true,
+        (Field::TicketOrNone, Some(key)) => return ticket_key(key),
         (Field::IdOrNone, Some(id)) => return uuid_v7(id),
         (Field::Description, Some(text)) => return description_length(text),
         (Field::Ticket, Some(key)) => return ticket_key(key),
@@ -174,7 +248,10 @@ fn uuid_v7(id: &str) -> Result<()> {
 
 // Description: trimmed, at most 500 characters as JavaScript counts them.
 fn trimmed(text: &str) -> &str {
-    text.trim_matches(|c: char| c.is_whitespace() || c == '\u{feff}')
+    text.trim_matches(js_whitespace)
+}
+pub(crate) fn js_whitespace(c: char) -> bool {
+    matches!(c, '\u{0009}'..='\u{000d}' | ' ' | '\u{00a0}' | '\u{1680}' | '\u{2000}'..='\u{200a}' | '\u{2028}' | '\u{2029}' | '\u{202f}' | '\u{205f}' | '\u{3000}' | '\u{feff}')
 }
 fn description_length(text: &str) -> Result<()> {
     if trimmed(text).encode_utf16().count() > 500 {
@@ -182,6 +259,18 @@ fn description_length(text: &str) -> Result<()> {
     }
     Ok(())
 }
+pub(crate) fn name(text: &str) -> Result<()> {
+    let mut text = text.to_owned();
+    trim(&mut text);
+    if text.is_empty() {
+        return invalid("Enter a name.");
+    }
+    if text.encode_utf16().count() > 100 {
+        return invalid("Use at most 100 characters.");
+    }
+    Ok(())
+}
+
 pub(crate) fn trim(text: &mut String) {
     let trimmed = trimmed(text);
     if trimmed.len() != text.len() {
@@ -233,6 +322,12 @@ pub(crate) fn query_bool<'de, D: Deserializer<'de>>(
         Value::String(text) => Ok(text == "true"),
         _ => Err(serde::de::Error::custom("Expected a boolean")),
     }
+}
+
+pub(crate) fn optional_bool<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> std::result::Result<Option<bool>, D::Error> {
+    query_bool(deserializer).map(Some)
 }
 
 #[cfg(test)]

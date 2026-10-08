@@ -39,7 +39,7 @@ Database and hashing:
 - [x] One capacity confirmation on M at 1 core / 0 readers with the selected
       backstop, recording the held offer, refusal status, latency, RSS, and generator
       validity. The full capacity matrix and overload comparison moved to
-      [081.26](26-capacity-overload.md); they do not block this task's merge
+      [081.27](27-capacity-overload.md); they do not block this task's merge
 
 Rendering (V8):
 
@@ -176,7 +176,7 @@ RSS by 38%, 46%, and 142%, above the 10% limit. Excess requests mostly return 50
 some return 500. The two eight-reader overload plans hit the generator CPU guard and
 drop actions, so their overload and recovery results are invalid.
 
-The broader capacity and overload measurements moved to task 081.26 after review.
+The broader capacity and overload measurements moved to task 081.27 after review.
 The one-core confirmation below passes and the remaining runs do not block merging
 this task into `081-native-poc`.
 
@@ -196,7 +196,7 @@ Kait agrees to drop the 10% RSS rule. The criterion now records RSS at capacity,
 no OOM or swap, bounded queues, 503 admission refusals with `Retry-After`, and passing
 recovery. The shared-host 85% safety stop is not a budget. The four-configuration
 capacity rerun and valid eight-reader overload comparison are in
-[081.26](26-capacity-overload.md), which does not block the merge.
+[081.27](27-capacity-overload.md), which does not block the merge.
 
 The runtime comparison is inconclusive; the valid 5,000-user pair favors
 `current_thread`, but one pair cannot change the default. The failed 15,000-user

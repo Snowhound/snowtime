@@ -19,7 +19,7 @@ crates/server/src/
   entries/       mod (rules), schemas, routes
   projects/      mod (rules), schemas, routes
   reports/       mod (rules), aggregation, schemas, routes
-  settings/      mod (rules), schemas
+  settings/      mod (rules), schemas, routes
   teams/         mod (rules), schemas, routes
   timer/         mod (rules), schemas, routes
   http.rs        InOrganization, AsUser, Public, AuthCall, router
@@ -37,12 +37,23 @@ crates/host/src/
   config.rs
 ```
 
-Each domain's `routes.rs` mirrors the ported paths in its TypeScript routes file. Unported
-routes answer 404. Ported reads: the session, the running timer, entries and the first
-entry's start, projects, teams, members, and the report (`getReport`). Of the writes, the
-timer's and the entries'. Not ported: the report's breakdown, entry lists, and export;
-settings, team, project, and organization writes; invitations; and the sign-in page's
-reads (sign-in methods, deployment, seeded users), so `/sign-in` signed out answers 500.
+Each domain's `routes.rs` mirrors the ported paths in its TypeScript routes file.
+Unported routes answer 404. Ported reads: the session, the running timer, entries and
+the first entry's start, projects, teams, members, and all five report reads (report,
+breakdown, entries, entry totals, and export). Each report read uses `run_report`, so
+reports and export pieces take the report budget before database admission.
+The sign-in page's reads (sign-in methods, deployment, seeded users), password sign-in,
+and Better Auth sign-out are also ported. `/sign-in` renders signed out.
+Of the other writes, the timer's, the entries', settings PUT/PATCH, and project writes
+(including team assignments) and team writes (including membership and roles) are ported.
+Invitation preview/list/create and issue-link writes are also ported, with all 880
+functional comparison calls byte-equal in task 081.26.
+Not ported: other organization writes; invitation acceptance; passkey registration,
+sign-in, and management; and Google/OAuth sign-in. The sign-in method list includes
+passkey for TypeScript parity, but the native host has no passkey endpoints yet.
+
+[Task 081.26](../tasks/081-native-backend/26-functional-port.md#local-review) gives
+localhost commands for separate seeded TypeScript and native hosts.
 
 Pages call the API in process: the renderer's host callback sends each call through
 `router.oneshot` with the page request's cookie, as `src/lib/api/request.ts` sends it.
@@ -159,6 +170,11 @@ and reports the median of at least 20 measured hashes. On macOS, vendored OpenSS
 Perl and make. The optional Docker stage installs those and `linux-perf` for profiling.
 
 ## Run it
+
+The native host reads inherited environment variables only. It doesn't load `.env`
+files or accept configuration through command-line arguments. Loading a dotenv file,
+with inherited variables taking precedence, is a possible future option; it isn't
+implemented.
 
 The server reads the TypeScript server's environment variables: `TURSO_DATABASE_URL` (a
 `file:` URL of a migrated database), `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `HOST`,

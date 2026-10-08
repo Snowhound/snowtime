@@ -27,6 +27,7 @@ fn store_at(deadline: Duration, origin: &str) -> LaneStore {
             app_url: origin.into(),
             secret: SECRET.into(),
             password_enabled: true,
+            sign_in_page: Default::default(),
             client_ip_header: None,
         },
         0,

@@ -34,7 +34,7 @@ pub struct Request {
 pub struct Response {
     pub status: u16,
     pub body: Vec<u8>,
-    pub set_cookie: Option<String>,
+    pub set_cookies: Vec<String>,
     pub server_timing: Option<String>,
 }
 impl From<WireResponse> for Response {
@@ -42,7 +42,7 @@ impl From<WireResponse> for Response {
         Self {
             status: r.status,
             body: r.body,
-            set_cookie: None,
+            set_cookies: Vec::new(),
             server_timing: None,
         }
     }
@@ -59,8 +59,8 @@ impl IntoResponse for Response {
         if self.status == 503 {
             headers.insert(header::RETRY_AFTER, "1".parse().unwrap());
         }
-        if let Some(cookie) = self.set_cookie {
-            headers.insert(header::SET_COOKIE, cookie.parse().unwrap());
+        for cookie in self.set_cookies {
+            headers.append(header::SET_COOKIE, cookie.parse().unwrap());
         }
         if let Some(timing) = self.server_timing {
             headers.insert("server-timing", timing.parse().unwrap());
@@ -175,11 +175,13 @@ pub fn router(app: Arc<App>) -> Router {
         .merge(crate::entries::routes::routes())
         .merge(crate::projects::routes::routes())
         .merge(crate::reports::routes::routes())
-        .merge(crate::teams::routes::routes());
+        .merge(crate::teams::routes::routes())
+        .merge(crate::auth::routes::organization_routes());
     let api = Router::new()
         .merge(crate::auth::routes::routes())
         .merge(crate::availability::routes::routes())
         .merge(crate::timer::routes::routes())
+        .merge(crate::settings::routes::routes())
         .nest("/organizations/{organizationId}", organization);
     Router::new()
         .nest("/api/v1", api)
@@ -286,6 +288,29 @@ fn respond(db: &Connection, result: Result<WireResponse>) -> Response {
         Err(Error::App(e)) => app_failure(e).into(),
         Err(Error::Invalid(e)) => failure(400, &e).into(),
         Err(Error::Database(e)) => unavailable_or(db, &e).into(),
+        Err(Error::Auth {
+            status,
+            code,
+            message,
+        }) => {
+            #[derive(Serialize)]
+            struct Refusal {
+                code: &'static str,
+                message: &'static str,
+            }
+            #[derive(Serialize)]
+            struct Body {
+                error: Refusal,
+            }
+            WireResponse {
+                status,
+                body: serde_json::to_vec(&Body {
+                    error: Refusal { code, message },
+                })
+                .expect("auth refusal serializes"),
+            }
+            .into()
+        }
     }
 }
 
@@ -419,6 +444,29 @@ impl App {
 }
 
 impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> InOrganization<T, READ> {
+    pub async fn with_auth<O: Serialize + 'static>(
+        self,
+        rule: fn(&Connection, &Scope, T, &Config, &MemoryStore) -> Result<O>,
+    ) -> Response {
+        answer(
+            self.0,
+            self.1,
+            READ,
+            false,
+            move |app, db, request, timer| {
+                let user = app.caller(db, request, READ, timer)?;
+                let scope = resolve_scope(db, &user, request.param("organizationId"))?;
+                Ok(ok(&rule(
+                    db,
+                    &scope,
+                    decode(input(request)?)?,
+                    &app.config,
+                    &app.rate_limits,
+                )?))
+            },
+        )
+        .await
+    }
     pub async fn run<O: Serialize + 'static>(
         self,
         rule: fn(&Connection, &Scope, T) -> Result<O>,
@@ -480,6 +528,16 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> Public<T
     }
 }
 impl Public<Empty> {
+    pub async fn with_config<O: Serialize + 'static>(
+        self,
+        rule: fn(&Connection, &Config) -> Result<O>,
+    ) -> Response {
+        answer(self.0, self.1, true, false, move |app, db, _, _| {
+            Ok(ok(&rule(db, &app.config)?))
+        })
+        .await
+    }
+
     // The session read, which answers signed-out callers too.
     pub async fn with_session<O: Serialize + 'static>(
         self,
@@ -525,6 +583,9 @@ impl FromRequest<Arc<App>> for AuthCall {
 impl AuthCall {
     pub(crate) async fn sign_in(self) -> Response {
         self.0.sign_in(self.1, self.2).await
+    }
+    pub(crate) async fn sign_out(self) -> Response {
+        self.0.sign_out(self.1, self.2).await
     }
 }
 

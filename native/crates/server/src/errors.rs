@@ -50,9 +50,20 @@ pub enum Key {
     TimerRunningInLeftOrganization,
     ProjectNotFound,
     ProjectArchived,
+    ProjectsForbidden,
+    ProjectLimit,
+    ProjectIdTaken,
+    ProjectNameTaken,
+    ProjectHasEntries,
     TeamNotFound,
+    TeamsForbidden,
+    TeamNameTaken,
+    TeamLimit,
+    TeamMemberNotFound,
     TeamReportForbidden,
     SettingsNotFound,
+    ScenePinNotInCollection,
+    OrganizationForbidden,
     RateLimited,
     DatabaseUnavailable,
 }
@@ -70,6 +81,11 @@ pub enum Error {
     App(AppError),
     Invalid(String),
     Database(rusqlite::Error),
+    Auth {
+        status: u16,
+        code: &'static str,
+        message: &'static str,
+    },
 }
 
 impl From<AppError> for Error {

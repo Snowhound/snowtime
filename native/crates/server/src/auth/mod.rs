@@ -11,8 +11,12 @@ pub mod session;
 pub use session::{Credentials, SessionConfig, create_session, find_credentials, signed_in_user};
 pub(crate) use sign_in::FetchHeaders;
 
+mod invitations;
+mod organization;
 pub mod routes;
 mod sign_in;
+mod sign_in_page;
+mod sign_out;
 
 #[cfg(feature = "auth-spike")]
 pub mod spike;

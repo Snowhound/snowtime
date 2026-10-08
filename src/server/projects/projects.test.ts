@@ -59,6 +59,24 @@ function logOn(projectId: string, deleted = false) {
   })
 }
 
+test('an empty project patch returns the existing fields without changing its audit', async () => {
+  const created = await newProject(scopes.owner, 'Empty patch')
+  const before = await db.select().from(project).where(eq(project.id, created.id))
+  expect(await as(scopes.admin, () => updateProject(db, scopes.admin, { id: created.id }))).toEqual(
+    created,
+  )
+  expect(await db.select().from(project).where(eq(project.id, created.id))).toEqual(before)
+  await expect(updateProject(db, scopes.member, { id: created.id })).rejects.toMatchObject({
+    code: 'FORBIDDEN',
+    key: 'projects_forbidden',
+  })
+  await expect(updateProject(db, scopes.owner, { id: uuidv7() })).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+    key: 'project_not_found',
+  })
+  await as(scopes.owner, () => deleteProject(db, scopes.owner, { id: created.id }))
+})
+
 describe('listProjects', () => {
   test('members see unassigned projects and those of their teams', async () => {
     expect(await idsOf(scopes.member)).toEqual([P.internal, P.mobile, P.website])

@@ -18,8 +18,45 @@ fn config() -> Config {
         app_url: "http://snowtime.test".into(),
         secret: "test-secret".into(),
         password_enabled: false,
+        sign_in_page: Default::default(),
         client_ip_header: None,
     }
+}
+
+#[tokio::test]
+async fn sign_out_expires_cookies_and_deletes_only_the_signed_session() {
+    let app = app();
+    app.db()
+        .execute(
+            "insert into session values ('alice', 'other-token', ?, ?, ?, null)",
+            [clock::now() + 100000, clock::now(), clock::now()],
+        )
+        .unwrap();
+    let cookie = format!(
+        "better-auth.session_token={}",
+        crate::auth::cookie::sign("token", "test-secret")
+    );
+    let response = router(app.clone())
+        .oneshot(
+            HttpRequest::builder()
+                .method("POST")
+                .uri("/api/auth/sign-out")
+                .header("cookie", cookie)
+                .header("origin", "http://snowtime.test")
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+    assert_eq!(response.headers().get_all("set-cookie").iter().count(), 3);
+    assert_eq!(
+        app.db()
+            .query_row("select token from session", [], |r| r.get::<_, String>(0))
+            .unwrap(),
+        "other-token"
+    );
 }
 fn tables(app: &App) {
     app.db()
@@ -112,7 +149,7 @@ async fn checks_known_origin_session_scope_then_input() {
     let router = router(app.clone());
     for (method, path) in [
         ("PUT", "/api/v1/session"),
-        ("POST", "/api/v1/organizations/o/projects"),
+        ("PUT", "/api/v1/organizations/o/projects"),
         ("POST", "/api/v1/timer"),
     ] {
         assert_eq!(
@@ -580,4 +617,45 @@ async fn a_running_report_leaves_readers_and_writer_available_and_keeps_budget_o
     drop(permit);
     drop(app);
     std::fs::remove_file(path).unwrap();
+}
+
+#[tokio::test]
+async fn full_report_budget_refuses_export_immediately_and_admits_timer() {
+    let mut app = app();
+    Arc::get_mut(&mut app).unwrap().report_gate =
+        crate::admission::Gate::bounded(1, 0, std::time::Duration::from_secs(60));
+    let busy = app.report_gate.acquire().await.unwrap();
+    let cookie = app
+        .session
+        .session_cookie("token")
+        .split(';')
+        .next()
+        .unwrap()
+        .to_owned();
+    let router = router(app);
+    for path in [
+        "report",
+        "report/breakdown",
+        "report/entries",
+        "report/entry-totals",
+        "report/export",
+    ] {
+        let response = tokio::time::timeout(
+            std::time::Duration::from_millis(100),
+            router.clone().oneshot(
+                HttpRequest::builder().method("POST")
+                    .uri(format!("/api/v1/organizations/org/{path}"))
+                    .header("cookie", &cookie)
+                    .body(Body::from(r#"{"report":{"from":"2026-09-21","to":"2026-09-28"},"from":"2026-09-21","to":"2026-09-24"}"#))
+                    .unwrap(),
+            ),
+        ).await.expect("full report budget must refuse before the admission deadline").unwrap();
+        assert_eq!(response.status(), 503, "{path}");
+        assert_eq!(response.headers()[header::RETRY_AFTER], "1");
+    }
+    assert_eq!(
+        answer(router, "GET", "/api/v1/timer", Some(&cookie), None, "").await,
+        (200, "null".into()),
+    );
+    drop(busy);
 }

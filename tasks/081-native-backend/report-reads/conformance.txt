@@ -1,0 +1,17 @@
+{"timestamp":"2026-10-07T13:48:28.251020Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-07T13:48:28.251177Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:3488","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/reports.conformance.ts:
+(pass) reports > the week, a day at a time, as a read that needs no Origin [12.29ms]
+(pass) reports > a member can't report on someone else, or on a team they don't lead [1.69ms]
+(pass) reports > a range that ends before it starts is refused with a message [0.40ms]
+(pass) reports > the breakdown totals per project and member [2.11ms]
+(pass) reports > the entries come a page at a time By day, after the last piece shown [9.94ms]
+(pass) reports > one row's count and total, and By description's rows [2.70ms]
+(pass) reports > the export's first piece brings the report, and the next counts up to its moment [7.08ms]
+
+ 7 pass
+ 0 fail
+ 20 expect() calls
+Ran 7 tests across 1 file. [211.00ms]
