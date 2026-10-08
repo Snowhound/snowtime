@@ -15,6 +15,33 @@ kit's crates, patterns, and codemods. The kit aims at that goal but isn't bounde
 better designed, more capable kit is worth a few more runs. The kit is also honest about
 when a port isn't worth doing.
 
+Kait, 2026-10-08, the kit's shape and the repositories:
+
+- The kit works like a project template that agents run. Agents run its workflow: they
+  ask the questions, plan the details, and generate an opinionated first version of the
+  port as its own repository, kept in sync with the original. After that the project is
+  the user's to tune, and later porting agents port into whatever it has become.
+- Its crates are opinionated and fast, but general enough for a broader range of
+  projects. Each one is optional and plugs in alone, such as the in-process edge in place
+  of a reverse proxy, or the rate limits. Code shaped by one app is template code that
+  the generated project owns, not a crate.
+- Staying in sync is what the kit generates for: documentation, tests (conformance and
+  the byte comparison), and task records that make each later feature port work, with a
+  pin to the original's commit. The kit suggests changes to the original repository that
+  make later ports easier, and never requires them.
+- A separate repository is the main pattern, not the only one. A proof of concept can
+  start in the original repository, which usually needs TypeScript changes too: a minimal
+  port of the critical paths to Rust, with the rest run through V8 if needed, as task 081
+  began. Running unported API routes, not only rendering, needs a database path for
+  them; the proof-of-concept recipe decides between host operations for V8 and a proxy
+  to the original server.
+- Task 081 moves to its own repository, `snowtime-native`, after the port is feature
+  complete and audited: split it first, then extract the kit's crates into the kit's
+  repository with `snowtime-native` as their first consumer. It pins the `snowtime`
+  commit it matches, and that commit's conformance suite and byte comparison define the
+  match. Once the kit exists, regenerating `snowtime-native` from it measures the kit
+  against the hand-built port. A second, different app tests that the crates are general.
+
 ## What goes in
 
 Only what an AI session can't quickly work out itself, because models keep improving at the
