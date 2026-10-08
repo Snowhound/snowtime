@@ -64,7 +64,7 @@ const { values } = parseArgs({
     plan: { type: 'string' },
     'past-capacity': { type: 'boolean', default: false },
     runtime: { type: 'string', default: 'multi_thread' },
-    'queue-max-waiting': { type: 'string', default: '128' },
+    'queue-max-waiting': { type: 'string', default: '4096' },
     'queue-timeout-ms': { type: 'string', default: '1000' },
     dataset: { type: 'string', default: 'S' },
     'dataset-date': { type: 'string' },

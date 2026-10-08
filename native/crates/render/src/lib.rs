@@ -286,10 +286,13 @@ impl Renderer {
             profile.after();
         }
         let output = self.js().op_state().borrow_mut().take::<Output>();
+        if result.is_err() {
+            // A failed render may leave locale, timers, or query work behind.
+            self.reset();
+        }
         if let Some(retry_after) = output.retry_after {
             // A framework may catch the dependency error and emit a 500 or partial page.
             // The host still owes the caller the dependency's admission refusal.
-            self.reset();
             return Err(RenderError::ApiRefused { retry_after });
         }
         match (result, output.head) {
@@ -298,15 +301,11 @@ impl Renderer {
                 headers,
                 body: output.body,
             }),
-            (result, _) => {
-                // A failed render may leave locale, timers, or query work behind.
-                self.reset();
-                Err(RenderError::Failed(
-                    result
-                        .err()
-                        .map_or("The page sent no head".into(), |e| e.to_string()),
-                ))
-            }
+            (result, _) => Err(RenderError::Failed(
+                result
+                    .err()
+                    .map_or("The page sent no head".into(), |e| e.to_string()),
+            )),
         }
     }
 }
@@ -818,6 +817,80 @@ mod tests {
             locale: Some("en".into()),
             now: None,
         }
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn api_refusals_keep_a_completed_renderer_warm_and_reset_a_failed_render() {
+        let send: SendApi = Arc::new(|_| {
+            Box::pin(async {
+                Ok(ApiResponse {
+                    status: 503,
+                    headers: vec![("retry-after".into(), "7".into())],
+                    body: vec![],
+                })
+            })
+        });
+        let mut renderer = Renderer::new(send, r#"{"routes":{}}"#.into(), Policy::default());
+        renderer
+            .js()
+            .execute_script(
+                "refused.js",
+                r#"
+            globalThis.warmth = 42;
+            renderPage = async () => {
+              await Deno.core.ops.op_send({method:'GET',path:'/busy',headers:[],body:[]});
+              Deno.core.ops.op_head(500, []);
+            };
+        "#,
+            )
+            .unwrap();
+        assert!(matches!(
+            renderer.render(&page(), std::future::pending()).await,
+            Err(RenderError::ApiRefused { retry_after }) if retry_after == "7"
+        ));
+        renderer
+            .js()
+            .execute_script(
+                "healthy.js",
+                r#"
+            if (globalThis.warmth !== 42) throw Error('the refused page reset its isolate');
+            renderPage = async () => Deno.core.ops.op_head(204, []);
+        "#,
+            )
+            .unwrap();
+        assert_eq!(
+            renderer
+                .render(&page(), std::future::pending())
+                .await
+                .unwrap()
+                .status,
+            204
+        );
+        renderer
+            .js()
+            .execute_script(
+                "failed.js",
+                r#"
+            renderPage = async () => {
+              await Deno.core.ops.op_send({method:'GET',path:'/busy',headers:[],body:[]});
+              throw Error('render failed');
+            };
+        "#,
+            )
+            .unwrap();
+        assert!(matches!(
+            renderer.render(&page(), std::future::pending()).await,
+            Err(RenderError::ApiRefused { .. })
+        ));
+        renderer
+            .js()
+            .execute_script(
+                "reset.js",
+                r#"
+            if (globalThis.warmth !== undefined) throw Error('the failed render kept its isolate');
+        "#,
+            )
+            .unwrap();
     }
 
     #[tokio::test(flavor = "current_thread")]

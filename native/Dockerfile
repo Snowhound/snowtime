@@ -11,10 +11,12 @@ COPY native native
 COPY src/lib/holidays/ee.json src/lib/holidays/ee.json
 ARG BIN=snowtime-axum
 ARG CARGO_FEATURES=
-# Worktrees share this target cache; rebuild local crates to avoid stale source mtimes.
+# Bench worktrees share this cache; release builds retain their incremental artifacts.
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/native/target \
-    cd native && cargo clean --release -p snowtime-server -p snowtime-render -p snowtime-host \
+    cd native && if echo ",${CARGO_FEATURES}," | grep -Eq ",bench,|(^|[ ,])bench([ ,]|$)"; then \
+        cargo clean --release -p snowtime-server -p snowtime-render -p snowtime-host; \
+    fi \
     && cargo build --release --locked --bin ${BIN} --features "${CARGO_FEATURES}" \
     && cp target/release/${BIN} /server && strip /server
 

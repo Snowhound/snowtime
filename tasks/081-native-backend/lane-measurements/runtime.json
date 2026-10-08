@@ -1,6 +1,6 @@
 {
   "measuredOn": "2026-10-07",
-  "decision": "retain multi_thread as default; current_thread stays available through TOKIO_RUNTIME",
+  "decision": "inconclusive; keep multi_thread default unchanged; valid 5000-user pair favors current_thread on all recorded metrics; failed 15000-user phases do not select the runtime",
   "method": "same after image and M source as bursts.json; one core, no readers, 30-second 5k warmup, 120-second 5k and 15k offers; one run per runtime; CPU ms per HTTP attempt is mixed process cost including TLS; 15k misses the HTTP error target",
   "runs": [
     {

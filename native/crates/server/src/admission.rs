@@ -17,7 +17,7 @@ impl Default for Limits {
         Self {
             hashes: std::thread::available_parallelism().map_or(1, |n| n.get()),
             queue_timeout: Duration::from_secs(1),
-            max_waiting: 128,
+            max_waiting: 4096,
         }
     }
 }

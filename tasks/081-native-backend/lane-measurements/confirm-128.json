@@ -1,7 +1,7 @@
 {
   "measuredOn": "2026-10-08",
   "run": "2026-10-08T03-48-45-M-fixed-08117-after-8c-r8-confirm128",
-  "decision": "choose 128 default from earlier passing peak 117 and lower measured refusal rate; 80000-user capacity remains unconfirmed",
+  "decision": "rejected as ordinary count bound in review; instant refusals show 128 cuts off work before the deadline; superseded by 4096 backstop; 80000-user capacity not confirmed",
   "bound": 128,
   "deadlineMs": 1000,
   "appCores": 8,

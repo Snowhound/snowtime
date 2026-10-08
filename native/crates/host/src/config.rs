@@ -45,7 +45,7 @@ pub fn from_env() -> Result<Config, String> {
             crate::memory::limit().bytes,
             cpus,
         )),
-        max_waiting: number("WORK_QUEUE_MAX_WAITING", 128)?,
+        max_waiting: number("WORK_QUEUE_MAX_WAITING", 4096)?,
         queue_timeout: std::time::Duration::from_millis(
             number("WORK_QUEUE_TIMEOUT_MS", 1000)? as u64
         ),

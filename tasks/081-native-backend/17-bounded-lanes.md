@@ -1,6 +1,6 @@
 # 081.17: The lane contract, the overload policy, and refusal in the client
 
-Status: in-progress
+Status: done
 
 Bring the database, password hashing, and V8 render lanes up to the contract in
 [native-host.md](../../docs/architecture/native-host.md), and build the overload policy
@@ -36,12 +36,10 @@ Database and hashing:
       gate, checked by a test or a lint
 - [x] A fixed load with a burst of sign-ins (10 a second for 10 seconds) before and after:
       the p95 of the other request kinds during the burst
-- [ ] The ramp past capacity before and after: record app RSS at held capacity, 2x,
-      4x, and recovery. Queues stay within their count bounds; the app has no OOM kill
-      or swap, and shared-host memory stays below the harness's 85% guard. Admission
-      refusals return 503 with `Retry-After`, and the 120-second recovery hold passes
-      the capacity targets. Every judged phase has generator headroom and no dropped
-      actions
+- [x] One capacity confirmation on M at 1 core / 0 readers with the selected
+      backstop, recording the held offer, refusal status, latency, RSS, and generator
+      validity. The full capacity matrix and overload comparison moved to
+      [081.26](26-capacity-overload.md); they do not block this task's merge
 
 Rendering (V8):
 
@@ -161,9 +159,9 @@ input hashes, and image IDs. Raw evidence remains in `perf/.cache/stress/` in th
 worktree. A dropped-action pilot is excluded; the runner now checks k6's global and
 scenario dropped counters rather than relying on the custom step tag.
 
-The one-core runtime pair completes without dropped actions. Keep the multi-threaded
-runtime: the single-threaded one saves 7% CPU at 5,000 users and 1% at 15,000, with
-higher return and page p95 at 15,000. Both high-offer phases miss the error target.
+The one-core runtime pair completes without dropped actions. The comparison is inconclusive: the valid 5,000-user pair favors `current_thread`
+on all recorded metrics, but lacks repeats. Keep the default unchanged. Both
+15,000-user phases miss the error target and do not select the runtime.
 [Runtime evidence](lane-measurements/runtime.json) records the observations.
 
 ## Capacity and overload results, 2026-10-08
@@ -178,30 +176,37 @@ RSS by 38%, 46%, and 142%, above the 10% limit. Excess requests mostly return 50
 some return 500. The two eight-reader overload plans hit the generator CPU guard and
 drop actions, so their overload and recovery results are invalid.
 
-The overload criterion stays unchecked. The follow-up below sets the queue bound,
-restates the RSS criterion, and fixes page refusal propagation. Remaining work:
-resolve the capacity regression and obtain valid overload evidence at the selected
-bound. The decisions catalogue records these open findings. The merge
-into `081-native-poc` remains pending.
+The broader capacity and overload measurements moved to task 081.26 after review.
+The one-core confirmation below passes and the remaining runs do not block merging
+this task into `081-native-poc`.
 
-## Follow-up, 2026-10-08
+## Agreed review, 2026-10-08
 
-The page handler's API-refusal test passes: a dependency's 503 reaches the page caller
-with the same `Retry-After` and `Cache-Control: no-store`. The native suites pass
-58 tests; [raw test output](lane-measurements/native-tests.log) is retained.
+A completed page with an API refusal keeps its isolate; a thrown render resets it.
+The renderer-reuse regression test verifies both paths, and the page-handler test
+retains the original retry interval and `Cache-Control: no-store`.
 
-The RSS criterion now records each phase and checks memory-budget safety, bounded
-queues, refusal status, and recovery. The three valid after overload plans have no
-OOM kill or observed app swap and pass their recovery holds. A valid eight-reader
-comparison remains open; remote Windows generation needs a reserved slot and a fresh
-LAN capacity reference.
+The selected 4,096-waiter backstop follows measured throughput times the one-second
+deadline, with room for fan-out and sub-second spikes. The 32/128 limits refuse
+instantly rather than at that deadline. Native host records the calculation and
+waiter memory estimate. No 256 comparison runs.
 
-The one requested larger-bound trial at 128 completes without generator limits or
-dropped actions, but its 80,000-user hold misses the error target: 452 refusals
-(0.23%), all 503 with `Retry-After`, versus 882 server errors (0.44%) with 32.
-Latency targets pass. [Raw trial output](lane-measurements/confirm-128.log) and
-[structured evidence](lane-measurements/confirm-128.json) retain the result. The
-default is 128, supported by the earlier passing queue observation of 117 callers
-and the measured reduction in refusals. The 1,000-ms deadline stays configurable.
-The 80,000-user capacity claim remains unconfirmed. A 256-waiter comparison remains
-unmeasured.
+Kait agrees to drop the 10% RSS rule. The criterion now records RSS at capacity, 2x,
+4x, and recovery against task 10's provisional 2-GiB whole-host budget for M, with
+no OOM or swap, bounded queues, 503 admission refusals with `Retry-After`, and passing
+recovery. The shared-host 85% safety stop is not a budget. The four-configuration
+capacity rerun and valid eight-reader overload comparison are in
+[081.26](26-capacity-overload.md), which does not block the merge.
+
+The runtime comparison is inconclusive; the valid 5,000-user pair favors
+`current_thread`, but one pair cannot change the default. The failed 15,000-user
+phases do not select it. Keep `multi_thread` unchanged. Docker cache cleaning now
+runs only for bench builds; non-bench images retain their local-crate artifacts.
+
+The requested one-core, zero-reader hold at the new bound passes at 20,000 users:
+49,716 responses, all 200; no dropped actions; all latency windows within target;
+336 MB peak app RSS; no OOM kill or observed swap. Sampler continuity confirms it
+runs after the Mac wakes, without a sleep gap. The measurement confirms the held
+offer, not maximum capacity. [Evidence](lane-measurements/confirm-4096.json),
+[raw runner output](lane-measurements/confirm-4096.log), and
+[59-test output](lane-measurements/review-native-tests.log) are recorded.

@@ -1,0 +1,176 @@
+   Compiling snowtime-render v0.1.0 (/Users/kaitkasak/projects/snowtime/snowtime-081-lanes/native/crates/render)
+   Compiling snowtime-server v0.1.0 (/Users/kaitkasak/projects/snowtime/snowtime-081-lanes/native/crates/server)
+   Compiling snowtime-host v0.1.0 (/Users/kaitkasak/projects/snowtime/snowtime-081-lanes/native/crates/host)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.12s
+     Running unittests src/main.rs (native/target/debug/deps/snowtime_axum-714bfcc160f23600)
+
+running 14 tests
+test config::tests::auto_gives_one_core_no_readers ... ok
+test edge::access::tests::samples_like_caddy ... ok
+test memory::tests::sizes_renderers_from_memory ... ok
+test edge::tests::tls_modes_and_redirects_are_explicit ... ok
+test edge::accept::tests::stalled_handshake_expires ... ok
+test edge::tests::headers_preserve_the_renderers_nonce_and_redirects_ignore_host ... ok
+test edge::tests::timeout_covers_the_handler_and_errors_keep_security_headers ... ok
+test pages::tests::dropping_a_call_aborts_it_on_the_host_runtime ... ok
+test edge::tests::body_limit_rejects_oversized_requests ... ok
+test edge::tests::compression_and_headers_can_be_disabled ... ok
+test edge::tests::static_files_keep_cache_and_precompression_and_pages_without_exposing_api_or_dotfiles ... ok
+TypeError: Cannot use 'in' operator to search for 'key' in The server is busy. Try again.
+    at request (render.js:6:152047)
+test edge::tests::tls_serves_with_pem_files_and_a_cached_acme_certificate ... ok
+test health::tests::the_api_serves_while_the_render_lane_is_down ... ok
+test pages::tests::a_refused_api_dependency_refuses_the_page_and_keeps_retry_after ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running unittests src/lib.rs (native/target/debug/deps/snowtime_render-de45fadc863b100f)
+
+running 9 tests
+test profile::tests::preserves_deep_allocation_profiles ... ok
+test tests::api_refusals_keep_a_completed_renderer_warm_and_reset_a_failed_render ... ok
+test web_api_tests::encoding_and_formatting_keep_web_semantics ... ok
+test tests::web_apis_host_contract_and_recovery ... ok
+Error: no API
+    at render.js:61:250592
+    at request (render.js:6:151841)
+    at getAppSession (render.js:6:638028)
+    at queryFn (render.js:6:640524)
+    at Object.fetchFn [as fn] (render.js:6:181065)
+    at run (render.js:6:171703)
+    at Object.start (render.js:6:172476)
+    at Query.fetch (render.js:6:182139)
+    at U.query (render.js:6:212019)
+    at Object.beforeLoad (render.js:60:2226)
+Error: no API
+    at render.js:61:250592
+    at request (render.js:6:151841)
+    at getAppSession (render.js:6:638028)
+    at queryFn (render.js:6:640524)
+    at Object.fetchFn [as fn] (render.js:6:181065)
+    at run (render.js:6:171703)
+    at Object.start (render.js:6:172476)
+    at Query.fetch (render.js:6:182139)
+    at U.query (render.js:6:212019)
+    at Object.beforeLoad (render.js:60:2226)
+test tests::refuses_when_full_and_reclaims_cancelled_pages_at_once ... ok
+Error: no API
+    at render.js:61:250592
+    at request (render.js:6:151841)
+    at getAppSession (render.js:6:638028)
+    at queryFn (render.js:6:640524)
+    at Object.fetchFn [as fn] (render.js:6:181065)
+    at run (render.js:6:171703)
+    at Object.start (render.js:6:172476)
+    at Query.fetch (render.js:6:182139)
+    at U.query (render.js:6:212019)
+    at Object.beforeLoad (render.js:60:2226)
+test tests::restarts_a_panicking_renderer_within_the_budget ... ok
+Error: no API
+    at render.js:61:250592
+    at request (render.js:6:151841)
+    at getAppSession (render.js:6:638028)
+    at queryFn (render.js:6:640524)
+    at Object.fetchFn [as fn] (render.js:6:181065)
+    at run (render.js:6:171703)
+    at Object.start (render.js:6:172476)
+    at Query.fetch (render.js:6:182139)
+    at U.query (render.js:6:212019)
+    at Object.beforeLoad (render.js:60:2226)
+Error: no API
+    at render.js:61:250592
+    at request (render.js:6:151841)
+    at getAppSession (render.js:6:638028)
+    at queryFn (render.js:6:640524)
+    at Object.fetchFn [as fn] (render.js:6:181065)
+    at run (render.js:6:171703)
+    at Object.start (render.js:6:172476)
+    at Query.fetch (render.js:6:182139)
+    at U.query (render.js:6:212019)
+    at Object.beforeLoad (render.js:60:2226)
+Error: no API
+    at render.js:61:250592
+    at request (render.js:6:151841)
+    at getAppSession (render.js:6:638028)
+    at queryFn (render.js:6:640524)
+    at Object.fetchFn [as fn] (render.js:6:181065)
+    at run (render.js:6:171703)
+    at Object.start (render.js:6:172476)
+    at Query.fetch (render.js:6:182139)
+    at U.query (render.js:6:212019)
+    at Object.beforeLoad (render.js:60:2226)
+test tests::isolate_replacements_do_not_spend_the_restart_budget ... ok
+Error: no API
+    at async render.js:61:250572
+    at async request (render.js:6:151835)
+Error: no API
+    at async render.js:61:250572
+    at async request (render.js:6:151835)
+test tests::grows_only_while_pages_wait ... ok
+test tests::refuses_a_page_queued_behind_a_stuck_render_near_max_queue_wait ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.52s
+
+     Running unittests src/bin/render-bench.rs (native/target/debug/deps/render_bench-24eb486fb68dfb25)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (native/target/debug/deps/snowtime_server-335825c47128c9d0)
+
+running 36 tests
+test calendar::tests::reads_iso_dates_and_weekdays ... ok
+test auth::cookie::tests::signs_as_better_call_does ... ok
+test admission::tests::count_bound_refuses_immediately_and_cancellation_frees_waiting ... ok
+test calendar::tests::starts_days_across_clock_changes ... ok
+test hash_lane::tests::cancellation_keeps_the_running_hash_permit ... ok
+test admission::tests::blocking_work_is_only_spawned_by_admission ... ok
+test hash_lane::tests::hashes_are_bounded_by_memory_and_cores ... ok
+test hash_lane::tests::dedicated_worker_survives_a_job_panic ... ok
+test connections::tests::session_maintenance_on_the_writer_does_not_relock_it ... ok
+test holidays::tests::counts_days_off ... ok
+test http::tests::authenticates_cookies_split_across_http2_fields ... ok
+test connections::tests::readers_see_committed_writes_and_session_maintenance_uses_writer ... ok
+test http::tests::a_running_report_leaves_readers_and_writer_available_and_keeps_budget_on_cancel ... ok
+test http::tests::checks_known_origin_session_scope_then_input ... ok
+test http::tests::forwards_page_cookie_through_oneshot ... ok
+test http::tests::post_reads_skip_origin_and_write_rate ... ok
+test admission::tests::rejects_queue_timeout_and_releases_a_completed_slot ... ok
+test migrations::tests::reads_folder_timestamps_as_drizzle_does ... ok
+test migrations::tests::rolls_back_a_failing_migration ... ok
+test queries::tests::assignments_preserve_absent_null_and_value ... ok
+test queries::tests::binds_values_and_splices_nested_fragments ... ok
+test reports::aggregation::tests::splits_entries_into_day_and_week_buckets ... ok
+test schemas::tests::checks_ids_and_tickets ... ok
+test schemas::tests::decodes_with_defaults_and_trimming ... ok
+test schemas::tests::reads_query_booleans ... ok
+test timestamp::tests::reads_what_date_reads ... ok
+test timestamp::tests::round_trips ... ok
+test migrations::tests::applies_the_repository_migrations_once_and_refuses_edits ... ok
+test admission::tests::cancelling_a_caller_does_not_release_running_work ... ok
+test http::tests::report_queue_holds_no_database_slot_and_the_route_refuses_with_retry_after ... ok
+test admission::tests::gates_passed_in_turn_share_one_deadline ... ok
+test http::tests::a_slow_writer_leaves_reads_to_idle_readers ... ok
+test http::tests::slow_readers_leave_the_writer_to_writes ... ok
+test auth::password::tests::verifies_better_auths_hashes ... ok
+test auth::password::tests::verifies_normalized_password_with_nul ... ok
+test auth::password::tests::verifies_its_own_hashes ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.83s
+
+   Doc-tests snowtime_render
+
+running 2 tests
+test /Users/kaitkasak/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/deno_core-0.405.0/extensions.rs - extensions::encoding::encoding_ops (line 483) ... ignored
+test /Users/kaitkasak/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/deno_core-0.405.0/extensions.rs - host (line 483) ... ignored
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 0.18s; merged doctests compilation took 0.17s
+   Doc-tests snowtime_server
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
