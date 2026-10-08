@@ -399,8 +399,8 @@ member-removal hooks, and installed Better Auth 1.7.7 organization routes, adapt
 permissions, and profile update before porting. Names keep their supplied whitespace after
 the hooks validate trimmed length. Slugs stay immutable. Permission, owner safeguards,
 organization caps, active-organization changes, duplicate roles, response field order,
-and metadata encoding follow TypeScript. An update with no recognized organization fields
-retains TypeScript's empty HTTP 500 response.
+and metadata encoding follow TypeScript. At step 4, an update with no recognized organization fields retained TypeScript's empty
+HTTP 500 response. [Task 081.29](29-hardening.md) corrects both backends to return 400.
 
 Kait requested an isolated TypeScript bug fix for `memberRemovalHook`: act only when the
 returned member or leave result has string `userId` and `organizationId` fields. Better
@@ -420,8 +420,10 @@ The step 3 review fix preserves the raw percent-encoded callback path and writes
 Latin-1 header bytes. TypeScript and native both return 302 for
 `POST /api/auth/callback/%0A`, with `Location: <origin>/api/auth/callback/%0A?`, and for
 `callbackURL: "/ä"`, with `Location: /ä`. A character outside ByteString, such as `雪`,
-returns TypeScript's empty HTTP 500 without a Rust panic. Rust response tests, HTTP
-conformance, and `compare.ts` include these cases. The auth `expect()`/`unwrap()` audit
+returned TypeScript's empty HTTP 500 without a Rust panic at step 4.
+[Task 081.29](29-hardening.md) encodes that callback URL on both backends and verifies
+a 302 with `Location: /%E9%9B%AA`. Rust response tests, HTTP conformance, and
+`compare.ts` include these cases. The auth `expect()`/`unwrap()` audit
 found no other unguarded request-derived value: ordered schemas guard body conversions,
 explicit checks guard sessions and callback codes, and remaining assertions concern
 serialization, fixed patterns, configuration, or database invariants. The saved grep
@@ -481,24 +483,9 @@ that confirms both fake-provider errors are resolved.
 
 ## Follow-up
 
-Both items are required before a native host faces the internet. The in-process edge is
-the default deployment ([task 07](07-edge-in-process.md)).
-
-- [ ] Read the TCP peer address through `axum_server` connect info. The host currently
-      derives `client_ip` only from `CLIENT_IP_HEADER` in `native/crates/server/src/http.rs`.
-      In direct mode, sessions store an empty IP and per-IP limits have no address key.
-      Use the peer address in direct mode; keep `CLIENT_IP_HEADER` only for a trusted
-      proxy in front of the host.
-- [ ] Port Better Auth's per-IP limits on `/api/auth` with `tower_governor`, keyed by
-      the address resolved above. Include the installed library's defaults and sign-in
-      special rule, plus the `/organization/create` and `/organization/invite-member`
-      `customRules` in `src/server/auth/better-auth.server.ts`. Match Better Auth's 429
-      body and headers. Add a `RATE_LIMIT` variable: on by default unless
-      `NODE_ENV=development`, with `RATE_LIMIT=off` for perf and stress runs. Put the API's
-      per-user write limit under the same switch. Log at startup and show in health output
-      when limits are off. Keep TLS and ACME off unless configured. Verify limits in
-      production mode: TypeScript applies them only in production, so development-mode
-      byte comparisons cannot detect missing limits.
+Completed in [081.29](29-hardening.md): TCP peer addresses in direct mode, trusted-proxy
+headers, Better Auth per-IP quotas through `tower_governor`, the shared `RATE_LIMIT`
+switch, and production-mode refusal checks. TLS and ACME remain opt-in.
 
 ## Local review
 

@@ -20,6 +20,7 @@ fn config() -> Config {
         password_enabled: false,
         sign_in_page: Default::default(),
         client_ip_header: None,
+        rate_limit: false,
         oauth: vec![],
     }
 }

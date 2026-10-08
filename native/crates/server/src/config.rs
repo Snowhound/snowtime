@@ -10,6 +10,7 @@ pub struct Config {
     pub password_enabled: bool,
     pub sign_in_page: SignInPageConfig,
     pub client_ip_header: Option<String>,
+    pub rate_limit: bool,
 }
 
 #[derive(Default)]

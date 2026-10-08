@@ -139,7 +139,13 @@ impl Serialize for Zone {
 
 /// Milliseconds the zone is ahead of UTC at the instant.
 pub fn offset_at(ms: i64, zone: &Zone) -> i64 {
-    let at = jiff::Timestamp::from_millisecond(ms).expect("instants are within jiff's range");
+    // DaySplitter probes the day beyond an ISO date's 9999 upper bound. Use the
+    // boundary offset when that adjacent-day probe leaves jiff's supported range.
+    let at = match jiff::Timestamp::from_millisecond(ms) {
+        Ok(at) => at,
+        Err(_) if ms < 0 => jiff::Timestamp::MIN,
+        Err(_) => jiff::Timestamp::MAX,
+    };
     i64::from(zone.tz.to_offset(at).seconds()) * 1000
 }
 

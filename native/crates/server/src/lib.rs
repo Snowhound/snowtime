@@ -6,6 +6,7 @@ pub mod availability;
 #[cfg(feature = "bench")]
 mod bench;
 pub mod calendar;
+pub mod client_ip;
 pub mod clock;
 mod config;
 mod connections;

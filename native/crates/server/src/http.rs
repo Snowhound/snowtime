@@ -152,9 +152,9 @@ impl App {
             ),
             readers,
             db: Mutex::new(db),
-            config,
             session,
-            rate_limits: MemoryStore::default(),
+            rate_limits: MemoryStore::new(config.rate_limit),
+            config,
         }))
     }
     pub(crate) fn db(&self) -> MutexGuard<'_, Connection> {
@@ -200,12 +200,20 @@ pub fn router(app: Arc<App>) -> Router {
         .merge(crate::timer::routes::routes())
         .merge(crate::settings::routes::routes())
         .nest("/organizations/{organizationId}", organization);
-    Router::new()
+    let limits = app
+        .config
+        .rate_limit
+        .then(|| crate::auth::rate_limit::layer(app.config.client_ip_header.clone()));
+    let router = Router::new()
         .nest("/api/v1", api)
         .merge(crate::auth::routes::better_auth_routes())
         .fallback(unknown)
         .method_not_allowed_fallback(unknown)
-        .with_state(app)
+        .with_state(app);
+    match limits {
+        Some(layer) => router.layer(layer),
+        None => router,
+    }
 }
 async fn unknown() -> Response {
     failure(404, "No such call.").into()
@@ -254,11 +262,12 @@ async fn extract(
         query: parts.uri.query().map(str::to_owned),
         cookie: cookies(&parts.headers),
         user_agent: text(&parts.headers, "user-agent"),
-        client_ip: app
-            .config
-            .client_ip_header
-            .as_deref()
-            .and_then(|h| text(&parts.headers, h)),
+        client_ip: crate::client_ip::resolve(
+            &parts.headers,
+            &parts.extensions,
+            app.config.client_ip_header.as_deref(),
+        )
+        .map(crate::client_ip::session_address),
         body: bytes.to_vec(),
         params,
     })

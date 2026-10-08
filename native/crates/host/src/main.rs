@@ -40,6 +40,11 @@ async fn serve(config: config::Config) {
         .next()
         .expect("HOST has an address");
     let origin = config.server.app_url.clone();
+    let rate_limit = config.server.rate_limit;
+    tracing::info!(enabled = rate_limit, "rate limits");
+    if !rate_limit {
+        tracing::warn!("rate limits are off");
+    }
     // Before the listener starts, so no request writes during a migration.
     if let Some(folder) = &config.migrations {
         let mut db =
@@ -93,6 +98,7 @@ async fn serve(config: config::Config) {
     let health = health::routes(health::Lanes {
         api: api.clone(),
         pool: pool.clone(),
+        rate_limit,
     });
     let pages = Router::new()
         .fallback(pages::page)

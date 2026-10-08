@@ -66,7 +66,12 @@ export class PasskeyAuthenticator {
             ]
     this.publicKey = cbor(new Map(fields))
   }
-  registration(challenge: string, origin: string, flags = 1) {
+  registration(
+    challenge: string,
+    origin: string,
+    flags = 1,
+    transform?: (data: Buffer) => Uint8Array,
+  ) {
     const client = Buffer.from(
       JSON.stringify({ type: 'webauthn.create', challenge, origin, crossOrigin: false }),
     )
@@ -84,7 +89,7 @@ export class PasskeyAuthenticator {
       new Map<string, unknown>([
         ['fmt', 'none'],
         ['attStmt', new Map()],
-        ['authData', auth],
+        ['authData', transform?.(auth) ?? auth],
       ]),
     )
     return {

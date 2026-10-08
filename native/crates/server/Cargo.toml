@@ -7,12 +7,7 @@ publish.workspace = true
 
 [features]
 bench = []
-auth-spike = [
-  "dep:better-auth",
-  "dep:better-auth-core",
-  "dep:async-trait",
-  "dep:chrono",
-]
+auth-spike = ["dep:better-auth", "dep:better-auth-core", "dep:async-trait", "dep:chrono"]
 scrypt-bench = ["dep:scrypt"]
 
 [dependencies]
@@ -26,6 +21,7 @@ better-auth = { version = "=1.0.0-alpha.3", default-features = false, features =
 better-auth-core = { version = "=1.0.0-alpha.3", optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
 form_urlencoded.workspace = true
+governor = "0.10"
 hmac.workspace = true
 icu_collator.workspace = true
 icu_locale_core.workspace = true
@@ -43,6 +39,7 @@ serde_cbor_2 = { version = "0.13" }
 serde_json.workspace = true
 sha2.workspace = true
 tokio = { workspace = true, features = ["sync", "time"] }
+tower_governor = { version = "0.8", default-features = false, features = ["axum"] }
 tower = { version = "0.5", features = ["util"] }
 unicode-normalization.workspace = true
 url = "2"

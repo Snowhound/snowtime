@@ -77,7 +77,12 @@ try {
   fixture.close()
 }
 await buildApp()
-const [ts, native] = await Promise.all([startApp({ database }), startNative(binary, database)])
+// TypeScript's API write limits also run in development. Enable the native switch here
+// to compare those refusals; the production harness separately checks auth quotas.
+const [ts, native] = await Promise.all([
+  startApp({ database, env: { CLIENT_IP_HEADER: 'x-bench-ip' } }),
+  startNative(binary, database, { RATE_LIMIT: 'on', CLIENT_IP_HEADER: 'x-bench-ip' }),
+])
 
 type Server = { url: string }
 type Who = 'admin' | 'member' | null
@@ -157,7 +162,7 @@ async function compareWrites(domain: string, cases: WriteCase[], sql: string[] =
   const a = await startApp({ database: source })
   let b: Awaited<ReturnType<typeof startNative>> | undefined
   try {
-    b = await startNative(binary, source)
+    b = await startNative(binary, source, { RATE_LIMIT: 'on' })
     const credentials = {
       ts: {
         admin: await signInHeaders(a, 'admin'),
@@ -384,6 +389,13 @@ try {
       'getReport',
       { ...reportWeek, userId: memberId, teamId: companyIds.teams.web },
       'admin',
+    ],
+    [
+      'report, upper ISO boundary',
+      'getReport',
+      { ...reportWeek, from: '9999-12-30', to: '9999-12-31' },
+      'admin',
+      now,
     ],
     ['report, unknown day', 'getReport', { ...reportWeek, from: '2026-02-30' }, 'admin'],
     ['report, no from', 'getReport', { organizationId, to: '2026-10-05' }, 'admin'],
@@ -912,11 +924,16 @@ try {
     ],
     ['sign-in, invalid email', (s) => ({ origin: s.url }), '{"email":"x","password":"y"}'],
   ]
-  for (const [label, headersOf, body] of signIns) {
+  for (const [index, [label, headersOf, body]] of signIns.entries()) {
     async function call(server: Server) {
       const response = await fetch(`${server.url}/api/auth/sign-in/email`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', ...headersOf(server) },
+        // Each origin/schema case needs an unspent auth bucket.
+        headers: {
+          'content-type': 'application/json',
+          'x-bench-ip': `203.0.113.${index + 1}`,
+          ...headersOf(server),
+        },
         body: body ?? wrong,
       })
       return { status: response.status, text: await response.text() }

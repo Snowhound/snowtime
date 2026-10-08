@@ -228,7 +228,7 @@ impl App {
         if let Some(issue) = issue {
             return refusal(400, "VALIDATION_ERROR", &issue);
         }
-        let id = body["invitationId"].as_str().unwrap().to_owned();
+        let id = body["invitationId"].as_str().unwrap_or_default().to_owned();
         let app = self.clone();
         self.write_gate
             .run(move || {
@@ -279,6 +279,7 @@ mod tests {
                 password_enabled: true,
                 sign_in_page: Default::default(),
                 client_ip_header: None,
+                rate_limit: false,
                 oauth: vec![],
             },
         )

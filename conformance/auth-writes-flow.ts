@@ -250,7 +250,7 @@ export async function authWritesFlow(
     'update organization no fields',
     '/organization/update',
     { data: { ignored: true } },
-    500,
+    400,
   )
   await call(
     'role last owner',

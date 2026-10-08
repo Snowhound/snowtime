@@ -245,7 +245,7 @@ fn authorization_url(
     }
     for (key, value) in parameters {
         if key != "include_granted_scopes" || provider.id != "google" {
-            query.append_pair(key, value.as_str().unwrap());
+            query.append_pair(key, value.as_str().unwrap_or_default());
         }
     }
     drop(query);
@@ -257,6 +257,20 @@ fn session_user(
     request: &Request,
 ) -> rusqlite::Result<Option<session::Session>> {
     session::find_session(db, &app.session, request.cookie.as_deref(), clock::now())
+}
+fn redirect_url(value: &str) -> String {
+    let mut encoded = String::new();
+    for character in value.chars() {
+        if u32::from(character) <= 255 {
+            encoded.push(character);
+        } else {
+            for byte in character.encode_utf8(&mut [0; 4]).bytes() {
+                use std::fmt::Write;
+                write!(encoded, "%{byte:02X}").expect("writing to a string cannot fail");
+            }
+        }
+    }
+    encoded
 }
 fn start(
     db: &Connection,
@@ -279,8 +293,18 @@ fn start(
         return Ok(refusal(401, "UNAUTHORIZED", "Unauthorized").into());
     }
     match action {
-        Action::List => return list_accounts(db, &user.unwrap().user_id),
-        Action::Unlink => return unlink(db, &user.unwrap(), body["accountId"].as_str().unwrap()),
+        Action::List => {
+            return match user {
+                Some(user) => list_accounts(db, &user.user_id),
+                None => Ok(refusal(401, "UNAUTHORIZED", "Unauthorized").into()),
+            };
+        }
+        Action::Unlink => {
+            return match user {
+                Some(user) => unlink(db, &user, body["accountId"].as_str().unwrap_or_default()),
+                None => Ok(refusal(401, "UNAUTHORIZED", "Unauthorized").into()),
+            };
+        }
         _ => (),
     }
     let Some(provider) = app.config.oauth.iter().find(|p| p.id == body["provider"]) else {
@@ -294,16 +318,19 @@ fn start(
         return Ok(refusal(401, "INVALID_TOKEN", "Invalid token").into());
     }
     let state = State {
-        callback_url: body["callbackURL"]
-            .as_str()
-            .filter(|s| !s.is_empty())
-            .unwrap_or(app.config.app_origin())
-            .into(),
+        callback_url: redirect_url(
+            body["callbackURL"]
+                .as_str()
+                .filter(|s| !s.is_empty())
+                .unwrap_or(app.config.app_origin()),
+        ),
         code_verifier: random(128),
-        error_url: body["errorCallbackURL"].as_str().map(str::to_owned),
-        new_user_url: body["newUserCallbackURL"].as_str().map(str::to_owned),
+        error_url: body["errorCallbackURL"].as_str().map(redirect_url),
+        new_user_url: body["newUserCallbackURL"].as_str().map(redirect_url),
         link: if matches!(action, Action::Link) {
-            let user = user.unwrap();
+            let Some(user) = user else {
+                return Ok(refusal(401, "UNAUTHORIZED", "Unauthorized").into());
+            };
             Some(Link {
                 email: db.query_row(
                     "select email from user where id=?1",
@@ -536,7 +563,7 @@ async fn exchange(
     };
     let mut form = vec![
         ("grant_type", "authorization_code"),
-        ("code", query["code"].as_str().unwrap()),
+        ("code", query["code"].as_str().unwrap_or_default()),
         ("code_verifier", &pending.state.code_verifier),
     ];
     let uri = callback_uri(config, &provider.id);
@@ -1064,6 +1091,7 @@ mod tests {
             password_enabled: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
+            rate_limit: false,
             oauth: vec![OAuthProvider {
                 id: "google".into(),
                 client_id: "client".into(),
