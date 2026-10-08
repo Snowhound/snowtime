@@ -209,7 +209,7 @@ pub fn create_session(
             token,
             now + EXPIRES_IN_S * 1000,
             ip_address,
-            user_agent,
+            super::bounds::user_agent(user_agent),
             now
         ],
     )?;
@@ -233,4 +233,24 @@ fn uuid_v7(now: i64) -> String {
         (now.rem_euclid(1000) * 1_000_000) as u32,
     );
     uuid::Uuid::new_v7(at).to_string()
+}
+
+#[cfg(test)]
+mod input_bounds_tests {
+    use super::*;
+    #[test]
+    fn sessions_store_at_most_512_user_agent_bytes() {
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch("create table session(id text,user_id text,token text,expires_at integer,ip_address text,user_agent text,created_at integer,updated_at integer);").unwrap();
+        let agent = format!("{}😀", "a".repeat(510));
+        let token = create_session(&db, "user", "127.0.0.1", &agent, 0).unwrap();
+        let stored: String = db
+            .query_row(
+                "select user_agent from session where token=?1",
+                [token],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(stored, "a".repeat(510));
+    }
 }

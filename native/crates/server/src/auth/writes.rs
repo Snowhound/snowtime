@@ -1,5 +1,5 @@
 //! The app's remaining Better Auth profile and organization writes.
-use super::ordered_json::OrderedJson;
+use super::ordered_json::{MetadataInput, OrderedJson};
 use super::{
     cookie, session,
     sign_in::{FetchHeaders, refusal},
@@ -257,6 +257,7 @@ fn rule(
     request: &Request,
     action: Action,
     body: &Value,
+    metadata: Option<OrderedJson>,
 ) -> rusqlite::Result<Response> {
     let Some(user) =
         session::find_session(db, &app.session, request.cookie.as_deref(), clock::now())?
@@ -317,7 +318,7 @@ fn rule(
                 Ok(answer(json!({"status":true})))
             }
         }
-        Action::Create => create(db, app, request, &user, body),
+        Action::Create => create(db, app, request, &user, body, metadata),
         Action::SetActive => {
             if body.get("organizationId") == Some(&Value::Null) {
                 set_active(db, app, request, None)?;
@@ -400,7 +401,7 @@ fn rule(
                 ));
             };
             match action {
-                Action::Update => update(db, request, &actor, body),
+                Action::Update => update(db, &actor, body, metadata),
                 Action::Role => update_role(db, &actor, body),
                 _ => remove(db, app, request, &actor, &user, body),
             }
@@ -413,6 +414,7 @@ fn create(
     request: &Request,
     user: &session::Session,
     body: &Value,
+    metadata: Option<OrderedJson>,
 ) -> rusqlite::Result<Response> {
     let count: i64 = db.query_row(
         "select count(*) from member where user_id=?1",
@@ -436,9 +438,6 @@ fn create(
     let id = uuid::Uuid::now_v7().to_string();
     let mid = uuid::Uuid::now_v7().to_string();
     let now = clock::now();
-    let metadata = serde_json::from_slice::<OrderedJson>(&request.body)
-        .ok()
-        .and_then(|v| v.get("metadata").cloned());
     db.execute("insert into organization(id,name,slug,logo,metadata,created_at) values (?1,?2,?3,?4,?5,?6)",params![id,name.as_str(),slug,body["logo"].as_str(),metadata.as_ref().map(|v|serde_json::to_string(v).expect("metadata serializes")),now])?;
     db.execute("insert into member(id,organization_id,user_id,role,created_at) values (?1,?2,?3,'owner',?4)",params![mid,id,user.user_id,now])?;
     if body["keepCurrentActiveOrganization"] != true {
@@ -471,9 +470,9 @@ fn create(
 }
 fn update(
     db: &Connection,
-    request: &Request,
     actor: &Member,
     body: &Value,
+    metadata: Option<OrderedJson>,
 ) -> rusqlite::Result<Response> {
     if !admin(&actor.role) {
         return Ok(org_error(
@@ -509,9 +508,6 @@ fn update(
             "No fields to update",
         ));
     }
-    let metadata = serde_json::from_slice::<OrderedJson>(&request.body)
-        .ok()
-        .and_then(|v| v.get("data").and_then(|v| v.get("metadata")).cloned());
     db.execute("update organization set name=case when ?1 then ?2 else name end,logo=case when ?3 then ?4 else logo end,metadata=case when ?5 then ?6 else metadata end where id=?7",params![data.get("name").is_some(),data["name"].as_str(),data.get("logo").is_some(),data["logo"].as_str(),data.get("metadata").is_some(),metadata.as_ref().map(|v|serde_json::to_string(v).expect("metadata serializes")),actor.organization_id])?;
     let mut org = organization(db, &actor.organization_id)?;
     if let Some(org) = &mut org {
@@ -747,10 +743,15 @@ impl App {
         if !issues.is_empty() {
             return refusal(400, "VALIDATION_ERROR", &issues.join("; "));
         }
+        let metadata = if matches!(action, Action::Create | Action::Update) {
+            MetadataInput::parse(&request.body, matches!(action, Action::Update))
+        } else {
+            None
+        };
         let app = self.clone();
         match self
             .write_gate
-            .run(move || rule(&app.db(), &app, &request, action, &body))
+            .run(move || rule(&app.db(), &app, &request, action, &body, metadata))
             .await
         {
             Ok(Ok(r)) => r,
@@ -766,6 +767,48 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test]
+    async fn oversized_profile_and_organization_inputs_refuse_before_database_work() {
+        let app = App::open(crate::Config {
+            database_path: ":memory:".into(),
+            app_url: "http://snowtime.test".into(),
+            secret: "test-secret".into(),
+            password_enabled: false,
+            sign_in_page: Default::default(),
+            client_ip_header: None,
+            rate_limit: false,
+            oauth: vec![],
+        })
+        .unwrap();
+        for (action, body) in [
+            (Action::Profile, json!({"image":"a".repeat(2049)})),
+            (
+                Action::Create,
+                json!({"name":"Org","slug":"org","logo":"a".repeat(2049)}),
+            ),
+            (
+                Action::Create,
+                json!({"name":"Org","slug":"org","metadata":{"v":"a".repeat(4089)}}),
+            ),
+            (Action::Update, json!({"data":{"logo":"a".repeat(2049)}})),
+            (
+                Action::Update,
+                json!({"data":{"metadata":{"v":"a".repeat(4089)}}}),
+            ),
+        ] {
+            let mut request = Request::auth_fixture(String::new());
+            request.body = serde_json::to_vec(&body).unwrap();
+            let mut headers = axum::http::HeaderMap::new();
+            headers.insert("origin", "http://snowtime.test".parse().unwrap());
+            let response = app
+                .clone()
+                .auth_write(request, FetchHeaders::of(&headers), action)
+                .await;
+            assert_eq!(response.status, 400);
+            let error: Value = serde_json::from_slice(&response.body).unwrap();
+            assert_eq!(error["code"], "VALIDATION_ERROR");
+        }
+    }
     #[test]
     fn removal_stops_only_live_timers_in_the_removed_organization_and_removes_teams() {
         let db = Connection::open_in_memory().unwrap();

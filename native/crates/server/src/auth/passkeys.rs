@@ -267,6 +267,10 @@ fn consume(
             |r| Ok((r.get(0)?, r.get(1)?)),
         )
         .optional()?;
+    tx.execute(
+        "delete from verification where expires_at < ?1",
+        [clock::now()],
+    )?;
     tx.execute("delete from verification where identifier=?1", [&token])?;
     tx.commit()?;
     Ok(data
@@ -698,6 +702,61 @@ mod tests {
         ))
     }
 
+    #[tokio::test]
+    async fn oversized_passkey_name_refuses_before_consuming_challenge() {
+        let app = fixture();
+        app.db()
+            .execute(
+                "insert into verification values ('challenge','challenge','{}',?1,0,0)",
+                [clock::now() + 600000],
+            )
+            .unwrap();
+        let mut request = request(&app, "challenge");
+        request.body = serde_json::to_vec(&json!({"response":{},"name":"😀".repeat(51)})).unwrap();
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert("origin", "https://snowtime.test".parse().unwrap());
+        let response = app
+            .clone()
+            .passkey(request, FetchHeaders::of(&headers), Action::Register)
+            .await;
+        assert_eq!(response.status, 400);
+        assert_eq!(response.body, br#"{"message":"[body.name] Too big: expected string to have <=100 characters","code":"VALIDATION_ERROR"}"#);
+        assert_eq!(
+            app.db()
+                .query_row("select count(*) from verification", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+    }
+    #[test]
+    fn missing_passkey_challenge_lookup_sweeps_only_expired_rows() {
+        let app = fixture();
+        let db = app.db();
+        for (id, expiry) in [
+            ("expired", clock::now() - 1),
+            ("live", clock::now() + 600000),
+        ] {
+            db.execute(
+                "insert into verification values (?1,?1,'{}',?2,0,0)",
+                params![id, expiry],
+            )
+            .unwrap();
+        }
+        assert!(
+            consume(&db, &app, &request(&app, "missing"), "authentication")
+                .unwrap()
+                .is_none()
+        );
+        let ids: Vec<String> = db
+            .prepare("select id from verification")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert_eq!(ids, vec!["live"]);
+    }
     #[test]
     fn challenges_are_signed_expiring_and_consumed_once_including_wrong_ceremonies() {
         let app = fixture();

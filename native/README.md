@@ -8,9 +8,10 @@ subtask 01 (`01-server-rendering.md`) the renderer's.
 
 Feature level: matches snowtime main c8ffa84. The branch's TypeScript app (`src/`) is
 identical to that commit, and against it the native host passes all 49 conformance
-tests (511 assertions, 10 files) and all 1,361 `compare.ts` calls byte for byte.
-[Task 081.30](../tasks/081-native-backend/30-audit.md#parity-record) records the run
-and the audit's findings.
+tests (522 assertions, 10 files) and all 1,375 `compare.ts` calls byte for byte.
+[Task 081.30](../tasks/081-native-backend/30-audit.md#parity-record) records the audit's findings.
+[Task 081.31](../tasks/081-native-backend/31-input-bounds.md) records the current checks
+and deliberate auth input bounds that differ from TypeScript.
 
 ## Crates
 

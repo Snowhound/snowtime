@@ -184,6 +184,7 @@ export async function authWritesFlow(
     { name: ' ', slug: COMPANY.slug },
     400,
   )
+  await call('profile image at byte bound', '/update-user', { image: 'a'.repeat(2048) }, 200)
   const created = await call(
     'create organization',
     '/organization/create',
@@ -244,6 +245,26 @@ export async function authWritesFlow(
     'update organization',
     '/organization/update',
     { data: { name: 'Renamed', logo: 'https://example.com/logo', metadata: { changed: true } } },
+    200,
+  )
+  await call('update duplicate metadata preserves order', '/organization/update', {}, 200, {
+    raw: '{"data":{"metadata":{"old":0}},"data":{"metadata":{"z":1,"a":2,"z":3,"2":"second","1":"first"}}}',
+  })
+  await call(
+    'update bounded metadata and logo',
+    '/organization/update',
+    {
+      data: { metadata: { v: 'a'.repeat(4088) }, logo: 'a'.repeat(2048) },
+    },
+    200,
+  )
+  await call(
+    'update ignores large unknown object',
+    '/organization/update',
+    {
+      data: { name: 'Renamed' },
+      pad: Object.fromEntries(Array.from({ length: 10_000 }, (_, i) => [`key${i}`, 0])),
+    },
     200,
   )
   await call(

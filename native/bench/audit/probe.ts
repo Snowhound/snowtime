@@ -124,7 +124,7 @@ const run: Record<string, () => Promise<void>> = {
     await app.stop()
   },
 
-  // Organization update parses the whole body with OrderedJson on the writer.
+  // Organization update with large unknown fields, followed by a concurrent write.
   async orderedjson() {
     const db = await copyDb('orderedjson')
     const app = await start(db, { RATE_LIMIT: 'off' })
@@ -154,12 +154,12 @@ const run: Record<string, () => Promise<void>> = {
       headers: h,
       body,
     })
-    await Bun.sleep(300)
+    await Bun.sleep(10)
     const t0 = performance.now()
     const w = await fetch(`${app.url}/api/v1/settings`, {
       method: 'PATCH',
       headers: h,
-      body: JSON.stringify({ weekStart: 1 }),
+      body: JSON.stringify({ weekStart: 'mon' }),
     })
     log(
       'orderedjson: concurrent PATCH /settings ->',
@@ -259,7 +259,12 @@ const run: Record<string, () => Promise<void>> = {
     await app.stop()
     // Expired rows stay after a later start and a new challenge.
     const later = await start(db, { PERF_NOW: String(SEED_NOW.getTime() + 3_600_000) })
-    await (await fetch(`${later.url}/api/auth/passkey/generate-authenticate-options`)).text()
+    const options = await fetch(`${later.url}/api/auth/passkey/generate-authenticate-options`)
+    const challengeCookie = options.headers
+      .getSetCookie()
+      .map((h) => h.split(';')[0])
+      .join('; ')
+    await options.text()
     const c2 = createClient({ url: `file:${db}` })
     const expired = Number(
       (
@@ -269,6 +274,33 @@ const run: Record<string, () => Promise<void>> = {
       ).rows[0].c,
     )
     log(`verification: an hour later, expired rows still stored: ${expired}`)
+    const lookup = await fetch(`${later.url}/api/auth/passkey/verify-authentication`, {
+      method: 'POST',
+      headers: { origin: later.url, cookie: challengeCookie, 'content-type': 'application/json' },
+      body: '{"response":{}}',
+    })
+    await lookup.text()
+    const remaining = Number((await c2.execute('select count(*) c from verification')).rows[0].c)
+    log(`verification: after passkey lookup -> ${lookup.status}; total rows ${remaining}`)
+    await c2.execute({
+      sql: 'insert into verification(id,identifier,value,expires_at,created_at,updated_at) values (?,?,?,?,?,?)',
+      args: [
+        'expired-oauth-probe',
+        'auth-state:expired-probe',
+        '{}',
+        SEED_NOW.getTime(),
+        SEED_NOW.getTime(),
+        SEED_NOW.getTime(),
+      ],
+    })
+    const oauthLookup = await fetch(
+      `${later.url}/api/auth/callback/google?state=missing-probe&code=bad`,
+      { redirect: 'manual' },
+    )
+    await oauthLookup.text()
+    log(
+      `verification: after OAuth missing-state lookup -> ${oauthLookup.status}; total rows ${Number((await c2.execute('select count(*) c from verification')).rows[0].c)}`,
+    )
     c2.close()
     await later.stop()
   },

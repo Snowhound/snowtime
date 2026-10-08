@@ -84,8 +84,8 @@ export function startOAuthProvider() {
         return Response.json({
           access_token: access,
           refresh_token: 'fake-refresh',
-          expires_in: 3600,
-          refresh_token_expires_in: 7200,
+          expires_in: grant.profile.token_expires_in ?? 3600,
+          refresh_token_expires_in: grant.profile.token_expires_in ?? 7200,
           scope: grant.scopes,
           token_type: 'Bearer',
           id_token: jwt,

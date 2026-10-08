@@ -13,6 +13,7 @@ pub use session::{Credentials, SessionConfig, create_session, find_credentials, 
 pub(crate) use sign_in::FetchHeaders;
 
 mod acceptance;
+mod bounds;
 mod invitations;
 pub(crate) mod oauth;
 mod ordered_json;

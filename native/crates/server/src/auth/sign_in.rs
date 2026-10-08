@@ -227,7 +227,7 @@ impl App {
         if !looks_like_email(&body.email) {
             return refusal(400, "INVALID_EMAIL", "Invalid email");
         }
-        if body.password.chars().count() > 128 {
+        if body.password.encode_utf16().count() > 128 {
             return refusal(400, "PASSWORD_TOO_LONG", "Password too long");
         }
         let email = body.email;
@@ -334,6 +334,48 @@ impl App {
                     None
                 }
             },
+        }
+    }
+}
+
+#[cfg(test)]
+mod input_bounds_tests {
+    use super::*;
+    #[tokio::test]
+    async fn password_limit_counts_utf16_units_before_database_work() {
+        let app = App::open(crate::Config {
+            database_path: ":memory:".into(),
+            app_url: "http://snowtime.test".into(),
+            secret: "test-secret".into(),
+            password_enabled: true,
+            sign_in_page: Default::default(),
+            client_ip_header: None,
+            rate_limit: false,
+            oauth: vec![],
+        })
+        .unwrap();
+        app.db().execute_batch("create table user(id text,name text,email text,email_verified integer,image text,created_at integer,updated_at integer); create table account(user_id text,provider_id text,account_id text,password text);").unwrap();
+        for (password, status, code) in [
+            ("😀".repeat(65), 400, "PASSWORD_TOO_LONG"),
+            ("a".repeat(129), 400, "PASSWORD_TOO_LONG"),
+            (format!("{}a", "😀".repeat(64)), 400, "PASSWORD_TOO_LONG"),
+            ("😀".repeat(64), 401, "INVALID_EMAIL_OR_PASSWORD"),
+            ("a".repeat(128), 401, "INVALID_EMAIL_OR_PASSWORD"),
+        ] {
+            let mut request = Request::auth_fixture(String::new());
+            request.body = serde_json::to_vec(
+                &serde_json::json!({"email":"missing@example.com","password":password}),
+            )
+            .unwrap();
+            let mut headers = HeaderMap::new();
+            headers.insert("origin", "http://snowtime.test".parse().unwrap());
+            let response = app
+                .clone()
+                .sign_in(request, FetchHeaders::of(&headers))
+                .await;
+            assert_eq!(response.status, status);
+            let body: serde_json::Value = serde_json::from_slice(&response.body).unwrap();
+            assert_eq!(body["code"], code);
         }
     }
 }

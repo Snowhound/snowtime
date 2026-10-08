@@ -471,6 +471,10 @@ fn consume(
             |r| r.get(0),
         )
         .optional()?;
+    db.execute(
+        "delete from verification where expires_at < ?1",
+        [clock::now()],
+    )?;
     let Some(data) = data else {
         return Ok(Err(error(&default, "state_mismatch", None)));
     };
@@ -731,6 +735,12 @@ fn scopes(tokens: &Value) -> Vec<String> {
             .collect()
     }
 }
+fn token_expiry(now: i64, seconds: Option<i64>) -> Option<i64> {
+    seconds
+        .filter(|s| *s != 0)
+        .and_then(|s| s.checked_mul(1000))
+        .and_then(|ms| now.checked_add(ms))
+}
 fn save_account(
     db: &Connection,
     provider: &str,
@@ -741,12 +751,7 @@ fn save_account(
     merge: bool,
 ) -> rusqlite::Result<()> {
     let incoming = scopes(tokens);
-    let expiry = |key: &str| {
-        tokens[key]
-            .as_i64()
-            .filter(|s| *s != 0)
-            .map(|s| clock::now() + s * 1000)
-    };
+    let expiry = |key: &str| token_expiry(clock::now(), tokens[key].as_i64());
     if let Some(id) = existing {
         let scope = if merge {
             let stored: Option<String> =
@@ -781,6 +786,9 @@ fn finish(
     tokens: &Value,
     profile: &Profile,
 ) -> rusqlite::Result<Answer> {
+    if let Some(issue) = super::bounds::url_issue(&json!(profile.image), "image") {
+        return Ok(refusal(400, "VALIDATION_ERROR", &issue).into());
+    }
     let default = format!("{}/api/auth/error", app.config.app_origin());
     let error_url = pending.state.error_url.as_deref().unwrap_or(&default);
     let existing: Option<(String, String)> = db
@@ -1137,6 +1145,96 @@ mod tests {
         app.db()
             .query_row("select count(*) from verification", [], |r| r.get(0))
             .unwrap()
+    }
+    #[tokio::test]
+    async fn oversized_additional_data_refuses_before_storing_state() {
+        let app = fixture(false);
+        for action in [Action::SignIn, Action::Link] {
+            let mut request = Request::auth_fixture(String::new());
+            request.body = serde_json::to_vec(
+                &json!({"provider":"google","additionalData":{"blob":"a".repeat(4096)}}),
+            )
+            .unwrap();
+            let mut headers = axum::http::HeaderMap::new();
+            headers.insert("origin", "http://snowtime.test".parse().unwrap());
+            let response = app
+                .clone()
+                .oauth(request, FetchHeaders::of(&headers), action)
+                .await;
+            assert_eq!(response.status(), 400);
+            let bytes = axum::body::to_bytes(response.into_body(), 4096)
+                .await
+                .unwrap();
+            assert_eq!(bytes.as_ref(), br#"{"message":"[body.additionalData] Too big: expected JSON to have <=4096 bytes","code":"VALIDATION_ERROR"}"#);
+            assert_eq!(count(&app), 0);
+        }
+    }
+    #[test]
+    fn oversized_provider_image_refuses_before_persisting_user_or_account() {
+        let app = fixture(false);
+        save(&app, "image", "image", clock::now() + 600000);
+        let data: String = app
+            .db()
+            .query_row("select value from verification", [], |r| r.get(0))
+            .unwrap();
+        let pending = Pending {
+            state: serde_json::from_str(&data).unwrap(),
+            provider: app.config.oauth[0].clone(),
+            cookies: vec![],
+        };
+        let profile = Profile {
+            id: "id".into(),
+            email: Some("alice@example.com".into()),
+            name: "Alice".into(),
+            image: Some("a".repeat(2049)),
+            verified: true,
+        };
+        let response = finish(
+            &app.db(),
+            &app,
+            &request(&app, "image"),
+            &pending,
+            &json!({}),
+            &profile,
+        )
+        .unwrap();
+        assert_eq!(response.response.status, 400);
+        assert_eq!(response.response.body, br#"{"message":"[body.image] Too big: expected string to have <=2048 bytes","code":"VALIDATION_ERROR"}"#);
+    }
+    #[test]
+    fn token_expiry_checks_multiplication_and_addition() {
+        assert_eq!(token_expiry(1_000, Some(3600)), Some(3_601_000));
+        assert_eq!(token_expiry(1_000, Some(-1)), Some(0));
+        assert_eq!(token_expiry(1_000, Some(0)), None);
+        assert_eq!(token_expiry(1_000, None), None);
+        for seconds in [i64::MAX, i64::MIN] {
+            assert_eq!(token_expiry(1_000, Some(seconds)), None);
+        }
+        assert_eq!(token_expiry(i64::MAX - 999, Some(1)), None);
+        assert_eq!(token_expiry(i64::MIN + 999, Some(-1)), None);
+        assert_eq!(token_expiry(i64::MAX - 1000, Some(1)), Some(i64::MAX));
+    }
+    #[test]
+    fn missing_oauth_state_lookup_sweeps_only_expired_rows() {
+        let app = fixture(false);
+        save(&app, "old", "old", clock::now() - 1);
+        save(&app, "live", "live", clock::now() + 600000);
+        let result = consume(
+            &app.db(),
+            &app,
+            &request(&app, "missing"),
+            &json!({"state":"missing","code":"bad"}),
+        )
+        .unwrap()
+        .err()
+        .unwrap();
+        assert!(result.location.unwrap().ends_with("error=state_mismatch"));
+        assert_eq!(count(&app), 1);
+        let id: String = app
+            .db()
+            .query_row("select id from verification", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(id, "live");
     }
     #[test]
     fn redirect_headers_use_fetch_bytes_and_refuse_invalid_values_without_panicking() {

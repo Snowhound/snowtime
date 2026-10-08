@@ -182,6 +182,7 @@ export async function oauthFlow(
     { provider: 3 },
     { provider: 'not-configured' },
     { provider: 'google', scopes: [3] },
+    { provider: 'google', scopes: Array.from({ length: 32 }, () => null) },
     { provider: 'google', additionalParams: { state: 'override' } },
     { provider: 'google', callbackURL: 'https://evil.example/' },
     { provider: 'google', idToken: null },
@@ -276,6 +277,7 @@ export async function oauthFlow(
       link: { userId: 'other', email: 'other@example.com' },
       serverContext: { forged: true },
       oauthState: 'overridden',
+      v: 'a'.repeat(3800),
     },
   })
   let code = await issue(profile(USERS.admin.email))
@@ -383,6 +385,21 @@ export async function oauthFlow(
       302,
     )
     await call(`microsoft ${id} account`, '/list-accounts', undefined, 200)
+  }
+  for (const seconds of [0, -1]) {
+    cookie = ''
+    await begin('google', { additionalData: { v: 'a'.repeat(4088) } })
+    code = await issue({
+      ...profile(`expiry${seconds}@oauth.example`, true, `expiry${seconds}`),
+      token_expires_in: seconds,
+    })
+    await call(
+      `token expiry ${seconds}`,
+      `/callback/google?state=${state}&code=${code}`,
+      undefined,
+      302,
+    )
+    await call(`token expiry ${seconds} account`, '/list-accounts', undefined, 200)
   }
   cookie = ''
   await begin()

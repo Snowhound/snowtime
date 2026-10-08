@@ -306,7 +306,7 @@ pub(crate) fn passkey_issues(
         Action::Delete => &[("id", "string", false)],
         _ => unreachable!(),
     };
-    fields_to_check
+    let mut issues: Vec<String> = fields_to_check
         .iter()
         .filter_map(|(name, expected, optional)| {
             let value = fields.get(*name);
@@ -326,7 +326,11 @@ pub(crate) fn passkey_issues(
                 )
             })
         })
-        .collect()
+        .collect();
+    if matches!(action, Action::Register) {
+        issues.extend(super::bounds::passkey_name_issue(&body["name"]));
+    }
+    issues
 }
 
 pub(crate) fn oauth_issues(
@@ -490,14 +494,20 @@ pub(crate) fn oauth_issues(
                 }
             }
         } else if *name == "scopes" {
+            let mut scope_issues = 0;
             for (i, v) in value.as_array().into_iter().flatten().enumerate() {
-                check(
+                if scope_issues == super::bounds::SCOPE_ISSUES {
+                    break;
+                }
+                if !check(
                     &mut issues,
                     &format!("scopes.{i}"),
                     Some(v),
                     "string",
                     false,
-                );
+                ) {
+                    scope_issues += 1;
+                }
             }
         } else if *name == "additionalParams" {
             let mut valid = true;
@@ -521,6 +531,10 @@ pub(crate) fn oauth_issues(
             }
         }
     }
+    issues.extend(super::bounds::json_issue(
+        &body["additionalData"],
+        "additionalData",
+    ));
     issues
 }
 
@@ -632,7 +646,7 @@ pub(crate) fn auth_write_issues(
     }
     let mut issues = vec![];
     match action {
-        Action::Profile => (),
+        Action::Profile => issues.extend(super::bounds::url_issue(&body["image"], "image")),
         Action::SetActive => {
             check(
                 &mut issues,
@@ -713,6 +727,14 @@ pub(crate) fn auth_write_issues(
                     false,
                     false,
                 );
+                issues.extend(super::bounds::url_issue(
+                    &data["logo"],
+                    &format!("{prefix}logo"),
+                ));
+                issues.extend(super::bounds::json_issue(
+                    &data["metadata"],
+                    &format!("{prefix}metadata"),
+                ));
                 if matches!(action, Action::Create) {
                     check(
                         &mut issues,
@@ -806,4 +828,70 @@ pub(crate) fn auth_write_issues(
         ),
     }
     issues
+}
+
+#[cfg(test)]
+mod input_bounds_tests {
+    use super::*;
+    use serde_json::{Value, json};
+    #[test]
+    fn scope_issues_stop_at_thirty_two_with_ordinary_messages_unchanged() {
+        let body = json!({"provider":"google","scopes":vec![Value::Null; 200_000]});
+        let issues = oauth_issues(super::super::oauth::Action::SignIn, &body, false, &[]);
+        assert_eq!(issues.len(), 32);
+        assert_eq!(
+            issues[0],
+            "[body.scopes.0] Invalid input: expected string, received null"
+        );
+        assert_eq!(
+            issues[31],
+            "[body.scopes.31] Invalid input: expected string, received null"
+        );
+        let body = json!({"provider":"google","scopes":["ok",3,null]});
+        assert_eq!(
+            oauth_issues(super::super::oauth::Action::SignIn, &body, false, &[]),
+            vec![
+                "[body.scopes.1] Invalid input: expected string, received number",
+                "[body.scopes.2] Invalid input: expected string, received null",
+            ]
+        );
+    }
+    #[test]
+    fn stored_auth_fields_are_bounded_at_each_input() {
+        use super::super::{oauth, passkeys, writes::Action};
+        for (action, body) in [
+            (Action::Profile, json!({"image":"a".repeat(2049)})),
+            (
+                Action::Create,
+                json!({"name":"Org","slug":"org","logo":"a".repeat(2049)}),
+            ),
+            (Action::Update, json!({"data":{"logo":"a".repeat(2049)}})),
+            (
+                Action::Create,
+                json!({"name":"Org","slug":"org","metadata":{"v":"a".repeat(4089)}}),
+            ),
+            (
+                Action::Update,
+                json!({"data":{"metadata":{"v":"a".repeat(4089)}}}),
+            ),
+        ] {
+            assert_eq!(auth_write_issues(action, &body, false).len(), 1);
+        }
+        for action in [oauth::Action::SignIn, oauth::Action::Link] {
+            let body = json!({"provider":"google","additionalData":{"v":"a".repeat(4089)}});
+            assert_eq!(oauth_issues(action, &body, false, &[]).len(), 1);
+            let body = json!({"provider":"google","additionalData":{"v":"a".repeat(4088)}});
+            assert!(oauth_issues(action, &body, false, &[]).is_empty());
+        }
+        assert_eq!(
+            passkey_issues(
+                &passkeys::Action::Register,
+                &json!({"response":{},"name":"😀".repeat(51)}),
+                false,
+                &Value::Null
+            )
+            .len(),
+            1
+        );
+    }
 }

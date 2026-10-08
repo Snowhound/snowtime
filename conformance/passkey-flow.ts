@@ -174,6 +174,7 @@ export async function passkeyFlow(
     if (register.headers.getSetCookie().every((s) => !s.includes('Max-Age=300')))
       throw new Error('Challenge cookie must last five minutes')
     const registration = authenticator.registration(register.body.challenge, server.url, flags)
+    const keyName = i === 0 ? '😀'.repeat(50) : 'Test key'
     const registered = await call(
       `${authenticator.algorithm} registration UV=false`,
       'verify-registration',
@@ -182,7 +183,7 @@ export async function passkeyFlow(
         method: 'POST',
         body: {
           response: registration,
-          name: '  Test key  ',
+          name: `  ${keyName}  `,
           ...(i === 2 ? { createSession: true } : {}),
         },
         cookie: `${admin.cookie}; ${register.cookie}`,
@@ -191,7 +192,7 @@ export async function passkeyFlow(
     if (registered.body.publicKey !== authenticator.publicKey.toString('base64'))
       throw new Error('COSE bytes changed')
     if (
-      registered.body.name !== 'Test key' ||
+      registered.body.name !== keyName ||
       registered.body.deviceType !== (flags & 8 ? 'multiDevice' : 'singleDevice')
     )
       throw new Error('Incorrect registered key metadata')

@@ -38,6 +38,17 @@ export async function compareOAuthFixtures(
   }
   await db.execute({
     sql: 'insert into verification(id,identifier,value,expires_at,created_at,updated_at) values (?,?,?,?,?,?)',
+    args: [
+      'cleanup-victim',
+      'auth-state:cleanup-victim',
+      JSON.stringify({ ...stateData, oauthState: 'cleanup-victim' }),
+      now - 1,
+      now,
+      now,
+    ],
+  })
+  await db.execute({
+    sql: 'insert into verification(id,identifier,value,expires_at,created_at,updated_at) values (?,?,?,?,?,?)',
     args: ['expired', 'auth-state:expired', JSON.stringify(stateData), now - 1, now, now],
   })
   await db.execute({
@@ -129,6 +140,17 @@ export async function compareOAuthFixtures(
           signed('better-auth.state', state),
         )
       }
+      const swept = await call(
+        'lookup removes unrelated expired state',
+        '/callback/google?state=cleanup-victim&code=bad',
+        undefined,
+        302,
+        signed('better-auth.state', 'cleanup-victim'),
+      )
+      if (
+        swept.response.headers.get('location') !== `${app.url}/api/auth/error?error=state_mismatch`
+      )
+        throw new Error('Expired verification row survived another state lookup')
       const stale = signed('better-auth.session_token', 'stale-token')
       await call(
         'stale unlink refuses',

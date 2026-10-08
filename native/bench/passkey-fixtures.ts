@@ -97,6 +97,7 @@ export async function comparePasskeyFixtures(
             origin: server.url,
             'x-bench-ip': '127.0.0.1',
             'content-type': 'application/json',
+            'user-agent': 'a'.repeat(512),
           },
           body: body === undefined ? undefined : JSON.stringify(body),
         })

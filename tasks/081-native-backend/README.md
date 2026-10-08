@@ -286,6 +286,9 @@ which records the edge measurements.
 - [30](30-audit.md): the whole-port audit before the repository split: three high and
   eleven medium findings, and the feature level that matches `main` at `c8ffa84`
 
+- [31](31-input-bounds.md): auth input bounds, ordered metadata parsing, and expired
+  verification cleanup from the audit
+
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
 per domain (Kait, 2026-10-04). On `main`, task 090 fixes `perf:stress`, and task 091 looks

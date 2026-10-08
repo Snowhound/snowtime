@@ -922,6 +922,11 @@ try {
       (s) => ({ origin: s.url }),
       '{"email":[],"password":null,"rememberMe":"yes"}',
     ],
+    ...[64, 65].map((length): [string, (server: Server) => Record<string, string>, string] => [
+      `sign-in, ${length} astral password characters`,
+      (s) => ({ origin: s.url }),
+      JSON.stringify({ email: USERS.admin.email, password: '😀'.repeat(length) }),
+    ]),
     ['sign-in, invalid email', (s) => ({ origin: s.url }), '{"email":"x","password":"y"}'],
   ]
   for (const [index, [label, headersOf, body]] of signIns.entries()) {
