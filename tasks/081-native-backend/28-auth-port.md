@@ -92,8 +92,10 @@ production calls to reject invitations, leave/delete organizations, or update pa
 Verified on macOS arm64 on 2026-10-08. Step 1 is complete; steps 2–4 are pending.
 Kait approved fixing the TypeScript already-member crash with the recorded option 2
 in [the auth decision](../../docs/architecture/auth.md#invitation-acceptance-after-joining).
-The scope commit is `2583c0c`; the isolated TypeScript fix is `1222cf2`. Applying
-that fix to `main` requires Kait's review and approval.
+The scope commit is `2583c0c`; the isolated TypeScript fix is `1222cf2`, and the native
+implementation is `1397ee5`. Kait reviewed and approved applying the TypeScript fix to
+`main`, where it is committed as `c0e7d43`. The transplant preserves `main`'s existing
+invitation-limit code and includes no native changes.
 
 - `cargo fmt` and workspace Clippy, both without and with `bench`, pass.
 - Server tests: 66 pass without `bench`, and 66 with it. Host tests: 16 pass.
@@ -109,6 +111,10 @@ that fix to `main` requires Kait's review and approval.
   canceled, already accepted, existing member, new member, repeat click, origin, session,
   malformed JSON, and ordered Zod string validation. Reads check closed previews,
   organization roles, team membership, and active organization after each acceptance.
+- On `main`, invitation, team-invitation, auth-schema, and login-policy tests pass:
+  28 tests, 96 assertions. Invitation HTTP conformance passes: 5 tests, 16 assertions.
+  Its existing combined refusal test remains combined. The pre-commit lint, format,
+  and Knip checks pass. See `main-ts-tests.log` and `main-conformance.log`.
 - Frontend and render-bundle builds, changed-file lint, and all three Knip configurations
   pass. Full `tsc --noEmit` still reports existing native benchmark dependency and
   shared-props AST errors; it reports no errors in changed files. See `types.log`.
