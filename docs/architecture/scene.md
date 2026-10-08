@@ -60,6 +60,8 @@ collections".
 - Glass (task 069): a glass surface shows a copy of the photo that the browser blurred once,
   not a live `backdrop-filter` blur. Every weather frame changes the whole canvas, so the
   browser redrew each live blur on every frame, which cost more than the weather itself.
+  - `VITE_GLASS_OPTIMIZATION=false` disables the copy and keeps live backdrop blur for
+    machines with rendering artifacts. This build-time browser setting defaults to on.
   - The scene layer blurs the photo that shows with `glassPhoto` (`src/lib/scene/glass.ts`),
     loaded when a picture first shows: a 240 px wide copy, a Gaussian blur in JavaScript with
     the standard deviation `blur(24px)` has on this screen, as a JPEG data URL. The content

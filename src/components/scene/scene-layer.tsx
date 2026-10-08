@@ -159,7 +159,12 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
     createEffect(() => {
       const theme: PhotoTheme = dark() ? 'dark' : 'light'
       const top = photos[theme].at(-1)
-      if (!top || !props.settings.sceneBackground || props.settings.surfaces !== 'glass') {
+      if (
+        import.meta.env.VITE_GLASS_OPTIMIZATION === 'false' ||
+        !top ||
+        !props.settings.sceneBackground ||
+        props.settings.surfaces !== 'glass'
+      ) {
         wanted = null
         setGlass(null)
         return
