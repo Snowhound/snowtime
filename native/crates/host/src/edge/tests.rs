@@ -139,6 +139,44 @@ async fn timeout_answers_503_and_errors_keep_security_headers() {
 }
 
 #[tokio::test]
+async fn uris_past_the_limit_answer_414() {
+    let api = Router::new().fallback(|| async { "ok" });
+    let app = router(
+        api.clone(),
+        api,
+        &config(&[("EDGE_URI_LIMIT_BYTES", "32")]),
+        "https://snowtime.test",
+    );
+    let fits = format!("/api/auth/{}", "x".repeat(22));
+    for (uri, status, body) in [
+        (fits.as_str(), StatusCode::OK, "ok"),
+        (
+            "/api/auth/sign-in/email?query=too-long",
+            StatusCode::URI_TOO_LONG,
+            r#"{"error":{"message":"The request URI is too long."}}"#,
+        ),
+        (
+            "/lumen/timer/and/then/some/more/path",
+            StatusCode::URI_TOO_LONG,
+            "The request URI is too long.",
+        ),
+    ] {
+        let answer = app
+            .clone()
+            .oneshot(HttpRequest::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(answer.status(), status, "{uri}");
+        assert_eq!(
+            axum::body::to_bytes(answer.into_body(), 1024)
+                .await
+                .unwrap(),
+            body
+        );
+    }
+}
+
+#[tokio::test]
 async fn a_panicking_async_handler_answers_500() {
     async fn panics() -> &'static str {
         tokio::task::yield_now().await;

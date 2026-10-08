@@ -15,7 +15,7 @@ at `d67ba4c`, and build the M6 design Kait decided on 2026-10-08.
       the API's JSON body on `/api` paths.
 - [x] L18: `CatchPanicLayer` answers a panic with the API's JSON 500 on the API router and
       plain text at the edge, with tests that panic in an async handler.
-- [ ] M4: rate-limit keys hold a route template or a rule's pattern, not the raw path,
+- [x] M4: rate-limit keys hold a route template or a rule's pattern, not the raw path,
       and the edge answers 414 past a URI limit.
 - [ ] M6: database owner threads, a startup index of the public files, and a blocking
       pool of a fixed size for files and DNS only.

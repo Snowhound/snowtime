@@ -291,6 +291,7 @@ the certificate-file mode. Wildcard certificates are unsupported.
 | `EDGE_MAX_CONNECTIONS`             | `4096`                                | Open connections per listener, TLS handshakes included; zero disables                          |
 | `EDGE_MAX_CONNECTIONS_PER_ADDRESS` | `256`, or `0` with `CLIENT_IP_HEADER` | Open connections per listener from one client address; zero disables                           |
 | `EDGE_BODY_LIMIT_BYTES`            | `2097152`                             | Request-body limit; zero disables this host layer, leaving API limits intact                   |
+| `EDGE_URI_LIMIT_BYTES`             | `8192`                                | Path and query limit, answered with 414; zero disables                                         |
 | `EDGE_BENCH_LOG`                   | unset                                 | Complete JSON benchmark log for the sampler                                                    |
 
 Boolean switches accept `true` or `false`. The two connection timeouts take a positive
@@ -335,7 +336,11 @@ controls both per-IP auth limits and API per-user write limits. Startup logs sho
 whether it is enabled; `/readyz` includes `rate_limit`. Auth limits use in-memory
 `governor` GCRA quotas through `tower_governor`, with Better Auth's 429 JSON body,
 `Content-Type: application/json`, and `X-Retry-After` (rounded-up seconds until the
-next token). Idle keys are pruned every minute. TLS and ACME remain opt-in.
+next token). A request to a ported route counts under the route's template, so
+`/api/auth/callback/{id}` is one quota for every provider. Any other path counts under
+the rule pattern it matched, so all unported `/api/auth/` paths share one quota per
+address, where Better Auth keeps one per path. Idle keys are pruned every minute. TLS and
+ACME remain opt-in.
 
 Verify production auth limits and session IPs with
 `bun native/bench/hardening-compare.ts native/target/debug/snowtime-axum`. The ordinary

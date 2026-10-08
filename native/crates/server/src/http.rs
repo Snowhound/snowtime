@@ -11,6 +11,7 @@ use axum::{
     Router,
     body::to_bytes,
     extract::{FromRequest, FromRequestParts, Path, Request as HttpRequest},
+    handler::HandlerWithoutStateExt,
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response as HttpResponse},
 };
@@ -206,14 +207,15 @@ pub fn router(app: Arc<App>) -> Router {
         .then(|| crate::auth::rate_limit::layer(app.config.client_ip_header.clone()));
     let router = Router::new()
         .nest("/api/v1", api)
-        .merge(crate::auth::routes::better_auth_routes())
-        .fallback(unknown)
-        .method_not_allowed_fallback(unknown)
-        .with_state(app);
+        .merge(crate::auth::routes::better_auth_routes());
+    // Inside routing, so a routed request's quota counts under its route's template.
     let router = match limits {
-        Some(layer) => router.layer(layer),
-        None => router,
+        Some(layer) => router
+            .route_layer(layer.clone())
+            .fallback_service(tower::Layer::layer(&layer, unknown.into_service())),
+        None => router.fallback(unknown),
     };
+    let router = router.method_not_allowed_fallback(unknown).with_state(app);
     // A panic in async handler code answers 500 instead of resetting the connection, and an
     // in-process call from a page gets the same answer.
     router.layer(tower_http::catch_panic::CatchPanicLayer::custom(panicked))

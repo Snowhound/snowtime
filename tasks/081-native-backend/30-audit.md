@@ -170,6 +170,9 @@ Fixed in 081.34 ([edge](34-edge.md)): hyper's timers, an idle timeout, and conne
 
 **M4. Rate-limit keys hold any request path.**
 
+Fixed in 081.34 ([edge](34-edge.md)): keys hold a route template or a rule pattern, and the
+edge answers 414 past 8 KiB.
+
 - **Where:** `native/crates/server/src/rate_limit/layer.rs:23-31`; the layer covers
   unknown `/api/auth/*` paths too, and keys are pruned every 60 seconds.
 - **Failure:** each distinct path creates a governor entry holding the path, up to the

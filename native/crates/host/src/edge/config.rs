@@ -30,6 +30,7 @@ pub struct Config {
     pub static_dir: Option<PathBuf>,
     pub timeout_seconds: u64,
     pub body_limit: usize,
+    pub uri_limit: usize,
     pub header_timeout: Duration,
     pub connections: super::connections::Limits,
     pub bench_log: Option<PathBuf>,
@@ -136,6 +137,7 @@ impl Config {
             static_dir: var("EDGE_STATIC_DIR").map(PathBuf::from),
             timeout_seconds: number("EDGE_TIMEOUT_SECONDS", 30)?,
             body_limit: count("EDGE_BODY_LIMIT_BYTES", 2 * 1024 * 1024)?,
+            uri_limit: count("EDGE_URI_LIMIT_BYTES", 8192)?,
             header_timeout: seconds("EDGE_HEADER_TIMEOUT_SECONDS", 30)?,
             connections: super::connections::Limits {
                 total: count("EDGE_MAX_CONNECTIONS", 4096)?,

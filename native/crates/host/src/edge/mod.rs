@@ -50,6 +50,9 @@ pub fn router(api: Router, pages: Router, config: &Config, app_url: &str) -> Rou
     if config.body_limit > 0 {
         router = router.layer(RequestBodyLimitLayer::new(config.body_limit));
     }
+    if config.uri_limit > 0 {
+        router = router.layer(middleware::from_fn_with_state(config.uri_limit, uri_limit));
+    }
     if config.timeout_seconds > 0 {
         router = router.layer(middleware::from_fn_with_state(
             Duration::from_secs(config.timeout_seconds),
@@ -97,6 +100,19 @@ fn refusal(api: bool, status: StatusCode, message: &'static str) -> Response {
             .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));
     }
     response
+}
+
+// Before routing, so no path of any length reaches the rate limits or the API.
+async fn uri_limit(State(limit): State<usize>, request: Request, next: Next) -> Response {
+    let uri = request.uri();
+    if uri.path_and_query().map_or(0, |p| p.as_str().len()) > limit {
+        return refusal(
+            is_api(uri.path()),
+            StatusCode::URI_TOO_LONG,
+            "The request URI is too long.",
+        );
+    }
+    next.run(request).await
 }
 
 // 503 rather than 408, which browsers may resend on their own while the first attempt's
