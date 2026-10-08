@@ -37,6 +37,22 @@ try {
   })
   const userId = users.rows[0].id
   if (typeof userId !== 'string') throw new Error('Fixture owner id is not text')
+  await fixture.batch(
+    ['pending', 'accepted', 'rejected', 'canceled', 'pending'].map((status, i) => ({
+      sql: 'insert into invitation (id,email,role,organization_id,inviter_id,status,expires_at,created_at) values (?, ?, ?, ?, ?, ?, ?, ?)',
+      args: [
+        `01900000-0000-7000-8020-${String(i).padStart(12, '0')}`,
+        `preview${i}@example.com`,
+        i === 0 ? 'member,admin' : null,
+        organizationId,
+        userId,
+        status,
+        SEED_NOW.getTime() + (i === 4 ? -1 : DAY),
+        SEED_NOW.getTime(),
+      ],
+    })),
+    'write',
+  )
   const start = Date.parse('2024-10-01T09:00:00Z')
   const descriptions = ['b', 'Á', 'A', 'á', 'a', ...Array.from({ length: 230 }, () => 'Busy day')]
   await fixture.batch(
@@ -122,11 +138,22 @@ async function orgAdminHeaders(server: Server) {
       .join('; '),
   }
 }
-async function compareWrites(domain: string, cases: WriteCase[]) {
-  const a = await startApp({ database })
+async function compareWrites(domain: string, cases: WriteCase[], sql: string[] = []) {
+  let source = database
+  if (sql.length) {
+    source = join(fixtureDirectory, `${domain}.db`)
+    cpSync(database, source)
+    const fixture = createClient({ url: `file:${source}` })
+    try {
+      await fixture.batch(sql, 'write')
+    } finally {
+      fixture.close()
+    }
+  }
+  const a = await startApp({ database: source })
   let b: Awaited<ReturnType<typeof startNative>> | undefined
   try {
-    b = await startNative(binary, database)
+    b = await startNative(binary, source)
     const credentials = {
       ts: {
         admin: await signInHeaders(a, 'admin'),
@@ -1115,6 +1142,28 @@ try {
     )
   }
   await compareWrites('projects', projectCases)
+  await compareWrites(
+    'project limit',
+    [
+      [
+        'owner at limit',
+        'createProject',
+        { organizationId, id: unknown, name: 'New' },
+        'admin',
+        422,
+      ],
+      [
+        'member permission before limit',
+        'createProject',
+        { organizationId, id: unknown, name: 'New' },
+        'member',
+        403,
+      ],
+    ],
+    [
+      `with recursive n(x) as (select 1 union all select x+1 from n where x<1000) insert into project (id,organization_id,name,created_by,updated_by) select 'limit-project-'||x,'${organizationId}','Limit project '||x,(select user_id from member where organization_id='${organizationId}' and role='owner' limit 1),(select user_id from member where organization_id='${organizationId}' and role='owner' limit 1) from n`,
+    ],
+  )
   const team = { organizationId, teamId: '$functionalTeam' }
   const membership = { ...team, userId: memberId }
   const teamCases: WriteCase[] = []
@@ -1226,6 +1275,271 @@ try {
     )
   }
   await compareWrites('teams', teamCases)
+  await compareWrites(
+    'team limit',
+    [
+      ['owner at limit', 'createTeam', { organizationId, name: 'New' }, 'admin', 422],
+      [
+        'member permission before limit',
+        'createTeam',
+        { organizationId, name: 'New' },
+        'member',
+        403,
+      ],
+    ],
+    [
+      `with recursive n(x) as (select 1 union all select x+1 from n where x<100) insert into team (id,organization_id,name,created_at) select 'limit-team-'||x,'${organizationId}','Limit team '||x,0 from n`,
+    ],
+  )
+  const invitationCases: WriteCase[] = [
+    ['list as owner', 'listInvitations', { organizationId }, 'admin', 200],
+    ['list as member', 'listInvitations', { organizationId }, 'member', 200],
+    ['list signed out', 'listInvitations', { organizationId }, null, 401],
+    ['unknown preview signed out', 'getInvitation', { id: unknown }, null, 200],
+    ['invalid preview id', 'getInvitation', { id: 'bad' }, null, 400],
+    [
+      'member refusal',
+      'inviteMember',
+      { organizationId, email: 'functional@example.com', role: 'member', teamId: null },
+      'member',
+      403,
+    ],
+    [
+      'signed out',
+      'inviteMember',
+      { organizationId, email: 'functional@example.com', role: 'member', teamId: null },
+      null,
+      401,
+    ],
+    ['malformed body', 'inviteMember', { organizationId }, 'admin', 400, { body: '{' }],
+    [
+      'missing team',
+      'inviteMember',
+      { organizationId, email: 'functional@example.com', role: 'member', teamId: unknown },
+      'admin',
+      404,
+    ],
+    [
+      'existing member',
+      'inviteMember',
+      { organizationId, email: USERS.member.email, role: 'member', teamId: null },
+      'admin',
+      400,
+    ],
+    [
+      'admin cannot invite owner',
+      'inviteMember',
+      { organizationId, email: 'new-owner@example.com', role: 'owner', teamId: null },
+      'orgAdmin',
+      403,
+    ],
+  ]
+  for (let i = 0; i < 5; i++)
+    invitationCases.push([
+      `preview state ${i}`,
+      'getInvitation',
+      { id: `01900000-0000-7000-8020-${String(i).padStart(12, '0')}` },
+      null,
+      200,
+    ])
+  for (const value of [
+    undefined,
+    null,
+    3,
+    [],
+    '',
+    'bad',
+    'a..b@example.com',
+    'user@localhost',
+    'ä@example.com',
+  ]) {
+    invitationCases.push([
+      `invalid email ${JSON.stringify(value)}`,
+      'inviteMember',
+      { organizationId, email: value, role: 'member', teamId: null },
+      'admin',
+      400,
+    ])
+  }
+  for (const [field, value] of [
+    ['role', undefined],
+    ['role', null],
+    ['role', 'lead'],
+    ['role', []],
+    ['teamId', undefined],
+    ['teamId', 'bad'],
+    ['teamId', 3],
+  ] as [string, unknown][]) {
+    invitationCases.push([
+      `invalid ${field} ${JSON.stringify(value)}`,
+      'inviteMember',
+      { organizationId, email: 'valid@example.com', role: 'member', teamId: null, [field]: value },
+      'admin',
+      400,
+    ])
+  }
+  invitationCases.push(
+    [
+      'Valibot email then Zod refusal',
+      'inviteMember',
+      { organizationId, email: 'valid@part.123.example.com', role: 'member', teamId: null },
+      'admin',
+      200,
+      { capture: '$numericDomain', mask: ['expiresAt'] },
+    ],
+    [
+      'create and normalize email',
+      'inviteMember',
+      {
+        organizationId,
+        email: ' Functional@EXAMPLE.COM ',
+        role: 'member',
+        teamId: companyIds.teams.design,
+      },
+      'admin',
+      200,
+      { capture: '$functionalInvite', mask: ['expiresAt'] },
+    ],
+    [
+      'duplicate open invitation',
+      'inviteMember',
+      { organizationId, email: 'functional@example.com', role: 'admin', teamId: null },
+      'admin',
+      400,
+    ],
+    ['preview has team and inviter', 'getInvitation', { id: '$functionalInvite' }, null, 200],
+    [
+      'list after create as member',
+      'listInvitations',
+      { organizationId },
+      'member',
+      200,
+      { mask: ['expiresAt'] },
+    ],
+    [
+      'organization admin can invite admin',
+      'inviteMember',
+      { organizationId, email: 'another-admin@example.com', role: 'admin', teamId: null },
+      'orgAdmin',
+      200,
+      { capture: '$adminInvite', mask: ['expiresAt'] },
+    ],
+    [
+      'owner can invite owner',
+      'inviteMember',
+      { organizationId, email: 'another-owner@example.com', role: 'owner', teamId: null },
+      'admin',
+      200,
+      { capture: '$ownerInvite', mask: ['expiresAt'] },
+    ],
+  )
+  await compareWrites('invitations', invitationCases)
+  const invitationRates: WriteCase[] = []
+  for (const who of ['admin', 'member'] as const) {
+    for (let i = 0; i < 31; i++)
+      invitationRates.push([
+        `${who} invitation request ${i + 1}`,
+        'inviteMember',
+        { organizationId, email: USERS.member.email, role: 'member', teamId: null },
+        who,
+        i === 30 ? 429 : who === 'admin' ? 400 : 403,
+      ])
+  }
+  await compareWrites('invitation rate', invitationRates)
+  const issueCases: WriteCase[] = [
+    [
+      'member refused',
+      'updateIssueLinks',
+      { organizationId, issueLinks: 'https://tracker.example.com/{key}' },
+      'member',
+      403,
+    ],
+    ['signed out', 'updateIssueLinks', { organizationId, issueLinks: '' }, null, 401],
+    ['malformed JSON', 'updateIssueLinks', { organizationId }, 'admin', 400, { body: '{' }],
+  ]
+  for (const value of [
+    undefined,
+    null,
+    3,
+    [],
+    'http://example.com/{key}',
+    'https://localhost/{key}',
+    'https://example.com',
+    'https://example.com/',
+    'https://example.com/a b/{key}',
+    'x'.repeat(501),
+  ]) {
+    issueCases.push([
+      `invalid ${JSON.stringify(value)}`,
+      'updateIssueLinks',
+      { organizationId, issueLinks: value },
+      'admin',
+      400,
+    ])
+  }
+  issueCases.push(
+    [
+      'set and trim as owner',
+      'updateIssueLinks',
+      { organizationId, issueLinks: ' https://tracker.example.com/browse/{key} ' },
+      'admin',
+      200,
+    ],
+    [
+      'session exposes saved links',
+      'getAppSession',
+      undefined,
+      'admin',
+      200,
+      { mask: ['signedInAt', 'appUrl'] },
+    ],
+    [
+      'set as organization admin',
+      'updateIssueLinks',
+      { organizationId, issueLinks: 'https://other.example.com/{key}' },
+      'orgAdmin',
+      200,
+    ],
+    ['clear links', 'updateIssueLinks', { organizationId, issueLinks: ' \ufeff ' }, 'admin', 200],
+    [
+      'session exposes cleared links',
+      'getAppSession',
+      undefined,
+      'member',
+      200,
+      { mask: ['signedInAt', 'appUrl'] },
+    ],
+  )
+  await compareWrites('issue links', issueCases)
+  await compareWrites(
+    'invitation limit',
+    [
+      [
+        'owner at limit',
+        'inviteMember',
+        { organizationId, email: 'limit-new@example.com', role: 'member', teamId: null },
+        'admin',
+        403,
+      ],
+      [
+        'member permission before limit',
+        'inviteMember',
+        { organizationId, email: 'limit-new@example.com', role: 'member', teamId: null },
+        'member',
+        403,
+      ],
+      [
+        'existing member before limit',
+        'inviteMember',
+        { organizationId, email: USERS.member.email, role: 'member', teamId: null },
+        'admin',
+        400,
+      ],
+    ],
+    [
+      `with recursive n(x) as (select 1 union all select x+1 from n where x<100) insert into invitation (id,email,organization_id,inviter_id,status,expires_at,created_at) select 'limit-invite-'||x,'limit'||x||'@example.com','${organizationId}',(select user_id from member where organization_id='${organizationId}' and role='owner' limit 1),'pending',${SEED_NOW.getTime() + DAY},0 from n`,
+    ],
+  )
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {
   await Promise.all([ts.stop(), native.stop()])

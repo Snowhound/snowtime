@@ -46,7 +46,10 @@ The sign-in page's reads (sign-in methods, deployment, seeded users), password s
 and Better Auth sign-out are also ported. `/sign-in` renders signed out.
 Of the other writes, the timer's, the entries', settings PUT/PATCH, and project writes
 (including team assignments) and team writes (including membership and roles) are ported.
-Not ported: organization writes; invitations; passkey registration,
+Invitation preview/list/create and issue-link writes are implemented in task 081.26.
+Creation isn't byte-equal at the invitation limit with expired rows; the task's
+temporary handoff records the pending decision and failing comparison.
+Not ported: other organization writes; invitation acceptance; passkey registration,
 sign-in, and management; and Google/OAuth sign-in. The sign-in method list includes
 passkey for TypeScript parity, but the native host has no passkey endpoints yet.
 

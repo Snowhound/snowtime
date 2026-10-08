@@ -1,6 +1,6 @@
 # 081.26: Port the remaining functional calls
 
-Status: in-progress (steps 1–2 reviewed; continuing steps 3–5)
+Status: in-progress (steps 1–4 done; step 5 waits for the invitation-limit decision)
 
 Port the sign-in page and settings writes first, then project and team writes,
 invitations, and issue links. Follow subtask 24's route, schema, comparison, and
@@ -101,6 +101,61 @@ Patterns for subtask 05:
   An empty patch reads without updating audit columns. Writes set the actor explicitly.
 
 ## Verification
+
+### Step 5: partial verification
+
+Verified on Ubuntu x64 in WSL on 2026-10-08. This step is not complete: the invitation
+limit differs from TypeScript, and Kait's requested decision is still pending. See the
+[temporary handoff](TEMPORARY-functional-port-handoff.md), to remove after resolution.
+
+- `cargo fmt` and both workspace Clippy configurations pass.
+- Server tests: 63 pass without `bench`, and 63 with it. Host tests: 15 pass.
+- Projects, teams, settings, and session conformance: 19 pass, 61 assertions.
+- Invitation conformance: 4 pass, 8 assertions, 1 acceptance test filtered out. The
+  original combined Better Auth refusal test is split without changing its assertions,
+  so creation runs independently of acceptance, which is outside this task's scope.
+- TypeScript invitation, team-invitation, auth-schema, and team tests: 26 pass,
+  77 assertions.
+- Comparison: 877 calls byte-equal, 1 different, and the final 2 invitation-limit
+  cases not reached. The saved command exits nonzero. Both project and team limits,
+  invitation previews in all states, normal creation and role refusals, the invitation
+  rate limit, and issue-link writes pass. The mismatch is owner creation at the pending
+  invitation limit when expired rows are present: TypeScript sends 200, native sends 403.
+- Chrome creates, edits, assigns, archives, restores, and deletes a temporary project.
+  It creates and renames a temporary team, adds a member, promotes them to lead,
+  verifies the role after reload, removes them, and deletes the team. Console and
+  error checks are empty. These review rows are removed afterward.
+
+Patterns for subtask 05:
+
+- Auth-backed application rules use `InOrganization::with_auth` to receive config and
+  the rate store after the ordinary session, scope, and schema checks. The invite's
+  30-per-minute count runs before its admin refusal, as TypeScript does.
+- Better Auth refusals retain their status, code, message, and field order in the
+  application API. Invitation validation applies Valibot's email check before Zod's.
+- Public invitation previews serialize each state in TypeScript's field order and
+  omit closed or expired private fields. Listing pending invitations needs membership,
+  but doesn't require an admin role.
+- Generated invitation IDs use the same explicit pairing as team IDs. `expiresAt`
+  is another advancing-clock field, masked in creation and subsequent list comparisons.
+- Shared trimming uses JavaScript's whitespace set, including BOM and excluding U+0085.
+  Nullable required IDs distinguish a missing key from explicit null.
+- No TypeScript invitation-limit fix is authorized yet. Native currently counts all
+  live pending invitations; Better Auth fetches at most 100 rows before filtering expiry.
+
+Saved outputs are in [functional-port/step5](functional-port/step5/).
+
+| Handler or helper                                     | TypeScript | Rust |
+| ----------------------------------------------------- | ---------: | ---: |
+| `invitationPreview`                                   |         40 |   15 |
+| `listInvitations`                                     |         16 |    4 |
+| `inviteMember` API wrapper / native full rule         |         19 |  129 |
+| App invitation wrapper (included in native full rule) |         26 |    0 |
+| `updateIssueLinks`                                    |          9 |   24 |
+
+The TypeScript invitation wrapper counts exclude Better Auth's installed
+`plugins/organization/routes/crud-invites.mjs` endpoint. The native full rule includes
+the endpoint's relevant permission, existing-member, pending-invitation, and limit checks.
 
 ### Step 4
 
@@ -206,8 +261,8 @@ Verified on Ubuntu x64 in WSL on 2026-10-07:
   The isolated review hosts and browser sessions are stopped.
 
 Saved outputs are in [functional-port/step2](functional-port/step2/).
-No TypeScript server behavior changed. No Docker, load runs, stress runs, or native
-Windows builds were used. Steps 3–5 wait for Kait's review.
+Steps 1–2 changed no TypeScript server behavior. No Docker, load runs, stress runs, or
+native Windows builds were used. Kait reviewed these steps and resumed on 2026-10-08.
 
 ## Line counts
 
@@ -244,16 +299,18 @@ export NODE_ENV=development
 export BETTER_AUTH_SECRET=localhost-review-secret-081-functional-port
 export BETTER_AUTH_URL=http://localhost:3100
 export TURSO_DATABASE_URL=file:functional-review-ts.db
-bun run db:migrate
-bun run db:seed --company
+unset ACME_DOMAINS ACME_EMAIL TLS_CERT_FILE TLS_KEY_FILE HTTP_REDIRECT_PORT
+bun --no-env-file scripts/db-migrate.ts
+bun --no-env-file scripts/db-seed.ts --company
 cp functional-review-ts.db functional-review-native.db
-HOST=127.0.0.1 PORT=3100 bun .output/server/index.mjs
+HOST=127.0.0.1 PORT=3100 bun --no-env-file .output/server/index.mjs
 ```
 
 In a second Ubuntu terminal, start the native host:
 
 ```sh
 cd /root/snowtime-functional-port
+unset ACME_DOMAINS ACME_EMAIL TLS_CERT_FILE TLS_KEY_FILE HTTP_REDIRECT_PORT
 NODE_ENV=development HOST=127.0.0.1 PORT=3200 RENDERERS=1 \
   BETTER_AUTH_SECRET=localhost-review-secret-081-functional-port \
   BETTER_AUTH_URL=http://127.0.0.1:3200 \

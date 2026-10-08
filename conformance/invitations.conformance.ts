@@ -65,7 +65,7 @@ describe('invitations', () => {
     ).toEqual({ status: 403, body: refused('FORBIDDEN', 'organization_forbidden') })
   })
 
-  test("Better Auth's refusals keep its status and code", async () => {
+  test("Better Auth's create refusal keeps its status and code", async () => {
     const { status, body } = await send('inviteMember', {
       organizationId,
       email: USERS.member.email,
@@ -76,7 +76,9 @@ describe('invitations', () => {
     expect(body).toMatchObject({
       error: { code: 'USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION', message: expect.any(String) },
     })
+  })
 
+  test("Better Auth's acceptance refusal checks the recipient", async () => {
     const [invitation] = await admin('listInvitations', { organizationId })
     const accepted = await send('acceptInvitation', { id: invitation.id }, headers.member)
     expect(accepted.status).toBe(403)

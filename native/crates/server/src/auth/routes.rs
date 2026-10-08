@@ -1,8 +1,9 @@
-use crate::http::{App, AuthCall, Public, Response};
+use super::schemas::*;
+use crate::http::{App, AuthCall, InOrganization, Public, Response};
 use crate::schemas::Empty;
 use axum::{
     Router,
-    routing::{get, post},
+    routing::{get, patch, post},
 };
 use std::sync::Arc;
 
@@ -13,6 +14,7 @@ pub fn routes() -> Router<Arc<App>> {
         .route("/sign-in-methods", get(sign_in_methods))
         .route("/deployment", get(deployment))
         .route("/dev-users", get(dev_users))
+        .route("/invitations/{id}", get(invitation))
 }
 async fn sign_in_methods(call: Public<Empty>) -> Response {
     call.with_config(super::sign_in_page::sign_in_methods).await
@@ -25,6 +27,23 @@ async fn dev_users(call: Public<Empty>) -> Response {
 }
 async fn session(call: Public<Empty>) -> Response {
     call.with_session(super::app_session::get_app_session).await
+}
+async fn invitation(call: Public<GetInvitationInput>) -> Response {
+    call.run(super::invitations::invitation_preview).await
+}
+pub fn organization_routes() -> Router<Arc<App>> {
+    Router::new()
+        .route("/invitations", get(invitations).post(invite))
+        .route("/issue-links", patch(issue_links))
+}
+async fn invitations(call: InOrganization<Empty>) -> Response {
+    call.run(super::invitations::list_invitations).await
+}
+async fn invite(call: InOrganization<InviteMemberInput>) -> Response {
+    call.with_auth(super::invitations::invite_member).await
+}
+async fn issue_links(call: InOrganization<UpdateIssueLinksInput>) -> Response {
+    call.run(super::organization::update_issue_links).await
 }
 
 // Better Auth's own routes, under /api/auth.

@@ -63,6 +63,7 @@ pub enum Key {
     TeamReportForbidden,
     SettingsNotFound,
     ScenePinNotInCollection,
+    OrganizationForbidden,
     RateLimited,
     DatabaseUnavailable,
 }
@@ -80,6 +81,11 @@ pub enum Error {
     App(AppError),
     Invalid(String),
     Database(rusqlite::Error),
+    Auth {
+        status: u16,
+        code: &'static str,
+        message: &'static str,
+    },
 }
 
 impl From<AppError> for Error {

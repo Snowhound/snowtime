@@ -36,6 +36,7 @@ jiff.workspace = true
 libc = "0.2"
 openssl = { version = "0.10", features = ["vendored"], optional = true }
 rand.workspace = true
+regex = "1"
 rusqlite.workspace = true
 rustc-hash.workspace = true
 scrypt = { workspace = true, optional = true }

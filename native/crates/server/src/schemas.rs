@@ -39,6 +39,7 @@ pub enum Field {
     RequiredId,
     Id,
     NullableId,
+    RequiredNullableId,
     // Uuidv7 or 'none'.
     IdOrNone,
     TicketOrNone,
@@ -118,6 +119,7 @@ pub(crate) fn check_field(name: &str, field: Field, value: Option<&Value>) -> Re
         if matches!(
             field,
             Field::RequiredId
+                | Field::RequiredNullableId
                 | Field::RequiredDate
                 | Field::RequiredDay
                 | Field::RequiredNumber
@@ -151,7 +153,9 @@ pub(crate) fn check_field(name: &str, field: Field, value: Option<&Value>) -> Re
     }
     let text = value.as_str();
     let typed = match (field, text) {
-        (Field::NullableId | Field::Ticket, _) if value.is_null() => return Ok(()),
+        (Field::NullableId | Field::RequiredNullableId | Field::Ticket, _) if value.is_null() => {
+            return Ok(());
+        }
         (Field::NullablePicklist(_), _) if value.is_null() => return Ok(()),
         (Field::NullableCheckedString(_), _) if value.is_null() => return Ok(()),
         (Field::Bool, _) => value.is_boolean() || matches!(text, Some("true" | "false")),
@@ -171,7 +175,10 @@ pub(crate) fn check_field(name: &str, field: Field, value: Option<&Value>) -> Re
             }
             true
         }
-        (Field::RequiredId | Field::Id | Field::NullableId, Some(id)) => return uuid_v7(id),
+        (
+            Field::RequiredId | Field::Id | Field::NullableId | Field::RequiredNullableId,
+            Some(id),
+        ) => return uuid_v7(id),
         (Field::IdOrNone | Field::TicketOrNone, Some("none")) => true,
         (Field::TicketOrNone, Some(key)) => return ticket_key(key),
         (Field::IdOrNone, Some(id)) => return uuid_v7(id),
@@ -241,7 +248,10 @@ fn uuid_v7(id: &str) -> Result<()> {
 
 // Description: trimmed, at most 500 characters as JavaScript counts them.
 fn trimmed(text: &str) -> &str {
-    text.trim_matches(|c: char| c.is_whitespace() || c == '\u{feff}')
+    text.trim_matches(js_whitespace)
+}
+pub(crate) fn js_whitespace(c: char) -> bool {
+    matches!(c, '\u{0009}'..='\u{000d}' | ' ' | '\u{00a0}' | '\u{1680}' | '\u{2000}'..='\u{200a}' | '\u{2028}' | '\u{2029}' | '\u{202f}' | '\u{205f}' | '\u{3000}' | '\u{feff}')
 }
 fn description_length(text: &str) -> Result<()> {
     if trimmed(text).encode_utf16().count() > 500 {

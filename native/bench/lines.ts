@@ -10,6 +10,41 @@ import { ROOT } from '../../perf/lib/database'
 // TypeScript [file, names] against Rust [module, names], per row.
 const PAIRS: [string, string, string[], string, string[]][] = [
   [
+    'invitationPreview',
+    'src/server/auth/invitations.server.ts',
+    ['invitationPreview'],
+    'auth/invitations.rs',
+    ['invitation_preview'],
+  ],
+  [
+    'listInvitations',
+    'src/server/auth/invitations.server.ts',
+    ['listInvitations'],
+    'auth/invitations.rs',
+    ['list_invitations'],
+  ],
+  [
+    'inviteMember',
+    'src/server/auth/auth.server.ts',
+    ['inviteMember'],
+    'auth/invitations.rs',
+    ['invite_member', 'auth_refusal'],
+  ],
+  [
+    'inviteMember app wrapper',
+    'src/server/auth/invitations.server.ts',
+    ['inviteMember'],
+    'auth/invitations.rs',
+    [],
+  ],
+  [
+    'updateIssueLinks',
+    'src/server/auth/organization.server.ts',
+    ['updateIssueLinks'],
+    'auth/organization.rs',
+    ['update_issue_links'],
+  ],
+  [
     'team write helpers',
     'src/server/teams/teams.server.ts',
     ['assertAdmin', 'assertTeamInScope', 'nameFailure', 'insertTeamMember'],

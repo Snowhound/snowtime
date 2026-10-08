@@ -4890,6 +4890,7 @@ dependencies = [
  "libc",
  "openssl",
  "rand 0.10.3",
+ "regex",
  "rusqlite",
  "rustc-hash",
  "scrypt",
