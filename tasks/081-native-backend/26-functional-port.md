@@ -331,5 +331,8 @@ once; reload to check persistence, then sign out through the account menu.
 
 ## Follow-ups
 
+- Invitation acceptance (including the app's optional team assignment)
+- Passkey registration, sign-in, listing, and removal
 - Google/OAuth sign-in parity
+- Remaining organization writes and client auth calls: [081.28](28-auth-port.md)
 - Native Windows builds and verification
