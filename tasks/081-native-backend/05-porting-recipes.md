@@ -131,6 +131,17 @@ it:
   provisional 2-GiB whole-host budget for M, with no OOM or swap and passing recovery.
   Open: the four-configuration capacity rerun and valid eight-reader overload in 26.
   Results: [native host](../../docs/architecture/native-host.md)
+- Static files served from disk, behind a CDN or caching proxy (Kait, 2026-10-08,
+  from audit finding M6 in 30). Snowtime runs behind Cloudflare, which caches the
+  immutable `/assets/` and the week-cached `/backgrounds/` and `/brand/`, so few file
+  requests reach the origin. The host keeps an index of the public directory's paths
+  so pages and missing-file probes skip the disk, and reads real files from disk.
+  Rejected for Snowtime: preloading the public files into memory (36 MB, 32 MB of it
+  backgrounds) to serve CDN misses. It applies to an app served without a CDN or proxy,
+  where the origin answers every asset request: preloading the hot files (Snowtime's
+  `/assets/` and `/brand/`, about 3.4 MB) then takes file reads off the request path.
+  The kit asks during setup whether a CDN or caching proxy will front the app, unless
+  the repository already answers it (deployment docs, proxy or CDN configuration)
 - A JSON API for both backends, not server functions (02, task 084)
 - JSON with dates revived by the schemas, and answers validated in full (task 089).
   Open: columns for the large responses (081 question 2, 02)
