@@ -281,6 +281,8 @@ which records the edge measurements.
 
 - [28](28-auth-port.md): invitation acceptance, passkeys, Google/OAuth, and the
   remaining client auth and organization calls
+- [29](29-hardening.md): client IPs, rate limits, request panic checks, and clean native
+  TypeScript before the full port audit
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions
