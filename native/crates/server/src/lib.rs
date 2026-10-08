@@ -9,6 +9,8 @@ pub mod calendar;
 pub mod clock;
 mod config;
 mod connections;
+mod hash_lane;
+pub use hash_lane::hash_workers;
 pub mod entries;
 pub mod errors;
 pub mod fill;

@@ -1,0 +1,99 @@
+{
+  "measuredOn": "2026-10-08",
+  "run": "2026-10-08T03-48-45-M-fixed-08117-after-8c-r8-confirm128",
+  "decision": "rejected as ordinary count bound in review; instant refusals show 128 cuts off work before the deadline; superseded by 4096 backstop; 80000-user capacity not confirmed",
+  "bound": 128,
+  "deadlineMs": 1000,
+  "appCores": 8,
+  "readers": 8,
+  "generatorCores": 2,
+  "runtime": "multi_thread",
+  "warmup": {
+    "users": 40000,
+    "seconds": 30
+  },
+  "hold": {
+    "users": 80000,
+    "seconds": 120
+  },
+  "pageRefusalCommit": "a521513",
+  "method": "same M dataset and recording as ramp.json; new image includes the tested page refusal mapping; no overload phases; all latency targets pass but the error target fails",
+  "command": [
+    "bun",
+    "perf/stress/stress.ts",
+    "--app=native",
+    "--direct",
+    "--dataset=M",
+    "--dataset-date=2026-10-04",
+    "--run=fixed",
+    "--plan=/Users/kaitkasak/projects/snowtime/snowtime-081-lanes/perf/.cache/stress/08117/confirm-128-plan.json",
+    "--recording=perf/.cache/stress/lanes-pages.json",
+    "--encoding=gzip",
+    "--no-build",
+    "--warmup-seconds=0",
+    "--memory=15872m",
+    "--app-cpuset=0-7",
+    "--sampler-cpuset=0-7",
+    "--caddy-cpuset=0-7",
+    "--k6-cpuset=8-9",
+    "--read-connections=8",
+    "--preallocated-vus=1000",
+    "--max-vus=3000",
+    "--runtime=multi_thread",
+    "--queue-max-waiting=128",
+    "--label=08117-after-8c-r8-confirm128"
+  ],
+  "images": [
+    "[snowtime-native:08117-confirm snowtime-native:bench] sha256:057a8502815b375768a4069dba8f9eef80046e54ec407b4b84581094ac59d325",
+    "[snowtime-app:bench] sha256:6536be911240da626d3631050ed83d476f7832c4a5fec2d853336e124bed5f81",
+    "[snowtime-caddy:bench] sha256:78509cff05bc50e443b3a2c748294b725321e213dbd426374c63dc746bff76b5",
+    "[snowtime-sampler:bench] sha256:2422cf55d36c788f084c8a1adf6441529761c50544087df44bf11a3f47e1593b"
+  ],
+  "sourceSha256": {
+    "native/crates/host/src/pages.rs": "191e34b26985211f2e245f96ff40a7397a335305465eb9044a9773600ac1aa6b",
+    "native/crates/render/src/lib.rs": "e998e75bbff318bf9b4312e6537da421e01e6caacecdbbee8c34bb7cf215278b",
+    "native/crates/host/src/main.rs": "ba6e2ddad8e000b8d1ad054edd2f0f523c9521b4e243b2ad4acc5d0f98f11739",
+    "native/crates/server/src/http.rs": "e05236135fd516fd543aa89b3665db67f7c5091f52225066d4753d35021593d7",
+    "native/Dockerfile": "4f871d92d81a8f69af41e46631a1ea9be9d47e1d666570657ec277d4020442db",
+    "perf/stress/scenario.js": "488d1beec1f16a0f7ae3803670e2330cc9fb68e9b6522bdec8a820ae7bcbc5d4",
+    "perf/stress/stress.ts": "303be449e45dc538858ad3e2953256f858ffd936eadc0adb2485987ab293faa2"
+  },
+  "steps": {
+    "warmup": {
+      "validity": {
+        "generatorLimited": false,
+        "aborted": null,
+        "missed": []
+      },
+      "statuses": {
+        "200": 24889
+      },
+      "globalDropped": 0,
+      "peakRssMB": 516.354048,
+      "maxAppSwapBytes": 0,
+      "retryAfterCount": 0
+    },
+    "hold80000": {
+      "validity": {
+        "generatorLimited": false,
+        "aborted": null,
+        "missed": ["0.23% errors"]
+      },
+      "statuses": {
+        "200": 198491,
+        "503": 452,
+        "404": 27
+      },
+      "globalDropped": 0,
+      "peakRssMB": 1133.817856,
+      "maxAppSwapBytes": 0,
+      "retryAfterCount": 452
+    }
+  },
+  "queuePeaks": {
+    "read_admission": 89,
+    "write_admission": 4,
+    "hash_admission": 0,
+    "report_admission": 0
+  }
+}

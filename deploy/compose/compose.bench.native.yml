@@ -9,6 +9,9 @@ services:
       EDGE_ACCESS_LOG: 'off'
       EDGE_HEADERS: 'false'
       DB_READ_CONNECTIONS: ${BENCH_READ_CONNECTIONS:-0}
+      TOKIO_RUNTIME: ${BENCH_TOKIO_RUNTIME:-multi_thread}
+      WORK_QUEUE_MAX_WAITING: ${BENCH_QUEUE_MAX_WAITING:-4096}
+      WORK_QUEUE_TIMEOUT_MS: ${BENCH_QUEUE_TIMEOUT_MS:-1000}
       MIGRATIONS_DIR: /migrations
     volumes:
       - ../../drizzle:/migrations:ro

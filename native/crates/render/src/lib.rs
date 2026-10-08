@@ -62,6 +62,8 @@ pub struct Page {
 pub enum RenderError {
     /// The queue was full, or the page waited in it longer than the policy allows.
     Busy,
+    /// An API dependency refused this page; preserve its retry interval.
+    ApiRefused { retry_after: String },
     /// The render threw, ran past its deadline, or outgrew the page limit.
     Failed(String),
     /// Renderers crashed past the restart budget; the pool takes no more pages.
@@ -125,6 +127,7 @@ struct Output {
     head: Option<(u16, Headers)>,
     body: Vec<u8>,
     limit: usize,
+    retry_after: Option<String>,
 }
 #[derive(Serialize)]
 struct JsApiResponse {
@@ -140,6 +143,14 @@ async fn op_send(
 ) -> Result<JsApiResponse, JsErrorBox> {
     let send = state.borrow().borrow::<SendApi>().clone();
     let answer = send(request).await.map_err(JsErrorBox::generic)?;
+    if answer.status == 503 {
+        let retry_after = answer
+            .headers
+            .iter()
+            .find(|(name, _)| name.eq_ignore_ascii_case("retry-after"))
+            .map_or_else(|| "1".into(), |(_, value)| value.clone());
+        state.borrow_mut().borrow_mut::<Output>().retry_after = Some(retry_after);
+    }
     Ok(JsApiResponse {
         status: answer.status,
         headers: answer.headers,
@@ -242,7 +253,7 @@ impl Renderer {
         &mut self,
         request: &PageRequest,
         cancelled: impl Future<Output = ()>,
-    ) -> Result<Page, String> {
+    ) -> Result<Page, RenderError> {
         if let Some(profile) = &mut self.profile {
             profile.before();
         }
@@ -275,19 +286,26 @@ impl Renderer {
             profile.after();
         }
         let output = self.js().op_state().borrow_mut().take::<Output>();
+        if result.is_err() {
+            // A failed render may leave locale, timers, or query work behind.
+            self.reset();
+        }
+        if let Some(retry_after) = output.retry_after {
+            // A framework may catch the dependency error and emit a 500 or partial page.
+            // The host still owes the caller the dependency's admission refusal.
+            return Err(RenderError::ApiRefused { retry_after });
+        }
         match (result, output.head) {
             (Ok(()), Some((status, headers))) => Ok(Page {
                 status,
                 headers,
                 body: output.body,
             }),
-            (result, _) => {
-                // A failed render may leave locale, timers, or query work behind.
-                self.reset();
-                Err(result
+            (result, _) => Err(RenderError::Failed(
+                result
                     .err()
-                    .map_or("The page sent no head".into(), |e| e.to_string()))
-            }
+                    .map_or("The page sent no head".into(), |e| e.to_string()),
+            )),
         }
     }
 }
@@ -732,7 +750,7 @@ async fn run_renderer(shared: Arc<Shared>) {
             p
         });
         drop(busy);
-        let _ = reply.send(page.map_err(RenderError::Failed));
+        let _ = reply.send(page);
         dirty = true;
         idle_since = Instant::now();
         let pressure = shared.pressure.load(Ordering::Relaxed);
@@ -802,6 +820,80 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    async fn api_refusals_keep_a_completed_renderer_warm_and_reset_a_failed_render() {
+        let send: SendApi = Arc::new(|_| {
+            Box::pin(async {
+                Ok(ApiResponse {
+                    status: 503,
+                    headers: vec![("retry-after".into(), "7".into())],
+                    body: vec![],
+                })
+            })
+        });
+        let mut renderer = Renderer::new(send, r#"{"routes":{}}"#.into(), Policy::default());
+        renderer
+            .js()
+            .execute_script(
+                "refused.js",
+                r#"
+            globalThis.warmth = 42;
+            renderPage = async () => {
+              await Deno.core.ops.op_send({method:'GET',path:'/busy',headers:[],body:[]});
+              Deno.core.ops.op_head(500, []);
+            };
+        "#,
+            )
+            .unwrap();
+        assert!(matches!(
+            renderer.render(&page(), std::future::pending()).await,
+            Err(RenderError::ApiRefused { retry_after }) if retry_after == "7"
+        ));
+        renderer
+            .js()
+            .execute_script(
+                "healthy.js",
+                r#"
+            if (globalThis.warmth !== 42) throw Error('the refused page reset its isolate');
+            renderPage = async () => Deno.core.ops.op_head(204, []);
+        "#,
+            )
+            .unwrap();
+        assert_eq!(
+            renderer
+                .render(&page(), std::future::pending())
+                .await
+                .unwrap()
+                .status,
+            204
+        );
+        renderer
+            .js()
+            .execute_script(
+                "failed.js",
+                r#"
+            renderPage = async () => {
+              await Deno.core.ops.op_send({method:'GET',path:'/busy',headers:[],body:[]});
+              throw Error('render failed');
+            };
+        "#,
+            )
+            .unwrap();
+        assert!(matches!(
+            renderer.render(&page(), std::future::pending()).await,
+            Err(RenderError::ApiRefused { .. })
+        ));
+        renderer
+            .js()
+            .execute_script(
+                "reset.js",
+                r#"
+            if (globalThis.warmth !== undefined) throw Error('the failed render kept its isolate');
+        "#,
+            )
+            .unwrap();
+    }
+
+    #[tokio::test(flavor = "current_thread")]
     async fn web_apis_host_contract_and_recovery() {
         let send: SendApi = Arc::new(|request| {
             Box::pin(async move {
@@ -859,13 +951,10 @@ mod tests {
                 "renderPage = async () => { await Deno.core.ops.op_send({method:'GET',path:'/pending',headers:[],body:[]}) }",
             )
             .unwrap();
-        assert!(
-            renderer
-                .render(&page(), std::future::pending())
-                .await
-                .unwrap_err()
-                .contains("deadline")
-        );
+        assert!(matches!(
+            renderer.render(&page(), std::future::pending()).await,
+            Err(RenderError::Failed(message)) if message.contains("deadline")
+        ));
 
         let recovered = "renderPage = async () => Deno.core.ops.op_head(204, [])";
         for failing in [

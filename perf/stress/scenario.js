@@ -20,20 +20,23 @@ import { Counter, Trend } from 'k6/metrics'
 const handshakes = new Counter('bench_tls_handshakes')
 const protocols = new Counter('bench_protocols')
 const serverTiming = new Trend('bench_server_timing', true)
-const TIMINGS = [
-  'admission',
-  'connection_wait',
-  'connection_hold',
-  'cpu',
-  'scrypt_cpu',
-  'blocking_cpu',
-  'blocking_queue',
-  'render_queue',
-  'render_cpu',
-  'render',
-  'session',
-  'db',
-]
+const TIMINGS =
+  __ENV.LANE_BENCH === '1'
+    ? ['admission', 'cpu', 'scrypt_cpu', 'render_queue']
+    : [
+        'admission',
+        'connection_wait',
+        'connection_hold',
+        'cpu',
+        'scrypt_cpu',
+        'blocking_cpu',
+        'blocking_queue',
+        'render_queue',
+        'render_cpu',
+        'render',
+        'session',
+        'db',
+      ]
 
 const ORIGIN = __ENV.ORIGIN
 const HOST = ORIGIN.replace(/^https:\/\//, '')
@@ -61,9 +64,29 @@ const MIX = [
 const ACTIONS_PER_HOUR = MIX.reduce((total, [, times]) => total + times, 0)
 
 const users = new SharedArray('users', () => JSON.parse(open(__ENV.USERS)))
+const selections = new Map(
+  PLAN.filter((step) => step.userId || step.organization || step.excludeOrganization).map(
+    (step) => [
+      step.name,
+      new SharedArray(`selection:${step.name}`, () => {
+        const all = JSON.parse(open(__ENV.USERS))
+        return all.flatMap((user, index) => {
+          const selected = step.userId
+            ? user.userId === step.userId
+            : step.organization
+              ? user.organizationId === step.organization
+              : user.organizationId !== step.excludeOrganization
+          return selected ? [index] : []
+        })
+      }),
+    ],
+  ),
+)
 const recording = JSON.parse(open(__ENV.RECORDING))
 
 const errors = new Counter('bench_errors')
+const statuses = new Counter('bench_statuses')
+const retryAfter = new Counter('bench_retry_after')
 const callDuration = new Trend('bench_call_duration', true)
 const actionDuration = new Trend('bench_action_duration', true)
 
@@ -104,10 +127,17 @@ for (const step of PLAN) {
       const kind = kindOf(action, request),
         call = `${request.method} ${request.path.split('?')[0]}`
       thresholds[`bench_call_duration{step:${step.name},kind:${kind},call:${call}}`] = ['max>=0']
+      for (const status of [200, 503])
+        thresholds[`bench_statuses{step:${step.name},kind:${kind},call:${call},status:${status}}`] =
+          ['count>=0']
     }
   }
+  for (const status of [200, 503, 429])
+    thresholds[`bench_statuses{step:${step.name},status:${status}}`] = ['count>=0']
+  thresholds[`bench_retry_after{step:${step.name}}`] = ['count>=0']
   thresholds[`http_reqs{step:${step.name}}`] = ['count>=0']
   thresholds[`dropped_iterations{step:${step.name}}`] = ['count>=0']
+  thresholds[`dropped_iterations{scenario:${step.name}}`] = ['count>=0']
   thresholds[`bench_action_duration{step:${step.name}}`] = ['max>=0']
   for (const type of ['5xx', '429', '4xx', 'connection', 'timeout']) {
     thresholds[`bench_errors{step:${step.name},type:${type}}`] = ['count>=0']
@@ -137,7 +167,7 @@ for (const step of PLAN) {
     rate: perHour,
     timeUnit: '1h',
     duration: `${step.seconds}s`,
-    startTime: `${start}s`,
+    startTime: `${step.start ?? start}s`,
     preAllocatedVUs: Math.min(
       concurrent,
       Number(__ENV.PREALLOCATED_VUS) ||
@@ -148,7 +178,7 @@ for (const step of PLAN) {
     exec: 'act',
     tags: { step: step.name },
   }
-  start += step.seconds
+  start = Math.max(start, (step.start ?? start) + step.seconds)
 }
 
 export const options = {
@@ -214,9 +244,13 @@ function classify(response) {
 
 export function act() {
   const step = exec.scenario.name
-  const index = Math.floor(Math.random() * users.length)
+  const selection = PLAN.find((s) => s.name === step)
+  const candidates = selections.get(step)
+  const index = candidates
+    ? candidates[Math.floor(Math.random() * candidates.length)]
+    : Math.floor(Math.random() * users.length)
   const user = users[index]
-  let action = PLAN.find((s) => s.name === step).action ?? pickAction()
+  let action = selection.action ?? pickAction()
   const fresh = {}
   if (action === 'timer') {
     const running = started.get(index)
@@ -265,6 +299,8 @@ export function act() {
   }
 
   function check(response, request) {
+    statuses.add(1, { status: response.status, kind: kindOf(action, request), call: request.call })
+    if (response.status === 503 && response.headers['Retry-After'] === '1') retryAfter.add(1)
     callDuration.add(response.timings.duration, {
       kind: kindOf(action, request),
       call: request.call,

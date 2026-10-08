@@ -21,6 +21,7 @@ import { table } from '../checks/baseline'
 import { CACHE, ROOT } from '../lib/database'
 import { type BenchUser, DATASETS, type DatasetName, dataset } from './dataset'
 import { checkOtherSessions, reserveStack } from './lock'
+import { droppedActions } from './metrics'
 import { type Recording, record } from './record'
 import {
   type App,
@@ -60,6 +61,11 @@ const MAX_DISK_SHARE = 0.8
 
 const { values } = parseArgs({
   options: {
+    plan: { type: 'string' },
+    'past-capacity': { type: 'boolean', default: false },
+    runtime: { type: 'string', default: 'multi_thread' },
+    'queue-max-waiting': { type: 'string', default: '4096' },
+    'queue-timeout-ms': { type: 'string', default: '1000' },
     dataset: { type: 'string', default: 'S' },
     'dataset-date': { type: 'string' },
     run: { type: 'string', default: 'fixed' },
@@ -248,6 +254,10 @@ interface Step {
   // One action alone, at this many per hour.
   action?: string
   perHour?: number
+  start?: number
+  organization?: string
+  userId?: string
+  excludeOrganization?: string
 }
 
 interface StepResult {
@@ -275,6 +285,7 @@ async function runK6(
     ORIGIN: target.origin,
     SECRET: target.secret,
     PLAN: JSON.stringify(plan),
+    ...((values.plan || values['past-capacity']) && { LANE_BENCH: '1' }),
     ...(values['preallocated-vus'] && { PREALLOCATED_VUS: values['preallocated-vus'] }),
     ...(values['max-vus'] && { MAX_VUS: values['max-vus'] }),
     ...(values.encoding && { ENCODING: values.encoding }),
@@ -454,7 +465,7 @@ function misses(result: StepResult): string[] {
   if (sent > 0 && failed / sent > MAX_ERROR_SHARE) {
     found.push(`${((failed / sent) * 100).toFixed(2)}% errors`)
   }
-  const dropped = metric(result.summary, `dropped_iterations{step:${result.step.name}}`, 'count')
+  const dropped = droppedActions(result.summary.metrics, result.step.name)
   if (dropped > 0) found.push(`${dropped} dropped iterations (invalid run)`)
   return [...new Set(found)]
 }
@@ -624,6 +635,7 @@ async function runPlan(plan: Step[], files: { recording: string; users: string; 
     if (last && (last.memTotal - last.memAvailable) / last.memTotal > MAX_MEMORY_SHARE)
       return 'memory above 85%'
     if (last && last.diskUsed / last.diskTotal > MAX_DISK_SHARE) return 'disk above 80%'
+    if (values.plan || values['past-capacity']) return null
     // Any kind over its target for the last 30 seconds.
     const recent = logged.filter((r) => r.t > now - WINDOW_S - 5)
     for (const kind of new Set(recent.map((r) => r.kind))) {
@@ -731,6 +743,9 @@ async function main() {
       BENCH_LITESTREAM_MEMORY: values['litestream-memory'],
       BENCH_APP_CPUSET: values['app-cpuset'],
       BENCH_SAMPLER_CPUSET: values['sampler-cpuset'],
+      BENCH_TOKIO_RUNTIME: values.runtime,
+      BENCH_QUEUE_MAX_WAITING: values['queue-max-waiting'],
+      BENCH_QUEUE_TIMEOUT_MS: values['queue-timeout-ms'],
       BENCH_READ_CONNECTIONS: values['read-connections'],
       ...(values.direct && { BENCH_DIRECT_TLS: tls }),
       ...(values.memory && { BENCH_APP_MEMORY: values.memory }),
@@ -877,7 +892,10 @@ async function main() {
     await waitInitialCompaction()
   }
 
-  if (values.run === 'fixed' || values.run === 'calibration') {
+  if (values.plan) {
+    const plan = JSON.parse(readFileSync(resolve(values.plan), 'utf8')) as Step[]
+    await runPlan(plan, files)
+  } else if (values.run === 'fixed' || values.run === 'calibration') {
     const usersCount = Number(values.users ?? (values.run === 'calibration' ? 100 : 200))
     await runPlan(
       [{ name: 'fixed', users: usersCount, seconds: Number(values.seconds ?? 300) }],
@@ -926,6 +944,9 @@ async function main() {
       }
       break
     }
+    if (lastGood === undefined && values['past-capacity']) {
+      lastGood = RAMP.filter((users) => users < from).at(-1)
+    }
     if (lastGood === undefined) {
       console.log('[stress] Not even the first step held.')
       capacity(null, false, 'First ramp step failed')
@@ -951,6 +972,16 @@ async function main() {
       if (missed.length === 0 && !aborted) {
         console.log(`\n[stress] Capacity on ${name}: ${users} active users`)
         capacity(users, false)
+        if (values['past-capacity']) {
+          await runPlan(
+            [
+              { name: 'x2', users: users * 2, seconds: stepSeconds },
+              { name: 'x4', users: users * 4, seconds: stepSeconds },
+              { name: 'recover', users, seconds: Number(values['hold-seconds']) },
+            ],
+            files,
+          )
+        }
         return
       }
       console.log(`\n[stress] The hold at ${users} users missed: ${missed.join('; ')}`)

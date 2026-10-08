@@ -256,7 +256,7 @@ which records the edge measurements.
 - [16](16-javascriptcore.md): JavaScriptCore as the render engine: the gate failed on plain
   JSC; the Bun render sidecar that followed is parked in favor of V8 (2026-10-07)
 - [17](17-bounded-lanes.md): the lane contract for the database, hashing, and V8 render
-  lanes, the overload policy, and how the client handles refusal
+  lanes, the overload policy, and how the client handles refusal (done)
 - [18](18-v8-builds.md): newer V8 builds, flags, and build options against the render gap:
   no V8 upgrade closes it, so rely on the Bun sidecar (cancelled)
 - [19](19-prototype-props.md): server props with prototype getters instead of per-render
@@ -270,6 +270,12 @@ which records the edge measurements.
   ASCII minified bundle take 7–9 MB off V8's render RSS; V8 at 1.21–1.30 times Bun (done)
 - [23](23-render-month-year.md): month and year render hot spots, where V8 is still 1.27–1.29
   times Bun: the report code, the shared site getter, and Lucide's icon building
+- [24](24-report-reads.md): the report's breakdown, entry lists, and export in the native
+  server, through the report budget
+- [25](25-router-state.md): the router's hydration state per page, measured by bytes and
+  allocations rather than timing alone
+- [26](26-capacity-overload.md): the capacity matrix at the deadline-led queue bound
+  and a valid eight-reader overload comparison; follows 17 without blocking its merge
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

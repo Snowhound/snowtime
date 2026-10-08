@@ -89,11 +89,21 @@ it:
   host, at 1.21–1.30 times Bun's render CPU (22); the Bun sidecar parked; embedded JSC
   paused. Open: the gap confirmed on Linux, and whole-server load showing whether the
   render lane saturates first (10, 12, 16)
-- Tokio only at the edge, and lanes with a fixed number of workers, waiting bounded by
-  count and time, admission per connection class, and refusal for the database,
-  password hashing, and rendering (`docs/architecture/native-host.md`). An overload
-  policy that names what keeps working, and a client that keeps a refused edit. Open:
-  admission built in 10, the rest in 17
+- Tokio at the edge, with fixed worker lanes and waiting bounded by count and time
+  for database work, hashing, and rendering. Database and hash gates use a 4,096-waiter
+  memory backstop and a 1,000-ms deadline (17); the new one-core hold passes at
+  20,000 users with zero refusals. The 32/128 limits refuse instantly at
+  loads the unbounded host handles; size from throughput times deadline with spike
+  headroom. A 32-KiB planning estimate per waiter budgets 128 MiB per gate, excluding
+  large bodies and renderer heaps. Keep the smaller report budget, which protects
+  other organizations' timer reads under a report burst. The one-core runtime
+  comparison is inconclusive: the valid 5,000-user pair favors `current_thread`, but
+  lacks repeats, so the `multi_thread` default stays unchanged. A refused edit stays
+  pending in the client; an API refusal during rendering reaches the page as 503 with
+  `Retry-After` and keeps a completed renderer warm. Record phase RSS against the
+  provisional 2-GiB whole-host budget for M, with no OOM or swap and passing recovery.
+  Open: the four-configuration capacity rerun and valid eight-reader overload in 26.
+  Results: [native host](../../docs/architecture/native-host.md)
 - A JSON API for both backends, not server functions (02, task 084)
 - JSON with dates revived by the schemas, and answers validated in full (task 089).
   Open: columns for the large responses (081 question 2, 02)
@@ -101,7 +111,9 @@ it:
 - Axum, and `rusqlite` with SQL strings over SeaQuery; Rocket, Diesel, and sqlx not
   tried (03, 06)
 - One writer and a pool of readers on WAL; bounded database work that refuses with 503
-  past a deadline. Open: built in 10, not yet measured
+  past count or time bounds. A report budget leaves ordinary readers available under
+  a single-organization burst (17). A single connection still delays timers while a
+  report runs. Open: valid overload and capacity evidence at the chosen backstop in 26
 - Better Auth through an app-owned `rusqlite` store on the host's lanes (question 5,
   [auth spike](auth-spike.md), 2026-10-06). The 1,582-line adapter proves storage and
   selected flows without SeaORM or sqlx. Reject a library-owned pool where the host

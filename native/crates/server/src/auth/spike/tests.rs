@@ -33,6 +33,7 @@ fn store_at(deadline: Duration, origin: &str) -> LaneStore {
         Limits {
             hashes: 1,
             queue_timeout: Duration::from_millis(30),
+            max_waiting: 32,
         },
     )
     .unwrap();

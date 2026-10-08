@@ -145,6 +145,18 @@ pub async fn page(State(pages): State<Arc<Pages>>, request: Request) -> Response
                 .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));
             busy
         }
+        Err(RenderError::ApiRefused { retry_after }) => {
+            let mut busy = text(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "The server is busy. Try again.",
+            );
+            busy.headers_mut().insert(
+                header::RETRY_AFTER,
+                HeaderValue::try_from(retry_after)
+                    .unwrap_or_else(|_| HeaderValue::from_static("1")),
+            );
+            busy
+        }
         Err(RenderError::Down) => text(
             StatusCode::SERVICE_UNAVAILABLE,
             "Pages are unavailable. Try again later.",
@@ -165,6 +177,46 @@ mod tests {
     use snowtime_render::ApiRequest;
     use std::time::Duration;
     use tokio::sync::mpsc;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_refused_api_dependency_refuses_the_page_and_keeps_retry_after() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let calls = Arc::new(AtomicUsize::new(0));
+        let observed = calls.clone();
+        let api = Router::new().fallback(move || {
+            observed.fetch_add(1, Ordering::SeqCst);
+            async {
+                (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    [(header::RETRY_AFTER, "7")],
+                    r#"{"error":"The server is busy. Try again."}"#,
+                )
+            }
+        });
+        let pool = Pool::start(
+            in_process(api),
+            snowtime_render::MANIFEST,
+            Default::default(),
+        )
+        .unwrap();
+        let router = Router::new().fallback(page).with_state(Arc::new(Pages {
+            pool,
+            app_url: "http://snowtime.test".into(),
+        }));
+        let response = router
+            .oneshot(
+                Request::get("/lumen/timer")
+                    .header(header::COOKIE, "session=test")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert!(calls.load(Ordering::SeqCst) > 0);
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(response.headers()[header::RETRY_AFTER], "7");
+        assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
+    }
 
     #[tokio::test]
     async fn dropping_a_call_aborts_it_on_the_host_runtime() {

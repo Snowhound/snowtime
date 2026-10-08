@@ -1,0 +1,80 @@
+time="2026-10-08T09:04:24+03:00" level=warning msg="Found orphan containers (snowtime-bench-litestream-1) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up."
+ Container snowtime-bench-app-1 Recreate 
+ Container snowtime-bench-sampler-1 Recreate 
+ Container snowtime-bench-sampler-1 Recreated 
+ Container snowtime-bench-app-1 Recreated 
+ Container snowtime-bench-caddy-1 Recreate 
+ Container snowtime-bench-caddy-1 Recreated 
+ Container snowtime-bench-app-1 Stopping 
+ Container snowtime-bench-app-1 Stopped 
+time="2026-10-08T09:04:26+03:00" level=warning msg="Found orphan containers (snowtime-bench-litestream-1) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up."
+ Container snowtime-bench-app-1 Recreate 
+ Container snowtime-bench-sampler-1 Recreate 
+ Container snowtime-bench-sampler-1 Recreated 
+ Container snowtime-bench-app-1 Recreated 
+ Container snowtime-bench-caddy-1 Recreate 
+ Container snowtime-bench-caddy-1 Recreated 
+ Container snowtime-bench-sampler-1 Starting 
+ Container snowtime-bench-app-1 Starting 
+ Container snowtime-bench-sampler-1 Started 
+ Container snowtime-bench-app-1 Started 
+ Container snowtime-bench-app-1 Waiting 
+ Container snowtime-bench-app-1 Healthy 
+ Container snowtime-bench-caddy-1 Starting 
+ Container snowtime-bench-caddy-1 Started 
+ Container snowtime-bench-app-1 Waiting 
+ Container snowtime-bench-caddy-1 Waiting 
+ Container snowtime-bench-sampler-1 Waiting 
+ Container snowtime-bench-sampler-1 Healthy 
+ Container snowtime-bench-caddy-1 Healthy 
+ Container snowtime-bench-app-1 Healthy 
+[stress] Idle app (native): memory 114 MB (anon 17, cache 94), RSS 49 MB
+
+warmup: 10000 active users, 30 s. Offered 208.8 req/s, completed 208.8 req/s
+Kind                req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+edit api            29.67    1    3    8        1        3        5     300
+open page            2.43   27   51  112       27       54      128    1000
+reports-week api     1.90    1    4    7        1        7        8     300
+reports-year api     0.67    1    5    6        1        6        6    3000
+reports-year page    0.13   37   66   69       43       70       70    3000
+return api         139.67    3   19  106        2       18      105     300
+sign-in api          1.40    3    7   11        1        6       10     300
+sign-in auth         0.23   71   95  101       70      103      103    1000
+start api           32.67    1    6   27        1        5       27     300
+Errors: none
+Container     CPU  throttled  mem MB  peak  anon  cache   RSS  swap  read MB/s  write  PSI cpu  mem  io
+app         30.0%       0.0%     435   435   208    214   258     0       3.69   0.81      17%   0%  2%
+caddy        0.0%       0.0%      72    72    16     53    51     0       0.00   0.00       0%   0%  0%
+sampler      0.3%       0.0%      18    18     7      7    14     0       0.00   0.00       0%   0%  0%
+litestream   0.0%       0.0%       0     0     0      0     0     0       0.00   0.00       0%   0%  0%
+k6          21.0%       0.0%    1166  1166  1109     48  1140     0       0.00   0.00       0%   0%  0%
+App CPU per request 1.5 ms, Caddy 0.00 ms; steal 0.0%; host memory 2269 of 8571 MB; database 949 MB; disk 7%; OOM kills 0
+k6 CPU observed for 30 s: mean 21.0%, peak one-second 67.6%; app peak threads 9
+Within targets
+
+hold20000: 20000 active users, 120 s. Offered 414.3 req/s, completed 414.3 req/s
+Kind                 req/s  p50  p95  p99  srv p50  srv p95  srv p99  target
+edit api             55.58    1   28  108        1       28      109     300
+open page             5.60   24  145  251       24      145      252    1000
+reports-month api     0.63    2    9   17        1       10       17     300
+reports-month page    0.13   20  121  143       20      147      147    1000
+reports-week api      2.90    1    6   77        0        6       99     300
+reports-year api      0.67    4   40   66        3       39       88    3000
+reports-year page     0.13   41  382  401       45      405      405    3000
+return api          277.79    2   71  151        1       70      150     300
+sign-in api           3.15    1   12   44        1       18       56     300
+sign-in auth          0.53   87  170  263       87      170      275    1000
+start api            67.17    1   23   94        1       22       93     300
+stop api              0.03    1    2    2        1        2        2     300
+Errors: none
+Container     CPU  throttled  mem MB  peak  anon  cache   RSS  swap  read MB/s  write  PSI cpu  mem  io
+app         47.7%       0.0%     470   583   178    282   336     0       0.47   1.29      34%   0%  1%
+caddy        0.0%       0.0%      71    72    15     53    51     0       0.00   0.00       0%   0%  0%
+sampler      0.4%       0.0%      21    24     7      7    16     0       0.00   0.00       0%   0%  0%
+litestream   0.0%       0.0%       0     0     0      0     0     0       0.00   0.00       0%   0%  0%
+k6          22.3%       0.0%    1654  1654  1592     48  1624     0       0.00   0.00       0%   0%  0%
+App CPU per request 1.2 ms, Caddy 0.00 ms; steal 0.0%; host memory 2884 of 8571 MB; database 950 MB; disk 7%; OOM kills 0
+k6 CPU observed for 120 s: mean 22.3%, peak one-second 97.7%; app peak threads 9
+Within targets
+
+[stress] Results in perf/.cache/stress/runs/2026-10-08T06-04-33-M-fixed-08117-after-1c-r0-confirm4096

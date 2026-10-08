@@ -1,0 +1,3606 @@
+{
+  "options": {
+    "summaryTimeUnit": "",
+    "noColor": false,
+    "summaryTrendStats": ["avg", "med", "p(95)", "p(99)", "max", "count"]
+  },
+  "state": { "isStdOutTTY": false, "isStdErrTTY": false, "testRunDurationMs": 150004.258458 },
+  "metrics": {
+    "bench_server_timing{step:hold20000,kind:reports-month api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:sign-in auth,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 65.94,
+        "count": 63,
+        "avg": 62.090809523809526,
+        "med": 62.073,
+        "p(95)": 64.3699,
+        "p(99)": 65.7602
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration{step:warmup,kind:reports-month api}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 4, "rate": 0.026665909628958755 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 116, "rate": 0.7733113792398039 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:stop api,call:GET /api/v1/session,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:reports-year page}": {
+      "contains": "time",
+      "values": {
+        "avg": 113.7713776875,
+        "med": 40.9052505,
+        "p(95)": 381.56720824999996,
+        "p(99)": 400.94330885,
+        "max": 405.787334,
+        "count": 16
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_statuses{step:hold20000,kind:stop api,call:GET /api/v1/timer,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 1, "rate": 0.006666477407239689 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/timer,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:open page,timing:scrypt_cpu}": {
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/members,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/session,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_errors": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0, "count": 0 }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:GET /api/v1/session,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:GET /api/v1/timer,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 8.893080861257744, "count": 1334 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-month api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-week api,call:POST /api/v1/organizations/{{organizationId}}/report,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 116, "rate": 0.7733113792398039 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:sign-in api,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:return api,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 6263, "rate": 41.75214800154217 }
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/session,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 6667, "rate": 44.445404874067 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_reqs{step:hold20000,kind:edit api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 6670, "rate": 44.46540430628872 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:reports-year api}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 80,
+        "avg": 9.9769005375,
+        "med": 3.9792295,
+        "p(95)": 39.52262295,
+        "p(99)": 66.05727242999998,
+        "max": 88.831458
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_errors{step:hold20000,type:4xx}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_duration{expected_response:true}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 47.72330799999991,
+        "p(99)": 142.47595499999997,
+        "max": 637.479042,
+        "count": 55979,
+        "avg": 9.307798240179359,
+        "med": 1.5105
+      }
+    },
+    "bench_statuses{step:warmup,kind:stop api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:GET /api/v1/session,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 4, "rate": 0.026665909628958755 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:stop api,call:GET /api/v1/timer}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 1,
+        "avg": 0.872,
+        "med": 0.872,
+        "p(95)": 0.872,
+        "p(99)": 0.872,
+        "max": 0.872
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:503}": {
+      "contains": "default",
+      "values": { "rate": 0, "count": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_call_duration{step:warmup,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/projects}": {
+      "values": {
+        "p(95)": 9.268600099999999,
+        "p(99)": 10.44102002,
+        "max": 10.734125,
+        "count": 7,
+        "avg": 5.263023714285715,
+        "med": 4.057291
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:hold20000,kind:sign-in auth,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 61.878,
+        "p(95)": 64.1373,
+        "p(99)": 65.58484,
+        "max": 65.689,
+        "count": 63,
+        "avg": 61.87393650793649
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:return api}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 150.601947,
+        "max": 457.817959,
+        "count": 33335,
+        "avg": 11.164784492185408,
+        "med": 1.878708,
+        "p(95)": 70.59498729999987
+      }
+    },
+    "bench_errors{step:warmup,type:timeout}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_protocols{protocol:HTTP/2.0}": {
+      "values": { "count": 55979, "rate": 373.18273877987053 },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_call_duration{step:hold20000,kind:edit api,call:PATCH /api/v1/organizations/{{organizationId}}/entries/{{entryId}}}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 159.42660811,
+        "max": 381.632917,
+        "count": 1334,
+        "avg": 10.774638023988015,
+        "med": 1.4215835,
+        "p(95)": 76.19525219999998
+      }
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/session,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start}": {
+      "contains": "time",
+      "values": {
+        "count": 7,
+        "avg": 5.039791714285713,
+        "med": 4.832125,
+        "p(95)": 9.5557957,
+        "p(99)": 10.48862554,
+        "max": 10.721833
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:200}": {
+      "contains": "default",
+      "values": { "count": 838, "rate": 5.586508067266859 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_call_duration{step:warmup,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 838,
+        "avg": 5.772997916467771,
+        "med": 2.6972915,
+        "p(95)": 17.64747054999999,
+        "p(99)": 80.66894874999993,
+        "max": 143.303375
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:sign-in api,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs{step:hold20000}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 49716, "rate": 331.43059077832834 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:POST /api/v1/organizations/{{organizationId}}/report,status:200}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_server_timing{step:warmup,kind:start api,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "vus_max": {
+      "contains": "default",
+      "values": { "min": 2000, "max": 2000, "value": 2000 },
+      "type": "gauge"
+    },
+    "bench_call_duration{step:warmup,kind:reports-month api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration{step:warmup,kind:stop api}": {
+      "values": { "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_statuses{step:warmup,kind:start api,call:GET /api/v1/timer,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:stop api,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/members}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 1.696625,
+        "p(95)": 6.076737399999998,
+        "p(99)": 8.22921388,
+        "max": 8.767333,
+        "count": 15,
+        "avg": 2.278636066666667
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-year api,timing:scrypt_cpu}": {
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_call_duration{step:warmup,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/members}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 1.6355727500000001,
+        "med": 1.2475,
+        "p(95)": 2.6157786499999998,
+        "p(99)": 2.80438853,
+        "max": 2.851541,
+        "count": 4
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:200}": {
+      "contains": "default",
+      "values": { "count": 16, "rate": 0.10666363851583502 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_call_duration{step:hold20000,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start}": {
+      "values": {
+        "count": 63,
+        "avg": 3.8460793492063488,
+        "med": 1.674375,
+        "p(95)": 10.878891099999997,
+        "p(99)": 39.822738,
+        "max": 39.923333
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:hold20000,kind:reports-month page,timing:cpu}": {
+      "contains": "time",
+      "values": { "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_statuses{step:hold20000,kind:start api,call:GET /api/v1/session,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 13.432951975587972, "count": 2015 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "http_reqs{step:warmup,kind:return api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 4190, "rate": 27.932540336334295 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-week api,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:stop api,call:POST /api/v1/timer/stop,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:PATCH /api/v1/organizations/{{organizationId}}/entries/{{entryId}},status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:GET /api/v1/session,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-year page,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.032,
+        "med": 0.011,
+        "p(95)": 0.08664999999999999,
+        "p(99)": 0.09733,
+        "max": 0.1,
+        "count": 4
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:start api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/teams}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 15.513943379999999,
+        "max": 17.005375,
+        "count": 15,
+        "avg": 3.2922584000000006,
+        "med": 1.711167,
+        "p(95)": 9.548216899999995
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs{step:warmup,kind:reports-month page}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 49716, "rate": 331.43059077832834 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/teams}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/members}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 7.99200275,
+        "med": 3.6587084999999995,
+        "p(95)": 29.700405749999998,
+        "p(99)": 29.80868115,
+        "max": 29.83575,
+        "count": 16
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:start api}": {
+      "values": {
+        "p(99)": 93.61196147,
+        "max": 428.794292,
+        "count": 8060,
+        "avg": 4.711904919106703,
+        "med": 0.863375,
+        "p(95)": 22.78657914999998
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:hold20000,kind:reports-year api,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 55979, "rate": 373.18273877987053 }
+    },
+    "bench_statuses{step:warmup,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_call_duration{step:warmup,kind:reports-year page,call:GET /{{slug}}/reports}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 69.948333,
+        "count": 4,
+        "avg": 43.02486450000001,
+        "med": 37.370854,
+        "p(95)": 65.89981425,
+        "p(99)": 69.13862925000001
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-week api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0.1015,
+        "p(95)": 0.6750999999999998,
+        "p(99)": 1.30896,
+        "max": 3.739,
+        "count": 348,
+        "avg": 0.19446264367816088
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs{step:hold20000,kind:stop api}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 4, "rate": 0.026665909628958755 }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year page,call:GET /{{slug}}/reports,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-week api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:start api,call:GET /api/v1/timer,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 245, "rate": 1.6332869647737236 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-month api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 75,
+        "avg": 0.49887999999999977,
+        "med": 0.117,
+        "p(95)": 1.6852999999999965,
+        "p(99)": 7.49114,
+        "max": 8.297
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:POST /api/v1/organizations/{{organizationId}}/report,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "dropped_iterations{step:warmup}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:stop api}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 1.0839375,
+        "med": 0.846375,
+        "p(95)": 1.83239375,
+        "p(99)": 1.96797875,
+        "max": 2.001875,
+        "count": 4
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:stop api,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.18425,
+        "med": 0.1075,
+        "p(95)": 0.4758,
+        "p(99)": 0.51276,
+        "max": 0.522,
+        "count": 4
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:reports-week api}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 105.935833,
+        "count": 348,
+        "avg": 3.1119042011494242,
+        "med": 0.6966875,
+        "p(95)": 6.176983449999998,
+        "p(99)": 76.56704999999985
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 15, "rate": 0.09999716110859533 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-year page,call:GET /{{slug}}/reports,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0.026665909628958755, "count": 4 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:GET /api/v1/session,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0.10666363851583502, "count": 16 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_duration{step:warmup,kind:sign-in api}": {
+      "contains": "time",
+      "values": {
+        "med": 3.3295209999999997,
+        "p(95)": 6.8247273999999996,
+        "p(99)": 10.72908528,
+        "max": 10.734125,
+        "count": 42,
+        "avg": 3.34535219047619
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_retry_after{step:warmup}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 15, "rate": 0.09999716110859533 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:start api,call:GET /api/v1/session,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-month api,timing:render_queue}": {
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_req_duration{step:warmup,kind:reports-year page}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 37.370854,
+        "p(95)": 65.89981425,
+        "p(99)": 69.13862925000001,
+        "max": 69.948333,
+        "count": 4,
+        "avg": 43.02486450000001
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:edit api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_blocked": {
+      "contains": "time",
+      "values": {
+        "max": 7.598708,
+        "count": 55979,
+        "avg": 0.03515578406186764,
+        "med": 0.000125,
+        "p(95)": 0.000375,
+        "p(99)": 0.9376060199999998
+      },
+      "type": "trend"
+    },
+    "bench_server_timing{step:warmup,kind:sign-in api,timing:scrypt_cpu}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 }
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:503}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_server_timing{step:warmup,kind:sign-in auth,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 66.318,
+        "count": 7,
+        "avg": 62.48085714285714,
+        "med": 61.691,
+        "p(95)": 65.7876,
+        "p(99)": 66.21191999999999
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:start api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/session,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:hold20000,kind:start api,call:GET /api/v1/timer,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:warmup,kind:reports-month page,call:GET /{{slug}}/reports,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-year api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 1.5702499999999968,
+        "p(99)": 4.370849999999999,
+        "max": 5.071,
+        "count": 20,
+        "avg": 0.5982,
+        "med": 0.123
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration{step:warmup,kind:edit api}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 890,
+        "avg": 1.4019083674157298,
+        "med": 1.0432295,
+        "p(95)": 3.0390726999999997,
+        "p(99)": 7.804952619999999,
+        "max": 56.019917
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs{step:warmup,kind:reports-month api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_duration{step:warmup,kind:reports-month page}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-week api,call:POST /api/v1/organizations/{{organizationId}}/report}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 7.018916,
+        "count": 19,
+        "avg": 0.8926074210526315,
+        "med": 0.4525,
+        "p(95)": 2.217079399999996,
+        "p(99)": 6.0585486799999995
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:return api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 160.466,
+        "count": 33335,
+        "avg": 0.8462791660416956,
+        "med": 0.11,
+        "p(95)": 3.648199999999994,
+        "p(99)": 12.396119999999991
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_errors{step:warmup,type:connection}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-year page,timing:admission}": {
+      "contains": "time",
+      "values": { "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_call_duration{step:warmup,kind:start api,call:POST /api/v1/organizations/{{organizationId}}/timer/start}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 5.580570383673467,
+        "med": 1.974292,
+        "p(95)": 13.185116599999976,
+        "p(99)": 105.64117452,
+        "max": 125.684708,
+        "count": 245
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:start api,call:POST /api/v1/organizations/{{organizationId}}/timer/start,status:200}": {
+      "contains": "default",
+      "values": { "count": 2015, "rate": 13.432951975587972 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:warmup,kind:start api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 245, "rate": 1.6332869647737236 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-year page,call:GET /{{slug}}/reports,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_call_duration{step:hold20000,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/teams}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 11.2390078125,
+        "med": 3.075125,
+        "p(95)": 44.90818799999998,
+        "p(99)": 56.984337599999996,
+        "max": 60.003375,
+        "count": 16
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:open page,timing:cpu}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 }
+    },
+    "bench_call_duration{step:warmup,kind:edit api,call:GET /api/v1/timer}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 178,
+        "avg": 1.1433302471910123,
+        "med": 0.984062,
+        "p(95)": 1.8690561999999997,
+        "p(99)": 4.381143929999997,
+        "max": 12.963791
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs{step:warmup,kind:sign-in api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 42, "rate": 0.2799920511040669 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/projects}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 4.534917,
+        "count": 4,
+        "avg": 2.301271,
+        "med": 1.912646,
+        "p(95)": 4.2827733,
+        "p(99)": 4.48448826
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_tls_handshakes": {
+      "contains": "default",
+      "values": { "count": 1995, "rate": 13.299622427443179 },
+      "type": "counter"
+    },
+    "bench_server_timing{step:hold20000,kind:return api,timing:scrypt_cpu}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 }
+    },
+    "bench_statuses{step:hold20000,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/members,status:503}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:warmup,kind:reports-week api,call:POST /api/v1/organizations/{{organizationId}}/report,status:200}": {
+      "values": { "count": 19, "rate": 0.1266630707375541 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/timer,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/members,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 15, "rate": 0.09999716110859533 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:stop api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "values": {
+        "avg": 0.641125,
+        "med": 0.641125,
+        "p(95)": 0.641125,
+        "p(99)": 0.641125,
+        "max": 0.641125,
+        "count": 1
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_reqs{step:warmup,kind:start api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 980, "rate": 6.533147859094894 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-week api,timing:render_queue}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 }
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:GET /api/v1/timer,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_server_timing{step:warmup,kind:edit api,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 55.185,
+        "count": 890,
+        "avg": 0.5101786516853918,
+        "med": 0.1295,
+        "p(95)": 1.2290499999999995,
+        "p(99)": 5.133069999999999
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:start api,call:GET /api/v1/session,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:stop api,call:POST /api/v1/timer/stop,status:200}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:warmup,kind:start api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_reqs{step:hold20000,kind:return api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 33335, "rate": 222.22702437033502 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 838, "rate": 5.586508067266859 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/members,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 16, "rate": 0.10666363851583502 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 63, "rate": 0.4199880766561004 }
+    },
+    "bench_call_duration{step:hold20000,kind:edit api,call:GET /api/v1/timer}": {
+      "contains": "time",
+      "values": {
+        "avg": 4.424809851574215,
+        "med": 0.87775,
+        "p(95)": 23.256437949999984,
+        "p(99)": 73.41348935999997,
+        "max": 214.262791,
+        "count": 1334
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_statuses{step:hold20000,kind:stop api,call:GET /api/v1/timer,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_protocols{protocol:HTTP/1.1}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "type": "counter"
+    },
+    "bench_statuses{step:hold20000,kind:reports-week api,call:POST /api/v1/organizations/{{organizationId}}/report,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": { "count": 80806874, "rate": 538697.1998706642 }
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:200}": {
+      "contains": "default",
+      "values": { "count": 1334, "rate": 8.893080861257744 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0.026665909628958755, "count": 4 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:return api,call:GET /api/v1/timer}": {
+      "contains": "time",
+      "values": {
+        "count": 6667,
+        "avg": 9.940507434228318,
+        "med": 1.204375,
+        "p(95)": 66.52118739999996,
+        "p(99)": 146.04414093999992,
+        "max": 457.532042
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_call_duration{step:hold20000,kind:stop api,call:POST /api/v1/timer/stop}": {
+      "contains": "time",
+      "values": {
+        "avg": 2.001875,
+        "med": 2.001875,
+        "p(95)": 2.001875,
+        "p(99)": 2.001875,
+        "max": 2.001875,
+        "count": 1
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_call_duration{step:warmup,kind:edit api,call:PATCH /api/v1/organizations/{{organizationId}}/entries/{{entryId}}}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 178,
+        "avg": 2.454088213483148,
+        "med": 1.7523955,
+        "p(95)": 3.83326255,
+        "p(99)": 12.210548569999974,
+        "max": 56.019917
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-month api,timing:render_queue}": {
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_req_duration{step:hold20000,kind:sign-in auth}": {
+      "contains": "time",
+      "values": {
+        "avg": 103.81868323809525,
+        "med": 87.416959,
+        "p(95)": 170.0331788,
+        "p(99)": 263.10042546,
+        "max": 275.137209,
+        "count": 63
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_server_timing{step:warmup,kind:sign-in auth,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "dropped_iterations": {
+      "values": { "count": 0, "rate": 0 },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/members,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/session,status:200}": {
+      "contains": "default",
+      "values": { "count": 14, "rate": 0.09333068370135564 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_server_timing{step:hold20000,kind:sign-in api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 38.599,
+        "count": 378,
+        "avg": 0.5048968253968249,
+        "med": 0.0645,
+        "p(95)": 2.181599999999999,
+        "p(99)": 6.29740999999999
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:start api,call:GET /api/v1/timer}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 17.125874899999943,
+        "p(99)": 46.705227499999964,
+        "max": 208.173583,
+        "count": 2015,
+        "avg": 3.1105028129032233,
+        "med": 0.758416
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/timer,status:200}": {
+      "values": { "count": 838, "rate": 5.586508067266859 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_server_timing{step:hold20000,kind:reports-year api,timing:cpu}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 29.75085999999999,
+        "max": 41.337,
+        "count": 80,
+        "avg": 1.8700374999999998,
+        "med": 0.21450000000000002,
+        "p(95)": 6.471299999999977
+      }
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 838, "rate": 5.586508067266859 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-year page,timing:render_queue}": {
+      "contains": "time",
+      "values": {
+        "max": 113.225,
+        "count": 16,
+        "avg": 7.85975,
+        "med": 0.0095,
+        "p(95)": 36.95899999999993,
+        "p(99)": 97.97179999999997
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_retry_after{step:hold20000}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:200}": {
+      "values": { "rate": 44.445404874067, "count": 6667 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/session,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:start api,call:GET /api/v1/timer}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 6.034441799999996,
+        "p(99)": 20.548659479999998,
+        "max": 26.63425,
+        "count": 245,
+        "avg": 1.468434963265306,
+        "med": 0.695292
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-year api,call:POST /api/v1/organizations/{{organizationId}}/report}": {
+      "contains": "time",
+      "values": {
+        "avg": 11.211612000000002,
+        "med": 5.7203125,
+        "p(95)": 35.32095824999995,
+        "p(99)": 78.12935804999998,
+        "max": 88.831458,
+        "count": 16
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_call_duration{step:hold20000,kind:start api,call:POST /api/v1/organizations/{{organizationId}}/timer/start}": {
+      "values": {
+        "avg": 9.502905474937974,
+        "med": 1.595708,
+        "p(95)": 62.34615009999988,
+        "p(99)": 134.10558476,
+        "max": 428.794292,
+        "count": 2015
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:start api,call:POST /api/v1/organizations/{{organizationId}}/timer/start,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 245, "rate": 1.6332869647737236 }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-month page,call:GET /{{slug}}/reports}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 142.55065614,
+        "max": 147.882416,
+        "count": 15,
+        "avg": 40.184461133333336,
+        "med": 20.396542,
+        "p(95)": 121.22361669999998
+      }
+    },
+    "bench_action_duration": {
+      "contains": "time",
+      "values": {
+        "avg": 16.044332165267704,
+        "med": 4,
+        "p(95)": 84,
+        "p(99)": 177.2999999999999,
+        "max": 637,
+        "count": 12271
+      },
+      "type": "trend"
+    },
+    "http_reqs{step:warmup}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 6263, "rate": 41.75214800154217 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_errors{step:warmup,type:5xx}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "http_reqs{step:hold20000,kind:start api}": {
+      "contains": "default",
+      "values": { "count": 8060, "rate": 53.73180790235189 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "http_req_duration{step:warmup,kind:return api}": {
+      "values": {
+        "avg": 6.532639152267291,
+        "med": 2.8829165,
+        "p(95)": 18.896493899999996,
+        "p(99)": 105.75719176999999,
+        "max": 158.98525,
+        "count": 4190
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:warmup,kind:reports-month api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:return api,timing:admission}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 1.2465000000000002,
+        "p(95)": 14.672449999999996,
+        "p(99)": 84.28205999999994,
+        "max": 157.921,
+        "count": 4190,
+        "avg": 4.317303818615766
+      }
+    },
+    "bench_server_timing{step:warmup,kind:open page,timing:scrypt_cpu}": {
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "http_req_duration{step:warmup,kind:reports-week api}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 4.453016399999992,
+        "p(99)": 7.367817959999999,
+        "max": 7.811875,
+        "count": 57,
+        "avg": 1.6247864736842106,
+        "med": 1.331375
+      }
+    },
+    "http_req_duration{step:warmup,kind:open page}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 32.26339875342466,
+        "med": 26.933916,
+        "p(95)": 50.56189999999998,
+        "p(99)": 111.94494851999998,
+        "max": 128.143209,
+        "count": 73
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-week api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:edit api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 890,
+        "avg": 0.1371943820224722,
+        "med": 0.118,
+        "p(95)": 0.31709999999999994,
+        "p(99)": 0.7968699999999999,
+        "max": 1.097
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "dropped_iterations{step:hold20000}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-month page,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 1334,
+        "avg": 4.324067362068963,
+        "med": 0.7472295,
+        "p(95)": 23.32830219999996,
+        "p(99)": 73.33221507999998,
+        "max": 214.616083
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:GET /api/v1/session,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-year page,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_call_duration{step:warmup,kind:return api,call:GET /api/v1/timer}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 6.074056541766118,
+        "med": 2.5888964999999997,
+        "p(95)": 17.48849999999995,
+        "p(99)": 97.36820070999984,
+        "max": 158.98525,
+        "count": 838
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:edit api,timing:scrypt_cpu}": {
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_statuses{step:hold20000,kind:stop api,call:GET /api/v1/session,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 1, "rate": 0.006666477407239689 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/projects}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 13.272396247187633,
+        "med": 3.315833,
+        "p(95)": 78.01147489999991,
+        "p(99)": 155.07955499999997,
+        "max": 457.40725,
+        "count": 6667
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 55979, "rate": 373.18273877987053 }
+    },
+    "http_reqs{step:warmup,kind:reports-year api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 20, "rate": 0.13332954814479378 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:sign-in auth,call:POST /api/auth/sign-in/email,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 7, "rate": 0.04666534185067782 }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-week api,call:POST /api/v1/organizations/{{organizationId}}/report}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 116,
+        "avg": 1.4017388620689648,
+        "med": 0.383979,
+        "p(95)": 5.505874749999995,
+        "p(99)": 18.5175786,
+        "max": 21.921375
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-year page,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:GET /api/v1/session,status:200}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_action_duration{step:hold20000}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 91,
+        "p(99)": 186,
+        "max": 637,
+        "count": 10907,
+        "avg": 16.648482625836618,
+        "med": 4
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month page,call:GET /{{slug}}/reports,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:open page}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 144.95083969999996,
+        "p(99)": 250.87180281999997,
+        "max": 637.479042,
+        "count": 672,
+        "avg": 38.68279863244044,
+        "med": 24.2733755
+      }
+    },
+    "bench_call_duration{step:hold20000,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 4.380653710644674,
+        "med": 0.805396,
+        "p(95)": 23.383787499999965,
+        "p(99)": 73.37427174999998,
+        "max": 214.2825,
+        "count": 1334
+      }
+    },
+    "bench_statuses{step:warmup,status:429}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:hold20000,status:503}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:POST /api/v1/organizations/{{organizationId}}/report,status:200}": {
+      "contains": "default",
+      "values": { "count": 15, "rate": 0.09999716110859533 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/projects}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 }
+    },
+    "bench_call_duration{step:warmup,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0.744833,
+        "p(95)": 1.8519875499999991,
+        "p(99)": 6.445825929999997,
+        "max": 12.911416,
+        "count": 178,
+        "avg": 0.9841191573033709
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:open page,call:GET /{{slug}}/timer,status:200}": {
+      "contains": "default",
+      "values": { "count": 73, "rate": 0.48665285072849723 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_call_duration{step:hold20000,kind:reports-year page,call:GET /{{slug}}/reports}": {
+      "contains": "time",
+      "values": {
+        "p(95)": 381.56720824999996,
+        "p(99)": 400.94330885,
+        "max": 405.787334,
+        "count": 16,
+        "avg": 113.7713776875,
+        "med": 40.9052505
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_server_timing{step:warmup,kind:reports-week api,timing:admission}": {
+      "values": {
+        "p(99)": 5.8232,
+        "max": 6.498,
+        "count": 57,
+        "avg": 0.480526315789474,
+        "med": 0.001,
+        "p(95)": 2.3835999999999986
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_statuses{step:hold20000,kind:reports-year page,call:GET /{{slug}}/reports,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 16, "rate": 0.10666363851583502 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 178, "rate": 1.1866329784886644 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:POST /api/v1/organizations/{{organizationId}}/report,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 16, "rate": 0.10666363851583502 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/members,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 4, "rate": 0.026665909628958755 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/timer,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 6667, "rate": 44.445404874067 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:sign-in api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 1.7405566428571426,
+        "med": 0.425646,
+        "p(95)": 5.8833193,
+        "p(99)": 6.14849746,
+        "max": 6.214792,
+        "count": 14
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:start api,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:sign-in auth,call:POST /api/auth/sign-in/email,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:edit api,timing:render_queue}": {
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_reqs{step:warmup,kind:sign-in auth}": {
+      "contains": "default",
+      "values": { "count": 7, "rate": 0.04666534185067782 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_server_timing{step:warmup,kind:open page,timing:admission}": {
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "http_req_duration{step:warmup,kind:reports-year api}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 5.767166,
+        "count": 20,
+        "avg": 2.1881271500000006,
+        "med": 1.3127710000000001,
+        "p(95)": 4.701345799999999,
+        "p(99)": 5.554001959999999
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:stop api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:stop api,call:POST /api/v1/timer/stop,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 1, "rate": 0.006666477407239689 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 1334, "rate": 8.893080861257744 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/teams}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 6.926604499999983,
+        "p(99)": 92.30514019999995,
+        "max": 105.935833,
+        "count": 116,
+        "avg": 4.016518318965517,
+        "med": 0.8795204999999999
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/projects}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 16.719,
+        "count": 15,
+        "avg": 3.9185195333333342,
+        "med": 2.088625,
+        "p(95)": 12.774266899999997,
+        "p(99)": 15.93005338
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:open page,call:GET /{{slug}}/timer,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 672, "rate": 4.47987281766507 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 1.65884635,
+        "p(99)": 6.388367999999997,
+        "max": 12.697833,
+        "count": 178,
+        "avg": 1.170279528089887,
+        "med": 0.9397495
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:stop api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-month api,call:POST /api/v1/organizations/{{organizationId}}/report}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:stop api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_statuses{step:warmup,kind:stop api,call:GET /api/v1/session,status:503}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:hold20000,kind:reports-month page,call:GET /{{slug}}/reports,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 15, "rate": 0.09999716110859533 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-month page,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 63, "rate": 0.4199880766561004 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_action_duration{step:warmup}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 117,
+        "max": 160,
+        "count": 1364,
+        "avg": 11.213343108504398,
+        "med": 6,
+        "p(95)": 35
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0.04666534185067782, "count": 7 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-month page,call:GET /{{slug}}/reports,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_duration{step:warmup,kind:start api}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 980,
+        "avg": 2.6053704204081645,
+        "med": 1.082979,
+        "p(95)": 6.349302099999998,
+        "p(99)": 26.786429859999995,
+        "max": 125.684708
+      }
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 44.445404874067, "count": 6667 }
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/timer,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 7, "rate": 0.04666534185067782 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-month api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 6.793733899999998,
+        "p(99)": 8.58858038,
+        "max": 9.037292,
+        "count": 15,
+        "avg": 1.9751277333333332,
+        "med": 1.021208
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/members,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_errors{step:hold20000,type:connection}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_server_timing{step:warmup,kind:reports-month page,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-year api,call:POST /api/v1/organizations/{{organizationId}}/report}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 2.4193749999999996,
+        "med": 1.4597295,
+        "p(95)": 5.175172399999999,
+        "p(99)": 5.6487672799999995,
+        "max": 5.767166,
+        "count": 4
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:GET /api/v1/session,status:503}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_call_duration{step:warmup,kind:open page,call:GET /{{slug}}/timer}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 26.933916,
+        "p(95)": 50.56189999999998,
+        "p(99)": 111.94494851999998,
+        "max": 128.143209,
+        "count": 73,
+        "avg": 32.26339875342466
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-month page,timing:cpu}": {
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_call_duration{step:hold20000,kind:reports-month api,call:POST /api/v1/organizations/{{organizationId}}/report}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 9.57254298,
+        "max": 10.152709,
+        "count": 15,
+        "avg": 2.4550026666666667,
+        "med": 0.565833,
+        "p(95)": 7.251878899999997
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-month page,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_tls_handshaking": {
+      "contains": "time",
+      "values": {
+        "avg": 0.03032384537058537,
+        "med": 0,
+        "p(95)": 0,
+        "p(99)": 0.78796802,
+        "max": 7.407292,
+        "count": 55979
+      },
+      "type": "trend"
+    },
+    "bench_call_duration{step:hold20000,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start}": {
+      "values": {
+        "avg": 11.526151604919724,
+        "med": 2.102416,
+        "p(95)": 72.19635019999996,
+        "p(99)": 150.4998375,
+        "max": 457.563166,
+        "count": 6667
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:GET /api/v1/session,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_call_duration{step:warmup,kind:stop api,call:GET /api/v1/timer}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-year api,call:GET /api/v1/session}": {
+      "contains": "time",
+      "values": {
+        "avg": 6.6474843749999994,
+        "med": 1.8449790000000001,
+        "p(95)": 30.57915625,
+        "p(99)": 31.750731249999998,
+        "max": 32.043625,
+        "count": 16
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_server_timing{step:hold20000,kind:reports-year api,timing:admission}": {
+      "values": {
+        "count": 80,
+        "avg": 6.476649999999999,
+        "med": 1.7334999999999998,
+        "p(95)": 28.88154999999999,
+        "p(99)": 45.16762999999999,
+        "max": 53.86
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:warmup,kind:sign-in auth,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "dropped_iterations{scenario:warmup}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:stop api,call:GET /api/v1/timer,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:sign-in api,call:GET /api/v1/timer}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 2.196042,
+        "p(95)": 5.707282999999999,
+        "p(99)": 6.139222999999999,
+        "max": 6.247208,
+        "count": 7,
+        "avg": 2.659255857142857
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/session,status:200}": {
+      "contains": "default",
+      "values": { "rate": 5.586508067266859, "count": 838 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_call_duration{step:hold20000,kind:sign-in auth,call:POST /api/auth/sign-in/email}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 103.81868323809525,
+        "med": 87.416959,
+        "p(95)": 170.0331788,
+        "p(99)": 263.10042546,
+        "max": 275.137209,
+        "count": 63
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:open page,timing:admission}": {
+      "contains": "time",
+      "values": { "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_statuses{step:hold20000,kind:stop api,call:POST /api/v1/timer/stop,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_reqs{step:hold20000,kind:reports-year page}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 16, "rate": 0.10666363851583502 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:sign-in api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:reports-month page}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 20.396542,
+        "p(95)": 121.22361669999998,
+        "p(99)": 142.55065614,
+        "max": 147.882416,
+        "count": 15,
+        "avg": 40.184461133333336
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:stop api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_call_duration{step:hold20000,kind:return api,call:GET /api/v1/session}": {
+      "contains": "time",
+      "values": {
+        "count": 6667,
+        "avg": 9.841746020998936,
+        "med": 1.104542,
+        "p(95)": 66.26681599999985,
+        "p(99)": 146.08010687999996,
+        "max": 457.46675
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:stop api,call:GET /api/v1/timer,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/members,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:start api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_duration{step:warmup,kind:sign-in auth}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 101.23033858000001,
+        "max": 102.912541,
+        "count": 7,
+        "avg": 75.3082557142857,
+        "med": 70.533541,
+        "p(95)": 94.5015289
+      }
+    },
+    "http_reqs{step:hold20000,kind:open page}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 4.47987281766507, "count": 672 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_reqs{step:hold20000,kind:reports-month page}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 15, "rate": 0.09999716110859533 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-year page,timing:cpu}": {
+      "contains": "time",
+      "values": { "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_server_timing{step:warmup,kind:reports-year api,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/timer,status:503}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "http_req_duration{step:hold20000,kind:edit api}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0.9103749999999999,
+        "p(95)": 28.00361425,
+        "p(99)": 107.81183920999986,
+        "max": 381.632917,
+        "count": 6670,
+        "avg": 5.666062542878552
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs{step:hold20000,kind:sign-in auth}": {
+      "contains": "default",
+      "values": { "rate": 0.4199880766561004, "count": 63 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_server_timing{step:warmup,kind:stop api,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-week api,call:POST /api/v1/organizations/{{organizationId}}/report,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 11.243121153592305,
+        "med": 1.954125,
+        "p(95)": 70.08490809999996,
+        "p(99)": 150.99160949999998,
+        "max": 457.817959,
+        "count": 6667
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs{step:warmup,kind:edit api}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 890, "rate": 5.9331648924433225 }
+    },
+    "bench_statuses{step:hold20000,kind:stop api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 1, "rate": 0.006666477407239689 }
+    },
+    "bench_call_duration{step:hold20000,kind:start api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0.799084,
+        "p(95)": 17.289258899999997,
+        "p(99)": 46.507502739999964,
+        "max": 207.866542,
+        "count": 2015,
+        "avg": 3.107131789081883
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:sign-in auth,call:POST /api/auth/sign-in/email,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 637.769251,
+        "count": 12271,
+        "avg": 16.227517556433913,
+        "med": 4.602792,
+        "p(95)": 84.28137499999998,
+        "p(99)": 177.82761669999996
+      }
+    },
+    "http_reqs{step:hold20000,kind:sign-in api}": {
+      "contains": "default",
+      "values": { "count": 378, "rate": 2.5199284599366023 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:503}": {
+      "values": { "rate": 0, "count": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_call_duration{step:warmup,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/members}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 2.0074034736842106,
+        "med": 1.583292,
+        "p(95)": 4.248962199999997,
+        "p(99)": 7.099292439999999,
+        "max": 7.811875,
+        "count": 19
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs{step:warmup,kind:stop api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0, "count": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_errors{step:warmup,type:429}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:start api,call:POST /api/v1/organizations/{{organizationId}}/timer/start,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:edit api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 6.722521069999997,
+        "max": 12.839042,
+        "count": 178,
+        "avg": 1.2577246910112356,
+        "med": 0.9975835,
+        "p(95)": 1.9372625499999998
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:sign-in auth,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:edit api,timing:render_queue}": {
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:warmup,kind:start api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 2.317,
+        "count": 980,
+        "avg": 0.19146530612244897,
+        "med": 0.157,
+        "p(95)": 0.45009999999999994,
+        "p(99)": 0.8682799999999994
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_reqs{step:hold20000,kind:reports-month api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 75, "rate": 0.4999858055429766 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_sending": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 0.152625,
+        "max": 3.152375,
+        "count": 55979,
+        "avg": 0.057719327390628315,
+        "med": 0.051041,
+        "p(95)": 0.115833
+      }
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:GET /api/v1/session,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 178, "rate": 1.1866329784886644 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-year page,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-year api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 4,
+        "avg": 2.037667,
+        "med": 1.3001875,
+        "p(95)": 4.038521499999999,
+        "p(99)": 4.409171499999999,
+        "max": 4.501834
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "iterations": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 12271, "rate": 81.80434426423821 }
+    },
+    "http_reqs{step:hold20000,kind:reports-year api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 80, "rate": 0.5333181925791751 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-month page,timing:render_queue}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 2.7578,
+        "med": 0.01,
+        "p(95)": 13.103499999999977,
+        "p(99)": 33.747899999999994,
+        "max": 38.909,
+        "count": 15
+      }
+    },
+    "bench_call_duration{step:hold20000,kind:open page,call:GET /{{slug}}/timer}": {
+      "values": {
+        "avg": 38.68279863244044,
+        "med": 24.2733755,
+        "p(95)": 144.95083969999996,
+        "p(99)": 250.87180281999997,
+        "max": 637.479042,
+        "count": 672
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:warmup,kind:reports-week api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.27347368421052626,
+        "med": 0.137,
+        "p(95)": 0.8367999999999998,
+        "p(99)": 1.6967599999999992,
+        "max": 2.707,
+        "count": 57
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:POST /api/v1/organizations/{{organizationId}}/report,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_server_timing{step:hold20000,kind:stop api,timing:render_queue}": {
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_call_duration{step:warmup,kind:start api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0.976209,
+        "p(95)": 5.2393913999999935,
+        "p(99)": 20.326605,
+        "max": 26.279833,
+        "count": 245,
+        "avg": 1.6983925183673452
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/members,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0.7733113792398039, "count": 116 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 6667, "rate": 44.445404874067 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 7, "rate": 0.04666534185067782 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:open page,call:GET /{{slug}}/timer,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_server_timing{step:hold20000,kind:reports-month page,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:start api,call:GET /api/v1/session,status:200}": {
+      "values": { "count": 245, "rate": 1.6332869647737236 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "http_reqs{step:warmup,kind:reports-year page}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 4, "rate": 0.026665909628958755 }
+    },
+    "bench_server_timing{step:hold20000,kind:sign-in api,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 2.804523809523806,
+        "med": 0.1725,
+        "p(95)": 9.286249999999974,
+        "p(99)": 43.25965999999995,
+        "max": 146.451,
+        "count": 378
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/members,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/timer,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:PATCH /api/v1/organizations/{{organizationId}}/entries/{{entryId}},status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 1334, "rate": 8.893080861257744 }
+    },
+    "bench_statuses{step:hold20000,kind:start api,call:POST /api/v1/organizations/{{organizationId}}/timer/start,status:503}": {
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default"
+    },
+    "http_reqs{step:hold20000,kind:reports-week api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 348, "rate": 2.3199341377194114 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:return api,timing:cpu}": {
+      "values": {
+        "avg": 0.9180589498806674,
+        "med": 0.146,
+        "p(95)": 4.046899999999996,
+        "p(99)": 13.517719999999999,
+        "max": 148.463,
+        "count": 4190
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:hold20000,kind:return api,timing:admission}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 9.157766281685447,
+        "med": 0.183,
+        "p(95)": 66.7289,
+        "p(99)": 146.8384,
+        "max": 457.292,
+        "count": 33335
+      }
+    },
+    "bench_call_duration{step:hold20000,kind:stop api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0.82075,
+        "p(95)": 0.82075,
+        "p(99)": 0.82075,
+        "max": 0.82075,
+        "count": 1,
+        "avg": 0.82075
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:GET /api/v1/session,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 15, "rate": 0.09999716110859533 }
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_errors{step:warmup,type:4xx}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": { "count": 19445496, "rate": 129632.95975656973 }
+    },
+    "http_reqs{step:warmup,kind:reports-week api}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 57, "rate": 0.37998921221266224 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-year api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 0,
+        "p(99)": 0.10400923999999998,
+        "max": 1.071209,
+        "count": 55979,
+        "avg": 0.0032490262777112836,
+        "med": 0
+      }
+    },
+    "vus": {
+      "type": "gauge",
+      "contains": "default",
+      "values": { "value": 1, "min": 0, "max": 19 }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:POST /api/v1/organizations/{{organizationId}}/report,status:503}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_call_duration{step:warmup,kind:return api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 6.268791088305508,
+        "med": 2.7928125,
+        "p(95)": 17.629718699999987,
+        "p(99)": 97.79762112999985,
+        "max": 158.97925,
+        "count": 838
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_receiving": {
+      "values": {
+        "max": 1.087459,
+        "count": 55979,
+        "avg": 0.021601719019632364,
+        "med": 0.017667,
+        "p(95)": 0.045375,
+        "p(99)": 0.07413423999999998
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_call_duration{step:hold20000,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/projects}": {
+      "values": {
+        "avg": 12.79439575,
+        "med": 4.891812,
+        "p(95)": 44.48892699999998,
+        "p(99)": 56.452751799999994,
+        "max": 59.443708,
+        "count": 16
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:warmup,kind:reports-month api,timing:admission}": {
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_statuses{step:warmup,kind:open page,call:GET /{{slug}}/timer,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:POST /api/v1/organizations/{{organizationId}}/report,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 4, "rate": 0.026665909628958755 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:open page,timing:cpu}": {
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_call_duration{step:warmup,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 4.310458,
+        "p(95)": 6.2289126999999995,
+        "p(99)": 6.54878254,
+        "max": 6.62875,
+        "count": 7,
+        "avg": 3.6289285714285713
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-month api,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 10.620619999999995,
+        "max": 16.198,
+        "count": 75,
+        "avg": 1.4452133333333337,
+        "med": 0.445,
+        "p(95)": 6.633199999999996
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 9.307798240179359,
+        "med": 1.5105,
+        "p(95)": 47.72330799999991,
+        "p(99)": 142.47595499999997,
+        "max": 637.479042,
+        "count": 55979
+      }
+    },
+    "bench_call_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 47.72330799999991,
+        "p(99)": 142.47595499999997,
+        "max": 637.479042,
+        "count": 55979,
+        "avg": 9.307798240179359,
+        "med": 1.5105
+      }
+    },
+    "http_reqs{step:warmup,kind:open page}": {
+      "contains": "default",
+      "values": { "count": 73, "rate": 0.48665285072849723 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:PATCH /api/v1/organizations/{{organizationId}}/entries/{{entryId}},status:200}": {
+      "contains": "default",
+      "values": { "count": 178, "rate": 1.1866329784886644 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_protocols": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 55979, "rate": 373.18273877987053 }
+    },
+    "bench_call_duration{step:warmup,kind:stop api,call:POST /api/v1/timer/stop}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:start api,call:GET /api/v1/timer,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 2015, "rate": 13.432951975587972 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-year page,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:return api,timing:render_queue}": {
+      "values": { "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:hold20000,kind:stop api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.13075,
+        "med": 0.14049999999999999,
+        "p(95)": 0.22005,
+        "p(99)": 0.22641,
+        "max": 0.228,
+        "count": 4
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:reports-month api}": {
+      "contains": "time",
+      "values": {
+        "avg": 2.78390888,
+        "med": 1.693083,
+        "p(95)": 9.371917099999997,
+        "p(99)": 16.793457500000002,
+        "max": 17.005375,
+        "count": 75
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_server_timing{step:warmup,kind:sign-in api,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0.8,
+        "p(95)": 4.3831,
+        "p(99)": 7.894169999999998,
+        "max": 9.806,
+        "count": 42,
+        "avg": 1.4575714285714285
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-month page,call:GET /{{slug}}/reports}": {
+      "contains": "time",
+      "values": { "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/teams}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 1.9743485263157894,
+        "med": 1.53725,
+        "p(95)": 3.8073371999999974,
+        "p(99)": 6.243667439999999,
+        "max": 6.85275,
+        "count": 19
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:reports-year api,timing:admission}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.43165,
+        "med": 0.0265,
+        "p(95)": 1.9555499999999995,
+        "p(99)": 2.48071,
+        "max": 2.612,
+        "count": 20
+      }
+    },
+    "bench_server_timing": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 526.3,
+        "count": 443652,
+        "avg": 1.3364221506941092,
+        "med": 0.031,
+        "p(95)": 2.835,
+        "p(99)": 25.700979999999994
+      }
+    },
+    "bench_server_timing{step:warmup,kind:sign-in auth,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 66.40256,
+        "max": 66.506,
+        "count": 7,
+        "avg": 62.73,
+        "med": 61.949,
+        "p(95)": 65.9888
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/projects}": {
+      "contains": "time",
+      "values": {
+        "p(95)": 22.319123249999993,
+        "p(99)": 116.79764520999998,
+        "max": 158.934333,
+        "count": 838,
+        "avg": 8.687075262529834,
+        "med": 4.3901665
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_call_duration{step:hold20000,kind:sign-in api,call:GET /api/v1/timer}": {
+      "values": {
+        "p(95)": 4.5710999999999995,
+        "p(99)": 29.90626757999999,
+        "max": 39.674083,
+        "count": 63,
+        "avg": 2.466080031746032,
+        "med": 0.938166
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_errors{step:hold20000,type:5xx}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 19, "rate": 0.1266630707375541 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/teams}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 4.3922311999999994,
+        "p(99)": 4.594646239999999,
+        "max": 4.64525,
+        "count": 4,
+        "avg": 2.54675,
+        "med": 2.152104
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/session,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 126, "rate": 0.8399761533122008 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 40.1431055,
+        "max": 40.236958,
+        "count": 63,
+        "avg": 3.5647539365079357,
+        "med": 1.38975,
+        "p(95)": 10.735179199999983
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "dropped_iterations{scenario:hold20000}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_call_duration{step:warmup,kind:stop api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "max": 0, "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-month api,call:POST /api/v1/organizations/{{organizationId}}/report,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/members}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:reports-week api,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 75.86894999999986,
+        "max": 105.4,
+        "count": 348,
+        "avg": 2.2033620689655145,
+        "med": 0,
+        "p(95)": 4.913699999999969
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "http_req_duration{step:hold20000,kind:sign-in api}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 12.328424999999891,
+        "p(99)": 43.921826409999944,
+        "max": 149.352083,
+        "count": 378,
+        "avg": 4.0627526375661365,
+        "med": 1.216646
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-year api,call:GET /api/v1/session,status:503}": {
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter"
+    },
+    "bench_call_duration{step:warmup,kind:stop api,call:GET /api/v1/session}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 }
+    },
+    "bench_server_timing{step:warmup,kind:open page,timing:render_queue}": {
+      "values": {
+        "avg": 0.45375342465753427,
+        "med": 0.011,
+        "p(95)": 0.022,
+        "p(99)": 11.405359999999986,
+        "max": 26.93,
+        "count": 73
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_server_timing{step:hold20000,kind:edit api,timing:admission}": {
+      "values": {
+        "p(99)": 105.25853999999983,
+        "max": 380.57,
+        "count": 6670,
+        "avg": 4.740230134932556,
+        "med": 0.1245,
+        "p(95)": 26.663149999999984
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time"
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 178, "rate": 1.1866329784886644 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:start api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0.123,
+        "p(95)": 0.3370499999999997,
+        "p(99)": 0.42,
+        "max": 2.722,
+        "count": 8060,
+        "avg": 0.1462413151364766
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:return api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "count": 0, "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:open page,timing:render_queue}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 442.049,
+        "count": 672,
+        "avg": 5.532741071428599,
+        "med": 0.01,
+        "p(95)": 21.06094999999999,
+        "p(99)": 114.57572999999981
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:GET /api/v1/timer,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_statuses{step:warmup,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:edit api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 23.25275799999994,
+        "p(99)": 71.29467238999995,
+        "max": 212.206625,
+        "count": 1334,
+        "avg": 4.426143766116941,
+        "med": 0.8856875
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_errors{step:hold20000,type:timeout}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 }
+    },
+    "bench_call_duration{step:hold20000,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/projects}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 63,
+        "avg": 5.316196396825397,
+        "med": 2.488667,
+        "p(95)": 24.69525029999998,
+        "p(99)": 39.751111,
+        "max": 39.887666
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:stop api,call:GET /api/v1/session,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0, "count": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0.04666534185067782, "count": 7 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 63, "rate": 0.4199880766561004 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:edit api,call:GET /api/v1/timer,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 1.1866329784886644, "count": 178 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:sign-in auth,call:POST /api/auth/sign-in/email}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 7,
+        "avg": 75.3082557142857,
+        "med": 70.533541,
+        "p(95)": 94.5015289,
+        "p(99)": 101.23033858000001,
+        "max": 102.912541
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:start api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 2015,
+        "avg": 3.1270795995037237,
+        "med": 0.726416,
+        "p(95)": 17.303924899999966,
+        "p(99)": 47.126556119999954,
+        "max": 208.18475
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,status:429}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:start api,call:GET /api/v1/organizations/{{organizationId}}/entries}": {
+      "contains": "time",
+      "values": {
+        "med": 0.924334,
+        "p(95)": 6.223633199999993,
+        "p(99)": 20.577885,
+        "max": 26.609333,
+        "count": 245,
+        "avg": 1.6740838163265304
+      },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_call_duration{step:hold20000,kind:sign-in api,call:GET /api/v1/session}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 107.17818724999995,
+        "max": 149.352083,
+        "count": 126,
+        "avg": 4.591703055555556,
+        "med": 0.491938,
+        "p(95)": 8.36512499999999
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:hold20000,kind:sign-in auth,timing:admission}": {
+      "contains": "time",
+      "values": { "avg": 0, "med": 0, "p(95)": 0, "p(99)": 0, "max": 0, "count": 0 },
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend"
+    },
+    "bench_server_timing{step:hold20000,kind:edit api,timing:cpu}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.09737136431784069,
+        "med": 0.104,
+        "p(95)": 0.206,
+        "p(99)": 0.259,
+        "max": 2.165,
+        "count": 6670
+      }
+    },
+    "bench_statuses{step:hold20000,kind:start api,call:GET /api/v1/organizations/{{organizationId}}/entries,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 2015, "rate": 13.432951975587972 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:warmup,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/members,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0.1266630707375541, "count": 19 }
+    },
+    "http_req_failed": {
+      "contains": "default",
+      "values": { "passes": 0, "fails": 55979, "rate": 0 },
+      "type": "rate"
+    },
+    "bench_retry_after": {
+      "values": { "count": 0, "rate": 0 },
+      "type": "counter",
+      "contains": "default"
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:sign-in api,timing:cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.5430714285714286,
+        "med": 0.082,
+        "p(95)": 3.71535,
+        "p(99)": 4.78248,
+        "max": 5.222,
+        "count": 42
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:warmup,kind:return api,call:GET /api/v1/organizations/{{organizationId}}/entries/first-start}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "count": 838,
+        "avg": 5.860274952267301,
+        "med": 2.4984995,
+        "p(95)": 16.332570599999993,
+        "p(99)": 84.74080053999997,
+        "max": 144.275334
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_server_timing{step:warmup,kind:start api,timing:admission}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 2.6287499999999917,
+        "p(99)": 26.15478,
+        "max": 122.855,
+        "count": 980,
+        "avg": 1.4870591836734683,
+        "med": 0.001
+      },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/teams,status:503}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0, "count": 0 }
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:GET /api/v1/session,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 1334, "rate": 8.893080861257744 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:sign-in auth,call:POST /api/auth/sign-in/email,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0.4199880766561004, "count": 63 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "http_req_waiting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 9.228477193769029,
+        "med": 1.427292,
+        "p(95)": 47.66810769999997,
+        "p(99)": 142.38338678,
+        "max": 637.353834,
+        "count": 55979
+      }
+    },
+    "bench_server_timing{step:hold20000,kind:stop api,timing:scrypt_cpu}": {
+      "type": "trend",
+      "contains": "time",
+      "values": { "p(95)": 0, "p(99)": 0, "max": 0, "count": 0, "avg": 0, "med": 0 },
+      "thresholds": { "max>=0": { "ok": true } }
+    },
+    "bench_call_duration{step:hold20000,kind:reports-week api,call:GET /api/v1/organizations/{{organizationId}}/members}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 105.770833,
+        "count": 116,
+        "avg": 3.9174554224137923,
+        "med": 0.7626664999999999,
+        "p(95)": 6.8112812499999835,
+        "p(99)": 92.02624999999995
+      }
+    },
+    "bench_statuses{step:hold20000,kind:edit api,call:PATCH /api/v1/organizations/{{organizationId}}/entries/{{entryId}},status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_errors{step:hold20000,type:429}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0, "count": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:sign-in api,call:GET /api/v1/timer,status:200}": {
+      "thresholds": { "count>=0": { "ok": true } },
+      "type": "counter",
+      "contains": "default",
+      "values": { "rate": 0.4199880766561004, "count": 63 }
+    },
+    "bench_server_timing{step:hold20000,kind:start api,timing:admission}": {
+      "thresholds": { "max>=0": { "ok": true } },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 425.428,
+        "count": 8060,
+        "avg": 3.6528325062035054,
+        "med": 0.001,
+        "p(95)": 21.598149999999986,
+        "p(99)": 91.23188999999991
+      }
+    },
+    "bench_statuses{step:hold20000,kind:reports-month api,call:GET /api/v1/organizations/{{organizationId}}/members,status:503}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 0, "rate": 0 },
+      "thresholds": { "count>=0": { "ok": true } }
+    },
+    "bench_statuses{step:hold20000,kind:reports-year api,call:GET /api/v1/organizations/{{organizationId}}/projects,status:200}": {
+      "type": "counter",
+      "contains": "default",
+      "values": { "count": 16, "rate": 0.10666363851583502 },
+      "thresholds": { "count>=0": { "ok": true } }
+    }
+  },
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [],
+    "checks": []
+  }
+}

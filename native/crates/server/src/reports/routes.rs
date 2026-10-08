@@ -8,5 +8,5 @@ pub fn routes() -> Router<Arc<App>> {
     Router::new().route("/report", post(report))
 }
 async fn report(call: InOrganization<ReportInput, true>) -> Response {
-    call.run(super::get_report).await
+    call.run_report(super::get_report).await
 }

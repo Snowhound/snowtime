@@ -1,0 +1,208 @@
+{
+  "measuredOn": "2026-10-08",
+  "run": "2026-10-08T06-04-33-M-fixed-08117-after-1c-r0-confirm4096",
+  "queueMaxWaiting": 4096,
+  "deadlineMs": 1000,
+  "appCores": 1,
+  "readers": 0,
+  "generatorCores": 8,
+  "runtime": "multi_thread",
+  "method": "capacity only; 30-second 10000-user warmup, 120-second 20000-user hold; same pinned M source and recording as ramp.json; new image retains warm isolate on completed API refusal; no 256 comparison or overload phase",
+  "command": [
+    "bun",
+    "perf/stress/stress.ts",
+    "--app=native",
+    "--direct",
+    "--dataset=M",
+    "--dataset-date=2026-10-04",
+    "--run=fixed",
+    "--plan=/Users/kaitkasak/projects/snowtime/snowtime-081-lanes/perf/.cache/stress/08117/confirm-4096-1c-plan.json",
+    "--recording=perf/.cache/stress/lanes-pages.json",
+    "--encoding=gzip",
+    "--no-build",
+    "--warmup-seconds=0",
+    "--memory=1536m",
+    "--app-cpuset=1",
+    "--sampler-cpuset=1",
+    "--caddy-cpuset=1",
+    "--k6-cpuset=2-9",
+    "--read-connections=0",
+    "--preallocated-vus=1000",
+    "--max-vus=3000",
+    "--runtime=multi_thread",
+    "--queue-max-waiting=4096",
+    "--label=08117-after-1c-r0-confirm4096"
+  ],
+  "images": [
+    "[snowtime-native:08117-review snowtime-native:bench] sha256:b34e4a701614cdd5b621e2ec5a1f74fb5f9b5bab2930884129dee3447c2a82c2",
+    "[snowtime-app:bench] sha256:6536be911240da626d3631050ed83d476f7832c4a5fec2d853336e124bed5f81",
+    "[snowtime-caddy:bench] sha256:78509cff05bc50e443b3a2c748294b725321e213dbd426374c63dc746bff76b5",
+    "[snowtime-sampler:bench] sha256:2422cf55d36c788f084c8a1adf6441529761c50544087df44bf11a3f47e1593b"
+  ],
+  "sourceSha256": {
+    "native/crates/host/src/config.rs": "9df2da8a9d1bc5bb1160dc71c534acbd59fa4e2d92814fbcfea69445f0ca8b76",
+    "native/crates/host/src/main.rs": "ba6e2ddad8e000b8d1ad054edd2f0f523c9521b4e243b2ad4acc5d0f98f11739",
+    "native/crates/host/src/pages.rs": "191e34b26985211f2e245f96ff40a7397a335305465eb9044a9773600ac1aa6b",
+    "native/crates/render/src/lib.rs": "c16e70b0a4a2367bf5b546acaebb2a8f16946a2e35382c6100d71b9dcf81a760",
+    "native/crates/server/src/admission.rs": "33043e07627e662ba1debfc6155a64cdfe5ffe3280dd45a3eee71b6a4b30ec90",
+    "native/crates/server/src/http.rs": "e05236135fd516fd543aa89b3665db67f7c5091f52225066d4753d35021593d7",
+    "native/Dockerfile": "541376b177950a60a3a03fd2cf4067351d214c915a5d993cb8852e2aef1a781f",
+    "perf/stress/scenario.js": "488d1beec1f16a0f7ae3803670e2330cc9fb68e9b6522bdec8a820ae7bcbc5d4",
+    "perf/stress/stress.ts": "6a5d6f725faabf5851bb32dd33eaf18c949a8e7ba14d99566a1d5fb7031b6ce1"
+  },
+  "steps": {
+    "warmup": {
+      "statuses": {
+        "200": 6263
+      },
+      "validity": {
+        "generatorLimited": false,
+        "aborted": null,
+        "missed": []
+      },
+      "globalDropped": 0,
+      "peakAppRssMB": 257.55648,
+      "maxAppSwapBytes": 0,
+      "sampleStartUtc": "2026-10-08T06:04:45.010000+00:00",
+      "sampleEndUtc": "2026-10-08T06:05:16+00:00",
+      "maxSampleGapSeconds": 1.00600004196167,
+      "kinds": {
+        "edit api": {
+          "count": 890,
+          "serverP95Ms": 2.552083
+        },
+        "open page": {
+          "count": 73,
+          "serverP95Ms": 53.607166
+        },
+        "reports-week api": {
+          "count": 57,
+          "serverP95Ms": 6.657334
+        },
+        "reports-year api": {
+          "count": 20,
+          "serverP95Ms": 5.528207999999999
+        },
+        "reports-year page": {
+          "count": 4,
+          "serverP95Ms": 69.59708400000001
+        },
+        "return api": {
+          "count": 4190,
+          "serverP95Ms": 18.3105
+        },
+        "sign-in api": {
+          "count": 42,
+          "serverP95Ms": 5.614292
+        },
+        "sign-in auth": {
+          "count": 7,
+          "serverP95Ms": 102.658125
+        },
+        "start api": {
+          "count": 980,
+          "serverP95Ms": 5.00725
+        }
+      }
+    },
+    "hold20000": {
+      "statuses": {
+        "200": 49716
+      },
+      "validity": {
+        "generatorLimited": false,
+        "aborted": null,
+        "missed": []
+      },
+      "globalDropped": 0,
+      "peakAppRssMB": 335.659008,
+      "maxAppSwapBytes": 0,
+      "sampleStartUtc": "2026-10-08T06:05:15.003000+00:00",
+      "sampleEndUtc": "2026-10-08T06:07:16+00:00",
+      "maxSampleGapSeconds": 1.0079998970031738,
+      "kinds": {
+        "edit api": {
+          "count": 6670,
+          "serverP95Ms": 27.784916
+        },
+        "open page": {
+          "count": 672,
+          "serverP95Ms": 145.020125
+        },
+        "reports-month api": {
+          "count": 75,
+          "serverP95Ms": 9.91075
+        },
+        "reports-month page": {
+          "count": 15,
+          "serverP95Ms": 147.463291
+        },
+        "reports-week api": {
+          "count": 348,
+          "serverP95Ms": 6.035875
+        },
+        "reports-year api": {
+          "count": 80,
+          "serverP95Ms": 38.656584
+        },
+        "reports-year page": {
+          "count": 16,
+          "serverP95Ms": 405.317167
+        },
+        "return api": {
+          "count": 33335,
+          "serverP95Ms": 69.900083
+        },
+        "sign-in api": {
+          "count": 378,
+          "serverP95Ms": 17.5895
+        },
+        "sign-in auth": {
+          "count": 63,
+          "serverP95Ms": 170.02979100000002
+        },
+        "start api": {
+          "count": 8060,
+          "serverP95Ms": 22.14575
+        },
+        "stop api": {
+          "count": 4,
+          "serverP95Ms": 1.5825
+        }
+      }
+    }
+  },
+  "queuePeaks": {
+    "write_admission": 55,
+    "hash_admission": 0,
+    "report_admission": 0
+  },
+  "sleepCheck": {
+    "lastFullWakeLocal": "2026-10-08T08:56:10+03:00",
+    "interpretation": "measured samples start after wake; no sampler gap during either phase"
+  },
+  "waiterMemoryEstimate": {
+    "bytesPerTypicalWaiter": 32768,
+    "maxWaitersPerGate": 4096,
+    "bytesPerGate": 134217728,
+    "threeGateClassTotalBytes": 402653184,
+    "status": "planning estimate, not measured allocation or enforced per-request limit",
+    "excludes": "large request bodies, running scrypt buffers, renderer heaps, filesystem cache"
+  },
+  "decision": "deadline-led admission with 4096 memory backstop; 20000-user one-core held capacity confirmed; maximum capacity and four-cell matrix deferred to 081.26",
+  "oomKilled": false,
+  "priorRefusals": {
+    "32": {
+      "count": 872,
+      "under10ms": 872,
+      "atLeast900ms": 0,
+      "maxServerMs": 0.804459
+    },
+    "128": {
+      "count": 452,
+      "under10ms": 449,
+      "atLeast900ms": 0,
+      "maxServerMs": 263.272458
+    }
+  }
+}

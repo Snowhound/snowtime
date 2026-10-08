@@ -73,7 +73,8 @@ pub struct App {
     pub(crate) db: Mutex<Connection>,
     // One slot, for the writer. Without readers every call takes it.
     pub(crate) write_gate: crate::admission::Gate,
-    pub(crate) hash_gate: crate::admission::Gate,
+    pub(crate) hash_gate: crate::hash_lane::HashLane,
+    report_gate: crate::admission::Gate,
     // A slot per reader, so a read admitted through the gate finds one idle.
     read_gate: Option<crate::admission::Gate>,
     readers: Option<crate::connections::Readers>,
@@ -113,11 +114,25 @@ impl App {
             )?)
         };
         Ok(Arc::new(Self {
-            write_gate: crate::admission::Gate::new(1, limits.queue_timeout),
-            hash_gate: crate::admission::Gate::new(limits.hashes, limits.queue_timeout),
-            read_gate: readers
-                .is_some()
-                .then(|| crate::admission::Gate::new(count, limits.queue_timeout)),
+            write_gate: crate::admission::Gate::bounded(
+                1,
+                limits.max_waiting,
+                limits.queue_timeout,
+            ),
+            hash_gate: crate::hash_lane::HashLane::new(
+                limits.hashes,
+                limits.max_waiting,
+                limits.queue_timeout,
+            )
+            .expect("dedicated password threads start at lower priority"),
+            read_gate: readers.is_some().then(|| {
+                crate::admission::Gate::bounded(count, limits.max_waiting, limits.queue_timeout)
+            }),
+            report_gate: crate::admission::Gate::bounded(
+                (count / 4).max(1),
+                4,
+                limits.queue_timeout,
+            ),
             readers,
             db: Mutex::new(db),
             config,
@@ -315,23 +330,40 @@ async fn answer(
     app: Arc<App>,
     request: Request,
     read: bool,
+    report: bool,
     call: impl FnOnce(&App, &Connection, &Request, &mut Timer) -> Result<WireResponse> + Send + 'static,
 ) -> Response {
     #[cfg(feature = "bench")]
     let admission = std::time::Instant::now();
+    let deadline = app.write_gate.deadline();
+    // Reports take their budget first, so waiting for it never holds a database slot.
+    let report_permit = if report {
+        match app.report_gate.acquire_by(deadline).await {
+            Ok(p) => Some(p),
+            Err(r) => return r,
+        }
+    } else {
+        None
+    };
     let on_reader = app.readers.is_some() && (read || request.method == "GET");
     let gate = match &app.read_gate {
         Some(gate) if on_reader => gate,
         _ => &app.write_gate,
     };
-    let permit = match gate.acquire().await {
+    let permit = match gate.acquire_by(deadline).await {
         Ok(p) => p,
         Err(r) => return r,
     };
     #[cfg(feature = "bench")]
     let admission_ms = admission.elapsed().as_secs_f64() * 1000.0;
-    run_blocking(move || {
-        let _permit = permit;
+    #[cfg(feature = "bench")]
+    let queued = std::time::Instant::now();
+    crate::admission::Gate::run_admitted(permit, move || {
+        #[cfg(feature = "bench")]
+        let queue_ms = queued.elapsed().as_secs_f64() * 1000.0;
+        #[cfg(feature = "bench")]
+        let blocking_cpu = crate::timing::cpu_ms();
+        let _report_permit = report_permit;
         #[cfg(feature = "bench")]
         let waiting = std::time::Instant::now();
         let reader = app
@@ -364,10 +396,13 @@ async fn answer(
             held.elapsed().as_secs_f64() * 1000.0,
             crate::timing::cpu_ms() - cpu
         );
+        #[cfg(feature = "bench")]
+        let header = format!("{header}, blocking_queue;dur={queue_ms:.3}, blocking_cpu;dur={:.3}", crate::timing::cpu_ms() - blocking_cpu);
         response.server_timing = Some(header);
         response
     })
     .await
+    .unwrap_or_else(|response| response)
 }
 impl App {
     // The signed-in user, with a write counted against their rate.
@@ -388,11 +423,30 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> InOrgani
         self,
         rule: fn(&Connection, &Scope, T) -> Result<O>,
     ) -> Response {
-        answer(self.0, self.1, READ, move |app, db, request, timer| {
-            let user = app.caller(db, request, READ, timer)?;
-            let scope = resolve_scope(db, &user, request.param("organizationId"))?;
-            Ok(ok(&rule(db, &scope, decode(input(request)?)?)?))
-        })
+        self.run_budgeted(rule, false).await
+    }
+    pub async fn run_report<O: Serialize + 'static>(
+        self,
+        rule: fn(&Connection, &Scope, T) -> Result<O>,
+    ) -> Response {
+        self.run_budgeted(rule, true).await
+    }
+    async fn run_budgeted<O: Serialize + 'static>(
+        self,
+        rule: fn(&Connection, &Scope, T) -> Result<O>,
+        report: bool,
+    ) -> Response {
+        answer(
+            self.0,
+            self.1,
+            READ,
+            report,
+            move |app, db, request, timer| {
+                let user = app.caller(db, request, READ, timer)?;
+                let scope = resolve_scope(db, &user, request.param("organizationId"))?;
+                Ok(ok(&rule(db, &scope, decode(input(request)?)?)?))
+            },
+        )
         .await
     }
 }
@@ -401,10 +455,16 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> AsUser<T
         self,
         rule: fn(&Connection, &str, T) -> Result<O>,
     ) -> Response {
-        answer(self.0, self.1, READ, move |app, db, request, timer| {
-            let user = app.caller(db, request, READ, timer)?;
-            Ok(ok(&rule(db, &user, decode(input(request)?)?)?))
-        })
+        answer(
+            self.0,
+            self.1,
+            READ,
+            false,
+            move |app, db, request, timer| {
+                let user = app.caller(db, request, READ, timer)?;
+                Ok(ok(&rule(db, &user, decode(input(request)?)?)?))
+            },
+        )
         .await
     }
 }
@@ -413,7 +473,7 @@ impl<T: DeserializeOwned + Validate + Send + 'static, const READ: bool> Public<T
         self,
         rule: fn(&Connection, T) -> Result<O>,
     ) -> Response {
-        answer(self.0, self.1, READ, move |_, db, request, _| {
+        answer(self.0, self.1, READ, false, move |_, db, request, _| {
             Ok(ok(&rule(db, decode(input(request)?)?)?))
         })
         .await
@@ -425,20 +485,26 @@ impl Public<Empty> {
         self,
         rule: fn(&Connection, Option<Session>, &str) -> Result<O>,
     ) -> Response {
-        answer(self.0, self.1, true, move |app, db, request, timer| {
-            let cookie = request.cookie.as_deref();
-            let session = timer.session(|| {
-                crate::auth::session::find_session_with_writer(
-                    db,
-                    &app.db,
-                    &app.write_gate,
-                    &app.session,
-                    cookie,
-                    clock::now(),
-                )
-            })?;
-            Ok(ok(&rule(db, session, app.config.app_origin())?))
-        })
+        answer(
+            self.0,
+            self.1,
+            true,
+            false,
+            move |app, db, request, timer| {
+                let cookie = request.cookie.as_deref();
+                let session = timer.session(|| {
+                    crate::auth::session::find_session_with_writer(
+                        db,
+                        &app.db,
+                        &app.write_gate,
+                        &app.session,
+                        cookie,
+                        clock::now(),
+                    )
+                })?;
+                Ok(ok(&rule(db, session, app.config.app_origin())?))
+            },
+        )
         .await
     }
 }
@@ -461,41 +527,6 @@ impl AuthCall {
         self.0.sign_in(self.1, self.2).await
     }
 }
-async fn run_blocking(call: impl FnOnce() -> Response + Send + 'static) -> Response {
-    #[cfg(feature = "bench")]
-    let queued = std::time::Instant::now();
-    #[cfg(feature = "bench")]
-    crate::bench::QUEUED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    tokio::task::spawn_blocking(move || {
-        #[cfg(feature = "bench")]
-        let queue_ms = queued.elapsed().as_secs_f64() * 1000.0;
-        #[cfg(feature = "bench")]
-        crate::bench::QUEUED.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
-        #[cfg(feature = "bench")]
-        let _active = crate::bench::Active::new(&crate::bench::BLOCKING);
-        #[cfg(feature = "bench")]
-        crate::bench::mark_blocking_thread();
-        #[cfg(feature = "bench")]
-        let cpu = crate::timing::cpu_ms();
-        let response = call();
-        #[cfg(feature = "bench")]
-        let response = {
-            let mut response = response;
-            let timing = response.server_timing.get_or_insert_with(String::new);
-            if !timing.is_empty() {
-                timing.push_str(", ");
-            }
-            timing.push_str(&format!(
-                "blocking_queue;dur={queue_ms:.3}, blocking_cpu;dur={:.3}",
-                crate::timing::cpu_ms() - cpu
-            ));
-            response
-        };
-        response
-    })
-    .await
-    .unwrap_or_else(|_| failure(500, "Internal error.").into())
-}
 
 #[cfg(test)]
 mod tests;
@@ -505,7 +536,7 @@ impl App {
     pub fn bench_stats(&self) -> serde_json::Value {
         let writer = self.db.try_lock().ok().map(|db| crate::bench::sqlite(&db));
         let readers = self.readers.as_ref().map(|r| r.stats());
-        serde_json::json!({ "read_admission": self.read_gate.as_ref().map(|g| g.stats()), "write_admission": self.write_gate.stats(), "hash_admission": self.hash_gate.stats(), "writer": writer, "readers": readers,
+        serde_json::json!({ "read_admission": self.read_gate.as_ref().map(|g| g.stats()), "write_admission": self.write_gate.stats(), "hash_admission": self.hash_gate.stats(), "report_admission": self.report_gate.stats(), "writer": writer, "readers": readers,
             "sqlite_busy_errors": crate::bench::SQLITE_BUSY_ERRORS.load(std::sync::atomic::Ordering::Relaxed),
             "blocking_threads": crate::bench::BLOCKING_THREADS.load(std::sync::atomic::Ordering::Relaxed),
             "blocking_threads_peak": crate::bench::BLOCKING_THREADS_PEAK.load(std::sync::atomic::Ordering::Relaxed),
