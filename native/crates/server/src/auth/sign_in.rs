@@ -2,7 +2,7 @@
 //! verifies the scrypt hash, writes the session row, and sets the signed session cookie.
 //! The database is held only for the reads and the write, not while scrypt runs.
 use crate::auth::session::User;
-use crate::auth::{create_session, find_credentials, password};
+use crate::auth::{create_session, find_credentials, login_domains, password};
 use crate::clock;
 use serde::{Deserialize, Serialize};
 
@@ -206,6 +206,9 @@ impl App {
         if let Err(refused) = fetch.validate(app_origin, false) {
             return refused;
         }
+        if let Err(refused) = self.clone().login_domain_middleware(&request).await {
+            return refused;
+        }
         let issues = body_issues(body.as_ref());
         let (Some(body), true) = (body, issues.is_empty()) else {
             return refusal(400, "VALIDATION_ERROR", &issues.join("; "));
@@ -289,6 +292,9 @@ impl App {
             );
         };
         let user = credentials.user;
+        if !login_domains::allowed(&self.config.sign_in_page.allowed_domains, &user.email) {
+            return login_domains::refusal();
+        }
         let user_id = user.id.clone();
         #[cfg(feature = "bench")]
         let session_trace = trace.clone();
@@ -348,6 +354,7 @@ mod input_bounds_tests {
             app_url: "http://snowtime.test".into(),
             secret: "test-secret".into(),
             password_enabled: true,
+            production: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
             rate_limit: false,
@@ -377,5 +384,89 @@ mod input_bounds_tests {
             let body: serde_json::Value = serde_json::from_slice(&response.body).unwrap();
             assert_eq!(body["code"], code);
         }
+    }
+}
+
+#[cfg(test)]
+mod login_domain_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn refuses_addresses_and_sessions_outside_the_allowed_domains() {
+        let app = App::open(crate::Config {
+            database_path: ":memory:".into(),
+            app_url: "http://snowtime.test".into(),
+            secret: "test-secret".into(),
+            password_enabled: true,
+            production: false,
+            sign_in_page: crate::SignInPageConfig {
+                allowed_domains: vec!["allowed.example".into()],
+                ..Default::default()
+            },
+            client_ip_header: None,
+            rate_limit: false,
+            oauth: vec![],
+        })
+        .unwrap();
+        let hash = password::hash("correct horse");
+        app.db()
+            .execute_batch(
+                "create table user(id text,name text,email text,email_verified integer,image text,created_at integer,updated_at integer);
+                 create table account(user_id text,provider_id text,account_id text,password text);
+                 create table session(id text,user_id text,token text,expires_at integer,ip_address text,user_agent text,created_at integer,updated_at integer,active_organization_id text);
+                 insert into user values ('blocked','B','b@blocked.example',1,null,0,0),('allowed','A','a@allowed.example',1,null,0,0);
+                 insert into session(user_id,token,expires_at,created_at,updated_at) values ('blocked','blocked-token',9e15,0,0);",
+            )
+            .unwrap();
+        for user in ["blocked", "allowed"] {
+            app.db()
+                .execute(
+                    "insert into account values (?1,'credential',?1,?2)",
+                    [user, hash.as_str()],
+                )
+                .unwrap();
+        }
+        let blocked_cookie = app
+            .session
+            .session_cookie("blocked-token")
+            .split(';')
+            .next()
+            .unwrap()
+            .to_owned();
+        let sign_in = |email: &str, password: &str, cookie: Option<&str>| {
+            let mut request = Request::auth_fixture(cookie.unwrap_or_default().into());
+            request.cookie = cookie.map(str::to_owned);
+            request.body =
+                serde_json::to_vec(&serde_json::json!({"email":email,"password":password}))
+                    .unwrap();
+            let mut headers = HeaderMap::new();
+            headers.insert("origin", "http://snowtime.test".parse().unwrap());
+            app.clone().sign_in(request, FetchHeaders::of(&headers))
+        };
+        let sessions = || {
+            app.db()
+                .query_row("select count(*) from session", [], |r| r.get::<_, i64>(0))
+                .unwrap()
+        };
+        let refused = r#"{"code":"LOGIN_DOMAIN_NOT_ALLOWED","message":"This email domain cannot sign in to this instance."}"#;
+        let response = sign_in("b@blocked.example", "correct horse", None).await;
+        assert_eq!(
+            (response.status, response.body.as_slice()),
+            (403, refused.as_bytes())
+        );
+        assert!(response.set_cookies.is_empty());
+        assert_eq!(sessions(), 1);
+        let response = sign_in("b@blocked.example", "wrong", None).await;
+        assert_eq!(response.status, 401);
+        // The blocked session is refused before the body or the password is checked.
+        let response = sign_in("a@allowed.example", "correct horse", Some(&blocked_cookie)).await;
+        assert_eq!(
+            (response.status, response.body.as_slice()),
+            (403, refused.as_bytes())
+        );
+        assert_eq!(sessions(), 1);
+        let response = sign_in("a@allowed.example", "correct horse", None).await;
+        assert_eq!(response.status, 200);
+        assert_eq!(sessions(), 2);
     }
 }

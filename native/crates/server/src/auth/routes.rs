@@ -84,6 +84,7 @@ pub fn better_auth_routes() -> Router<Arc<App>> {
         .route("/api/auth/passkey/delete-passkey", post(passkey_delete))
         .route("/api/auth/sign-in/email", post(sign_in))
         .route("/api/auth/sign-out", post(sign_out))
+        .route("/api/auth/error", get(error_page))
         .route(
             "/api/auth/organization/accept-invitation",
             post(auth_accept),
@@ -94,6 +95,9 @@ async fn sign_out(call: AuthCall) -> Response {
 }
 async fn sign_in(call: AuthCall) -> Response {
     call.sign_in().await
+}
+async fn error_page(call: AuthCall) -> axum::response::Response {
+    call.error_page().await
 }
 
 async fn accept(call: AsUser<GetInvitationInput>) -> Response {

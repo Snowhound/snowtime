@@ -1,3 +1,4 @@
+use super::login_domains;
 use super::schemas::*;
 use crate::rate_limit::{MemoryStore, RateLimitRule};
 use crate::schemas::Empty;
@@ -56,19 +57,11 @@ pub fn invite_member(
         crate::teams::assert_team_in_scope(db, scope, team_id)?;
     }
     let (role,email): (String,String) = crate::sql!("select member.role,user.email from member inner join user on user.id = member.user_id where member.organization_id = ",&scope.organization_id," and member.user_id = ",&scope.user_id).query_row(db,|r|Ok((r.get(0)?,r.get(1)?)))?;
-    if !config.sign_in_page.allowed_domains.is_empty()
-        && !email.rsplit_once('@').is_some_and(|(_, domain)| {
-            config
-                .sign_in_page
-                .allowed_domains
-                .iter()
-                .any(|allowed| allowed.eq_ignore_ascii_case(domain))
-        })
-    {
+    if !login_domains::allowed(&config.sign_in_page.allowed_domains, &email) {
         return auth_refusal(
             403,
-            "LOGIN_DOMAIN_NOT_ALLOWED",
-            "This email domain cannot sign in to this instance.",
+            login_domains::REFUSAL_CODE,
+            login_domains::REFUSAL_MESSAGE,
         );
     }
     static EMAIL: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
@@ -183,6 +176,7 @@ mod tests {
             app_url: "http://localhost".into(),
             secret: "test".into(),
             password_enabled: true,
+            production: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
             rate_limit: false,

@@ -121,6 +121,7 @@ impl App {
         let session = SessionConfig {
             secret: config.secret.clone(),
             secure: config.secure(),
+            allowed_domains: config.sign_in_page.allowed_domains.clone(),
         };
         let readers = if count == 0 {
             None
@@ -664,6 +665,9 @@ impl AuthCall {
     }
     pub(crate) async fn sign_out(self) -> Response {
         self.0.sign_out(self.1, self.2).await
+    }
+    pub(crate) async fn error_page(self) -> axum::response::Response {
+        self.0.error_page(self.1).await
     }
 }
 

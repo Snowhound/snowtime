@@ -1,5 +1,5 @@
 use super::{
-    cookie, session,
+    cookie, login_domains, session,
     sign_in::{FetchHeaders, refusal},
 };
 use crate::http::{App, Request, Response};
@@ -119,21 +119,7 @@ fn keys(db: &Connection, column: &'static str, value: &str) -> rusqlite::Result<
         .collect()
 }
 fn allowed(config: &Config, email: &str) -> bool {
-    config.sign_in_page.allowed_domains.is_empty()
-        || email.rsplit_once('@').is_some_and(|(_, domain)| {
-            config
-                .sign_in_page
-                .allowed_domains
-                .iter()
-                .any(|d| d.eq_ignore_ascii_case(domain))
-        })
-}
-fn domain_refusal() -> Response {
-    refusal(
-        403,
-        "LOGIN_DOMAIN_NOT_ALLOWED",
-        "This email domain cannot sign in to this instance.",
-    )
+    login_domains::allowed(&config.sign_in_page.allowed_domains, email)
 }
 fn descriptors(keys: &[Passkey]) -> String {
     format!(
@@ -520,7 +506,7 @@ fn new_session(
     .unwrap()
     .user;
     if !allowed(&app.config, &user.email) {
-        return Ok(domain_refusal());
+        return Ok(login_domains::refusal());
     }
     let now = clock::now();
     let ip = request.client_ip.as_deref().unwrap_or("");
@@ -558,15 +544,6 @@ fn run(
     query: &Value,
 ) -> rusqlite::Result<Response> {
     let user = session::find_session(db, &app.session, request.cookie.as_deref(), clock::now())?;
-    if let Some(user) = &user {
-        let email: String =
-            db.query_row("select email from user where id=?1", [&user.user_id], |r| {
-                r.get(0)
-            })?;
-        if !allowed(&app.config, &email) {
-            return Ok(domain_refusal());
-        }
-    }
     match action {
         Action::AuthenticateOptions => return options(db, app, user.as_ref(), false, query),
         Action::Authenticate => return authentication(db, app, request, body),
@@ -647,6 +624,9 @@ impl App {
                 return r;
             }
         }
+        if let Err(r) = self.clone().login_domain_middleware(&request).await {
+            return r;
+        }
         let issues =
             super::schemas::passkey_issues(&action, &body, request.body.is_empty(), &query);
         if !issues.is_empty() {
@@ -674,6 +654,7 @@ mod tests {
             app_url: "https://snowtime.test".into(),
             secret: "test-secret".into(),
             password_enabled: false,
+            production: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
             rate_limit: false,

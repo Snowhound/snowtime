@@ -1,12 +1,14 @@
 // Runs conformance tests against a native server: serves it a copy of the benchmark database
 // with its clock at SEED_NOW and password sign-in on (conformance/server.ts), runs the tests
-// with CONFORMANCE_URL, and stops it.
+// with CONFORMANCE_URL, and stops it. The OAuth and login-domain files need their own setup,
+// so run each of them on its own.
 //
 //   bun native/bench/conformance.ts native/target/release/snowtime-axum
 //   bun native/bench/conformance.ts <binary> ./conformance/timer.conformance.ts
 
 import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
+import { LOGIN_DOMAINS_ENV, loginDomainsDatabase } from '../../conformance/login-domains-fixture'
 import { oauthEnv, startOAuthProvider } from '../../conformance/oauth-provider'
 import { ROOT, seededDatabase } from '../../perf/lib/database'
 import { startNative } from './native'
@@ -17,10 +19,11 @@ if (!binary) throw new Error('Usage: bun native/bench/conformance.ts <binary> [t
 const provider = files.some((file) => file.includes('oauth.conformance'))
   ? startOAuthProvider()
   : undefined
+const domains = files.some((file) => file.includes('login-domains.conformance'))
 const server = await startNative(
   binary,
-  await seededDatabase(),
-  provider ? oauthEnv(provider.url) : {},
+  domains ? await loginDomainsDatabase(await seededDatabase()) : await seededDatabase(),
+  provider ? oauthEnv(provider.url) : domains ? LOGIN_DOMAINS_ENV : {},
 )
 let code = 1
 try {

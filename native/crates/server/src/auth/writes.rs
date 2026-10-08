@@ -268,25 +268,6 @@ fn rule(
             _ => refusal(401, "UNAUTHORIZED", "Unauthorized"),
         });
     };
-    let email: String =
-        db.query_row("select email from user where id=?1", [&user.user_id], |r| {
-            r.get(0)
-        })?;
-    if !app.config.sign_in_page.allowed_domains.is_empty()
-        && !email.rsplit_once('@').is_some_and(|(_, d)| {
-            app.config
-                .sign_in_page
-                .allowed_domains
-                .iter()
-                .any(|v| v.eq_ignore_ascii_case(d))
-        })
-    {
-        return Ok(hook_error(
-            403,
-            "LOGIN_DOMAIN_NOT_ALLOWED",
-            "This email domain cannot sign in to this instance.",
-        ));
-    }
     match action {
         Action::Profile => {
             if super::sign_out::truthy(&body["email"]) {
@@ -745,6 +726,9 @@ impl App {
         {
             return r;
         }
+        if let Err(r) = self.clone().login_domain_middleware(&request).await {
+            return r;
+        }
         let issues = super::schemas::auth_write_issues(action, &body, request.body.is_empty());
         if !issues.is_empty() {
             return refusal(400, "VALIDATION_ERROR", &issues.join("; "));
@@ -780,6 +764,7 @@ mod tests {
             app_url: "http://snowtime.test".into(),
             secret: "test-secret".into(),
             password_enabled: false,
+            production: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
             rate_limit: false,

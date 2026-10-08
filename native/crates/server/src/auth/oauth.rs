@@ -1,6 +1,6 @@
 //! Better Auth's redirect OAuth flow and account management with Snowtime's options.
 use super::{
-    cookie, session,
+    cookie, login_domains, session,
     sign_in::{FetchHeaders, refusal},
 };
 use crate::{
@@ -120,21 +120,7 @@ fn callback_uri(config: &Config, provider: &str) -> String {
     format!("{}/api/auth/callback/{provider}", config.app_origin())
 }
 fn allowed(config: &Config, email: &str) -> bool {
-    config.sign_in_page.allowed_domains.is_empty()
-        || email.rsplit_once('@').is_some_and(|(_, d)| {
-            config
-                .sign_in_page
-                .allowed_domains
-                .iter()
-                .any(|v| v.eq_ignore_ascii_case(d))
-        })
-}
-fn domain_error() -> Response {
-    refusal(
-        403,
-        "LOGIN_DOMAIN_NOT_ALLOWED",
-        "This email domain cannot sign in to this instance.",
-    )
+    login_domains::allowed(&config.sign_in_page.allowed_domains, email)
 }
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -291,15 +277,6 @@ fn start(
     body: &Value,
 ) -> rusqlite::Result<Answer> {
     let user = session_user(db, app, request)?;
-    if let Some(user) = &user {
-        let email: String =
-            db.query_row("select email from user where id=?1", [&user.user_id], |r| {
-                r.get(0)
-            })?;
-        if !allowed(&app.config, &email) {
-            return Ok(domain_error().into());
-        }
-    }
     if matches!(action, Action::Link | Action::List | Action::Unlink) && user.is_none() {
         return Ok(refusal(401, "UNAUTHORIZED", "Unauthorized").into());
     }
@@ -461,15 +438,6 @@ fn consume(
     request: &Request,
     query: &Value,
 ) -> rusqlite::Result<Result<Pending, Answer>> {
-    if let Some(user) = session_user(db, app, request)? {
-        let email: String =
-            db.query_row("select email from user where id=?1", [&user.user_id], |r| {
-                r.get(0)
-            })?;
-        if !allowed(&app.config, &email) {
-            return Ok(Err(domain_error().into()));
-        }
-    }
     let default = format!("{}/api/auth/error", app.config.app_origin());
     let Some(state) = query["state"].as_str().filter(|s| !s.is_empty()) else {
         return Ok(Err(error(&default, "state_not_found", None)));
@@ -889,8 +857,8 @@ fn finish(
         if !allowed(&app.config, email) {
             return Ok(error(
                 error_url,
-                "LOGIN_DOMAIN_NOT_ALLOWED",
-                Some("This email domain cannot sign in to this instance."),
+                login_domains::REFUSAL_CODE,
+                Some(login_domains::REFUSAL_MESSAGE),
             ));
         }
         if !profile.verified {
@@ -921,8 +889,8 @@ fn finish(
     if !allowed(&app.config, &local_email) {
         return Ok(error(
             error_url,
-            "LOGIN_DOMAIN_NOT_ALLOWED",
-            Some("This email domain cannot sign in to this instance."),
+            login_domains::REFUSAL_CODE,
+            Some(login_domains::REFUSAL_MESSAGE),
         ));
     }
     let token = session::create_session(
@@ -982,6 +950,9 @@ impl App {
             {
                 return r.into_response();
             }
+        }
+        if let Err(r) = self.clone().login_domain_middleware(&request).await {
+            return r.into_response();
         }
         let issues = if matches!(action, Action::Callback) && request.method == "POST" {
             super::schemas::oauth_callback_issues(&body, request.body.is_empty())
@@ -1112,6 +1083,7 @@ mod tests {
             .into(),
             secret: "fixture-secret".into(),
             password_enabled: false,
+            production: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
             rate_limit: false,

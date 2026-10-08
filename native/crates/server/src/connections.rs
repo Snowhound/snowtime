@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn session_maintenance_on_the_writer_does_not_relock_it() {
         let db = Connection::open_in_memory().unwrap();
-        db.execute_batch("create table user (id text); insert into user values ('alice');
+        db.execute_batch("create table user (id text, email text); insert into user values ('alice', 'alice@example.com');
             create table session (user_id text, token text, expires_at integer, created_at integer, updated_at integer, active_organization_id text);").unwrap();
         let now = 1_800_000_000_000i64;
         db.execute(
@@ -98,6 +98,7 @@ mod tests {
             let config = SessionConfig {
                 secret: "test-secret".into(),
                 secure: false,
+                allowed_domains: Vec::new(),
             };
             let cookie = config.session_cookie("token");
             let gate = Gate::new(1, Duration::from_secs(1));
@@ -130,7 +131,7 @@ mod tests {
         let path = std::env::temp_dir().join(format!("snowtime-pool-{}.db", uuid::Uuid::now_v7()));
         let writer = Connection::open(&path).unwrap();
         writer.pragma_update(None, "journal_mode", "WAL").unwrap();
-        writer.execute_batch("create table user (id text); insert into user values ('alice');
+        writer.execute_batch("create table user (id text, email text); insert into user values ('alice', 'alice@example.com');
             create table session (user_id text, token text, expires_at integer, created_at integer, updated_at integer, active_organization_id text);").unwrap();
         let now = 1_800_000_000_000i64;
         writer
@@ -152,6 +153,7 @@ mod tests {
         let config = SessionConfig {
             secret: "test-secret".into(),
             secure: false,
+            allowed_domains: Vec::new(),
         };
         let cookie = config.session_cookie("token");
         let session = find_session_with_writer(&first, &writer, &gate, &config, Some(&cookie), now)
