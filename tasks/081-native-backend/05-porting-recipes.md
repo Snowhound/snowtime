@@ -113,7 +113,7 @@ it:
 - One writer and a pool of readers on WAL; bounded database work that refuses with 503
   past count or time bounds. A report budget leaves ordinary readers available under
   a single-organization burst (17). A single connection still delays timers while a
-  report runs. Open: valid overload and capacity evidence at the chosen backstop in 26
+  report runs. Open: valid overload and capacity evidence at the chosen backstop in 27
 - Better Auth through an app-owned `rusqlite` store on the host's lanes (question 5,
   [auth spike](auth-spike.md), 2026-10-06). The 1,582-line adapter proves storage and
   selected flows without SeaORM or sqlx. Reject a library-owned pool where the host
@@ -124,6 +124,17 @@ it:
   pinned better-auth-rs release with public server-only key calls and TypeScript's
   passkey UV policy, followed by compatibility and HTTP conformance runs. Alpha.3
   alone does not pass that gate.
+
+  Kait, 2026-10-08: the kit's auth recipe uses better-auth-rs for the flows. Fix its
+  gaps in a fork, offer each fix upstream, and depend on the fork only where a fix
+  isn't accepted. What better-auth-rs lacks goes in a separate crate beside it: the
+  closest usable subsets of task 081's port with Snowtime's policies taken out, such
+  as Better Auth's signed session cookies and their per-request check, origin and URL
+  checks, the error body, scrypt, and the `rusqlite` store on the host's lanes. Task
+  081.28's hand-ported flows stay as the reference and fallback for gaps, and its
+  conformance tests, byte comparison, fake OAuth provider, and software passkey
+  authenticator judge a better-auth-rs port of the same routes.
+
 - AWS-LC for scrypt (08)
 - The optional in-process edge, and Caddy's tuning where Caddy stays (07)
 - Drizzle's migrations applied by the binary, recorded as drizzle-orm records them
