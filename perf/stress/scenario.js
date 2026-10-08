@@ -39,10 +39,12 @@ const TIMINGS =
       ]
 
 const ORIGIN = __ENV.ORIGIN
-const HOST = ORIGIN.replace(/^https:\/\//, '')
+const HOST = ORIGIN.replace(/^https?:\/\//, '')
 const SECRET = __ENV.SECRET
 const PLAN = JSON.parse(__ENV.PLAN)
-const SESSION_COOKIE = '__Secure-better-auth.session_token'
+const SESSION_COOKIE = ORIGIN.startsWith('https:')
+  ? '__Secure-better-auth.session_token'
+  : 'better-auth.session_token'
 const LOCALE_COOKIE = 'PARAGLIDE_LOCALE'
 const PASSWORD = 'snowtime-local'
 
@@ -271,7 +273,7 @@ export function act() {
   if (signedIn) {
     const signature = crypto.hmac('sha256', SECRET, user.token, 'base64')
     jar.set(ORIGIN, SESSION_COOKIE, encodeURIComponent(`${user.token}.${signature}`), {
-      secure: true,
+      secure: ORIGIN.startsWith('https:'),
     })
   }
   // A client address per user, which Caddy trusts from the load generator.

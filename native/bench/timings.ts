@@ -9,11 +9,7 @@ import { v7 as uuidv7 } from 'uuid'
 import { buildApp, signInHeaders, startApp } from '../../perf/lib/app'
 import { COMPANY, SEED_NOW, seededDatabase } from '../../perf/lib/database'
 import { CALLS, type CallName, requestOf } from './calls'
-import { startNative } from './native'
-
-const [binary, repeatArg] = process.argv.slice(2)
-if (!binary) throw new Error('Usage: bun native/bench/timings.ts <binary> [repeats]')
-const repeats = Number(repeatArg ?? 50)
+import { processUsage, startNative } from './native'
 
 const DAY = 86_400_000
 const organizationId = COMPANY.id
@@ -42,47 +38,104 @@ function parse(header: string | null) {
   )
 }
 
-const database = await seededDatabase()
-await buildApp()
-const [ts, native] = await Promise.all([startApp({ database }), startNative(binary, database)])
-try {
-  const servers = { ts, native }
-  console.log(`Medians of ${repeats} calls each, as the admin, in ms`)
-  console.log(
-    '| Call | TS session | TS db | TS total | native session | native db | native total |',
-  )
-  console.log('| --- | --: | --: | --: | --: | --: | --: |')
-  for (const [label, name, input] of CASES) {
-    const row: string[] = [label]
-    for (const server of Object.values(servers)) {
-      const headers = { ...(await signInHeaders(server, 'admin')), origin: server.url }
-      const timings: Record<string, number>[] = []
-      const totals: number[] = []
-      for (let i = 0; i < repeats + 5; i++) {
-        const operation = CALLS[name]
-        const { path, body } = requestOf(operation, input())
-        const started = performance.now()
-        const response = await fetch(`${server.url}${path}`, {
-          method: operation.method,
-          headers: body ? { ...headers, 'content-type': 'application/json' } : headers,
-          body,
-        })
-        await response.arrayBuffer()
-        if (!response.ok) throw new Error(`${label}: ${response.status}`)
-        // The first calls warm the caches and the JIT.
-        if (i < 5) continue
-        totals.push(performance.now() - started)
-        timings.push(parse(response.headers.get('server-timing')))
+async function main() {
+  const [binary, repeatArg] = process.argv.slice(2)
+  if (!binary) throw new Error('Usage: bun native/bench/timings.ts <binary> [repeats]')
+  const repeats = Number(repeatArg ?? 50)
+
+  const database = await seededDatabase()
+  await buildApp()
+  const [ts, native] = await Promise.all([startApp({ database }), startNative(binary, database)])
+  try {
+    const servers = { ts, native }
+    console.log(`Medians of ${repeats} calls each, as the admin, in ms`)
+    console.log(
+      '| Call | TS session | TS db | TS total | native session | native db | native total |',
+    )
+    console.log('| --- | --: | --: | --: | --: | --: | --: |')
+    for (const [label, name, input] of CASES) {
+      const row: string[] = [label]
+      for (const server of Object.values(servers)) {
+        const headers = { ...(await signInHeaders(server, 'admin')), origin: server.url }
+        const timings: Record<string, number>[] = []
+        const totals: number[] = []
+        for (let i = 0; i < repeats + 5; i++) {
+          const operation = CALLS[name]
+          const { path, body } = requestOf(operation, input())
+          const started = performance.now()
+          const response = await fetch(`${server.url}${path}`, {
+            method: operation.method,
+            headers: body ? { ...headers, 'content-type': 'application/json' } : headers,
+            body,
+          })
+          await response.arrayBuffer()
+          if (!response.ok) throw new Error(`${label}: ${response.status}`)
+          // The first calls warm the caches and the JIT.
+          if (i < 5) continue
+          totals.push(performance.now() - started)
+          timings.push(parse(response.headers.get('server-timing')))
+        }
+        row.push(
+          median(timings.map((t) => t.session)).toFixed(2),
+          median(timings.map((t) => t.db)).toFixed(2),
+          median(totals).toFixed(2),
+        )
       }
-      row.push(
-        median(timings.map((t) => t.session)).toFixed(2),
-        median(timings.map((t) => t.db)).toFixed(2),
-        median(totals).toFixed(2),
-      )
+      console.log(`| ${row.join(' | ')} |`)
     }
-    console.log(`| ${row.join(' | ')} |`)
+  } finally {
+    await Promise.all([ts.stop(), native.stop()])
   }
-} finally {
-  await Promise.all([ts.stop(), native.stop()])
+  process.exit(0)
 }
-process.exit(0)
+if (import.meta.main) await main()
+
+export async function nativeHotTimings(
+  server: { url: string; pid: number },
+  headers: Record<string, string>,
+  repeats = 100,
+) {
+  const cases: [string, CallName, unknown][] = [
+    ['session', 'getAppSession', undefined],
+    ['timer', 'getRunningTimer', undefined],
+    ['entries', 'listEntries', { organizationId, ...week }],
+    [
+      'week report',
+      'getReport',
+      { organizationId, from: '2026-09-28', to: '2026-10-05', unit: 'day' },
+    ],
+  ]
+  const result: Record<string, Record<string, number>> = {}
+  for (const [label, name, input] of cases) {
+    const operation = CALLS[name]
+    const { path, body } = requestOf(operation, input)
+    async function call() {
+      const response = await fetch(`${server.url}${path}`, {
+        method: operation.method,
+        headers: {
+          ...headers,
+          origin: server.url,
+          ...(body && { 'content-type': 'application/json' }),
+        },
+        body,
+      })
+      await response.arrayBuffer()
+      if (!response.ok) throw new Error(`${label}: ${response.status}`)
+      const timing = parse(response.headers.get('server-timing'))
+      if (!Number.isFinite(timing.session) || !Number.isFinite(timing.db))
+        throw new Error(`${label}: missing Server-Timing`)
+      return timing
+    }
+    for (let i = 0; i < 5; i++) await call()
+    const timings: Record<string, number>[] = []
+    const before = processUsage(server.pid)
+    for (let i = 0; i < repeats; i++) timings.push(await call())
+    const after = processUsage(server.pid)
+    result[label] = {
+      cpu_ms: (after.cpuMs - before.cpuMs) / repeats,
+      session_ms: median(timings.map((t) => t.session)),
+      db_ms: median(timings.map((t) => t.db)),
+    }
+  }
+  return result
+}

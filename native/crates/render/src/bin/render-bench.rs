@@ -276,8 +276,12 @@ async fn main() -> anyhow::Result<()> {
     let samples = sampler.join().expect("the sampler runs");
     let loop_rss = rss_mb();
     let loop_malloc = malloc_mb();
-    tokio::time::sleep(Duration::from_millis(1500)).await;
-    let idle_rss = rss_mb();
+    let idle_rss = if std::env::var_os("RENDER_BENCH_SKIP_FINAL_IDLE").is_some() {
+        None
+    } else {
+        tokio::time::sleep(Duration::from_millis(1500)).await;
+        Some(rss_mb())
+    };
     times.sort_by(f64::total_cmp);
     println!(
         "{}",

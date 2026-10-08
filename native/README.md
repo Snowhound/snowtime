@@ -319,3 +319,142 @@ For a local edge comparison, first run the normal benchmark once to create its C
 certificate, then add `--direct` to `perf:stress --app=native --recording=<file>`.
 The direct run copies that certificate and sends k6 traffic straight to the host's TLS
 listener. Caddy remains as the sampler's access point but receives no app requests.
+
+## Performance gate for the kit refactor
+
+The quick gate runs on Kait's Ryzen under WSL, after builds finish. It retains the
+starting native server and `render-bench` binaries and alternates fresh processes
+in one session: baseline, current, baseline, current (A/B/A/B). It never rebuilds
+the baseline. Docker confines the gate to CPU 0, one CPU, and 2 GiB with no swap.
+The same container also holds the lightweight client and k6; server CPU comes from
+the server's own `/proc` counters, excluding generator CPU. This is a regression
+check on a shared WSL host, not Hetzner confirmation or whole-host capacity evidence.
+
+[`perf-gate.ts`](bench/perf-gate.ts) reuses `render-bench`, `timings.ts`,
+`api-recording.ts`, `native.ts`, and the existing k6 scenario. Each round measures:
+
+- Timer, week, month, and year: 25 measured renders after the existing 50-page warmup
+  and idle collection, one renderer, a 128 MiB heap, and a 32 MiB semi-space. Report
+  process CPU per render, p50/p95 latency, and lifetime peak RSS in MiB. The quick
+  mode skips only the final idle RSS observation; it retains startup/warmup peaks.
+- Session, timer, entries, and week report: 1,000 sequential calls each after five
+  warmups, on a fresh frozen Lumen seed copy at `SEED_NOW`. `timings.ts` reports
+  server CPU per call from `/proc`, plus `session` and `db` Server-Timing medians.
+  Sign-in happens before measurement. `/proc` uses clock ticks, so zero CPU needs
+  more repeats; rounded zero Server-Timing durations remain valid observations.
+- Ten seconds at 30 recorded API-slice actions per second on a fresh M copy. The
+  frozen slice combines the recording's return and week-report reads, deduplicated
+  in order; it excludes pages, writes, and password hashing. Report server CPU per
+  completed request and lifetime app peak RSS. The existing k6 scenario handles
+  request batching, cookies, failures, and dropped-action counters over plain HTTP.
+- Retained server binary bytes and shared render bundle bytes. Binaries use the same
+  release/strip procedure for both versions. Bun's plain-bundle comparison is not
+  part of this native refactor gate.
+
+The defaults aim for 1–2 minutes on the Ryzen after the build. The first run must
+confirm this estimate; no gate timings have been recorded yet. The script records
+elapsed seconds. `--renders`, `--repeats`, and `--rate` change both A and B together.
+Increase repeats if CPU falls below clock-tick resolution; do not lower counts just
+to make a failing measurement fit the time estimate.
+
+### Prepare once, then keep the baseline
+
+Use a Linux filesystem checkout with Bun 1.4.2, Docker/Compose, and Chrome for the
+initial fixture capture. The full baseline's preparation builds both native images
+and preserves the M source/users pair and recording. The full baseline itself is
+one capacity ramp and two RSS holds, documented in
+[081.01](../tasks/081-native-backend/01-server-rendering.md#baseline-before-the-kit-refactor).
+That longer baseline runs once at the start of the kit phase, separately from the gate.
+
+Transfer the branch without pushing if needed. On the Mac, create a bundle and copy
+it to the Ryzen yourself; in the Ryzen checkout, fetch the copied file:
+
+```sh
+# Mac
+git bundle create /tmp/081-linux-confirmation.bundle 081-linux-confirmation
+# WSL; replace only the copied bundle's location.
+git fetch /mnt/c/Users/YOUR_USER/Downloads/081-linux-confirmation.bundle \
+  081-linux-confirmation:081-linux-confirmation
+git switch 081-linux-confirmation
+```
+
+Keep Windows awake while WSL runs. This PowerShell command opens WSL under a sleep
+inhibitor and restores the normal policy when that shell exits:
+
+```powershell
+Add-Type 'using System.Runtime.InteropServices; public class GateAwake { [DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint flags); }'
+[GateAwake]::SetThreadExecutionState([uint32]2147483649)
+try { wsl.exe } finally { [GateAwake]::SetThreadExecutionState([uint32]2147483648) }
+```
+
+Run the following in that WSL shell, at the committed starting revision. Finish all
+preparation before measuring. Keep the Ryzen idle and run one measurement at a time.
+No LAN generator or remote server is used. Kait runs every command on the Ryzen.
+
+```sh
+baseline_date=$(date -u +%F)
+baseline_recording=perf/.cache/stress/kit-pages.json
+bun native/bench/scaling/kit-baseline.ts --prepare \
+  --date="$baseline_date" --recording="$baseline_recording"
+bun native/bench/perf-gate.ts --freeze
+
+# First verify the gate against identical binaries: current initially copies A.
+bun native/bench/perf-gate.ts
+
+# Separately, record the full start-of-kit baseline.
+bun native/bench/scaling/kit-baseline.ts \
+  --date="$baseline_date" --recording="$baseline_recording"
+```
+
+`--freeze` refuses to overwrite `perf/.cache/native-gate/baseline/`. It saves the
+server, render harness, shared bundle, source metadata, image IDs, and artifact hashes;
+`inputs/` holds immutable copies of the render fixtures, API seed, M seed/users, and
+recorded API slice with hashes. Keep these folders throughout the refactor. An
+interrupted freeze must be repaired before measurement; preserve `excluded.txt`
+and the preparation logs before removing incomplete artifacts.
+
+After each refactor step, build and snapshot only current, then run the gate:
+
+```sh
+bun native/bench/perf-gate.ts --build-current
+# After the build finishes, leave Windows and WSL idle.
+bun native/bench/perf-gate.ts
+```
+
+`--build-current` builds the app, render bundles, native host, and render harness,
+then copies current artifacts. The retained baseline and inputs stay fixed. A run
+checks artifact/input hashes and rejects a checkout that changed after current's
+capture. Build-dependency, database-schema, or runtime changes that prevent the old
+binary from running require a new matched baseline; keep the original evidence.
+
+### Results and regression rule
+
+The gate prints and saves a table of baseline/current means, deltas, observed noise
+bands, and flags. For each metric, the noise band is `abs(A1 - A2)`. CPU uses
+`max(abs(A1 - A2), 5% of mean(A))`. A regression is `mean(B) - mean(A) > band`.
+Lower values are better for every metric, including sizes. Sizes normally have zero
+spread, so any growth is flagged. This two-round band is a quick review rule, not
+a statistical confidence interval. Short p95 samples can be noisy; investigate a
+flag with a repeat in an idle session before attributing it to the refactor.
+
+Exit codes are 0 for a passing gate, 1 for a flagged regression, and 2 for invalid
+measurements or setup errors. Generator validity takes precedence over every server
+comparison: zero dropped actions and API errors, sampled k6 CPU below 70% of the
+assigned core, client CPU below 20%, sampled app/client/k6 RSS below 1,536 MiB,
+p95 action duration times offered rate below 35 of the 50 allocated VUs, no observed
+process swap, and a replay that
+finishes within 13 seconds including a one-second setup delay and k6 startup/drain.
+The CPU guard excludes startup samples before offered load. The gate saves generator
+CPU/RSS samples and k6 summaries, including VU usage; inspect memory/VU headroom
+before accepting a result. Host contention or a container OOM makes the run excluded,
+not a regression estimate. Preserve the exclusion reason and repeat later.
+
+Each run writes under `perf/.cache/native-gate/runs/<UTC timestamp>/`: raw renderer
+JSON/HTML, API timing JSON, k6 summary and generator samples, service output in
+`gate.log`, machine/CPU details, runtime image ID, input/artifact manifests, per-round
+metrics, `comparison.json`, `table.md`, and elapsed seconds. Return those folders
+with the full-baseline output; retain the artifact/input folders on the Ryzen:
+
+```sh
+tar -czf /tmp/native-gate-ryzen.tgz -C perf/.cache native-gate kit-baseline
+```

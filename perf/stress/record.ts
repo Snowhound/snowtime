@@ -181,11 +181,11 @@ export async function record({
     })
     await context.addCookies([
       {
-        name: SESSION_COOKIE,
+        name: origin.startsWith('https:') ? SESSION_COOKIE : 'better-auth.session_token',
         value: sessionCookie(user.token, secret),
         domain: hostname,
         path: '/',
-        secure: true,
+        secure: origin.startsWith('https:'),
         httpOnly: true,
       },
     ])

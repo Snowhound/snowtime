@@ -18,13 +18,10 @@ const { values } = parseArgs({
     date: { type: 'string' },
     recording: { type: 'string' },
     from: { type: 'string', default: '10000' },
-    reference: { type: 'string' },
   },
 })
 if (values.help) {
-  console.log(
-    'kit-baseline.ts [--prepare] --date=YYYY-MM-DD --recording=<file> [--from=10000] [--reference=<baseline folder>]',
-  )
+  console.log('kit-baseline.ts [--prepare] --date=YYYY-MM-DD --recording=<file> [--from=10000]')
   process.exit(0)
 }
 if (!values.date || !values.recording)
@@ -123,6 +120,44 @@ try {
       )
     command('docker', ['pull', 'grafana/k6:2.3.0'], 'k6-pull.log')
     command('docker', ['pull', 'alpine'], 'alpine-pull.log')
+    command(
+      'bun',
+      [
+        '-e',
+        "import { compose, useApp } from './perf/stress/stack'; useApp('native'); compose(['up', '-d', '--wait', '--no-deps', 'caddy'])",
+      ],
+      'certificate-start.log',
+    )
+    try {
+      command(
+        'curl',
+        [
+          '--silent',
+          '--show-error',
+          '--insecure',
+          '--resolve',
+          'snowtime-bench.test:8443:127.0.0.1',
+          '--retry',
+          '10',
+          '--retry-connrefused',
+          '--retry-delay',
+          '1',
+          '--max-time',
+          '10',
+          'https://snowtime-bench.test:8443',
+        ],
+        'certificate-handshake.log',
+      )
+    } finally {
+      command(
+        'bun',
+        [
+          '-e',
+          "import { compose, useApp } from './perf/stress/stack'; useApp('native'); compose(['stop', 'caddy'])",
+        ],
+        'certificate-stop.log',
+      )
+    }
     writeFileSync(
       join(CACHE, 'kit-baseline/prepared.json'),
       JSON.stringify(
@@ -186,69 +221,6 @@ try {
     mkdirSync(join(out, 'fixtures'))
     for (const page of ['timer', 'week', 'month', 'year', 'answers'])
       cpSync(join(fixtures, `${page}.json`), join(out, 'fixtures', `${page}.json`))
-    const render: Record<string, Record<string, number[]>> = {}
-    const running = command('docker', ['ps', '--format', '{{.Names}}'], 'running-containers.txt')
-      .trim()
-      .split('\n')
-      .filter((name) => /^snowtime-bench-(app|caddy|sampler|litestream)-1$/.test(name))
-    if (running.length) command('docker', ['stop', ...running], 'stop-stack.log')
-    for (const page of ['timer', 'week', 'month', 'year']) {
-      render[page] = { v8: [], bun: [] }
-      for (let round = 1; round <= 3; round++) {
-        for (const engine of round === 2 ? ['bun', 'v8'] : ['v8', 'bun']) {
-          const args =
-            engine === 'v8'
-              ? [
-                  '-e',
-                  'RENDER_HEAP_MB=128',
-                  '-e',
-                  'RENDER_SEMI_MB=32',
-                  'snowtime-kit-render:bench',
-                  'render-bench',
-                  `/results/${page}.json`,
-                  '/results/answers.json',
-                  '500',
-                  '1',
-                  '1',
-                  `/raw/${page}-${engine}-${round}.html`,
-                ]
-              : [
-                  '-e',
-                  'RENDER_PROPS=plain',
-                  'snowtime-kit-render:bench',
-                  'bun',
-                  '/repo/native/crates/render/bundle/bun-bench.ts',
-                  `/results/${page}.json`,
-                  '/results/answers.json',
-                  '500',
-                  `/raw/${page}-${engine}-${round}.html`,
-                ]
-          const text = command(
-            'docker',
-            [
-              'run',
-              '--rm',
-              '--cpus=1',
-              '--cpuset-cpus=0',
-              '--memory=2g',
-              '--memory-swap=2g',
-              '-v',
-              `${ROOT}:/repo:ro`,
-              '-v',
-              `${fixtures}:/results:ro`,
-              '-v',
-              `${out}:/raw`,
-              ...args,
-            ],
-            `${page}-${engine}-${round}.json`,
-          )
-          const cpu = JSON.parse(text).cpu_ms
-          if (!Number.isFinite(cpu) || cpu <= 0) throw new Error('Missing render CPU measurement')
-          render[page][engine].push(cpu)
-        }
-      }
-    }
-    writeFileSync(join(out, 'render-summary.json'), JSON.stringify(render, null, 2))
   }
 } finally {
   release()
@@ -338,45 +310,7 @@ for (let round = 1; round <= 2; round++) {
       2 ** 20,
   })
 }
-const result = { render: json(join(out, 'render-summary.json')), holds, capacity }
-writeFileSync(join(out, 'summary.json'), JSON.stringify(result, null, 2))
-if (values.reference) {
-  const reference = json(join(resolve(values.reference), 'summary.json'))
-  const oldHashes = json(join(resolve(values.reference), 'hashes.json'))
-  const currentHashes = json(join(out, 'hashes.json'))
-  for (const suffix of [
-    '.db',
-    '.users.json',
-    ...['timer', 'week', 'month', 'year', 'answers'].map((page) => `/results/${page}.json`),
-  ]) {
-    const oldInput = Object.entries(oldHashes).find(([path]) => path.endsWith(suffix))?.[1]
-    const currentInput = Object.entries(currentHashes).find(([path]) => path.endsWith(suffix))?.[1]
-    if (!oldInput || currentInput !== oldInput)
-      throw new Error(`Excluded comparison: changed input ${suffix}`)
-  }
-  const alerts: string[] = []
-  function check(name: string, old: number[], current: number[]) {
-    const sorted = [...current].sort((a, b) => a - b)
-    const median = sorted[Math.floor(sorted.length / 2)]
-    const ceiling = Math.max(...old) + Math.max(...old) - Math.min(...old)
-    if (median > ceiling)
-      alerts.push(`${name}: ${median} exceeds baseline max plus spread (${ceiling})`)
-  }
-  for (const page of Object.keys(result.render))
-    for (const engine of ['v8', 'bun'])
-      check(`${page}/${engine} CPU`, reference.render[page][engine], result.render[page][engine])
-  for (const metric of ['peakMiB', 'holdPeakMiB'] as const)
-    check(
-      metric,
-      reference.holds.map((h: (typeof holds)[number]) => h[metric]),
-      holds.map((h) => h[metric]),
-    )
-  if (capacity.users < reference.capacity.users)
-    alerts.push(
-      'Capacity decreased: repeat the lower and former held offers before declaring a regression',
-    )
-  writeFileSync(join(out, 'comparison.json'), JSON.stringify({ alerts }, null, 2))
-}
+writeFileSync(join(out, 'summary.json'), JSON.stringify({ holds, capacity }, null, 2))
 console.log(
-  `Baseline complete: ${out}. Review generator memory/VUs and host sizing logs before accepting summary.json.`,
+  `Full baseline complete: ${out}. Review generator memory/VUs and host sizing logs before accepting summary.json.`,
 )

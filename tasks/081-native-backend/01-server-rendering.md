@@ -484,135 +484,73 @@ gaps, with production-mode refusal checks and a shared write-limit switch.
 
 ## Baseline before the kit refactor
 
-Status: procedure prepared on 2026-10-08; Ryzen results pending Kait's run. This is
-a regression baseline for the porting-kit refactor. It does not confirm the Hetzner
-deployment criterion, which waits until the port and kit refactor are complete.
+Status: procedure prepared on 2026-10-08; Ryzen results pending Kait's run. This full
+baseline records the starting capacity and app RSS for the kit phase. It does not
+close the Hetzner criterion, which waits until the port and kit refactor are complete.
+The quick per-step gate is documented in [native/README.md](../../native/README.md#performance-gate-for-the-kit-refactor).
 
-Run on Kait's Ryzen machine under WSL with Docker. The script records the exact CPU,
-Linux kernel, Docker version/resources, commit and working-tree diff, image IDs,
-SHA-256 input hashes, UTC command boundaries, and command arguments. Results belong
-in this section after Kait returns the raw folders. No baseline numbers are claimed
-before that run. Step 0 is commit `332b476`: benchmark rate limits are off and the
-stress runner requires health output to confirm it. Access logging stays off.
+Run on Kait's Ryzen under WSL with Docker. The script records the exact CPU, kernel,
+Docker resources/version, commit and working-tree diff, image IDs, SHA-256 input
+hashes, UTC command boundaries, and arguments. Record the resulting identifiers,
+held offer, two lifetime/hold RSS peaks, and raw evidence here after Kait returns
+output. No numbers are claimed before that run. Step 0 remains commit `332b476`.
 
-[`kit-baseline.ts`](../../native/bench/scaling/kit-baseline.ts) runs these measurements
-serially, with no builds during measurement:
+[`kit-baseline.ts`](../../native/bench/scaling/kit-baseline.ts) runs one M capacity
+ramp with 30-second steps and a 120-second passing hold, then two fresh 120-second
+runs at that held offer. Each invocation restores the source and drops caches before
+starting a fresh app. The native app uses one renderer, zero readers, `multi_thread`,
+4,096 waiters, a one-second queue deadline, `--cpus=1`, CPU 0 affinity, and 2 GiB
+memory with no app swap. Its own sizing chooses the heap and semi-space. Preserve
+and verify the sizing log. `/proc/1/status`'s `VmHWM` includes startup and page
+warmup; report it separately from the hold's sampled RSS peak, in MiB.
 
-1. Timer, week, month, and year: three pairs per page, alternating V8/Bun,
-   Bun/V8, V8/Bun. Each fresh process warms 50 pages and measures 500 renders.
-   V8 uses the shared bundle, a 128 MiB heap, and a 32 MiB semi-space; Bun uses the
-   plain bundle with its native web APIs. Both use `--cpus=1 --memory=2g`, no swap,
-   and CPU 0 affinity. Compare process CPU per measured render, including V8's
-   compiler and GC threads. Recorded API answers exclude database CPU.
-2. One quick M capacity ramp: 30-second steps and a 120-second passing hold,
-   starting at 10,000 users. This is the highest passing rung of this quick ramp,
-   not a precise maximum. It preserves task 10's normal latency/error targets and
-   generator guards. If the first rung fails, rerun with `--from=1000` and retain
-   the first attempt as excluded.
-3. Two fresh M runs at that held offer, each for 120 seconds. Each invocation
-   restores the same source database and drops caches before starting a fresh app.
-   The app has one renderer, zero readers, `multi_thread`, 4,096 waiters, a
-   one-second queue deadline, one CPU, and 2 GiB memory with no app swap. Its own
-   sizing chooses the heap and semi-space; preserve and verify the sizing log.
-   `/proc/1/status`'s `VmHWM` includes startup and page warmup. Report that lifetime
-   peak separately from the hold's sampled peak RSS in MiB.
+Native serves TLS directly with gzip; replication is off. Caddy exposes only
+instrumentation. Caddy and the sampler share CPU 0; k6 uses the remaining Docker
+CPUs. The app's 2 GiB limit excludes the generator, instrumentation, OS, and cache.
+This shared WSL VM baseline is not a whole-host acceptance result for 081.27.
+Give Docker at least four CPUs and enough RAM for headroom (8 GiB or more).
+Leave Windows and WSL idle; no builds, tests, or other load during measurement.
+Use the Windows sleep-prevention procedure in the native README. No LAN run is
+involved and no Windows LAN reservation is needed.
 
-The native app serves TLS directly with gzip. Replication is off to reduce variation
-in these refactor checks. Caddy only exposes instrumentation. Caddy and the sampler
-share CPU 0; k6 uses the remaining Docker CPUs. The app's 2 GiB limit excludes those
-services, the generator, OS, and filesystem cache. This shared WSL VM baseline is
-not a whole-host 2 GiB acceptance result for 081.27. Give Docker at least four CPUs
-and enough RAM for generator headroom (8 GiB or more), and leave Windows idle.
-No LAN generator or remote server is used, so no Windows LAN reservation is needed.
-
-### Commands and evidence
-
-Transfer this branch to the Ryzen checkout without pushing. If it is not already
-there, create a Git bundle on the Mac, copy it to the Ryzen, and fetch it in WSL:
-
-```sh
-# Mac, in this repository; copy this file to the Ryzen yourself.
-git bundle create /tmp/081-linux-confirmation.bundle 081-linux-confirmation
-# WSL, in the Ryzen checkout; adjust only the bundle's copied location.
-git fetch /mnt/c/Users/YOUR_USER/Downloads/081-linux-confirmation.bundle \
-  081-linux-confirmation:081-linux-confirmation
-git switch 081-linux-confirmation
-```
-
-Keep Windows awake for the WSL session. Run this in PowerShell, then run the Linux
-commands below in the WSL shell it opens:
-
-```powershell
-Add-Type 'using System.Runtime.InteropServices; public class BaselineAwake { [DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint flags); }'
-[BaselineAwake]::SetThreadExecutionState([uint32]2147483649)
-try { wsl.exe } finally { [BaselineAwake]::SetThreadExecutionState([uint32]2147483648) }
-```
-
-WSL prerequisites: Bun 1.4.2, Docker/Compose, and Chrome available to Playwright's
-`chrome` channel for fixture capture. Use a Linux filesystem checkout, rather than
-building under `/mnt/c`. Stop other builds, tests, benchmarks, and heavy applications.
-The preparation phase builds images and captures fixtures; it does not measure them.
-Use today's UTC date for a new dataset and keep it fixed for later comparisons:
+Transfer `081-linux-confirmation` to the Ryzen without pushing, using a Git bundle
+if needed, as documented in the native README. With Bun 1.4.2, Docker/Compose, and
+Chrome available to Playwright's `chrome` channel, run in a Linux filesystem checkout:
 
 ```sh
 baseline_date=$(date -u +%F)
 baseline_recording=perf/.cache/stress/kit-pages.json
 bun native/bench/scaling/kit-baseline.ts --prepare \
   --date="$baseline_date" --recording="$baseline_recording"
-# Wait for preparation to finish, then leave both Windows and WSL idle.
+# Preparation finishes before measurement starts. Leave both machines idle.
 bun native/bench/scaling/kit-baseline.ts \
   --date="$baseline_date" --recording="$baseline_recording"
 ```
 
-Preparation creates the page-inclusive recording if the file is absent; it preserves
-an existing one. Measurement requires the prepared commit and image IDs. Allow
-roughly 20–40 minutes for measurements plus image builds. Commands and full logs
-are written under `perf/.cache/kit-baseline/<UTC timestamp>/`. Return both the
-preparation and measurement folders, including `summary.json`, `images.json`,
-`hashes.json`, `commands.json`, fixtures, rendered HTML, service logs, app inspection,
-process status, and the copied stress run directories. For example:
+Preparation builds images and captures fixtures. It creates the page-inclusive
+recording if absent and preserves an existing one. Measurement requires the prepared
+commit and image IDs. Allow roughly 10–20 minutes plus preparation. The default ramp
+starts at 10,000 users; if its first rung fails, retain that attempt as excluded and
+repeat with `--from=1000`. Report the highest passing rung of this quick ramp, not
+an exact maximum. The runner keeps task 10's normal latency/error targets and guards.
+
+Before interpreting any server number, validate zero global dropped actions,
+generator CPU below the 70% assigned-core guard, memory and VU headroom, no OOM or
+swap, and uninterrupted samples. The script rejects failed capacity/hold validity
+and saves `excluded.txt`; review the generator's raw memory/VU counters before
+accepting `summary.json`. Mark exclusions and their reasons here after review.
+
+Return both preparation and measurement folders, including commands, hashes, image
+IDs, summary, fixtures, copied stress directories, service logs, app inspection,
+and process status. Preserve the source DB/users pair and recording for the gate.
 
 ```sh
 tar -czf /tmp/kit-baseline-ryzen.tgz -C perf/.cache kit-baseline
 ```
 
-Validate generator headroom before interpreting any app number: zero global dropped
-actions, CPU below the 70% assigned-core guard, adequate k6 memory and VU headroom,
-no OOM or swap, and uninterrupted samples. The script rejects failed capacity/hold
-validity and preserves `excluded.txt` on failure; review the raw generator memory
-and VU counters yourself before accepting the summary. Mark excluded attempts and
-their reasons here after review. Never overwrite or delete earlier raw folders.
-
-### Regression checks
-
-Repeat preparation after each refactor step to rebuild the images. Keep the same M
-source, users, recording, render fixtures, clock, affinity, and resource limits.
-Preparation re-captures render fixtures; restore the baseline fixture JSON files
-from its `fixtures/` folder before measurement so generated URL/cookie differences
-do not change inputs. Compare hashes and rendered output. If sessions expire or the
-schema changes, establish a new matched baseline and retain the old one.
-
-```sh
-bun native/bench/scaling/kit-baseline.ts --prepare \
-  --date="$baseline_date" --recording="$baseline_recording"
-# Restore the baseline fixture JSON files before measuring the refactor.
-cp perf/.cache/kit-baseline/BASELINE_TIMESTAMP/fixtures/*.json \
-  native/crates/render/results/
-bun native/bench/scaling/kit-baseline.ts \
-  --date="$baseline_date" --recording="$baseline_recording" \
-  --reference=perf/.cache/kit-baseline/BASELINE_TIMESTAMP
-```
-
-The script flags CPU or RSS when the new median exceeds the baseline maximum plus
-its observed spread (`max - min`). CPU has three observations per engine/page; RSS
-has two, so its comparison uses the upper observation. These are review thresholds,
-not statistical confidence intervals. Compare RSS only at the same held offer.
-A lower capacity rung is a regression candidate: repeat that rung and the former
-held offer under valid generator conditions before declaring a regression. Repeat
-any CPU/RSS flag in an otherwise idle session to confirm it. Changed HTML, errors,
-restarts, OOM, swap, or lost generator validity require investigation regardless
-of the timing threshold. The 256 MiB app guideline is reported separately; missing
-it does not by itself reject the baseline or close the deferred Hetzner criterion.
+The earlier 24-process V8/Bun render comparison and cross-session `--reference`
+comparison are replaced by the quick A/B/A/B native gate. This full baseline keeps
+only the ramp and two RSS holds; it is not rerun at every refactor step.
 
 ## Acceptance criteria
 
