@@ -1,0 +1,13 @@
+bun test ./conformance/passkeys.conformance.ts
+bun test v1.4.2 (744846f84)
+
+conformance/passkeys.conformance.ts:
+[perf] Built in 4 s
+(pass) passkey registration, sign-in, listing, removal, and refusal contracts [477.23ms]
+
+ 1 pass
+ 0 fail
+ 127 expect() calls
+Ran 1 test across 1 file. [9.60s]
+Exit code: 0
+

@@ -14,6 +14,7 @@ pub(crate) use sign_in::FetchHeaders;
 mod acceptance;
 mod invitations;
 mod organization;
+pub(crate) mod passkeys;
 pub mod routes;
 mod sign_in;
 mod sign_in_page;

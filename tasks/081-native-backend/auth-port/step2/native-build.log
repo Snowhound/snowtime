@@ -1,0 +1,6 @@
+cargo build --manifest-path native/Cargo.toml -p snowtime-host --offline
+   Compiling snowtime-server v0.1.0 (/private/tmp/snowtime-081-auth-port/native/crates/server)
+   Compiling snowtime-host v0.1.0 (/private/tmp/snowtime-081-auth-port/native/crates/host)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.16s
+Exit code: 0
+

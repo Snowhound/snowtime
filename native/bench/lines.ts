@@ -10,6 +10,67 @@ import { ROOT } from '../../perf/lib/database'
 // TypeScript [file, names] against Rust [module, names], per row.
 const PAIRS: [string, string, string[], string, string[]][] = [
   [
+    'passkey registration options',
+    'node_modules/@better-auth/passkey/dist/index.mjs',
+    ['generatePasskeyRegistrationOptions'],
+    'auth/passkeys.rs',
+    ['options', 'descriptors'],
+  ],
+  [
+    'passkey authentication options',
+    'node_modules/@better-auth/passkey/dist/index.mjs',
+    ['generatePasskeyAuthenticationOptions'],
+    'auth/passkeys.rs',
+    [],
+  ],
+  [
+    'passkey registration',
+    'node_modules/@better-auth/passkey/dist/index.mjs',
+    ['verifyPasskeyRegistration'],
+    'auth/passkeys.rs',
+    ['registration', 'check_response'],
+  ],
+  [
+    'passkey authentication',
+    'node_modules/@better-auth/passkey/dist/index.mjs',
+    ['verifyPasskeyAuthentication'],
+    'auth/passkeys.rs',
+    ['authentication', 'new_session', 'auth_user'],
+  ],
+  [
+    'passkey listing',
+    'node_modules/@better-auth/passkey/dist/index.mjs',
+    ['listPasskeys'],
+    'auth/passkeys.rs',
+    ['list_passkeys'],
+  ],
+  [
+    'passkey removal',
+    'node_modules/@better-auth/passkey/dist/index.mjs',
+    ['deletePasskey'],
+    'auth/passkeys.rs',
+    ['delete_passkey'],
+  ],
+  [
+    'passkey Zod validation',
+    'node_modules/@better-auth/passkey/dist/index.mjs',
+    [
+      'generatePasskeyQuerySchema',
+      'verifyPasskeyRegistrationBodySchema',
+      'verifyPasskeyAuthenticationBodySchema',
+    ],
+    'auth/schemas.rs',
+    ['passkey_issues'],
+  ],
+  [
+    'passkey HTTP and session policy',
+    'node_modules/@better-auth/passkey/dist/index.mjs',
+    ['resolveRegistrationUser'],
+    'auth/passkeys.rs',
+    ['passkey', 'run'],
+  ],
+
+  [
     'acceptInvitation Zod validation',
     'node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs',
     ['acceptInvitationBodySchema'],

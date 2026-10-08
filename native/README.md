@@ -14,7 +14,7 @@ libraries bind no listening socket.
 
 ```text
 crates/server/src/
-  auth/          app_session, cookie, password, session, sign_in, schemas, routes
+  auth/          app_session, acceptance, cookie, passkeys, password, session, sign_in, schemas, routes
   availability/  mod, routes
   entries/       mod (rules), schemas, routes
   projects/      mod (rules), schemas, routes
@@ -51,9 +51,11 @@ functional comparison calls byte-equal in task 081.26.
 Invitation acceptance through the application API and Better Auth is ported in
 [task 081.28](../tasks/081-native-backend/28-auth-port.md), including team assignment
 and acceptance by an existing member without changing their role.
-Not ported: the remaining organization writes and profile update listed in that task; passkey registration,
-sign-in, and management; and Google/OAuth sign-in. The sign-in method list includes
-passkey for TypeScript parity, but the native host has no passkey endpoints yet.
+Passkey registration, sign-in, listing, and removal are also ported in task 081.28.
+The native verifier uses the spike's pinned WebAuthn core and the existing COSE columns;
+challenge state lives in the shared verification table.
+Not ported: Google/OAuth sign-in, and the remaining organization writes and profile
+update listed in that task.
 
 [Task 081.26](../tasks/081-native-backend/26-functional-port.md#local-review) gives
 localhost commands for separate seeded TypeScript and native hosts.

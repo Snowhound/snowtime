@@ -1,0 +1,70 @@
+bun native/bench/lines.ts
+| Handler | TypeScript | server |
+| --- | --- | --- |
+| passkey registration options | 124 | 112 |
+| passkey authentication options | 95 | 0 |
+| passkey registration | 112 | 125 |
+| passkey authentication | 86 | 127 |
+| passkey listing | 33 | 3 |
+| passkey removal | 34 | 17 |
+| passkey Zod validation | 11 | 66 |
+| passkey HTTP and session policy | 28 | 84 |
+| acceptInvitation Zod validation | 1 | 26 |
+| acceptInvitation app wrapper | 16 | 10 |
+| acceptInvitation Better Auth rule | 105 | 153 |
+| acceptInvitation app hooks | 70 | 0 |
+| acceptInvitation HTTP | 1 | 49 |
+| invitationPreview | 40 | 15 |
+| listInvitations | 16 | 4 |
+| inviteMember | 19 | 129 |
+| inviteMember app wrapper | 26 | 0 |
+| invitationLimit callback | 20 | 0 |
+| updateIssueLinks | 9 | 24 |
+| team write helpers | 31 | 53 |
+| createTeam | 25 | 32 |
+| renameTeam | 14 | 23 |
+| deleteTeam | 9 | 13 |
+| addTeamMember | 17 | 23 |
+| removeTeamMember | 16 | 28 |
+| setTeamRole | 11 | 26 |
+| project write helpers | 20 | 40 |
+| createProject | 28 | 44 |
+| updateProject | 19 | 37 |
+| archiveProject | 15 | 26 |
+| unarchiveProject | 3 | 3 |
+| deleteProject | 35 | 51 |
+| assignProjectToTeam | 16 | 22 |
+| unassignProjectFromTeam | 17 | 19 |
+| createSettings | 9 | 12 |
+| updateSettings | 24 | 66 |
+| signInMethods | 37 | 12 |
+| getDeployment | 3 | 6 |
+| getDevUsers | 13 | 40 |
+| signOut | 80 | 77 |
+| signOut body validation | 5 | 40 |
+| signOut URL checks | 28 | 94 |
+| report context | 278 | 375 |
+| getReport | 32 | 38 |
+| getReportBreakdown | 9 | 11 |
+| getReportEntries | 23 | 38 |
+| getReportEntryTotals | 24 | 29 |
+| getReportExport | 26 | 30 |
+| report aggregation | 192 | 302 |
+| scope | 50 | 51 |
+| assertUsableProject | 21 | 27 |
+| entry columns | 10 | 17 |
+| entry checks | 49 | 70 |
+| createEntry | 33 | 24 |
+| updateEntry | 49 | 68 |
+| deleteEntry | 9 | 21 |
+| getFirstEntryStart | 12 | 15 |
+| listEntries | 20 | 28 |
+| timer helpers | 29 | 63 |
+| listProjects | 33 | 34 |
+| startTimer | 45 | 48 |
+| stopTimer | 5 | 6 |
+| getRunningTimer | 22 | 21 |
+| Total | 2292 | 3047 |
+
+Exit code: 0
+

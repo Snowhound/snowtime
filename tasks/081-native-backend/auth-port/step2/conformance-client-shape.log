@@ -1,0 +1,30 @@
+Final conformance completion after omitting clientExtensionResults, as the installed client does.
+(pass) invitations > an admin invites by address, and the link shows the invitation signed out [5.23ms]
+(pass) invitations > an unknown link shows nothing [0.74ms]
+(pass) invitations > a member may not invite [0.83ms]
+(pass) invitations > Better Auth's create refusal keeps its status and code [0.83ms]
+(pass) invitations > Better Auth's acceptance refusal checks the recipient [1.54ms]
+(pass) a verified recipient accepts a team invitation and a repeated click is closed [280.20ms]
+
+conformance/session.conformance.ts:
+(pass) the session > signed out, the session is null [1.04ms]
+(pass) the session > signed in, it has the user, their organizations and settings, and the app URL [4.17ms]
+(pass) the session > reading it sets no language cookie, even in another language than the account's [3.98ms]
+(pass) signed-out reads > the app says it can serve pages [0.43ms]
+(pass) signed-out reads > the sign-in methods, the deployment, and the seeded users [1.20ms]
+(pass) issue links > an admin sets and clears them, and the session shows them [3.09ms]
+(pass) issue links > a member may not set them, and an address without {key} is refused [1.18ms]
+
+conformance/teams.conformance.ts:
+(pass) members and teams > the members list each with their role and teams [1.87ms]
+(pass) members and teams > the teams list each with its members and their team roles [2.84ms]
+(pass) members and teams > a member may not change teams [0.86ms]
+(pass) members and teams > a team is created, renamed, given a lead, and deleted [8.55ms]
+
+ 18 pass
+ 0 fail
+ 178 expect() calls
+Ran 18 tests across 4 files. [2.71s]
+
+Exit code: 0
+

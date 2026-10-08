@@ -50,6 +50,24 @@ async fn issue_links(call: InOrganization<UpdateIssueLinksInput>) -> Response {
 // Better Auth's own routes, under /api/auth.
 pub fn better_auth_routes() -> Router<Arc<App>> {
     Router::new()
+        .route(
+            "/api/auth/passkey/generate-register-options",
+            get(passkey_register_options),
+        )
+        .route(
+            "/api/auth/passkey/generate-authenticate-options",
+            get(passkey_authenticate_options),
+        )
+        .route(
+            "/api/auth/passkey/verify-registration",
+            post(passkey_register),
+        )
+        .route(
+            "/api/auth/passkey/verify-authentication",
+            post(passkey_authenticate),
+        )
+        .route("/api/auth/passkey/list-user-passkeys", get(passkey_list))
+        .route("/api/auth/passkey/delete-passkey", post(passkey_delete))
         .route("/api/auth/sign-in/email", post(sign_in))
         .route("/api/auth/sign-out", post(sign_out))
         .route(
@@ -69,4 +87,29 @@ async fn accept(call: AsUser<GetInvitationInput>) -> Response {
 }
 async fn auth_accept(call: AuthCall) -> Response {
     call.accept_invitation().await
+}
+
+async fn passkey_register_options(call: AuthCall) -> Response {
+    call.passkey(super::passkeys::Action::RegisterOptions).await
+}
+
+async fn passkey_authenticate_options(call: AuthCall) -> Response {
+    call.passkey(super::passkeys::Action::AuthenticateOptions)
+        .await
+}
+
+async fn passkey_register(call: AuthCall) -> Response {
+    call.passkey(super::passkeys::Action::Register).await
+}
+
+async fn passkey_authenticate(call: AuthCall) -> Response {
+    call.passkey(super::passkeys::Action::Authenticate).await
+}
+
+async fn passkey_list(call: AuthCall) -> Response {
+    call.passkey(super::passkeys::Action::List).await
+}
+
+async fn passkey_delete(call: AuthCall) -> Response {
+    call.passkey(super::passkeys::Action::Delete).await
 }

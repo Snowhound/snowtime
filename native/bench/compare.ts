@@ -15,6 +15,7 @@ import { companyIds } from '../../src/db/seed-company'
 import { COLLECTION_IMAGES } from '../../src/lib/scene/images'
 import { CALLS, type CallName, requestOf } from './calls'
 import { startNative } from './native'
+import { comparePasskeys } from './passkey-compare'
 
 const [binary] = process.argv.slice(2)
 if (!binary) throw new Error('Usage: bun native/bench/compare.ts <binary>')
@@ -1663,6 +1664,7 @@ try {
     await compareWrites(`auth acceptance schema ${JSON.stringify(value)}`, [
       ['Zod string', 'authAcceptInvitation', { invitationId: value }, 'admin', 400],
     ])
+  await comparePasskeys(binary, database, judge)
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {
   await Promise.all([ts.stop(), native.stop()])

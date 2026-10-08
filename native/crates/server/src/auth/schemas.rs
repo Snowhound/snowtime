@@ -261,3 +261,70 @@ pub(super) fn accept_body_issue(body: &serde_json::Value, absent: bool) -> Optio
         )),
     }
 }
+
+pub(crate) fn passkey_issues(
+    action: &super::passkeys::Action,
+    body: &serde_json::Value,
+    empty: bool,
+    query: &serde_json::Value,
+) -> Vec<String> {
+    use super::passkeys::Action;
+    use serde_json::Value;
+    fn received(v: Option<&Value>) -> &'static str {
+        match v {
+            None => "undefined",
+            Some(Value::Null) => "null",
+            Some(Value::Bool(_)) => "boolean",
+            Some(Value::Number(_)) => "number",
+            Some(Value::String(_)) => "string",
+            Some(Value::Array(_)) => "array",
+            Some(Value::Object(_)) => "object",
+        }
+    }
+    if matches!(action, Action::RegisterOptions) {
+        return query.get("authenticatorAttachment").filter(|v| !matches!(v.as_str(),Some("platform"|"cross-platform"))).map(|_|vec!["[query.authenticatorAttachment] Invalid option: expected one of \"platform\"|\"cross-platform\"".into()]).unwrap_or_default();
+    }
+    if !matches!(
+        action,
+        Action::Register | Action::Authenticate | Action::Delete
+    ) {
+        return vec![];
+    }
+    let Some(fields) = body.as_object() else {
+        return vec![format!(
+            "[body] Invalid input: expected object, received {}",
+            received((!empty).then_some(body))
+        )];
+    };
+    let fields_to_check: &[(&str, &str, bool)] = match action {
+        Action::Register => &[
+            ("response", "nonoptional", false),
+            ("name", "string", true),
+            ("createSession", "boolean", true),
+        ],
+        Action::Authenticate => &[("response", "record", false)],
+        Action::Delete => &[("id", "string", false)],
+        _ => unreachable!(),
+    };
+    fields_to_check
+        .iter()
+        .filter_map(|(name, expected, optional)| {
+            let value = fields.get(*name);
+            let valid = if value.is_none() {
+                *optional
+            } else if *expected == "nonoptional" {
+                true
+            } else if *expected == "record" {
+                value.is_some_and(Value::is_object)
+            } else {
+                received(value) == *expected
+            };
+            (!valid).then(|| {
+                format!(
+                    "[body.{name}] Invalid input: expected {expected}, received {}",
+                    received(value)
+                )
+            })
+        })
+        .collect()
+}

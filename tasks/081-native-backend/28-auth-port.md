@@ -18,8 +18,8 @@ TypeScript and installed Better Auth 1.7.7 remain the source of truth. Follow
    - [x] Stop after step 1. Give Kait the commit range, verification counts, and commands
          for two local hosts with separate seeded database copies.
 2. Passkeys:
-   - [ ] Port registration, sign-in, listing, and removal as the app uses them.
-   - [ ] Start from [the auth spike](auth-spike.md), branch `081-auth-spike`; record
+   - [x] Port registration, sign-in, listing, and removal as the app uses them.
+   - [x] Start from [the auth spike](auth-spike.md), branch `081-auth-spike`; record
          the chosen crates and reasons. The method list already advertises passkeys.
 3. Google/OAuth:
    - [ ] Match Better Auth's state, PKCE, callback, and account-linking behavior.
@@ -56,7 +56,8 @@ subrequests. Existing email sign-in and sign-out are ported.
 The only application API route without a Rust counterpart is
 `POST /api/v1/invitations/:id/accept` (step 1).
 
-All following Better Auth paths have the prefix `/api/auth` and currently return 404:
+At the base commit, the following Better Auth paths under `/api/auth` returned 404.
+Steps 1 and 2 now cover acceptance and the six passkey endpoints; steps 3 and 4 remain open.
 
 | Method   | Path                                     | Client use                                 | Step |
 | -------- | ---------------------------------------- | ------------------------------------------ | ---- |
@@ -89,7 +90,7 @@ production calls to reject invitations, leave/delete organizations, or update pa
 
 ### Step 1
 
-Verified on macOS arm64 on 2026-10-08. Step 1 is complete; steps 2–4 are pending.
+Verified on macOS arm64 on 2026-10-08. At completion of step 1, steps 2–4 were pending.
 Kait approved fixing the TypeScript already-member crash with the recorded option 2
 in [the auth decision](../../docs/architecture/auth.md#invitation-acceptance-after-joining).
 The scope commit is `2583c0c`; the isolated TypeScript fix is `1222cf2`, and the native
@@ -168,6 +169,106 @@ Patterns for subtask 05:
 The installed Better Auth version is 1.7.7, matching this branch's package manifest.
 The spike still documents its earlier target version; crate adoption belongs to step 2.
 
+### Step 2
+
+Verified on macOS arm64 on 2026-10-08. Passkey registration, sign-in, listing, and removal
+are implemented. Kait approved step 1 and asked to stop after step 2. Google/OAuth and
+remaining organization/profile writes remain pending. No TypeScript auth behavior changes.
+The requested seed import correction is `b7c2349` on `main` and `dbad70a` on
+`081-auth-port`.
+
+Read the app's auth configuration, settings mutations, sign-in action, installed
+`@better-auth/passkey` 1.7.7 server/client, and `@simplewebauthn/server` 13.3.3 before
+porting. The `081-auth-spike` storage adapter and ceremony tests supply the COSE mapping
+and identify the published Better Auth Rust plugin's UV=false registration failure.
+
+Crates:
+
+- `webauthn-rs-core =0.5.5`: reuse the spike's verifier and existing COSE rows, with
+  TypeScript's preferred user-verification policy. The published Better Auth Rust plugin
+  requires verification for registration, so it remains unmounted. The higher-level
+  passkey wrapper's policy and credential envelope do not match this port's contract.
+  The [core API](https://docs.rs/webauthn-rs-core/0.5.5/webauthn_rs_core/struct.WebauthnCore.html)
+  puts policy and state handling in the caller. Snowtime binds the exact RP and origin,
+  verifies signed challenge cookies, consumes persisted challenges once, binds registration
+  to a fresh session and its user, and preserves counter checks. The exact pin prevents
+  changes to the reconstructed state/credential format without review.
+- `serde_cbor_2` 0.13.0: decode persisted COSE keys as in the spike. Registration stores
+  the authenticator's original COSE bytes, including their map order, without adding
+  columns or a process cache.
+- `openssl` 0.10.81 with `vendored`: the WebAuthn core's cryptography dependency is built
+  into the host, so deployment needs no shared OpenSSL library. The native image's build
+  installs Perl and make for that build. No Docker build or Linux verification was run.
+
+Checks and output in [auth-port/step2](auth-port/step2/):
+
+- Formatting and workspace Clippy with all targets and warnings denied pass, without
+  and with `bench`.
+- Server tests: 69 pass without `bench`, and 69 with it. Host tests: 16 pass.
+- Native passkey, invitation, session, and team conformance: 18 pass, 178 assertions.
+  The TypeScript passkey reference test passes: 1 test, 127 assertions.
+- Comparison: 1,071 calls answer with the same bytes, including 137 passkey cases.
+  ES256, Ed25519, and RSA cover UV=false registration/sign-in, UV=true sign-in, backed-up
+  multi-device credentials, backup-flag transitions, raw COSE bytes, optional registration
+  session creation, discovery and session options, exclusion lists, listing, and removal.
+  Refusals cover Zod ordering, HTTP and ceremony origins, missing/tampered/expired
+  challenges, replay, wrong challenge, invalid signature, absent user presence, stale
+  counters, wrong registration/deletion owner, wrong ceremony, and removed credentials.
+- Separate seeded copies cover imported COSE keys in fresh server processes, authenticators
+  without counters, expired challenges, and registration's 24-hour freshness boundary.
+  Better Auth's deletion endpoint requires a live session, but not a fresh one; native
+  behavior follows that endpoint even though the settings UI disables stale-session actions.
+- The software authenticator sends the installed client's response shape, including the
+  omission of `clientExtensionResults`. It produces real signatures and keys. It cannot
+  prove browser prompts, OS credential storage/synchronization, hardware attestation,
+  or physical authenticator interoperability. Snowtime requests attestation `none`.
+- Comparisons pair checked UUIDv7 passkey/session IDs and checked random session tokens.
+  Options validate 32-byte challenges and the random registration user handle before
+  masking them. Only new credential/session dates are masked; seeded user dates, COSE
+  bytes, counters, backup metadata, supplied IDs, and response key order remain exact.
+  Both fixture hosts use `CLIENT_IP_HEADER=x-bench-ip`; IP and user-agent fields remain
+  exact. Without a configured trusted header, the native host retains its existing
+  unknown-address policy.
+- Changed-file lint and Knip pass. Full `tsc --noEmit` has the same existing optional
+  benchmark dependency and shared-props AST errors as step 1, with no changed-file errors.
+
+Handler rows are in `native/bench/lines.ts`. The shared options rule is counted on
+registration's row; authentication options reuse it.
+
+| Handler or helper                       | TypeScript | Rust |
+| --------------------------------------- | ---------: | ---: |
+| Registration options and shared options |        124 |  112 |
+| Authentication options                  |         95 |    0 |
+| Registration                            |        112 |  125 |
+| Authentication and session creation     |         86 |  127 |
+| Listing                                 |         33 |    3 |
+| Removal                                 |         34 |   17 |
+| Ordered Zod validation                  |         11 |   66 |
+| HTTP and session policy                 |         28 |   84 |
+
+Run from the worktree root:
+
+```sh
+cargo fmt --all --manifest-path native/Cargo.toml
+cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --offline -- -D warnings
+cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --features bench --offline -- -D warnings
+cargo test --manifest-path native/Cargo.toml -p snowtime-server --offline
+cargo test --manifest-path native/Cargo.toml -p snowtime-server --features bench --offline
+cargo test --manifest-path native/Cargo.toml -p snowtime-host --offline
+cargo build --manifest-path native/Cargo.toml -p snowtime-host --offline
+bun native/bench/conformance.ts native/target/debug/snowtime-axum conformance/passkeys.conformance.ts conformance/invitations.conformance.ts conformance/session.conformance.ts conformance/teams.conformance.ts
+bun test ./conformance/passkeys.conformance.ts
+bun native/bench/compare.ts native/target/debug/snowtime-axum
+bun native/bench/passkey-compare.ts native/target/debug/snowtime-axum
+bun native/bench/lines.ts
+```
+
+The focused passkey comparison runs the same cases that `compare.ts` includes, for
+iteration without rerunning other domains. Run TypeScript conformance and comparison
+sequentially: their builds replace the same harness cache. The final `*-client-shape.log`
+outputs check the response shape with `clientExtensionResults` omitted. No Docker,
+load, or stress runs.
+
 ## Local review
 
 The worktree's independent review copies are already prepared at
@@ -220,3 +321,30 @@ Accept each link, reload the organization view to check the membership and Desig
 and reopen the invitation to check that it is closed. The native invitation page still
 calls the unported `organization/set-active` endpoint after acceptance; acceptance itself
 already activates the organization, and step 4 ports that client call.
+
+## Passkey review
+
+Use the two seeded database copies above. For a browser passkey check, use `localhost`
+for both hosts, with separate browser profiles to keep their cookies apart. Stop the
+acceptance-review native host and restart it with its URL changed to `localhost`:
+
+```sh
+cd /private/tmp/snowtime-081-auth-port
+NODE_ENV=development HOST=127.0.0.1 PORT=3200 RENDERERS=1 \
+  BETTER_AUTH_SECRET=localhost-review-secret-081-auth-port \
+  BETTER_AUTH_URL=http://localhost:3200 \
+  TURSO_DATABASE_URL=file:/private/tmp/snowtime-081-auth-port/perf/.cache/auth-review-native.db \
+  EDGE_STATIC_DIR=native/crates/render/bundle/dist/public \
+  native/target/debug/snowtime-axum
+```
+
+On `http://localhost:3100`, sign in as `kristiina@lumen.example.com` with password
+`snowtime-local`. On `http://localhost:3200`, use another browser profile and
+`noah@example.com` with the same password, so the authenticator's account labels differ.
+Open Settings and add a passkey on each host. Sign out, choose the passkey registered
+for that host's database, then return to Settings and remove it. Reopen Settings to
+check that the row is gone. Both hosts share the `localhost` relying party; their
+databases and sessions remain separate.
+
+The native settings page still calls the unported OAuth account-list endpoint; that
+error remains until step 3. The passkey endpoints work independently of it.

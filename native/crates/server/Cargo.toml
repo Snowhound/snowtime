@@ -12,11 +12,8 @@ auth-spike = [
   "dep:better-auth-core",
   "dep:async-trait",
   "dep:chrono",
-  "dep:serde_cbor_2",
-  "dep:webauthn-rs-core",
-  "dep:openssl",
 ]
-scrypt-bench = ["dep:scrypt", "dep:openssl"]
+scrypt-bench = ["dep:scrypt"]
 
 [dependencies]
 async-trait = { version = "0.1", optional = true }
@@ -34,14 +31,14 @@ icu_collator.workspace = true
 icu_locale_core.workspace = true
 jiff.workspace = true
 libc = "0.2"
-openssl = { version = "0.10", features = ["vendored"], optional = true }
+openssl = { version = "0.10", features = ["vendored"] }
 rand.workspace = true
 regex = "1"
 rusqlite.workspace = true
 rustc-hash.workspace = true
 scrypt = { workspace = true, optional = true }
 serde.workspace = true
-serde_cbor_2 = { version = "0.13", optional = true }
+serde_cbor_2 = { version = "0.13" }
 serde_json.workspace = true
 sha2.workspace = true
 tokio = { workspace = true, features = ["sync", "time"] }
@@ -49,7 +46,7 @@ tower = { version = "0.5", features = ["util"] }
 unicode-normalization.workspace = true
 url = "2"
 uuid.workspace = true
-webauthn-rs-core = { version = "=0.5.5", optional = true }
+webauthn-rs-core = { version = "=0.5.5" }
 
 [[example]]
 name = "scrypt-bench"

@@ -1,0 +1,52 @@
+bun native/bench/conformance.ts native/target/debug/snowtime-axum conformance/passkeys.conformance.ts conformance/invitations.conformance.ts conformance/session.conformance.ts conformance/teams.conformance.ts
+{"timestamp":"2026-10-08T07:43:17.067177Z","level":"INFO","fields":{"message":"sized the renderers","limit_mib":32768,"source":"physical memory","cpus":10,"renderers":10,"heap_mib":128,"semi_space_mib":32},"target":"snowtime_axum"}
+{"timestamp":"2026-10-08T07:43:17.074782Z","level":"INFO","fields":{"message":"listening","address":"127.0.0.1:59400","tls":false},"target":"snowtime_axum"}
+bun test v1.4.2 (744846f84)
+
+conformance/passkeys.conformance.ts:
+[passkey] authentication: The credential may have be compromised and should be inspected
+[passkey] authentication: client origin
+[passkey] authentication: A JSON parser failure has occurred
+[passkey] authentication: Authentication has failed
+[passkey] authentication: The user present bit is not set, and required
+[passkey] authentication: The credential may have be compromised and should be inspected
+[passkey] authentication: client origin
+[passkey] authentication: A JSON parser failure has occurred
+[passkey] authentication: Authentication has failed
+[passkey] authentication: The user present bit is not set, and required
+[passkey] authentication: The credential may have be compromised and should be inspected
+[passkey] authentication: client origin
+[passkey] authentication: A JSON parser failure has occurred
+[passkey] authentication: Authentication has failed
+[passkey] authentication: The user present bit is not set, and required
+(pass) passkey registration, sign-in, listing, removal, and refusal contracts [735.54ms]
+
+conformance/invitations.conformance.ts:
+(pass) invitations > an admin invites by address, and the link shows the invitation signed out [8.02ms]
+(pass) invitations > an unknown link shows nothing [0.50ms]
+(pass) invitations > a member may not invite [0.55ms]
+(pass) invitations > Better Auth's create refusal keeps its status and code [0.51ms]
+(pass) invitations > Better Auth's acceptance refusal checks the recipient [1.01ms]
+(pass) a verified recipient accepts a team invitation and a repeated click is closed [278.50ms]
+
+conformance/session.conformance.ts:
+(pass) the session > signed out, the session is null [0.86ms]
+(pass) the session > signed in, it has the user, their organizations and settings, and the app URL [4.08ms]
+(pass) the session > reading it sets no language cookie, even in another language than the account's [4.40ms]
+(pass) signed-out reads > the app says it can serve pages [0.47ms]
+(pass) signed-out reads > the sign-in methods, the deployment, and the seeded users [1.29ms]
+(pass) issue links > an admin sets and clears them, and the session shows them [3.24ms]
+(pass) issue links > a member may not set them, and an address without {key} is refused [1.04ms]
+
+conformance/teams.conformance.ts:
+(pass) members and teams > the members list each with their role and teams [1.68ms]
+(pass) members and teams > the teams list each with its members and their team roles [2.30ms]
+(pass) members and teams > a member may not change teams [0.71ms]
+(pass) members and teams > a team is created, renamed, given a lead, and deleted [8.57ms]
+
+ 18 pass
+ 0 fail
+ 178 expect() calls
+Ran 18 tests across 4 files. [2.75s]
+Exit code: 0
+

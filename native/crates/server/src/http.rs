@@ -30,6 +30,21 @@ pub struct Request {
     params: Vec<(String, String)>,
 }
 
+#[cfg(test)]
+impl Request {
+    pub(crate) fn auth_fixture(cookie: String) -> Self {
+        Self {
+            method: "POST".into(),
+            query: None,
+            cookie: Some(cookie),
+            user_agent: None,
+            client_ip: None,
+            body: vec![],
+            params: vec![],
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Response {
     pub status: u16,
@@ -604,6 +619,9 @@ impl FromRequest<Arc<App>> for AuthCall {
     }
 }
 impl AuthCall {
+    pub(crate) async fn passkey(self, action: crate::auth::passkeys::Action) -> Response {
+        self.0.passkey(self.1, self.2, action).await
+    }
     pub(crate) async fn accept_invitation(self) -> Response {
         self.0.better_auth_accept_invitation(self.1, self.2).await
     }
