@@ -19,6 +19,7 @@ import {
 } from './login-policy.server'
 import { memberRemovalHook } from './member-removal.server'
 import { databaseHooks, organizationHooks } from './name-checks.server'
+import { encodeCallbackUrls } from './redirect-urls.server'
 import { passwordEnabled, refuseUnverifiedSignUp, socialProviders } from './sign-in.server'
 
 // Passkeys are bound to the app's domain, so each environment's relying party follows its
@@ -87,6 +88,7 @@ export const auth = betterAuth({
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      encodeCallbackUrls(ctx.path, ctx.body)
       await loginDomainMiddleware(domains)(ctx)
       // The outer hook owns the headers envelope; return only the nested hook's response.
       return acceptanceHooks.before({ ...ctx, returnHeaders: false })

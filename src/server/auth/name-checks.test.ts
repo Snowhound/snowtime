@@ -93,6 +93,7 @@ describe('name checks', () => {
     function update(data: { name?: string; slug?: string }) {
       return auth.api.updateOrganization({ body: { organizationId, data }, headers })
     }
+    expect((await refusal(update({}))).code).toBe('NO_FIELDS_TO_UPDATE')
     expect((await refusal(update({ name: long }))).code).toBe('NAME_TOO_LONG')
     expect((await refusal(update({ slug: 'acme-co' }))).code).toBe('SLUG_READ_ONLY')
     expect((await update({ name: 'Acme Co' }))?.name).toBe('Acme Co')
