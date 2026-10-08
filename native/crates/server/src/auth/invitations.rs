@@ -123,9 +123,9 @@ pub fn invite_member(
     }
     let id = uuid::Uuid::now_v7().to_string();
     let expires_at = now + 48 * 60 * 60 * 1000;
-    crate::sql!("insert into invitation (id,email,role,organization_id,inviter_id,status,expires_at,created_at) values (",&id,", ",&input.email,", ",&input.role,", ",&scope.organization_id,", ",&scope.user_id,", 'pending', ",expires_at,", ",now,")").execute(db)?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
+    crate::sql!("insert into invitation (id,email,role,organization_id,inviter_id,status,expires_at,created_at) values (",&id,", ",&input.email,", ",&input.role,", ",&scope.organization_id,", ",&scope.user_id,", 'pending', ",expires_at,", ",now,")").execute(&tx)?;
     if let Some(team_id) = &input.team_id {
-        let tx = db.unchecked_transaction()?;
         let found = crate::sql!(
             "select id from team where id = ",
             team_id,
@@ -145,8 +145,8 @@ pub fn invite_member(
             )
             .execute(&tx)?;
         }
-        tx.commit()?;
     }
+    tx.commit()?;
     Ok(Invitation {
         id,
         email: input.email,
@@ -196,6 +196,23 @@ mod tests {
             team_id: None,
         }
     }
+    #[test]
+    fn team_assignment_failure_rolls_back_invitation_insert() {
+        let db = database();
+        db.execute_batch("insert into team (id,name,organization_id,member_count,created_at) values ('team','Team','org',0,0);
+            CREATE TRIGGER fail_invitation_team BEFORE UPDATE OF team_id ON invitation
+            BEGIN SELECT RAISE(ABORT, 'team assignment failed'); END;").unwrap();
+        let mut input = input("new@example.com");
+        input.team_id = Some("team".into());
+        assert!(invite_member(&db, &scope(), input, &config(), &MemoryStore::default()).is_err());
+        assert_eq!(
+            db.query_row("select count(*) from invitation", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+    }
+
     #[test]
     fn preview_hides_closed_and_expired_fields() {
         let db = database();

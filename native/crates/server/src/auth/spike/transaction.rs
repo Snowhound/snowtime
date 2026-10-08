@@ -71,7 +71,11 @@ impl TransactionStore<Schema> for LaneStore {
         let worker = tokio::spawn(async move {
             store
                 .run(move |db| {
-                    let tx = db.unchecked_transaction().map_err(error)?;
+                    let tx = rusqlite::Transaction::new_unchecked(
+                        db,
+                        rusqlite::TransactionBehavior::Immediate,
+                    )
+                    .map_err(error)?;
                     let expires = Instant::now() + deadline;
                     ready
                         .send(())

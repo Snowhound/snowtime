@@ -885,7 +885,8 @@ fn finish(
             ));
         }
         let user = uuid::Uuid::now_v7().to_string();
-        let tx = db.unchecked_transaction()?;
+        let tx =
+            rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
         tx.execute("insert into user(id,name,email,email_verified,image,created_at,updated_at) values (?1,?2,?3,?4,?5,?6,?6)",params![user,profile.name,email.to_lowercase(),profile.verified,profile.image,clock::now()])?;
         save_account(
             &tx,

@@ -125,8 +125,7 @@ fn accept(
             );
         }
     }
-    let was_member = existing.is_some();
-    let tx = db.unchecked_transaction()?;
+    let tx = rusqlite::Transaction::new_unchecked(db, rusqlite::TransactionBehavior::Immediate)?;
     let changed = crate::sql!(
         "update invitation set status = 'accepted' where id = ",
         id,
@@ -182,16 +181,10 @@ fn accept(
         )
         .execute(&tx)?;
     }
-    if was_member && let Some(team) = &team {
+    if let Some(team) = &team {
         crate::teams::insert_team_member(&tx, team, user)?;
     }
     tx.commit()?;
-    // The app's team assignment follows Better Auth's acceptance in a separate transaction.
-    if !was_member && let Some(team) = team {
-        let tx = db.unchecked_transaction()?;
-        crate::teams::insert_team_member(&tx, &team, user)?;
-        tx.commit()?;
-    }
     invitation.status = "accepted".into();
     Ok(Accepted { invitation, member })
 }
@@ -339,6 +332,33 @@ mod tests {
             ));
         }
     }
+    #[test]
+    fn team_assignment_failure_rolls_back_new_membership_and_acceptance() {
+        let (db, config) = fixture();
+        db.execute_batch(
+            "CREATE TRIGGER fail_team_member BEFORE INSERT ON team_member
+            BEGIN SELECT RAISE(ABORT, 'team assignment failed'); END;",
+        )
+        .unwrap();
+        assert!(accept(&db, "recipient", "invite", &config, None).is_err());
+        assert_eq!(
+            db.query_row("select status from invitation", [], |r| r
+                .get::<_, String>(0))
+                .unwrap(),
+            "pending"
+        );
+        assert_eq!(
+            db.query_row("select count(*) from member", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            db.query_row("select member_count from team", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+    }
+
     #[test]
     fn refusals_leave_invitation_and_membership_unchanged() {
         let (db, config) = fixture();
