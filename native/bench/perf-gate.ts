@@ -18,6 +18,8 @@ const { values } = parseArgs({
     freeze: { type: 'boolean', default: false },
     'build-current': { type: 'boolean', default: false },
     inside: { type: 'boolean', default: false },
+    identical: { type: 'boolean', default: false },
+    calibrate: { type: 'boolean', default: false },
     help: { type: 'boolean', default: false },
     out: { type: 'string' },
     renders: { type: 'string', default: '25' },
@@ -26,7 +28,9 @@ const { values } = parseArgs({
   },
 })
 if (values.help) {
-  console.log('perf-gate.ts --freeze | --build-current | [--renders=25 --repeats=1000 --rate=30]')
+  console.log(
+    'perf-gate.ts --freeze | --build-current | --calibrate | [--identical --renders=25 --repeats=1000 --rate=30]',
+  )
   process.exit(0)
 }
 for (const value of [values.renders, values.repeats, values.rate])
@@ -235,7 +239,7 @@ async function inside() {
   const all: Record<string, Record<string, number>> = {}
   for (const [index, name] of ['baseline', 'current', 'baseline', 'current'].entries()) {
     const round = `${index + 1}-${name}`
-    const artifact = join(gate, name)
+    const artifact = join(gate, values.identical ? 'baseline' : name)
     const manifest = json(join(artifact, 'artifact.json'))
     for (const file of Object.keys(manifest.files))
       if (hash(join(artifact, file)) !== manifest.files[file].sha256)
@@ -307,7 +311,7 @@ async function inside() {
       compareMetric(
         [all['1-baseline'][metric], all['3-baseline'][metric]],
         [all['2-current'][metric], all['4-current'][metric]],
-        metric.endsWith('/cpu_ms'),
+        metric,
       ),
     ]),
   )
@@ -327,6 +331,56 @@ async function inside() {
 async function main() {
   if (values.inside) {
     await inside()
+    return
+  }
+  if (values.calibrate) {
+    const attempts: { folder: string; exitCode: number | null; flagged: string[] }[] = []
+    let streak = 0
+    function recordCalibration(status: string) {
+      writeFileSync(
+        join(out, 'calibration.json'),
+        JSON.stringify(
+          {
+            status,
+            identical: true,
+            requiredConsecutivePasses: 2,
+            consecutivePasses: streak,
+            attempts,
+          },
+          null,
+          2,
+        ),
+      )
+    }
+    recordCalibration('running')
+    while (streak < 2) {
+      const folder = join(out, `attempt-${attempts.length + 1}`)
+      const args = [
+        'native/bench/perf-gate.ts',
+        '--identical',
+        `--out=${folder}`,
+        `--renders=${values.renders}`,
+        `--repeats=${values.repeats}`,
+        `--rate=${values.rate}`,
+      ]
+      const result = spawnSync('bun', args, { cwd: ROOT, stdio: 'inherit' })
+      const comparison = existsSync(join(folder, 'comparison.json'))
+        ? json(join(folder, 'comparison.json'))
+        : {}
+      const flagged = Object.entries(comparison)
+        .filter(([, result]) => (result as { flagged: boolean }).flagged)
+        .map(([metric]) => metric)
+      attempts.push({ folder: relative(ROOT, folder), exitCode: result.status, flagged })
+      streak = result.status === 0 ? streak + 1 : 0
+      recordCalibration(streak === 2 ? 'passed' : 'running')
+      if (result.status !== 0 && result.status !== 1) {
+        recordCalibration('invalid')
+        throw new Error(
+          'Invalid calibration attempt; inspect its excluded evidence before rerunning',
+        )
+      }
+    }
+    console.log(`Two consecutive identical comparisons passed. Evidence: ${out}`)
     return
   }
   checkOtherSessions()
@@ -437,16 +491,28 @@ async function main() {
       )
       snapshot('current')
     } else {
-      const current = json(join(gate, 'current/artifact.json'))
+      command('git', ['rev-parse', 'HEAD'], 'runner-commit.txt')
+      command('git', ['diff', 'HEAD'], 'runner-diff.patch')
+      const current = json(
+        join(gate, values.identical ? 'baseline/artifact.json' : 'current/artifact.json'),
+      )
       if (
-        current.commit !== command('git', ['rev-parse', 'HEAD'], 'current-commit.txt').trim() ||
-        current.diff !== command('git', ['diff', 'HEAD'], 'current-diff.patch')
+        !values.identical &&
+        (current.commit !== command('git', ['rev-parse', 'HEAD'], 'current-commit.txt').trim() ||
+          current.diff !== command('git', ['diff', 'HEAD'], 'current-diff.patch'))
       )
         throw new Error(
           'Current checkout changed since artifact capture; run --build-current first',
         )
       cpSync(join(gate, 'baseline/artifact.json'), join(out, 'baseline-artifact.json'))
-      cpSync(join(gate, 'current/artifact.json'), join(out, 'current-artifact.json'))
+      cpSync(
+        join(gate, values.identical ? 'baseline/artifact.json' : 'current/artifact.json'),
+        join(out, 'current-artifact.json'),
+      )
+      writeFileSync(
+        join(out, 'comparison-mode.json'),
+        JSON.stringify({ identical: values.identical }),
+      )
       cpSync(join(gate, 'inputs/hashes.json'), join(out, 'input-hashes.json'))
       for (const [file, h] of Object.entries(json(join(gate, 'inputs/hashes.json'))))
         if (hash(join(gate, 'inputs', file)) !== (h as { sha256: string }).sha256)
@@ -486,6 +552,7 @@ async function main() {
           `--renders=${values.renders}`,
           `--repeats=${values.repeats}`,
           `--rate=${values.rate}`,
+          ...(values.identical ? ['--identical'] : []),
         ],
         { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
       )

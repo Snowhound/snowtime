@@ -398,8 +398,8 @@ bun native/bench/scaling/kit-baseline.ts --prepare \
   --date="$baseline_date" --recording="$baseline_recording"
 bun native/bench/perf-gate.ts --freeze
 
-# First verify the gate against identical binaries: current initially copies A.
-bun native/bench/perf-gate.ts
+# Verify identical artifacts until two consecutive comparisons pass.
+bun native/bench/perf-gate.ts --calibrate
 
 # Separately, record the full start-of-kit baseline.
 bun native/bench/scaling/kit-baseline.ts \
@@ -430,12 +430,30 @@ binary from running require a new matched baseline; keep the original evidence.
 ### Results and regression rule
 
 The gate prints and saves a table of baseline/current means, deltas, observed noise
-bands, and flags. For each metric, the noise band is `abs(A1 - A2)`. CPU uses
-`max(abs(A1 - A2), 5% of mean(A))`. A regression is `mean(B) - mean(A) > band`.
-Lower values are better for every metric, including sizes. Sizes normally have zero
-spread, so any growth is flagged. This two-round band is a quick review rule, not
+bands, and flags. Each band is the larger of `abs(A1 - A2)` and its minimum floor:
+
+| Metric                                | Minimum floor, relative to mean(A) |
+| ------------------------------------- | ---------------------------------- |
+| CPU                                   | 5%                                 |
+| p95 latency                           | 10%                                |
+| p50 latency and Server-Timing medians | 5%                                 |
+| RSS                                   | Larger of 5% and 4 MiB             |
+| Binary and bundle sizes               | 5%                                 |
+
+A regression is `mean(B) - mean(A) > band`. Lower values are better for every metric.
+This two-round band is a quick review rule, not
 a statistical confidence interval. Short p95 samples can be noisy; investigate a
 flag with a repeat in an idle session before attributing it to the refactor.
+
+`--calibrate` runs A/B/A/B with the retained baseline artifacts in both positions.
+It does not replace current artifacts or rebuild anything, so it also works after
+updating only the gate's scripts. Each regression resets the consecutive-pass count.
+It stops after two consecutive passes, or stops with exit code 2 on invalid generator
+evidence or a setup error. Keep the Ryzen awake and idle throughout the sequence.
+The calibration folder retains every attempt, its flagged metrics and exit code,
+and `calibration.json` with the final streak. A standalone identical check uses
+`--identical`. The 2026-10-08 noise-floor amendment is implemented; its two passing
+Ryzen calibration runs are pending Kait's execution and returned evidence.
 
 Exit codes are 0 for a passing gate, 1 for a flagged regression, and 2 for invalid
 measurements or setup errors. Generator validity takes precedence over every server
