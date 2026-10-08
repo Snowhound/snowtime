@@ -272,6 +272,17 @@ fn redirect_url(value: &str) -> String {
     }
     encoded
 }
+fn state_url_issues(body: &Value) -> Vec<String> {
+    ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]
+        .into_iter()
+        .filter(|field| {
+            body[*field]
+                .as_str()
+                .is_some_and(|v| redirect_url(v).len() > super::bounds::URL_BYTES)
+        })
+        .map(|field| format!("[body.{field}] Too big: expected encoded URL to have <=2048 bytes"))
+        .collect()
+}
 fn start(
     db: &Connection,
     app: &App,
@@ -786,9 +797,6 @@ fn finish(
     tokens: &Value,
     profile: &Profile,
 ) -> rusqlite::Result<Answer> {
-    if let Some(issue) = super::bounds::url_issue(&json!(profile.image), "image") {
-        return Ok(refusal(400, "VALIDATION_ERROR", &issue).into());
-    }
     let default = format!("{}/api/auth/error", app.config.app_origin());
     let error_url = pending.state.error_url.as_deref().unwrap_or(&default);
     let existing: Option<(String, String)> = db
@@ -989,6 +997,12 @@ impl App {
         if !issues.is_empty() {
             return refusal(400, "VALIDATION_ERROR", &issues.join("; ")).into_response();
         }
+        if matches!(action, Action::SignIn | Action::Link) {
+            let issues = state_url_issues(&body);
+            if !issues.is_empty() {
+                return refusal(400, "VALIDATION_ERROR", &issues.join("; ")).into_response();
+            }
+        }
         if matches!(action, Action::Callback) {
             let query = callback_query(&request, &body);
             if request.method == "POST" {
@@ -1146,6 +1160,52 @@ mod tests {
             .query_row("select count(*) from verification", [], |r| r.get(0))
             .unwrap()
     }
+    async fn assert_state_url_bound(field: &str) {
+        let app = fixture(false);
+        for value in [
+            format!("/{}", "a".repeat(2047)),
+            format!("/{}", "雪".repeat(227)),
+        ] {
+            assert!(state_url_issues(&json!({field: value})).is_empty());
+        }
+        for action in [Action::SignIn, Action::Link] {
+            for value in [
+                format!("/{}", "a".repeat(2048)),
+                format!("/{}", "雪".repeat(228)),
+            ] {
+                let mut request = Request::auth_fixture(String::new());
+                request.body =
+                    serde_json::to_vec(&json!({"provider":"google",field:value})).unwrap();
+                let mut headers = axum::http::HeaderMap::new();
+                headers.insert("origin", "http://snowtime.test".parse().unwrap());
+                let response = app
+                    .clone()
+                    .oauth(request, FetchHeaders::of(&headers), action)
+                    .await;
+                assert_eq!(response.status(), 400);
+                let bytes = axum::body::to_bytes(response.into_body(), 4096)
+                    .await
+                    .unwrap();
+                let expected = format!(
+                    r#"{{"message":"[body.{field}] Too big: expected encoded URL to have <=2048 bytes","code":"VALIDATION_ERROR"}}"#
+                );
+                assert_eq!(bytes.as_ref(), expected.as_bytes());
+                assert_eq!(count(&app), 0);
+            }
+        }
+    }
+    #[tokio::test]
+    async fn callback_url_is_bounded_after_encoding_before_storing_state() {
+        assert_state_url_bound("callbackURL").await;
+    }
+    #[tokio::test]
+    async fn error_callback_url_is_bounded_after_encoding_before_storing_state() {
+        assert_state_url_bound("errorCallbackURL").await;
+    }
+    #[tokio::test]
+    async fn new_user_callback_url_is_bounded_after_encoding_before_storing_state() {
+        assert_state_url_bound("newUserCallbackURL").await;
+    }
     #[tokio::test]
     async fn oversized_additional_data_refuses_before_storing_state() {
         let app = fixture(false);
@@ -1168,38 +1228,6 @@ mod tests {
             assert_eq!(bytes.as_ref(), br#"{"message":"[body.additionalData] Too big: expected JSON to have <=4096 bytes","code":"VALIDATION_ERROR"}"#);
             assert_eq!(count(&app), 0);
         }
-    }
-    #[test]
-    fn oversized_provider_image_refuses_before_persisting_user_or_account() {
-        let app = fixture(false);
-        save(&app, "image", "image", clock::now() + 600000);
-        let data: String = app
-            .db()
-            .query_row("select value from verification", [], |r| r.get(0))
-            .unwrap();
-        let pending = Pending {
-            state: serde_json::from_str(&data).unwrap(),
-            provider: app.config.oauth[0].clone(),
-            cookies: vec![],
-        };
-        let profile = Profile {
-            id: "id".into(),
-            email: Some("alice@example.com".into()),
-            name: "Alice".into(),
-            image: Some("a".repeat(2049)),
-            verified: true,
-        };
-        let response = finish(
-            &app.db(),
-            &app,
-            &request(&app, "image"),
-            &pending,
-            &json!({}),
-            &profile,
-        )
-        .unwrap();
-        assert_eq!(response.response.status, 400);
-        assert_eq!(response.response.body, br#"{"message":"[body.image] Too big: expected string to have <=2048 bytes","code":"VALIDATION_ERROR"}"#);
     }
     #[test]
     fn token_expiry_checks_multiplication_and_addition() {

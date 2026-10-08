@@ -93,7 +93,10 @@ export function startOAuthProvider() {
       }
       const access = request.headers.get('authorization')?.replace(/^Bearer /, '') ?? ''
       const grant = tokens.get(access)
-      if (original.hostname === 'graph.microsoft.com') return new Response(null, { status: 404 })
+      if (original.hostname === 'graph.microsoft.com')
+        return grant?.profile.graph_photo
+          ? new Response(Buffer.alloc(2048, 42), { headers: { 'content-type': 'image/jpeg' } })
+          : new Response(null, { status: 404 })
       if (!grant) return Response.json({ error: 'bad_token' }, { status: 401 })
       if (original.pathname === '/user/emails')
         return Response.json([

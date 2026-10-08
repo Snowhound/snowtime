@@ -136,6 +136,12 @@ export async function oauthFlow(
           session.organizations.length === 0)
       )
         throw new Error('Implicit link changed the existing profile or membership')
+      if (
+        label === 'microsoft application session' &&
+        session.user.image !==
+          `data:image/jpeg;base64, ${Buffer.alloc(2048, 42).toString('base64')}`
+      )
+        throw new Error('Microsoft Graph photo was not stored intact')
       text = text.replaceAll(session.signedInAt, '$signedInAt')
     }
     const location = response.headers.get('location')
@@ -314,7 +320,10 @@ export async function oauthFlow(
   cookie = ''
   for (const id of ['google', 'github', 'microsoft']) {
     await begin(id, { newUserCallbackURL: `${app.url}/welcome` })
-    code = await issue(profile(`${id}@oauth.example`, true, `new-${id}`))
+    code = await issue({
+      ...profile(`${id}@oauth.example`, true, `new-${id}`),
+      ...(id === 'microsoft' ? { graph_photo: true } : {}),
+    })
     await call(
       `${id} new verified signup`,
       `/callback/${id}?state=${state}&code=${code}`,
@@ -385,6 +394,10 @@ export async function oauthFlow(
       302,
     )
     await call(`microsoft ${id} account`, '/list-accounts', undefined, 200)
+  }
+  for (const field of ['callbackURL', 'errorCallbackURL', 'newUserCallbackURL']) {
+    for (const path of ['/' + 'a'.repeat(2047), '/' + '雪'.repeat(227)])
+      await begin('google', { [field]: path })
   }
   for (const seconds of [0, -1]) {
     cookie = ''

@@ -524,7 +524,7 @@ fn new_session(
     }
     let now = clock::now();
     let ip = request.client_ip.as_deref().unwrap_or("");
-    let agent = request.user_agent.as_deref().unwrap_or("");
+    let agent = super::bounds::user_agent(request.user_agent.as_deref().unwrap_or(""));
     let token = session::create_session(db, user_id, ip, agent, now)?;
     let id: String = db.query_row("select id from session where token=?1", [&token], |r| {
         r.get(0)
@@ -702,6 +702,46 @@ mod tests {
         ))
     }
 
+    #[test]
+    fn created_session_returns_the_stored_truncated_user_agent() {
+        let app = fixture();
+        let db = app.db();
+        db.execute_batch(
+            "alter table user add column name text default 'Alice';
+            alter table user add column email_verified integer default 1;
+            alter table user add column image text;
+            alter table user add column created_at integer default 0;
+            alter table user add column updated_at integer default 0;
+            alter table session add column ip_address text;
+            alter table session add column user_agent text;
+            create table account(user_id text,provider_id text,account_id text,password text);",
+        )
+        .unwrap();
+        for agent in ["a".repeat(513), format!("{}😀", "a".repeat(510))] {
+            let mut request = request(&app, "none");
+            request.user_agent = Some(agent);
+            let response = new_session(&db, &app, &request, "alice").unwrap();
+            assert_eq!(response.status, 200);
+            let body: Value = serde_json::from_slice(&response.body).unwrap();
+            let stored: String = db
+                .query_row(
+                    "select user_agent from session where token=?1",
+                    [body["session"]["token"].as_str().unwrap()],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(body["session"]["userAgent"], stored);
+            assert!(stored.len() <= 512);
+            assert_eq!(
+                stored.len(),
+                if request.user_agent.as_ref().unwrap().is_ascii() {
+                    512
+                } else {
+                    510
+                }
+            );
+        }
+    }
     #[tokio::test]
     async fn oversized_passkey_name_refuses_before_consuming_challenge() {
         let app = fixture();

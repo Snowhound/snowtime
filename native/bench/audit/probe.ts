@@ -255,6 +255,19 @@ const run: Record<string, () => Promise<void>> = {
     log(
       `verification: unauthenticated sign-in/social with 1.5 MB additionalData -> ${r.status}; largest row ${max} bytes`,
     )
+    const beforeUrl = await count()
+    const urlResponse = await fetch(`${app.url}/api/auth/sign-in/social`, {
+      method: 'POST',
+      headers: { origin: app.url, 'content-type': 'application/json' },
+      body: JSON.stringify({ provider: 'google', callbackURL: '/' + 'y'.repeat(1_500_000) }),
+    })
+    const urlBody = await urlResponse.json()
+    const afterUrl = await count()
+    log(
+      `verification: unauthenticated sign-in/social with 1.5 MB callbackURL -> ${urlResponse.status}; rows ${beforeUrl} -> ${afterUrl}`,
+    )
+    if (urlResponse.status !== 400 || urlBody.code !== 'VALIDATION_ERROR' || afterUrl !== beforeUrl)
+      throw new Error('Oversized callbackURL must refuse without storing a verification row')
     client.close()
     await app.stop()
     // Expired rows stay after a later start and a new challenge.
