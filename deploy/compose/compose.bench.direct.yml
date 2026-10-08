@@ -3,6 +3,7 @@
 services:
   app:
     environment:
+      RATE_LIMIT: 'off'
       BETTER_AUTH_URL: https://snowtime-bench.test:3000
       TLS_CERT_FILE: /tls/cert.pem
       TLS_KEY_FILE: /tls/key.pem

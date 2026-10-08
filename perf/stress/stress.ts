@@ -20,6 +20,7 @@ import { parseArgs } from 'node:util'
 import { table } from '../checks/baseline'
 import { CACHE, ROOT } from '../lib/database'
 import { type BenchUser, DATASETS, type DatasetName, dataset } from './dataset'
+import { checkNativeBenchmarkHealth } from './health'
 import { checkOtherSessions, reserveStack } from './lock'
 import { droppedActions } from './metrics'
 import { type Recording, record } from './record'
@@ -788,6 +789,42 @@ async function main() {
   mkdirSync(out, { recursive: true })
   outputDirectory = out
   writeFileSync(join(out, 'settings.json'), JSON.stringify(values, null, 2))
+  if (app === 'native') {
+    const origin = new URL(target.origin)
+    const port = origin.port || '443'
+    const address = new URL(`http://${target.address ?? '127.0.0.1'}`)
+    const health = Bun.spawnSync(
+      [
+        ...(!target.remote ? ['docker', 'exec', 'snowtime-bench-app-1'] : []),
+        'curl',
+        '--silent',
+        '--show-error',
+        '--fail',
+        '--max-time',
+        '20',
+        '--noproxy',
+        '*',
+        ...(target.remote
+          ? [
+              '--connect-to',
+              `${origin.hostname}:${port}:${address.hostname}:${address.port || port}`,
+            ]
+          : []),
+        ...(target.insecure ? ['--insecure'] : []),
+        target.remote
+          ? `${target.origin}/readyz`
+          : `${values.direct ? 'https' : 'http'}://localhost:3000/readyz`,
+      ],
+      { stdout: 'pipe', stderr: 'pipe' },
+    )
+    const body = new TextDecoder().decode(health.stdout)
+    writeFileSync(join(out, 'native-health.json'), body)
+    if (health.exitCode !== 0)
+      throw new Error(
+        `[stress] Native /readyz preflight failed: ${new TextDecoder().decode(health.stderr)}`,
+      )
+    checkNativeBenchmarkHealth(JSON.parse(body))
+  }
   if (values['replica-dir'] && !target.remote && values.load) {
     console.log('[stress] Waiting for initial replication before measuring')
     const deadline = Date.now() + 15 * 60 * 1000
