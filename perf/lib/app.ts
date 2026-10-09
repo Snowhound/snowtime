@@ -87,11 +87,13 @@ export async function startApp({
   build = BUILD,
   scene = false,
   executable,
+  env = {},
 }: {
   database: string
   build?: string
   scene?: boolean
   executable?: string
+  env?: Record<string, string>
 }): Promise<RunningApp> {
   if (!executable && !existsSync(join(build, 'server/index.mjs'))) {
     throw new Error(`[perf] No build in ${build}`)
@@ -111,7 +113,15 @@ export async function startApp({
   writeFileSync(log, '')
   const [command, ...args] = executable
     ? [executable]
-    : ['bun', '--preload', join(ROOT, 'perf/lib/clock.ts'), join(build, 'server/index.mjs')]
+    : [
+        'bun',
+        '--preload',
+        join(ROOT, 'perf/lib/clock.ts'),
+        ...(env.OAUTH_FAKE_PROVIDER
+          ? ['--preload', join(ROOT, 'conformance/oauth-preload.ts')]
+          : []),
+        join(build, 'server/index.mjs'),
+      ]
   const server: ChildProcess = spawn(command, args, {
     cwd,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -125,6 +135,7 @@ export async function startApp({
       TURSO_DATABASE_URL: `file:${copy}`,
       BETTER_AUTH_SECRET: 'perf-harness-secret-perf-harness-secret',
       BETTER_AUTH_URL: url,
+      ...env,
     },
   })
   const output: string[] = []

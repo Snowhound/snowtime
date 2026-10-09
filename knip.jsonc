@@ -3,8 +3,8 @@
   // Start's server entry (vite.config.ts) and drizzle-kit's config, which knip can't load
   // without TURSO_DATABASE_URL.
   // The compiled release's migrator, which scripts/build-self-hosted.ts compiles by path.
-  // The harnesses (perf/README.md); the weather bench's page script loads from its HTML and
-  // its config from createServer. The load benchmark's k6 scenario runs in k6's container.
+  // The harnesses (perf/README.md) and the conformance tests' OAuth fetch preload; the
+  // weather bench's page script loads from its HTML and its config from createServer. The load benchmark's k6 scenario runs in k6's container.
   // Paraglide's Vite plugin and CLI load its config from the project folder.
   "entry": [
     "src/server-entry.ts",
@@ -12,6 +12,7 @@
     "project.inlang/paraglide.config.ts",
     "scripts/db-migrate-release.ts",
     "perf/*.ts",
+    "conformance/oauth-preload.ts",
     "perf/weather/bench.ts",
     "perf/weather/vite.config.ts",
     "perf/stress/scenario.js",
