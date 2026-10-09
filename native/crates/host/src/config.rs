@@ -14,7 +14,9 @@ pub struct Config {
     pub migrations: Option<std::path::PathBuf>,
 }
 pub fn from_env() -> Result<Config, String> {
-    let var = |name: &str| env::var(name).ok().filter(|v| !v.is_empty());
+    read(&|name| env::var(name).ok().filter(|v| !v.is_empty()))
+}
+fn read(var: &impl Fn(&str) -> Option<String>) -> Result<Config, String> {
     let required = |name: &str| var(name).ok_or_else(|| format!("Set {name}."));
     let database = required("TURSO_DATABASE_URL")?;
     let database_path = database
@@ -22,7 +24,30 @@ pub fn from_env() -> Result<Config, String> {
         .ok_or("TURSO_DATABASE_URL must be a file: URL.")?
         .to_owned();
     let app_url = required("BETTER_AUTH_URL")?;
-    let edge = crate::edge::Config::from_env(&app_url)?;
+    // env.ts's refusals, so a configuration either backend starts with suits the other.
+    let node_env = var("NODE_ENV");
+    if !matches!(
+        node_env.as_deref(),
+        None | Some("development" | "test" | "production")
+    ) {
+        return Err("NODE_ENV is development, test, or production.".into());
+    }
+    let demo_mode = match var("DEMO_MODE").as_deref() {
+        None | Some("false") => false,
+        Some("true") => true,
+        _ => return Err("DEMO_MODE is true or false.".into()),
+    };
+    let secret = required("BETTER_AUTH_SECRET")?;
+    // Valibot's minLength counts UTF-16 code units.
+    if secret.encode_utf16().count() < 32 {
+        return Err("BETTER_AUTH_SECRET is at least 32 characters.".into());
+    }
+    if var("MICROSOFT_TENANT_ID").is_some() && var("MICROSOFT_CLIENT_ID").is_none() {
+        return Err(
+            "MICROSOFT_TENANT_ID needs MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET.".into(),
+        );
+    }
+    let edge = crate::edge::Config::read(&app_url, var)?;
     let cpus = std::thread::available_parallelism().map_or(1, |n| n.get());
     let read_connections = match var("DB_READ_CONNECTIONS").as_deref() {
         None | Some("auto") => auto_readers(cpus),
@@ -70,15 +95,15 @@ pub fn from_env() -> Result<Config, String> {
             .transpose()?,
         server: ServerConfig {
             database_path,
-            oauth: oauth_config(&var),
-            secret: required("BETTER_AUTH_SECRET")?,
-            password_enabled: var("NODE_ENV").as_deref() == Some("development")
-                || var("DEMO_MODE").as_deref() == Some("true"),
-            production: var("NODE_ENV").as_deref() == Some("production"),
-            sign_in_page: sign_in_page_config(&var)?,
-            client_ip_header: var("CLIENT_IP_HEADER").map(|h| h.to_lowercase()),
+            oauth: oauth_config(var),
+            secret,
+            password_enabled: node_env.as_deref() == Some("development") || demo_mode,
+            // Unset counts as production, as in env.ts.
+            production: matches!(node_env.as_deref(), None | Some("production")),
+            sign_in_page: sign_in_page_config(var)?,
+            client_ip_header: client_ip_header(var)?,
             rate_limit: snowtime_server::rate_limit::enabled(
-                var("NODE_ENV").as_deref(),
+                node_env.as_deref(),
                 var("RATE_LIMIT").as_deref(),
             )?,
             app_url: url::Url::parse(&app_url)
@@ -87,6 +112,24 @@ pub fn from_env() -> Result<Config, String> {
                 .ascii_serialization(),
         },
     })
+}
+
+fn client_ip_header(
+    var: &impl Fn(&str) -> Option<String>,
+) -> Result<Option<snowtime_server::client_ip::ClientIpHeader>, String> {
+    let proxies = var("CLIENT_IP_TRUSTED_PROXIES")
+        .map(|value| snowtime_server::client_ip::Cidr::parse_list(&value))
+        .transpose()?;
+    match var("CLIENT_IP_HEADER") {
+        Some(name) => Ok(Some(snowtime_server::client_ip::ClientIpHeader {
+            name: name.to_lowercase(),
+            proxies: proxies.unwrap_or_default(),
+        })),
+        None if proxies.is_some() => {
+            Err("CLIENT_IP_TRUSTED_PROXIES needs CLIENT_IP_HEADER.".into())
+        }
+        None => Ok(None),
+    }
 }
 
 fn oauth_config(var: &impl Fn(&str) -> Option<String>) -> Vec<snowtime_server::OAuthProvider> {
@@ -176,6 +219,100 @@ fn auto_readers(cpus: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
+    fn read(vars: &[(&str, &str)]) -> Result<super::Config, String> {
+        let base = [
+            ("TURSO_DATABASE_URL", "file:snowtime.db"),
+            ("BETTER_AUTH_URL", "https://snowtime.test"),
+            ("BETTER_AUTH_SECRET", "0123456789abcdef0123456789abcdef"),
+        ];
+        super::read(&|name| {
+            vars.iter()
+                .chain(&base)
+                .find(|(key, _)| *key == name)
+                .map(|(_, value)| (*value).into())
+        })
+    }
+
+    #[test]
+    fn env_ts_refusals_hold_natively() {
+        let config = read(&[]).unwrap();
+        assert!(config.server.production, "unset NODE_ENV is production");
+        assert!(!config.server.password_enabled);
+        for (vars, message) in [
+            (
+                &[("BETTER_AUTH_SECRET", "0123456789abcdef0123456789abcde")][..],
+                "BETTER_AUTH_SECRET is at least 32 characters.",
+            ),
+            (
+                &[(
+                    "BETTER_AUTH_SECRET",
+                    "\u{1F600}0123456789abcdef0123456789abc",
+                )],
+                "BETTER_AUTH_SECRET is at least 32 characters.",
+            ),
+            (
+                &[("MICROSOFT_TENANT_ID", "tenant")],
+                "MICROSOFT_TENANT_ID needs MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET.",
+            ),
+            (
+                &[("NODE_ENV", "staging")],
+                "NODE_ENV is development, test, or production.",
+            ),
+            (&[("DEMO_MODE", "yes")], "DEMO_MODE is true or false."),
+        ] {
+            assert_eq!(read(vars).err().as_deref(), Some(message));
+        }
+        // 31 characters, but 32 UTF-16 units.
+        assert!(
+            read(&[(
+                "BETTER_AUTH_SECRET",
+                "\u{1F600}0123456789abcdef0123456789abcd"
+            )])
+            .is_ok()
+        );
+        let config = read(&[
+            ("MICROSOFT_TENANT_ID", "tenant"),
+            ("MICROSOFT_CLIENT_ID", "id"),
+            ("MICROSOFT_CLIENT_SECRET", "secret"),
+            ("NODE_ENV", "test"),
+            ("DEMO_MODE", "true"),
+        ])
+        .unwrap();
+        assert!(!config.server.production);
+        assert!(config.server.password_enabled);
+    }
+
+    #[test]
+    fn the_client_address_header_takes_a_list_of_trusted_proxies() {
+        assert!(read(&[]).unwrap().server.client_ip_header.is_none());
+        let header = read(&[
+            ("CLIENT_IP_HEADER", "CF-Connecting-IP"),
+            (
+                "CLIENT_IP_TRUSTED_PROXIES",
+                "173.245.48.0/20, 2400:cb00::/32",
+            ),
+        ])
+        .unwrap()
+        .server
+        .client_ip_header
+        .unwrap();
+        assert_eq!(header.name, "cf-connecting-ip");
+        assert_eq!(header.proxies.len(), 2);
+        assert_eq!(
+            read(&[("CLIENT_IP_TRUSTED_PROXIES", "173.245.48.0/20")])
+                .err()
+                .as_deref(),
+            Some("CLIENT_IP_TRUSTED_PROXIES needs CLIENT_IP_HEADER.")
+        );
+        assert!(
+            read(&[
+                ("CLIENT_IP_HEADER", "cf-connecting-ip"),
+                ("CLIENT_IP_TRUSTED_PROXIES", "cloudflare"),
+            ])
+            .is_err()
+        );
+    }
+
     #[test]
     fn sign_in_page_normalizes_domains_and_keeps_provider_order() {
         let vars = [

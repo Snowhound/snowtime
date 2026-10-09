@@ -33,7 +33,7 @@ fn refusal(error: GovernorError) -> Response {
     }
 }
 
-pub(crate) fn layer(header: Option<String>) -> RuleLayer {
+pub(crate) fn layer(header: Option<crate::client_ip::ClientIpHeader>) -> RuleLayer {
     RuleLayer::new(
         vec![
             Rule {

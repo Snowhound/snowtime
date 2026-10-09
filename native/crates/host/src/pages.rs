@@ -25,7 +25,10 @@ const PAGE_HEADERS: [header::HeaderName; 2] = [header::CONTENT_TYPE, header::ACC
 /// cookie and client address as the renderer gives them, so it can't pass as another origin
 /// or address. A call runs on the host's runtime and is aborted when the page drops it, as
 /// when the page fails or times out, and its answer is read only up to the page's limit.
-pub fn in_process(api: Router, client_ip_header: Option<String>) -> SendApi {
+pub fn in_process(
+    api: Router,
+    client_ip_header: Option<snowtime_server::client_ip::ClientIpHeader>,
+) -> SendApi {
     let runtime = tokio::runtime::Handle::current();
     Arc::new(move |call| {
         let api = api.clone();
@@ -58,8 +61,8 @@ pub fn in_process(api: Router, client_ip_header: Option<String>) -> SendApi {
                     request = request.header(header::COOKIE, call.cookie);
                 }
                 if let Some(client) = call.client {
-                    if let Some(name) = &client_ip_header {
-                        request = request.header(name, client.to_string());
+                    if let Some(trusted) = &client_ip_header {
+                        request = request.header(&trusted.name, client.to_string());
                     }
                     request = request.extension(ConnectInfo(SocketAddr::new(client, 0)));
                 }
@@ -129,7 +132,7 @@ pub struct Pages {
     // The public URL; behind a proxy the request's own URL may differ.
     pub app_url: String,
     // CLIENT_IP_HEADER, for the address the page's API calls carry.
-    pub client_ip_header: Option<String>,
+    pub client_ip_header: Option<snowtime_server::client_ip::ClientIpHeader>,
 }
 
 // A fresh CSP nonce per page (newNonce in src/server/csp.server.ts).
@@ -154,7 +157,7 @@ pub async fn page(State(pages): State<Arc<Pages>>, request: Request) -> Response
     let client = snowtime_server::client_ip::resolve(
         request.headers(),
         request.extensions(),
-        pages.client_ip_header.as_deref(),
+        pages.client_ip_header.as_ref(),
     );
     // One Cookie header, however HTTP/2 split it.
     let mut headers: Vec<(String, String)> = request
@@ -230,14 +233,17 @@ pub async fn page(State(pages): State<Arc<Pages>>, request: Request) -> Response
             StatusCode::SERVICE_UNAVAILABLE,
             "Pages are unavailable. Try again later.",
         ),
-        Err(RenderError::Failed(error)) => {
-            tracing::error!(path, %error, "render failed");
-            text(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "The page failed to render.",
-            )
-        }
+        Err(RenderError::Failed(error)) => render_failed(request.uri(), &error),
     }
+}
+
+// The path only: a query may carry an invitation or OAuth token.
+fn render_failed(uri: &axum::http::Uri, error: &str) -> Response {
+    tracing::error!(path = uri.path(), %error, "render failed");
+    text(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "The page failed to render.",
+    )
 }
 
 #[cfg(test)]
@@ -286,6 +292,34 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
         assert_eq!(response.headers()[header::RETRY_AFTER], "7");
         assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
+    }
+
+    #[test]
+    fn a_failed_render_logs_the_path_without_its_query() {
+        #[derive(Clone, Default)]
+        struct Logs(Arc<std::sync::Mutex<Vec<u8>>>);
+        impl std::io::Write for Logs {
+            fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+                self.0.lock().unwrap().extend_from_slice(bytes);
+                Ok(bytes.len())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        let logs = Logs::default();
+        let writer = logs.clone();
+        let subscriber = tracing_subscriber::fmt()
+            .with_writer(move || writer.clone())
+            .with_ansi(false)
+            .finish();
+        let response = tracing::subscriber::with_default(subscriber, || {
+            render_failed(&"/invite/accept?token=secret".parse().unwrap(), "boom")
+        });
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let logged = String::from_utf8(logs.0.lock().unwrap().clone()).unwrap();
+        assert!(logged.contains(r#"path="/invite/accept""#), "{logged}");
+        assert!(!logged.contains("secret"), "{logged}");
     }
 
     #[tokio::test]
@@ -363,7 +397,13 @@ mod tests {
             )
         }
         let api = Router::new().fallback(echo);
-        let send = in_process(api, Some("x-client-ip".into()));
+        let send = in_process(
+            api,
+            Some(snowtime_server::client_ip::ClientIpHeader {
+                name: "x-client-ip".into(),
+                proxies: vec![],
+            }),
+        );
         let answer = |request| {
             let send = send.clone();
             async move {

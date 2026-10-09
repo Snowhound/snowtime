@@ -361,9 +361,16 @@ const DEADLINE: std::time::Duration = std::time::Duration::from_millis(200);
 // Two readers, gates that refuse after DEADLINE, a session that needs renewing, and an
 // expired one.
 fn pooled_app(path: &std::path::Path) -> Arc<App> {
+    pooled_app_with(path, vec![])
+}
+fn pooled_app_with(path: &std::path::Path, allowed_domains: Vec<String>) -> Arc<App> {
     let app = App::open_with_limits(
         Config {
             database_path: path.to_str().unwrap().into(),
+            sign_in_page: crate::SignInPageConfig {
+                allowed_domains,
+                ..Default::default()
+            },
             ..config()
         },
         2,
@@ -529,6 +536,49 @@ async fn a_slow_writer_leaves_reads_to_idle_readers() {
         401
     );
     assert_eq!(sessions(&file, "expired"), 0);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_login_domain_check_reads_while_the_writer_is_busy() {
+    for (domain, refused) in [("allowed.example", Some(403)), ("example.com", None)] {
+        let file = TempDb::new();
+        let app = pooled_app_with(&file.0, vec![domain.into()]);
+        let check = |token: &str| {
+            let app = app.clone();
+            let request = Request {
+                cookie: Some(cookie(&app, token)),
+                ..lane_request()
+            };
+            async move {
+                app.login_domain_middleware(&request)
+                    .await
+                    .err()
+                    .map(|r| r.status)
+            }
+        };
+        let (finish, finished) = std::sync::mpsc::channel::<()>();
+        let permit = app.write_gate.acquire().await.unwrap();
+        let writer = app.clone();
+        let slow = std::thread::spawn(move || {
+            let _permit = permit;
+            let _db = writer.db();
+            finished.recv().unwrap();
+        });
+        let stale_expiry = expiry(&file, "stale");
+        let started = std::time::Instant::now();
+        assert_eq!(check("token").await, refused, "{domain}");
+        assert_eq!(check("stale").await, refused, "{domain}");
+        assert!(
+            started.elapsed() < DEADLINE,
+            "the check waited for the writer"
+        );
+        assert_eq!(expiry(&file, "stale"), stale_expiry);
+        finish.send(()).unwrap();
+        slow.join().unwrap();
+        // Renewal still takes the writer once it's free.
+        assert_eq!(check("stale").await, refused, "{domain}");
+        assert!(expiry(&file, "stale") > stale_expiry);
+    }
 }
 
 #[tokio::test(flavor = "multi_thread")]

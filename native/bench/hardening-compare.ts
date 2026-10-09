@@ -45,8 +45,9 @@ async function sessionIps(header: string | undefined, address: string, expected:
         client.close()
       }
     }
+    // The public health body doesn't say whether limits are off.
     const health = await fetch(`${native.url}/readyz`).then((r) => r.json())
-    assert.equal(health.rate_limit, false)
+    assert.equal('rate_limit' in health, false)
     checks++
     console.log(`persisted IP matches TypeScript: ${header ?? 'TCP peer'} (${expected})`)
   } finally {
@@ -63,7 +64,7 @@ const ts = await startApp({ database, env })
 let native: Awaited<ReturnType<typeof startNative>> | undefined
 try {
   native = await startNative(binary, database, env)
-  assert.equal((await fetch(`${native.url}/readyz`).then((r) => r.json())).rate_limit, true)
+  assert.equal('rate_limit' in (await fetch(`${native.url}/readyz`).then((r) => r.json())), false)
   const rules: [string, number, number][] = [
     ['/sign-in/email', 10, 3],
     ['/sign-in/social', 10, 3],

@@ -11,7 +11,7 @@ pub struct Config {
     // NODE_ENV is production, as Better Auth's isProduction reads it: an unset NODE_ENV isn't.
     pub production: bool,
     pub sign_in_page: SignInPageConfig,
-    pub client_ip_header: Option<String>,
+    pub client_ip_header: Option<crate::client_ip::ClientIpHeader>,
     pub rate_limit: bool,
 }
 

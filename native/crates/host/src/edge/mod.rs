@@ -1,5 +1,6 @@
 mod accept;
 mod access;
+mod acme_cache;
 mod config;
 mod connections;
 mod files;
@@ -59,7 +60,12 @@ pub fn router(api: Router, pages: Router, config: &Config, app_url: &str) -> Rou
         );
     }
     if config.body_limit > 0 {
-        router = router.layer(RequestBodyLimitLayer::new(config.body_limit));
+        router = router
+            .layer(RequestBodyLimitLayer::new(config.body_limit))
+            .layer(middleware::from_fn_with_state(
+                config.body_limit,
+                declared_body_limit,
+            ));
     }
     if config.uri_limit > 0 {
         router = router.layer(middleware::from_fn_with_state(config.uri_limit, uri_limit));
@@ -124,6 +130,24 @@ fn refusal(api: bool, status: StatusCode, message: &'static str) -> Response {
             .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));
     }
     response
+}
+
+// A declared length past the limit, answered before `RequestBodyLimitLayer`'s plain-text
+// 413 so the API's paths get its JSON refusal. A longer body without one fails as the API
+// reads it, with the same refusal.
+async fn declared_body_limit(State(limit): State<usize>, request: Request, next: Next) -> Response {
+    let declared = request
+        .headers()
+        .get(header::CONTENT_LENGTH)
+        .and_then(|value| value.to_str().ok()?.parse::<u64>().ok());
+    if is_api(request.uri().path()) && declared.is_some_and(|length| length > limit as u64) {
+        return refusal(
+            true,
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "Request body too large.",
+        );
+    }
+    next.run(request).await
 }
 
 // Before routing, so no path of any length reaches the rate limits or the API.
@@ -289,12 +313,9 @@ pub async fn serve(
             cache,
             staging,
         } => {
-            use std::os::unix::fs::PermissionsExt;
-            std::fs::create_dir_all(cache)?;
-            std::fs::set_permissions(cache, std::fs::Permissions::from_mode(0o700))?;
             let mut state = rustls_acme::AcmeConfig::new(domains.clone())
                 .contact(contact.clone())
-                .cache(rustls_acme::caches::DirCache::new(cache.clone()))
+                .cache(acme_cache::PrivateDirCache::new(cache.clone())?)
                 .directory_lets_encrypt(!staging)
                 .state();
             let mut tls = (*state.default_rustls_config()).clone();

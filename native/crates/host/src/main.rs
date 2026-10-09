@@ -18,7 +18,8 @@ async fn shutdown() {
 }
 
 fn main() {
-    snowtime_server::clock::init_from_env();
+    let perf_now =
+        snowtime_server::clock::init_from_env().unwrap_or_else(|message| panic!("{message}"));
     let config = config::from_env().unwrap_or_else(|message| panic!("{message}"));
     let mut builder = match std::env::var("TOKIO_RUNTIME").as_deref() {
         Ok("current_thread") => tokio::runtime::Builder::new_current_thread(),
@@ -30,13 +31,16 @@ fn main() {
         .enable_all()
         .build()
         .expect("the host runtime starts");
-    runtime.block_on(serve(config));
+    runtime.block_on(serve(config, perf_now));
 }
-async fn serve(config: config::Config) {
+async fn serve(config: config::Config, perf_now: Option<i64>) {
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
         .expect("one TLS provider");
     let _logs = edge::init_logs(&config.edge);
+    if let Some(perf_now) = perf_now {
+        tracing::warn!(perf_now, "PERF_NOW moved the clock");
+    }
     let address = tokio::net::lookup_host((config.host.as_str(), config.port))
         .await
         .expect("HOST resolves")
@@ -102,7 +106,6 @@ async fn serve(config: config::Config) {
     let health = health::routes(health::Lanes {
         api: api.clone(),
         pool: pool.clone(),
-        rate_limit,
     });
     let pages = Router::new()
         .fallback(pages::page)

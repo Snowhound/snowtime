@@ -75,7 +75,21 @@ pub(crate) fn find_session_with_writer(
     cookie_header: Option<&str>,
     now: i64,
 ) -> rusqlite::Result<Option<Session>> {
-    let session = match find_session_using(db, config, cookie_header, now)? {
+    let session = find_any_session_with_writer(db, writer, gate, config, cookie_header, now)?;
+    Ok(session.filter(|s| super::login_domains::allowed(&config.allowed_domains, &s.email)))
+}
+
+/// `find_session_with_writer` without the domain filter, for loginDomainMiddleware, which
+/// refuses a session whose domain isn't listed.
+pub(crate) fn find_any_session_with_writer(
+    db: &Connection,
+    writer: &std::sync::Mutex<Connection>,
+    gate: &crate::admission::Gate,
+    config: &SessionConfig,
+    cookie_header: Option<&str>,
+    now: i64,
+) -> rusqlite::Result<Option<Session>> {
+    Ok(match find_session_using(db, config, cookie_header, now)? {
         Found::Session(session) => session,
         Found::NeedsWriter { session, expired } => match gate.try_acquire() {
             Some(_permit) => {
@@ -85,8 +99,7 @@ pub(crate) fn find_session_with_writer(
             }
             None => (!expired).then_some(session),
         },
-    };
-    Ok(session.filter(|s| super::login_domains::allowed(&config.allowed_domains, &s.email)))
+    })
 }
 
 enum Found {

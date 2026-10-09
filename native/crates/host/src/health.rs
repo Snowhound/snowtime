@@ -24,7 +24,6 @@ enum Lane {
 pub struct Lanes {
     pub api: Router,
     pub pool: Pool,
-    pub rate_limit: bool,
 }
 
 pub fn routes(lanes: Lanes) -> Router {
@@ -73,7 +72,6 @@ async fn live(State(lanes): State<Arc<Lanes>>) -> StatusCode {
 struct Readiness {
     status: Lane,
     lanes: LaneStates,
-    rate_limit: bool,
 }
 #[derive(Serialize)]
 struct LaneStates {
@@ -100,7 +98,6 @@ async fn ready(State(lanes): State<Arc<Lanes>>) -> Response {
         Json(Readiness {
             status,
             lanes: states,
-            rate_limit: lanes.rate_limit,
         }),
     )
         .into_response();
@@ -168,11 +165,7 @@ mod tests {
             }));
         let router = api
             .clone()
-            .merge(routes(Lanes {
-                api,
-                pool,
-                rate_limit: false,
-            }))
+            .merge(routes(Lanes { api, pool }))
             .fallback_service(pages);
 
         assert_eq!(get(&router, "/livez").await.0, 200);
@@ -180,7 +173,7 @@ mod tests {
             get(&router, "/readyz").await,
             (
                 200,
-                r#"{"status":"degraded","lanes":{"database":"ready","render":"down"},"rate_limit":false}"#.into()
+                r#"{"status":"degraded","lanes":{"database":"ready","render":"down"}}"#.into()
             )
         );
         assert_eq!(

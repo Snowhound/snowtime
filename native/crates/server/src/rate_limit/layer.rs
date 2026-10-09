@@ -21,7 +21,7 @@ struct QuotaPath(String);
 
 #[derive(Clone)]
 pub struct IpPath {
-    pub trusted_header: Option<String>,
+    pub trusted_header: Option<crate::client_ip::ClientIpHeader>,
 }
 impl KeyExtractor for IpPath {
     type Key = (Option<IpAddr>, String);
@@ -34,7 +34,7 @@ impl KeyExtractor for IpPath {
             crate::client_ip::resolve(
                 request.headers(),
                 request.extensions(),
-                self.trusted_header.as_deref(),
+                self.trusted_header.as_ref(),
             ),
             path.clone(),
         ))
@@ -91,7 +91,7 @@ impl RuleLayer {
     /// it with `route_layer` and to the fallback. Cleanup ends when every layer is dropped.
     pub fn new(
         rules: Vec<Rule>,
-        trusted_header: Option<String>,
+        trusted_header: Option<crate::client_ip::ClientIpHeader>,
         refusal: fn(GovernorError) -> Response,
     ) -> Result<Self, &'static str> {
         let mut groups = Vec::new();

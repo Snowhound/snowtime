@@ -36,11 +36,6 @@ pub struct Config {
     pub bench_log: Option<PathBuf>,
 }
 impl Config {
-    pub fn from_env(app_url: &str) -> Result<Self, String> {
-        Self::read(app_url, |name| {
-            std::env::var(name).ok().filter(|v| !v.is_empty())
-        })
-    }
     pub fn read(app_url: &str, var: impl Fn(&str) -> Option<String>) -> Result<Self, String> {
         let url = url::Url::parse(app_url).map_err(|_| "BETTER_AUTH_URL is an origin URL.")?;
         if !matches!(url.scheme(), "http" | "https")
@@ -123,6 +118,12 @@ impl Config {
         if redirect_port.is_some() && matches!(tls, Tls::Plain) {
             return Err("HTTP_REDIRECT_PORT requires TLS.".into());
         }
+        // Behind a proxy, every connection comes from the proxy's address, and a CDN such as
+        // Cloudflare keeps an idle origin connection for up to 900 seconds; closing it first
+        // makes the CDN answer 520 now and then. hyper's header timeout also runs while a
+        // kept-alive HTTP/1 connection waits, so both timeouts outlast the CDN's.
+        let proxied = var("CLIENT_IP_HEADER").is_some();
+        let keep_alive = if proxied { 920 } else { 30 };
         Ok(Self {
             tls,
             redirect_port,
@@ -138,19 +139,17 @@ impl Config {
             timeout_seconds: number("EDGE_TIMEOUT_SECONDS", 30)?,
             body_limit: count("EDGE_BODY_LIMIT_BYTES", 2 * 1024 * 1024)?,
             uri_limit: count("EDGE_URI_LIMIT_BYTES", 8192)?,
-            header_timeout: seconds("EDGE_HEADER_TIMEOUT_SECONDS", 30)?,
+            header_timeout: seconds("EDGE_HEADER_TIMEOUT_SECONDS", keep_alive)?,
             connections: super::connections::Limits {
                 total: count("EDGE_MAX_CONNECTIONS", 4096)?,
-                // Behind a proxy every connection comes from the proxy's address.
                 per_address: count(
                     "EDGE_MAX_CONNECTIONS_PER_ADDRESS",
-                    if var("CLIENT_IP_HEADER").is_some() {
-                        0
-                    } else {
-                        256
-                    },
+                    if proxied { 0 } else { 256 },
                 )?,
-                idle: seconds("EDGE_IDLE_TIMEOUT_SECONDS", 60)?,
+                idle: seconds(
+                    "EDGE_IDLE_TIMEOUT_SECONDS",
+                    if proxied { keep_alive } else { 60 },
+                )?,
             },
             bench_log: var("EDGE_BENCH_LOG").map(PathBuf::from),
         })

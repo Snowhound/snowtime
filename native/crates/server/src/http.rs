@@ -96,7 +96,7 @@ pub struct App {
     pub(crate) hash_gate: crate::hash_lane::HashLane,
     report_gate: crate::admission::Gate,
     // A thread per reader, each owning its connection.
-    read_gate: Option<crate::lane::Lane<Connection>>,
+    pub(crate) read_gate: Option<crate::lane::Lane<Connection>>,
     pub(crate) config: Config,
     pub(crate) session: SessionConfig,
     rate_limits: MemoryStore,
@@ -281,7 +281,7 @@ async fn extract(
         client_ip: crate::client_ip::resolve(
             &parts.headers,
             &parts.extensions,
-            app.config.client_ip_header.as_deref(),
+            app.config.client_ip_header.as_ref(),
         )
         .map(crate::client_ip::session_address),
         body: bytes.to_vec(),

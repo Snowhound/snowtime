@@ -293,6 +293,9 @@ which records the edge measurements.
   transactions, and static SQL literals (done)
 - [34](34-edge.md): edge connection limits, rate-limit keys, database owner threads, and
   the public file index from the audit (done)
+- [35](35-edge-config.md): configuration refusals, the bench-only clock, trusted proxies,
+  private ACME files, CDN keep-alive defaults, and session reads for the login-domain check
+  from the audit (done)
 - [36](36-render.md): renderer fixes from the audit: no network extensions, the rustls
   update, heap headroom, API limits, a read-only in-process transport, and renderer
   lifecycle (done)

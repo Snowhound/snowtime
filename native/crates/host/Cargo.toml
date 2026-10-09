@@ -13,6 +13,7 @@ path = "src/main.rs"
 bench = ["snowtime-server/bench", "snowtime-render/bench"]
 
 [dependencies]
+async-trait = "0.1"
 axum.workspace = true
 base64.workspace = true
 libc = "0.2"

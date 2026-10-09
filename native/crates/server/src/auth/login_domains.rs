@@ -3,6 +3,7 @@ use super::session;
 use crate::clock;
 use crate::http::{App, Request, Response, unavailable_or};
 use crate::schemas::js_whitespace;
+use rusqlite::Connection;
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -57,20 +58,36 @@ impl App {
         }
         let cookie = request.cookie.clone();
         let app = self.clone();
-        let blocked = self
-            .write_gate
-            .run(move || {
-                let db = app.db();
-                match session::find_session(&db, &app.session, cookie.as_deref(), clock::now()) {
-                    Ok(found) => Ok(found.is_some_and(|session| {
-                        !allowed(&app.config.sign_in_page.allowed_domains, &session.email)
-                    })),
-                    Err(error) => Err(Response::from(unavailable_or(&db, &error))),
-                }
-            })
-            .await
-            .and_then(|found| found)?;
+        // On a reader, as the API's session check reads; only renewal or expiry takes the
+        // writer, and only when it's free.
+        let blocked = match &self.read_gate {
+            Some(readers) => readers.run_with(move |db| app.blocked(db, cookie)).await,
+            None => {
+                self.write_gate
+                    .run(move || app.blocked(&app.db(), cookie))
+                    .await
+            }
+        }
+        .and_then(|found| found)?;
         if blocked { Err(refusal()) } else { Ok(()) }
+    }
+}
+
+impl App {
+    fn blocked(&self, db: &Connection, cookie: Option<String>) -> Result<bool, Response> {
+        match session::find_any_session_with_writer(
+            db,
+            &self.db,
+            &self.write_gate,
+            &self.session,
+            cookie.as_deref(),
+            clock::now(),
+        ) {
+            Ok(found) => Ok(found.is_some_and(|session| {
+                !allowed(&self.config.sign_in_page.allowed_domains, &session.email)
+            })),
+            Err(error) => Err(Response::from(unavailable_or(db, &error))),
+        }
     }
 }
 

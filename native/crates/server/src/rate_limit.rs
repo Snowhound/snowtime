@@ -33,10 +33,20 @@ struct Window {
     ends_at: i64,
 }
 
+// Pruning starts above this many windows.
+const PRUNE_AT: usize = 10_000;
+
 // Keys are user IDs from the session row, which the server made, so FxHash serves.
 pub struct MemoryStore {
     enabled: bool,
-    windows: Mutex<FxHashMap<String, Window>>,
+    windows: Mutex<Windows>,
+}
+#[derive(Default)]
+struct Windows {
+    map: FxHashMap<String, Window>,
+    // The size at which the next write drops ended windows: twice what the last pruning
+    // kept, so a map of live windows costs one pass per doubling, not one per write.
+    prune_at: usize,
 }
 
 impl Default for MemoryStore {
@@ -49,7 +59,10 @@ impl MemoryStore {
     pub fn new(enabled: bool) -> Self {
         Self {
             enabled,
-            windows: Mutex::new(FxHashMap::default()),
+            windows: Mutex::new(Windows {
+                map: FxHashMap::default(),
+                prune_at: PRUNE_AT,
+            }),
         }
     }
     /// Counts one request and says whether it fits.
@@ -58,18 +71,19 @@ impl MemoryStore {
             return true;
         }
         let mut windows = self.windows.lock().unwrap_or_else(|e| e.into_inner());
-        // Drops ended windows now and then, so keys of past users don't pile up.
-        if windows.len() > 10_000 {
-            windows.retain(|_, w| w.ends_at > now);
+        let Windows { map, prune_at } = &mut *windows;
+        if map.len() >= *prune_at {
+            map.retain(|_, w| w.ends_at > now);
+            *prune_at = (map.len() * 2).max(PRUNE_AT);
         }
-        let window = match windows.get_mut(key) {
+        let window = match map.get_mut(key) {
             Some(w) if w.ends_at > now => w,
             _ => {
                 let fresh = Window {
                     count: 0,
                     ends_at: now + rule.window * 1000,
                 };
-                windows.entry(key.to_owned()).insert_entry(fresh).into_mut()
+                map.entry(key.to_owned()).insert_entry(fresh).into_mut()
             }
         };
         window.count = window.count.saturating_add(1);
@@ -102,6 +116,30 @@ mod tests {
         for _ in 0..200 {
             assert!(off.consume("alice", rule, 0));
         }
-        assert!(off.windows.lock().unwrap().is_empty());
+        assert!(off.windows.lock().unwrap().map.is_empty());
+    }
+    #[test]
+    fn ended_windows_are_pruned_once_the_map_doubles() {
+        let store = MemoryStore::default();
+        let rule = RateLimitRule { window: 1, max: 1 };
+        let len = || store.windows.lock().unwrap().map.len();
+        for user in 0..PRUNE_AT {
+            store.consume(&user.to_string(), rule, 0);
+        }
+        // Every window is live, so pruning keeps them all and waits for twice as many.
+        store.consume("late", rule, 0);
+        assert_eq!(len(), PRUNE_AT + 1);
+        assert_eq!(store.windows.lock().unwrap().prune_at, 2 * PRUNE_AT);
+        // Ended windows stay until then.
+        for user in 0..PRUNE_AT - 2 {
+            store.consume(&format!("next-{user}"), rule, 5000);
+        }
+        assert_eq!(len(), 2 * PRUNE_AT - 1);
+        store.consume("last", rule, 5000);
+        assert_eq!(len(), 2 * PRUNE_AT);
+        // The 10,001 windows that ended at 1,000 go; the 9,999 live ones and this one stay.
+        store.consume("pruned", rule, 5000);
+        assert_eq!(len(), PRUNE_AT);
+        assert_eq!(store.windows.lock().unwrap().prune_at, 2 * (PRUNE_AT - 1));
     }
 }

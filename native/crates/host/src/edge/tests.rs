@@ -76,25 +76,45 @@ async fn headers_preserve_the_renderers_nonce_and_redirects_ignore_host() {
     );
 }
 #[tokio::test]
-async fn body_limit_rejects_oversized_requests() {
-    let api = Router::new().route("/", axum::routing::post(|| async { "ok" }));
-    let answer = router(
+async fn body_limit_rejects_oversized_requests_in_the_apis_format_on_its_paths() {
+    let api = Router::new()
+        .route("/", axum::routing::post(|| async { "ok" }))
+        .route("/api/v1/entries", axum::routing::post(|| async { "ok" }));
+    let app = router(
         api.clone(),
         api,
         &config(&[("EDGE_BODY_LIMIT_BYTES", "4")]),
         "http://snowtime.test",
-    )
-    .oneshot(
-        HttpRequest::builder()
-            .method("POST")
-            .uri("/")
-            .header(header::CONTENT_LENGTH, "5")
-            .body(Body::from("12345"))
-            .unwrap(),
-    )
-    .await
-    .unwrap();
-    assert_eq!(answer.status(), StatusCode::PAYLOAD_TOO_LARGE);
+    );
+    for (path, content_type, body) in [
+        (
+            "/api/v1/entries",
+            "application/json; charset=UTF-8",
+            r#"{"error":{"message":"Request body too large."}}"#,
+        ),
+        ("/", "text/plain; charset=utf-8", "length limit exceeded"),
+    ] {
+        let answer = app
+            .clone()
+            .oneshot(
+                HttpRequest::builder()
+                    .method("POST")
+                    .uri(path)
+                    .header(header::CONTENT_LENGTH, "5")
+                    .body(Body::from("12345"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(answer.status(), StatusCode::PAYLOAD_TOO_LARGE);
+        assert_eq!(answer.headers()[header::CONTENT_TYPE], content_type);
+        assert_eq!(
+            axum::body::to_bytes(answer.into_body(), 1024)
+                .await
+                .unwrap(),
+            body
+        );
+    }
 }
 
 #[tokio::test(start_paused = true)]
@@ -198,7 +218,7 @@ async fn a_panicking_async_handler_answers_500() {
 }
 
 #[test]
-fn connection_limits_default_and_refuse_zero_timeouts() {
+fn connection_limits_and_timeouts_default_by_proxy_and_refuse_zero_timeouts() {
     let defaults = config(&[]);
     assert_eq!(defaults.header_timeout, Duration::from_secs(30));
     assert_eq!(
@@ -209,13 +229,25 @@ fn connection_limits_default_and_refuse_zero_timeouts() {
             idle: Duration::from_secs(60),
         }
     );
-    // Behind a proxy every connection shares its address.
+    // Behind a proxy every connection shares its address, and the CDN keeps idle
+    // connections for up to 900 seconds.
+    let proxied = config(&[("CLIENT_IP_HEADER", "cf-connecting-ip")]);
+    assert_eq!(proxied.header_timeout, Duration::from_secs(920));
     assert_eq!(
-        config(&[("CLIENT_IP_HEADER", "cf-connecting-ip")])
-            .connections
-            .per_address,
-        0
+        proxied.connections,
+        connections::Limits {
+            total: 4096,
+            per_address: 0,
+            idle: Duration::from_secs(920),
+        }
     );
+    let tuned = config(&[
+        ("CLIENT_IP_HEADER", "cf-connecting-ip"),
+        ("EDGE_HEADER_TIMEOUT_SECONDS", "10"),
+        ("EDGE_IDLE_TIMEOUT_SECONDS", "20"),
+    ]);
+    assert_eq!(tuned.header_timeout, Duration::from_secs(10));
+    assert_eq!(tuned.connections.idle, Duration::from_secs(20));
     for name in ["EDGE_HEADER_TIMEOUT_SECONDS", "EDGE_IDLE_TIMEOUT_SECONDS"] {
         assert!(
             Config::read("https://snowtime.test", |key| (key == name)

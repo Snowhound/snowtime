@@ -207,8 +207,13 @@ implemented.
 The server reads the TypeScript server's environment variables: `TURSO_DATABASE_URL` (a
 `file:` URL of a migrated database), `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `HOST`,
 `PORT`, `CLIENT_IP_HEADER`, and `NODE_ENV=development` or `DEMO_MODE=true` for password
-sign-in. `PERF_NOW`, in milliseconds, moves its clock as `perf/lib/clock.ts` does, the
-renderer's included. `RENDERERS` is described above, and the edge's variables below.
+sign-in. It refuses to start where `src/env.ts` refuses: a `BETTER_AUTH_SECRET` shorter than
+32 characters, `MICROSOFT_TENANT_ID` without a Microsoft client, or a `NODE_ENV` or
+`DEMO_MODE` outside their values. An unset `NODE_ENV` counts as production. In `bench` and
+debug builds, `PERF_NOW`, in milliseconds since the epoch, moves the clock as
+`perf/lib/clock.ts` does, the renderer's included, and the host logs a warning with the
+moment it moved to. Other builds refuse to start with `PERF_NOW` set. `RENDERERS` is
+described above, and the edge's variables below.
 
 With `MIGRATE_ON_START=true`, the server migrates the database before it listens, from
 `MIGRATIONS_DIR` (default `drizzle/` in the working directory), as the TypeScript
@@ -245,7 +250,9 @@ HTTP/3 remains outside this proof of concept. TLS handshakes expire after 10 sec
 
 Every listener, the redirect listener included, bounds its connections. A request's
 headers must arrive within `EDGE_HEADER_TIMEOUT_SECONDS`; on HTTP/1, hyper runs the same
-timer while a kept-alive connection waits for its next request. A connection with no
+timer while a kept-alive connection waits for its next request. hyper 1.x has no separate
+idle timer: it starts the header timer as soon as a connection is ready for its next
+request. A connection with no
 request in flight for `EDGE_IDLE_TIMEOUT_SECONDS` closes, which covers HTTP/2 and a
 connection that never sends a byte. HTTP/2 connections are pinged every 20 seconds and
 closed when a ping goes unanswered for 20 seconds. An HTTP/1 request head and read buffer
@@ -255,6 +262,17 @@ connection without an answer, before its TLS handshake. Both caps count per list
 keep the total below the process's file-descriptor limit. The per-address cap groups
 IPv6 addresses by /64, as rate limits do. Behind a proxy every connection comes from the
 proxy, so with `CLIENT_IP_HEADER` set the per-address cap defaults to off.
+
+Behind a CDN, the host keeps idle connections longer than the CDN does. Cloudflare reuses
+an idle origin connection for up to 900 seconds
+([connection limits](https://developers.cloudflare.com/fundamentals/reference/connection-limits/)),
+and answers 520 now and then when the origin closes one first. With `CLIENT_IP_HEADER` set,
+`EDGE_HEADER_TIMEOUT_SECONDS` and `EDGE_IDLE_TIMEOUT_SECONDS` therefore default to 920.
+Because hyper can't shorten the header timeout alone, a client that sends part of a request
+head can then hold a connection for 920 seconds too. Accept connections only from the CDN:
+a firewall allow-list of its address ranges, or Cloudflare's Authenticated Origin Pulls.
+Behind a proxy that keeps idle connections for less time, such as Caddy, lower both
+timeouts to match.
 
 Without certificate configuration, `snowtime-axum` serves plain HTTP. Configure a
 certificate pair to serve HTTPS, or use ACME to obtain and renew certificates:
@@ -272,39 +290,43 @@ Supply the database URL and authentication secret as in "Run it". Certificate fi
 and ACME are mutually exclusive. ACME uses Let's Encrypt's production service; set
 `ACME_STAGING=true` to try a setup against staging, whose certificates browsers don't
 trust, without using up production's rate limits. Persist `/data/acme` across
-restarts and allow the host user to write it. The host sets this directory to mode
-0700 because the cache contains account and certificate private keys.
+restarts and allow the host user to write it. Give `ACME_CACHE_DIR` a directory of its
+own: the cache holds account and certificate private keys, so the host sets the directory
+to mode 0700 at startup and each file in it to 0600, including files already there.
 
 ACME uses TLS-ALPN-01. DNS must reach this listener on public TCP port 443; a proxy
 that terminates TLS prevents the challenge from reaching it. Behind such a proxy,
 use plain HTTP on a private connection or provision an origin certificate through
 the certificate-file mode. Wildcard certificates are unsupported.
 
-| Variable                           | Default                               | Behavior                                                                                       |
-| ---------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `TLS_CERT_FILE`, `TLS_KEY_FILE`    | unset                                 | PEM certificate chain and private key; both required                                           |
-| `ACME_DOMAINS`                     | unset                                 | Comma-separated DNS names, including the app URL's hostname                                    |
-| `ACME_EMAIL`                       | unset                                 | ACME account contact email                                                                     |
-| `ACME_CACHE_DIR`                   | `/data/acme`                          | Persistent account and certificate cache                                                       |
-| `ACME_STAGING`                     | `false`                               | Use Let's Encrypt's staging service instead of production                                      |
-| `HTTP_REDIRECT_PORT`               | unset                                 | Separate HTTP listener issuing 308 redirects to the configured app origin                      |
-| `EDGE_COMPRESSION`                 | `true`                                | Gzip and zstd for compressible responses of at least 1024 bytes                                |
-| `EDGE_ACCESS_LOG`                  | `all`                                 | JSON access events on stdout: `all`, `sampled`, or `off`                                       |
-| `EDGE_HEADERS`                     | `true`                                | Security headers, CSP fallback, and private no-store fallback                                  |
-| `EDGE_STATIC_DIR`                  | unset                                 | Serve this public build directory, with `.br`, `.zst`, and `.gz` variants                      |
-| `EDGE_TIMEOUT_SECONDS`             | `30`                                  | Response-header timeout, answered with 503 and `Retry-After: 1`; zero disables this host layer |
-| `EDGE_HEADER_TIMEOUT_SECONDS`      | `30`                                  | Time to receive a request's headers, and on HTTP/1 to wait for the next request                |
-| `EDGE_IDLE_TIMEOUT_SECONDS`        | `60`                                  | Close a connection with no request in flight for this long                                     |
-| `EDGE_MAX_CONNECTIONS`             | `4096`                                | Open connections per listener, TLS handshakes included; zero disables                          |
-| `EDGE_MAX_CONNECTIONS_PER_ADDRESS` | `256`, or `0` with `CLIENT_IP_HEADER` | Open connections per listener from one client address; zero disables                           |
-| `EDGE_BODY_LIMIT_BYTES`            | `2097152`                             | Request-body limit; zero disables this host layer, leaving API limits intact                   |
-| `EDGE_URI_LIMIT_BYTES`             | `8192`                                | Path and query limit, answered with 414; zero disables                                         |
-| `EDGE_BENCH_LOG`                   | unset                                 | Complete JSON benchmark log for the sampler                                                    |
+| Variable                           | Default                                | Behavior                                                                                        |
+| ---------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `TLS_CERT_FILE`, `TLS_KEY_FILE`    | unset                                  | PEM certificate chain and private key; both required                                            |
+| `ACME_DOMAINS`                     | unset                                  | Comma-separated DNS names, including the app URL's hostname                                     |
+| `ACME_EMAIL`                       | unset                                  | ACME account contact email                                                                      |
+| `ACME_CACHE_DIR`                   | `/data/acme`                           | Persistent account and certificate cache, in a directory of its own                             |
+| `ACME_STAGING`                     | `false`                                | Use Let's Encrypt's staging service instead of production                                       |
+| `HTTP_REDIRECT_PORT`               | unset                                  | Separate HTTP listener issuing 308 redirects to the configured app origin                       |
+| `EDGE_COMPRESSION`                 | `true`                                 | Gzip and zstd for compressible responses of at least 1024 bytes                                 |
+| `EDGE_ACCESS_LOG`                  | `all`                                  | JSON access events on stdout: `all`, `sampled`, or `off`                                        |
+| `EDGE_HEADERS`                     | `true`                                 | Security headers, CSP fallback, and private no-store fallback                                   |
+| `EDGE_STATIC_DIR`                  | unset                                  | Serve this public build directory, with `.br`, `.zst`, and `.gz` variants                       |
+| `EDGE_TIMEOUT_SECONDS`             | `30`                                   | Response-header timeout, answered with 503 and `Retry-After: 1`; zero disables this host layer  |
+| `EDGE_HEADER_TIMEOUT_SECONDS`      | `30`, or `920` with `CLIENT_IP_HEADER` | Time to receive a request's headers, and on HTTP/1 to wait for the next request                 |
+| `EDGE_IDLE_TIMEOUT_SECONDS`        | `60`, or `920` with `CLIENT_IP_HEADER` | Close a connection with no request in flight for this long                                      |
+| `EDGE_MAX_CONNECTIONS`             | `4096`                                 | Open connections per listener, TLS handshakes included; zero disables                           |
+| `EDGE_MAX_CONNECTIONS_PER_ADDRESS` | `256`, or `0` with `CLIENT_IP_HEADER`  | Open connections per listener from one client address; zero disables                            |
+| `EDGE_BODY_LIMIT_BYTES`            | `2097152`                              | Request-body limit, answered with 413; zero disables this host layer, leaving API limits intact |
+| `EDGE_URI_LIMIT_BYTES`             | `8192`                                 | Path and query limit, answered with 414; zero disables                                          |
+| `EDGE_BENCH_LOG`                   | unset                                  | Complete JSON benchmark log for the sampler                                                     |
+| `CLIENT_IP_HEADER`                 | unset                                  | Header holding the client address, set by a trusted proxy                                       |
+| `CLIENT_IP_TRUSTED_PROXIES`        | unset                                  | Comma-separated CIDRs whose `CLIENT_IP_HEADER` is read; unset trusts every peer                 |
 
 Boolean switches accept `true` or `false`. The two connection timeouts take a positive
 number of seconds. A request past `EDGE_TIMEOUT_SECONDS` gets 503 rather than 408, which
 browsers may resend on their own while the first attempt's write still commits; on `/api`
-paths the body is the API's JSON refusal. A panic in a handler answers 500: the API's
+paths the body is the API's JSON refusal, as it is for a 413 past `EDGE_BODY_LIMIT_BYTES`.
+A panic in a handler answers 500: the API's
 JSON on its routes and in-process calls, plain text elsewhere. `BETTER_AUTH_URL` must be an HTTP(S) origin,
 with no credentials, path, query, or fragment. The host normalizes its scheme, hostname,
 and default port. TLS requires an HTTPS origin. Redirects
@@ -336,17 +358,22 @@ setup puts a CDN or caching proxy in front, as Snowtime's Cloudflare does; the h
 serves static files as the fallback for cache misses
 ([native-host.md](../docs/architecture/native-host.md), "Tokio at the edge, lanes behind it").
 
-When a proxy supplies the client address, set `CLIENT_IP_HEADER` only on a listener
-whose network access is restricted to that trusted proxy. The native API accepts one
-valid address from that header, rejects chains, and ignores other forwarded headers. Without it, all listener
-modes use `axum_server` connect info for the TCP peer. Sessions and rate-limit keys
+When a proxy supplies the client address, set `CLIENT_IP_HEADER` to the header it
+overwrites, and `CLIENT_IP_TRUSTED_PROXIES` to the proxy's address ranges, for example
+Cloudflare's published IPv4 and IPv6 ranges. The host then reads the header only from a peer
+in those ranges and uses the TCP peer's own address for any other, so a client that
+reaches the origin directly can't choose its address. Without `CLIENT_IP_TRUSTED_PROXIES`,
+every peer is trusted, so restrict the listener's network access to the proxy. The native
+API accepts one valid address from that header, rejects chains, and ignores other
+forwarded headers. Without `CLIENT_IP_HEADER`, all listener modes use `axum_server`
+connect info for the TCP peer. Sessions and rate-limit keys
 normalize IPv4-mapped IPv6 to IPv4 and group IPv6 by `/64`, as Better Auth does.
 The direct benchmark trusts its isolated generator network for simulated user IPs.
 
 `RATE_LIMIT` defaults to on unless `NODE_ENV=development`. Set `RATE_LIMIT=on` to
 exercise limits in development, or `RATE_LIMIT=off` for perf and stress runs. It
 controls both per-IP auth limits and API per-user write limits. Startup logs show
-whether it is enabled; `/readyz` includes `rate_limit`. Auth limits use in-memory
+whether it is enabled. Auth limits use in-memory
 `governor` GCRA quotas through `tower_governor`, with Better Auth's 429 JSON body,
 `Content-Type: application/json`, and `X-Retry-After` (rounded-up seconds until the
 next token). A request to a ported route counts under the route's template, so
