@@ -1,6 +1,6 @@
 # 081.35: Edge configuration
 
-Status: in-progress
+Status: done
 
 Fix M10, L3–L7, L20, and the edge's 413 from task 081.30, the 081.32 follow-up on the
 login-domain session check, and the CDN keep-alive defaults Kait asked for on 2026-10-09.
@@ -23,8 +23,8 @@ M11.
       saturates. Other builds refuse to start with it set.
 - [x] L4: `/readyz` no longer reports `rate_limit`; the startup log still does.
       `hardening-compare.ts` checks the body instead of reading the flag.
-- [ ] L4: reserve the `livez` and `readyz` slugs on both backends, in a separate commit
-      that touches only the slug lists. Waiting for Kait.
+- [x] L4: `livez` and `readyz` are reserved slugs on both backends, in a commit that
+      touches only the two slug lists, so it can go to `main` on its own.
 - [x] L5: with `CLIENT_IP_TRUSTED_PROXIES` (comma-separated CIDRs), the host reads
       `CLIENT_IP_HEADER` only from a peer in those ranges and uses the peer's address for
       any other. The variable needs `CLIENT_IP_HEADER`.
