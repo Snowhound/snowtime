@@ -25,7 +25,7 @@ fn op_encode_simdutf(scope: &mut v8::PinScope, text: v8::Local<v8::String>) -> V
         let mut input = vec![0; length];
         text.write_one_byte_v2(scope, 0, &mut input, v8::WriteFlags::empty());
         let mut output = vec![0; length * 2];
-        // simdutf requires twice the Latin-1 input length in output capacity.
+        // SAFETY: simdutf requires twice the Latin-1 input length in output capacity.
         let written = unsafe { v8::simdutf::convert_latin1_to_utf8(&input, &mut output) };
         output.truncate(written);
         output
@@ -33,7 +33,7 @@ fn op_encode_simdutf(scope: &mut v8::PinScope, text: v8::Local<v8::String>) -> V
         let mut input = vec![0; length];
         text.write_v2(scope, 0, &mut input, v8::WriteFlags::empty());
         let mut output = vec![0; length * 3];
-        // simdutf requires three bytes per UTF-16 code unit in output capacity.
+        // SAFETY: simdutf requires three bytes per UTF-16 code unit in output capacity.
         let written = unsafe { v8::simdutf::convert_utf16le_to_utf8(&input, &mut output) };
         if written == 0 && length != 0 {
             return deno_core::serde_v8::to_utf8(text, scope).into_bytes();
@@ -69,7 +69,7 @@ fn op_decode_simdutf<'s, 'i>(
 ) -> Result<v8::Local<'s, v8::String>, JsErrorBox> {
     let bytes = without_bom(bytes);
     let mut output = vec![0; bytes.len()];
-    // UTF-16 output cannot use more code units than the input has UTF-8 bytes.
+    // SAFETY: UTF-16 output cannot use more code units than the input has UTF-8 bytes.
     let length = unsafe { v8::simdutf::convert_utf8_to_utf16le(bytes, &mut output) };
     if length == 0 && !bytes.is_empty() {
         return v8::String::new_from_utf8(scope, bytes, v8::NewStringType::Normal)

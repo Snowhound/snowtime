@@ -22,7 +22,6 @@ exceptions = [
   { allow = ["MPL-2.0"], crate = "webauthn-rs-core" },
   { allow = ["MPL-2.0"], crate = "webauthn-rs-proto" },
   { allow = ["MPL-2.0"], crate = "webauthn-attestation-ca" },
-  { allow = ["MPL-2.0"], crate = "webauthn-rs" },
   { allow = ["MPL-2.0"], crate = "base64urlsafedata" },
   { allow = ["MPL-2.0"], crate = "cssparser" },
   { allow = ["MPL-2.0"], crate = "cssparser-macros" },

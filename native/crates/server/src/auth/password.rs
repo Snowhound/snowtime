@@ -15,7 +15,8 @@ fn key(password: &str, salt: &str) -> [u8; 64] {
     let normalized: String = password.nfkc().collect();
     let mut key = [0u8; 64];
     // AWS-LC needs slightly more than 32 MiB for its ROMix buffer and scratch blocks.
-    // The pointers remain valid for this call, and AWS-LC writes exactly key.len() bytes.
+    // SAFETY: the pointers remain valid for this call, and AWS-LC writes exactly key.len()
+    // bytes.
     let result = unsafe {
         aws_lc_sys::EVP_PBE_scrypt(
             normalized.as_ptr().cast(),

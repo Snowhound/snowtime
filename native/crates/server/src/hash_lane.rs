@@ -24,6 +24,7 @@ pub(crate) fn start(workers: usize, waiting: usize, timeout: Duration) -> io::Re
 #[cfg(target_os = "linux")]
 fn priority() -> io::Result<i32> {
     // Linux niceness is per thread. errno disambiguates a successful value of -1.
+    // SAFETY: errno is this thread's own, and getpriority takes no pointers.
     unsafe {
         *libc::__errno_location() = 0;
         let nice = libc::getpriority(libc::PRIO_PROCESS, 0);
@@ -41,6 +42,7 @@ fn lower_priority() -> io::Result<()> {
     if target == before {
         return Ok(());
     }
+    // SAFETY: setpriority takes no pointers and changes only this thread's niceness.
     if unsafe { libc::setpriority(libc::PRIO_PROCESS, 0, target) } != 0 {
         return Err(io::Error::last_os_error());
     }

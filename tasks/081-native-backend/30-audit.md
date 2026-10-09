@@ -232,6 +232,9 @@ four-thread blocking pool for files and DNS.
 
 **M7. Vendored OpenSSL ships in the release binary.**
 
+reqwest part fixed in 081.37 ([supply chain](37-supply-chain.md)): ring is out of the
+graph. OpenSSL stays, as 081.28 decided.
+
 - **Where:** `native/crates/server/Cargo.toml:30`, `openssl` with `vendored`, required by
   `webauthn-rs-core =0.5.5`.
 - **Failure:** the release links three crypto libraries (OpenSSL, AWS-LC, ring), and
@@ -245,6 +248,9 @@ four-thread blocking pool for files and DNS.
 
 **M8. The V8 library downloads at build time without a content check.**
 
+Fixed in 081.37 ([supply chain](37-supply-chain.md)): `native/v8-archive.sh` checks a
+pinned SHA-256; the image build is unverified.
+
 - **Where:** the `v8 149.4.0` build script, through `deno_core`; `native/Dockerfile:18-21`
   sets neither `RUSTY_V8_ARCHIVE` nor `RUSTY_V8_MIRROR`.
 - **Failure:** the build fetches a prebuilt static library from GitHub releases and links
@@ -255,6 +261,10 @@ four-thread blocking pool for files and DNS.
   `RUSTY_V8_ARCHIVE`.
 
 **M9. The image ships no third-party notices.**
+
+Fixed in 081.37 ([supply chain](37-supply-chain.md)): `native/THIRD_PARTY_LICENSES` in
+`/usr/share/doc/snowtime/`. The prebuilt V8 library also holds LGPL-2.1 code from glibc,
+which the Cargo graph below doesn't show; 081.37 records it as an open question.
 
 - **Where:** `native/Dockerfile:33-43`.
 - **Failure:** the binary statically links V8 and its Chromium third-party code, OpenSSL,
@@ -316,10 +326,10 @@ Fixed in 081.34 ([edge](34-edge.md)): only paths in the startup file index are s
 | L18 | `host/src/edge/mod.rs`, `server/src/http.rs`                                                                 | No `CatchPanicLayer`: a panic in async handler code resets the connection instead of answering 500. Blocking code already maps panics to 500.                                                                                                                                 | Code.                                                                                            | Add `CatchPanicLayer` with the API's JSON 500. Fixed in 081.34.                                                                                 |
 | L19 | `server/src/auth/oauth.rs:742-748`                                                                           | A provider's `expires_in` multiplies without overflow checks.                                                                                                                                                                                                                 | Code.                                                                                            | `checked_mul` and `checked_add`. Fixed in 081.31 ([input bounds](31-input-bounds.md)).                                                          |
 | L20 | `server/src/rate_limit.rs:60-64`                                                                             | Above 10,000 live windows, every write prunes the whole map under one mutex.                                                                                                                                                                                                  | Code.                                                                                            | Prune on a timer or after the map doubles. Fixed in 081.35.                                                                                     |
-| L21 | `native/README.md:207-210`; `native/bench/compare.ts`                                                        | The README's commands build without `bench`, but OAuth conformance and `compare.ts` need it for the fake provider, so they fail. `compare.ts`'s mask turns `updatedAt` into `$created` when both match to the millisecond, which failed one run of 1,361.                     | Reproduced: OAuth conformance fails without `bench`; [compare-run1.log](audit/compare-run1.log). | Document `--features bench`; mask each field by name.                                                                                           |
-| L22 | `native/crates/server/Cargo.toml:9-19`                                                                       | The `auth-spike` feature keeps alpha `better-auth` crates and `rsa` (RUSTSEC-2023-0071) in the lockfile, failing `cargo deny --all-features`.                                                                                                                                 | [cargo-deny-all-features.log](audit/cargo-deny-all-features.log).                                | Remove the spike before the split.                                                                                                              |
-| L23 | `native/Dockerfile:7`, `:33`; workspace                                                                      | Base images pinned by tag, no `rust-toolchain.toml`, no `[workspace.lints]` for `unsafe`, and no CI job runs cargo.                                                                                                                                                           | Code.                                                                                            | Pin digests and the toolchain; add the lints and a cargo CI job.                                                                                |
-| L24 | Conformance suites                                                                                           | No native test uses another organization's IDs; TypeScript's unit tests do. The code is correct today.                                                                                                                                                                        | Code.                                                                                            | Add a second-organization fixture to conformance.                                                                                               |
+| L21 | `native/README.md:207-210`; `native/bench/compare.ts`                                                        | The README's commands build without `bench`, but OAuth conformance and `compare.ts` need it for the fake provider, so they fail. `compare.ts`'s mask turns `updatedAt` into `$created` when both match to the millisecond, which failed one run of 1,361.                     | Reproduced: OAuth conformance fails without `bench`; [compare-run1.log](audit/compare-run1.log). | Document `--features bench`; mask each field by name. Fixed in 081.37.                                                                          |
+| L22 | `native/crates/server/Cargo.toml:9-19`                                                                       | The `auth-spike` feature keeps alpha `better-auth` crates and `rsa` (RUSTSEC-2023-0071) in the lockfile, failing `cargo deny --all-features`.                                                                                                                                 | [cargo-deny-all-features.log](audit/cargo-deny-all-features.log).                                | Remove the spike before the split. Fixed in 081.37.                                                                                             |
+| L23 | `native/Dockerfile:7`, `:33`; workspace                                                                      | Base images pinned by tag, no `rust-toolchain.toml`, no `[workspace.lints]` for `unsafe`, and no CI job runs cargo.                                                                                                                                                           | Code.                                                                                            | Pin digests and the toolchain; add the lints and a cargo CI job. Fixed in 081.37.                                                               |
+| L24 | Conformance suites                                                                                           | No native test uses another organization's IDs; TypeScript's unit tests do. The code is correct today.                                                                                                                                                                        | Code.                                                                                            | Add a second-organization fixture to conformance. Fixed in 081.37.                                                                              |
 
 ### Info
 
@@ -435,7 +445,7 @@ as a non-root user.
 | RUSTSEC-2026-0119 | hickory-proto 0.25.2             | `deno_net`, `deno_fetch`               | Yes, unused          | M3                                  |
 | RUSTSEC-2026-0118 | hickory-proto 0.25.2             | `deno_net`, `deno_fetch`               | Yes, unused          | M3                                  |
 | RUSTSEC-2023-0071 | rsa 0.9.10                       | `auth-spike` (`jsonwebtoken`)          | No                   | L22                                 |
-| RUSTSEC-2026-0097 | rand 0.8.5 (unsound)             | `deno_fs`; `auth-spike`                | Yes, unused API      | None                                |
+| RUSTSEC-2026-0097 | rand 0.8.5 (unsound)             | `deno_fs`; `auth-spike`                | Yes, unused API      | 0.8.8 in 081.37                     |
 | Unmaintained      | bincode 1, paste, rustls-pemfile | `deno_core`, `v8`, `deno_native_certs` | Yes                  | Ignored with reasons in `deny.toml` |
 
 `cargo deny` 0.20.2 with the new `native/deny.toml`: licenses, bans, and sources pass;

@@ -16,7 +16,7 @@ fn main() {
         let start = Instant::now();
         match candidate {
             "aws-lc" => {
-                // All pointers refer to live slices for the duration of this call.
+                // SAFETY: all pointers refer to live slices for the duration of this call.
                 let result = unsafe {
                     aws_lc_sys::EVP_PBE_scrypt(
                         password.as_ptr().cast(),

@@ -1,9 +1,10 @@
 // Renders the same pages on two native hosts, one after the other on one copy of the
 // benchmark database with the same sessions, and compares each answer byte for byte. Only the
-// CSP nonce, which is random per page, times from the host's clock, and the Date and
-// Server-Timing headers are masked. A
-// change to the render crate, the bundle, or the in-process API transport must not change a
-// page; compare.ts and conformance cover only the API.
+// CSP nonce, which is random per page, times from the host's clock, the Date and Server-Timing
+// headers, and the content hashes in script and style file names are masked, so a control
+// binary from another frontend build compares cleanly. A change to the render crate, the
+// bundle, or the in-process API transport must not change a page; compare.ts and conformance
+// cover only the API.
 //
 //   bun native/bench/page-compare.ts <control-binary> <candidate-binary>
 import { createClient } from '@libsql/client'
@@ -116,6 +117,9 @@ async function signIn(url: string, who: keyof typeof USERS) {
     .join('; ')
 }
 
+// Vite names a script or style file <name>-<8-character hash>; both may contain hyphens.
+const ASSET = /\/assets\/([\w.-]+)-[\w-]{8}\.(js|css)\b/g
+
 // The router and the query cache stamp a page with the host's clock, which runs on from
 // PERF_NOW; seeded data is older.
 function fromClock(time: number) {
@@ -140,6 +144,7 @@ async function render(url: string, sessions: Record<string, string>, item: Case)
       .replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/g, (iso) =>
         fromClock(Date.parse(iso)) ? '$now' : iso,
       )
+      .replace(ASSET, '/assets/$1-$hash.$2')
   }
   const kept = [...response.headers].filter(([name]) => !['date', 'server-timing'].includes(name))
   return {

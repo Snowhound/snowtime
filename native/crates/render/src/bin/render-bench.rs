@@ -24,6 +24,7 @@ fn rss_mb() -> f64 {
 // glibc's view of the memory it manages: in use, and freed but kept.
 #[cfg(all(target_os = "linux", target_env = "gnu"))]
 fn malloc_mb() -> serde_json::Value {
+    // SAFETY: mallinfo2 takes no arguments and returns a plain record.
     let info = unsafe { libc::mallinfo2() };
     let mb = |bytes: usize| bytes as f64 / 1048576.0;
     serde_json::json!({"in_use": mb(info.uordblks + info.hblkhd), "free": mb(info.fordblks)})
@@ -34,7 +35,9 @@ fn malloc_mb() -> serde_json::Value {
 }
 
 fn usage() -> (f64, f64) {
+    // SAFETY: rusage is a C record whose fields are all valid when zeroed.
     let mut usage = unsafe { std::mem::zeroed::<libc::rusage>() };
+    // SAFETY: getrusage writes only the record it borrows for this call.
     unsafe {
         libc::getrusage(libc::RUSAGE_SELF, &mut usage);
     }
@@ -133,6 +136,7 @@ fn heap_limits() -> Policy {
 // CPU milliseconds per thread name, from /proc/self/task.
 fn thread_cpu() -> HashMap<String, f64> {
     let mut by_name = HashMap::new();
+    // SAFETY: sysconf only reads configuration.
     let tick = 1000.0 / unsafe { libc::sysconf(libc::_SC_CLK_TCK) } as f64;
     for task in std::fs::read_dir("/proc/self/task")
         .into_iter()

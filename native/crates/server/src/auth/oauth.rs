@@ -1202,6 +1202,13 @@ mod tests {
             assert_eq!(count(&app), 0);
         }
     }
+    // reqwest has no crypto provider of its own; the host installs AWS-LC at startup.
+    #[test]
+    fn the_provider_client_uses_the_installed_aws_lc_provider() {
+        let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
+        client(true);
+        client(false);
+    }
     #[test]
     fn token_expiry_checks_multiplication_and_addition() {
         assert_eq!(token_expiry(1_000, Some(3600)), Some(3_601_000));

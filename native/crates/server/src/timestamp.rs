@@ -72,12 +72,13 @@ impl Timestamp {
                 50..=99 => (1900 + n, 1),
                 _ => (n, 1),
             };
-            // tm is a C record whose zeroed fields are valid, and mktime borrows it.
+            // SAFETY: tm is a C record whose fields are all valid when zeroed.
             let mut date: libc::tm = unsafe { std::mem::zeroed() };
             date.tm_year = year - 1900;
             date.tm_mon = month - 1;
             date.tm_mday = 1;
             date.tm_isdst = -1;
+            // SAFETY: mktime borrows the record for this call only.
             let seconds = unsafe { libc::mktime(&mut date) };
             return Some(Timestamp(seconds as i64 * 1000));
         }

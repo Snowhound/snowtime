@@ -644,6 +644,7 @@ fn file_reads_holding_every_blocking_thread_leave_database_calls_running() {
                 .map(|i| {
                     let path = directory.path().join(format!("stuck-{i}.js"));
                     let name = std::ffi::CString::new(path.to_str().unwrap()).unwrap();
+                    // SAFETY: name is a NUL-terminated string that outlives the call.
                     assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
                     path
                 })

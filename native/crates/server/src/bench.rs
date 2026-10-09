@@ -42,7 +42,7 @@ impl Drop for Active {
 pub(crate) fn sqlite(db: &rusqlite::Connection) -> serde_json::Value {
     fn status(db: &rusqlite::Connection, code: i32) -> i32 {
         let (mut current, mut peak) = (0, 0);
-        // The caller owns the connection; SQLite writes only these two outputs.
+        // SAFETY: the caller owns the connection; SQLite writes only these two outputs.
         unsafe {
             rusqlite::ffi::sqlite3_db_status(db.handle(), code, &mut current, &mut peak, 0);
         }

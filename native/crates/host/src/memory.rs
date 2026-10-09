@@ -46,7 +46,7 @@ fn cgroup_limit() -> Option<u64> {
 }
 
 fn physical_memory() -> u64 {
-    // sysconf only reads configuration.
+    // SAFETY: sysconf only reads configuration.
     let (pages, size) = unsafe {
         (
             libc::sysconf(libc::_SC_PHYS_PAGES),
@@ -104,6 +104,7 @@ pub fn policy(limit: &Limit, cpus: usize, at_most: Option<usize>) -> Policy {
 fn resident() -> Option<u64> {
     let statm = std::fs::read_to_string("/proc/self/statm").ok()?;
     let pages: u64 = statm.split_whitespace().nth(1)?.parse().ok()?;
+    // SAFETY: sysconf only reads configuration.
     let size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
     Some(pages * size.max(0) as u64)
 }

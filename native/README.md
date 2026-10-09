@@ -7,8 +7,8 @@ those pages rendered by the app's own server bundle in V8. Subtask 03
 subtask 01 (`01-server-rendering.md`) the renderer's.
 
 Feature level: matches snowtime main c8ffa84. The branch's TypeScript app (`src/`) is
-identical to that commit, and against it the native host passes all 54 conformance
-tests (539 assertions, 11 files) and all 1,409 `compare.ts` calls byte for byte.
+identical to that commit, and against it the native host passes all 55 conformance
+tests (542 assertions, 12 files) and all 1,409 `compare.ts` calls byte for byte.
 [Task 081.30](../tasks/081-native-backend/30-audit.md#parity-record) records the audit's findings.
 [Task 081.31](../tasks/081-native-backend/31-input-bounds.md) records the current checks
 and deliberate auth input bounds that differ from TypeScript.
@@ -225,10 +225,13 @@ records them in `__drizzle_migrations` as drizzle-orm does, so either backend ca
 the database the other runs. The image doesn't include `drizzle/`; mount it.
 
 ```sh
-cargo build --release --manifest-path native/Cargo.toml --bin snowtime-axum
+cargo build --release --manifest-path native/Cargo.toml --bin snowtime-axum --features bench
 bun native/bench/conformance.ts native/target/release/snowtime-axum
 bun native/bench/compare.ts native/target/release/snowtime-axum
 ```
+
+Both need the `bench` build: the OAuth calls reach the fake provider through
+`OAUTH_FAKE_PROVIDER`, which only `bench` builds read.
 
 `conformance.ts` serves the binary a copy of the benchmark database at `SEED_NOW` and
 runs `conformance/timer.conformance.ts` against it (or the test files given after the
@@ -236,12 +239,43 @@ binary); the other files' unported calls fail. `compare.ts` sends the same reads
 TypeScript build and the binary and fails on any answer that differs in status or bytes,
 masking only each server's clock, sign-in time, and URL. It also compares malformed
 inputs, the order of request checks, and Better Auth's origin and CSRF checks on
-sign-in. `lines.ts` counts the code
+sign-in. `page-compare.ts` renders the same pages on two hosts, a control and a candidate,
+and fails on any byte that differs, masking only the CSP nonce, the hosts' clocks, and the
+content hashes in script and style file names, so the control may come from another
+frontend build:
+
+```sh
+bun native/bench/page-compare.ts <control binary> native/target/debug/snowtime-axum
+```
+
+CI (`.github/workflows/native.yml`) runs it on a pull request that leaves `src/` alone,
+against the base commit's host. `lines.ts` counts the code
 lines of each ported handler in TypeScript and in the server crate (or a historical rules
 crate it's given).
 `api-recording.ts` cuts a `perf:stress` recording down to the calls and pages the native
 backend serves, for `perf:stress --app=native --recording=<file>`; `native/Dockerfile`
 builds the image that run uses, from the repository root once the bundle is built.
+
+## Supply chain
+
+`rust-toolchain.toml` pins the toolchain, and `[workspace.lints]` requires a `SAFETY:`
+comment on every `unsafe` block. CI also runs `cargo deny check` (with and without
+`--all-features`) and `cargo audit`; `deny.toml` ignores no vulnerability.
+
+The release image pins its base images by digest and builds against a V8 library that
+`v8-archive.sh` downloads and checks against a pinned SHA-256, rather than the v8 build
+script's unchecked download. A new v8 version needs its hashes added there first.
+
+`THIRD_PARTY_LICENSES` holds the notices for the Linux release graph, and the image
+copies it to `/usr/share/doc/snowtime/`. Regenerate it after any change to `Cargo.lock`,
+with cargo-about 0.9 installed; CI fails while it's stale:
+
+```sh
+cargo fetch --manifest-path native/Cargo.toml
+native/licenses/generate.sh
+```
+
+[`licenses/README.md`](licenses/README.md) says where the bundled V8 notices come from.
 
 ## Optional edge
 
@@ -393,11 +427,9 @@ ACME remain opt-in.
 Verify production auth limits and session IPs with
 `bun native/bench/hardening-compare.ts native/target/debug/snowtime-axum`. The ordinary
 byte comparison runs in development and cannot exercise TypeScript's auth limiter.
-Before `bunx tsc --noEmit`, install the isolated benchmark dependencies with
-`bun install --frozen-lockfile` in `native/bench/auth-spike` and
-`native/crates/render/bundle/bench`, and run `bun run i18n:compile` in the repository
-root. The API-key spike deliberately keeps its pinned Better Auth version separate
-from the app's version.
+Before `bunx tsc --noEmit`, install the render benchmark's isolated dependencies with
+`bun install --frozen-lockfile` in `native/crates/render/bundle/bench`, and run
+`bun run i18n:compile` in the repository root.
 
 For a local edge comparison, first run the normal benchmark once to create its Caddy
 certificate, then add `--direct` to `perf:stress --app=native --recording=<file>`.

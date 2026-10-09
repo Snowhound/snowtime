@@ -26,6 +26,3 @@ mod sign_in;
 mod sign_in_page;
 mod sign_out;
 pub(crate) mod writes;
-
-#[cfg(feature = "auth-spike")]
-pub mod spike;

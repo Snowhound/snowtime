@@ -299,6 +299,9 @@ which records the edge measurements.
 - [36](36-render.md): renderer fixes from the audit: no network extensions, the rustls
   update, heap headroom, API limits, a read-only in-process transport, and renderer
   lifecycle (done)
+- [37](37-supply-chain.md): supply chain and harness before the split: ring out of the
+  graph, a checked V8 download, third-party notices, the auth spike removed, a pinned
+  toolchain and base images, a native CI job, and a second-organization conformance file
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

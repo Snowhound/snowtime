@@ -1,0 +1,120 @@
+# Checks the native backend (native/README.md) on every PR and push to main that touches it
+# or the app it renders: formatting, Clippy with and without bench, the Rust tests,
+# cargo-deny, cargo-audit, and whether THIRD_PARTY_LICENSES is current. On a PR that leaves
+# the frontend alone, page-compare.ts also renders every page on the base commit's host and
+# this one and fails on any difference.
+name: Native
+
+on:
+  pull_request:
+    paths: ['native/**', 'src/**', 'conformance/**', 'perf/lib/**', '.github/workflows/native.yml']
+  push:
+    branches: [main]
+    paths: ['native/**', 'src/**', 'conformance/**', 'perf/lib/**', '.github/workflows/native.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CARGO_TERM_COLOR: always
+      RUSTY_V8_ARCHIVE: ${{ runner.temp }}/librusty_v8.a.gz
+    defaults:
+      run:
+        working-directory: native
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      # Installs rust-toolchain.toml's version and components.
+      - name: Toolchain
+        run: rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny@0.20.2,cargo-audit@0.22.2,cargo-about@0.9.2
+
+      - name: V8 library
+        run: ./v8-archive.sh Cargo.lock "$RUSTY_V8_ARCHIVE"
+
+      # The render crate embeds the app's server bundle, so the app builds first.
+      - name: Render bundle
+        working-directory: .
+        run: |
+          bun install --frozen-lockfile
+          bun run i18n:compile
+          bun run build
+          bun native/crates/render/bundle/build.ts
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --locked --workspace --all-targets -- -D warnings
+
+      - name: Clippy with bench
+        run: cargo clippy --locked --workspace --all-targets --features bench -- -D warnings
+
+      - name: Tests
+        run: |
+          cargo test --locked -p snowtime-server
+          cargo test --locked -p snowtime-server --features bench
+          cargo test --locked -p snowtime-host
+          cargo test --locked -p snowtime-render
+
+      - name: cargo-deny
+        run: |
+          cargo deny --locked check
+          cargo deny --locked --all-features check
+
+      - name: cargo-audit
+        run: cargo audit
+
+      - name: Third-party licenses are current
+        run: |
+          cargo fetch --locked
+          licenses/generate.sh
+          git diff --exit-code THIRD_PARTY_LICENSES
+
+      # Pages may change only with the frontend, so a PR that changes src/ skips this.
+      - name: Pages match the base commit
+        if: github.event_name == 'pull_request'
+        working-directory: .
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if ! git diff --quiet "$BASE" HEAD -- src; then
+            echo "::notice title=Page comparison skipped::This PR changes src/."
+            exit 0
+          fi
+          cargo build --locked --manifest-path native/Cargo.toml -p snowtime-host
+          git worktree add ../base "$BASE"
+          (
+            cd ../base
+            bun install --frozen-lockfile
+            bun run i18n:compile
+            bun run build
+            bun native/crates/render/bundle/build.ts
+            # The base may lock another v8, so it gets its own checked library.
+            native/v8-archive.sh native/Cargo.lock "$RUNNER_TEMP/base-v8.a.gz"
+            RUSTY_V8_ARCHIVE="$RUNNER_TEMP/base-v8.a.gz" CARGO_TARGET_DIR="$RUNNER_TEMP/base" \
+              cargo build --locked --manifest-path native/Cargo.toml -p snowtime-host
+          )
+          bun native/bench/page-compare.ts \
+            "$RUNNER_TEMP/base/debug/snowtime-axum" native/target/debug/snowtime-axum

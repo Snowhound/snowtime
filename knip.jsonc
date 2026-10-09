@@ -23,12 +23,11 @@
   ],
   "drizzle": false,
   // Static prototypes and design files load their scripts from HTML.
-  // The render benchmark and auth spike each have their own manifest and Knip check.
+  // The render benchmark has its own manifest and Knip check.
   "ignore": [
     "prototypes/**",
     "design/**",
     "native/crates/render/bundle/bench/**",
-    "native/bench/auth-spike/**",
     // Deno's fetch scripts, which the render crate snapshots by path.
     "native/crates/render/vendor/**",
   ],

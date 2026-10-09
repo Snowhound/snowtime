@@ -1,0 +1,5 @@
+# The toolchain for local builds and CI; native/Dockerfile's Rust image matches it.
+[toolchain]
+channel = "1.99.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

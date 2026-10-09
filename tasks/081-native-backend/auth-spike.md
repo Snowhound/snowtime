@@ -6,8 +6,10 @@ through the host's database gate. This release lacks public server-only API-key
 creation and verification, and its passkey verifier rejects a registration that
 TypeScript accepts. These are compatibility gaps, not reasons to use SeaORM.
 
-The isolated implementation is `native/crates/server/src/auth/spike/`, behind the
-`auth-spike` feature. The app's router does not mount it. Password sign-in still uses
+The isolated implementation was `native/crates/server/src/auth/spike/`, behind the
+`auth-spike` feature. The app's router did not mount it. Task 081.37 removed the feature,
+its fixtures in `native/bench/auth-spike/`, and their dependencies before the repository
+split; branch `081-auth-spike` keeps them, as does `081-audit` at `ae0ec17`. Password sign-in still uses
 AWS-LC scrypt, and the per-request session check still uses the app's cookie verifier.
 No renderer or lane implementation changed.
 

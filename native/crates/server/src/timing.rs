@@ -78,6 +78,7 @@ pub(crate) fn cpu_ms() -> f64 {
             tv_nsec: 0,
         };
         // A thread-local CPU clock excludes time waiting for SQLite and the scheduler.
+        // SAFETY: clock_gettime writes only the timespec it borrows for this call.
         unsafe {
             libc::clock_gettime(libc::CLOCK_THREAD_CPUTIME_ID, &mut t);
         }

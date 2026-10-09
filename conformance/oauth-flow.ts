@@ -15,6 +15,11 @@ function profile(email: string, verified = true, id = 'oauth-user') {
   }
 }
 
+// Masks one field's value, so two fields that hold the same moment keep their own names.
+function maskField(text: string, field: string, value: string, alias: string) {
+  return text.replaceAll(`"${field}":${JSON.stringify(value)}`, `"${field}":"${alias}"`)
+}
+
 export interface OAuthObservation {
   label: string
   status: number
@@ -123,7 +128,8 @@ export async function oauthFlow(
       if (social) accountId = social.id
       for (const a of accounts)
         if (a.providerId !== 'credential') {
-          text = text.replaceAll(a.createdAt, '$created').replaceAll(a.updatedAt, '$updated')
+          text = maskField(text, 'createdAt', a.createdAt, '$created')
+          text = maskField(text, 'updatedAt', a.updatedAt, '$updated')
         }
     }
     if (path === '/api/v1/session' && response.ok) {
@@ -142,7 +148,7 @@ export async function oauthFlow(
           `data:image/jpeg;base64, ${Buffer.alloc(2048, 42).toString('base64')}`
       )
         throw new Error('Microsoft Graph photo was not stored intact')
-      text = text.replaceAll(session.signedInAt, '$signedInAt')
+      text = maskField(text, 'signedInAt', session.signedInAt, '$signedInAt')
     }
     const location = response.headers.get('location')
     if (label === 'callback newline provider' && location !== `${app.url}/api/auth/callback/%0A?`)

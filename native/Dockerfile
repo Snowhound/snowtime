@@ -4,8 +4,15 @@
 # BIN picks the host binary; perf:stress --app=native builds it as snowtime-native:bench.
 #
 #   docker build -f native/Dockerfile --build-arg BIN=snowtime-axum -t snowtime-native:bench .
-FROM rust:1.99-trixie AS build
+#
+# Base images are pinned by digest, the Rust image to rust-toolchain.toml's version.
+FROM rust:1.99-trixie@sha256:6ff07edce8775d0f64be7aba9197229407301bddf2054d62c27b541a6238a181 AS build
 RUN apt-get update && apt-get install -y --no-install-recommends clang perl make && rm -rf /var/lib/apt/lists/*
+# The V8 library, checked against a pinned hash, rather than the v8 build script's unchecked
+# download. A change to Cargo.lock downloads it again.
+COPY native/v8-archive.sh native/Cargo.lock /tmp/v8/
+RUN /tmp/v8/v8-archive.sh /tmp/v8/Cargo.lock /opt/librusty_v8.a.gz && rm -r /tmp/v8
+ENV RUSTY_V8_ARCHIVE=/opt/librusty_v8.a.gz
 WORKDIR /src
 COPY native native
 COPY src/lib/holidays/ee.json src/lib/holidays/ee.json
@@ -31,7 +38,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     && cp target/release/examples/scrypt-bench /scrypt-bench
 ENTRYPOINT ["/scrypt-bench"]
 
-FROM debian:trixie-slim AS app
+FROM debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f AS app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
@@ -40,6 +47,7 @@ RUN apt-get update \
 # Named snowtime, as the release image names it, so the bench sampler finds the process.
 COPY --from=build /server /app/snowtime
 COPY native/crates/render/bundle/dist/public /app/public
+COPY native/THIRD_PARTY_LICENSES /usr/share/doc/snowtime/THIRD_PARTY_LICENSES
 ENV HOST=0.0.0.0 PORT=3000 EDGE_STATIC_DIR=/app/public
 USER snowtime
 EXPOSE 3000

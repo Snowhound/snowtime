@@ -441,7 +441,7 @@ fn create_params(policy: &Policy) -> deno_core::v8::CreateParams {
 // system. A no-op elsewhere.
 fn trim() {
     #[cfg(all(target_os = "linux", target_env = "gnu"))]
-    // malloc_trim only releases free memory.
+    // SAFETY: malloc_trim only releases free memory.
     unsafe {
         libc::malloc_trim(0);
     }
@@ -967,6 +967,7 @@ fn cpu_ms() -> f64 {
             tv_nsec: 0,
         };
         // Only this renderer's CPU, excluding the host's in-process API worker threads.
+        // SAFETY: clock_gettime writes only the timespec it borrows for this call.
         unsafe {
             libc::clock_gettime(libc::CLOCK_THREAD_CPUTIME_ID, &mut t);
         }
