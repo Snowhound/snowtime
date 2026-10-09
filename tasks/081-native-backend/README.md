@@ -203,8 +203,15 @@ the port follows `main`.
 The split repository pins `main` as a git submodule, builds the bundle and assets from
 it, and runs the conformance suite and `compare.ts` from the pinned commit. This
 repository keeps the contract: the conformance tests and a load harness that takes a
-server image or address. The harness's native-specific parts move with the port. Move
-`native/` with `git filter-repo`, so its history and measurements stay traceable.
+server image or address. The harness's native-specific parts move with the port.
+
+Kait, 2026-10-09: the split is `snowtime-native`, laid out as the porting kit will generate
+a port (the kit's `docs/port-repository.md`). It starts with fresh history at the pinned
+commit rather than `git filter-repo`'s, as a generated port would; this branch keeps the
+proof of concept's history, and the task 081 records move to the new repository's
+`docs/`. The branch's conformance tests and `perf/lib` changes go to `main`, since they
+test the TypeScript server too. The benchmark compose files, the native architecture
+docs, and the native CI move to `snowtime-native`.
 
 Rejected for now: a separate repository from the start. Every contract change would
 take two PRs and a pin bump, and fixes to the shared harness would flow back to this

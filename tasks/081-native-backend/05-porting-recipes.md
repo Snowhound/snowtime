@@ -2,6 +2,10 @@
 
 Status: todo (the last step: waits on task 081's port working and measured)
 
+Since 2026-10-09 the kit's design lives in the porting kit's repository (local, working
+name `porting-kit`), in `docs/design.md`; edit it there. This file is the copy it started
+from.
+
 Kait's goal (2026-10-03): what task 081 learns becomes a separate repository of recipes,
 skills, crates, and codemods for porting a modern cloud app to one Rust server with a
 local SQLite database, first on one instance and later with Turso. AI sessions do the
