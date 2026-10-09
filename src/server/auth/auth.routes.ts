@@ -1,11 +1,19 @@
 import { Hono } from 'hono'
 import { db } from '~/db'
 import { env } from '~/env'
-import { input, type OrganizationEnv, run, type UserEnv } from '../http.server'
-import { GetInvitationInput, InviteMemberInput, UpdateIssueLinksInput } from './auth.schemas'
+import { input, keys, type OrganizationEnv, run, type UserEnv } from '../http.server'
+import * as apiKeys from './api-keys.server'
+import {
+  CreateApiKeyInput,
+  GetInvitationInput,
+  InviteMemberInput,
+  RevokeApiKeyInput,
+  UpdateIssueLinksInput,
+} from './auth.schemas'
 import * as auth from './auth.server'
 import * as invitations from './invitations.server'
 import * as organizations from './organization.server'
+import { me } from './session.server'
 import { signInMethods } from './sign-in.server'
 
 // Calls that need no session: the sign-in page's, the session itself, and an invitation
@@ -19,6 +27,14 @@ export const publicAuthRoutes = new Hono()
   .get('/invitations/:id', input(GetInvitationInput), async (c) =>
     c.json(await invitations.invitationPreview(db, c.var.input.id)),
   )
+
+// The user's own account: `me` for a client that signs in with a key and has no session to
+// read, and the user's API keys for Settings. A key can't manage keys.
+export const accountRoutes = new Hono<UserEnv>()
+  .get('/me', keys, (c) => run(c, me))
+  .get('/api-keys', (c) => run(c, apiKeys.listApiKeys))
+  .post('/api-keys', input(CreateApiKeyInput), (c) => run(c, auth.createApiKey))
+  .delete('/api-keys/:id', input(RevokeApiKeyInput), (c) => run(c, apiKeys.revokeApiKey))
 
 // Better Auth's own calls read the request's headers.
 export const invitationRoutes = new Hono<UserEnv>().post(

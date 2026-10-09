@@ -8,8 +8,8 @@ of the code keeps; the rest is by area:
 - [native-rendering.md](native-rendering.md): planned rendering in the native backend
 - [data.md](data.md): data conventions, tenancy, schema and migrations, time zones, and
   working days
-- [auth.md](auth.md): sign-in methods, cookies and consent, abuse limits, and the content
-  security policy
+- [auth.md](auth.md): sign-in methods, API keys, cookies and consent, abuse limits, and the
+  content security policy
 - [platform.md](platform.md): supported browsers, deployment, environments,
   internationalization, error pages, the performance harnesses, and Server-Timing
 - [reports.md](reports.md): report export, entries, views, and ticket keys
@@ -144,6 +144,12 @@ of the code keeps; the rest is by area:
     throws it again. Better Auth's own refusals keep Better Auth's status and code. A
     serialization adapter in `src/start.ts` keeps an `AppError` that a loader throws
     during the server render; Start would otherwise send only the message.
+- Clients outside the browser call the same API with a personal API key
+  (`Authorization: Bearer <key>`, [docs/api.md](../api.md)) instead of the session cookie.
+  A key reaches only the routes marked `keys`; `known` refuses it on any other. `signedIn`
+  checks the key in place of the session, with its scope against the route. A key's
+  writes skip the `Origin` check, which guards cookies, and count against the same rate as
+  the user's writes in the browser ("API keys" in [auth.md](auth.md)).
 - The client imports a domain's `*.schemas.ts`, `schemas.ts`, and `errors.ts`: that is
   the backend's contract. It never imports `*.server.ts` or `*.routes.ts`, even for a
   type. Each domain has a client module in `src/lib/api/` (`entries.ts`, `projects.ts`,

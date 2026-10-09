@@ -27,8 +27,8 @@ export const groups: Group[] = [
   {
     name: 'auth',
     color: '#BAB0AC',
-    title: 'Auth (Better Auth core and passkey plugin)',
-    tables: ['user', 'session', 'account', 'passkey', 'verification'],
+    title: 'Auth (Better Auth core, passkey and API key plugins)',
+    tables: ['user', 'session', 'account', 'passkey', 'api_key', 'verification'],
   },
   {
     name: 'tenancy',
@@ -95,6 +95,20 @@ export const tables: Record<string, TableNotes> = {
       account_id: 'Identifier at the provider; equals user_id for the credential provider.',
       provider_id: 'credential, or an OAuth provider id.',
       password: 'Password hash, credential provider only.',
+    },
+  },
+  api_key: {
+    note: 'API key plugin (@better-auth/api-key). A personal key for the /api/v1 routes (task 093); it reaches no other route.',
+    columns: {
+      reference_id: 'The user who owns the key.',
+      key: 'Hash of the key. The key itself is shown once, at creation, and never stored.',
+      start:
+        'Always null: the plugin is set not to store the first characters. Kept because Better Auth refuses to start without any field a plugin declares.',
+      permissions: 'JSON of scopes, read and optionally write, as {"api": [...]}.',
+      expires_at: 'Null when the user chose no expiry.',
+      last_request: 'Last use, saved at most once a minute and shown in Settings.',
+      request_count:
+        'Always 0: the API counts requests per key in the rate-limit store. Kept because the plugin writes it when it creates a key.',
     },
   },
   passkey: {
