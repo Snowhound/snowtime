@@ -1,0 +1,29 @@
+meta {
+  name: Running timer
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/timer
+  body: none
+  auth: inherit
+}
+
+script:post-response {
+  const timer = res.getBody()
+  if (timer) bru.setVar('entryId', timer.id)
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  # GET /api/v1/timer
+
+  `null` without a running timer, or the running entry with its project.
+  Needs a `read` key.
+
+  Saves the running entry's id as `entryId`.
+}

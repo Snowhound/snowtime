@@ -134,6 +134,66 @@ already does what previews need, and its shared-accounts box is true of staging.
 - Previews have no Upstash and count rate limits in memory, so staging traffic doesn't
   count against production's limits.
 
+## API keys
+
+Clients outside the browser, such as the Raycast extension, sign in with a personal API key.
+Task 093 records why keys came before device sign-in. `@better-auth/api-key` issues and
+stores the keys, pinned to the `better-auth` version as `@better-auth/passkey` is. Its
+options are `apiKeyOptions` in `src/server/auth/api-keys.server.ts`.
+
+- A key belongs to a user, not an organization. It starts with `snow_`, so people and
+  secret scanners can spot one.
+- The `api_key` table holds a hash of the key. The key itself appears once, in the answer
+  to `createApiKey`. The plugin stores none of its characters
+  (`startingCharactersConfig.shouldStore: false`), so Settings names keys and shows no part
+  of one.
+- The user picks a lifetime when creating a key: 30 days, 90 days (preselected), 1 year,
+  or none. `CreateApiKeyInput` requires one, so no expiry is a choice, never a missing
+  value. The plugin's own default stays unset, because the plugin applies it whenever
+  `expiresIn` is empty, which would rule out a key that never expires.
+- A key has scopes, as the plugin's permissions: `read` (`{ api: ['read'] }`), or `write`,
+  which includes read. The form preselects read only, the least access.
+- Settings creates, lists, and revokes keys through the JSON API's `createApiKey`,
+  `listApiKeys`, and `revokeApiKey` calls, not the Better Auth client. The plugin takes
+  permissions only from the server, so the handler calls it without request headers. A
+  key can't make these calls, so a key can't mint or revoke keys. The plugin's HTTP
+  endpoints are closed (`apiKeyDisabledPaths`), so a session can't make a key without
+  scopes or extend one's expiry. Listing and revoking
+  read and delete the plugin's rows directly, filtered by the user.
+- `api_key.reference_id` references `user(id)` with `ON DELETE CASCADE`, which the plugin
+  doesn't declare, so a deleted user's keys go with the user row.
+- The plugin's sessions from API keys stay off (`enableSessionForAPIKeys: false`), so a key
+  can't reach `/api/auth/*`. The JSON API reads `Authorization: Bearer <key>`, and
+  `signedIn` (`src/server/http.server.ts`) checks the key in place of the session. A
+  request with a key is signed in by the key alone: the API never reads its cookie, so a
+  session can't widen it.
+- A key reaches only the routes marked `keys` in the domains' `*.routes.ts`. The rest, such
+  as the Settings calls above and the public routes, answer 403 to a key.
+- `keyChecker` (`src/server/auth/api-keys.server.ts`) checks a key without the plugin's
+  `verifyApiKey`. It hashes the key as the plugin does (SHA-256, unpadded base64url) and
+  reads the key's row joined to its user in one query. The plugin verifies with that read
+  plus two writes on every request, the rate-limit count with `last_request` and then
+  `updated_at`, so a client polling the timer would write to the database on every poll.
+  The plugin still creates keys, and a test checks that its hash matches `hashKey`.
+  Upgrading the plugin means rerunning that test, because the hasher isn't exported.
+- `keyChecker` refuses an unknown or disabled key with 401, an expired one with 401 and its
+  own message, and a read-only key on a write with 403, so a client can tell a wrong key
+  from a read-only one.
+- `keyChecker` checks the key's user against `ALLOWED_LOGIN_DOMAINS` on every request, as
+  the session hooks check a session, so a key stops working when its user's domain leaves
+  the list.
+- A failed read throws, and the API's error handler answers 503 when the database is
+  unreachable, so a client isn't told to replace a working key during an outage.
+- A key's writes skip the `Origin` check, which stops other sites from writing with the
+  session cookie; a key travels in a header no other site can set. They count against the
+  same per-user write rate as the browser's.
+- Each key may send 120 requests a minute (`rateLimits.apiKeyRequests`), counted in the
+  same store as the other rate limits (Upstash Redis when configured), not in the key's
+  row. The plugin's own limit is off.
+- `last_request` records a key's last use for Settings, at most once a minute. The write
+  runs beside the call, and the response waits for it, so it finishes on Vercel too. A
+  failed write is logged and doesn't fail the call.
+
 ## Cookies and consent
 
 Snowtime asks for no cookie consent (task 038). The ePrivacy Directive, Article 5(3) (in
@@ -201,6 +261,8 @@ the database, and the Turso quotas in `docs/hosting.md`, without bound. The valu
   count can admit invitations beyond the cap. The callback runs at the plugin's limit
   check, preserving earlier permission, existing-member, and duplicate refusals.
   Kait approved this correction for both servers on 2026-10-08.
+- `createApiKey` caps a user's API keys, expired ones included until the plugin deletes
+  them.
 - `createEntry` and `startTimer` cap a member's entries starting within 24 hours of the
   new one, either side. `updateEntry` checks the same when an entry's start moves,
   without counting the entry itself. The count is one range read on the

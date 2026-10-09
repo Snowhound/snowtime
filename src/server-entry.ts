@@ -4,6 +4,7 @@ import { setSend } from '~/lib/api/request'
 import { paraglideMiddleware } from '~/paraglide/server.js'
 import { api } from '~/server/api.server'
 import { contentSecurityPolicy, newNonce } from '~/server/csp.server'
+import { localeRequest } from '~/server/locale.server'
 import { serverTiming, time, withTiming } from '~/server/timing.server'
 
 // The route loaders' calls during a server render go to the API in process, by URL and with
@@ -28,7 +29,9 @@ export default {
       const nonce = newNonce()
       const cookie = request.headers.get('cookie') ?? ''
       const response = await time('render', () =>
-        paraglideMiddleware(request, () => handler.fetch(request, { context: { nonce, cookie } })),
+        paraglideMiddleware(localeRequest(request), () =>
+          handler.fetch(request, { context: { nonce, cookie } }),
+        ),
       )
       if (!response.headers.get('content-type')?.startsWith('text/html')) return response
       // A copy, because a response's headers can be immutable.

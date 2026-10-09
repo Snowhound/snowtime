@@ -126,6 +126,15 @@ only seeded data, so a reseed costs nothing.
   After that, saving another language switches it in place. The cookie never holds anything but the
   account's language (see "Cookies and consent" in [auth.md](auth.md)). `src/server-entry.ts`
   runs Paraglide's middleware around every request, which scopes the locale per request.
+- The JSON API answers a request with an API key in English only
+  ([docs/api.md](../api.md)). For such a request, `localeRequest`
+  (`src/server/locale.server.ts`) hands Paraglide's middleware a copy of the request
+  without its cookie or `Accept-Language`, so the locale falls back to English and the
+  domain schemas' validation messages match the API's other messages. An API client isn't
+  a user's browser, and one language keeps the contract simple. The app's own calls keep
+  the user's language. Paraglide's own
+  `routeStrategies` option would do the same, but compiles route matching into the browser
+  runtime, 5.7 kB gzipped on every page.
 - The user's language is `user_settings.locale` (see "User settings" in [timer.md](timer.md)).
   A new user's settings, which `PUT /api/v1/settings` creates, take it from the browser, as
   they do the time zone.

@@ -1,0 +1,29 @@
+meta {
+  name: Start timer again
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/organizations/{{orgId}}/timer/start
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "id": "{{newEntryId}}",
+    "description": "Started from Bruno"
+  }
+}
+
+assert {
+  res.status: eq 409
+}
+
+docs {
+  # A retried start
+
+  Sends **Start timer**'s last `id` again, as a client would after losing the answer. The
+  timer already exists, so the API answers 409 `CONFLICT` instead of starting a second one.
+}

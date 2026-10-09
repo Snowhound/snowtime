@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { input, type OrganizationEnv, run } from '../http.server'
+import { input, keys, type OrganizationEnv, run } from '../http.server'
 import {
   CreateEntryInput,
   DeleteEntryInput,
@@ -10,7 +10,7 @@ import {
 import * as entries from './entries.server'
 
 export const entryRoutes = new Hono<OrganizationEnv>()
-  .get('/entries', input(ListEntriesInput), (c) => run(c, entries.listEntries))
+  .get('/entries', keys, input(ListEntriesInput), (c) => run(c, entries.listEntries))
   .get('/entries/first-start', input(GetFirstEntryStartInput), (c) =>
     run(c, entries.getFirstEntryStart),
   )

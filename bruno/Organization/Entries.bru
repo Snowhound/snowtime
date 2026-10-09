@@ -1,0 +1,40 @@
+meta {
+  name: Entries
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/organizations/{{orgId}}/entries?from={{rangeFrom}}&to={{rangeTo}}
+  body: none
+  auth: inherit
+}
+
+params:query {
+  from: {{rangeFrom}}
+  to: {{rangeTo}}
+  ~userId: 
+}
+
+script:pre-request {
+  // The last 7 days up to now, on every run.
+  const now = Date.now()
+  bru.setVar('rangeFrom', new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString())
+  bru.setVar('rangeTo', new Date(now).toISOString())
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  # GET /api/v1/organizations/:orgId/entries
+
+  Entries that overlap `[from, to)`, newest first, as an array. Needs a `read` key.
+
+  - `from` and `to` are ISO 8601 timestamps, at most 93 days apart. The script sets them
+    to the last 7 days; for another range, type timestamps over `{{rangeFrom}}` and
+    `{{rangeTo}}`, such as `2026-10-01T00:00:00Z`.
+  - `userId` is off; turn it on for one member's entries. A user who may not read that
+    member's entries gets 403.
+}
