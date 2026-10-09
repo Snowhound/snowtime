@@ -38,7 +38,7 @@ async function withBuildLock<T>(run: () => T): Promise<T> {
 export async function buildApp(): Promise<string> {
   return withBuildLock(() => {
     const started = performance.now()
-    const result = spawnSync('bunx', ['--bun', 'vite', 'build'], {
+    const result = spawnSync('bun', ['--bun', 'run', 'build'], {
       cwd: ROOT,
       encoding: 'utf8',
       env: { ...process.env, NODE_ENV: 'production' },

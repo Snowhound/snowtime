@@ -60,7 +60,7 @@ function libsqlPackage(arch: Arch): string {
 const addons = new Map(targets.map((arch) => [arch, libsqlPackage(arch)]))
 
 if (values.build) {
-  const result = spawnSync('bunx', ['--bun', 'vite', 'build'], {
+  const result = spawnSync('bun', ['--bun', 'run', 'build'], {
     cwd: ROOT,
     stdio: 'inherit',
     env: { ...process.env, NODE_ENV: 'production', NITRO_PRESET: 'bun' },
