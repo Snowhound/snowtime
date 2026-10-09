@@ -134,6 +134,8 @@ fn slug_error(slug: &str) -> Option<Response> {
         "terms",
         "backgrounds",
         "brand",
+        "livez",
+        "readyz",
     ]
     .contains(&slug)
     {
