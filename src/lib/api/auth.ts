@@ -1,6 +1,9 @@
 import * as v from 'valibot'
 import {
+  ApiKey,
   AppSession,
+  type CreateApiKeyInput,
+  CreatedApiKey,
   CreatedInvitation,
   Deployment,
   DevUser,
@@ -8,6 +11,7 @@ import {
   Invitation,
   InvitationPreview,
   type InviteMemberInput,
+  Me,
   SignInMethod,
   type UpdateIssueLinksInput,
 } from '~/server/auth/auth.schemas'
@@ -31,6 +35,24 @@ export function getDeployment() {
 // Empty wherever password sign-in is off.
 export function getDevUsers() {
   return request('GET', '/api/v1/dev-users', undefined, v.array(DevUser))
+}
+
+// The user and their organizations, for a client that signs in with an API key.
+export function getMe() {
+  return request('GET', '/api/v1/me', undefined, Me)
+}
+
+export function listApiKeys() {
+  return request('GET', '/api/v1/api-keys', undefined, v.array(ApiKey))
+}
+
+// The answer carries the key itself, which the server never shows again.
+export function createApiKey(input: CreateApiKeyInput) {
+  return request('POST', '/api/v1/api-keys', input, CreatedApiKey)
+}
+
+export function revokeApiKey({ id }: { id: string }) {
+  return request('DELETE', `/api/v1/api-keys/${id}`, undefined, v.object({ id: v.string() }))
 }
 
 export function updateIssueLinks({ organizationId, ...input }: In<typeof UpdateIssueLinksInput>) {

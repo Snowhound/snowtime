@@ -4,7 +4,7 @@
 // "Tenancy"; docs/architecture/timer.md, "User settings"; and docs/architecture/taglines.md).
 import { and, asc, eq, gt, gte, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Database } from '~/db'
-import { invitation, member, organization, timeEntry } from '~/db/schema'
+import { invitation, member, organization, timeEntry, user } from '~/db/schema'
 import { localDate } from '~/lib/calendar'
 import { userRegion } from '~/lib/holidays/region'
 import { fillRange, fillSummary } from '~/lib/taglines/fill'
@@ -20,22 +20,10 @@ export async function appSession(
   now = new Date(),
 ) {
   // Every signed-in page waits for this, so independent reads share a round trip.
-  const [memberships, settings] = await Promise.all([
-    db
-      .select({
-        id: organization.id,
-        name: organization.name,
-        slug: organization.slug,
-        issueLinks: organization.issueLinks,
-        role: member.role,
-      })
-      .from(member)
-      .innerJoin(organization, eq(organization.id, member.organizationId))
-      .where(eq(member.userId, user.id))
-      .orderBy(asc(organization.name), asc(organization.id)),
+  const [organizations, settings] = await Promise.all([
+    organizationsOf(db, user.id),
     findSettings(db, user.id),
   ])
-  const organizations = memberships.map((o) => ({ ...o, role: strongestRole(o.role) }))
 
   // The session may have no active organization yet, or one the user has since left; the
   // first by name stands in, and the caller saves it to the session.
@@ -54,6 +42,39 @@ export async function appSession(
     fill,
     invitationId,
   }
+}
+
+// The getMe call: the user and their organizations, without the settings and fill totals
+// appSession reads for the app frame.
+export async function me(db: Database, userId: string) {
+  const [[account], organizations] = await Promise.all([
+    db
+      .select({ id: user.id, name: user.name, email: user.email })
+      .from(user)
+      .where(eq(user.id, userId)),
+    organizationsOf(db, userId),
+  ])
+  return {
+    user: account,
+    organizations: organizations.map(({ id, name, slug, role }) => ({ id, name, slug, role })),
+  }
+}
+
+// The user's organizations by name, with their strongest role in each.
+async function organizationsOf(db: Database, userId: string) {
+  const memberships = await db
+    .select({
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      issueLinks: organization.issueLinks,
+      role: member.role,
+    })
+    .from(member)
+    .innerJoin(organization, eq(organization.id, member.organizationId))
+    .where(eq(member.userId, userId))
+    .orderBy(asc(organization.name), asc(organization.id))
+  return memberships.map((o) => ({ ...o, role: strongestRole(o.role) }))
 }
 
 // Only asked when there is no organization: such a user goes to their invitation, or to

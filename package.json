@@ -44,6 +44,7 @@
     "prepare": "lefthook install || true"
   },
   "dependencies": {
+    "@better-auth/api-key": "1.7.7",
     "@better-auth/passkey": "1.7.7",
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@kobalte/core": "^0.13.14",

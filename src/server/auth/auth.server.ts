@@ -2,7 +2,7 @@
 // the request's session, the calls that go through Better Auth, its HTTP handler, and its
 // refusals as the API sends them.
 import { APIError } from 'better-auth/api'
-import type { Database } from '~/db'
+import { type Database, db } from '~/db'
 import { SEED_PASSWORD, seedUsers } from '~/db/seed'
 import { companyUsers } from '~/db/seed-company'
 import { appUrl, env } from '~/env'
@@ -10,7 +10,9 @@ import type { WireError } from '~/lib/api/wire'
 import { AppError } from '../errors'
 import { rateLimits } from '../limits.server'
 import type { Scope } from '../scope.server'
-import type { GetInvitationInput, InviteMemberInput } from './auth.schemas'
+import { time } from '../timing.server'
+import * as apiKeys from './api-keys.server'
+import type { CreateApiKeyInput, GetInvitationInput, InviteMemberInput } from './auth.schemas'
 import { auth, rateLimitStore, sessionOf } from './better-auth.server'
 import * as invitations from './invitations.server'
 import { appSession } from './session.server'
@@ -33,6 +35,22 @@ export async function signedInUser(headers: Headers, write: boolean) {
     if (!allowed) throw new AppError('RATE_LIMITED', 'rate_limited')
   }
   return userId
+}
+
+const checkKey = apiKeys.keyChecker({
+  db,
+  rateLimitStore,
+  loginDomains: env.ALLOWED_LOGIN_DOMAINS ?? [],
+})
+
+// The user of a request's API key, timed as the session lookup it stands in for.
+export function keyUser(key: string, write: boolean) {
+  return time('session', () => checkKey(key, write))
+}
+
+// Called without request headers, so the plugin accepts the server-only permissions.
+export function createApiKey(db: Database, userId: string, input: CreateApiKeyInput) {
+  return apiKeys.createApiKey(db, (body) => auth.api.createApiKey({ body }), userId, input)
 }
 
 // Better Auth's own refusal, as its HTTP API sends it, or null for any other error.

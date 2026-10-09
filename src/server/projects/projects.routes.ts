@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { input, type OrganizationEnv, run } from '../http.server'
+import { input, keys, type OrganizationEnv, run } from '../http.server'
 import {
   CreateProjectInput,
   ListProjectsInput,
@@ -10,7 +10,7 @@ import {
 import * as projects from './projects.server'
 
 export const projectRoutes = new Hono<OrganizationEnv>()
-  .get('/projects', input(ListProjectsInput), (c) => run(c, projects.listProjects))
+  .get('/projects', keys, input(ListProjectsInput), (c) => run(c, projects.listProjects))
   .post('/projects', input(CreateProjectInput), (c) => run(c, projects.createProject))
   .patch('/projects/:id', input(UpdateProjectInput), (c) => run(c, projects.updateProject))
   .post('/projects/:id/archive', input(ProjectIdInput), (c) => run(c, projects.archiveProject))

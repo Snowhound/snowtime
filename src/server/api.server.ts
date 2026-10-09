@@ -1,8 +1,14 @@
 // The JSON API (task 084): each domain's routes behind the checks in http.server.ts, over
-// HTTP, and in process for Start's server render (src/server-entry.ts). The native backend
-// serves the same API, and the conformance tests (conformance/) check both.
+// HTTP, and in process for Start's server render (src/server-entry.ts). Clients outside the
+// browser call it with a personal API key (docs/api.md). The native backend serves the same
+// API, and the conformance tests (conformance/) check both.
 import { Hono } from 'hono'
-import { invitationRoutes, organizationRoutes, publicAuthRoutes } from './auth/auth.routes'
+import {
+  accountRoutes,
+  invitationRoutes,
+  organizationRoutes,
+  publicAuthRoutes,
+} from './auth/auth.routes'
 import { availabilityRoutes } from './availability/availability.routes'
 import { entryRoutes } from './entries/entries.routes'
 import { known, organization, refused, signedIn } from './http.server'
@@ -25,6 +31,7 @@ export const api = new Hono()
   .use(signedIn)
   .route('/', timerRoutes)
   .route('/', settingsRoutes)
+  .route('/', accountRoutes)
   .route('/', invitationRoutes)
   .use(`${inOrganization}/*`, organization)
   .route(inOrganization, organizationRoutes)

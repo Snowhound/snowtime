@@ -105,6 +105,58 @@ export function slugify(name: string) {
     .replace(/-+$/, '')
 }
 
+// Personal API keys (docs/architecture/auth.md, "API keys"). The name's limit is the
+// api-key plugin's default, which the plugin checks again.
+export const API_KEY_NAME_MAX_LENGTH = 32
+export const API_KEY_LIFETIMES = ['30d', '90d', '1y', 'none'] as const
+export type ApiKeyLifetime = (typeof API_KEY_LIFETIMES)[number]
+// `read` reaches the API's reads; `write` adds its writes.
+const API_KEY_ACCESS = ['read', 'write'] as const
+export type ApiKeyAccess = (typeof API_KEY_ACCESS)[number]
+
+export const ApiKeyName = v.pipe(
+  v.string(),
+  v.trim(),
+  v.nonEmpty(() => m.validation_name_required()),
+  v.maxLength(API_KEY_NAME_MAX_LENGTH, (issue) =>
+    m.validation_too_long({ max: issue.requirement }),
+  ),
+)
+
+// The lifetime is always explicit: no expiry is a choice, never a missing value.
+export const CreateApiKeyInput = v.object({
+  name: ApiKeyName,
+  lifetime: v.picklist(API_KEY_LIFETIMES),
+  access: v.picklist(API_KEY_ACCESS),
+})
+export type CreateApiKeyInput = v.InferOutput<typeof CreateApiKeyInput>
+
+export const RevokeApiKeyInput = v.object({ id: Uuidv7 })
+export type RevokeApiKeyInput = v.InferOutput<typeof RevokeApiKeyInput>
+
+// A listed key: its name and settings, never any part of the key.
+export const ApiKey = v.object({
+  id: v.string(),
+  name: v.string(),
+  access: v.picklist(API_KEY_ACCESS),
+  createdAt: Timestamp,
+  expiresAt: v.nullable(Timestamp),
+  lastUsedAt: v.nullable(Timestamp),
+})
+export type ApiKey = v.InferOutput<typeof ApiKey>
+
+// The key itself appears only here, once.
+export const CreatedApiKey = v.object({ id: v.string(), key: v.string() })
+
+// The signed-in user and their organizations, for a client that signs in with a key and
+// has no session to read.
+export const Me = v.object({
+  user: v.object({ id: v.string(), name: v.string(), email: v.string() }),
+  organizations: v.array(
+    v.object({ id: v.string(), name: v.string(), slug: v.string(), role: OrgRole }),
+  ),
+})
+
 export const InviteMemberInput = v.object({
   email: InvitationEmail,
   role: v.picklist(['member', 'admin', 'owner']),

@@ -1,0 +1,28 @@
+meta {
+  name: Projects
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/organizations/{{orgId}}/projects
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~includeArchived: true
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  # GET /api/v1/organizations/:orgId/projects
+
+  The organization's projects the user can see, sorted by name, as an array. Needs a
+  `read` key.
+
+  Archived projects are left out; turn `includeArchived` on to list them too.
+}

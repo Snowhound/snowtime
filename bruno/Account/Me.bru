@@ -1,0 +1,29 @@
+meta {
+  name: Me
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/me
+  body: none
+  auth: inherit
+}
+
+script:post-response {
+  const organizations = res.getBody()?.organizations ?? []
+  if (organizations.length > 0) bru.setVar('orgId', organizations[0].id)
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  # GET /api/v1/me
+
+  The key's user and their organizations, sorted by name, with the user's role in each
+  (`owner`, `admin`, or `member`). Needs a `read` key.
+
+  Saves the first organization's id as `orgId`.
+}
