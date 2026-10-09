@@ -277,6 +277,11 @@ native/licenses/generate.sh
 
 [`licenses/README.md`](licenses/README.md) says where the bundled V8 notices come from.
 
+The binary links V8's `sin` and `cos`, which are under LGPL-2.1. The notice links their
+source at the locked V8 revision, and anyone can rebuild the host against a modified V8 by
+setting `RUSTY_V8_ARCHIVE` to it, as LGPL-2.1 asks of a statically linked binary. If you
+hand a built binary or image to anyone else, ship `THIRD_PARTY_LICENSES` with it.
+
 ## Optional edge
 
 The host wraps the application router with `tower-http` middleware and serves HTTP/1.1

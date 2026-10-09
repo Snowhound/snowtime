@@ -8451,6 +8451,10 @@ necessary.  Here is a sample; alter the names:
 
 That's all there is to it!
 
+Source: https://github.com/denoland/v8/tree/73d19698991616a34a00ca691a6e697dbb69e2ef/third_party/glibc
+To relink against a modified V8, build the host from source with RUSTY_V8_ARCHIVE set
+to the modified library (native/README.md, "Supply chain").
+
 ================================================================================
 V8: inspector protocol
 --------------------------------------------------------------------------------

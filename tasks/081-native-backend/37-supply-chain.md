@@ -51,16 +51,25 @@ or stress runs.
       calls refused alike on TypeScript and native, a report filtered by Harbor's project
       empty, and Harbor's entries, projects, teams, and members unchanged.
 
-## Open: LGPL code in V8
+## Decision: LGPL code in V8
 
 V8's `third_party/glibc` (`sin`, `cos`, and `__branred`, forked from glibc) is under
 LGPL-2.1, and the host binary links it: `nm` on the debug binary shows `glibc_sin`,
 `glibc_cos`, and `__branred`. 081.30's "no GPL, LGPL, or AGPL in the release graph"
-covered only the Cargo graph. The notices now include the LGPL text, but LGPL-2.1 asks more
-of a statically linked binary than a notice (section 6: a way to relink against a
-modified library). Chromium, Node.js, and Deno ship the same code. Kait decides whether
-that needs anything more before the image is distributed, for example a written offer
-pointing at the exact V8 sources.
+covered only the Cargo graph.
+
+LGPL-2.1's terms apply when a binary goes to someone else, not when it runs. Kait decided
+on 2026-10-09 that the notices are enough, with two additions:
+
+- `THIRD_PARTY_LICENSES` links the glibc code's source at the V8 revision the locked v8
+  crate pins, and says how to relink: build from source with `RUSTY_V8_ARCHIVE` set to a
+  modified library.
+- `native/README.md` says so too, and asks anyone who hands a built binary or image to
+  others to ship `THIRD_PARTY_LICENSES` with it. Porting kit users who build and run on
+  their own servers owe nothing more.
+
+Images in a private GHCR repository that only our deployments pull aren't distributed.
+Giving anyone outside the organization access to them is, and the two additions cover it.
 
 ## Verification
 

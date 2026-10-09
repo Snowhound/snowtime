@@ -6,6 +6,8 @@
 set -eu
 cd "$(dirname "$0")/.."
 out=THIRD_PARTY_LICENSES
+# The V8 revision rusty_v8 pins for the locked v8 crate; it changes with the crate.
+v8_revision=73d19698991616a34a00ca691a6e697dbb69e2ef
 
 cargo about generate --frozen --fail -c licenses/about.toml licenses/about.hbs -o "$out"
 
@@ -33,6 +35,9 @@ section() {
   section "V8: fdlibm" licenses/v8/v8.LICENSE.fdlibm
   section "V8: Strongtalk assembler" licenses/v8/v8.LICENSE.strongtalk
   section "V8: glibc math functions (third_party/glibc, LGPL-2.1)" licenses/v8/v8-glibc.LICENSE
+  printf '\nSource: https://github.com/denoland/v8/tree/%s/third_party/glibc\n' "$v8_revision"
+  printf 'To relink against a modified V8, build the host from source with RUSTY_V8_ARCHIVE set\n'
+  printf 'to the modified library (native/README.md, "Supply chain").\n'
   section "V8: inspector protocol" licenses/v8/v8-inspector_protocol.LICENSE
   section "V8: rapidhash" licenses/v8/v8-rapidhash-v8.LICENSE
   section "V8: SipHash" licenses/v8/v8-siphash.LICENSE

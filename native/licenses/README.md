@@ -30,5 +30,6 @@ revisions it pins:
 | `fast_float.LICENSE-MIT`  | `fastfloat/fast_float` mirror         | `05087a3`  |
 | `dragonbox.LICENSE-Boost` | `jk-jeon/dragonbox` mirror            | `beeeef9`  |
 
-Replace them when the v8 crate's version changes. V8's `third_party/glibc` (its `sin` and
-`cos`) is under LGPL-2.1; task 081.37 records what that asks of a binary release.
+Replace them, and `v8_revision` in `generate.sh`, when the v8 crate's version changes. V8's
+`third_party/glibc` (its `sin` and `cos`) is under LGPL-2.1; the notice links its source at
+that revision, and task 081.37 records what that asks of a binary release.
