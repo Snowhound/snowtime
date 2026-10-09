@@ -27,6 +27,9 @@ const RESERVED_SLUGS: readonly string[] = [
   // The folders in public/.
   'backgrounds',
   'brand',
+  // The native host's health checks.
+  'livez',
+  'readyz',
 ]
 
 export function isReservedSlug(slug: string) {
