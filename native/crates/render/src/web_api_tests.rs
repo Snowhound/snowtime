@@ -62,3 +62,38 @@ async fn encoding_and_formatting_keep_web_semantics() {
       }
     "#).unwrap();
 }
+
+// Pages reach the API only through op_send (task 081.36): no socket, DNS, TLS, or fetch op
+// is registered for page JavaScript to call.
+#[tokio::test(flavor = "current_thread")]
+async fn no_network_op_is_registered() {
+    let send: SendApi = Arc::new(|_| Box::pin(async { Err("unused API".into()) }));
+    let mut renderer = Renderer::new(send, r#"{"routes":{}}"#.into(), Policy::default());
+    let network = [
+        "net", "fetch", "dns", "tls", "socket", "tcp", "udp", "unix", "http",
+    ];
+    let names = renderer.js().op_names();
+    let found: Vec<_> = names
+        .iter()
+        .filter(|name| network.iter().any(|word| name.contains(word)))
+        .collect();
+    assert!(found.is_empty(), "{found:?}");
+    assert!(names.contains(&"op_send"));
+    renderer
+        .js()
+        .execute_script(
+            "network.js",
+            r#"
+      const found = Object.keys(Deno.core.ops).filter((name) => /net|fetch|dns|tls|socket|tcp|udp|unix|http/.test(name));
+      if (found.length) throw Error(found.join());
+      try { fetch('https://example.com'); throw Error('fetch ran'); } catch (error) {
+        if (!/setSend/.test(error.message)) throw error;
+      }
+      const headers = new Headers([['b', '2'], ['a', '1'], ['set-cookie', 'x'], ['set-cookie', 'y']]);
+      if (JSON.stringify([...headers]) !== '[["a","1"],["b","2"],["set-cookie","x"],["set-cookie","y"]]') throw Error('headers');
+      if (Response.json({ a: 1 }).headers.get('content-type') !== 'application/json') throw Error('json');
+      if (Response.redirect('https://example.com/x', 307).headers.get('location') !== 'https://example.com/x') throw Error('redirect');
+    "#,
+        )
+        .unwrap();
+}

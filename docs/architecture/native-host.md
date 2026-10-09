@@ -29,12 +29,14 @@ Every lane keeps the same contract:
   caller's side enforces. Past either bound the host answers at once with 503 and
   `Retry-After`, or 429 where a per-caller limit applies.
 - **No work for callers that left.** A caller dropped while waiting leaves the queue, and
-  its job never runs. Cancelling a page cancels the API calls it has queued. Work that
-  already runs keeps its permit until it finishes.
+  its job never runs. Work that already runs keeps its permit until it finishes; a page
+  that already renders finishes within its deadline, with its API calls, and its answer is
+  dropped (task 081.36).
 - **A restart budget for lasting workers.** A lane whose workers outlive a job (a renderer,
   an owner thread) restarts a worker that exits or panics, and keeps its worker count
   correct when one dies. Past N restarts in T seconds it stops restarting and is marked
-  down, so a crash loop can't take the core. Planned recycles don't count.
+  down, so a crash loop can't take the core, and it tries again after a cool-down. Planned
+  recycles don't count.
 
 A lane can implement this in two ways. Task 081.10 built the first: a semaphore taken
 asynchronously before `spawn_blocking`, with Tokio's blocking threads capped at the sum of
@@ -66,11 +68,11 @@ Memory-resident static files were rejected: Snowtime runs behind Cloudflare, whi
 the public files, so preloading them (36 MB) would serve only cache misses. The porting
 kit records when preloading fits ([05](../../tasks/081-native-backend/05-porting-recipes.md)).
 
-| Lane             | Built                                                                                                                                                       | _Planned_                                              |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                        | Owner threads (081.34); validate capacity and overload |
-| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                                   | None                                                   |
-| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled pages withdrawn with their API calls, a supervisor, and a restart budget (081.01, 081.17) | Bun: the sidecar, parked (081.16)                      |
+| Lane             | Built                                                                                                                                                 | _Planned_                                              |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                  | Owner threads (081.34); validate capacity and overload |
+| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                             | None                                                   |
+| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled queued pages withdrawn, a supervisor, and a restart budget (081.01, 081.17, 081.36) | Bun: the sidecar, parked (081.16)                      |
 
 A reader that finds a session due for renewal or expired takes the writer only if the
 writer's gate has a free slot at that moment. Otherwise it answers from the reader, and a
@@ -239,7 +241,9 @@ ready, degraded, or down. The host answers `/livez` with 200, or 503 when the da
 check fails, and `/readyz` with each lane's state as JSON. A database lane that refuses
 the check for being full counts as degraded, not down. A render lane past its restart
 budget serves pages from V8 if the image includes it, which is degraded, or answers 503
-for pages while the API keeps working. An orchestrator therefore doesn't restart a host whose API is healthy, which
+for pages while the API keeps working, until it starts its renderers again a minute later.
+A renderer on one page past twice the render deadline, blocked outside JavaScript, also
+makes the render lane degraded. An orchestrator therefore doesn't restart a host whose API is healthy, which
 would also reset the budget.
 
 ## Rules stay synchronous and free of I/O

@@ -79,7 +79,10 @@ localhost commands for separate seeded TypeScript and native hosts.
 review commands and links for a new member and an existing member.
 
 Pages call the API in process: the renderer's host callback sends each call through
-`router.oneshot` with the page request's cookie, as `src/lib/api/request.ts` sends it.
+`router.oneshot` with the page request's cookie and client address, which the host
+attaches, not page JavaScript. A page may only read: GET under `/api/v1`, or POST to the
+report calls. The host drops every header the page sets but `Content-Type` and `Accept`,
+so a call carries neither the page's `Origin` and `Host` nor a client-address header.
 
 ## SQL helpers
 

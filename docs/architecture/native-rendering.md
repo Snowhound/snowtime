@@ -47,12 +47,17 @@ generation; that costs 20–50 MB per renderer and saves 3–11% of render CPU (
 081.14). On Linux it watches its RSS and, near the limit, has renderers collect after
 every page and stops the extra ones. A full queue answers 503, and so does a page still
 queued after `max_queue_wait`, however long the render ahead of it takes. A page whose
-client leaves is withdrawn from the queue, or stopped if it renders, and the API calls it
-started are aborted. A supervisor thread joins the renderer threads and replaces one that
+client leaves is withdrawn from the queue; one that already renders finishes within its
+deadline and its answer is dropped, which keeps the isolate warm. A failed page's API
+calls are aborted. A supervisor thread joins the renderer threads and replaces one that
 panics. Past the restart budget the pool is down, and pages answer 503 while the API keeps
-working ([native-host.md](native-host.md)).
+working, until it starts its renderers again after a minute
+([native-host.md](native-host.md)).
 
-Deno's web extensions supply URL parsing, encoding, and streams. The host collects on
+Deno's web extensions supply URL parsing, encoding, and streams, and deno_fetch's
+scripts, without the crate, supply Headers, Request, and Response. No network extension
+is loaded, so page JavaScript can open no socket and reaches the API only through the
+host, which allows only reads and attaches the cookie and client address itself. The host collects on
 idle time or an old-generation threshold and replaces an isolate when collection fails to
 reduce its live heap. A watchdog interrupts synchronous JavaScript; a separate async
 deadline covers API futures. A failed render replaces the isolate, and the host answers 500. The render crate documents the current thresholds, which remain tunable.

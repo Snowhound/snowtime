@@ -291,6 +291,9 @@ which records the edge measurements.
   and Better Auth's error page (done)
 - [33](33-sql.md): migration foreign-key checks, atomic auth writes, immediate
   transactions, and static SQL literals (done)
+- [36](36-render.md): renderer fixes from the audit: no network extensions, the rustls
+  update, heap headroom, API limits, a read-only in-process transport, and renderer
+  lifecycle (done)
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

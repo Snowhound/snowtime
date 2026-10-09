@@ -29,6 +29,8 @@
     "design/**",
     "native/crates/render/bundle/bench/**",
     "native/bench/auth-spike/**",
+    // Deno's fetch scripts, which the render crate snapshots by path.
+    "native/crates/render/vendor/**",
   ],
   // k6's built-in modules, which the load benchmark's scenario imports inside k6.
   "ignoreDependencies": ["k6"],

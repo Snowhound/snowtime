@@ -20,9 +20,10 @@ try {
     core: {
       ops: {
         async op_send(input) {
+          // As the host does, with the page's cookie.
           const response = await fetch(`${app.url}${input.path}`, {
             method: input.method,
-            headers: input.headers,
+            headers: [...input.headers, ['cookie', headers.cookie]],
             body: input.body.length ? new Uint8Array(input.body) : undefined,
           })
           const answer = {
