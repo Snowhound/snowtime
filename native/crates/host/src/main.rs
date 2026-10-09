@@ -7,6 +7,10 @@ mod pages;
 use axum::Router;
 use std::sync::Arc;
 
+// Tokio's blocking pool serves only public files and DNS lookups; the database and
+// password lanes have threads of their own.
+const BLOCKING_THREADS: usize = 4;
+
 async fn shutdown() {
     let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
         .expect("SIGTERM handler");
@@ -22,8 +26,7 @@ fn main() {
         Ok(_) => panic!("TOKIO_RUNTIME is current_thread or multi_thread."),
     };
     let runtime = builder
-        // A thread per reader and one for the writer; hashes have dedicated threads.
-        .max_blocking_threads(config.read_connections + 1)
+        .max_blocking_threads(BLOCKING_THREADS)
         .enable_all()
         .build()
         .expect("the host runtime starts");
@@ -125,12 +128,9 @@ async fn serve(config: config::Config) {
         listener
             .set_nonblocking(true)
             .expect("nonblocking redirect listener");
+        let edge = config.edge.clone();
         tokio::spawn(async move {
-            axum_server::from_tcp(listener)
-                .expect("the redirect listener initializes")
-                .acceptor(axum_server::accept::NoDelayAcceptor::new())
-                .handle(handle)
-                .serve(edge::redirects(origin).into_make_service())
+            edge::serve_redirects(listener, origin, &edge, handle)
                 .await
                 .expect("the HTTP redirect listener runs");
         })
@@ -141,5 +141,31 @@ async fn serve(config: config::Config) {
         .expect("the server runs");
     if let Some(task) = redirect {
         task.abort();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn only_files_and_dns_use_the_blocking_pool() {
+        // Built at run time, so this file doesn't match itself.
+        let calls = [concat!("spawn", "_blocking"), concat!("block", "_in_place")];
+        fn check(path: &std::path::Path, calls: &[&str]) {
+            for entry in std::fs::read_dir(path).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    check(&path, calls);
+                } else if path.extension().is_some_and(|ext| ext == "rs") {
+                    let source = std::fs::read_to_string(&path).unwrap();
+                    for call in calls {
+                        assert!(!source.contains(call), "{call} in {}", path.display());
+                    }
+                }
+            }
+        }
+        check(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
+            &calls,
+        );
     }
 }

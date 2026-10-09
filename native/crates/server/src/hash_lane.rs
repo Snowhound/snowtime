@@ -1,10 +1,6 @@
 //! Dedicated password workers never lend their lower OS priority to database work.
-use crate::{admission::Gate, http::Response, wire::failure};
-use std::{
-    io,
-    sync::{Arc, Mutex, mpsc},
-    time::Duration,
-};
+use crate::lane::Lane;
+use std::{io, time::Duration};
 
 /// Hashes use at most one eighth of the host limit, within the render policy's headroom.
 /// Each scrypt call holds 32 MiB; a configured concurrency can only reduce this cap.
@@ -12,62 +8,17 @@ pub fn hash_workers(bytes: u64, cpus: usize) -> usize {
     (bytes / 8 / (32 << 20)).max(1).min(cpus.max(1) as u64) as usize
 }
 
-type Job = Box<dyn FnOnce() + Send>;
-pub(crate) struct HashLane {
-    gate: Gate,
-    jobs: mpsc::SyncSender<Job>,
-}
-impl HashLane {
-    pub fn new(workers: usize, waiting: usize, timeout: Duration) -> io::Result<Self> {
-        let (jobs, receive) = mpsc::sync_channel::<Job>(workers);
-        let receive = Arc::new(Mutex::new(receive));
-        for index in 0..workers {
-            let receive = receive.clone();
-            let (started, ready) = mpsc::sync_channel(1);
-            std::thread::Builder::new()
-                .name(format!("password-{index}"))
-                .spawn(move || {
-                    let priority = lower_priority();
-                    let failed = priority.is_err();
-                    if started.send(priority).is_err() || failed {
-                        return;
-                    }
-                    loop {
-                        let job = receive.lock().unwrap().recv();
-                        let Ok(job) = job else { return };
-                        // One bad job refuses its caller, without losing a lasting worker.
-                        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(job));
-                    }
-                })?;
-            ready.recv().map_err(io::Error::other)??;
-        }
-        Ok(Self {
-            gate: Gate::bounded(workers, waiting, timeout),
-            jobs,
-        })
-    }
-    pub async fn run<T: Send + 'static>(
-        &self,
-        call: impl FnOnce() -> T + Send + 'static,
-    ) -> Result<T, Response> {
-        let permit = self.gate.acquire().await?;
-        let (send, result) = tokio::sync::oneshot::channel();
-        self.jobs
-            .try_send(Box::new(move || {
-                let _permit = permit;
-                if !send.is_closed() {
-                    let _ = send.send(call());
-                }
-            }))
-            .map_err(|_| Response::from(failure(503, "The server is busy. Try again.")))?;
-        result
-            .await
-            .map_err(|_| failure(500, "Internal error.").into())
-    }
-    #[cfg(feature = "bench")]
-    pub fn stats(&self) -> serde_json::Value {
-        self.gate.stats()
-    }
+pub(crate) type HashLane = Lane<()>;
+
+/// Dedicated threads at lower priority; startup fails if one can't lower its own.
+pub(crate) fn start(workers: usize, waiting: usize, timeout: Duration) -> io::Result<HashLane> {
+    Lane::start(
+        "password",
+        vec![(); workers],
+        waiting,
+        timeout,
+        lower_priority,
+    )
 }
 
 #[cfg(target_os = "linux")]
@@ -106,6 +57,7 @@ fn lower_priority() -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Arc, mpsc};
     #[test]
     fn hashes_are_bounded_by_memory_and_cores() {
         assert_eq!(hash_workers(256 << 20, 8), 1);
@@ -115,7 +67,7 @@ mod tests {
     }
     #[tokio::test]
     async fn dedicated_worker_survives_a_job_panic() {
-        let lane = HashLane::new(1, 1, Duration::from_millis(20)).unwrap();
+        let lane = start(1, 1, Duration::from_millis(20)).unwrap();
         assert_eq!(
             lane.run(|| panic!("bad job")).await.unwrap_err().status,
             500
@@ -129,7 +81,7 @@ mod tests {
     }
     #[tokio::test]
     async fn cancellation_keeps_the_running_hash_permit() {
-        let lane = Arc::new(HashLane::new(1, 0, Duration::from_secs(1)).unwrap());
+        let lane = Arc::new(start(1, 0, Duration::from_secs(1)).unwrap());
         let (send, started) = tokio::sync::oneshot::channel();
         let (finish, wait) = mpsc::channel();
         let worker = lane.clone();
@@ -151,9 +103,16 @@ mod tests {
     #[tokio::test]
     async fn linux_priority_is_applied_only_to_password_threads() {
         let edge = priority().unwrap();
-        let db = Gate::new(1, Duration::from_secs(1));
+        let db = Lane::start(
+            "db",
+            vec![()],
+            1,
+            Duration::from_secs(1),
+            crate::lane::no_preparation,
+        )
+        .unwrap();
         let normal = db.run(|| priority().unwrap()).await.unwrap();
-        let lane = HashLane::new(2, 1, Duration::from_secs(1)).unwrap();
+        let lane = start(2, 1, Duration::from_secs(1)).unwrap();
         let barrier = Arc::new(std::sync::Barrier::new(2));
         let a = barrier.clone();
         let b = barrier.clone();

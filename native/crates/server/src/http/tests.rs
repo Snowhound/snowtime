@@ -726,3 +726,59 @@ async fn full_report_budget_refuses_export_immediately_and_admits_timer() {
     );
     drop(busy);
 }
+
+#[tokio::test]
+async fn a_panicking_async_handler_answers_the_apis_500() {
+    async fn panics() -> &'static str {
+        tokio::task::yield_now().await;
+        panic!("handler bug")
+    }
+    let response = Router::new()
+        .route("/api/v1/panic", axum::routing::get(panics))
+        .layer(tower_http::catch_panic::CatchPanicLayer::custom(panicked))
+        .oneshot(
+            HttpRequest::builder()
+                .uri("/api/v1/panic")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 500);
+    assert_eq!(
+        response.headers()[header::CONTENT_TYPE],
+        "application/json; charset=UTF-8"
+    );
+    assert_eq!(
+        axum::body::to_bytes(response.into_body(), 1024)
+            .await
+            .unwrap(),
+        r#"{"error":{"message":"Internal error."}}"#
+    );
+}
+
+#[tokio::test]
+async fn database_calls_run_on_the_lanes_own_threads_with_their_own_connections() {
+    let file = TempDb::new();
+    let app = pooled_app(&file.0);
+    let name = || std::thread::current().name().unwrap_or("").to_owned();
+    assert_eq!(app.write_gate.run(name).await.unwrap(), "db-writer-0");
+    let readers = app.read_gate.as_ref().unwrap();
+    let (thread, read_only) = readers
+        .run_with(move |db| (name(), db.is_readonly(rusqlite::MAIN_DB).unwrap()))
+        .await
+        .unwrap();
+    assert!(thread.starts_with("db-reader-"), "{thread}");
+    assert!(read_only);
+    // A read through the router runs on a reader too.
+    let response = router(app.clone())
+        .oneshot(
+            HttpRequest::builder()
+                .uri("/api/v1/availability")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+}

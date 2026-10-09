@@ -1,6 +1,8 @@
 mod accept;
 mod access;
 mod config;
+mod connections;
+mod files;
 pub use access::init as init_logs;
 pub use config::{AccessLog, Config, Tls};
 
@@ -9,32 +11,42 @@ use axum::{
     extract::{Request, State},
     http::{HeaderValue, StatusCode, header},
     middleware::{self, Next},
-    response::{Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
 };
 use snowtime_server::ServiceExt;
 use std::time::Duration;
 use tower_http::{
+    catch_panic::CatchPanicLayer,
     compression::{
         CompressionLayer,
         predicate::{DefaultPredicate, Predicate, SizeAbove},
     },
     limit::RequestBodyLimitLayer,
     services::ServeDir,
-    timeout::TimeoutLayer,
 };
 
 // The API's routes, then a public file, then a page. Unknown API paths, dotfiles, and
-// archives keep the API's refusal even if a file exists.
+// archives keep the API's refusal even if a file exists. Only paths in the startup index
+// of the public directory reach the disk.
 pub fn router(api: Router, pages: Router, config: &Config, app_url: &str) -> Router {
     let site = match &config.static_dir {
-        Some(directory) => Router::new().fallback_service(
-            ServeDir::new(directory)
-                .fallback(pages)
-                .append_index_html_on_directories(false)
-                .precompressed_br()
-                .precompressed_zstd()
-                .precompressed_gzip(),
-        ),
+        Some(directory) => {
+            let index = files::Index::list(directory).expect("EDGE_STATIC_DIR is readable");
+            tracing::info!(files = index.len(), "indexed the public files");
+            Router::new()
+                .fallback_service(
+                    ServeDir::new(directory)
+                        .fallback(pages.clone())
+                        .append_index_html_on_directories(false)
+                        .precompressed_br()
+                        .precompressed_zstd()
+                        .precompressed_gzip(),
+                )
+                .layer(middleware::from_fn_with_state(
+                    std::sync::Arc::new((index, pages)),
+                    indexed,
+                ))
+        }
         None => pages,
     };
     let mut router = api
@@ -49,12 +61,19 @@ pub fn router(api: Router, pages: Router, config: &Config, app_url: &str) -> Rou
     if config.body_limit > 0 {
         router = router.layer(RequestBodyLimitLayer::new(config.body_limit));
     }
+    if config.uri_limit > 0 {
+        router = router.layer(middleware::from_fn_with_state(config.uri_limit, uri_limit));
+    }
     if config.timeout_seconds > 0 {
-        router = router.layer(TimeoutLayer::with_status_code(
-            StatusCode::REQUEST_TIMEOUT,
+        router = router.layer(middleware::from_fn_with_state(
             Duration::from_secs(config.timeout_seconds),
+            deadline,
         ));
     }
+    // The API answers its own panics with its JSON 500; this covers pages and the rest.
+    router = router.layer(CatchPanicLayer::custom(|_| {
+        text(StatusCode::INTERNAL_SERVER_ERROR, "Internal error.")
+    }));
     if config.headers {
         router = router.layer(middleware::from_fn_with_state(
             app_url.starts_with("https://"),
@@ -62,6 +81,77 @@ pub fn router(api: Router, pages: Router, config: &Config, app_url: &str) -> Rou
         ));
     }
     access::layer(router, config)
+}
+
+async fn indexed(
+    State(site): State<std::sync::Arc<(files::Index, Router)>>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let (index, pages) = &*site;
+    if index.contains(request.uri().path()) {
+        next.run(request).await
+    } else {
+        pages.clone().oneshot(request).await.unwrap()
+    }
+}
+
+fn is_api(path: &str) -> bool {
+    path == "/api" || path.starts_with("/api/")
+}
+fn text(status: StatusCode, message: &'static str) -> Response {
+    (
+        status,
+        [(header::CONTENT_TYPE, "text/plain; charset=utf-8")],
+        message,
+    )
+        .into_response()
+}
+// The API's own refusal on its paths, so its clients read it as any other.
+fn refusal(api: bool, status: StatusCode, message: &'static str) -> Response {
+    let mut response = if api {
+        snowtime_server::http::Response::from(snowtime_server::wire::failure(
+            status.as_u16(),
+            message,
+        ))
+        .into_response()
+    } else {
+        text(status, message)
+    };
+    if status == StatusCode::SERVICE_UNAVAILABLE {
+        response
+            .headers_mut()
+            .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));
+    }
+    response
+}
+
+// Before routing, so no path of any length reaches the rate limits or the API.
+async fn uri_limit(State(limit): State<usize>, request: Request, next: Next) -> Response {
+    let uri = request.uri();
+    if uri.path_and_query().map_or(0, |p| p.as_str().len()) > limit {
+        return refusal(
+            is_api(uri.path()),
+            StatusCode::URI_TOO_LONG,
+            "The request URI is too long.",
+        );
+    }
+    next.run(request).await
+}
+
+// 503 rather than 408, which browsers may resend on their own while the first attempt's
+// write still commits.
+async fn deadline(State(limit): State<Duration>, request: Request, next: Next) -> Response {
+    let api = is_api(request.uri().path());
+    tokio::time::timeout(limit, next.run(request))
+        .await
+        .unwrap_or_else(|_| {
+            refusal(
+                api,
+                StatusCode::SERVICE_UNAVAILABLE,
+                "The server is busy. Try again.",
+            )
+        })
 }
 
 async fn security_headers(State(https): State<bool>, request: Request, next: Next) -> Response {
@@ -135,29 +225,62 @@ pub fn redirects(origin: String) -> Router {
     })
 }
 
+// Every listener gets hyper's timers and the acceptor's caps and idle timeout.
+fn listener<A>(
+    mut server: axum_server::Server<std::net::SocketAddr>,
+    acceptor: A,
+    config: &Config,
+    handle: axum_server::Handle<std::net::SocketAddr>,
+) -> axum_server::Server<std::net::SocketAddr, connections::Guard<A>> {
+    connections::tune(server.http_builder(), config.header_timeout);
+    server
+        .acceptor(connections::Guard::new(acceptor, config.connections))
+        .handle(handle)
+}
+
+/// The HTTP listener that redirects to the TLS one.
+pub async fn serve_redirects(
+    listener: std::net::TcpListener,
+    origin: String,
+    config: &Config,
+    handle: axum_server::Handle<std::net::SocketAddr>,
+) -> std::io::Result<()> {
+    self::listener(
+        axum_server::from_tcp(listener)?,
+        axum_server::accept::NoDelayAcceptor::new(),
+        config,
+        handle,
+    )
+    .serve(redirects(origin).into_make_service())
+    .await
+}
+
 pub async fn serve(
     address: std::net::SocketAddr,
     router: Router,
     config: Config,
     handle: axum_server::Handle<std::net::SocketAddr>,
 ) -> std::io::Result<()> {
-    match config.tls {
+    let service = router.into_make_service_with_connect_info::<std::net::SocketAddr>();
+    let server = axum_server::bind(address);
+    match &config.tls {
         Tls::Plain => {
-            axum_server::bind(address)
-                .acceptor(axum_server::accept::NoDelayAcceptor::new())
-                .handle(handle)
-                .serve(router.into_make_service_with_connect_info::<std::net::SocketAddr>())
-                .await
+            listener(
+                server,
+                axum_server::accept::NoDelayAcceptor::new(),
+                &config,
+                handle,
+            )
+            .serve(service)
+            .await
         }
         Tls::Files { certificate, key } => {
             let tls =
                 axum_server::tls_rustls::RustlsConfig::from_pem_file(certificate, key).await?;
             let acceptor = axum_server::tls_rustls::RustlsAcceptor::new(tls)
                 .acceptor(axum_server::accept::NoDelayAcceptor::new());
-            axum_server::bind(address)
-                .acceptor(acceptor)
-                .handle(handle)
-                .serve(router.into_make_service_with_connect_info::<std::net::SocketAddr>())
+            listener(server, acceptor, &config, handle)
+                .serve(service)
                 .await
         }
         Tls::Acme {
@@ -167,11 +290,11 @@ pub async fn serve(
             staging,
         } => {
             use std::os::unix::fs::PermissionsExt;
-            std::fs::create_dir_all(&cache)?;
-            std::fs::set_permissions(&cache, std::fs::Permissions::from_mode(0o700))?;
-            let mut state = rustls_acme::AcmeConfig::new(domains)
-                .contact(contact)
-                .cache(rustls_acme::caches::DirCache::new(cache))
+            std::fs::create_dir_all(cache)?;
+            std::fs::set_permissions(cache, std::fs::Permissions::from_mode(0o700))?;
+            let mut state = rustls_acme::AcmeConfig::new(domains.clone())
+                .contact(contact.clone())
+                .cache(rustls_acme::caches::DirCache::new(cache.clone()))
                 .directory_lets_encrypt(!staging)
                 .state();
             let mut tls = (*state.default_rustls_config()).clone();
@@ -186,10 +309,8 @@ pub async fn serve(
                     }
                 }
             });
-            let result = axum_server::bind(address)
-                .acceptor(accept::HandshakeTimeout(acceptor))
-                .handle(handle)
-                .serve(router.into_make_service_with_connect_info::<std::net::SocketAddr>())
+            let result = listener(server, accept::HandshakeTimeout(acceptor), &config, handle)
+                .serve(service)
                 .await;
             poll.abort();
             result

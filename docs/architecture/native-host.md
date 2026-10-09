@@ -7,7 +7,8 @@ after the overload measurements of tasks 081.03 and 081.10, a review of
 and an adversarial review of this design the same day. Rendering has its own record in
 [native-rendering.md](native-rendering.md). Items marked _planned_ aren't built yet;
 [task 081.17](../../tasks/081-native-backend/17-bounded-lanes.md) built the first set,
-and task 081.34 builds the database owner threads and the file index decided below.
+and [task 081.34](../../tasks/081-native-backend/34-edge.md) built the database owner
+threads and the file index decided below.
 
 ## Tokio at the edge, lanes behind it
 
@@ -38,41 +39,46 @@ Every lane keeps the same contract:
   down, so a crash loop can't take the core, and it tries again after a cool-down. Planned
   recycles don't count.
 
-A lane can implement this in two ways. Task 081.10 built the first: a semaphore taken
-asynchronously before `spawn_blocking`, with Tokio's blocking threads capped at the sum of
-the lanes' limits. The other is a dedicated thread or process fed by a bounded channel,
-as the V8 renderers are. The contract matters more than the mechanism. A lane gets its
-own threads where the shared pool can't keep the contract: password hashing, whose lower
-priority must not carry over to database work on a reused thread.
+Every lane is a gate taken asynchronously in front of dedicated threads, or a process,
+fed by a bounded channel, as the V8 renderers are. Task 081.10 first ran database work
+through a semaphore and `spawn_blocking`, with Tokio's blocking threads capped at
+readers plus one. Kait decided on 2026-10-08, from finding M6 of
+[task 081.30](../../tasks/081-native-backend/30-audit.md), that every lane gets its own
+threads and Tokio's blocking pool holds no lane. The audit found that the pool also runs
+`tokio::fs` for static files and reqwest's DNS lookups. On one core the writer then
+shared its only thread with every page's file probes, so admitted database work waited
+behind file work, past its deadline and after its caller left. Password hashing already
+had its own threads, so that its lower priority doesn't carry over to database work.
 
-_Planned_ (Kait, 2026-10-08, from finding M6 of
-[task 081.30](../../tasks/081-native-backend/30-audit.md)): every lane gets its own
-threads, and Tokio's blocking pool holds no lane. The audit found that the pool, capped at
-readers plus one, also runs `tokio::fs` for static files and reqwest's DNS lookups. On one
-core the writer then shares its only thread with every page's file probes, so admitted
-database work waits behind file work, past its deadline and after its caller left.
-
-- **Database owner threads.** One writer thread and one thread per reader, each owning
-  its connection and fed by a bounded channel, as the hash lane is. The gates keep
+- **Database owner threads.** One writer thread and one thread per reader, fed by a
+  bounded channel, as the hash lane is. Each reader thread owns its connection. The
+  writer's connection stays behind a mutex that its thread takes for each job, because
+  a reader's session check uses it while holding the writer's free slot. The gates keep
   their count and time bounds, and a worker skips a job whose caller left.
 - **A file index.** At startup the host lists the public directory's paths once and keeps
   only that set, a few KB. A path outside it goes to pages without touching the disk, so
   pages and missing-file probes cost no file call. Real files are still read from disk,
   so memory and `EDGE_STATIC_DIR` stay as they are. A precompressed variant serves only
   when its base path is in the set.
-- **The blocking pool serves only files and DNS,** with a small fixed cap of its own
-  (2–4) instead of readers plus one. Its queue has no bound, but it holds only CDN misses
+- **The blocking pool serves only files and DNS,** with a fixed cap of four threads
+  instead of readers plus one. Its queue has no bound, but it holds only CDN misses
   and the occasional OAuth lookup, and a backlog there no longer delays database work.
 
 Memory-resident static files were rejected: Snowtime runs behind Cloudflare, which caches
 the public files, so preloading them (36 MB) would serve only cache misses. The porting
 kit records when preloading fits ([05](../../tasks/081-native-backend/05-porting-recipes.md)).
 
-| Lane             | Built                                                                                                                                                 | _Planned_                                              |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Database         | A gate per connection class, bounded by count and time; reports take a smaller budget before taking a database slot (081.10, 081.17)                  | Owner threads (081.34); validate capacity and overload |
-| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                             | None                                                   |
-| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled queued pages withdrawn, a supervisor, and a restart budget (081.01, 081.17, 081.36) | Bun: the sidecar, parked (081.16)                      |
+| Lane             | Built                                                                                                                                                                   | _Planned_                               |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Database         | A gate per connection class, bounded by count and time, in front of owner threads; reports take a smaller budget before taking a database slot (081.10, 081.17, 081.34) | Validate capacity and overload (081.27) |
+| Password hashing | Dedicated threads at lower Linux priority, with admission bounded by count and time; sized from cores and memory (081.17)                                               | None                                    |
+| Rendering        | V8: a bounded queue, the deadline on the caller's side, cancelled queued pages withdrawn, a supervisor, and a restart budget (081.01, 081.17, 081.36)                   | Bun: the sidecar, parked (081.16)       |
+| Files and DNS    | Tokio's blocking pool, four threads; a startup index of the public paths keeps pages and missing files off it (081.34)                                                  | None                                    |
+
+The database and password threads catch a panicking job, which answers 500, so they never
+exit and need no restart budget. Owner threads have no load evidence yet: task 081.34
+shows them with tests, including one where file reads hold every blocking thread and a
+database call still answers, and leaves measurement to task 081.27.
 
 A reader that finds a session due for renewal or expired takes the writer only if the
 writer's gate has a free slot at that moment. Otherwise it answers from the reader, and a
@@ -273,11 +279,9 @@ This share fits inside the render policy's 25% headroom and still needs measurem
 On Linux each dedicated thread increases its inherited niceness by five, capped at 19,
 and verifies the new value before accepting work. Startup fails if a thread cannot get a
 lower priority, except on a host already at 19, which has no lower one. On other systems the dedicated threads keep their inherited priority.
-Tokio's blocking pool is capped at readers plus one, and a source test rejects
-`spawn_blocking` in the server crate outside database admission. Task 081.30 found that
-static files and DNS use the pool too. _Planned_ (081.34): database work moves to owner
-threads, the pool serves only files and DNS under a fixed cap of 2–4, and the source test
-covers the host crate and rejects `spawn_blocking` in database code.
+Database work runs on owner threads, one for the writer and one per reader (081.34).
+Tokio's blocking pool has a fixed four threads and serves only static files and DNS.
+Source tests in the server and host crates reject `spawn_blocking` and `block_in_place`.
 
 Task 081.10's provisional whole-host test budgets are 2 GiB for M and 4 GiB for L,
 including the OS, replication, and file cache. They come from a shared Mac VM and await

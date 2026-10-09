@@ -291,6 +291,8 @@ which records the edge measurements.
   and Better Auth's error page (done)
 - [33](33-sql.md): migration foreign-key checks, atomic auth writes, immediate
   transactions, and static SQL literals (done)
+- [34](34-edge.md): edge connection limits, rate-limit keys, database owner threads, and
+  the public file index from the audit (done)
 - [36](36-render.md): renderer fixes from the audit: no network extensions, the rustls
   update, heap headroom, API limits, a read-only in-process transport, and renderer
   lifecycle (done)

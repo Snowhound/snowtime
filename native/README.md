@@ -104,26 +104,28 @@ all requests on the writer.
 The host uses WAL in both modes. Each reader has a 2 MiB page-cache budget and caches
 64 prepared statements; these caches fill on demand.
 
-GETs and POST routes marked as reads lease a reader. The renderer's in-process calls
-use the same router and pool. Other calls and sign-in writes use the writer. Session
+GETs and POST routes marked as reads run on a reader. The renderer's in-process calls
+use the same router and readers. Other calls and sign-in writes use the writer. Session
 checks can renew expiry or delete expired sessions; these operations take the writer
 after the session SELECT has finished, even when the calling rule uses a reader.
 Maintenance rechecks the session under the writer lock before changing it. A
 request already using the writer reuses that lock.
-Readers cannot mutate the database. A lease returns its connection on early errors
-and normal completion. The pool remains opt-in: measured benefits depend on the
+Readers cannot mutate the database. The pool remains opt-in: measured benefits depend on the
 workload and core allocation. [Subtask 10](../tasks/081-native-backend/10-load-and-scaling.md)
 records the paired results, memory costs, and reasons for retaining the default.
 
-DB calls acquire async admission before entering Tokio's blocking pool. Each connection
-class has its own gate: reads wait for one of the `DB_READ_CONNECTIONS` readers when the
-read pool is on, and everything else waits for the writer's single slot. A reader renews
+DB calls acquire async admission, then run on a database owner thread: one writer
+thread, and one thread per reader that owns its connection, each fed by a bounded
+channel. Each connection class has its own gate: reads wait for one of the
+`DB_READ_CONNECTIONS` readers when the read pool is on, and everything else waits for
+the writer's single slot. A job whose caller left before a thread took it doesn't run. A reader renews
 or deletes a session only when the writer's gate has a free slot, and otherwise leaves it
 to a later request.
 `SCRYPT_CONCURRENCY` defaults to available cores. `WORK_QUEUE_TIMEOUT_MS` defaults to
-1,000 ms. Admission expiry returns 503 with `Retry-After: 1`. The blocking thread limit is
-the readers, plus one for the writer, plus the hash concurrency. Sign-in holds no DB
-permit while hashing. Renderer reads use the host runtime.
+1,000 ms. Admission expiry returns 503 with `Retry-After: 1`. Tokio's blocking pool has a
+fixed four threads and serves only public files and DNS lookups; source tests in both
+crates refuse `spawn_blocking` and `block_in_place`. Sign-in holds no DB permit while
+hashing. Renderer reads use the host runtime.
 
 `/livez` answers 200 while the API can serve, and `/readyz` reports each lane
 ([native-host.md](../docs/architecture/native-host.md), "Health").
@@ -132,8 +134,8 @@ Ramp-first whole-server runs and the two-machine repeat protocol are in
 [`bench/scaling/README.md`](bench/scaling/README.md).
 
 The optional `bench` Cargo feature adds connection wait/hold, blocking queue and CPU,
-and renderer queue timings, plus one-second SQLite cache, live DB/hash blocking
-worker counts, blocking concurrency,
+and renderer queue timings, plus one-second SQLite cache, live database and password
+lane thread counts, lane concurrency,
 scrypt concurrency, and render-pool counters. New diagnostics are compiled out of the
 default build. Thread CPU measurements work on Linux; macOS reports zero for those
 fields. Build a benchmark image with `--build-arg CARGO_FEATURES=bench`, or set
@@ -241,6 +243,19 @@ and HTTP/2. The application library still binds no socket. The edge can wrap a r
 page router as well: it preserves an existing CSP, including the renderer's nonce.
 HTTP/3 remains outside this proof of concept. TLS handshakes expire after 10 seconds.
 
+Every listener, the redirect listener included, bounds its connections. A request's
+headers must arrive within `EDGE_HEADER_TIMEOUT_SECONDS`; on HTTP/1, hyper runs the same
+timer while a kept-alive connection waits for its next request. A connection with no
+request in flight for `EDGE_IDLE_TIMEOUT_SECONDS` closes, which covers HTTP/2 and a
+connection that never sends a byte. HTTP/2 connections are pinged every 20 seconds and
+closed when a ping goes unanswered for 20 seconds. An HTTP/1 request head and read buffer
+take at most 64 KiB; a larger head gets 431. Past `EDGE_MAX_CONNECTIONS` in all, or
+`EDGE_MAX_CONNECTIONS_PER_ADDRESS` from one client address, the acceptor closes a new
+connection without an answer, before its TLS handshake. Both caps count per listener;
+keep the total below the process's file-descriptor limit. The per-address cap groups
+IPv6 addresses by /64, as rate limits do. Behind a proxy every connection comes from the
+proxy, so with `CLIENT_IP_HEADER` set the per-address cap defaults to off.
+
 Without certificate configuration, `snowtime-axum` serves plain HTTP. Configure a
 certificate pair to serve HTTPS, or use ACME to obtain and renew certificates:
 
@@ -265,23 +280,32 @@ that terminates TLS prevents the challenge from reaching it. Behind such a proxy
 use plain HTTP on a private connection or provision an origin certificate through
 the certificate-file mode. Wildcard certificates are unsupported.
 
-| Variable                        | Default      | Behavior                                                                     |
-| ------------------------------- | ------------ | ---------------------------------------------------------------------------- |
-| `TLS_CERT_FILE`, `TLS_KEY_FILE` | unset        | PEM certificate chain and private key; both required                         |
-| `ACME_DOMAINS`                  | unset        | Comma-separated DNS names, including the app URL's hostname                  |
-| `ACME_EMAIL`                    | unset        | ACME account contact email                                                   |
-| `ACME_CACHE_DIR`                | `/data/acme` | Persistent account and certificate cache                                     |
-| `ACME_STAGING`                  | `false`      | Use Let's Encrypt's staging service instead of production                    |
-| `HTTP_REDIRECT_PORT`            | unset        | Separate HTTP listener issuing 308 redirects to the configured app origin    |
-| `EDGE_COMPRESSION`              | `true`       | Gzip and zstd for compressible responses of at least 1024 bytes              |
-| `EDGE_ACCESS_LOG`               | `all`        | JSON access events on stdout: `all`, `sampled`, or `off`                     |
-| `EDGE_HEADERS`                  | `true`       | Security headers, CSP fallback, and private no-store fallback                |
-| `EDGE_STATIC_DIR`               | unset        | Serve this public build directory, with `.br`, `.zst`, and `.gz` variants    |
-| `EDGE_TIMEOUT_SECONDS`          | `30`         | Response-header timeout; zero disables this host layer                       |
-| `EDGE_BODY_LIMIT_BYTES`         | `2097152`    | Request-body limit; zero disables this host layer, leaving API limits intact |
-| `EDGE_BENCH_LOG`                | unset        | Complete JSON benchmark log for the sampler                                  |
+| Variable                           | Default                               | Behavior                                                                                       |
+| ---------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `TLS_CERT_FILE`, `TLS_KEY_FILE`    | unset                                 | PEM certificate chain and private key; both required                                           |
+| `ACME_DOMAINS`                     | unset                                 | Comma-separated DNS names, including the app URL's hostname                                    |
+| `ACME_EMAIL`                       | unset                                 | ACME account contact email                                                                     |
+| `ACME_CACHE_DIR`                   | `/data/acme`                          | Persistent account and certificate cache                                                       |
+| `ACME_STAGING`                     | `false`                               | Use Let's Encrypt's staging service instead of production                                      |
+| `HTTP_REDIRECT_PORT`               | unset                                 | Separate HTTP listener issuing 308 redirects to the configured app origin                      |
+| `EDGE_COMPRESSION`                 | `true`                                | Gzip and zstd for compressible responses of at least 1024 bytes                                |
+| `EDGE_ACCESS_LOG`                  | `all`                                 | JSON access events on stdout: `all`, `sampled`, or `off`                                       |
+| `EDGE_HEADERS`                     | `true`                                | Security headers, CSP fallback, and private no-store fallback                                  |
+| `EDGE_STATIC_DIR`                  | unset                                 | Serve this public build directory, with `.br`, `.zst`, and `.gz` variants                      |
+| `EDGE_TIMEOUT_SECONDS`             | `30`                                  | Response-header timeout, answered with 503 and `Retry-After: 1`; zero disables this host layer |
+| `EDGE_HEADER_TIMEOUT_SECONDS`      | `30`                                  | Time to receive a request's headers, and on HTTP/1 to wait for the next request                |
+| `EDGE_IDLE_TIMEOUT_SECONDS`        | `60`                                  | Close a connection with no request in flight for this long                                     |
+| `EDGE_MAX_CONNECTIONS`             | `4096`                                | Open connections per listener, TLS handshakes included; zero disables                          |
+| `EDGE_MAX_CONNECTIONS_PER_ADDRESS` | `256`, or `0` with `CLIENT_IP_HEADER` | Open connections per listener from one client address; zero disables                           |
+| `EDGE_BODY_LIMIT_BYTES`            | `2097152`                             | Request-body limit; zero disables this host layer, leaving API limits intact                   |
+| `EDGE_URI_LIMIT_BYTES`             | `8192`                                | Path and query limit, answered with 414; zero disables                                         |
+| `EDGE_BENCH_LOG`                   | unset                                 | Complete JSON benchmark log for the sampler                                                    |
 
-Boolean switches accept `true` or `false`. `BETTER_AUTH_URL` must be an HTTP(S) origin,
+Boolean switches accept `true` or `false`. The two connection timeouts take a positive
+number of seconds. A request past `EDGE_TIMEOUT_SECONDS` gets 503 rather than 408, which
+browsers may resend on their own while the first attempt's write still commits; on `/api`
+paths the body is the API's JSON refusal. A panic in a handler answers 500: the API's
+JSON on its routes and in-process calls, plain text elsewhere. `BETTER_AUTH_URL` must be an HTTP(S) origin,
 with no credentials, path, query, or fragment. The host normalizes its scheme, hostname,
 and default port. TLS requires an HTTPS origin. Redirects
 use that origin rather than the request's Host header.
@@ -295,6 +319,12 @@ logging cost shows. `EDGE_BENCH_LOG` writes a separate,
 complete, buffered file of the requests that carry `X-Bench-Kind`; set
 `EDGE_ACCESS_LOG=off` when only that file is needed. The benchmark file has no
 rotation and belongs only in the benchmark stack.
+
+At startup the host lists the paths in `EDGE_STATIC_DIR` once. A request for a path
+outside that list goes to pages without a file call, and a precompressed variant
+serves only beside its base file, as Caddy requires. Files added after startup aren't
+served until a restart. Symbolic links to files are listed; links to directories
+aren't followed. The files themselves are read from disk when served.
 
 Static files get the Caddy cache policy: one year and immutable under `/assets/`,
 one week under `/backgrounds/` and `/brand/`, and revalidation elsewhere. Unknown API
@@ -319,7 +349,11 @@ controls both per-IP auth limits and API per-user write limits. Startup logs sho
 whether it is enabled; `/readyz` includes `rate_limit`. Auth limits use in-memory
 `governor` GCRA quotas through `tower_governor`, with Better Auth's 429 JSON body,
 `Content-Type: application/json`, and `X-Retry-After` (rounded-up seconds until the
-next token). Idle keys are pruned every minute. TLS and ACME remain opt-in.
+next token). A request to a ported route counts under the route's template, so
+`/api/auth/callback/{id}` is one quota for every provider. Any other path counts under
+the rule pattern it matched, so all unported `/api/auth/` paths share one quota per
+address, where Better Auth keeps one per path. Idle keys are pruned every minute. TLS and
+ACME remain opt-in.
 
 Verify production auth limits and session IPs with
 `bun native/bench/hardening-compare.ts native/target/debug/snowtime-axum`. The ordinary

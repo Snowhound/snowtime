@@ -24,7 +24,7 @@ pub fn resolve(
     Some(normalize(address))
 }
 
-fn normalize(address: IpAddr) -> IpAddr {
+pub fn normalize(address: IpAddr) -> IpAddr {
     match address {
         IpAddr::V6(ip) => match ip.to_ipv4_mapped() {
             Some(ip) => IpAddr::V4(ip),

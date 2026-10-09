@@ -41,6 +41,7 @@ sha2.workspace = true
 tokio = { workspace = true, features = ["sync", "time"] }
 tower_governor = { version = "0.8", default-features = false, features = ["axum"] }
 tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.7", features = ["catch-panic"] }
 unicode-normalization.workspace = true
 url = "2"
 uuid.workspace = true

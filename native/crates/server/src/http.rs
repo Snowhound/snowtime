@@ -11,6 +11,7 @@ use axum::{
     Router,
     body::to_bytes,
     extract::{FromRequest, FromRequestParts, Path, Request as HttpRequest},
+    handler::HandlerWithoutStateExt,
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response as HttpResponse},
 };
@@ -87,17 +88,20 @@ impl IntoResponse for Response {
 }
 
 pub struct App {
+    // The writer's connection. Its lane's one thread locks it for each job; a reader's
+    // session check locks it only while holding the lane's free slot.
     pub(crate) db: Mutex<Connection>,
-    // One slot, for the writer. Without readers every call takes it.
-    pub(crate) write_gate: crate::admission::Gate,
+    // One slot and thread, for the writer. Without readers every call takes it.
+    pub(crate) write_gate: crate::lane::Lane<()>,
     pub(crate) hash_gate: crate::hash_lane::HashLane,
     report_gate: crate::admission::Gate,
-    // A slot per reader, so a read admitted through the gate finds one idle.
-    read_gate: Option<crate::admission::Gate>,
-    readers: Option<crate::connections::Readers>,
+    // A thread per reader, each owning its connection.
+    read_gate: Option<crate::lane::Lane<Connection>>,
     pub(crate) config: Config,
     pub(crate) session: SessionConfig,
     rate_limits: MemoryStore,
+    #[cfg(feature = "bench")]
+    reader_stats: Mutex<std::collections::BTreeMap<String, serde_json::Value>>,
 }
 impl App {
     pub fn open(config: Config) -> rusqlite::Result<Arc<Self>> {
@@ -123,39 +127,43 @@ impl App {
             secure: config.secure(),
             allowed_domains: config.sign_in_page.allowed_domains.clone(),
         };
-        let readers = if count == 0 {
-            None
-        } else {
-            Some(crate::connections::Readers::open(
-                &config.database_path,
-                count,
-            )?)
-        };
-        Ok(Arc::new(Self {
-            write_gate: crate::admission::Gate::bounded(
-                1,
+        let readers = (0..count)
+            .map(|_| crate::connections::open_reader(&config.database_path))
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        fn lane<C: Send + 'static>(
+            name: &str,
+            states: Vec<C>,
+            limits: &crate::Limits,
+        ) -> crate::lane::Lane<C> {
+            crate::lane::Lane::start(
+                name,
+                states,
                 limits.max_waiting,
                 limits.queue_timeout,
-            ),
-            hash_gate: crate::hash_lane::HashLane::new(
+                crate::lane::no_preparation,
+            )
+            .expect("database threads start")
+        }
+        Ok(Arc::new(Self {
+            write_gate: lane("db-writer", vec![()], &limits),
+            hash_gate: crate::hash_lane::start(
                 limits.hashes,
                 limits.max_waiting,
                 limits.queue_timeout,
             )
             .expect("dedicated password threads start at lower priority"),
-            read_gate: readers.is_some().then(|| {
-                crate::admission::Gate::bounded(count, limits.max_waiting, limits.queue_timeout)
-            }),
+            read_gate: (count > 0).then(|| lane("db-reader", readers, &limits)),
             report_gate: crate::admission::Gate::bounded(
                 (count / 4).max(1),
                 4,
                 limits.queue_timeout,
             ),
-            readers,
             db: Mutex::new(db),
             session,
             rate_limits: MemoryStore::new(config.rate_limit),
             config,
+            #[cfg(feature = "bench")]
+            reader_stats: Mutex::default(),
         }))
     }
     pub(crate) fn db(&self) -> MutexGuard<'_, Connection> {
@@ -207,14 +215,21 @@ pub fn router(app: Arc<App>) -> Router {
         .then(|| crate::auth::rate_limit::layer(app.config.client_ip_header.clone()));
     let router = Router::new()
         .nest("/api/v1", api)
-        .merge(crate::auth::routes::better_auth_routes())
-        .fallback(unknown)
-        .method_not_allowed_fallback(unknown)
-        .with_state(app);
-    match limits {
-        Some(layer) => router.layer(layer),
-        None => router,
-    }
+        .merge(crate::auth::routes::better_auth_routes());
+    // Inside routing, so a routed request's quota counts under its route's template.
+    let router = match limits {
+        Some(layer) => router
+            .route_layer(layer.clone())
+            .fallback_service(tower::Layer::layer(&layer, unknown.into_service())),
+        None => router.fallback(unknown),
+    };
+    let router = router.method_not_allowed_fallback(unknown).with_state(app);
+    // A panic in async handler code answers 500 instead of resetting the connection, and an
+    // in-process call from a page gets the same answer.
+    router.layer(tower_http::catch_panic::CatchPanicLayer::custom(panicked))
+}
+fn panicked(_: Box<dyn std::any::Any + Send>) -> HttpResponse {
+    Response::from(failure(500, "Internal error.")).into_response()
 }
 async fn unknown() -> Response {
     failure(404, "No such call.").into()
@@ -376,7 +391,7 @@ impl Request {
     }
 }
 
-// Runs a call off the async runtime, holding the one connection from the session check
+// Runs a call on a database lane's thread, holding the one connection from the session check
 // through the rule, and answers with its result and Server-Timing. A read with the read pool
 // on waits for a reader; anything else waits for the writer.
 async fn answer(
@@ -398,9 +413,9 @@ async fn answer(
     } else {
         None
     };
-    let on_reader = app.readers.is_some() && (read || request.method == "GET");
-    let gate = match &app.read_gate {
-        Some(gate) if on_reader => gate,
+    let on_reader = app.read_gate.is_some() && (read || request.method == "GET");
+    let gate: &crate::admission::Gate = match &app.read_gate {
+        Some(lane) if on_reader => lane,
         _ => &app.write_gate,
     };
     let permit = match gate.acquire_by(deadline).await {
@@ -411,7 +426,9 @@ async fn answer(
     let admission_ms = admission.elapsed().as_secs_f64() * 1000.0;
     #[cfg(feature = "bench")]
     let queued = std::time::Instant::now();
-    crate::admission::Gate::run_admitted(permit, move || {
+    let lanes = app.clone();
+    // A reader's lane passes its own connection; the writer's job locks the writer's.
+    let work = move |reader: Option<&Connection>| {
         #[cfg(feature = "bench")]
         let queue_ms = queued.elapsed().as_secs_f64() * 1000.0;
         #[cfg(feature = "bench")]
@@ -419,19 +436,12 @@ async fn answer(
         let _report_permit = report_permit;
         #[cfg(feature = "bench")]
         let waiting = std::time::Instant::now();
-        let reader = app
-            .readers
-            .as_ref()
-            .filter(|_| on_reader)
-            .map(|p| p.acquire());
         let writer = if reader.is_none() {
             Some(app.db())
         } else {
             None
         };
-        let db: &Connection = reader
-            .as_deref()
-            .unwrap_or_else(|| writer.as_deref().unwrap());
+        let db: &Connection = reader.unwrap_or_else(|| writer.as_deref().unwrap());
         #[cfg(feature = "bench")]
         let (wait, held, cpu) = (
             waiting.elapsed(),
@@ -450,11 +460,31 @@ async fn answer(
             crate::timing::cpu_ms() - cpu
         );
         #[cfg(feature = "bench")]
-        let header = format!("{header}, blocking_queue;dur={queue_ms:.3}, blocking_cpu;dur={:.3}", crate::timing::cpu_ms() - blocking_cpu);
+        let header = format!(
+            "{header}, blocking_queue;dur={queue_ms:.3}, blocking_cpu;dur={:.3}",
+            crate::timing::cpu_ms() - blocking_cpu
+        );
+        #[cfg(feature = "bench")]
+        if reader.is_some()
+            && let Some(name) = std::thread::current().name()
+        {
+            app.reader_stats
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .insert(name.to_owned(), crate::bench::sqlite(db));
+        }
         response.server_timing = Some(header);
         response
-    })
-    .await
+    };
+    match lanes.read_gate.as_ref().filter(|_| on_reader) {
+        Some(readers) => readers.run_admitted(permit, move |db| work(Some(db))).await,
+        None => {
+            lanes
+                .write_gate
+                .run_admitted(permit, move |()| work(None))
+                .await
+        }
+    }
     .unwrap_or_else(|response| response)
 }
 impl App {
@@ -678,7 +708,10 @@ mod tests;
 impl App {
     pub fn bench_stats(&self) -> serde_json::Value {
         let writer = self.db.try_lock().ok().map(|db| crate::bench::sqlite(&db));
-        let readers = self.readers.as_ref().map(|r| r.stats());
+        let readers = self.read_gate.as_ref().map(|_| {
+            let stats = self.reader_stats.lock().unwrap_or_else(|e| e.into_inner());
+            serde_json::json!({ "connections": stats.values().collect::<Vec<_>>() })
+        });
         serde_json::json!({ "read_admission": self.read_gate.as_ref().map(|g| g.stats()), "write_admission": self.write_gate.stats(), "hash_admission": self.hash_gate.stats(), "report_admission": self.report_gate.stats(), "writer": writer, "readers": readers,
             "sqlite_busy_errors": crate::bench::SQLITE_BUSY_ERRORS.load(std::sync::atomic::Ordering::Relaxed),
             "blocking_threads": crate::bench::BLOCKING_THREADS.load(std::sync::atomic::Ordering::Relaxed),
