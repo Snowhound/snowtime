@@ -581,6 +581,7 @@ fn file_reads_holding_every_blocking_thread_leave_database_calls_running() {
             app_url: "http://snowtime.test".into(),
             secret: "test-secret".into(),
             password_enabled: false,
+            production: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
             rate_limit: false,
