@@ -118,12 +118,20 @@ impl Config {
         if redirect_port.is_some() && matches!(tls, Tls::Plain) {
             return Err("HTTP_REDIRECT_PORT requires TLS.".into());
         }
-        // Behind a proxy, every connection comes from the proxy's address, and a CDN such as
-        // Cloudflare keeps an idle origin connection for up to 900 seconds; closing it first
-        // makes the CDN answer 520 now and then. hyper's header timeout also runs while a
-        // kept-alive HTTP/1 connection waits, so both timeouts outlast the CDN's.
-        let proxied = var("CLIENT_IP_HEADER").is_some();
-        let keep_alive = if proxied { 920 } else { 30 };
+        // A CDN such as Cloudflare keeps an idle origin connection for up to 900 seconds, and
+        // closing it first makes the CDN answer 520 now and then. hyper's header timeout also
+        // runs while a kept-alive HTTP/1 connection waits, and it applies to every
+        // connection, so with listed proxies it is the longer of the two windows. Other
+        // peers then close after the shorter of the header and idle timeouts with nothing
+        // in flight, which bounds a partial request head as hyper's timer did.
+        let proxies = var("CLIENT_IP_TRUSTED_PROXIES")
+            .map(|value| snowtime_server::client_ip::Cidr::parse_list(&value))
+            .transpose()?
+            .unwrap_or_default();
+        let header_timeout = seconds("EDGE_HEADER_TIMEOUT_SECONDS", 30)?;
+        let idle = seconds("EDGE_IDLE_TIMEOUT_SECONDS", 60)?;
+        let proxy_idle = seconds("EDGE_PROXY_IDLE_TIMEOUT_SECONDS", 920)?;
+        let listed = !proxies.is_empty();
         Ok(Self {
             tls,
             redirect_port,
@@ -139,17 +147,29 @@ impl Config {
             timeout_seconds: number("EDGE_TIMEOUT_SECONDS", 30)?,
             body_limit: count("EDGE_BODY_LIMIT_BYTES", 2 * 1024 * 1024)?,
             uri_limit: count("EDGE_URI_LIMIT_BYTES", 8192)?,
-            header_timeout: seconds("EDGE_HEADER_TIMEOUT_SECONDS", keep_alive)?,
+            header_timeout: if listed {
+                header_timeout.max(proxy_idle)
+            } else {
+                header_timeout
+            },
             connections: super::connections::Limits {
                 total: count("EDGE_MAX_CONNECTIONS", 4096)?,
+                // Behind an unlisted proxy every connection comes from the proxy's address.
                 per_address: count(
                     "EDGE_MAX_CONNECTIONS_PER_ADDRESS",
-                    if proxied { 0 } else { 256 },
+                    if var("CLIENT_IP_HEADER").is_some() && !listed {
+                        0
+                    } else {
+                        256
+                    },
                 )?,
-                idle: seconds(
-                    "EDGE_IDLE_TIMEOUT_SECONDS",
-                    if proxied { keep_alive } else { 60 },
-                )?,
+                idle: if listed {
+                    idle.min(header_timeout)
+                } else {
+                    idle
+                },
+                proxies,
+                proxy_idle,
             },
             bench_log: var("EDGE_BENCH_LOG").map(PathBuf::from),
         })

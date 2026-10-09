@@ -33,7 +33,7 @@ impl Cidr {
             .collect::<Result<_, _>>()
             .map_err(|()| "CLIENT_IP_TRUSTED_PROXIES is a comma-separated list of CIDRs.".into())
     }
-    fn contains(&self, address: IpAddr) -> bool {
+    pub fn contains(&self, address: IpAddr) -> bool {
         match (self.network, address.to_canonical()) {
             (IpAddr::V4(network), IpAddr::V4(address)) => {
                 let mask = u32::MAX

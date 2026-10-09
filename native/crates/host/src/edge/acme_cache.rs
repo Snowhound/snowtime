@@ -1,5 +1,6 @@
 //! rustls-acme's directory cache, kept private to the host user: the directory is 0700 and
-//! every file in it 0600, since it holds the account and certificate private keys.
+//! each of its files 0600, since they hold the account and certificate private keys. Only
+//! files named as `DirCache` names them (`cached_account_*`, `cached_cert_*`) change mode.
 //! `DirCache` writes a new file with the process umask; the store then narrows it, while
 //! the directory's mode already keeps other users out.
 use rustls_acme::{AccountCache, CertCache, caches::DirCache};
@@ -29,7 +30,10 @@ fn restrict(directory: &Path) -> io::Result<()> {
     for entry in std::fs::read_dir(directory)? {
         let entry = entry?;
         let metadata = entry.metadata()?;
-        if metadata.is_file() && metadata.permissions().mode() & 0o077 != 0 {
+        if metadata.is_file()
+            && entry.file_name().to_string_lossy().starts_with("cached_")
+            && metadata.permissions().mode() & 0o077 != 0
+        {
             std::fs::set_permissions(entry.path(), std::fs::Permissions::from_mode(0o600))?;
         }
     }
@@ -95,12 +99,20 @@ mod tests {
         std::fs::create_dir(&directory).unwrap();
         std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o755)).unwrap();
         let earlier = directory.join("cached_cert_earlier");
-        std::fs::write(&earlier, "key").unwrap();
-        std::fs::set_permissions(&earlier, std::fs::Permissions::from_mode(0o644)).unwrap();
+        let other = directory.join("notes.txt");
+        for file in [&earlier, &other] {
+            std::fs::write(file, "text").unwrap();
+            std::fs::set_permissions(file, std::fs::Permissions::from_mode(0o644)).unwrap();
+        }
 
         let cache = PrivateDirCache::new(directory.clone()).unwrap();
         assert_eq!(mode(&directory), 0o700);
         assert_eq!(mode(&earlier), 0o600);
+        assert_eq!(
+            mode(&other),
+            0o644,
+            "a file the cache didn't write keeps its mode"
+        );
         let url = "https://acme.test/directory";
         cache
             .store_cert(&["snowtime.test".into()], url, b"cert")
@@ -113,6 +125,7 @@ mod tests {
         let files: Vec<_> = std::fs::read_dir(&directory)
             .unwrap()
             .map(|entry| entry.unwrap().path())
+            .filter(|path| *path != other)
             .collect();
         assert_eq!(files.len(), 3);
         for file in &files {

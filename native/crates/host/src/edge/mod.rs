@@ -258,7 +258,10 @@ fn listener<A>(
 ) -> axum_server::Server<std::net::SocketAddr, connections::Guard<A>> {
     connections::tune(server.http_builder(), config.header_timeout);
     server
-        .acceptor(connections::Guard::new(acceptor, config.connections))
+        .acceptor(connections::Guard::new(
+            acceptor,
+            config.connections.clone(),
+        ))
         .handle(handle)
 }
 

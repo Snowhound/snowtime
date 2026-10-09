@@ -1,6 +1,7 @@
 //! What the acceptor enforces per listener: a cap on open connections, in total and per
 //! client address, and closing a connection that has had no request in flight for the idle
-//! timeout. hyper's own timers cover the rest (`tune`).
+//! timeout. hyper's own timers cover the rest (`tune`). A peer in CLIENT_IP_TRUSTED_PROXIES,
+//! such as a CDN, has no per-address cap and its own idle timeout.
 use axum::http::{Request, Response};
 use axum_server::accept::Accept;
 use http_body::{Body, Frame, SizeHint};
@@ -46,11 +47,13 @@ pub fn tune(
 }
 
 /// Zero turns a cap off.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Limits {
     pub total: usize,
     pub per_address: usize,
     pub idle: Duration,
+    pub proxies: Vec<snowtime_server::client_ip::Cidr>,
+    pub proxy_idle: Duration,
 }
 
 #[derive(Clone)]
@@ -58,6 +61,8 @@ pub struct Guard<A> {
     inner: A,
     caps: Arc<Caps>,
     idle: Duration,
+    proxies: Arc<[snowtime_server::client_ip::Cidr]>,
+    proxy_idle: Duration,
 }
 impl<A> Guard<A> {
     pub fn new(inner: A, limits: Limits) -> Self {
@@ -69,7 +74,12 @@ impl<A> Guard<A> {
                 open: Mutex::new(Open::default()),
             }),
             idle: limits.idle,
+            proxies: limits.proxies.into(),
+            proxy_idle: limits.proxy_idle,
         }
+    }
+    fn is_proxy(&self, peer: IpAddr) -> bool {
+        self.proxies.iter().any(|cidr| cidr.contains(peer))
     }
 }
 
@@ -86,16 +96,14 @@ where
 
     fn accept(&self, stream: TcpStream, service: S) -> Self::Future {
         // Dropping the stream closes it; the client sees the connection end unanswered.
-        let Some(slot) = stream
-            .peer_addr()
-            .ok()
-            .and_then(|peer| self.caps.open(peer.ip()))
-        else {
+        let peer = stream.peer_addr().ok().map(|peer| peer.ip());
+        let proxy = peer.is_some_and(|peer| self.is_proxy(peer));
+        let Some(slot) = peer.and_then(|peer| self.caps.open(peer, !proxy)) else {
             return Box::pin(std::future::ready(Err(io::Error::other(
                 "connection cap reached",
             ))));
         };
-        let idle = self.idle;
+        let idle = if proxy { self.proxy_idle } else { self.idle };
         // The slot is held through the TLS handshake as well.
         let accepted = self.inner.accept(stream, service);
         Box::pin(async move {
@@ -131,14 +139,17 @@ struct Open {
     by_address: HashMap<IpAddr, usize>,
 }
 impl Caps {
-    fn open(self: &Arc<Self>, address: IpAddr) -> Option<Slot> {
+    /// A slot for a connection from `address`, counted against the per-address cap if
+    /// `capped`.
+    fn open(self: &Arc<Self>, address: IpAddr, capped: bool) -> Option<Slot> {
         // The address the rate limits and sessions use: IPv4-mapped IPv6 as IPv4, IPv6 by /64.
         let address = snowtime_server::client_ip::normalize(address);
         let mut open = self.open.lock().unwrap_or_else(|e| e.into_inner());
         if self.total > 0 && open.total >= self.total {
             return None;
         }
-        if self.per_address > 0 {
+        let counted = capped && self.per_address > 0;
+        if counted {
             let count = open.by_address.entry(address).or_default();
             if *count >= self.per_address {
                 return None;
@@ -148,24 +159,25 @@ impl Caps {
         open.total += 1;
         Some(Slot {
             caps: self.clone(),
-            address,
+            counted: counted.then_some(address),
         })
     }
 }
 struct Slot {
     caps: Arc<Caps>,
-    address: IpAddr,
+    // The address whose per-address count this slot holds.
+    counted: Option<IpAddr>,
 }
 impl Drop for Slot {
     fn drop(&mut self) {
         let mut open = self.caps.open.lock().unwrap_or_else(|e| e.into_inner());
         open.total -= 1;
-        if self.caps.per_address > 0
-            && let Some(count) = open.by_address.get_mut(&self.address)
+        if let Some(address) = self.counted
+            && let Some(count) = open.by_address.get_mut(&address)
         {
             *count -= 1;
             if *count == 0 {
-                open.by_address.remove(&self.address);
+                open.by_address.remove(&address);
             }
         }
     }
@@ -334,7 +346,7 @@ mod tests {
             activity: activity.clone(),
             idle,
             timer: Box::pin(tokio::time::sleep(idle)),
-            _slot: caps.open("127.0.0.1".parse().unwrap()).unwrap(),
+            _slot: caps.open("127.0.0.1".parse().unwrap(), true).unwrap(),
         };
         (stream, client, activity)
     }
@@ -366,18 +378,36 @@ mod tests {
         });
         let a: IpAddr = "192.0.2.1".parse().unwrap();
         let mapped: IpAddr = "::ffff:192.0.2.1".parse().unwrap();
-        let first = caps.open(a).unwrap();
-        let _second = caps.open(mapped).unwrap();
-        assert!(caps.open(a).is_none(), "a third from one address");
-        let _other = caps.open("192.0.2.2".parse().unwrap()).unwrap();
+        let first = caps.open(a, true).unwrap();
+        let _second = caps.open(mapped, true).unwrap();
+        assert!(caps.open(a, true).is_none(), "a third from one address");
+        let _other = caps.open("192.0.2.2".parse().unwrap(), true).unwrap();
         assert!(
-            caps.open("192.0.2.3".parse().unwrap()).is_none(),
+            caps.open("192.0.2.3".parse().unwrap(), true).is_none(),
             "a fourth in all"
         );
         drop(first);
-        let _again = caps.open(a).unwrap();
+        let _again = caps.open(a, true).unwrap();
         let open = caps.open.lock().unwrap();
         assert_eq!(open.total, 3);
         assert_eq!(open.by_address[&a], 2);
+    }
+
+    #[test]
+    fn a_proxy_has_no_per_address_cap_but_counts_toward_the_total() {
+        let caps = Arc::new(Caps {
+            total: 3,
+            per_address: 1,
+            open: Mutex::new(Open::default()),
+        });
+        let proxy: IpAddr = "192.0.2.1".parse().unwrap();
+        let first = caps.open(proxy, false).unwrap();
+        let _second = caps.open(proxy, false).unwrap();
+        let _client = caps.open("192.0.2.9".parse().unwrap(), true).unwrap();
+        assert!(caps.open(proxy, false).is_none(), "past the total");
+        drop(first);
+        let open = caps.open.lock().unwrap();
+        assert_eq!(open.total, 2);
+        assert!(!open.by_address.contains_key(&proxy));
     }
 }

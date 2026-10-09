@@ -98,8 +98,7 @@ fn read(var: &impl Fn(&str) -> Option<String>) -> Result<Config, String> {
             oauth: oauth_config(var),
             secret,
             password_enabled: node_env.as_deref() == Some("development") || demo_mode,
-            // Unset counts as production, as in env.ts.
-            production: matches!(node_env.as_deref(), None | Some("production")),
+            production: node_env.as_deref() == Some("production"),
             sign_in_page: sign_in_page_config(var)?,
             client_ip_header: client_ip_header(var)?,
             rate_limit: snowtime_server::rate_limit::enabled(
@@ -121,8 +120,15 @@ fn client_ip_header(
         .map(|value| snowtime_server::client_ip::Cidr::parse_list(&value))
         .transpose()?;
     match var("CLIENT_IP_HEADER") {
+        Some(name)
+            if !name
+                .bytes()
+                .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-') =>
+        {
+            Err("CLIENT_IP_HEADER is lowercase letters, digits, and dashes.".into())
+        }
         Some(name) => Ok(Some(snowtime_server::client_ip::ClientIpHeader {
-            name: name.to_lowercase(),
+            name,
             proxies: proxies.unwrap_or_default(),
         })),
         None if proxies.is_some() => {
@@ -236,7 +242,8 @@ mod tests {
     #[test]
     fn env_ts_refusals_hold_natively() {
         let config = read(&[]).unwrap();
-        assert!(config.server.production, "unset NODE_ENV is production");
+        // Better Auth reads NODE_ENV at run time, so unset isn't production for it.
+        assert!(!config.server.production);
         assert!(!config.server.password_enabled);
         for (vars, message) in [
             (
@@ -286,7 +293,7 @@ mod tests {
     fn the_client_address_header_takes_a_list_of_trusted_proxies() {
         assert!(read(&[]).unwrap().server.client_ip_header.is_none());
         let header = read(&[
-            ("CLIENT_IP_HEADER", "CF-Connecting-IP"),
+            ("CLIENT_IP_HEADER", "cf-connecting-ip"),
             (
                 "CLIENT_IP_TRUSTED_PROXIES",
                 "173.245.48.0/20, 2400:cb00::/32",
@@ -298,6 +305,13 @@ mod tests {
         .unwrap();
         assert_eq!(header.name, "cf-connecting-ip");
         assert_eq!(header.proxies.len(), 2);
+        // env.ts refuses it rather than lowercasing it.
+        assert_eq!(
+            read(&[("CLIENT_IP_HEADER", "CF-Connecting-IP")])
+                .err()
+                .as_deref(),
+            Some("CLIENT_IP_HEADER is lowercase letters, digits, and dashes.")
+        );
         assert_eq!(
             read(&[("CLIENT_IP_TRUSTED_PROXIES", "173.245.48.0/20")])
                 .err()

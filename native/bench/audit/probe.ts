@@ -172,35 +172,42 @@ const run: Record<string, () => Promise<void>> = {
     await app.stop()
   },
 
-  // A connection that sends part of its headers and then nothing.
+  // A connection that sends part of its headers and then nothing, and one kept alive after a
+  // response: directly, from a listed proxy (127.0.0.1), and from an unlisted peer.
   async slowloris() {
-    const db = await copyDb('slowloris')
-    const app = await start(db)
-    const port = Number(new URL(app.url).port)
-    const result = await new Promise<string>((resolve) => {
-      const s = connect(port, '127.0.0.1', () => s.write('GET / HTTP/1.1\r\nHost: x\r\n'))
-      const t0 = Date.now()
-      s.on('close', () => resolve(`closed after ${Date.now() - t0} ms`))
-      s.on('error', (e) => resolve(`error ${e}`))
-      setTimeout(() => {
-        resolve(`still open after ${Date.now() - t0} ms`)
-        s.destroy()
-      }, 45_000)
-    })
-    log('slowloris: partial headers ->', result)
-    const idle = await new Promise<string>((resolve) => {
-      const s = connect(port, '127.0.0.1', () =>
-        s.write('GET /api/v1/availability HTTP/1.1\r\nHost: x\r\n\r\n'),
-      )
-      const t0 = Date.now()
-      s.on('close', () => resolve(`closed after ${Date.now() - t0} ms`))
-      setTimeout(() => {
-        resolve(`still open after ${Date.now() - t0} ms`)
-        s.destroy()
-      }, 45_000)
-    })
-    log('slowloris: idle keep-alive after one response ->', idle)
-    await app.stop()
+    for (const [label, env] of [
+      ['direct', {}],
+      ['listed proxy', { CLIENT_IP_HEADER: 'x-client-ip', CLIENT_IP_TRUSTED_PROXIES: '127.0.0.1' }],
+      [
+        'unlisted peer',
+        { CLIENT_IP_HEADER: 'x-client-ip', CLIENT_IP_TRUSTED_PROXIES: '192.0.2.0/24' },
+      ],
+    ] as [string, Record<string, string>][]) {
+      const db = await copyDb('slowloris')
+      const app = await start(db, env)
+      const port = Number(new URL(app.url).port)
+      function watch(request: string) {
+        return new Promise<string>((resolve) => {
+          const s = connect(port, '127.0.0.1', () => s.write(request))
+          // Reads the response, so the close behind it is reported.
+          s.resume()
+          const t0 = Date.now()
+          s.on('close', () => resolve(`closed after ${Date.now() - t0} ms`))
+          s.on('error', (e) => resolve(`error ${e}`))
+          setTimeout(() => {
+            resolve(`still open after ${Date.now() - t0} ms`)
+            s.destroy()
+          }, 45_000)
+        })
+      }
+      const [partial, idle] = await Promise.all([
+        watch('GET / HTTP/1.1\r\nHost: x\r\n'),
+        watch('GET /api/v1/availability HTTP/1.1\r\nHost: x\r\n\r\n'),
+      ])
+      log(`slowloris (${label}): partial headers ->`, partial)
+      log(`slowloris (${label}): idle keep-alive after one response ->`, idle)
+      await app.stop()
+    }
   },
 
   // Rate-limit keys include the concrete path.

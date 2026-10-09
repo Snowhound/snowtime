@@ -219,36 +219,47 @@ async fn a_panicking_async_handler_answers_500() {
 
 #[test]
 fn connection_limits_and_timeouts_default_by_proxy_and_refuse_zero_timeouts() {
+    let limits = |per_address, idle, proxies: &str| connections::Limits {
+        total: 4096,
+        per_address,
+        idle: Duration::from_secs(idle),
+        proxies: if proxies.is_empty() {
+            vec![]
+        } else {
+            snowtime_server::client_ip::Cidr::parse_list(proxies).unwrap()
+        },
+        proxy_idle: Duration::from_secs(920),
+    };
     let defaults = config(&[]);
     assert_eq!(defaults.header_timeout, Duration::from_secs(30));
-    assert_eq!(
-        defaults.connections,
-        connections::Limits {
-            total: 4096,
-            per_address: 256,
-            idle: Duration::from_secs(60),
-        }
-    );
-    // Behind a proxy every connection shares its address, and the CDN keeps idle
-    // connections for up to 900 seconds.
+    assert_eq!(defaults.connections, limits(256, 60, ""));
+    // Behind an unlisted proxy every connection shares its address.
     let proxied = config(&[("CLIENT_IP_HEADER", "cf-connecting-ip")]);
-    assert_eq!(proxied.header_timeout, Duration::from_secs(920));
-    assert_eq!(
-        proxied.connections,
-        connections::Limits {
-            total: 4096,
-            per_address: 0,
-            idle: Duration::from_secs(920),
-        }
-    );
+    assert_eq!(proxied.header_timeout, Duration::from_secs(30));
+    assert_eq!(proxied.connections, limits(0, 60, ""));
+    // Listed proxies keep idle connections past the CDN's 900 seconds; other peers keep the
+    // per-address cap and close after 30 seconds with nothing in flight.
+    let listed = config(&[
+        ("CLIENT_IP_HEADER", "cf-connecting-ip"),
+        ("CLIENT_IP_TRUSTED_PROXIES", "173.245.48.0/20"),
+    ]);
+    assert_eq!(listed.header_timeout, Duration::from_secs(920));
+    assert_eq!(listed.connections, limits(256, 30, "173.245.48.0/20"));
     let tuned = config(&[
         ("CLIENT_IP_HEADER", "cf-connecting-ip"),
+        ("CLIENT_IP_TRUSTED_PROXIES", "173.245.48.0/20"),
         ("EDGE_HEADER_TIMEOUT_SECONDS", "10"),
         ("EDGE_IDLE_TIMEOUT_SECONDS", "20"),
+        ("EDGE_PROXY_IDLE_TIMEOUT_SECONDS", "400"),
     ]);
-    assert_eq!(tuned.header_timeout, Duration::from_secs(10));
-    assert_eq!(tuned.connections.idle, Duration::from_secs(20));
-    for name in ["EDGE_HEADER_TIMEOUT_SECONDS", "EDGE_IDLE_TIMEOUT_SECONDS"] {
+    assert_eq!(tuned.header_timeout, Duration::from_secs(400));
+    assert_eq!(tuned.connections.idle, Duration::from_secs(10));
+    assert_eq!(tuned.connections.proxy_idle, Duration::from_secs(400));
+    for name in [
+        "EDGE_HEADER_TIMEOUT_SECONDS",
+        "EDGE_IDLE_TIMEOUT_SECONDS",
+        "EDGE_PROXY_IDLE_TIMEOUT_SECONDS",
+    ] {
         assert!(
             Config::read("https://snowtime.test", |key| (key == name)
                 .then(|| "0".into()))
@@ -338,6 +349,36 @@ async fn partial_headers_and_idle_connections_close() {
     get_once(&mut kept).await;
     let elapsed = closes_after(&mut kept).await;
     assert!(elapsed >= second / 2 && elapsed < 3 * second, "{elapsed:?}");
+}
+
+#[tokio::test]
+async fn only_listed_proxies_keep_partial_heads_and_idle_connections_open_longer() {
+    use tokio::io::AsyncWriteExt;
+    let second = Duration::from_secs(1);
+    for (proxies, expected) in [("127.0.0.1", 3 * second), ("192.0.2.0/24", second)] {
+        let (address, _handle) = listen(&[
+            ("CLIENT_IP_HEADER", "x-client-ip"),
+            ("CLIENT_IP_TRUSTED_PROXIES", proxies),
+            ("EDGE_HEADER_TIMEOUT_SECONDS", "1"),
+            ("EDGE_IDLE_TIMEOUT_SECONDS", "30"),
+            ("EDGE_PROXY_IDLE_TIMEOUT_SECONDS", "3"),
+        ])
+        .await;
+        let mut partial = tokio::net::TcpStream::connect(address).await.unwrap();
+        partial
+            .write_all(b"GET / HTTP/1.1\r\nHost: snowtime.test\r\n")
+            .await
+            .unwrap();
+        let mut kept = tokio::net::TcpStream::connect(address).await.unwrap();
+        get_once(&mut kept).await;
+        let (partial, kept) = tokio::join!(closes_after(&mut partial), closes_after(&mut kept));
+        for elapsed in [partial, kept] {
+            assert!(
+                elapsed >= expected - second / 2 && elapsed < expected + second,
+                "{proxies}: {elapsed:?}"
+            );
+        }
+    }
 }
 
 #[tokio::test]
