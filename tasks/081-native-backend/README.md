@@ -287,6 +287,8 @@ which records the edge measurements.
   eleven medium findings, and the feature level that matches `main` at `c8ffa84`
 - [31](31-input-bounds.md): auth input bounds, ordered metadata parsing, and expired
   verification cleanup from the audit (done)
+- [32](32-domains.md): `ALLOWED_LOGIN_DOMAINS` on existing sessions and password sign-in,
+  and Better Auth's error page (done)
 - [33](33-sql.md): migration foreign-key checks, atomic auth writes, immediate
   transactions, and static SQL literals (done)
 

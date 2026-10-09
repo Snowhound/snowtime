@@ -1,5 +1,5 @@
 use super::{
-    cookie,
+    cookie, login_domains,
     schemas::GetInvitationInput,
     sign_in::{FetchHeaders, refusal},
 };
@@ -58,19 +58,11 @@ fn accept(
     let (email, verified): (String, bool) =
         crate::sql!("select email,email_verified from user where id = ", user)
             .query_row(db, |r| Ok((r.get(0)?, r.get(1)?)))?;
-    if !config.sign_in_page.allowed_domains.is_empty()
-        && !email.rsplit_once('@').is_some_and(|(_, domain)| {
-            config
-                .sign_in_page
-                .allowed_domains
-                .iter()
-                .any(|allowed| allowed.eq_ignore_ascii_case(domain))
-        })
-    {
+    if !login_domains::allowed(&config.sign_in_page.allowed_domains, &email) {
         return denied(
             403,
-            "LOGIN_DOMAIN_NOT_ALLOWED",
-            "This email domain cannot sign in to this instance.",
+            login_domains::REFUSAL_CODE,
+            login_domains::REFUSAL_MESSAGE,
         );
     }
     let found = crate::sql!("select id,organization_id,email,role,status,expires_at,inviter_id,created_at,team_id from invitation where id = ",id).query_row(db, |r| Ok((AcceptedInvitation { id:r.get(0)?, organization_id:r.get(1)?, email:r.get(2)?,role:r.get(3)?,status:r.get(4)?,expires_at:r.get(5)?,inviter_id:r.get(6)?,created_at:r.get(7)? },r.get::<_,Option<String>>(8)?))).optional()?;
@@ -217,6 +209,9 @@ impl App {
         {
             return response;
         }
+        if let Err(response) = self.clone().login_domain_middleware(&request).await {
+            return response;
+        }
         let issue = super::schemas::accept_body_issue(&body, request.body.is_empty());
         if let Some(issue) = issue {
             return refusal(400, "VALIDATION_ERROR", &issue);
@@ -270,6 +265,7 @@ mod tests {
                 app_url: "http://localhost".into(),
                 secret: "test-secret".into(),
                 password_enabled: true,
+                production: false,
                 sign_in_page: Default::default(),
                 client_ip_header: None,
                 rate_limit: false,

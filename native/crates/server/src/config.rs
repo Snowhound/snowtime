@@ -8,6 +8,8 @@ pub struct Config {
     pub secret: String,
     // Password sign-in is for local development and demo deployments (passwordEnabled).
     pub password_enabled: bool,
+    // NODE_ENV is production, as Better Auth's isProduction reads it: an unset NODE_ENV isn't.
+    pub production: bool,
     pub sign_in_page: SignInPageConfig,
     pub client_ip_header: Option<String>,
     pub rate_limit: bool,

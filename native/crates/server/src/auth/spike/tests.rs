@@ -27,6 +27,7 @@ fn store_at(deadline: Duration, origin: &str) -> LaneStore {
             app_url: origin.into(),
             secret: SECRET.into(),
             password_enabled: true,
+            production: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
             rate_limit: false,
@@ -79,6 +80,7 @@ async fn call(
         &crate::auth::SessionConfig {
             secret: auth.config().secret.clone(),
             secure: auth.config().session.cookie_secure,
+            allowed_domains: Vec::new(),
         },
         req(method, path, body, cookie),
     )

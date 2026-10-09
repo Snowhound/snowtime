@@ -18,6 +18,7 @@ fn config() -> Config {
         app_url: "http://snowtime.test".into(),
         secret: "test-secret".into(),
         password_enabled: false,
+        production: false,
         sign_in_page: Default::default(),
         client_ip_header: None,
         rate_limit: false,
@@ -83,7 +84,7 @@ async fn sign_out_expires_cookies_and_deletes_only_the_signed_session() {
 fn tables(app: &App) {
     app.db()
         .execute_batch(
-            "create table user (id text); insert into user values ('alice');
+            "create table user (id text, email text); insert into user values ('alice', 'alice@example.com');
         create table session (user_id text, token text, expires_at integer, created_at integer, updated_at integer, active_organization_id text);
         create table member (organization_id text, user_id text, role text);
         create table team (id text, organization_id text);
@@ -156,6 +157,49 @@ async fn forwards_page_cookie_through_oneshot() {
             r#"{"error":{"code":"UNAUTHENTICATED","key":"sign_in_required"}}"#.into()
         )
     );
+}
+
+#[tokio::test]
+async fn a_session_outside_the_allowed_domains_is_no_session() {
+    for (domain, timer, session) in [
+        ("example.com", 200, "alice@example.com"),
+        ("allowed.example", 401, "null"),
+    ] {
+        let app = App::open(Config {
+            database_path: ":memory:".into(),
+            sign_in_page: crate::SignInPageConfig {
+                allowed_domains: vec![domain.into()],
+                ..Default::default()
+            },
+            ..config()
+        })
+        .unwrap();
+        tables(&app);
+        let cookie = app
+            .session
+            .session_cookie("token")
+            .split(';')
+            .next()
+            .unwrap()
+            .to_owned();
+        let router = router(app.clone());
+        let read = |path| answer(router.clone(), "GET", path, Some(&cookie), None, "");
+        assert_eq!(read("/api/v1/timer").await.0, timer, "{domain}");
+        let found = crate::auth::session::find_session_with_writer(
+            &app.db(),
+            &app.db,
+            &app.write_gate,
+            &app.session,
+            Some(&cookie),
+            clock::now(),
+        )
+        .unwrap();
+        assert_eq!(
+            found.map_or("null".into(), |s| s.email),
+            session,
+            "{domain}"
+        );
+    }
 }
 
 #[tokio::test]

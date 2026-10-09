@@ -14,6 +14,7 @@ import { companyIds } from '../../src/db/seed-company'
 import { COLLECTION_IMAGES } from '../../src/lib/scene/images'
 import { compareAuthWrites } from './auth-writes-compare'
 import { CALLS, type CallName, requestOf } from './calls'
+import { compareLoginDomains } from './login-domains-compare'
 import { startNative } from './native'
 import { compareOAuth } from './oauth-compare'
 import { comparePasskeys } from './passkey-compare'
@@ -1690,6 +1691,7 @@ try {
   await comparePasskeys(binary, database, judge)
   await compareOAuth(binary, database, judge)
   await compareAuthWrites(binary, database, judge)
+  await compareLoginDomains(binary, database, judge)
   console.log(differences ? `${differences} calls differ` : 'Every call answers the same')
 } finally {
   await Promise.all([ts.stop(), native.stop()])

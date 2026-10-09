@@ -14,6 +14,8 @@ pub struct SessionConfig {
     pub secret: String,
     // With an https app URL, the cookie has the __Secure- prefix and the Secure attribute.
     pub secure: bool,
+    // ALLOWED_LOGIN_DOMAINS, which `find_session_with_writer` applies.
+    pub allowed_domains: Vec<String>,
 }
 
 impl SessionConfig {
@@ -32,9 +34,10 @@ impl SessionConfig {
     }
 }
 
-/// A request's live session (Better Auth's session row).
+/// A request's live session (Better Auth's session row) and its user's address.
 pub struct Session {
     pub user_id: String,
+    pub email: String,
     pub created_at: Timestamp,
     pub active_organization_id: Option<String>,
 }
@@ -42,6 +45,10 @@ pub struct Session {
 /// The session of a request's Cookie header, or None. An expired session is deleted; one
 /// used a day or more after it was last renewed is renewed for 30 days. On a read-only
 /// connection, either fails; `find_session_with_writer` handles them.
+///
+/// It returns a session whose domain ALLOWED_LOGIN_DOMAINS no longer lists, as Better Auth's
+/// getSessionFromCtx does, so Better Auth's routes can refuse it with 403 as the app's
+/// loginDomainMiddleware does.
 pub fn find_session(
     db: &Connection,
     config: &SessionConfig,
@@ -54,10 +61,12 @@ pub fn find_session(
     }
 }
 
-/// `find_session` on any connection. A read-only one renews or deletes the session on the
-/// writer only if the writer's gate has a free slot; otherwise a later request does it. A
-/// session due for renewal stays valid for weeks, and an expired one is refused either way,
-/// so a busy writer never holds up a read.
+/// The API's session check, as the app's getSession answers it: `find_session` on any
+/// connection, with a session whose domain ALLOWED_LOGIN_DOMAINS doesn't list treated as
+/// none. A read-only connection renews or deletes the session on the writer only if the
+/// writer's gate has a free slot; otherwise a later request does it. A session due for
+/// renewal stays valid for weeks, and an expired one is refused either way, so a busy
+/// writer never holds up a read.
 pub(crate) fn find_session_with_writer(
     db: &Connection,
     writer: &std::sync::Mutex<Connection>,
@@ -66,17 +75,18 @@ pub(crate) fn find_session_with_writer(
     cookie_header: Option<&str>,
     now: i64,
 ) -> rusqlite::Result<Option<Session>> {
-    match find_session_using(db, config, cookie_header, now)? {
-        Found::Session(session) => Ok(session),
+    let session = match find_session_using(db, config, cookie_header, now)? {
+        Found::Session(session) => session,
         Found::NeedsWriter { session, expired } => match gate.try_acquire() {
             Some(_permit) => {
                 let writer = writer.lock().unwrap_or_else(|e| e.into_inner());
                 // Another reader may have renewed the session since this one read it.
-                find_session(&writer, config, cookie_header, now)
+                find_session(&writer, config, cookie_header, now)?
             }
-            None => Ok((!expired).then_some(session)),
+            None => (!expired).then_some(session),
         },
-    }
+    };
+    Ok(session.filter(|s| super::login_domains::allowed(&config.allowed_domains, &s.email)))
 }
 
 enum Found {
@@ -100,13 +110,14 @@ fn find_session_using(
     let session = db
         .prepare_cached(
             "select session.user_id, session.expires_at, session.created_at,
-                    session.active_organization_id
+                    session.active_organization_id, user.email
              from session join user on user.id = session.user_id where session.token = ?1",
         )?
         .query_row([token], |row| {
             Ok((
                 Session {
                     user_id: row.get(0)?,
+                    email: row.get(4)?,
                     created_at: row.get(2)?,
                     active_organization_id: row.get(3)?,
                 },

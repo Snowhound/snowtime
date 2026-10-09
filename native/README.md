@@ -7,11 +7,13 @@ those pages rendered by the app's own server bundle in V8. Subtask 03
 subtask 01 (`01-server-rendering.md`) the renderer's.
 
 Feature level: matches snowtime main c8ffa84. The branch's TypeScript app (`src/`) is
-identical to that commit, and against it the native host passes all 49 conformance
-tests (528 assertions, 10 files) and all 1,381 `compare.ts` calls byte for byte.
+identical to that commit, and against it the native host passes all 54 conformance
+tests (539 assertions, 11 files) and all 1,409 `compare.ts` calls byte for byte.
 [Task 081.30](../tasks/081-native-backend/30-audit.md#parity-record) records the audit's findings.
 [Task 081.31](../tasks/081-native-backend/31-input-bounds.md) records the current checks
 and deliberate auth input bounds that differ from TypeScript.
+[Task 081.32](../tasks/081-native-backend/32-domains.md) records the login-domain
+middleware and Better Auth's error page, and their differences from TypeScript.
 
 ## Crates
 

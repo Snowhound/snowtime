@@ -74,6 +74,7 @@ mod tests {
             app_url: "http://snowtime.test".into(),
             secret: "secret".into(),
             password_enabled: true,
+            production: false,
             sign_in_page: Default::default(),
             client_ip_header: None,
             rate_limit: false,

@@ -74,6 +74,7 @@ pub fn from_env() -> Result<Config, String> {
             secret: required("BETTER_AUTH_SECRET")?,
             password_enabled: var("NODE_ENV").as_deref() == Some("development")
                 || var("DEMO_MODE").as_deref() == Some("true"),
+            production: var("NODE_ENV").as_deref() == Some("production"),
             sign_in_page: sign_in_page_config(&var)?,
             client_ip_header: var("CLIENT_IP_HEADER").map(|h| h.to_lowercase()),
             rate_limit: snowtime_server::rate_limit::enabled(
