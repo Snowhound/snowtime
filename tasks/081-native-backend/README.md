@@ -302,6 +302,8 @@ which records the edge measurements.
 - [37](37-supply-chain.md): supply chain and harness before the split: ring out of the
   graph, a checked V8 download, third-party notices, the auth spike removed, a pinned
   toolchain and base images, a native CI job, and a second-organization conformance file
+- [38](38-api-keys.md): personal API keys from `main`'s task 093: the `keys` routes, the key
+  check, Settings' key calls, and the plugin's row, at `main` `1eedd18` (done)
 
 Task 084 moved the TypeScript app from server functions to the same API, through one
 client module. Task 089 replaces that module's call table with routes and client functions

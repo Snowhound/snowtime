@@ -1,21 +1,40 @@
 use super::schemas::*;
-use crate::http::{App, AsUser, AuthCall, InOrganization, Public, Response};
+use crate::http::{App, AsUser, AuthCall, InOrganization, KEYS, Public, Response};
 use crate::schemas::Empty;
 use axum::{
     Router,
-    routing::{get, patch, post},
+    handler::Handler,
+    routing::{delete, get, patch, post},
 };
 use std::sync::Arc;
 
-// Calls that need no session (publicAuthRoutes).
+// Calls that need no session (publicAuthRoutes), and the user's own account
+// (accountRoutes): `me` for a client that signs in with a key and has no session to read,
+// and the user's API keys for Settings. A key can't manage keys.
 pub fn routes() -> Router<Arc<App>> {
     Router::new()
+        .route("/me", get(me.layer(KEYS)))
+        .route("/api-keys", get(list_api_keys).post(create_api_key))
+        .route("/api-keys/{id}", delete(revoke_api_key))
         .route("/session", get(session))
         .route("/sign-in-methods", get(sign_in_methods))
         .route("/deployment", get(deployment))
         .route("/dev-users", get(dev_users))
         .route("/invitations/{id}", get(invitation))
         .route("/invitations/{id}/accept", post(accept))
+}
+async fn me(call: AsUser<Empty>) -> Response {
+    call.run(|db, user, _| super::app_session::me(db, user))
+        .await
+}
+async fn list_api_keys(call: AsUser<Empty>) -> Response {
+    call.run(super::api_keys::list_api_keys).await
+}
+async fn create_api_key(call: AsUser<CreateApiKeyInput>) -> Response {
+    call.run(super::api_keys::create_api_key).await
+}
+async fn revoke_api_key(call: AsUser<RevokeApiKeyInput>) -> Response {
+    call.run(super::api_keys::revoke_api_key).await
 }
 async fn sign_in_methods(call: Public<Empty>) -> Response {
     call.with_config(super::sign_in_page::sign_in_methods).await

@@ -895,3 +895,101 @@ mod input_bounds_tests {
         );
     }
 }
+
+// Personal API keys (docs/architecture/auth.md, "API keys"). The name's limit is the
+// api-key plugin's default, which the plugin checks again.
+const API_KEY_NAME_MAX_LENGTH: usize = 32;
+const API_KEY_LIFETIMES: &[&str] = &["30d", "90d", "1y", "none"];
+const API_KEY_ACCESS: &[&str] = &["read", "write"];
+
+fn api_key_name(text: &str) -> Result<()> {
+    let mut text = text.to_owned();
+    trim(&mut text);
+    if text.is_empty() {
+        return invalid("Enter a name.");
+    }
+    if text.encode_utf16().count() > API_KEY_NAME_MAX_LENGTH {
+        return invalid(format!("Use at most {API_KEY_NAME_MAX_LENGTH} characters."));
+    }
+    Ok(())
+}
+
+// The lifetime is always explicit: no expiry is a choice, never a missing value.
+#[derive(Deserialize)]
+pub struct CreateApiKeyInput {
+    pub name: String,
+    pub lifetime: String,
+    pub access: String,
+}
+impl Validate for CreateApiKeyInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[
+        (
+            "name",
+            Field::CheckedString {
+                required: true,
+                check: api_key_name,
+            },
+        ),
+        ("lifetime", Field::RequiredPicklist(API_KEY_LIFETIMES)),
+        ("access", Field::RequiredPicklist(API_KEY_ACCESS)),
+    ];
+    fn validate(&mut self) -> Result<()> {
+        trim(&mut self.name);
+        Ok(())
+    }
+}
+
+#[derive(Deserialize)]
+pub struct RevokeApiKeyInput {
+    pub id: String,
+}
+impl Validate for RevokeApiKeyInput {
+    const FIELDS: &'static [(&'static str, Field)] = &[("id", Field::RequiredId)];
+}
+
+// A listed key: its name and settings, never any part of the key. The field order is
+// listApiKeys's.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiKey {
+    pub id: String,
+    pub created_at: Timestamp,
+    pub expires_at: Option<Timestamp>,
+    pub last_used_at: Option<Timestamp>,
+    pub name: String,
+    pub access: &'static str,
+}
+
+// The key itself appears only here, once.
+#[derive(Serialize)]
+pub struct CreatedApiKey {
+    pub id: String,
+    pub key: String,
+}
+
+#[derive(Serialize)]
+pub struct RevokedApiKey {
+    pub id: String,
+}
+
+// The signed-in user and their organizations, for a client that signs in with a key and
+// has no session to read.
+#[derive(Serialize)]
+pub struct Me {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user: Option<MeUser>,
+    pub organizations: Vec<MeOrganization>,
+}
+#[derive(Serialize)]
+pub struct MeUser {
+    pub id: String,
+    pub name: String,
+    pub email: String,
+}
+#[derive(Serialize)]
+pub struct MeOrganization {
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+    pub role: OrgRole,
+}

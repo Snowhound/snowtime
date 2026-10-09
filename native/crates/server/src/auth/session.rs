@@ -250,7 +250,7 @@ fn random_token() -> String {
 }
 
 // The app's generateId, from the server's clock.
-fn uuid_v7(now: i64) -> String {
+pub(crate) fn uuid_v7(now: i64) -> String {
     let at = uuid::Timestamp::from_unix(
         uuid::NoContext,
         now.div_euclid(1000) as u64,

@@ -28,6 +28,12 @@ pub const WRITES_PER_USER: RateLimitRule = RateLimitRule {
     max: 120,
 };
 
+// rateLimits.apiKeyRequests: per API key, reads and writes alike.
+pub const API_KEY_REQUESTS: RateLimitRule = RateLimitRule {
+    window: 60,
+    max: 120,
+};
+
 struct Window {
     count: u32,
     ends_at: i64,

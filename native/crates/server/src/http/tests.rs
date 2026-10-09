@@ -634,6 +634,7 @@ fn lane_request() -> Request {
         method: "GET".into(),
         query: None,
         cookie: None,
+        key: None,
         user_agent: None,
         client_ip: None,
         body: vec![],
@@ -831,4 +832,206 @@ async fn database_calls_run_on_the_lanes_own_threads_with_their_own_connections(
         .await
         .unwrap();
     assert_eq!(response.status(), 200);
+}
+
+// An app on a migrated database file, with `readers` reader threads, Alice's session, Bob,
+// and Alice's keys `snow_read` and `snow_write`. Returns the app and Bob's session cookie.
+fn keyed_app(readers: usize) -> (Arc<App>, String) {
+    let path = std::env::temp_dir().join(format!("snowtime-keys-{}.db", uuid::Uuid::now_v7()));
+    let mut db = Connection::open(&path).unwrap();
+    crate::migrations::migrate(
+        &mut db,
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../drizzle"),
+    )
+    .unwrap();
+    let now = clock::now();
+    db.execute_batch("insert into user (id, name, email, email_verified, created_at, updated_at) values ('alice', 'Alice', 'alice@example.com', 1, 0, 0), ('bob', 'Bob', 'bob@example.com', 1, 0, 0)").unwrap();
+    db.execute(
+        "insert into session (id, user_id, token, expires_at, created_at, updated_at) values ('s', 'bob', 'bob-token', ?1, ?2, ?2)",
+        [now + crate::auth::session::EXPIRES_IN_S * 1000, now],
+    )
+    .unwrap();
+    for (id, key, permissions) in [
+        (
+            "01900000-0000-7000-8000-000000000001",
+            "snow_read",
+            r#"{"api":["read"]}"#,
+        ),
+        (
+            "01900000-0000-7000-8000-000000000002",
+            "snow_write",
+            r#"{"api":["read","write"]}"#,
+        ),
+    ] {
+        db.execute(
+            "insert into api_key (id, name, reference_id, prefix, key, rate_limit_enabled, created_at, updated_at, permissions, metadata) values (?1, ?1, 'alice', 'snow_', ?2, 0, ?3, ?3, ?4, 'null')",
+            rusqlite::params![id, crate::auth::api_keys::hash_key(key), now, permissions],
+        )
+        .unwrap();
+    }
+    drop(db);
+    let app = App::open_with_readers(
+        Config {
+            database_path: path.to_str().unwrap().into(),
+            ..config()
+        },
+        readers,
+    )
+    .unwrap();
+    let cookie = app
+        .session
+        .session_cookie("bob-token")
+        .split(';')
+        .next()
+        .unwrap()
+        .to_owned();
+    (app, cookie)
+}
+async fn keyed(
+    router: &Router,
+    method: &str,
+    path: &str,
+    key: &str,
+    cookie: Option<&str>,
+) -> (u16, String, String) {
+    let mut request = HttpRequest::builder()
+        .method(method)
+        .uri(path)
+        .header("authorization", format!("Bearer {key}"));
+    if let Some(cookie) = cookie {
+        request = request.header("cookie", cookie);
+    }
+    let response = router
+        .clone()
+        .oneshot(
+            request
+                .body(Body::from(if method == "GET" { "" } else { "{}" }))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = response.status().as_u16();
+    let timing = response
+        .headers()
+        .get("server-timing")
+        .map_or(String::new(), |v| v.to_str().unwrap().to_owned());
+    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    (status, String::from_utf8(body.to_vec()).unwrap(), timing)
+}
+
+#[tokio::test]
+async fn a_key_reaches_only_the_routes_marked_keys_and_needs_no_origin() {
+    let (app, _) = keyed_app(0);
+    let router = router(app);
+    let not_allowed =
+        r#"{"error":{"code":"FORBIDDEN","message":"API keys cannot make this call."}}"#;
+    for (method, path) in [
+        ("GET", "/api/v1/session"),
+        ("GET", "/api/v1/sign-in-methods"),
+        ("GET", "/api/v1/api-keys"),
+        ("POST", "/api/v1/api-keys"),
+        (
+            "DELETE",
+            "/api/v1/api-keys/01900000-0000-7000-8000-000000000001",
+        ),
+        ("PUT", "/api/v1/settings"),
+        ("GET", "/api/v1/organizations/org/teams"),
+        ("POST", "/api/v1/organizations/org/entries"),
+    ] {
+        let (status, body, _) = keyed(&router, method, path, "snow_write", None).await;
+        assert_eq!(
+            (status, body.as_str()),
+            (403, not_allowed),
+            "{method} {path}"
+        );
+    }
+    // An unknown call is unknown before the key's reach is checked.
+    assert_eq!(
+        keyed(&router, "GET", "/api/v1/nope", "snow_write", None)
+            .await
+            .0,
+        404
+    );
+    assert_eq!(
+        keyed(&router, "PUT", "/api/v1/me", "snow_write", None)
+            .await
+            .0,
+        404
+    );
+    // A key's write needs no Origin; it gets as far as its own checks.
+    assert_eq!(
+        keyed(&router, "POST", "/api/v1/timer/stop", "snow_read", None)
+            .await
+            .1,
+        r#"{"error":{"code":"FORBIDDEN","message":"API key is read-only."}}"#
+    );
+    assert_eq!(
+        keyed(&router, "POST", "/api/v1/timer/stop", "snow_write", None)
+            .await
+            .0,
+        400,
+        "the write key reaches the input check"
+    );
+    // Better Auth's routes ignore the header.
+    let (status, _, _) = keyed(
+        &router,
+        "GET",
+        "/api/auth/list-accounts",
+        "snow_write",
+        None,
+    )
+    .await;
+    assert_ne!(status, 403);
+}
+
+#[tokio::test]
+async fn a_key_alone_signs_in_and_its_last_use_is_saved_through_a_reader() {
+    let (app, bob) = keyed_app(2);
+    let router = router(app.clone());
+    let (status, body, timing) = keyed(&router, "GET", "/api/v1/me", "snow_read", Some(&bob)).await;
+    assert_eq!(
+        (status, body.as_str()),
+        (
+            200,
+            r#"{"user":{"id":"alice","name":"Alice","email":"alice@example.com"},"organizations":[]}"#
+        )
+    );
+    assert!(timing.starts_with("session;dur="), "{timing}");
+    let last_use = || {
+        app.db()
+            .query_row(
+                "select last_request from api_key where key = ?1",
+                [crate::auth::api_keys::hash_key("snow_read")],
+                |r| r.get::<_, Option<i64>>(0),
+            )
+            .unwrap()
+    };
+    let saved = last_use().expect("the reader's call saves the key's last use");
+    assert_eq!(
+        keyed(&router, "GET", "/api/v1/timer", "snow_read", None)
+            .await
+            .0,
+        200
+    );
+    assert_eq!(last_use(), Some(saved), "at most once a minute");
+    assert_eq!(
+        keyed(&router, "GET", "/api/v1/me", "snow_unknown", Some(&bob))
+            .await
+            .1,
+        r#"{"error":{"code":"UNAUTHENTICATED","message":"Invalid API key."}}"#,
+        "a working session doesn't stand in for an unknown key"
+    );
+}
+
+// A failed read takes unavailable_or's path, which answers 503 when `select 1` fails too; a
+// local file can't be made unreachable here, so the database still answers and it is 500.
+#[tokio::test]
+async fn a_failed_key_read_is_the_apis_database_failure_not_a_refusal() {
+    let (app, _) = keyed_app(0);
+    app.db().execute_batch("drop table api_key").unwrap();
+    let (status, body, _) = keyed(&router(app), "GET", "/api/v1/me", "snow_read", None).await;
+    assert_eq!(
+        (status, body.as_str()),
+        (500, r#"{"error":{"message":"Internal error."}}"#)
+    );
 }

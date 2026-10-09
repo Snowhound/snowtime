@@ -1,18 +1,19 @@
 use super::schemas::*;
-use crate::http::{App, AsUser, InOrganization, Response};
+use crate::http::{App, AsUser, InOrganization, KEYS, Response};
 use crate::schemas::Empty;
 use axum::{
     Router,
+    handler::Handler,
     routing::{get, post},
 };
 use std::sync::Arc;
 pub fn routes() -> Router<Arc<App>> {
     Router::new()
-        .route("/timer", get(running))
-        .route("/timer/stop", post(stop))
+        .route("/timer", get(running.layer(KEYS)))
+        .route("/timer/stop", post(stop.layer(KEYS)))
 }
 pub fn organization_routes() -> Router<Arc<App>> {
-    Router::new().route("/timer/start", post(start))
+    Router::new().route("/timer/start", post(start.layer(KEYS)))
 }
 async fn running(call: AsUser<Empty>) -> Response {
     call.run(|db, user, _| super::get_running_timer(db, user))

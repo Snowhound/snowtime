@@ -64,6 +64,8 @@ pub enum Key {
     SettingsNotFound,
     ScenePinNotInCollection,
     OrganizationForbidden,
+    ApiKeyLimit,
+    ApiKeyNotFound,
     RateLimited,
     DatabaseUnavailable,
 }

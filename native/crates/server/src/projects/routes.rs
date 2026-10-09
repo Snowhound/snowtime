@@ -1,14 +1,15 @@
 use super::schemas::*;
-use crate::http::{App, InOrganization, Response};
+use crate::http::{App, InOrganization, KEYS, Response};
 use axum::{
     Router,
+    handler::Handler,
     routing::{get, patch, post, put},
 };
 use std::sync::Arc;
 
 pub fn routes() -> Router<Arc<App>> {
     Router::new()
-        .route("/projects", get(list).post(create))
+        .route("/projects", get(list.layer(KEYS)).post(create))
         .route("/projects/{id}", patch(update).delete(delete))
         .route("/projects/{id}/archive", post(archive))
         .route("/projects/{id}/unarchive", post(unarchive))

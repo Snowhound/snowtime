@@ -1,5 +1,6 @@
 //! Shared request checks, with one connection held from session lookup through the rule.
 use crate::auth::SessionConfig;
+use crate::auth::api_keys::LastUse;
 use crate::auth::session::Session;
 use crate::rate_limit::{MemoryStore, WRITES_PER_USER};
 use crate::schemas::{Empty, Validate, decode};
@@ -8,7 +9,7 @@ use crate::timing::Timer;
 use crate::wire::{app_failure, failure, ok};
 use crate::{AppError, Code, Config, Error, Key, Result, WireResponse, clock};
 use axum::{
-    Router,
+    Extension, Router,
     body::to_bytes,
     extract::{FromRequest, FromRequestParts, Path, Request as HttpRequest},
     handler::HandlerWithoutStateExt,
@@ -18,6 +19,7 @@ use axum::{
 use rusqlite::Connection;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Map, Value};
+use std::cell::Cell;
 use std::marker::PhantomData;
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -26,6 +28,8 @@ pub struct Request {
     pub path: String,
     pub query: Option<String>,
     pub cookie: Option<String>,
+    // A personal API key, on a route marked `keys`. A request with one has no cookie.
+    pub key: Option<String>,
     pub user_agent: Option<String>,
     pub client_ip: Option<String>,
     pub body: Vec<u8>,
@@ -40,6 +44,7 @@ impl Request {
             path: String::new(),
             query: None,
             cookie: Some(cookie),
+            key: None,
             user_agent: None,
             client_ip: None,
             body: vec![],
@@ -251,13 +256,30 @@ pub fn cookies(headers: &HeaderMap) -> Option<String> {
     }
     Some(joined)
 }
+/// Marks a route a personal API key may call (`keys` in src/server/http.server.ts):
+/// `get(handler.layer(KEYS))`. Every other `/api/v1` route refuses a key.
+pub(crate) const KEYS: Extension<Keys> = Extension(Keys);
+#[derive(Clone, Copy)]
+pub(crate) struct Keys;
+
+// `api` is the JSON API's checks (`known`): a key reaches only the routes marked `keys`, and
+// writes with the session cookie come only from the app's own pages. Another site can't set
+// a key's header, so a key's writes need no Origin. Better Auth's routes ignore a key.
 async fn extract(
     request: HttpRequest,
     app: &Arc<App>,
     reads: bool,
+    api: bool,
 ) -> std::result::Result<Request, Response> {
     let (mut parts, body) = request.into_parts();
+    let key = api
+        .then(|| crate::auth::api_keys::bearer_key(&parts.headers))
+        .flatten();
+    if key.is_some() && parts.extensions.get::<Keys>().is_none() {
+        return Err(respond_error(crate::auth::api_keys::not_allowed()));
+    }
     if !reads
+        && key.is_none()
         && parts.method != "GET"
         && !app
             .config
@@ -276,7 +298,9 @@ async fn extract(
         method: parts.method.to_string(),
         path: parts.uri.path().to_owned(),
         query: parts.uri.query().map(str::to_owned),
-        cookie: cookies(&parts.headers),
+        // The key alone signs its request in, so a session can't widen what it may do.
+        cookie: key.is_none().then(|| cookies(&parts.headers)).flatten(),
+        key,
         user_agent: text(&parts.headers, "user-agent"),
         client_ip: crate::client_ip::resolve(
             &parts.headers,
@@ -328,14 +352,24 @@ pub(crate) fn unavailable_or(db: &Connection, error: &rusqlite::Error) -> WireRe
 fn respond(db: &Connection, result: Result<WireResponse>) -> Response {
     match result {
         Ok(r) => r.into(),
-        Err(Error::App(e)) => app_failure(e).into(),
-        Err(Error::Invalid(e)) => failure(400, &e).into(),
         Err(Error::Database(e)) => unavailable_or(db, &e).into(),
-        Err(Error::Auth {
+        Err(e) => respond_error(e),
+    }
+}
+// A refusal that needs no database to answer.
+fn respond_error(error: Error) -> Response {
+    match error {
+        Error::App(e) => app_failure(e).into(),
+        Error::Invalid(e) => failure(400, &e).into(),
+        Error::Database(e) => {
+            eprintln!("[api] {e}");
+            failure(500, "Internal error.").into()
+        }
+        Error::Auth {
             status,
             code,
             message,
-        }) => {
+        } => {
             #[derive(Serialize)]
             struct Refusal {
                 code: &'static str,
@@ -371,7 +405,7 @@ macro_rules! extractor {
             ) -> std::result::Result<Self, Response> {
                 Ok(Self(
                     app.clone(),
-                    extract(request, app, READ).await?,
+                    extract(request, app, READ, true).await?,
                     PhantomData,
                 ))
             }
@@ -449,8 +483,17 @@ async fn answer(
             crate::timing::cpu_ms(),
         );
         let mut timer = Timer::start();
+        LAST_USE.set(None);
         let result = call(&app, db, &request, &mut timer);
         let mut response = respond(db, result);
+        // The writer saves a key's last use beside the call's own statements; a reader can't
+        // write, so the writer's lane saves it before the answer goes out.
+        let mut last_use = LAST_USE.take();
+        if reader.is_none()
+            && let Some(last_use) = last_use.take()
+        {
+            crate::auth::api_keys::save_last_use(db, &last_use);
+        }
         let header = timer.header();
         #[cfg(feature = "bench")]
         let header = format!(
@@ -474,9 +517,9 @@ async fn answer(
                 .insert(name.to_owned(), crate::bench::sqlite(db));
         }
         response.server_timing = Some(header);
-        response
+        (response, last_use)
     };
-    match lanes.read_gate.as_ref().filter(|_| on_reader) {
+    let (response, last_use) = match lanes.read_gate.as_ref().filter(|_| on_reader) {
         Some(readers) => readers.run_admitted(permit, move |db| work(Some(db))).await,
         None => {
             lanes
@@ -485,10 +528,30 @@ async fn answer(
                 .await
         }
     }
-    .unwrap_or_else(|response| response)
+    .unwrap_or_else(|response| (response, None));
+    if let Some(last_use) = last_use {
+        let writer = lanes.clone();
+        let saved = lanes
+            .write_gate
+            .run(move || crate::auth::api_keys::save_last_use(&writer.db(), &last_use))
+            .await;
+        if let Err(refused) = saved {
+            eprintln!(
+                "[api-key] Saving an API key's last use failed: the writer answered {}",
+                refused.status
+            );
+        }
+    }
+    response
+}
+thread_local! {
+    // A call runs on one lane thread, so the key check leaves a key's due last use here for
+    // answer() to save once the rule has run.
+    static LAST_USE: Cell<Option<LastUse>> = const { Cell::new(None) };
 }
 impl App {
-    // The signed-in user, with a write counted against their rate.
+    // The signed-in user of the session, or of the key, which a request with one is signed in
+    // by alone; a write counts against their rate.
     fn caller(
         &self,
         db: &Connection,
@@ -497,7 +560,21 @@ impl App {
         timer: &mut Timer,
     ) -> Result<String> {
         let write = !read && request.method != "GET";
-        timer.session(|| self.user(db, request.cookie.as_deref(), write))
+        let Some(key) = &request.key else {
+            return timer.session(|| self.user(db, request.cookie.as_deref(), write));
+        };
+        timer.session(|| {
+            let (user, last_use) = crate::auth::api_keys::key_user(
+                db,
+                key,
+                write,
+                &self.rate_limits,
+                &self.session.allowed_domains,
+                clock::now(),
+            )?;
+            LAST_USE.set(last_use);
+            Ok(user)
+        })
     }
 }
 
@@ -663,7 +740,7 @@ impl FromRequest<Arc<App>> for AuthCall {
             .get(header::CONTENT_TYPE)
             .and_then(|v| v.to_str().ok())
             .is_some_and(|v| v.starts_with("application/x-www-form-urlencoded"));
-        let mut request = extract(request, app, true).await?;
+        let mut request = extract(request, app, true, false).await?;
         if form {
             let mut fields = serde_json::Map::new();
             for (k, v) in form_urlencoded::parse(&request.body) {

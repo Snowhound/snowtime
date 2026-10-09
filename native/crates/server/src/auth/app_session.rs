@@ -2,7 +2,7 @@
 //! getAppSession in auth.server.ts): their organizations and role in each, the default one,
 //! their settings, the fill summary for the taglines, and an open invitation when they have
 //! no organization yet.
-use super::schemas::{AppSession, SessionOrganization, SessionUser};
+use super::schemas::{AppSession, Me, MeOrganization, MeUser, SessionOrganization, SessionUser};
 use super::session::Session;
 use crate::calendar::local_date;
 use crate::fill::{Options, fill_range, fill_summary};
@@ -40,20 +40,7 @@ pub fn get_app_session(
             row.get::<_, Timestamp>(4)?,
         ))
     })?;
-    let organizations = crate::sql!(
-        "select organization.id, organization.name, organization.slug, organization.issue_links, member.role from member inner join organization on organization.id = member.organization_id where member.user_id = ",
-        &user.id,
-        " order by organization.name asc, organization.id asc"
-    )
-    .query(db, |row| {
-        Ok(SessionOrganization {
-            id: row.get(0)?,
-            name: row.get(1)?,
-            slug: row.get(2)?,
-            issue_links: row.get(3)?,
-            role: strongest_role(&row.get::<_, String>(4)?),
-        })
-    })?;
+    let organizations = organizations_of(db, &user.id)?;
     let settings = find_settings(db, &user.id)?;
     let active = organizations
         .iter()
@@ -121,4 +108,49 @@ pub fn get_app_session(
         invitation_id,
         app_url: app_origin.to_owned(),
     }))
+}
+
+/// The getMe call: the user and their organizations, without the settings and fill totals
+/// the app frame reads.
+pub fn me(db: &Connection, user_id: &str) -> Result<Me> {
+    let user = crate::sql!("select id, name, email from user where id = ", user_id)
+        .query_row(db, |row| {
+            Ok(MeUser {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                email: row.get(2)?,
+            })
+        })
+        .optional()?;
+    let organizations = organizations_of(db, user_id)?
+        .into_iter()
+        .map(|o| MeOrganization {
+            id: o.id,
+            name: o.name,
+            slug: o.slug,
+            role: o.role,
+        })
+        .collect();
+    Ok(Me {
+        user,
+        organizations,
+    })
+}
+
+// The user's organizations by name, with their strongest role in each.
+fn organizations_of(db: &Connection, user_id: &str) -> Result<Vec<SessionOrganization>> {
+    Ok(crate::sql!(
+        "select organization.id, organization.name, organization.slug, organization.issue_links, member.role from member inner join organization on organization.id = member.organization_id where member.user_id = ",
+        user_id,
+        " order by organization.name asc, organization.id asc"
+    )
+    .query(db, |row| {
+        Ok(SessionOrganization {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            slug: row.get(2)?,
+            issue_links: row.get(3)?,
+            role: strongest_role(&row.get::<_, String>(4)?),
+        })
+    })?)
 }

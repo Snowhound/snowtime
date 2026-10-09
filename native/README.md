@@ -6,14 +6,16 @@ those pages rendered by the app's own server bundle in V8. Subtask 03
 (`tasks/081-native-backend/03-port-libraries.md`) records the API's measurements and
 subtask 01 (`01-server-rendering.md`) the renderer's.
 
-Feature level: matches snowtime main c8ffa84. The branch's TypeScript app (`src/`) is
-identical to that commit, and against it the native host passes all 55 conformance
-tests (542 assertions, 12 files) and all 1,409 `compare.ts` calls byte for byte.
+Feature level: matches snowtime main 1eedd18. The branch's TypeScript app (`src/`) is
+identical to that commit, and against it the native host passes all 66 conformance
+tests (570 assertions, 13 files) and all 1,490 `compare.ts` calls byte for byte.
 [Task 081.30](../tasks/081-native-backend/30-audit.md#parity-record) records the audit's findings.
 [Task 081.31](../tasks/081-native-backend/31-input-bounds.md) records the current checks
 and deliberate auth input bounds that differ from TypeScript.
 [Task 081.32](../tasks/081-native-backend/32-domains.md) records the login-domain
 middleware and Better Auth's error page, and their differences from TypeScript.
+[Task 081.38](../tasks/081-native-backend/38-api-keys.md) records personal API keys and
+their differences from TypeScript.
 
 ## Crates
 
@@ -23,7 +25,7 @@ libraries bind no listening socket.
 
 ```text
 crates/server/src/
-  auth/          app_session, acceptance, cookie, oauth, passkeys, password, session, sign_in, writes, schemas, routes
+  auth/          api_keys, app_session, acceptance, cookie, oauth, passkeys, password, session, sign_in, writes, schemas, routes
   availability/  mod, routes
   entries/       mod (rules), schemas, routes
   projects/      mod (rules), schemas, routes
