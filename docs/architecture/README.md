@@ -54,6 +54,12 @@ of the code keeps; the rest is by area:
   writes: `listProjects` says which projects have live time entries, so deleting one of those
   offers archiving without a call. A delete the server refuses anyway, because an entry was
   logged after the list loaded, brings the row back and shows the error.
+  - A write the server refused before running it (503, with or without `Retry-After`)
+    keeps its optimistic change instead, pending in `src/lib/queries/refusal.ts` and shown
+    as not saved with Try again. Writes made meanwhile wait behind it unsent, and Try again
+    sends them in order; nothing retries a write on its own. Reads retry with backoff and
+    jitter, wait at least `Retry-After`, and don't retry in server renders (task 081.17,
+    Kait, 2026-10-06).
   - An optimistic change goes only into the caches it belongs in: a new entry joins the
     lists of its organization, user, and days, and a stopped timer ends where the server
     will end it, at most 24 hours after its start.
