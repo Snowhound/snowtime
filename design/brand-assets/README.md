@@ -58,7 +58,9 @@ shading follow the board: white on dark and slate blue on light.
   outlined by [wordmark.py](wordmark.py). It needs no font at runtime. The font
   and its SIL OFL 1.1 license are in `fonts/`.
 - `favicon/`: default `02` SVG, 16, 32, 180, 192, and 512 px PNGs; `variants/`
-  contains 16 and 32 px PNGs for all concepts.
+  contains 16 and 32 px PNGs for all concepts. `favicon.ico` packs the navy-tile `02`
+  16 and 32 px PNGs. It and `apple-touch-icon.png` are copied to the root of `public/`
+  for browsers that request those paths without reading the page's icon links.
 - `site.webmanifest`: proposed standalone-app manifest with default `02` artwork.
 - `theme-tokens.css`: proposed light/dark brand tokens.
 - `qa/`: extra 20, 24, and 64 px PNGs used for size checks.
