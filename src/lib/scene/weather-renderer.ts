@@ -1,5 +1,5 @@
 // The seasonal scene's weather renderer: a WebGL 2 canvas that draws an image's effects, each as
-// points, or rain, mist, and the aurora as quads, in one call with no buffers; each item's
+// points, or rain, mist, and the aurora as quads, in one call with no vertex data; each item's
 // randomness comes from gl_VertexID and its position from the vertex shader. SceneLayer
 // (src/components/scene/scene-layer.tsx) imports it the first time weather runs, so pages with
 // the weather off send no shaders.
@@ -77,6 +77,15 @@ ${HASH}
 // An item's k-th random value, 0 to 1. A group of items takes streams from 10 up, so it doesn't
 // share values with the item of the same number.
 float rnd(uint item, uint k){ return float(lowbias32(lowbias32(item) + k) >> 8) / 16777216.0; }
+layout(location = 0) in float a_zero;
+#define main effect
+`
+// Firefox on desktop OpenGL, as on a Mac, emulates attribute 0 with a buffer the size of each
+// draw unless the program reads it from an array. So the effect's main runs from this one,
+// which adds a_zero, always 0, from a one-float buffer set up in createWeatherRenderer.
+const VS_MAIN = `
+#undef main
+void main(){ effect(); gl_Position.w += a_zero; }
 `
 // The wind, for everything that floats or falls.
 const WIND = `
@@ -1171,7 +1180,7 @@ export function createWeatherRenderer(
     const fx = EFFECTS[effect]
     const head = `#version 300 es\n${defines.map((d) => `#define ${d}\n`).join('')}`
     const p = gl.createProgram()
-    gl.attachShader(p, compile(gl.VERTEX_SHADER, head + fx.vs))
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, head + fx.vs + VS_MAIN))
     gl.attachShader(p, compile(gl.FRAGMENT_SHADER, head + fx.fs))
     gl.linkProgram(p)
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
@@ -1187,6 +1196,12 @@ export function createWeatherRenderer(
     return program(weather.effect, EFFECTS[weather.effect].defines?.(tuned(weather)) ?? [])
   }
   gl.bindVertexArray(gl.createVertexArray())
+  // a_zero (VS_MAIN): one float per instance serves any vertex count.
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
+  gl.bufferData(gl.ARRAY_BUFFER, 4, gl.STATIC_DRAW)
+  gl.vertexAttribPointer(0, 1, gl.FLOAT, false, 0, 0)
+  gl.vertexAttribDivisor(0, 1)
+  gl.enableVertexAttribArray(0)
   gl.enable(gl.BLEND)
   // Premultiplied, as the canvas composites, so edges don't darken. A transparent pixel leaves the
   // canvas as it was, so the shaders don't discard.
