@@ -1,6 +1,6 @@
 # 093: Public API with personal API keys
 
-Status: in-progress
+Status: done
 
 A versioned HTTP API under `/api/v1`, signed in with personal API keys, so clients outside
 the browser can use the timer: a Raycast extension first, then a likely tray app and
@@ -88,9 +88,10 @@ doesn't translate keys: a client maps them to its own text, as the Raycast exten
   `docs/api.md`; the helper became `keyChecker`, which `signedIn` runs for a key
 - [04: Endpoints](04-endpoints.md): the six `/api/v1` endpoints, now routes marked `keys`
 - [05: Raycast extension](05-raycast-extension.md): the client, in its own repository
-- [06: Custom expiry date](06-custom-expiry.md): optional; a key that ends on any chosen day
+- [06: Custom expiry date](06-custom-expiry.md): optional, not started; a key that ends on
+  any chosen day
 
 ## Acceptance criteria
 
 - [x] `docs/product.md` moves the API and the Raycast extension out of "Not in MVP"
-- [ ] Subtasks 01 and 03–05 are done; 06 is optional
+- [x] Subtasks 01 and 03–05 are done; 06 is optional
