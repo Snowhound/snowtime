@@ -1,9 +1,10 @@
 # HTTP API
 
-Snowtime's JSON API serves the web app, and clients outside the browser, such as a Raycast
-extension or a script, call it with a personal API key. This page is the contract for those
-clients: they may rely on everything it states. A key reaches the calls listed under
-[Endpoints](#endpoints); the app's other calls need its session.
+Snowtime's JSON API serves the web app, and clients outside the browser, such as the
+[Raycast extension](https://github.com/Snowhound/snowtime-raycast) or a script, call it with
+a personal API key. This page is the contract for those clients: they may rely on
+everything it states. A key reaches the calls listed under [Endpoints](#endpoints); the
+app's other calls need its session.
 
 ## Base URL
 
