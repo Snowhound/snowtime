@@ -107,3 +107,10 @@ Edit their source files at the paths above so both agents use the same instructi
 
 - One or two lean sentences, imperative mood.
 - No body, no `Co-Authored-By` or any other trailers.
+
+## Pull requests
+
+- Plain prose about the change: what, why, and one line on the checks.
+- No "Generated with Claude Code" line or any other attribution.
+- Run a new pull request's text through `.claude/skills/google-style` when you first
+  write it.
