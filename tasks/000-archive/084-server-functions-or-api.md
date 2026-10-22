@@ -3,14 +3,14 @@
 Status: done
 
 The TypeScript app moves fully to the JSON API of task 081.02, and Start's server
-functions go (Kait, 2026-10-03). The timer's measurements below showed the API no slower
+functions go (2026-10-03). The timer's measurements below showed the API no slower
 and its responses smaller, and the schemas, the shared checks, and the API's encoding now
 give what server functions gave: types end to end, `Date` and `AppError` across the wire,
 middleware, and CSRF. Keeping them would mean binding every call twice and following
 Start's private protocol, which the native backend can't serve.
 
-Earlier the same day Kait chose to keep server functions behind the client module and
-switch once the API cost little; the measurements settled that. The seam below was built
+Earlier the same day the maintainer chose to keep server functions behind the client module
+and switch once the API cost little; the measurements settled that. The seam below was built
 for that plan and carries the move.
 
 ## Design
@@ -28,17 +28,17 @@ for that plan and carries the move.
   scope.
 - **Output schemas.** Valibot schemas in `*.schemas.ts` describe each response. Dates go
   over the wire as ISO 8601 strings, and the HTTP implementation decodes them with the
-  output schemas (Kait, 2026-10-03). The same schemas check the TypeScript rules' return
+  output schemas (2026-10-03). The same schemas check the TypeScript rules' return
   types and the conformance tests' responses.
 - **The API in every build.** The TypeScript app serves the timer's `/api/v1` routes on
-  Vercel too, as Start server routes over the same rules (Kait, 2026-10-03). Its client
+  Vercel too, as Start server routes over the same rules (2026-10-03). Its client
   keeps calling server functions. The conformance tests run against the API over HTTP, so
   one suite checks both backends.
 
 ## To measure
 
-Kait chose these on 2026-10-03, because they inform the seam or a later switch. On the
-same build and database (Lumen Works, `perf:load`):
+The maintainer chose these on 2026-10-03, because they inform the seam or a later switch. On
+the same build and database (Lumen Works, `perf:load`):
 
 - **API against server functions.** Server CPU per call, and latency p50 and p95, for the
   timer's calls: running timer, entries, start, and stop. This tells whether a switch
@@ -158,7 +158,7 @@ Speed is not a reason to stay on server functions, so the move is only work:
 - **An in-process transport for Start's server render,** running `runOperation` for the
   page's session, as the native backend's host does, so a page load makes no HTTP request
   to itself. The browser uses `httpTransport`. The hydration test covers both.
-- **A GET only reads** (Kait, 2026-10-03). A read works out what it needs, and only an
+- **A GET only reads** (2026-10-03). A read works out what it needs, and only an
   explicit write saves it:
   - The session read returns the fallback active organization without saving it. Only
     switching organizations saves it, through Better Auth's own call. Check first that
@@ -191,12 +191,12 @@ These changes go in `src/lib/api/` and `operations.server.ts` once, not in the f
   revives dates. `listProjects` takes a boolean, and the report reads take the report's
   filters, with nested objects (`report`, `row`, `after`) and numbers. The other reads
   stay GET, and `decode` reads a boolean query value (`includeArchived=true`) by the
-  schema as it revives dates. Kait first chose HTTP `QUERY`, a read with a JSON body, for
-  the report reads. Vercel's edge refuses it: a preview answered `405` with
-  `x-vercel-error: INVALID_REQUEST_METHOD` on 2026-10-03, before the function ran. Kait
-  then chose POST over JSON in the query string, the agreed fallback, which reads badly in
-  URLs and logs: the report reads are POSTs marked `read` in the operation list, so the
-  API skips the `Origin` check and the write rate limit for them, as for a GET.
+  schema as it revives dates. The maintainer first chose HTTP `QUERY`, a read with a JSON
+  body, for the report reads. Vercel's edge refuses it: a preview answered `405` with
+  `x-vercel-error: INVALID_REQUEST_METHOD` on 2026-10-03, before the function ran. The
+  maintainer then chose POST over JSON in the query string, the agreed fallback, which reads
+  badly in URLs and logs: the report reads are POSTs marked `read` in the operation list, so
+  the API skips the `Origin` check and the write rate limit for them, as for a GET.
 - **B: Signed-out calls.** `runOperation` assumes a signed-in user. Six calls run without
   one, so the contract gains a third scope, `public`, whose handler gets the session or
   `null`.
@@ -255,7 +255,7 @@ The changes:
    Auth's `APIError` into `{ data: null, error: { code, status } }`, which the client's
    `unwrap` throws, as with Better Auth's client calls. `inviteMember` also returns Better
    Auth's whole invitation, of which the client reads `id`, `email`, and `expiresAt`; its
-   output narrows to those. How the refusal travels is under Kait's answers below.
+   output narrows to those. How the refusal travels is under the maintainer's answers below.
 3. **`getSettings` is a GET that creates the row.** Its only caller is the app frame,
    which creates a new user's settings from the browser's time zone and language; the
    session read carries the settings. It becomes `PUT /api/v1/settings`, which inserts the
@@ -275,9 +275,9 @@ one lookup. `runOperation` resolves the scope per call, so the in-process transp
 repeats that indexed read once per loader. The transport keeps no cache: under
 "After the move", the server render is as fast or faster than with server functions.
 
-### Kait's answers
+### The maintainer's answers
 
-Kait agreed on 2026-10-03:
+The maintainer agreed on 2026-10-03:
 
 - **Better Auth's refusals (2).** The API answers with Better Auth's status and
   `{ error: { code, message } }` carrying Better Auth's code, the shape Better Auth's own

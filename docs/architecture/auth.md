@@ -260,7 +260,7 @@ the database, and the Turso quotas in `docs/hosting.md`, without bound. The valu
   1.7.7 fetches at most 100 pending rows before excluding expired ones, so its default
   count can admit invitations beyond the cap. The callback runs at the plugin's limit
   check, preserving earlier permission, existing-member, and duplicate refusals.
-  Kait approved this correction for both servers on 2026-10-08.
+  The maintainer approved this correction for both servers on 2026-10-08.
 - `createApiKey` caps a user's API keys, expired ones included until the plugin deletes
   them.
 - `createEntry` and `startTimer` cap a member's entries starting within 24 hours of the
@@ -344,7 +344,7 @@ anyway, since each one renders the signed-in user's session.
 
 ## Invitation acceptance after joining
 
-Kait, 2026-10-08: a verified recipient who joined after an invitation was sent accepts
+2026-10-08: a verified recipient who joined after an invitation was sent accepts
 that still-live invitation using the existing membership. Keep its organization role,
 mark the invitation accepted, activate the organization, and apply the invitation's
 optional team assignment. Existing members do not consume another membership slot.

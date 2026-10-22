@@ -23,8 +23,8 @@ overload, and its closed loop slows down with the server, which hides queueing.
 
 ## Usage model
 
-Capacity is quoted in active users, so the results publish what a user does. Kait agreed
-to this starting point on 2026-10-02:
+Capacity is quoted in active users, so the results publish what a user does. The maintainer
+agreed to this starting point on 2026-10-02:
 
 | An active user in the peak hour                       | Times |
 | ----------------------------------------------------- | ----- |
@@ -134,9 +134,9 @@ drops the load two steps and ends the ramp.
   reach port 443.
 - The generator runs on the Mac. If home network noise shows in the client-side timings
   at low load, it moves to a temporary Hetzner VM in the same location.
-- Kait starts and stops the bench stack and runs anything else on the server. The agent
-  never connects to the server: it sends load to the origin and reads the sampler's URL
-  with its password.
+- The maintainer starts and stops the bench stack and runs anything else on the server.
+  The agent never connects to the server: it sends load to the origin and reads the
+  sampler's URL with its password.
 
 ## Local results so far (2026-10-02)
 
@@ -157,7 +157,8 @@ sign-in 107 ms. An active user costs about 0.46 s of app CPU per peak hour.
 Findings:
 
 - Password sign-in limited S below 5,000 users under the 300 ms target, while everything
-  else stayed under 100 ms. Kait moved sign-in to the page target (1 s) on 2026-10-02.
+  else stayed under 100 ms. The maintainer moved sign-in to the page target (1 s) on
+  2026-10-02.
 - Below 50% CPU, a run can still miss: the app stalls for about 2 seconds, and every kind
   misses in that 30-second window. In S's 10-minute run at 8,000 users, 239 of 248 slow
   requests fell in one 2-second span. The cause is open: a long garbage collection, or
@@ -203,8 +204,8 @@ Cheap settings on M, each a 5-minute run at 6,500 users unless noted:
 | `--smol` (`BUN_OPTIONS`)                   | 3% less RSS (316 against 326 MB), same CPU; not worth it                                                                                                            |
 | Caddy cap: 24 requests in flight, 1 s wait | Overload run: at 4 times the knee, 28% of requests get a quick 503, the rest p95 about 1 s; app peak 579 MB, Caddy 295 MB, no restarts; back within targets at once |
 
-Kait decided on 2026-10-02 that the cap goes into the production Caddyfile once the
-Hetzner runs confirm its value on that CPU.
+The maintainer decided on 2026-10-02 that the cap goes into the production Caddyfile once
+the Hetzner runs confirm its value on that CPU.
 
 A memory limit doesn't slow the app at the knee, but under overload the app grew to 1.4 GB
 without the cap, so a 512 MB limit would get it killed there. The cap keeps memory flat
@@ -224,29 +225,29 @@ The deploy workflow publishes the sampler image and copies the bench files, and
 
 The local work is done and pushed on branch `078-load-benchmark`. In order:
 
-1. Kait deploys the branch:
+1. The maintainer deploys the branch:
    `gh workflow run compose-deploy.yml --ref 078-load-benchmark -f server=restart`.
 2. The agent generates M on the day of the run (`bun perf/stress/dataset.ts M`), because
-   the data ends when it's generated and the users file must match. It gives Kait the
-   file's path under `perf/.cache/stress/`.
-3. Kait follows steps 2 to 5 of "Run the load benchmark": copies the file, adds the three
-   `BENCH_*` settings to `.env`, loads the dataset, and starts the bench stack.
-4. Kait gives the agent `BENCH_HOST`, `BENCH_ORIGIN_IP`, `BENCH_AUTH_SECRET`, and
+   the data ends when it's generated and the users file must match. It gives the
+   maintainer the file's path under `perf/.cache/stress/`.
+3. The maintainer follows steps 2 to 5 of "Run the load benchmark": copies the file, adds
+   the three `BENCH_*` settings to `.env`, loads the dataset, and starts the bench stack.
+4. The maintainer gives the agent `BENCH_HOST`, `BENCH_ORIGIN_IP`, `BENCH_AUTH_SECRET`, and
    `BENCH_SAMPLER_PASSWORD`. The agent runs `--remote --dataset=M --run=calibration`,
    then `--run=ramp` from the bottom, because the CX11's shared x64 vCPU can be far
    slower than a Mac core. The ramp stops at the knee on its own.
-5. If time allows, Kait sets `BENCH_MAX_REQUESTS=24` and `BENCH_TRY_DURATION=1s` in `.env`
-   and restarts the bench stack, and the agent runs `--remote --run=fixed` at the knee, to
-   check that the cap costs nothing on that CPU. Overload runs stay local. The production
-   Caddyfile gets the cap afterwards (Kait, 2026-10-02).
-6. Kait brings the demo back (step 7 of "Run the load benchmark").
+5. If time allows, the maintainer sets `BENCH_MAX_REQUESTS=24` and `BENCH_TRY_DURATION=1s`
+   in `.env` and restarts the bench stack, and the agent runs `--remote --run=fixed` at the
+   knee, to check that the cap costs nothing on that CPU. Overload runs stay local. The
+   production Caddyfile gets the cap afterwards (2026-10-02).
+6. The maintainer brings the demo back (step 7 of "Run the load benchmark").
 7. The agent writes the measured sizing into `docs/hosting.md` (closing task 075's server
    run) and the capacity into `README.md` with the date, release, dataset, and usage
    model, and records the calibration ratio of server CPU to local CPU per request here.
 
 ## Acceptance criteria
 
-- [x] Usage model and targets agreed with Kait as the starting point (2026-10-02)
+- [x] Usage model and targets agreed with the maintainer as the starting point (2026-10-02)
 - [x] A dataset generator for S, M, and L, documented in `perf/README.md`
 - [x] `bun run perf:stress` runs a scenario on the local stack and prints a table per
       step, documented in `perf/README.md`

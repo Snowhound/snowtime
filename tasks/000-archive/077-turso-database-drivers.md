@@ -23,5 +23,5 @@ round trips that came with this task parallelized independent statements in `app
       `staging` doesn't exist yet.
 - [x] Foreign keys: the libSQL server enforces them by default, so the serverless client
       gets them; the local engine needs `PRAGMA foreign_keys = ON`
-- [x] Kait decided to keep `@libsql/client` for both deployments, recorded in
+- [x] The maintainer decided to keep `@libsql/client` for both deployments, recorded in
       `docs/architecture/platform.md`

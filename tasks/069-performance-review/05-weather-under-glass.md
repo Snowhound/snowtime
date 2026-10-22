@@ -32,12 +32,13 @@ pick one.
    with the surfaces cut out of it, so the glass blurs only the still photo and re-blurs only
    on scroll. The cutouts must follow scrolling within the same frame, or items bleed over a
    card's edge while it moves; a soft fade at the edges may hide that. Weather would also fall
-   over text outside cards, such as page titles. Kait is open to it only if it helps a lot:
-   some effects would hide small details outside cards, for example fog over the markers at
-   the end of a list. If the numbers make it the clear winner, build it so Kait can check the
-   worst cases (thickest fog, busiest rain) and look for workarounds there.
+   over text outside cards, such as page titles. The maintainer is open to it only if it
+   helps a lot: some effects would hide small details outside cards, for example fog over
+   the markers at the end of a list. If the numbers make it the clear winner, build it so
+   the maintainer can check the worst cases (thickest fog, busiest rain) and look for
+   workarounds there.
 4. **A smaller blur.** Measure 24 against 16 and 8 px. The cost grows with the radius. This
-   is a design change, so Kait decides.
+   is a design change, so the maintainer decides.
 
 Also measure the simplest fallback: fewer weather frames while surfaces cover most of the
 screen.
@@ -49,17 +50,18 @@ screen.
       the chosen copy, on the timer layout
 - [x] The chosen option in the app, with the numbers and the reason in
       `docs/architecture/scene.md` ("Glass")
-- [x] Nothing looks different except where Kait agreed to it, checked by Kait while
-      scrolling on the timer and reports pages, in both themes, in Chrome and Safari
+- [x] Nothing looks different except where the maintainer agreed to it, checked by the
+      maintainer while scrolling on the timer and reports pages, in both themes, in Chrome
+      and Safari
 - [x] Popovers, menus, and dialogs unaffected (they're solid and render outside the frame;
       none holds a `Glass` element)
 
 ## Pop-ins when the collection changes (fixed)
 
-Kait saw two on 2026-09-30 in Chrome, switching collections with the September pictures.
-Between the two Baltic collections, the mist under the cards appeared twice and much more
-strongly than production's live blur. Switching to Mountain valley, the background crossfaded,
-then flickered to something else a second or two later.
+The maintainer saw two on 2026-09-30 in Chrome, switching collections with the September
+pictures. Between the two Baltic collections, the mist under the cards appeared twice and
+much more strongly than production's live blur. Switching to Mountain valley, the background
+crossfaded, then flickered to something else a second or two later.
 
 Both had the same cause. A backdrop filter makes its element the containing block for fixed
 descendants. So while the copy faded in or out over the live blur (`over` and `under`), its
@@ -81,12 +83,12 @@ Checked in Chrome, dark theme, logging each state change and a card's mean color
   rounded corners (weather off, screenshots compared pixel by pixel). The isolation and
   `position: relative` change nothing.
 
-Kait checked the fix in the app on 2026-09-30: better in Chrome (dark theme), and correct in
-Safari in the light theme, switching collections and themes and scrolling.
+The maintainer checked the fix in the app on 2026-09-30: better in Chrome (dark theme), and
+correct in Safari in the light theme, switching collections and themes and scrolling.
 
 ## Findings (2026-09-30)
 
-Weather bench on Kait's M1 Pro, headless Chrome (60 Hz), 1440 × 900, pixel ratio 1.5, calm
+Weather bench on an M1 Pro, headless Chrome (60 Hz), 1440 × 900, pixel ratio 1.5, calm
 pace, with the photo. Each option ran as a bench variant, interleaved with today's glass in
 3-second windows. "Proc" is the GPU process's CPU time in ms per second, all threads, from
 CDP's `SystemInfo.getProcessInfo`; it holds the display compositor and, under SwiftShader,
@@ -127,8 +129,8 @@ Timer layout, squall (rain, 60 fps):
   | Snow                |  30 | 28 → 13 | 60 → 15             | 122 → 60            |
   | Mist (four presets) |  10 | 12 → 10 | 20 → 7 (one run 37) | 67–90, within noise |
 
-- The header alone is about a third of the glass's cost. Kait chose to copy it too, so the
-  page scrolling under it no longer shows through its 82% page color.
+- The header alone is about a third of the glass's cost. The maintainer chose to copy it
+  too, so the page scrolling under it no longer shows through its 82% page color.
 - A CSS `filter: blur(24px)` on each surface's copy cost about the same as the pre-blurred
   image in Chrome, but a filter per surface depends on the browser caching it, so the copy
   is blurred once in JavaScript.

@@ -2,7 +2,7 @@
 
 Status: cancelled
 
-Cancelled by Kait and the user on 2026-10-03. Device sign-in needs OAuth device
+Cancelled by the maintainer and the user on 2026-10-03. Device sign-in needs OAuth device
 authorization with registered applications and client ids to maintain, which is out of
 scope while task 081 moves the backend to Rust. API keys (subtask 01) serve clients for now,
 and device sign-in can come later beside them. Work on the criteria below never started.

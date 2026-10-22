@@ -24,8 +24,8 @@ The usual layout for a non-TypeScript backend with a TypeScript frontend is per-
 server routes and per-domain client modules, with server rendering calling the API in
 process by URL. SvelteKit's `event.fetch` works this way. The native backend will use the
 same layout with Axum (task 081.06), so each domain's routes file has a counterpart in
-Rust. Kait decided on this on 2026-10-04. OpenAPI generated from the server stays a later
-option, not part of this task.
+Rust. The maintainer decided on this on 2026-10-04. OpenAPI generated from the server stays
+a later option, not part of this task.
 
 ## Design
 
@@ -124,8 +124,8 @@ These keep the TypeScript server easy to compare file for file with the Rust por
 ## Prove it on one domain first
 
 Move entries first, on both the server and the client, with in-process rendering by URL.
-Review that diff before moving the other domains. Kait expects it to read better. If it
-doesn't, stop and record why in this task.
+Review that diff before moving the other domains. The maintainer expects it to read better.
+If it doesn't, stop and record why in this task.
 
 ## Acceptance criteria
 

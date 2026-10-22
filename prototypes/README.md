@@ -1141,9 +1141,9 @@ Settings switches reaching an open sign-in tab, reduced motion, and no browser e
 
 ### [stars.html](stars.html) — Twinkling stars
 
-Task 076: stars over the night sky of each candidate image, to tune with Kait before the app
-gets the effect. The page shows the dark photo with the app's tint and vignette and a WebGL
-canvas of stars over it. A picker chooses the image (or ← and
+Task 076: stars over the night sky of each candidate image, to tune with the maintainer before
+the app gets the effect. The page shows the dark photo with the app's tint and vignette and
+a WebGL canvas of stars over it. A picker chooses the image (or ← and
 →), and the URL's hash keeps it. Stars keep to the image's open sky (`SKIES`: polygons in
 fractions of the photo) and out of a circle around its moon; **Markers** shows both and rings
 each star.
@@ -1168,12 +1168,13 @@ fold does when its rays line up behind each other; that makes its hook. Value no
 curtain makes fine rays that drift sideways and end at their own heights, and dim patches
 that drift along it; the lower edge sways, brightness pulses travel along it, and the color
 fades from green to a little violet at the top. The treeline hides it. Its sliders show only on
-that image, with **Rays** picking between versions of the ray sliders: the defaults are Kait's
-pick (2026-10-02). The photo's night has no aurora of its own, so the curtains are the only one.
+that image, with **Rays** picking between versions of the ray sliders: the defaults are the
+maintainer's pick (2026-10-02). The photo's night has no aurora of its own, so the curtains
+are the only one.
 
 ### [weather.html](weather.html) — Weather by image
 
-Task 066: each image's weather, tuned to the picture, compared with Kait before the app got it. The page shows one image full screen with the sign-in card, the app column, or nothing over
+Task 066: each image's weather, tuned to the picture, compared with the maintainer before the app got it. The page shows one image full screen with the sign-in card, the app column, or nothing over
 it. A panel picks the image (or ← and →), the theme, the strength, the pace (the sign-in page's,
 or the app pages' calm one), and the weather: task 066's, the weather from before it
 (`LEGACY_WEATHER`), or off. The URL's hash keeps the view, so a link opens the same image and
@@ -1217,7 +1218,7 @@ at `center 20%`, it steps a frame down a refresh when frames drop, and it leaves
 | leaves       | leaves  | The autumn leaves; land September's take the birches' and rowans' colors, and land October's are smaller and fainter, so they sit in the tinted picture |
 | glitter, frost | glitter | Specks in the image's snowy `zones` that shimmer faintly and slowly, and now and then a full, larger glint, timed so about 1.2 show at once for 1.5 s each |
 | mist         | mist    | Wide, soft banks of uneven density drifting along a band near the horizon, or in zones |
-| stars        | stars   | Kait's stars from [stars.html](stars.html): fixed points in the image's open `sky`, out of the `moon`'s circle, twinkling and now and then flashing ("twinkling stars") |
+| stars        | stars   | The stars from [stars.html](stars.html): fixed points in the image's open `sky`, out of the `moon`'s circle, twinkling and now and then flashing ("twinkling stars") |
 | aurora       | aurora  | The curtains tuned in stars.html, low over countryside December's treeline and behind it ("northern lights") |
 | none         | none    | No weather ("still air"), for a still image; no image uses it now                       |
 
@@ -1256,8 +1257,9 @@ at `center 20%`, it steps a frame down a refresh when frames drop, and it leaves
   faster one's rate; the mist gets a canvas of its own under the stars, so it keeps its rate and
   resolution (`weatherCanvases`, task 076, subtask 01). The stars and the aurora place their
   items once per start or resize (`layout`), and the pace doesn't thin them.
-- The blowing snow follows Kait's weather prototype (fine grains, a fast fall, a slant that
-  grows with the wind), with the shear added for wind that picks up near the ground.
+- The blowing snow follows the maintainer's weather prototype (fine grains, a fast fall, a
+  slant that grows with the wind), with the shear added for wind that picks up near the
+  ground.
 
 Checked on 2026-09-28 in headless Chrome at 1440 × 900, light and dark, on the images whose
 presets changed, with each overlay: every effect compiles and draws, glitter stays below the

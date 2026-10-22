@@ -9,7 +9,7 @@ cache adds staleness and invalidation, and every organization's cached data cost
 ## Constraints
 
 - Per-organization cached data stays at a few KB. More is acceptable only where
-  measurements show a clear gain (Kait, 2026-10-04).
+  measurements show a clear gain (2026-10-04).
 - Whatever is cached, cache it the same way in both backends, so they keep behaving the
   same and the conformance tests stay valid.
 - One app process per database (`docs/hosting.md`), so an in-process cache doesn't need

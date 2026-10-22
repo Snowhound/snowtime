@@ -24,11 +24,11 @@ the weather and the glass.
 Worth a try, not required. Each goes in only if it works well, with no visible stutter or
 jump, and stays simple; otherwise record what was tried and drop it.
 
-- Drawing less when the page has been idle for a while, picking up again on input. Kait
-  thinks this is probably fine. Battery is still an open question.
-- Slowing the weather while the page scrolls, at least the fog (Kait's idea). A change of
-  rate mid-scroll may show as a stutter or a jump, so try it in the weather bench and show
-  Kait first.
+- Drawing less when the page has been idle for a while, picking up again on input. The
+  maintainer thinks this is probably fine. Battery is still an open question.
+- Slowing the weather while the page scrolls, at least the fog (the maintainer's idea). A
+  change of rate mid-scroll may show as a stutter or a jump, so try it in the weather bench
+  and show the maintainer first.
 
 ## Acceptance criteria
 

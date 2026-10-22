@@ -4,15 +4,15 @@ Status: done
 
 A versioned HTTP API under `/api/v1`, signed in with personal API keys, so clients outside
 the browser can use the timer: a Raycast extension first, then a likely tray app and
-scripts. Issue #2 proposed it, and Kait chose API keys (Option A) and settled the open
-questions on 2026-10-01. The decisions below come from that reply.
+scripts. Issue #2 proposed it, and the maintainer chose API keys (Option A) and settled the
+open questions on 2026-10-01. The decisions below come from that reply.
 
-On 2026-10-02 Kait switched to device sign-in (Option B), and the keys were reverted
-(`d4101d8`). On 2026-10-03 Kait and the user went back to keys, because device sign-in
-needs OAuth device authorization with registered applications and client ids to maintain.
-That is out of scope while task 081 moves the backend to Rust, and keys leave it one auth
-flow fewer to port. The keys are restored, subtask 02 records the cancelled device sign-in,
-and device sign-in can still come later beside the keys.
+On 2026-10-02 the maintainer switched to device sign-in (Option B), and the keys were
+reverted (`d4101d8`). On 2026-10-03 the maintainer and the user went back to keys, because
+device sign-in needs OAuth device authorization with registered applications and client ids
+to maintain. That is out of scope while task 081 moves the backend to Rust, and keys leave
+it one auth flow fewer to port. The keys are restored, subtask 02 records the cancelled
+device sign-in, and device sign-in can still come later beside the keys.
 
 On 2026-10-04, merging main brought task 084's JSON API, which serves the app itself under
 `/api/v1`, with a session cookie. The user chose to sign keys in to that API rather than
@@ -25,8 +25,8 @@ task 084's, so the Raycast extension moves to them.
 On 2026-10-09 the branch was replayed onto main as task 093, because main's task 089 had
 replaced the call table with Hono routes per domain and taken the number. Routes a key may
 call are marked `keys`, `known` refuses a key on any other route, and `signedIn` checks the
-key in place of the session (`src/server/http.server.ts`). Kait settled point 4 below the
-same day. The paths the Raycast extension calls didn't change.
+key in place of the session (`src/server/http.server.ts`). The maintainer settled point 4
+below the same day. The paths the Raycast extension calls didn't change.
 
 ## Decisions
 
@@ -65,7 +65,7 @@ records how the settled ones are built.
    key with a read and two writes before the response (the rate-limit count with
    `last_request`, then `updated_at`). With the user lookup, that made four sequential
    Turso round trips, three of them writes on every poll. `deferUpdates: true` defers only
-   the deletion of expired keys. Kait chose on 2026-10-09 to check keys without the
+   the deletion of expired keys. The maintainer chose on 2026-10-09 to check keys without the
    plugin, over accepting the cost or moving the plugin to Upstash secondary storage
    (which would also move sessions there). `keyChecker` hashes the key as the plugin does,
    reads the key and its user in one query, counts the per-key limit in `rateLimitStore`,

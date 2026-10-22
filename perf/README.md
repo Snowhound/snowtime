@@ -373,11 +373,11 @@ November's coast mist by night under the timer page's cards.
 When a change moves a gated number for a reason you accept, or an optimization lowers one,
 rewrite the baseline and commit it with the change, saying why in the commit:
 
-| Baseline                                                  | Command                                                                      |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `perf/baselines/budgets.json`, `plans.json`, `reads.json` | `bun run perf --update`                                                      |
-| `perf/baselines/pages.json`                               | `bun run perf:pages --update` (run it twice first; the numbers must repeat)  |
-| `perf/golden/*.png`                                       | `bun run perf:weather --golden --update`, after Kait signed off the new look |
+| Baseline                                                  | Command                                                                     |
+| --------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `perf/baselines/budgets.json`, `plans.json`, `reads.json` | `bun run perf --update`                                                     |
+| `perf/baselines/pages.json`                               | `bun run perf:pages --update` (run it twice first; the numbers must repeat) |
+| `perf/golden/*.png`                                       | `bun run perf:weather --golden --update`, after the new look is signed off  |
 
 `perf:weather --update` deletes frames of cases that no longer exist, unless `--only`
 limits it to some cases.

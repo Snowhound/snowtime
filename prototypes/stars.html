@@ -118,9 +118,9 @@
       }
       // Where stars may go in each image: the open sky as polygons, in fractions of the photo's
       // width and height, clear of trees, buildings, clouds and the horizon's haze, and a circle
-      // around the moon (x, y, radius in photo heights) that they keep out of. `tuned` is Kait's
-      // pick for the image (2026-10-01), over the sliders' defaults. scene.js's IMAGE_WEATHER holds
-      // the same picks.
+      // around the moon (x, y, radius in photo heights) that they keep out of. `tuned` is the
+      // maintainer's pick for the image (2026-10-01), over the sliders' defaults. scene.js's
+      // IMAGE_WEATHER holds the same picks.
       const SKIES = {
         'land-november': { note: 'Stars in place of the frost.', tuned: { count: 52, seed: 88, brightness: 0.6 }, sky: [[[0.17, 0.02], [0.86, 0.02], [0.84, 0.3], [0.81, 0.46], [0.17, 0.46]]] },
         'land-april': { note: 'Over the mist. Moonless sky right of the trees.', tuned: { count: 5, seed: 96 }, sky: [[[0.54, 0.02], [0.99, 0.02], [0.99, 0.46], [0.54, 0.5]]] },

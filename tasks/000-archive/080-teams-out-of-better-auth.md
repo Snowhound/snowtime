@@ -4,8 +4,8 @@ Status: done
 
 Move team writes from Better Auth's organization plugin into the teams domain, so teams
 become ordinary app data, like projects. Task 081's native backend builds on
-better-auth-rs, which has no teams (roadmap phases 14 and 15, outside its v1). Kait chose
-this over a teams plugin for better-auth-rs on 2026-10-02 (task 081, question 5). It
+better-auth-rs, which has no teams (roadmap phases 14 and 15, outside its v1). The maintainer
+chose this over a teams plugin for better-auth-rs on 2026-10-02 (task 081, question 5). It
 reverses the decision in `docs/architecture/data.md` ("Tenancy") that wrapping the
 plugin's team endpoints would duplicate its checks for no new rule, so this change updates
 that section.
@@ -29,14 +29,14 @@ rows. The teams domain already owns team roles and the team lists
   team on `invitation.team_id`, and its accept call adds the new member to that team
   after Better Auth accepts. Both backends can do this without hooking into Better Auth's
   routes. If this turns out awkward, the fallback is invitations that name only the
-  organization, with admins adding people to teams after they join; ask Kait first.
+  organization, with admins adding people to teams after they join; ask the maintainer first.
 - The hook that stops a removed member's timer also deletes their team rows.
 - The organization plugin runs without `teams`. Decide whether the unused
   `session.active_team_id` goes, which needs a table rebuild (`docs/migrations.md`), or
   stays.
 
 A small redesign of how teams work is open for discussion if it makes this task or task
-081 simpler. Raise it with Kait before making it.
+081 simpler. Raise it with the maintainer before making it.
 
 ## Acceptance criteria
 

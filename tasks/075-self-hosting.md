@@ -77,7 +77,8 @@ both.
 
 Both options keep the SQLite file on the server as the primary, with all reads and writes
 local. Litestream is implemented and documented; Turso Sync is documented as the
-alternative after a spike. Switching the app's driver to Turso Sync is Kait's decision.
+alternative after a spike. Switching the app's driver to Turso Sync is the maintainer's
+decision.
 
 - **Litestream** 0.5 streams each change to S3-compatible storage (Hetzner Object
   Storage, Cloudflare R2, and others), with point-in-time restore. It needs no code change
@@ -216,5 +217,5 @@ the last two columns from 8 seconds at 10 concurrent.
   service only; whoever runs a self-hosted stack, such as a company's internal tool, sets
   its operator and privacy text (`docs/deployment/README.md`).
 - A week of point-in-time restore (`retention: 168h` in `litestream.yml`) is enough.
-- 4 GB is expected to be enough for building on the server; Kait will confirm it on a real
-  server later, with the other checks above.
+- 4 GB is expected to be enough for building on the server; the maintainer will confirm it on
+  a real server later, with the other checks above.

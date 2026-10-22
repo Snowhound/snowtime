@@ -20,10 +20,10 @@ files are version `02`. Land December is version `03`: a new night in October 20
 
 ## Sources
 
-Each image starts from a 1344 × 768 render, picked by Kait from previews and fix rounds. The
-light image is text to image with Qwen-Image 2.1, sometimes followed by an edit or a tone
-lift. The dark image is an edit of the light one. Each image's section below gives these
-prompts and seeds.
+Each image starts from a 1344 × 768 render, picked by the maintainer from previews and fix
+rounds. The light image is text to image with Qwen-Image 2.1, sometimes followed by an edit
+or a tone lift. The dark image is an edit of the light one. Each image's section below gives
+these prompts and seeds.
 
 - Task 062 images: `art\snowtime-backgrounds\062\out\fix3\<month>\`.
 - Task 065 images: `art\snowtime-backgrounds\065\`, listed in its `finals-sources.json`.
@@ -570,8 +570,8 @@ Pick `land-december-b-1007` (task 065).
 
   > Edit <image1>: keep this night photograph exactly, the spruces, the road, the snowy field, the far trees, the stars, the exposure and the colours. Remove the northern lights completely: the whole sky is a clean, even deep blue, a little lighter near the horizon, with a few faint stars and no green anywhere. Nothing gets brighter. No moon.
 
-  Kait also tried a faint glow in the middle, under the cards (seed 1101, `aurora-mid1101`),
-  and chose the night with none (2026-10-02).
+  The maintainer also tried a faint glow in the middle, under the cards (seed 1101,
+  `aurora-mid1101`), and chose the night with none (2026-10-02).
 
 The light image didn't change; version `03` is the `02` file renamed. Both nights went through
 the finals in `art\snowtime-backgrounds\065\l12_finals.py`, which runs `062\finals.py` into

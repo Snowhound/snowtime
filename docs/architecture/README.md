@@ -59,7 +59,7 @@ of the code keeps; the rest is by area:
     as not saved with Try again. Writes made meanwhile wait behind it unsent, and Try again
     sends them in order; nothing retries a write on its own. Reads retry with backoff and
     jitter, wait at least `Retry-After`, and don't retry in server renders (task 081.17,
-    Kait, 2026-10-06).
+    2026-10-06).
   - An optimistic change goes only into the caches it belongs in: a new entry joins the
     lists of its organization, user, and days, and a stopped timer ends where the server
     will end it, at most 24 hours after its start.

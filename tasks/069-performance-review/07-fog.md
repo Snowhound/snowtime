@@ -6,8 +6,8 @@ The mist is the most expensive effect. Each bank is a large quad that computes v
 per pixel, and the banks overlap, so a pixel can be shaded several times. Task 065 already
 halved its resolution and runs it at 10 fps. The goal is fog that reads the same in each
 scene for much less work. It doesn't have to match pixel for pixel: a faster approach that
-looks somewhat different, or a new idea, goes to Kait as a variant beside the current fog in
-the weather bench, with its numbers, to sign off (as in subtask 06).
+looks somewhat different, or a new idea, goes to the maintainer as a variant beside the
+current fog in the weather bench, with its numbers, to sign off (as in subtask 06).
 
 What makes it cheap is that fog is soft and slow: banks drift at most about 3 px a second and
 have no detail finer than tens of pixels.
@@ -35,13 +35,15 @@ Start with the cheapest to try; stop when the numbers are good enough.
 
 - [x] GPU time for the mist presets before and after, on the M1 (SwiftShader was measured
       in subtask 06, where the mist costs about what the other effects do)
-- [x] Golden frames for the mist presets unchanged within tolerance, or Kait signed off the
-      new fog (8 of 9 match; Kait agreed to the quarter on 2026-09-30)
+- [x] Golden frames for the mist presets unchanged within tolerance, or the maintainer
+      signed off the new fog (8 of 9 match; the maintainer agreed to the quarter on
+      2026-09-30)
 - [x] `docs/architecture/scene.md` ("Weather") describes how the fog is drawn and why
 
 ## Findings (2026-09-30)
 
-Subtask 06's numbers cut this subtask down to approach 1, with Kait's agreement. On the M1 the
+Subtask 06's numbers cut this subtask down to approach 1, with the maintainer's agreement. On
+the M1 the
 mist cost 0.10 to 0.18 ms a frame against 0.04 ms for the other effects, at 10 fps, so about
 1.5 ms of GPU time a second. Under SwiftShader it costs about what snow and rain do. Since
 subtask 05's pre-blurred glass, the mist's frames already run near the no-glass floor.
