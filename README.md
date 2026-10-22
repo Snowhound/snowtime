@@ -109,7 +109,8 @@ the scripts, and the database workflow are in [docs/development.md](docs/develop
 - [Data model](datamodel/README.md): the DBML diagram and its conventions
 - [Prototypes](prototypes/README.md): HTML prototypes of each view and the brand
 - [Design process](docs/design-process.md): how the design took shape
-- [Tasks](tasks/README.md): open work; finished tasks are in `tasks/000-archive/`
+- [Tasks](tasks/README.md): open work; finished tasks are one line each in
+  [the archive](tasks/000-archive/README.md), with their records in git history
 
 ## Contributing
 

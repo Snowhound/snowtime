@@ -29,7 +29,8 @@ It produced three kinds of working documents:
   `docs/migrations.md` governs schema changes.
 - `tasks/` holds one file per task, with a status and acceptance criteria. Larger tasks
   have numbered subtasks: task 006 covers server-function areas, and task 023 covers
-  views in build order. Completed tasks move to `tasks/000-archive/`.
+  views in build order. Completed tasks become one line in
+  `tasks/000-archive/README.md`; git history keeps their records.
 - `AGENTS.md`, added in the first commit, directs agents to these records. A change that
   contradicts a recorded decision must update the doc in the same change or stop to ask.
 

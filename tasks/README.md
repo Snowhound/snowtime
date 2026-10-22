@@ -33,7 +33,10 @@ says who cancelled it, when, and why.
 
 ## Archive
 
-When a task is done and nothing still builds on its file, move it to `000-archive/` with
-`git mv`, keeping its name. The main folder then lists only open work. Numbers stay
-unique across both folders: pick the next number after the highest in either. Refer to
-tasks by number ("task 008"), not by path, so a move breaks no reference.
+When a task is done and nothing still builds on its file, move what a current doc needs
+from it into that doc, delete the file, and add one line to `000-archive/README.md`: its
+number, title, outcome, and file name. Git history keeps the full record; the archive
+README names a commit that has every archived file. The main folder then lists only open
+work, and an agent reads only what is current. Numbers stay unique: pick the next number
+after the highest in the folder or the archive. Refer to tasks by number ("task 008"), not
+by path, so archiving breaks no reference.
