@@ -2,6 +2,8 @@
 // without it parsing messages; the key names the message, so the client can show it in
 // the user's language. This file reaches the client through src/lib/api/wire.ts and
 // src/start.ts: no server imports.
+import type { ValidationKey, ValidationParams } from './schemas'
+
 export type AppErrorCode =
   | 'UNAUTHENTICATED'
   | 'FORBIDDEN'
@@ -67,5 +69,19 @@ export class AppError extends Error {
     // A client built before a key existed still gets a message after a deploy.
     super(errorMessages[key] ?? key)
     this.name = 'AppError'
+  }
+}
+
+// Input that failed its schema, as the API answers it (task 094): the message's key and
+// parameters, which the client translates, and the server's English message, which a client
+// built before a key existed falls back to.
+export class ValidationError extends Error {
+  constructor(
+    readonly key: ValidationKey,
+    readonly params: ValidationParams | undefined,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'ValidationError'
   }
 }

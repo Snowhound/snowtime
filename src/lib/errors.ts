@@ -1,7 +1,8 @@
 import { isPendingChange } from '~/lib/queries/refusal'
 import { m } from '~/paraglide/messages.js'
 import { NAME_MAX_LENGTH, SLUG_MAX_LENGTH } from '~/server/auth/auth.schemas'
-import { AppError, type AppErrorKey } from '~/server/errors'
+import { AppError, type AppErrorKey, ValidationError } from '~/server/errors'
+import { validationText } from '~/server/schemas'
 
 // One message per AppError key. Typed as a full record, so a key added to the catalog in
 // src/server/errors.ts fails the type check until it has a message here.
@@ -79,11 +80,15 @@ function authErrorCode(error: unknown): string | undefined {
 }
 
 // The text to show for an error from an API call or a Better Auth client call. An
-// AppError from a newer server than this client falls back to the server's English
-// message; anything else is unexpected and gets a generic message instead of internals.
+// AppError or a ValidationError from a newer server than this client falls back to the
+// server's English message; anything else is unexpected and gets a generic message instead
+// of internals.
 export function errorMessage(error: unknown): string {
   if (isPendingChange(error)) return m.change_pending()
   if (error instanceof AppError) return errorText[error.key]?.() ?? error.message
+  if (error instanceof ValidationError) {
+    return validationText(error.key, error.params) ?? error.message
+  }
   // Better Auth's rate limiter answers 429 without a code.
   if (typeof error === 'object' && error !== null && 'status' in error && error.status === 429) {
     return m.error_rate_limited()

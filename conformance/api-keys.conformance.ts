@@ -166,6 +166,6 @@ describe('the timer with a write key', () => {
       },
     )
     expect(status).toBe(400)
-    expect(body).toEqual({ error: { message: expect.stringContaining('Invalid id') } })
+    expect(body).toEqual({ error: { key: 'validation_invalid_id', message: 'Invalid id.' } })
   })
 })

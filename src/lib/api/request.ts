@@ -3,7 +3,7 @@
 // native backend's render isolate does the same). Either way the answer is decoded alike, so
 // a server render and the browser fill the query cache with the same values.
 import type * as v from 'valibot'
-import { AppError } from '~/server/errors'
+import { AppError, ValidationError } from '~/server/errors'
 import { decode, type WireError } from './wire'
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -57,13 +57,16 @@ export async function request<S extends v.GenericSchema>(
   }
   if (response.ok) return decode(output, json)
   const error = isRecord(json) ? (json.error as WireError | undefined) : undefined
-  const thrown =
-    error && 'key' in error
-      ? new AppError(error.code, error.key)
-      : new Error(error?.message ?? `HTTP ${response.status}`)
-  throw Object.assign(thrown, {
+  throw Object.assign(thrownFor(error, response.status), {
     status: response.status,
-    code: error?.code,
+    code: error && 'code' in error ? error.code : undefined,
     retryAfter: response.headers.get('retry-after'),
   })
+}
+
+function thrownFor(error: WireError | undefined, status: number): Error {
+  if (!error) return new Error(`HTTP ${status}`)
+  if ('key' in error && 'code' in error) return new AppError(error.code, error.key)
+  if ('key' in error) return new ValidationError(error.key, error.params, error.message)
+  return new Error(error.message)
 }

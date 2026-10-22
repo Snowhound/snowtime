@@ -3,26 +3,23 @@ import { APP_ICON_IDS } from '~/lib/app-icon'
 import { validDurationPattern } from '~/lib/duration-pattern-settings'
 import { COUNTRIES } from '~/lib/holidays/region'
 import { COLLECTION_IDS, IMAGE_IDS } from '~/lib/scene/images'
-import { m } from '~/paraglide/messages.js'
+import { keyed } from '../schemas'
 
 // An IANA zone name such as Europe/Tallinn or UTC. Intl accepts the names the runtime
 // knows; the pattern rejects the offsets ("+02:00") Intl also accepts, because an offset
 // ignores daylight saving time.
 const TimeZone = v.pipe(
   v.string(),
-  v.regex(/^[A-Za-z][\w+-]*(\/[\w+-]+)*$/, () => m.validation_time_zone_format()),
-  v.check(
-    (zone) => {
-      try {
-        // oxlint-disable-next-line no-new -- constructing it is the check: it throws on an unknown zone.
-        new Intl.DateTimeFormat('en', { timeZone: zone })
-        return true
-      } catch {
-        return false
-      }
-    },
-    () => m.validation_time_zone_unknown(),
-  ),
+  v.regex(/^[A-Za-z][\w+-]*(\/[\w+-]+)*$/, keyed('validation_time_zone_format')),
+  v.check((zone) => {
+    try {
+      // oxlint-disable-next-line no-new -- constructing it is the check: it throws on an unknown zone.
+      new Intl.DateTimeFormat('en', { timeZone: zone })
+      return true
+    } catch {
+      return false
+    }
+  }, keyed('validation_time_zone_unknown')),
 )
 
 export const WeekStart = v.picklist(['mon', 'sun'])
@@ -74,7 +71,7 @@ const CopyDurationControl = v.picklist(COPY_DURATION_CONTROLS)
 // The text a copied duration becomes, such as `Hh Mm Ss` (src/lib/duration-pattern.ts).
 const CopyDurationPattern = v.pipe(
   v.string(),
-  v.check(validDurationPattern, () => m.validation_copy_duration_pattern()),
+  v.check(validDurationPattern, keyed('validation_copy_duration_pattern')),
 )
 // Whose working days count for the taglines; null guesses from the time zone.
 const Country = v.nullable(v.picklist(COUNTRIES))

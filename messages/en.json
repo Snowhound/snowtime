@@ -40,6 +40,7 @@
   "validation_issue_links_https": "Enter an https:// address, such as https://yourcompany.atlassian.net/browse/{key}.",
   "validation_issue_links_key": "Put {key} where the ticket key goes, such as …/browse/{key}.",
   "validation_invalid_id": "Invalid id.",
+  "validation_invalid": "Check the values you entered.",
   "validation_too_long": "Use at most {max} characters.",
   "validation_name_required": "Enter a name.",
   "validation_color_format": "Use a color like #4E79A7.",

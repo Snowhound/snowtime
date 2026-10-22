@@ -46,8 +46,22 @@ A failed request answers a JSON body under `error`. A refusal of the app's rules
 { "error": { "code": "NOT_FOUND", "key": "timer_not_running" } }
 ```
 
-A refusal of the key itself, input that fails validation, and a path that names no call
-carry a `message` in English instead, with a `code` where one applies:
+Input that fails validation carries a `key` for the check it failed, the check's `params`
+where it has any, and a `message` in English. A check without a key of its own answers
+`validation_invalid`:
+
+```json
+{
+  "error": {
+    "key": "validation_too_long",
+    "params": { "max": 500 },
+    "message": "Use at most 500 characters."
+  }
+}
+```
+
+A refusal of the key itself and a path that names no call carry a `message` in English
+instead, with a `code` where one applies:
 
 ```json
 { "error": { "code": "FORBIDDEN", "message": "API key is read-only." } }

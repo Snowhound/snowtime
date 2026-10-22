@@ -1,16 +1,15 @@
 import * as v from 'valibot'
-import { m } from '~/paraglide/messages.js'
-import { TicketKey, Timestamp, Uuidv7 } from '../schemas'
+import { TicketKey, Timestamp, Uuidv7, keyed } from '../schemas'
 import { WeekStart } from '../settings/settings.schemas'
 
 // A calendar day such as 2026-09-24, read in the user's time zone.
 export const IsoDate = v.pipe(
   v.string(),
-  v.isoDate(() => m.validation_date_format()),
+  v.isoDate(keyed('validation_date_format')),
   // Valibot runs this check after isoDate fails too, where the date is invalid.
   v.check(
     (d) => new Date(`${d}T00:00:00Z`).toJSON()?.startsWith(d) ?? false,
-    () => m.validation_date_unknown(),
+    keyed('validation_date_unknown'),
   ),
 )
 
@@ -37,18 +36,12 @@ export const ReportInput = v.pipe(
     projectId: v.optional(v.union([Uuidv7, v.literal('none')])),
     tickets: v.optional(v.literal(true)),
   }),
-  v.check(
-    (i) => i.to > i.from,
-    () => m.validation_range_end_before_start(),
-  ),
+  v.check((i) => i.to > i.from, keyed('validation_range_end_before_start')),
   v.check(
     (i) => days(i.from, i.to) <= MAX_REPORT_DAYS,
-    () => m.validation_range_too_long({ days: MAX_REPORT_DAYS }),
+    keyed('validation_range_too_long', () => ({ days: MAX_REPORT_DAYS })),
   ),
-  v.check(
-    (i) => !(i.userId && i.teamId),
-    () => m.validation_member_or_team(),
-  ),
+  v.check((i) => !(i.userId && i.teamId), keyed('validation_member_or_team')),
 )
 export type ReportInput = v.InferOutput<typeof ReportInput>
 
@@ -62,14 +55,11 @@ const MAX_EXPORT_PIECE_DAYS = 31
 // and the report count a running entry up to the same moment.
 export const ReportExportInput = v.pipe(
   v.object({ report: ReportInput, from: IsoDate, to: IsoDate, now: v.optional(Timestamp) }),
-  v.check(
-    (i) => i.to > i.from,
-    () => m.validation_range_end_before_start(),
-  ),
+  v.check((i) => i.to > i.from, keyed('validation_range_end_before_start')),
   v.check((i) => i.from >= i.report.from && i.to <= i.report.to),
   v.check(
     (i) => days(i.from, i.to) <= MAX_EXPORT_PIECE_DAYS,
-    () => m.validation_range_too_long({ days: MAX_EXPORT_PIECE_DAYS }),
+    keyed('validation_range_too_long', () => ({ days: MAX_EXPORT_PIECE_DAYS })),
   ),
 )
 export type ReportExportInput = v.InferOutput<typeof ReportExportInput>

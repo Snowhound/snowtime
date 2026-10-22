@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
-import { AppError, errorMessages, type AppErrorKey } from '~/server/errors'
+import { AppError, errorMessages, type AppErrorKey, ValidationError } from '~/server/errors'
+import type { ValidationKey } from '~/server/schemas'
 // oxlint-disable-next-line import/no-relative-parent-imports -- messages/ is outside src/
 import en from '../../messages/en.json'
 // oxlint-disable-next-line import/no-relative-parent-imports -- messages/ is outside src/
@@ -22,6 +23,17 @@ describe('error messages', () => {
   test('an AppError shows its message, anything else a generic one', () => {
     expect(errorMessage(new AppError('NOT_FOUND', 'entry_not_found'))).toBe('Entry not found.')
     expect(errorMessage(new Error('SQLITE_BUSY'))).toBe(en.error_unexpected)
+  })
+
+  test("a validation refusal shows its key's text, an unknown key the server's message", () => {
+    const tooLong = new ValidationError('validation_too_long', { max: 500 }, 'English')
+    expect(errorMessage(tooLong)).toBe('Use at most 500 characters.')
+    const unknown = new ValidationError(
+      'validation_newer' as ValidationKey,
+      undefined,
+      'From a newer server.',
+    )
+    expect(errorMessage(unknown)).toBe('From a newer server.')
   })
 
   test("a Better Auth refusal shows its code's message, an unknown code a generic one", () => {

@@ -5,12 +5,14 @@
 // as its code and key.
 import * as v from 'valibot'
 import type { AppErrorCode, AppErrorKey } from '~/server/errors'
+import type { ValidationKey, ValidationParams } from '~/server/schemas'
 
-// The body of a failed call. A rule's refusal carries its AppError's code and key. Anything
-// else carries a message: input that fails the schema, or a refusal of Better Auth's, which
-// adds Better Auth's code.
+// The body of a failed call. A rule's refusal carries its AppError's code and key. Input that
+// fails the schema carries its message's key and parameters, and the message in English.
+// Anything else carries a message: a refusal of Better Auth's adds Better Auth's code.
 export type WireError =
   | { code: AppErrorCode; key: AppErrorKey }
+  | { key: ValidationKey; params?: ValidationParams; message: string }
   | { code?: string; message: string }
 
 type AnySchema = v.GenericSchema & {
