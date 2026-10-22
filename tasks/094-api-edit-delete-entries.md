@@ -36,6 +36,13 @@ every non-`GET` route is (`src/server/http.server.ts`).
   rule, because a key acts as its user everywhere else.
 - Creating finished entries (`POST /entries`) stays closed to keys; no client asks for it
   yet.
+- Widening `write` gives every existing `write` key the delete too, without its owner
+  choosing it, and an admin's leaked key can delete the organization's entries. No third
+  scope: say so where keys are made, in the `write` scope's description in Settings, and
+  note the change in `docs/api.md`, so the owner of an existing key can tell (2026-10-22).
+- snowtime-native serves the same two routes, so it marks them `keys` too and takes the
+  API-key conformance tests. Implement after task 095, which touches `docs/api.md` and the
+  API-key conformance tests too, and gives the edit's refusals a key (2026-10-22).
 
 ## Acceptance criteria
 
@@ -52,3 +59,6 @@ every non-`GET` route is (`src/server/http.server.ts`).
       longer leaves one behind
 - [ ] Tests cover a key editing and deleting its own entry, the running one included, a
       member's key on another user's entry, and a `read` key
+- [ ] The `write` scope's description in Settings says it edits and deletes entries, and
+      `docs/api.md` notes that existing `write` keys gained both
+- [ ] snowtime-native marks both routes `keys`, and its API-key conformance tests pass
