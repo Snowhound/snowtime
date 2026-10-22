@@ -40,6 +40,7 @@
   "validation_issue_links_https": "Sisesta https://-aadress, näiteks https://yourcompany.atlassian.net/browse/{key}.",
   "validation_issue_links_key": "Pane {key} sinna, kuhu käib pileti tunnus, näiteks …/browse/{key}.",
   "validation_invalid_id": "Vigane ID.",
+  "validation_invalid": "Kontrolli sisestatud väärtusi.",
   "validation_too_long": "Kasuta kõige rohkem {max} märki.",
   "validation_name_required": "Sisesta nimi.",
   "validation_color_format": "Kasuta värvi kujul #4E79A7.",

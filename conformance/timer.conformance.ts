@@ -111,10 +111,28 @@ describe('the timer', () => {
     expect(await admin('getRunningTimer', undefined)).toBeNull()
   })
 
-  test('input that fails the schema is refused with a message', async () => {
+  test('input that fails the schema is refused with its key and an English message', async () => {
     const { status, body } = await send('startTimer', { organizationId, id: 'not-a-uuid' })
     expect(status).toBe(400)
-    expect(body).toMatchObject({ error: { message: expect.any(String) } })
+    expect(body).toEqual({ error: { key: 'validation_invalid_id', message: 'Invalid id.' } })
+  })
+
+  test('a refusal carries its parameters, and stays English in an Estonian session', async () => {
+    const estonian = { ...headers.admin, cookie: `${headers.admin.cookie}; PARAGLIDE_LOCALE=et` }
+    const description = 'x'.repeat(501)
+    const { status, body } = await send(
+      'startTimer',
+      { organizationId, id: uuidv7(), description },
+      estonian,
+    )
+    expect(status).toBe(400)
+    expect(body).toEqual({
+      error: {
+        key: 'validation_too_long',
+        params: { max: 500 },
+        message: 'Use at most 500 characters.',
+      },
+    })
   })
 })
 

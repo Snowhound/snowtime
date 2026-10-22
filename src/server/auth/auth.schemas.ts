@@ -3,8 +3,7 @@
 // validates its input here.
 import * as v from 'valibot'
 import { SLUG_PATTERN, isReservedSlug } from '~/lib/app-paths'
-import { m } from '~/paraglide/messages.js'
-import { OrgRole, Timestamp, Uuidv7 } from '../schemas'
+import { OrgRole, Timestamp, Uuidv7, keyed } from '../schemas'
 import { Settings } from '../settings/settings.schemas'
 
 export const GetInvitationInput = v.object({ id: Uuidv7 })
@@ -12,15 +11,8 @@ export type GetInvitationInput = v.InferOutput<typeof GetInvitationInput>
 
 // Password sign-in, local development only (docs/architecture/auth.md, "Sign-in methods").
 export const SignInForm = v.object({
-  email: v.pipe(
-    v.string(),
-    v.trim(),
-    v.email(() => m.validation_email()),
-  ),
-  password: v.pipe(
-    v.string(),
-    v.nonEmpty(() => m.validation_password_required()),
-  ),
+  email: v.pipe(v.string(), v.trim(), v.email(keyed('validation_email'))),
+  password: v.pipe(v.string(), v.nonEmpty(keyed('validation_password_required'))),
 })
 export type SignInForm = v.InferOutput<typeof SignInForm>
 
@@ -33,20 +25,23 @@ export const SLUG_MAX_LENGTH = 48
 // (/northwind-studio/timer), so it can't take one of the app's own paths.
 export const Slug = v.pipe(
   v.string(),
-  v.regex(SLUG_PATTERN, () => m.validation_slug_format()),
-  v.maxLength(SLUG_MAX_LENGTH, (issue) => m.validation_too_long({ max: issue.requirement })),
-  v.check(
-    (slug) => !isReservedSlug(slug),
-    () => m.validation_slug_reserved(),
+  v.regex(SLUG_PATTERN, keyed('validation_slug_format')),
+  v.maxLength(
+    SLUG_MAX_LENGTH,
+    keyed('validation_too_long', (issue) => ({ max: Number(issue.requirement) })),
   ),
+  v.check((slug) => !isReservedSlug(slug), keyed('validation_slug_reserved')),
 )
 
 // A person's or an organization's name.
 export const Name = v.pipe(
   v.string(),
   v.trim(),
-  v.nonEmpty(() => m.validation_name_required()),
-  v.maxLength(NAME_MAX_LENGTH, (issue) => m.validation_too_long({ max: issue.requirement })),
+  v.nonEmpty(keyed('validation_name_required')),
+  v.maxLength(
+    NAME_MAX_LENGTH,
+    keyed('validation_too_long', (issue) => ({ max: Number(issue.requirement) })),
+  ),
 )
 
 export const CreateOrganizationForm = v.object({ name: Name, slug: Slug })
@@ -58,14 +53,17 @@ export const ISSUE_LINKS_MAX_LENGTH = 500
 export const IssueLinks = v.pipe(
   v.string(),
   v.trim(),
-  v.maxLength(ISSUE_LINKS_MAX_LENGTH, (issue) => m.validation_too_long({ max: issue.requirement })),
+  v.maxLength(
+    ISSUE_LINKS_MAX_LENGTH,
+    keyed('validation_too_long', (issue) => ({ max: Number(issue.requirement) })),
+  ),
   v.check(
     (value) => value === '' || isHttpsAddress(value),
-    () => m.validation_issue_links_https({ key: '{key}' }),
+    keyed('validation_issue_links_https', () => ({ key: '{key}' })),
   ),
   v.check(
     (value) => value === '' || value.includes('{key}'),
-    () => m.validation_issue_links_key({ key: '{key}' }),
+    keyed('validation_issue_links_key', () => ({ key: '{key}' })),
   ),
   v.transform((value) => value || null),
 )
@@ -84,7 +82,7 @@ export const InvitationEmail = v.pipe(
   v.string(),
   v.trim(),
   v.toLowerCase(),
-  v.email(() => m.validation_email()),
+  v.email(keyed('validation_email')),
 )
 
 // The profile's name, saved through Better Auth's updateUser. The email can't change:
@@ -117,9 +115,10 @@ export type ApiKeyAccess = (typeof API_KEY_ACCESS)[number]
 export const ApiKeyName = v.pipe(
   v.string(),
   v.trim(),
-  v.nonEmpty(() => m.validation_name_required()),
-  v.maxLength(API_KEY_NAME_MAX_LENGTH, (issue) =>
-    m.validation_too_long({ max: issue.requirement }),
+  v.nonEmpty(keyed('validation_name_required')),
+  v.maxLength(
+    API_KEY_NAME_MAX_LENGTH,
+    keyed('validation_too_long', (issue) => ({ max: Number(issue.requirement) })),
   ),
 )
 

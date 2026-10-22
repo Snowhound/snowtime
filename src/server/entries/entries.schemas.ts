@@ -1,6 +1,5 @@
 import * as v from 'valibot'
-import { m } from '~/paraglide/messages.js'
-import { Description, Ticket, Timestamp, Uuidv7 } from '../schemas'
+import { Description, Ticket, Timestamp, Uuidv7, keyed } from '../schemas'
 
 // The longest an entry runs. Stopping a timer ends it here at the latest, so the queries of
 // a range can start reading entries this long before it, on the started_at index, instead of
@@ -24,7 +23,7 @@ export const CreateEntryInput = v.pipe(
     v.partialCheck(
       [['startedAt'], ['stoppedAt']],
       (i) => i.stoppedAt > i.startedAt,
-      () => m.validation_end_before_start(),
+      keyed('validation_end_before_start'),
     ),
     ['stoppedAt'],
   ),
@@ -32,7 +31,7 @@ export const CreateEntryInput = v.pipe(
     v.partialCheck(
       [['startedAt'], ['stoppedAt']],
       (i) => i.stoppedAt.getTime() - i.startedAt.getTime() <= MAX_ENTRY_MS,
-      () => m.validation_entry_too_long({ hours: MAX_ENTRY_HOURS }),
+      keyed('validation_entry_too_long', () => ({ hours: MAX_ENTRY_HOURS })),
     ),
     ['stoppedAt'],
   ),
@@ -59,13 +58,10 @@ const MAX_LIST_DAYS = 93
 // Entries overlapping [from, to), optionally of one user.
 export const ListEntriesInput = v.pipe(
   v.object({ from: Timestamp, to: Timestamp, userId: v.optional(Uuidv7) }),
-  v.check(
-    (i) => i.to > i.from,
-    () => m.validation_range_end_before_start(),
-  ),
+  v.check((i) => i.to > i.from, keyed('validation_range_end_before_start')),
   v.check(
     (i) => i.to.getTime() - i.from.getTime() <= MAX_LIST_DAYS * 86_400_000,
-    () => m.validation_range_too_long({ days: MAX_LIST_DAYS }),
+    keyed('validation_range_too_long', () => ({ days: MAX_LIST_DAYS })),
   ),
 )
 export type ListEntriesInput = v.InferOutput<typeof ListEntriesInput>

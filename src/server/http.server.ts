@@ -14,6 +14,7 @@ import { ApiKeyRefusal, bearerKey } from './auth/api-keys.server'
 import { authRefusal, keyUser, signedInUser } from './auth/auth.server'
 import { databaseAvailable } from './availability/availability.server'
 import { AppError, type AppErrorCode } from './errors'
+import { issueMessage, validationText } from './schemas'
 import { resolveScope, type Scope } from './scope.server'
 
 // What the routes behind signedIn() and organization() know about the caller.
@@ -151,11 +152,24 @@ function refusalOf(error: unknown): { status: number; error: WireError } | null 
   if (error instanceof AppError) {
     return { status: statusOf[error.code], error: { code: error.code, key: error.key } }
   }
-  if (error instanceof v.ValiError) return { status: 400, error: { message: error.message } }
+  if (error instanceof v.ValiError)
+    return { status: 400, error: validationRefusal(error.issues[0]) }
   if (error instanceof ApiKeyRefusal) {
     return { status: error.status, error: { code: error.code, message: error.message } }
   }
   return authRefusal(error)
+}
+
+// Input that fails its schema: its message's key and parameters, which the client
+// translates, and the message in English whatever the request's locale, as docs/api.md
+// promises (task 095). Valibot's own checks carry no key, and answer validation_invalid.
+function validationRefusal(issue: v.BaseIssue<unknown>): WireError {
+  const message = issueMessage(issue)
+  if (!message) return { key: 'validation_invalid', message: issue.message }
+  const text = validationText(message.key, message.params, 'en') ?? issue.message
+  return message.params
+    ? { key: message.key, params: message.params, message: text }
+    : { key: message.key, message: text }
 }
 
 // An unexpected error while the database is unreachable is UNAVAILABLE.
