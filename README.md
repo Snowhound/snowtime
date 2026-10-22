@@ -120,6 +120,7 @@ pull request.
 
 ## License
 
-[MIT](LICENSE). Third-party assets keep their own licenses; see
+Licensed under either of [Apache License 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT), at
+your option. Third-party assets keep their own licenses; see
 [prototypes/THIRD_PARTY_NOTICES.md](prototypes/THIRD_PARTY_NOTICES.md) and the font
 license in `design/brand-assets/fonts/`.
