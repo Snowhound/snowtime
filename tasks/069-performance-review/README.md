@@ -20,12 +20,12 @@ weather's shaders, its fog, and the glass surfaces over it.
 - Fix real bottlenecks even when the fix is larger. The subtask records why it was worth it.
 - Make the general case fast, on every machine. A low-end mode (fewer or simpler effects
   on weak hardware) is a last resort: consider it only for a few outliers that nothing else
-  makes cheap enough, with their numbers, and ask Kait first.
+  makes cheap enough, with their numbers, and ask the maintainer first.
 
 ## No reference machine
 
-Kait has no idle machine that gives stable timings, so the harness gates regressions on
-counts that don't depend on the machine, and only reports timings:
+The maintainer has no idle machine that gives stable timings, so the harness gates
+regressions on counts that don't depend on the machine, and only reports timings:
 
 | Gated (exact or with a small tolerance) | Reported (compared within one run)    |
 | --------------------------------------- | ------------------------------------- |
@@ -60,8 +60,8 @@ which are what a weak integrated GPU runs out of first.
 each other; 08 and 10 can go at any point.
 
 The effects and the fog don't have to look exactly as they do now. A faster variant that
-looks somewhat different, or a new idea, goes to Kait in the weather bench beside the
-current one, and Kait signs it off.
+looks somewhat different, or a new idea, goes to the maintainer in the weather bench beside
+the current one, and the maintainer signs it off.
 
 ## Acceptance criteria
 

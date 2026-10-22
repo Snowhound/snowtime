@@ -76,7 +76,7 @@ Transitions:
 - Transitions on layout properties: none in `src/`. `TabsIndicator`'s `width` and `height`
   are the only ones, and it is unused. The CSS transitions in `src/styles.css` are
   opacity, transform, and filter (the intro lines and page).
-- Kait checked the tabs on Organization, Projects, and Reports after these changes
+- The maintainer checked the tabs on Organization, Projects, and Reports after these changes
   (2026-09-30): no visible change.
 
 Remaining CSS and HTML review (2026-09-30):
@@ -197,14 +197,15 @@ The four columns add up to the document; SVG and classes below are subsets of ma
 - [x] Tailwind scans only the app's sources, and the CSS size change is recorded
 - [x] CSS and HTML sizes per page before and after, from the harness
 - [x] Each render-cost candidate measured or ruled out, with the reason
-- [ ] No visible change, checked by Kait on the pages the changes touch
+- [ ] No visible change, checked by the maintainer on the pages the changes touch
 
 ## Open for review
 
-- Kait: check the signed-in header's organization and user names on Timer, Reports,
-  Settings, Projects, and Organization, at narrow and desktop widths and in both themes.
-  The two width classes are equivalent with the current spacing theme; no visible change
-  is intended. The visual acceptance criterion stays open until Kait checks them.
+- For the maintainer: check the signed-in header's organization and user names on Timer,
+  Reports, Settings, Projects, and Organization, at narrow and desktop widths and in both
+  themes. The two width classes are equivalent with the current spacing theme; no visible
+  change is intended. The visual acceptance criterion stays open until the maintainer
+  checks them.
 - The query-byte split measures the serialized envelope, not each query's independent
   compressed contribution. Shared references cross that boundary; review this definition
   before using it to justify a data-shaping change.

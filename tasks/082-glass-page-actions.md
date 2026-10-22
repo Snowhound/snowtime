@@ -22,4 +22,4 @@ The same toggle groups elsewhere have the second problem, such as Week and Break
 - [ ] Selected and unselected toggle items and the secondary page actions readable over the
       brightest and busiest scene photos in light mode, checked in the browser, with the
       dark theme and the Solid surfaces setting no worse
-- [ ] The look agreed with Kait before the change spreads beyond the timer page
+- [ ] The look agreed with the maintainer before the change spreads beyond the timer page

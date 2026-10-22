@@ -119,5 +119,5 @@ wait longest for the grid (12 months: 282 → 896 ms). Dropped for every range.
       week, year, and 12-month pages
 - [x] Change 1 kept and change 2 dropped, each with its numbers
 - [x] Page and bundle baselines updated with the change
-- [x] Kait has checked the timesheet visually: week and 12 months, both themes, narrow and
-      desktop, selecting cells and rows (2026-09-30)
+- [x] The maintainer has checked the timesheet visually: week and 12 months, both themes,
+      narrow and desktop, selecting cells and rows (2026-09-30)

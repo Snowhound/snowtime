@@ -31,7 +31,7 @@ test('domain lists normalize case and optional @, and reject invalid configurati
 })
 
 test('only exact email domains are allowed, with an unrestricted default', () => {
-  expect(loginDomainAllowed('Kait@Snowhound.eu', ['snowhound.eu'])).toBe(true)
+  expect(loginDomainAllowed('Owner@Snowhound.eu', ['snowhound.eu'])).toBe(true)
   for (const email of [
     'person@evil-snowhound.eu',
     'person@sub.snowhound.eu',

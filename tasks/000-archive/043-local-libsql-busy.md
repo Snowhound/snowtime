@@ -24,7 +24,7 @@ second one.
       connection config of `src/db/index.ts` and `src/db/testing.ts`, WAL mode, or both,
       tested with the repro above
 - [x] ~~If it is a client bug, it is reported upstream with the repro, and the version
-      that fixes it is noted here~~ Declined by Kait on 2026-09-30: no upstream report.
+      that fixes it is noted here~~ Declined on 2026-09-30: no upstream report.
       The bug is in the `libsql` binding (0.5.29 still has it), and the busy timeout and
       async test cleanup work around it locally
 

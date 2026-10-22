@@ -79,8 +79,8 @@
   const PRESETS = {
     snow: { effect: 'snow', hint: 'falling snow' },
     flurries: { effect: 'snow', hint: 'a few snowflakes', amount: 0.22, size: 1.45, fall: 0.75 },
-    // After Kait's weather prototype: fine grains, falling fast, in gusts, blown flatter near the
-    // ground.
+    // After the maintainer's weather prototype: fine grains, falling fast, in gusts, blown
+    // flatter near the ground.
     blowing: { effect: 'snow', hint: 'blowing snow', fps: 60, amount: 2.2, size: 0.9, fall: 6, gust: 0.6, shear: 2.5 },
     // Droplets torn off the waves: a pixel or two, flying nearly flat.
     spray: { effect: 'snow', hint: 'sea spray', fps: 60, amount: 0.8, size: 0.4, fall: 2.5, gust: 0.9, shear: 1.5 },
@@ -113,7 +113,7 @@
     frost: { effect: 'glitter', hint: 'glittering frost', opacity: 0.85 },
     'frost-day': { effect: 'glitter', hint: 'glittering frost', size: 1.4, shimmer: 0.4, peakSize: 2.6 },
     mist: { effect: 'mist', hint: 'drifting mist' },
-    // The defaults Kait tuned in stars.html (task 076).
+    // The defaults tuned in stars.html (task 076).
     stars: { effect: 'stars', hint: 'twinkling stars', opacity: 0.75, peaks: 0.4, peakTime: 1.2, peakSize: 1.6 },
     aurora: { effect: 'aurora', hint: 'northern lights', opacity: 0.95 },
     none: { effect: null, hint: 'still air' },
@@ -1135,7 +1135,7 @@
     return Math.max(t.peakTime, (count * t.peakTime) / Math.max(t.peaks, 0.01))
   }
 
-  // stars.html's generator, so a seed places the stars where Kait picked them.
+  // stars.html's generator, so a seed places the stars where they were picked.
   function rng(seed) {
     let s = seed * 2654435761
     return () => {

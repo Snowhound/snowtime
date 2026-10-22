@@ -11,7 +11,7 @@ four current mountain images as the season images.
 ## Decisions (2026-09-27)
 
 - **Collections.** The background comes from a collection the user picks, and follows
-  the calendar within it (Kait, 2026-09-27): Mountain valley (the four mountain images, by
+  the calendar within it (2026-09-27): Mountain valley (the four mountain images, by
   season, the default), Baltic coast, and Baltic countryside (12 images each, by month).
   This replaces reusing the seasonal images for January, May, July, and October, and the
   mountain images as a fallback for months. Each Baltic collection's 12 months are
@@ -25,7 +25,7 @@ four current mountain images as the season images.
   dark summer night. The four seasonal images keep theirs.
 - **Scenery setting.** `sceneCollection` (`mountains`, `coast`, `countryside`) and
   `scenePin` (an image id in that collection, or null to follow the calendar) replace
-  `sceneSeason` (Kait, 2026-09-27). A stored season becomes Mountain valley pinned to that
+  `sceneSeason` (2026-09-27). A stored season becomes Mountain valley pinned to that
   season, and `auto` becomes Mountain valley unpinned. Settings > Preferences > Scenery
   picks the collection from a gallery of three radio cards that apply at once, and pins
   behind a "Pin an image" disclosure, so the pin adds no row until it's opened; a
@@ -34,16 +34,17 @@ four current mountain images as the season images.
   the gallery; the sign-in page's Scenery menu has a Collection select.
 - **Season copy.** The intro lines, the tagline fallback, and the text colors
   (`SEASON_COPY`, `SeasonProvider`) stay by season: the calendar's, or the pinned image's
-  season (Kait, 2026-09-27), so the colors are the ones checked on the image that shows. Each month's image must keep
-  its season's `titleLight` at 5:1: December to February with winter's, March to May with
-  spring's, June to August with summer's, September to November with autumn's.
+  season (2026-09-27), so the colors are the ones checked on the image that shows. Each
+  month's image must keep its season's `titleLight` at 5:1: December to February with
+  winter's, March to May with spring's, June to August with summer's, September to November
+  with autumn's.
 - **Intro.** It still plays once a calendar season (`snowtime.introSeason`) with the
   season's lines, and fades in the image that shows. Once a month would repeat each season's
   lines three times.
 - **File names.** Each collection in `scene.ts` lists its image ids, in month order for
   the Baltic ones (`coast-january` to `coast-december`, `land-january` to
-  `land-december`). Each collection's files are in a folder of their own (Kait,
-  2026-09-28): `/backgrounds/<collection>/<id>-<theme>-01-<width>.avif`, so the four seasonal
+  `land-december`). Each collection's files are in a folder of their own
+  (2026-09-28): `/backgrounds/<collection>/<id>-<theme>-01-<width>.avif`, so the four seasonal
   files moved to `mountains/` with their names kept. Ids without files draw the placeholder.
   The head script's preload and the scene layer's photo stack key on the image id; the intro
   check keeps `MONTH_SEASONS`.
@@ -58,7 +59,7 @@ four current mountain images as the season images.
 
 ## Image briefs
 
-The 12 months show Baltic scenes, not more mountain valleys (Kait, 2026-09-27): the four
+The 12 months show Baltic scenes, not more mountain valleys (2026-09-27): the four
 mountain images are enough. Neighbouring months should be different kinds of place, so
 they don't look alike. Every new image follows these rules:
 
@@ -77,8 +78,8 @@ they don't look alike. Every new image follows these rules:
 
 The ideas come in two sets, coast and land, one per collection, so each year shows one
 kind of place. City scenes are on hold because they came out weaker. Each month previews two to
-four ideas, and Kait picks from the contact sheets. The prompts are in `prompts.py` in the
-image folder (see [Making the images](#making-the-images)).
+four ideas, and the maintainer picks from the contact sheets. The prompts are in
+`prompts.py` in the image folder (see [Making the images](#making-the-images)).
 
 | Month     | Coast                                 | Land                                                        |
 | --------- | ------------------------------------- | ----------------------------------------------------------- |
@@ -99,19 +100,19 @@ image folder (see [Making the images](#making-the-images)).
 
 The images come from the task 051 pipeline (`design/backgrounds/README.md`): ComfyUI
 on the RTX 4090 machine, Qwen-Image 2.1, then the enhance, detail, and SeedVR2 steps. The
-scripts and all output stay outside the repository, in
-`C:\Users\kait\projects\personal\art\snowtime-backgrounds\062\` (its `README.md` has the
-commands). A seed repeats its composition only at the same size and prompt, so every
-round before the final renders at 1344 × 768.
+scripts and all output stay in the source art folder kept outside the repository
+(`snowtime-backgrounds/062/`; its `README.md` has the commands). A seed repeats its
+composition only at the same size and prompt, so every round before the final renders at
+1344 × 768.
 
 1. **Previews.** Each month's light image, text to image at 12 steps, 12–16 seeds for each
    of its ideas. A contact sheet per month shows the candidates between the neighbouring
-   months' images, each with its idea, seed, and mean luminance. Kait shortlists 3–5 per
-   month.
+   months' images, each with its idea, seed, and mean luminance. The maintainer shortlists
+   3–5 per month.
 2. **Shortlist.** The shortlisted seeds render again at 40 steps, and each gets its dark
    version as an edit at the same size. A second sheet per month shows each pair between
    its neighbours, and again with the dimmed tint and a card over it to check the text.
-   Kait picks one pair per month.
+   The maintainer picks one pair per month.
 3. **Finals.** Each pick goes through the task 051 steps from its 1344 px render: the
    enhance edit at 2720 px, the detail pass, SeedVR2 to 3840 px, and the AVIF encode. Only
    then are the files copied into `public/backgrounds/<collection>/`, and the README records
@@ -142,7 +143,7 @@ final image) moved to task 066.
 - [x] Unpinned, the scene shows the collection's image and weather for the date; pinned,
       the pinned image, with the tagline in its season
 - [x] Each new image checked on the sign-in page and an app page, in light and dark, with
-      weather on, and the taglines and weather particles read (Kait, 2026-09-29). Measuring
+      weather on, and the taglines and weather particles read (2026-09-29). Measuring
       `titleLight` at 5:1 or better on the task 065 finals moved to task 067.
 - [x] `prototypes/scene.js` and `prototypes/README.md` match the app
 - [ ] Once the collections release is promoted, a migration drops `user_settings.scene_season`,

@@ -912,7 +912,7 @@ function coverClip(w: number, h: number) {
   return [(2 * shownW) / w, (-2 * shownH) / h, (w - shownW) / w - 1, 1 - (2 * top) / h]
 }
 
-// prototypes/stars.html's generator, so a seed places the stars where Kait picked them.
+// prototypes/stars.html's generator, so a seed places the stars where they were picked.
 function rng(seed: number) {
   let s = seed * 2654435761
   return () => {

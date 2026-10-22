@@ -1,6 +1,6 @@
 # 079: Static route shells
 
-Status: cancelled (Kait, 2026-10-03: a failed experiment; the native backend server-renders
+Status: cancelled (2026-10-03: a failed experiment; the native backend server-renders
 pages instead, task 081.01)
 
 Serve each page as an HTML file built ahead of time instead of rendering it on the server
@@ -73,8 +73,8 @@ renders.
 | Reports year, warm | 352 / 282 / 887                 | 322 / 765              |
 
 - A cold load paints the skeleton 150–460 ms sooner and has its content at about the time
-  the old page became interactive (+2 to +157 ms). Kait accepted a cold-load regression as
-  long as in-app navigation stays fast.
+  the old page became interactive (+2 to +157 ms). The maintainer accepted a cold-load
+  regression as long as in-app navigation stays fast.
 - A warm load's content comes 430–480 ms later than before, because the old HTML carried
   it, so the "no worse with a warm cache" rule isn't met. It is interactive about as soon:
   23 and 122 ms sooner on the timer and the year report, 82 ms later on the week report.
@@ -109,5 +109,5 @@ cost spread across the tree:
 - The header and app frame: about 68 ms. Kobalte's `Polymorphic`: about 48 ms.
 
 More lazy mounting inside a row could save 50–100 ms at 4×, which leaves content near
-600 ms against 290 ms with server rendering. That gap is why Kait chose server rendering
-(task 081.01).
+600 ms against 290 ms with server rendering. That gap is why the maintainer chose server
+rendering (task 081.01).

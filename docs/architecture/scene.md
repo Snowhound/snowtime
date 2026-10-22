@@ -85,8 +85,8 @@ collections".
     after the picture's fade, so the weather and mist under the surfaces don't pop in or out.
     `data-glass` goes `under`, `over`, `on`.
   - What differs from a live blur: the weather under a surface and the page scrolling under
-    the header don't show through. Kait agreed to both; the header alone is about a third
-    of the glass's cost.
+    the header don't show through. The maintainer agreed to both; the header alone is about
+    a third of the glass's cost.
   - A surface without the `Glass` element, or any surface before the copy is ready, blurs
     live.
   - Gain: the copy takes 35 to 55% off the GPU process's time on the timer, reports, and
@@ -99,7 +99,7 @@ collections".
   vertical gradient of the page color over the image keeps the text readable, covering
   `strength × 70%` at the top and `strength × 115%` at the bottom. Dimmed, the default, is 0.4
   light and 0.55 dark; Full is 0.2 and 0.3. A stronger light tint turned bright scenes very
-  white, and Kait chose a lighter tint over regenerating the images (task 065).
+  white, and the maintainer chose a lighter tint over regenerating the images (task 065).
 - Weather (`src/lib/scene/weather.ts`, task 066): `IMAGE_WEATHER` gives each image its horizon
   and zones, and a preset for light and dark pages (or one for both), by name, with the fields it
   changes; `weatherFor` merges the preset, then the image's horizon, zones, and fields. Task 066
@@ -118,8 +118,8 @@ collections".
     image's horizon but not its zones.
   - Stars sit at fixed points of each image's open sky, polygons of the image with a circle
     around the moon kept clear. `count` and `seed` place them as `prototypes/stars.html`
-    does, so Kait's picks there carry over; the pace doesn't thin them. The aurora's curtains
-    are Catmull-Rom curves through points of the image, drawn as quads along them.
+    does, so the picks made there carry over; the pace doesn't thin them. The aurora's
+    curtains are Catmull-Rom curves through points of the image, drawn as quads along them.
   - Wind: every effect takes a wind in screen heights per second, gusts, and shear, so snow,
     rain, seeds, leaves, and midges in one image blow the same way, as the reeds, grass, and
     waves lean. Shear strengthens the wind below the image's horizon, so falling snow and rain
@@ -168,8 +168,8 @@ collections".
     fraction break down there. The mist writes zero where it's too faint to show instead of
     discarding, which was up to a quarter faster on the Apple M1.
   - Mist without zones keeps to the ground below the horizon, as glitter does. Mists had
-    bands that were never applied; Kait kept that look for four pictures and chose land
-    March's band, now its zone (task 069, subtask 06).
+    bands that were never applied; the maintainer kept that look for four pictures and
+    chose land March's band, now its zone (task 069, subtask 06).
   - Glitter's glint cycle comes from the amount and the glints wanted on a 1440 × 900 screen,
     not the point count, so a resize doesn't jump every speck to another point of its cycle.
 - Weather frame rate: each effect sets a target, and a preset can set its own. Blowing snow,

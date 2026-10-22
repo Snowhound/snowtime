@@ -2,13 +2,13 @@
 
 Status: done
 
-Kait (2026-09-30): a new effect for the Baltic countryside's November night (`land-november`,
+2026-09-30: a new effect for the Baltic countryside's November night (`land-november`,
 dark), "vilkuvad tähed". Stars sit at fixed points in the sky. Each one's brightness changes a
 little all the time, as the atmosphere makes real stars scintillate, and now and then it
 flashes brighter, as glitter's specks do, without moving. On November they replace the frost
 the image's dark theme shows today.
 
-Kait (2026-10-01): the stars suit most of the Baltic night skies, partly cloudy ones and ones
+2026-10-01: the stars suit most of the Baltic night skies, partly cloudy ones and ones
 with a moon that isn't full and glaring included. There they come on top of the image's
 current effect, which mostly stays (the mist, for example), so the renderer must draw two
 effects at once (subtask 01). Countryside December also gets an aurora (subtask 02).
@@ -16,12 +16,12 @@ effects at once (subtask 01). Countryside December also gets an aurora (subtask 
 Prototype: [`prototypes/stars.html`](../../prototypes/stars.html) shows the stars over each
 candidate image's photo, kept to the open sky and out of a circle around the moon, with
 sliders for count, placement, size, brightness, twinkle, and flashes. Tune the look there
-first; branches and GPU cost come after. The sliders' defaults are Kait's first November pick
-(2026-10-01): placement 91, twinkle speed 0.3, and the rest as the page first had them. Kait's
-picks per image (2026-10-01) sit over those defaults (`tuned` in the page's `SKIES`) and are in
-the table.
+first; branches and GPU cost come after. The sliders' defaults are the maintainer's first
+November pick (2026-10-01): placement 91, twinkle speed 0.3, and the rest as the page first
+had them. The maintainer's picks per image (2026-10-01) sit over those defaults (`tuned` in
+the page's `SKIES`) and are in the table.
 
-Order of work (Kait, 2026-10-01): first the benchmark in subtask 01, which settles how two
+Order of work (2026-10-01): first the benchmark in subtask 01, which settles how two
 effects share the canvas. Then the stars and the aurora (subtask 02) move into
 `weather-renderer.ts` and `IMAGE_WEATHER` as production code, matching the prototype's look.
 Give their shaders the review of task 069, subtask 06 (integer hash, `flat` varyings,
@@ -30,7 +30,7 @@ keep that design: stateless items, one draw call per effect, no per-frame upload
 
 Candidates, with the dark effect each shows today:
 
-| Image         | Effect today | Sky                                                         | Kait's pick                                                 |
+| Image         | Effect today | Sky                                                         | Maintainer's pick                                           |
 | ------------- | ------------ | ----------------------------------------------------------- | ----------------------------------------------------------- |
 | land-november | frost        | Moonless; stars replace the frost                           | 52 stars, placement 88, brightness 0.6                      |
 | land-april    | mist         | Moonless, right of the trees                                | 5 stars, placement 96                                       |
@@ -45,11 +45,11 @@ Candidates, with the dark effect each shows today:
 | coast-august  | mist         | Small moon over the islet                                   | 42 stars, placement 90, brightness 0.4                      |
 | coast-october | squall       | Stars only in the gaps between clouds                       | 10 stars, placement 85, brightness 0.45                     |
 
-Left out: land September, which Kait tried and dropped (2026-10-01), foggy or overcast skies
-(coast November and September, the mountain autumn), and a large glowing moon (land January to
-March and August, coast December, the other mountain images).
+Left out: land September, which the maintainer tried and dropped (2026-10-01), foggy or
+overcast skies (coast November and September, the mountain autumn), and a large glowing moon
+(land January to March and August, coast December, the other mountain images).
 
-Coast July's fireflies under the stars were too busy (Kait, 2026-10-01). In the prototype's
+Coast July's fireflies under the stars were too busy (2026-10-01). In the prototype's
 `scene.js` they are fewer (`amount` 0.3 to 0.18) and fly and glow at 0.55 times the speed: the
 fireflies effect now takes `tempo`, as the midges do. The app's `weather-renderer.ts` and
 `IMAGE_WEATHER` follow with the stars, with coast July's golden frames updated.
@@ -57,10 +57,10 @@ fireflies effect now takes `tempo`, as the midges do. The app's `weather-rendere
 ## Acceptance criteria
 
 - [x] A stars effect whose zones are each image's open sky, with a keep-out circle for the
-      moon, tuned with Kait in the prototype and then the bench
-- [x] `IMAGE_WEATHER` gives stars, in the dark theme, to the images Kait picks from the table,
-      next to their current effect where Kait keeps it, with Weather hints and their messages
-      in every language
+      moon, tuned with the maintainer in the prototype and then the bench
+- [x] `IMAGE_WEATHER` gives stars, in the dark theme, to the images the maintainer picks from
+      the table, next to their current effect where the maintainer keeps it, with Weather
+      hints and their messages in every language
 - [x] Coast July's fireflies toned down in the app as in the prototype
 - [x] Golden frames added for the new cases, and the effect's GPU time per frame recorded
       (subtask 01, "Pairs in the app")

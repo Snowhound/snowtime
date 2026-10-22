@@ -16,9 +16,9 @@ into a texture.
 
 ## Cancelled (2026-09-30)
 
-Kait cancelled the probe: the reasons above make a gain almost certainly too small to keep a
-second renderer for. Revisit only once WebGPU runs everywhere the app does, so it could
-replace WebGL 2 rather than sit beside it.
+The maintainer cancelled the probe: the reasons above make a gain almost certainly too small
+to keep a second renderer for. Revisit only once WebGPU runs everywhere the app does, so it
+could replace WebGL 2 rather than sit beside it.
 
 ## The probe
 
@@ -30,7 +30,7 @@ code, not today's.
 
 ## Acceptance criteria
 
-- [ ] The probe page and its numbers for both APIs, on Kait's machine and under Chrome's
-      software rendering
+- [ ] The probe page and its numbers for both APIs, on the development machine and under
+      Chrome's software rendering
 - [ ] A recommendation in this file: adopt, revisit later (and when), or drop. Adopting
       becomes its own task.

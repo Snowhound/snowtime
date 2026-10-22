@@ -8,11 +8,11 @@ wait on a release, a device, or new pictures.
 
 ## Images
 
-The image work stays outside the repository, in
-`C:\Users\kait\projects\personal\art\snowtime-backgrounds\065\`, and its `README.md`
-("Follow-ups") has the details and Kait's notes. A replaced image follows task 065's
-pipeline and gets the next version in its file name (`-03-`), then `baltic.md` records it and
-`HORIZONS`, the bands, and the zones in `src/lib/scene/weather.ts` are measured again.
+The image work stays in the source art folder kept outside the repository
+(`snowtime-backgrounds/065/`), and its `README.md` ("Follow-ups") has the details and the
+maintainer's notes. A replaced image follows task 065's pipeline and gets the next version in
+its file name (`-03-`), then `baltic.md` records it and `HORIZONS`, the bands, and the zones in
+`src/lib/scene/weather.ts` are measured again.
 
 - Land September, October, and December: new light baselines from ChatGPT, as for land August,
   since the rowan berries, the October grass blades, and the straight spruce line look
@@ -28,7 +28,7 @@ pipeline and gets the next version in its file name (`-03-`), then `baltic.md` r
       baselines
 - [ ] Land November's night sky has realistic stars, or far fewer
 - [ ] Land August is recomposed, with its horizon and mist band measured again
-- [ ] Coast September's night fog (task 066) checked in motion by Kait
+- [ ] Coast September's night fog (task 066) checked in motion by the maintainer
 - [ ] `titleLight` measured at 5:1 or better over every Baltic final, light and dark, as task 065
       measured the task 062 images
 - [ ] The weather checked by eye in Chrome at 60 and 120 Hz and in Safari (task 063). Safari

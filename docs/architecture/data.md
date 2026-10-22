@@ -36,7 +36,7 @@
 - A project PATCH with no update fields returns the existing project after checking
   admin access and existence. It doesn't write or change audit columns. This avoids
   Drizzle's "No values to set" error and matches settings' empty-patch behavior
-  (Kait, 2026-10-08, task 081.26).
+  (2026-10-08, task 081.26).
 - Logical delete: entities users delete (`project`, `time_entry`) carry
   `sys_deleted` (0/1). Deleted rows are excluded from every query and report;
   `updated_at`/`updated_by` record when and by whom. Partial unique indexes

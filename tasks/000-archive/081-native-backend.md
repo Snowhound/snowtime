@@ -1,6 +1,6 @@
 # 081: Native backend
 
-Status: done (Kait, 2026-10-10)
+Status: done (2026-10-10)
 
 A second backend for self-hosting, in Rust, that serves the same API and pages from the
 app's own server bundle in V8. The proof of concept became its own repository,

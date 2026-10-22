@@ -195,7 +195,7 @@ export const PRESETS = {
   },
   frost: { effect: 'glitter', hint: 'frost' },
   mist: { effect: 'mist', hint: 'mist' },
-  // The defaults Kait tuned in prototypes/stars.html (task 076).
+  // The defaults tuned in prototypes/stars.html (task 076).
   stars: {
     effect: 'stars',
     hint: 'stars',

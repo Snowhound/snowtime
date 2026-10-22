@@ -250,5 +250,5 @@ server saving from the original build is 171,471 bytes (2.6%).
 
 Validation: `bun run test` (396 Bun tests, 175 component tests), lint, `format:check`,
 `tsc --noEmit`, knip, `bun run perf`, two alternating pairs of `perf:pages`, and all 75
-weather golden frames pass. On 2026-09-30 Kait checked the weather's onset on a cold
+weather golden frames pass. On 2026-09-30 the maintainer checked the weather's onset on a cold
 `/sign-in` and toggling it in Settings while the renderer loads; both behave.

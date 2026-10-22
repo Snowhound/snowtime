@@ -11,7 +11,7 @@ the scene, then build it.
 
 ## Wind
 
-Wind direction is required (Kait, 2026-09-28). Snow and rain follow the image's wind: the way
+Wind direction is required (2026-09-28). Snow and rain follow the image's wind: the way
 the reeds, grass, trees, clouds, and waves lean. The wind has a direction and a strength per
 image, and can differ between the light and dark images. A calm image keeps straight-down
 snow. The leaves' drift and the seeds' breeze should take the same wind, so one image doesn't
@@ -19,10 +19,10 @@ blow two ways.
 
 ## New effects
 
-Decided with Kait (2026-09-28): two new shaders, and variants of the existing ones for the
-rest. Each one is another shader to maintain and to pace (task 063), so a tuned existing
-effect comes first. Revised after Kait's first review the same day: the airborne sparkle was
-overdone, and the drift in a band made no sense.
+Decided with the maintainer (2026-09-28): two new shaders, and variants of the existing ones
+for the rest. Each one is another shader to maintain and to pace (task 063), so a tuned
+existing effect comes first. Revised after the maintainer's first review the same day: the
+airborne sparkle was overdone, and the drift in a band made no sense.
 
 | Weather  | Built from | What it shows                                                                      |
 | -------- | ---------- | ---------------------------------------------------------------------------------- |
@@ -37,7 +37,7 @@ overdone, and the drift in a band made no sense.
 | Squall   | rain       | Long streaks, slanted hard, in gusts                                               |
 | Motes    | seeds      | Specks glinting in low sun, without fluff; dust is more of them                    |
 
-Kait's review (2026-09-28):
+The maintainer's review (2026-09-28):
 
 - **Glitter** should look like snow glittering under a streetlight: specks of a pixel or two,
   only on the ground. Nothing in the air, and no rays. It fits winter and November's frost,
@@ -47,13 +47,13 @@ Kait's review (2026-09-28):
   recomposed image updates them. Third review: the quick flashes were too fast. The specks
   shimmer slowly again, and a full glint shows in only one or two places at a time, for 1.5
   seconds. `weather.html` has sliders to tune it and the other effects.
-- **Blowing snow** follows Kait's configurable weather prototype: fine grains over the whole
-  screen, falling fast, with a slant that grows with the wind. Wind often picks up near the
-  ground, so the path isn't a straight line: `shear` strengthens the wind below the image's
-  horizon, and the snow arcs toward the side.
+- **Blowing snow** follows the maintainer's configurable weather prototype: fine grains over
+  the whole screen, falling fast, with a slant that grows with the wind. Wind often picks up
+  near the ground, so the path isn't a straight line: `shear` strengthens the wind below the
+  image's horizon, and the snow arcs toward the side.
 - **Wind particles** (spray, drift) are a pixel or a few at most.
-- Midges were Kait's idea for land July, in place of motes by day and fireflies at night.
-  Dragonflies would be too hard to draw. Second review: a few per group, flying lazily,
+- Midges were the maintainer's idea for land July, in place of motes by day and fireflies at
+  night. Dragonflies would be too hard to draw. Second review: a few per group, flying lazily,
   just above the water, not mid-screen. Fireflies never among them: one or two on the bank.
 - **Seeds** on the open coast (May to July, September) are a few pixels at most.
 - Coast April is sunny: one-pixel dust by day, nothing at night. Coast March's wind comes
@@ -62,11 +62,12 @@ Kait's review (2026-09-28):
   open lake has the room for glitter.
 - Land July's midges fly a little faster, mostly by the cliff where they show; the fireflies
   keep to the far bank.
-- Fourth review: Kait tuned the images with `weather.html`'s sliders, and the table holds the
-  values. Land February's glitter skips the jetty and has to be strong by day to show; if it
-  still doesn't work, it becomes very little snow. Coast January glints over the whole lower
-  half, less on the snowy shore than on the ice (a zone's fifth number scales its opacity).
-  Land April is clear, so it gets coast April's one-pixel dust instead of rain.
+- Fourth review: the maintainer tuned the images with `weather.html`'s sliders, and the
+  table holds the values. Land February's glitter skips the jetty and has to be strong by
+  day to show; if it still doesn't work, it becomes very little snow. Coast January glints
+  over the whole lower half, less on the snowy shore than on the ice (a zone's fifth number
+  scales its opacity). Land April is clear, so it gets coast April's one-pixel dust instead
+  of rain.
 - Land October's leaves stood out in front of the tinted picture; they're smaller and
   fainter now. Land September's are right as they are.
 
@@ -76,10 +77,10 @@ the images. They stay still: animating them needs a position in the image, which
 
 ## Per image
 
-From the task 062 images, surveyed on 2026-09-28 and revised after Kait's review. Wind: →
-blows left to right, ← right to left. The task 065 images move things around but keep each
-month's concept, so the effects should hold. Check the wind, each horizon, and each band
-again on the task 065 finals.
+From the task 062 images, surveyed on 2026-09-28 and revised after the maintainer's review.
+Wind: → blows left to right, ← right to left. The task 065 images move things around but
+keep each month's concept, so the effects should hold. Check the wind, each horizon, and
+each band again on the task 065 finals.
 
 Coast:
 
@@ -126,10 +127,10 @@ Glitter's zones are rectangles of the image. A recomposed image changes those nu
 ## Prototype
 
 Built on 2026-09-28 in `prototypes/scene.js`, compared on `prototypes/weather.html`
-(`prototypes/README.md` has the presets and fields), and revised after Kait's first review.
-Every effect takes a wind in screen heights per second, gusts, shear below the horizon, and
-factors for amount, size, fall, and opacity. Next: Kait compares the revised presets in
-motion on a real screen, then the app gets them. Things to judge there:
+(`prototypes/README.md` has the presets and fields), and revised after the maintainer's
+first review. Every effect takes a wind in screen heights per second, gusts, shear below the
+horizon, and factors for amount, size, fall, and opacity. Next: the maintainer compares the
+revised presets in motion on a real screen, then the app gets them. Things to judge there:
 
 - The blowing snow's arc near the ground, and whether coast February needs more wind.
 - Whether the white day glitter shows on the bright snow, and the spray and dust at their
@@ -137,8 +138,8 @@ motion on a real screen, then the app gets them. Things to judge there:
 - The midges' pace, day and night.
 - The strength of each wind, and the mist's opacity behind the tagline on each night.
 
-Kait signed off on the look after the fourth review. A code review (2026-09-28) then changed the
-prototype without changing the look:
+The maintainer signed off on the look after the fourth review. A code review (2026-09-28)
+then changed the prototype without changing the look:
 
 - Each entry in `IMAGE_WEATHER` names its preset (`preset`) instead of copying its fields.
   `weatherFor()` merges the preset, then the image's horizon and fields, then the slider
@@ -179,8 +180,9 @@ low-end GPU still needs a check once the app has them.
   needs `highp uint` (as written), and its noise coordinate `v_p` needs `highp`: in `mediump`
   its fraction is too coarse at 7 times the texture's scale.
 - Frame-rate targets as in the prototype: blowing snow, spray, rain (so the squall), leaves,
-  and the midges at 60, the rest at 30. Kait lowered the mist to 15 in both, since it barely
-  moves (2026-09-28), and checked by eye that it looks the same. A preset's `fps` overrides its effect's.
+  and the midges at 60, the rest at 30. The maintainer lowered the mist to 15 in both, since
+  it barely moves (2026-09-28), and checked by eye that it looks the same. A preset's `fps`
+  overrides its effect's.
 - The data keeps its prototype shape: presets by name, image entries naming a preset and the
   fields they change. The app leaves out `LEGACY_WEATHER` and the slider overrides.
 - The Weather hint names the preset (`hint`), so each new preset needs
@@ -217,10 +219,10 @@ new pictures side by side (`art/snowtime-backgrounds/065/wxsheet.py`): the horiz
 recomposed images, the frost zones of coast December and land November, the land July midge
 and firefly zones, and the mist bands of coast November and land May. Coast August, land March,
 and land September keep their bands, and land February its zones. The winds are unchanged.
-Still to do: Kait checks them in motion on the finals.
+Still to do: the maintainer checks them in motion on the finals.
 
-Kait's first look in motion (2026-09-29), and a check of every horizon, band, and zone drawn on
-the finals:
+The maintainer's first look in motion (2026-09-29), and a check of every horizon, band, and
+zone drawn on the finals:
 
 - Land July: the midges sit lower and farther left, at the cliff's foot and on the river, and
   the fireflies slightly lower and farther right, along the far bank.
@@ -250,31 +252,31 @@ the finals:
 - Coast August by night: the mist lies on the open water, fading out at the rocks on the left,
   in wider banks. Across the rocks it lay as a flat smear, so it stays off them. Half the banks
   lie low along the island's foot, below the trunks, thickest from the start and clearing
-  now and then, over about 90 seconds (Kait, 2026-09-29).
+  now and then, over about 90 seconds (2026-09-29).
 - The horizons all match the pictures.
-- Coast September by night (Kait, 2026-09-29): thick fog in place of the fine seeds. It
+- Coast September by night (2026-09-29): thick fog in place of the fine seeds. It
   lies in three zones: over the bay and the far shore, low in the reeds right of the haystack,
-  and thinner over the near grass at the haystack's foot, clear of the haystack itself. Kait
-  still has to check it in motion. By day it keeps its seeds, but smaller and fewer, since they
-  stood out too much.
-- Coast December (Kait, 2026-09-29): a very slight snow blowing in off the sea, in place of
+  and thinner over the near grass at the haystack's foot, clear of the haystack itself. The
+  maintainer still has to check it in motion. By day it keeps its seeds, but smaller and
+  fewer, since they stood out too much.
+- Coast December (2026-09-29): a very slight snow blowing in off the sea, in place of
   the frost. By day its far flakes are grey-blue, as coast March's; under the cloudless night
   sky there are fewer and fainter.
-- Land January by night (Kait, 2026-09-29): glitter in place of the flurries, most on the
+- Land January by night (2026-09-29): glitter in place of the flurries, most on the
   moonlit snow under the moon, less over the far field, the bank right of the stream, and the
   moon's reflection in the stream. The weather takes up to four zones for it, up from three.
-- Coast January by night (Kait, 2026-09-29): the glitter gathers along the moon's path on the
+- Coast January by night (2026-09-29): the glitter gathers along the moon's path on the
   ice, and is a little fainter and slower overall.
 
 ## Approach
 
 1. **Survey.** For each Baltic image, light and dark, write down what the weather has to fit:
    the wind and which way it blows, the light (sun, overcast, night), and surfaces such as
-   snow, ice, water, or fields. Propose its effect and wind, and settle each with Kait. Survey
-   the task 065 finals, or the task 062 images that 065 keeps, since a recomposed image can
-   change the wind.
+   snow, ice, water, or fields. Propose its effect and wind, and settle each with the
+   maintainer. Survey the task 065 finals, or the task 062 images that 065 keeps, since a
+   recomposed image can change the wind.
 2. **Prototype.** Build the wind and the chosen effects in `prototypes/scene.js` first, and
-   compare them on the images with Kait.
+   compare them on the images with the maintainer.
 3. **Port.** Move the chosen weather to `src/lib/scene/weather.ts` and `IMAGE_WEATHER`.
 
 ## Constraints
@@ -293,7 +295,7 @@ the finals:
 
 - [x] Each Baltic image, light and dark, has an agreed effect and wind, recorded in the task
 - [x] Snow and rain take a wind direction and strength per image
-- [x] The new effects Kait picked are prototyped and agreed in `prototypes/scene.js`
+- [x] The new effects the maintainer picked are prototyped and agreed in `prototypes/scene.js`
 - [x] The app matches the prototype, and `IMAGE_WEATHER` gives each image its agreed weather
 - [x] Each effect holds its frame rate on a 120 Hz screen with glass surfaces, and the
       taglines read over it

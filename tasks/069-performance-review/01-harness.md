@@ -77,7 +77,7 @@ real glass CSS.
 - [x] Budgets, query plan snapshots, and golden frames committed, taken from `main` before any
       optimization, so subtasks 02 to 08 start from them
 - [x] CI runs `bun run perf`. If it makes CI too slow on GitHub's runners, it runs on a
-      self-hosted runner instead (Kait agreed to set one up), not less often
+      self-hosted runner instead (the maintainer agreed to set one up), not less often
 - [x] `docs/architecture/platform.md` points to `perf/README.md`
 
 ## Notes
@@ -88,7 +88,7 @@ real glass CSS.
   in the app was considered and rejected: it would put test plumbing in `src/`.
 - CI (GitHub's `ubuntu-latest`) runs `bun run perf` in 15 s, build and seed included, with
   the same gzipped sizes as on macOS, so no self-hosted runner is needed.
-- Run times on Kait's M1 Pro: `bun run perf` 7 s (8 s from scratch), `perf:pages` 22 s,
+- Run times on an M1 Pro: `bun run perf` 7 s (8 s from scratch), `perf:pages` 22 s,
   `perf:weather` 53 s.
 - The one app change is a bench hook in `weather.ts`: an `uncapped` option and `drawAt()`,
   neither used by the app.

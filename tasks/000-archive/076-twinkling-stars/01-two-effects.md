@@ -14,7 +14,7 @@ and a quarter. The glass doesn't add a cost: it shows a pre-blurred copy of the 
 
 ## Benchmark first
 
-Kait (2026-10-01): measure before building. Settle whether drawing the mist into a texture of
+2026-10-01: measure before building. Settle whether drawing the mist into a texture of
 its own is needed at all and whether it helps; only then put the effects into production code.
 
 Variants, run with `bun run perf:weather --variant=…` (`perf/README.md`, "Compare two
@@ -78,7 +78,7 @@ didn't separate them.
 - The moved texture wasn't needed: with two canvases the mist adds under 1 GPU ms/s on the
   M1 and about 5 under SwiftShader.
 
-Chosen (Kait, 2026-10-01): effects at the same resolution share a canvas and draw naively,
+Chosen (2026-10-01): effects at the same resolution share a canvas and draw naively,
 at the faster one's frame rate; an effect at a coarser resolution, the mist, gets a canvas of
 its own under the other, at its own rate (`weatherCanvases` in
 `src/lib/scene/weather-renderer.ts`). The measured pairs share a frame rate too. Grouping by
@@ -107,10 +107,10 @@ November and coast March are stars alone.
 | coast-october-dark | 0.22, 11.6 | 0.23, 12.3 | 0.22, 5.5 | 1.45, 75         | 1.51, 77          | 1.26, 33          |
 
 Coast August's stars alone under SwiftShader (114) is one noisy window; its pair is 35.
-Land December is re-timed with the aurora as Kait tuned it (2026-10-02, subtask 02): its
-taller curtains and ragged tops cost the pair about 0.06 ms a frame more on the M1 than the
-first version (0.26, 7.4), and under SwiftShader 72 GPU ms/s paced against 51, with its
-uncapped mean (3.27 before) within the run-to-run noise of about 15%. Its dim patches are
+Land December is re-timed with the aurora as the maintainer tuned it (2026-10-02, subtask
+02): its taller curtains and ragged tops cost the pair about 0.06 ms a frame more on the M1
+than the first version (0.26, 7.4), and under SwiftShader 72 GPU ms/s paced against 51, with
+its uncapped mean (3.27 before) within the run-to-run noise of about 15%. Its dim patches are
 worked out per vertex, which keeps two noise lookups out of the fragments. The stars cost no
 more than a canvas's floor, and the aurora adds about 0.1 ms a frame on the M1 and 1.5 ms
 under SwiftShader over it, so the shaders got no further rework past

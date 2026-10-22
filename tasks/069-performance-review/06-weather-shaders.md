@@ -10,8 +10,9 @@ could be done per item.
 An effect doesn't have to look exactly as it does now. What each scene should roughly look
 like is known and approved (`prototypes/README.md`, "Weather by image"), and a known trick
 that is much faster but looks a bit different is welcome, as are new ideas. Show such a
-variant to Kait beside the current one in the weather bench (a toggle between the two, same
-preset and time) with its numbers; Kait signs it off before it replaces the old one. A
+variant to the maintainer beside the current one in the weather bench (a toggle between the
+two, same preset and time) with its numbers; the maintainer signs it off before it replaces
+the old one. A
 change meant to keep the look must keep the golden frames (subtask 01) within tolerance.
 
 Keep the design, which is already the right one: stateless items whose position is a
@@ -50,9 +51,9 @@ sizes matter most.
 
 - [x] Each effect's shader reviewed against the list, with GPU time per frame before and
       after (weather bench), per effect
-- [x] Golden frames unchanged within tolerance, or updated after Kait signed off the
-      variant in the bench (the look-preserving rewrite matches all 75; the integer hash's
-      frames updated after Kait's sign-off on 2026-09-30)
+- [x] Golden frames unchanged within tolerance, or updated after the maintainer signed off
+      the variant in the bench (the look-preserving rewrite matches all 75; the integer
+      hash's frames updated after the maintainer's sign-off on 2026-09-30)
 - [x] No per-pixel branch that depends on the item; uniform branches only where a `#define`
       would make the code harder to read
 - [x] The shaders read as plainly as before or better, with comments where the math isn't
@@ -98,10 +99,11 @@ Found on the way: mist without zones never kept to its `band`. `prepare` always 
 least one zone (glitter's default, the ground below the horizon), so the old `u_zoneCount >
 .5` test was always true, in the prototype too. The band mists (coast November, land March,
 May, August, and September at night) lie between the horizon and the screen's foot, and
-that's the look Kait approved. Compared in the bench on 2026-09-30, Kait kept it for four
-of them and chose the band for land March, whose mist now lies on the bog's water. Its band
-became its zone, which draws the same frames as the band did, and the mists' bands are gone.
-The "mist band" golden case went with them, and coast April's merged into "mist zones".
+that's the look the maintainer approved. Compared in the bench on 2026-09-30, the
+maintainer kept it for four of them and chose the band for land March, whose mist now lies
+on the bog's water. Its band became its zone, which draws the same frames as the band did,
+and the mists' bands are gone. The "mist band" golden case went with them, and coast April's
+merged into "mist zones".
 
 ## Integer hash (signed off 2026-09-30)
 
@@ -109,8 +111,8 @@ An integer hash (lowbias32, from `uint(gl_VertexID)`) replaces the `fract(sin())
 `columnHash`, and the mist's noise uses it too. It gives every item new random values, so all
 75 golden frames changed, though density and spread look the same on a contact sheet. It's no
 faster (0.99 to 1.03 on the M1); the gain is one exact hash instead of three, with no `sin`
-hash breaking down at large arguments or in `mediump`. Kait compared it in the bench beside
-the old shaders and signed it off, and the golden frames were updated.
+hash breaking down at large arguments or in `mediump`. The maintainer compared it in the
+bench beside the old shaders and signed it off, and the golden frames were updated.
 
 ## Checked and left as is
 
