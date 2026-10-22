@@ -1,6 +1,6 @@
 # 095: Validation failures answer a key
 
-Status: in-progress
+Status: done (2026-10-22)
 
 Input that fails its schema answers 400 with `{ error: { message } }`, where `message` is
 the first issue's text. The schemas' custom messages are Paraglide calls, which run in the
@@ -36,4 +36,4 @@ valibot's English message.
       and falls back to `message` for a key it doesn't know.
 - [x] `docs/api.md` documents the new body; conformance tests cover an Estonian session.
 - [x] Format, lint, types, unit tests, and the conformance suite pass.
-- [ ] snowtime-native follows (its task records the change), and the byte comparison passes.
+- [x] snowtime-native follows (its task 081.44), and the byte comparison passes.
