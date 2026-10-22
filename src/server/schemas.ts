@@ -9,7 +9,7 @@ type ValidationMessage = (inputs?: ValidationParams, options?: { locale?: 'en' |
 type Issue = v.BaseIssue<unknown>
 
 // The schemas' messages by key. The API answers the key, and the client shows its text
-// (task 094); validation_invalid stands for valibot's own checks, which have no key.
+// (task 095); validation_invalid stands for valibot's own checks, which have no key.
 const validationMessages = {
   validation_color_format: m.validation_color_format,
   validation_copy_duration_pattern: m.validation_copy_duration_pattern,
@@ -52,7 +52,7 @@ export function validationText(
 const issueMessages = new WeakMap<Issue, { key: ValidationKey; params?: ValidationParams }>()
 
 // A schema message by its key: the text in the user's language, as the forms show it, with
-// the key and parameters kept for the issue, so the API can answer the key (task 094).
+// the key and parameters kept for the issue, so the API can answer the key (task 095).
 // Valibot passes the message function the issue it reports.
 export function keyed(key: ValidationKey, params?: (issue: Issue) => ValidationParams) {
   return (issue: Issue) => {

@@ -162,7 +162,7 @@ function refusalOf(error: unknown): { status: number; error: WireError } | null 
 
 // Input that fails its schema: its message's key and parameters, which the client
 // translates, and the message in English whatever the request's locale, as docs/api.md
-// promises (task 094). Valibot's own checks carry no key, and answer validation_invalid.
+// promises (task 095). Valibot's own checks carry no key, and answer validation_invalid.
 function validationRefusal(issue: v.BaseIssue<unknown>): WireError {
   const message = issueMessage(issue)
   if (!message) return { key: 'validation_invalid', message: issue.message }
