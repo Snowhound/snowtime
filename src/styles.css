@@ -769,16 +769,27 @@ summary,
 }
 /* An entry: a tint of its project's color (--p) with a bar in the full color. */
 .cal-block {
+  --tint: 18%;
   @apply text-foreground absolute z-10 flex flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight outline-none select-none;
   border-color: var(--p);
-  background-color: color-mix(in oklab, var(--p) 18%, var(--card));
+  background-color: color-mix(in oklab, var(--p) var(--tint), var(--card));
   touch-action: pan-y;
+}
+/* On the dark card a light tint is barely apart from the grid, so dark mode tints deeper and
+   adds a thin edge; a short block, whose bar is only a few pixels, tints deeper still. */
+.dark .cal-block {
+  --tint: 34%;
+  outline: 1px solid color-mix(in oklab, var(--p) 55%, transparent);
+  outline-offset: -1px;
+}
+.dark .cal-block[data-short] {
+  --tint: 45%;
 }
 .cal-block[data-pressed] {
   @apply ring-ring ring-offset-background shadow-lg ring-2 ring-offset-1;
 }
 .cal-block:hover {
-  background-color: color-mix(in oklab, var(--p) 26%, var(--card));
+  background-color: color-mix(in oklab, var(--p) calc(var(--tint) + 8%), var(--card));
 }
 .cal-block:focus-visible,
 .cal-block[data-editing] {
