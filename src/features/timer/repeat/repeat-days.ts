@@ -1,6 +1,6 @@
-// The copy panel's day math (prototypes/copy-entries.html, "Copy to more days"): which days a
-// Repeat pattern fills up to Until, the month grid, and each copy's times. A copy keeps the
-// entry's wall-clock start and its length, so it stays at 08:30 across a clock change.
+// The Repeat field's day math (prototypes/copy-entries.html, "Repeat"): which days a pattern
+// gives up to Until, the preview's month grid, and each copy's times. A copy keeps the entry's
+// wall-clock start and its length, so it stays at 08:30 across a clock change.
 import {
   type IsoDate,
   type WeekStart,
@@ -18,6 +18,8 @@ import { getLocale } from '~/paraglide/runtime.js'
 
 export const PATTERNS = ['workday', 'day', 'week', 'month'] as const
 export type Pattern = (typeof PATTERNS)[number]
+// The field's value: a pattern, or no repeat.
+export type Repeat = Pattern | 'none'
 
 // The entry the copies repeat: its day, its start, and its length.
 export interface CopyBase {
@@ -66,7 +68,7 @@ export function defaultUntil(pattern: Pattern, date: IsoDate): IsoDate {
 
 // The days after the entry's, up to Until, that match the pattern and don't already have the
 // entry; `had` counts the matching days left out because they have it.
-export function fillDays(options: {
+export function patternDays(options: {
   pattern: Pattern
   base: CopyBase
   until: IsoDate
@@ -83,17 +85,6 @@ export function fillDays(options: {
     else added.push(date)
   }
   return { added, had }
-}
-
-// Shift-click's days: the workdays from the last day clicked to this one, and this one.
-export function rangeDays(from: IsoDate, to: IsoDate, base: CopyBase, region: Region) {
-  const [first, last] = from < to ? [from, to] : [to, from]
-  const days: IsoDate[] = []
-  for (let i = 0; i <= daysBetween(first, last); i++) {
-    const date = addDays(first, i)
-    if (date !== base.date && (date === to || isWorkingDay(date, region))) days.push(date)
-  }
-  return days
 }
 
 // The month's weeks as cells, null outside the month.

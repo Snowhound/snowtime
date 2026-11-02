@@ -7,6 +7,7 @@ import { Show } from 'solid-js'
 import { Button } from '~/components/ui/button'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import { copyKeys, pasteKeys } from './point-menu'
 
 export interface Status {
   text: string
@@ -62,7 +63,9 @@ export function CalendarStatus(props: {
           </Button>
         </p>
       </Show>
-      <p class="text-muted-foreground hidden shrink-0 text-xs md:block">{m.calendar_hint()}</p>
+      <p class="text-muted-foreground hidden shrink-0 text-xs md:block">
+        {m.calendar_hint({ copy: copyKeys(), paste: pasteKeys() })}
+      </p>
     </div>
   )
 }

@@ -35,7 +35,6 @@ import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
-import { type Pattern, monthDayName, weekdayName } from '../copy-panel/copy-days'
 import { changedFields, entryLabel, lastEnded } from '../entries'
 import { EntryPopover, type EntryPopoverTarget, type EntryPopoverValues } from '../entry-popover'
 import {
@@ -49,12 +48,13 @@ import {
   useDeleteEntry,
   useUpdateEntry,
 } from '../queries'
+import { type Pattern, monthDayName, weekdayName } from '../repeat/repeat-days'
 import { CalendarBlock, CalendarGhost, HOUR_PX, blockProject, formatRange } from './calendar-block'
 import { CalendarHeader } from './calendar-header'
 import { CalendarStatus, type Status } from './calendar-status'
 import { DROP_ERRORS, createGridDrag } from './grid-drag'
 import { createOpeningScroll } from './opening-scroll'
-import { type MenuItem, PointMenu, copyKeys, isCopyKey } from './point-menu'
+import { type MenuItem, PointMenu, copyKeys, isShortcut, pasteKeys } from './point-menu'
 import {
   CLICK_MINUTES,
   type Range,
@@ -344,7 +344,11 @@ export function TimerCalendar(props: {
     const length = entry.stoppedAt.getTime() - entry.startedAt.getTime()
     setCopied({ description, ticket, projectId, length })
     setStatus({
-      text: m.calendar_copied({ description: entryLabel(entry), duration: formatHours(length) }),
+      text: m.calendar_copied({
+        description: entryLabel(entry),
+        duration: formatHours(length),
+        keys: pasteKeys(),
+      }),
     })
   }
 
@@ -356,6 +360,32 @@ export function TimerCalendar(props: {
     })
     focusEntry(addEntries(clip, [span], text)[0])
   }
+
+  // ⌘V or Ctrl+V pastes at the quarter hour under the pointer, as Paste here does. Days aren't
+  // focusable, so the pointer is what says where.
+  let hover: { x: number; y: number } | null = null
+  function track(event: PointerEvent) {
+    const onDay = !!(event.target as HTMLElement).closest('[data-date]')
+    hover = event.pointerType === 'mouse' && onDay ? { x: event.clientX, y: event.clientY } : null
+  }
+  function pasteKey(event: KeyboardEvent) {
+    const clip = copied()
+    const target = event.target as HTMLElement | null
+    if (!clip || !isShortcut(event, 'v') || editor() || menu()) return
+    if (target?.closest('input, textarea, select, [contenteditable]')) return
+    event.preventDefault()
+    if (!hover) {
+      setStatus({ text: m.calendar_paste_point({ keys: pasteKeys() }) })
+      return
+    }
+    const slot = drag.slotAt(hover.x, hover.y)
+    const minutes = Math.floor(slot.minutes / SNAP_MINUTES) * SNAP_MINUTES
+    pasteHere(clip, instantAt(slot.date, minutes, zone()))
+  }
+  onMount(() => {
+    document.addEventListener('keydown', pasteKey)
+    onCleanup(() => document.removeEventListener('keydown', pasteKey))
+  })
 
   // The entry popover: a new slot, an entry to edit, or the running entry.
   const [editor, setEditor] = createSignal<{
@@ -521,7 +551,7 @@ export function TimerCalendar(props: {
   // ⌘C or Ctrl+C copies a focused entry; Alt+arrows move it (grid-drag.ts).
   function keyDown(event: KeyboardEvent) {
     const block = (event.target as HTMLElement).closest<HTMLElement>('[data-entry]')
-    if (block && isCopyKey(event)) {
+    if (block && isShortcut(event, 'c')) {
       const entry = findEntry(block.dataset.entry)
       if (entry?.stoppedAt) copyEntry(entry as StoppedEntry)
       return
@@ -632,6 +662,7 @@ export function TimerCalendar(props: {
           ? m.menu_paste_here({ description: entryLabel(clip) })
           : m.menu_paste_here_empty(),
         icon: <ClipboardPasteIcon aria-hidden="true" />,
+        shortcut: pasteKeys(),
         disabled: !clip,
         onSelect: () => {
           const pasted = copied()
@@ -663,7 +694,7 @@ export function TimerCalendar(props: {
     const clip = copied()
     if (!clip) return m.menu_hint_empty({ keys: copyKeys() })
     const project = blockProject(props.projects, clip.projectId).name
-    return m.menu_hint({ duration: formatHours(clip.length), project })
+    return m.menu_hint({ duration: formatHours(clip.length), project, keys: pasteKeys() })
   }
 
   // Where a paste from the open menu would go, with the copied length.
@@ -780,7 +811,11 @@ export function TimerCalendar(props: {
           class={cn('cal-cols', drag.state()?.copy && 'cursor-copy')}
           style={{ '--days': columns().length }}
           onPointerDown={drag.pointerDown}
-          onPointerMove={drag.pointerMove}
+          onPointerMove={(event) => {
+            track(event)
+            drag.pointerMove(event)
+          }}
+          onPointerLeave={() => (hover = null)}
           onPointerUp={drag.pointerUp}
           onPointerCancel={drag.cancel}
           onKeyDown={keyDown}

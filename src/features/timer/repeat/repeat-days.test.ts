@@ -5,10 +5,9 @@ import {
   addMonths,
   copyTimes,
   defaultUntil,
-  fillDays,
+  patternDays,
   monthCells,
-  rangeDays,
-} from './copy-days'
+} from './repeat-days'
 
 const zone = 'Europe/Tallinn'
 // Monday 5 October 2026, 08:30 for 25 minutes.
@@ -36,13 +35,13 @@ describe('defaultUntil', () => {
   })
 })
 
-describe('fillDays', () => {
+describe('patternDays', () => {
   function none() {
     return false
   }
 
   test("every workday leaves out weekends and the country's public holidays", () => {
-    const { added } = fillDays({
+    const { added } = patternDays({
       pattern: 'workday',
       base: { ...base, date: '2026-12-21' },
       until: '2026-12-31',
@@ -62,10 +61,10 @@ describe('fillDays', () => {
 
   test('the same weekday, or the same day of the month', () => {
     expect(
-      fillDays({ pattern: 'week', base, until: '2026-10-31', region: 'other', has: none }).added,
+      patternDays({ pattern: 'week', base, until: '2026-10-31', region: 'other', has: none }).added,
     ).toEqual(['2026-10-12', '2026-10-19', '2026-10-26'])
     expect(
-      fillDays({
+      patternDays({
         pattern: 'month',
         base: { ...base, date: '2026-01-31' },
         until: '2026-05-31',
@@ -76,7 +75,7 @@ describe('fillDays', () => {
   })
 
   test('days that already have the entry are left out and counted', () => {
-    const result = fillDays({
+    const result = patternDays({
       pattern: 'day',
       base,
       until: '2026-10-08',
@@ -84,19 +83,6 @@ describe('fillDays', () => {
       has: (date) => date === '2026-10-07',
     })
     expect(result).toEqual({ added: ['2026-10-06', '2026-10-08'], had: 1 })
-  })
-})
-
-describe('rangeDays', () => {
-  test("the workdays between two clicks, and the clicked day, but not the entry's", () => {
-    expect(rangeDays('2026-10-02', '2026-10-11', base, 'other')).toEqual([
-      '2026-10-02',
-      '2026-10-06',
-      '2026-10-07',
-      '2026-10-08',
-      '2026-10-09',
-      '2026-10-11',
-    ])
   })
 })
 

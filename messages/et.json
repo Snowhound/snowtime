@@ -492,7 +492,7 @@
   "calendar_weekend": "Nädalavahetus",
   "calendar_weekend_forced": "Nädalavahetusel on aega märgitud, seega on see näha.",
   "calendar_day": "Päev",
-  "calendar_hint": "Lohista lisamiseks · lohista kannet liigutamiseks, Alt+lohistus kopeerib · Alt+nooled liigutavad valitud kannet · paremklõps kopeerib ja kleebib",
+  "calendar_hint": "Lohista lisamiseks · lohista kannet liigutamiseks, Alt+lohistus kopeerib · Alt+nooled liigutavad valitud kannet · {copy} ja {paste} kopeerivad ja kleebivad · paremklõpsuga rohkem",
   "calendar_now": "praegu",
   "calendar_entry": "{description}, {project}, {times}, {duration}",
   "calendar_entry_running": "{description}, {project}, {times}, {duration}, käib",
@@ -920,17 +920,13 @@
   "browser_notice_title": "See brauser on aegunud.",
   "browser_notice_body": "Snowtime toetab Chrome'i, Edge'i, Firefoxi ja Safari kahte uusimat versiooni ning osa sellest ei pruugi siin töötada. Uuenda brauserit, et kõik töötaks.",
   "browser_notice_dismiss": "Sulge",
-  "copy_toggle": "Kopeeri teistele päevadele",
-  "copy_days": "Päevad, kuhu kopeerida",
+  "copy_days": "Päevad, mil kanne kordub",
   "copy_repeat": "Kordus",
   "copy_until": "Kuni",
-  "copy_fill": "Täida",
-  "copy_clear": "Tühjenda",
   "copy_repeat_workday": "Igal tööpäeval",
   "copy_repeat_day": "Iga päev",
   "copy_repeat_week": "Iga {weekday}",
   "copy_repeat_month": "Iga kuu {day} kuupäeval",
-  "copy_pick_hint": "Vali päevad või täida need mustri järgi. Tõstuklahviga klõps valib vahemiku tööpäevad.",
   "copy_summary": [
     {
       "declarations": [
@@ -946,7 +942,7 @@
       }
     }
   ],
-  "copy_legend": "Ääristatud: see kanne · täpp: juba olemas",
+  "copy_legend": "Klõpsa päeval, et see välja jätta või lisada · ääristatud: see kanne · täpp: juba olemas",
   "copy_left_out": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],
@@ -957,7 +953,7 @@
       }
     }
   ],
-  "copy_none_match": "Kuni {date} rohkem sobivaid päevi pole.",
+  "copy_none_match": "Kuni {date} ei sobi ükski päev. Klõpsa päeval, et see lisada.",
   "copy_fix_times": "Paranda enne kuupäev ja kellaajad.",
   "copy_day_self": "see kanne",
   "copy_day_has": "see kanne on juba olemas",
@@ -989,13 +985,13 @@
   "calendar_copied_to": "Kopeeritud „{description}”: {days}.",
   "calendar_duplicated": "Tehtud koopia kandest „{description}”. Lohista koopia õigele päevale või liiguta seda Alt+nooleklahvidega.",
   "calendar_pasted": "Kleebitud „{description}”: {when}.",
-  "calendar_copied": "Kopeeritud „{description}” ({duration}). Kleepimiseks paremklõpsa kellaajal.",
+  "calendar_copied": "Kopeeritud „{description}” ({duration}). Osuta kellaajale ja vajuta {keys} või paremklõpsa seal.",
   "calendar_copy_ghost": "Koopia · {times}",
   "menu_entry": "Kanne",
   "menu_edit": "Muuda",
   "menu_copy": "Kopeeri",
   "menu_duplicate": "Tee koopia",
-  "menu_copy_days": "Kopeeri teistele päevadele…",
+  "menu_copy_days": "Korda…",
   "menu_add_here": "Lisa kanne siia",
   "menu_paste_here": "Kleebi „{description}” siia",
   "menu_paste_here_empty": "Kleebi siia",
@@ -1003,5 +999,7 @@
   "menu_paste_week": "Kleebi igale nädalapäevale: {weekday}…",
   "menu_paste_month": "Kleebi iga kuu {day} kuupäevale…",
   "menu_hint_empty": "Kleepimiseks kopeeri enne kanne: paremklõpsa sellel või vali see ja vajuta {keys}.",
-  "menu_hint": "{duration} · {project}. Kordused avavad kande lisamise, et päevad üle vaadata."
+  "menu_hint": "{duration} · {project}. {keys} kleebib ka kursori alla; kordused avavad kande lisamise, et päevad üle vaadata.",
+  "copy_repeat_none": "Ei kordu",
+  "calendar_paste_point": "Osuta kalendris kellaajale ja vajuta siis kleepimiseks {keys}."
 }

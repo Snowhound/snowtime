@@ -26,15 +26,25 @@ interface MenuAction {
 
 export type MenuItem = MenuAction | 'separator'
 
-// ⌘C on a Mac, Ctrl+C elsewhere: the keys that copy a focused entry.
-export function copyKeys() {
-  return /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘C' : 'Ctrl+C'
+function mac() {
+  return /Mac|iPhone|iPad/.test(navigator.platform)
 }
 
-// Whether the event is the platform's copy shortcut.
-export function isCopyKey(event: KeyboardEvent) {
-  const mac = /Mac|iPhone|iPad/.test(navigator.platform)
-  return (mac ? event.metaKey : event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'c'
+// ⌘C on a Mac, Ctrl+C elsewhere: the keys that copy a focused entry.
+export function copyKeys() {
+  return mac() ? '⌘C' : 'Ctrl+C'
+}
+
+// The keys that paste the copied entry under the pointer.
+export function pasteKeys() {
+  return mac() ? '⌘V' : 'Ctrl+V'
+}
+
+// Whether the event is the platform's shortcut with the letter, such as copy's C.
+export function isShortcut(event: KeyboardEvent, letter: 'c' | 'v') {
+  return (
+    (mac() ? event.metaKey : event.ctrlKey) && !event.altKey && event.key.toLowerCase() === letter
+  )
 }
 
 export function PointMenu(props: {

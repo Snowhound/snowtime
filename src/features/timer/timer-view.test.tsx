@@ -636,20 +636,10 @@ describe('TimerView', () => {
     fireEvent.input(within(dialog).getByLabelText('Date'), { target: { value: date } })
     fireEvent.input(within(dialog).getByLabelText('Start'), { target: { value: '08:30' } })
     fireEvent.input(within(dialog).getByLabelText('Duration'), { target: { value: '25m' } })
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Copy to more days' }))
-    const days = within(dialog).getByRole('group', { name: 'Days to copy to' })
     const next = addDays(date, 1)
-    const label = new Intl.DateTimeFormat('en', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC',
-    }).format(Date.parse(`${next}T00:00:00Z`))
-    // The next day may be in the month after.
-    if (!within(days).queryByRole('button', { name: label })) {
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Next month' }))
-    }
-    await userEvent.click(within(dialog).getByRole('button', { name: label }))
+    await userEvent.selectOptions(within(dialog).getByLabelText('Repeat'), 'day')
+    fireEvent.input(within(dialog).getByLabelText('Until'), { target: { value: next } })
+    await within(dialog).findByRole('button', { name: 'Add 2 entries' })
     await userEvent.click(within(dialog).getByRole('button', { name: 'Add 2 entries' }))
 
     expect(fn.createEntry).not.toHaveBeenCalled()

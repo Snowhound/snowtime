@@ -50,24 +50,36 @@ entry is at least a minute and at most 24 hours. Only `H:MM:SS` keeps seconds.
 ## Entry copies
 
 One entry can be logged on many days, such as a daily standup (task 096,
-`prototypes/copy-entries.html`). Every way of copying ends in the same day picker and save.
+`prototypes/copy-entries.html`). Repeat covers the usual case, a pattern of days; one-off
+copies are ⌘C and ⌘V, Paste here, Duplicate, and Alt+drag. Every way of copying ends in
+the same save.
 
-- **The popover and the copy panel split the work.** `CopyPanel`
-  (`src/features/timer/copy-panel/`) is Copy to more days: a month of days to pick, Repeat
-  (Every workday, Every day, Every Wednesday, Every month on the 7th) and Until, and the
-  "already has it" dots. It takes the form's entry as a day, a start, and a length, and
-  hands back the picked days; the popover owns those days and builds each copy's times with
-  `copyTimes` in the user's zone, keeping the wall-clock start. The popover's Save sends the
-  entry with its copies (`EntryPopoverValues.copies`), and the list and the calendar save
-  them. The panel's day math is in `copy-days.ts`, apart from the component, so it is tested
-  without a DOM.
+- **Repeat leads.** The popover's Repeat field (`src/features/timer/repeat/`) is set to
+  Doesn't repeat. A pattern, named for the entry's day (Every workday, Every day, Every
+  Wednesday, Every month on the 7th), fills its days after the entry's up to Until at once,
+  and the month under it previews them: a click takes a day out or adds one the pattern left
+  out. The field keeps the pattern's days, the days clicked out, and the days clicked in
+  apart, so the exceptions stay when Until, the pattern, or the entry's times change, and
+  nothing needs filling again. Decided on 2026-11-02 after a first build that put a day
+  picker first, with Repeat, Until, and a Fill button under it: filling a pattern is the
+  usual case and picking scattered days the rare one, and Fill was easy to miss.
+- **The popover and the field split the work.** `RepeatField` takes the form's entry as a
+  day, a start, and a length, and hands back the days to copy to; the popover builds each
+  copy's times with `copyTimes` in the user's zone, keeping the wall-clock start, and its
+  Save sends the entry with its copies (`EntryPopoverValues.copies`), which the list and the
+  calendar save. The day math is in `repeat-days.ts`, apart from the component, so it is
+  tested without a DOM.
 - **Every workday** leaves out weekends and the public holidays of the user's country
   (`userRegion`, `src/lib/holidays/`). Until starts at the end of the entry's month, a month
   later for a weekday, and six months later for monthly, and reaches at most a year ahead.
 - **"Already has it"**: a day with an entry of the same description and project starting at
-  the copy's minute shows a dot, and Repeat leaves it out and says how many it left out. The
-  panel reads the shown month with `listEntries`, and a Fill reads the days up to Until in
-  90-day chunks, since the user's other entries in those months aren't loaded otherwise.
+  the copy's minute shows a dot, and the pattern leaves it out and says how many it left
+  out. The field reads the days up to Until with `listEntries` in 90-day chunks, and the
+  shown month for the dots, since the user's other entries in those months aren't loaded
+  otherwise. Save waits until the read is done.
+- **The popover keeps clear of the sticky header**: with the month it can be taller than the
+  room below the header, so Kobalte's top padding is the header's height and the popover
+  scrolls within the height left (`--kb-popper-content-available-height`).
 - **One call, one Undo.** An entry and its copies are one `createEntries`
   (`POST /organizations/:orgId/entries/batch`): the work's description, ticket, and project
   once, and up to `MAX_BATCH_ENTRIES` (100) id and times, saved in one transaction. The
@@ -83,12 +95,17 @@ One entry can be logged on many days, such as a daily standup (task 096,
   the entry is dropped; the ghost reads "Copy · 12:15–13:30". Both, and Paste here, are a
   `createEntries` of one, so they undo like the others.
 - **Context menus** on the calendar: on an entry, Edit, Copy (⌘C or Ctrl+C on a focused
-  entry), Duplicate, Copy to more days…, and Delete, of which the running entry has only
-  Edit; on empty time, titled with the day and the quarter hour, Add entry here, Paste here,
-  and Paste every workday, every Wednesday, or on the 7th of every month. A right-click, a
+  entry), Duplicate, Repeat… (Edit with Repeat focused), and Delete, of which the running
+  entry has only Edit; on empty time, titled with the day and the quarter hour, Add entry
+  here, Paste here, and Paste every workday, every Wednesday, or on the 7th of every month. A right-click, a
   two-finger click, Ctrl+click on a Mac, Shift+F10, or the Menu key opens them; from the
-  keyboard, under the entry. The repeats open Add entry with the copied work and the panel
-  filled, so the days are checked before Save; Cancel saves nothing. Copy keeps the work and
+  keyboard, under the entry. The repeats open Add entry with the copied work and Repeat set,
+  so the days are checked before Save; Cancel saves nothing. A menu runs the picked item
+  once it has closed: an item that opens the popover would otherwise have the closing
+  menu's focus land outside the popover, which closes it.
+- **⌘V or Ctrl+V** pastes the copied entry at the quarter hour under the pointer, as Paste
+  here does; days aren't focusable, so the pointer says where. Off the grid it says to point
+  at a time. Copy keeps the work and
   length in the page, not the system clipboard. `PointMenu` is a `DropdownMenu` anchored to
   the point with a hidden trigger, because Kobalte's `ContextMenu` opens on a 700 ms timer
   on touch and couldn't tell a long press from one that drags.

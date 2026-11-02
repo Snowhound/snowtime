@@ -247,7 +247,7 @@ describe('TimerCalendar', () => {
     expect(within(popover).getByLabelText('End')).toHaveValue('10:30')
     // The project of the entry before it.
     expect(within(popover).getByLabelText('Project')).toHaveTextContent('Snowtime')
-    await userEvent.type(within(popover).getByRole('combobox'), 'Planning')
+    await userEvent.type(within(popover).getByLabelText('Description'), 'Planning')
     await userEvent.click(within(popover).getByRole('button', { name: 'Save' }))
     expect(fn.createEntry).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -368,19 +368,26 @@ describe('TimerCalendar', () => {
     )
   })
 
-  test('Copy to more days saves the entry and its copies in one call, which one Undo deletes', async () => {
+  test('Repeat saves the entry and its copies in one call, which one Undo deletes', async () => {
     renderView()
     await block()
     clickAt(1, 10.25)
     const popover = await screen.findByRole('dialog', { name: 'Add entry' })
     await userEvent.type(within(popover).getByLabelText('Description'), 'Standup')
-    await userEvent.click(within(popover).getByRole('button', { name: 'Copy to more days' }))
-    const days = within(popover).getByRole('group', { name: 'Days to copy to' })
+    expect(within(popover).getByLabelText('Repeat')).toHaveValue('none')
+    expect(within(popover).queryByLabelText('Until')).not.toBeInTheDocument()
+    await userEvent.selectOptions(within(popover).getByLabelText('Repeat'), 'day')
+    const days = within(popover).getByRole('group', { name: 'Days the entry repeats on' })
     expect(
       within(days).getByRole('button', { name: /Tuesday, September 29, this entry/ }),
     ).toHaveAttribute('aria-disabled', 'true')
+    const wednesday = within(days).getByRole('button', { name: 'Wednesday, September 30' })
+    expect(wednesday).toHaveAttribute('aria-pressed', 'true')
+    // A click takes a day out, and adds one the pattern left out.
+    await userEvent.click(wednesday)
+    expect(within(popover).getByRole('button', { name: 'Save' })).toBeInTheDocument()
+    await userEvent.click(wednesday)
     await userEvent.click(within(days).getByRole('button', { name: 'Monday, September 28' }))
-    await userEvent.click(within(days).getByRole('button', { name: 'Wednesday, September 30' }))
     expect(
       within(popover).getByText(/2 copies: Mon, Sep 28 and Wed, Sep 30, 10:00–10:30/),
     ).toBeInTheDocument()
@@ -403,7 +410,7 @@ describe('TimerCalendar', () => {
     })
   })
 
-  test('Repeat fills the workdays up to Until, leaving out a day that has the entry', async () => {
+  test('Every workday fills its days at once, leaves out a day that has the entry, and keeps a day taken out', async () => {
     server.entries.push({
       ...review,
       id: newId(),
@@ -416,22 +423,26 @@ describe('TimerCalendar', () => {
     clickAt(0, 11.1)
     const popover = await screen.findByRole('dialog', { name: 'Add entry' })
     await userEvent.type(within(popover).getByLabelText('Description'), 'Standup')
-    await userEvent.click(within(popover).getByRole('button', { name: 'Copy to more days' }))
-    expect(within(popover).getByLabelText('Repeat')).toHaveValue('workday')
+    await userEvent.selectOptions(within(popover).getByLabelText('Repeat'), 'workday')
     expect(within(popover).getByLabelText('Until')).toHaveValue('30.09.2026')
-    await userEvent.click(within(popover).getByRole('button', { name: 'Fill' }))
     expect(
       await within(popover).findByText(/Left out 1 day that already has it/),
     ).toBeInTheDocument()
-    const days = within(popover).getByRole('group', { name: 'Days to copy to' })
-    expect(within(days).getByRole('button', { name: 'Tuesday, September 29' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    const days = within(popover).getByRole('group', { name: 'Days the entry repeats on' })
+    const tuesday = within(days).getByRole('button', { name: 'Tuesday, September 29' })
+    expect(tuesday).toHaveAttribute('aria-pressed', 'true')
     expect(
       within(days).getByRole('button', { name: /Wednesday, September 30, already has this entry/ }),
     ).toHaveAttribute('aria-pressed', 'false')
     expect(within(popover).getByRole('button', { name: 'Add 2 entries' })).toBeInTheDocument()
+
+    await userEvent.click(tuesday)
+    fireEvent.input(within(popover).getByLabelText('Until'), { target: { value: '2026-10-02' } })
+    // 1 and 2 October; Tuesday stays out.
+    expect(
+      await within(popover).findByRole('button', { name: 'Add 3 entries' }),
+    ).toBeInTheDocument()
+    expect(tuesday).toHaveAttribute('aria-pressed', 'false')
   })
 
   test('Duplicate puts a copy at the same time, which Undo deletes', async () => {
@@ -467,7 +478,7 @@ describe('TimerCalendar', () => {
     fireEvent.contextMenu(screen.getByRole('group', { name: /Tuesday/ }), point(1, 14.1))
     const slotMenu = await screen.findByRole('menu', { name: 'Tue, Sep 29, 14:00' })
     await userEvent.click(
-      within(slotMenu).getByRole('menuitem', { name: 'Paste “Invoice export review” here' }),
+      within(slotMenu).getByRole('menuitem', { name: /^Paste “Invoice export review” here/ }),
     )
     // The item runs once the menu has closed.
     await waitFor(() =>
@@ -503,7 +514,8 @@ describe('TimerCalendar', () => {
     const popover = await screen.findByRole('dialog', { name: 'Add entry' })
     expect(within(popover).getByLabelText('Description')).toHaveValue('Invoice export review')
     expect(within(popover).getByLabelText('End')).toHaveValue('14:30')
-    const days = await within(popover).findByRole('group', { name: 'Days to copy to' })
+    expect(within(popover).getByLabelText('Repeat')).toHaveValue('workday')
+    const days = await within(popover).findByRole('group', { name: 'Days the entry repeats on' })
     await waitFor(() =>
       expect(within(days).getByRole('button', { name: 'Wednesday, September 30' })).toHaveAttribute(
         'aria-pressed',
@@ -511,6 +523,35 @@ describe('TimerCalendar', () => {
       ),
     )
     expect(within(popover).getByRole('button', { name: 'Add 2 entries' })).toBeInTheDocument()
+  })
+
+  test('⌘V or Ctrl+V pastes the copied entry under the pointer, and asks to point off the grid', async () => {
+    renderView()
+    const entry = await block()
+    entry.focus()
+    fireEvent.keyDown(entry, { key: 'c', ctrlKey: true, metaKey: true })
+    const tuesday = screen.getByRole('group', { name: /Tuesday/ })
+    fireEvent.pointerMove(tuesday, { pointerType: 'mouse', ...point(1, 14.1) })
+    fireEvent.keyDown(document.body, { key: 'v', ctrlKey: true, metaKey: true })
+    await waitFor(() =>
+      expect(fn.createEntries).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entries: [
+            {
+              id: expect.any(String),
+              startedAt: at('2026-09-29', '14:00'),
+              stoppedAt: at('2026-09-29', '15:30'),
+            },
+          ],
+        }),
+      ),
+    )
+    expect(status()).toHaveTextContent('Pasted “Invoice export review”: Tue 14:00–15:30.')
+
+    fireEvent.pointerLeave(grid())
+    fireEvent.keyDown(document.body, { key: 'v', ctrlKey: true, metaKey: true })
+    expect(status()).toHaveTextContent('Point at a time on the calendar, then press Ctrl+V')
+    expect(fn.createEntries).toHaveBeenCalledTimes(1)
   })
 
   test("the running entry's menu only edits it, and Shift+F10 opens it under the entry", async () => {
@@ -532,7 +573,7 @@ describe('TimerCalendar', () => {
       'aria-disabled',
       'true',
     )
-    for (const name of [/^Copy(?! to)/, 'Duplicate', 'Copy to more days…', 'Delete']) {
+    for (const name of [/^Copy/, 'Duplicate', 'Repeat…', 'Delete']) {
       expect(within(entryMenu).getByRole('menuitem', { name })).toHaveAttribute(
         'aria-disabled',
         'true',
@@ -572,7 +613,7 @@ describe('TimerCalendar', () => {
       return waitFor(() => expect(entry).toHaveAttribute('data-pressed'), { timeout: 2000 })
     }
     function hold() {
-      return new Promise((resolve) => setTimeout(resolve, 700))
+      return new Promise((resolve) => setTimeout(resolve, 1000))
     }
 
     test("a long press that lifts opens an entry's menu, or empty time's", async () => {

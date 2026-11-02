@@ -7,8 +7,8 @@
 // ticket is found in the description on blur and Save, and its chip sits at the end of the
 // field. Escape and a click outside keep what was typed into a new entry for the next Add
 // entry; Cancel and Save clear it. A calendar slot keeps nothing: its times come from the grid.
-// Copy to more days (copy-panel/) picks more days for a stopped or new entry, and Save sends
-// the entry with a copy on each of them; a paste opens a slot with the copied work and the
+// Repeat (repeat/) gives more days for a stopped or new entry, and Save sends the entry with a
+// copy on each of them; a paste that repeats opens a slot with the copied work and the
 // panel filled by a pattern.
 import { createForm } from '@tanstack/solid-form'
 import CopyPlusIcon from 'lucide-solid/icons/copy-plus'
@@ -26,13 +26,13 @@ import type { Region } from '~/lib/holidays/holidays'
 import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
 import { MAX_BATCH_ENTRIES } from '~/server/entries/entries.schemas'
-import { type Pattern, copyTimes } from './copy-panel/copy-days'
-import { CopyPanel } from './copy-panel/copy-panel'
 import { DescriptionCombobox } from './description-combobox'
 import { durationErrorMessage, formatDurationInput, parseDuration } from './duration-input'
 import { type EntryFormError, lastEndToday, readEntryTimes, readStart } from './entries'
 import { ProjectSelect } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
+import { type Pattern, copyTimes } from './repeat/repeat-days'
+import { RepeatField } from './repeat/repeat-field'
 import { TicketChip } from './ticket-chip'
 import { caretAfterKey, createTicketDraft } from './ticket-draft'
 
@@ -46,7 +46,7 @@ interface EntrySlot {
   ticket?: string | null
 }
 
-// `copy` opens Copy to more days, filled by the pattern when one is given.
+// `copy` sets Repeat to a pattern, or for an entry focuses Repeat.
 export type EntryPopoverTarget =
   | { kind: 'new'; slot?: EntrySlot; copy?: Pattern }
   | { kind: 'running'; entry: Entry }
@@ -64,7 +64,7 @@ export interface EntryPopoverValues {
   startedAt: Date
   // Null for the running entry.
   stoppedAt: Date | null
-  // A copy of the entry on each day picked under Copy to more days.
+  // A copy of the entry on each day Repeat gives.
   copies: EntryCopy[]
 }
 
@@ -100,6 +100,14 @@ const PLACEMENTS = {
   beside: { placement: 'right-start', flip: 'left-start bottom-start top-start' },
 } as const
 
+// The page's popovers stay under the sticky header (src/lib/layers.ts), so this one keeps
+// clear of it at the top. Kobalte hands the padding to floating-ui, which takes one per side,
+// though Kobalte's type says a number.
+function overflowPadding() {
+  const header = document.querySelector('.scene-header')?.getBoundingClientRect().bottom ?? 0
+  return { top: Math.max(0, header) + 8, right: 8, bottom: 8, left: 8 } as unknown as number
+}
+
 export function EntryPopover(props: {
   target: EntryPopoverTarget | null
   // The button the popover opens under.
@@ -111,7 +119,7 @@ export function EntryPopover(props: {
   entries: readonly Entry[]
   // The organization's Issue links setting, for the chip.
   issueLinks: string | null
-  // Whose entries the copy panel checks for days that already have the entry.
+  // Whose entries Repeat checks for days that already have the entry.
   owner: { organizationId: string; userId: string }
   // Where Every workday finds the public holidays.
   region: Region
@@ -151,9 +159,11 @@ export function EntryPopover(props: {
       anchorRef={anchor}
       placement={placement().placement}
       flip={placement().flip}
+      overflowPadding={overflowPadding()}
     >
       <PopoverContent
-        class="max-h-[calc(100dvh-1rem)] w-[28rem] max-w-[calc(100vw-1rem)] overflow-y-auto"
+        // With Repeat's month it can be taller than the room below the header, so it scrolls.
+        class="max-h-(--kb-popper-content-available-height) w-[28rem] max-w-[calc(100vw-1rem)] overflow-y-auto"
         aria-labelledby="entry-popover-title"
         aria-describedby="entry-popover-description"
         // The buttons that open the popover carry data-entry-trigger, so a click on one while
@@ -165,11 +175,18 @@ export function EntryPopover(props: {
             event.preventDefault()
           } else interactedOutside = true
         }}
-        // The running entry opens at its start, a new one at its description.
+        // The running entry opens at its start, an entry's Repeat… at Repeat, and the rest at
+        // the description.
         onOpenAutoFocus={(event: Event) => {
           event.preventDefault()
           const content = event.currentTarget as HTMLElement
-          const field = shown()?.kind === 'running' ? '#entry-start' : '[role="combobox"]'
+          const target = shown()
+          const field =
+            target?.kind === 'running'
+              ? '#entry-start'
+              : target?.kind === 'edit' && target.copy
+                ? '[data-repeat]'
+                : '[role="combobox"]'
           content.querySelector<HTMLElement>(field)?.focus()
         }}
         onCloseAutoFocus={(event: Event) => {
@@ -283,21 +300,21 @@ function EntryForm(props: {
     return { startedAt: times.startedAt, stoppedAt }
   }
 
-  // Copy to more days, for a stopped or new entry.
-  const [copyOpen, setCopyOpen] = createSignal(!running && !!target.copy)
-  const [picked, setPicked] = createSignal<IsoDate[]>([])
+  // The days Repeat gives, for a stopped or new entry, and whether they're known yet: until
+  // the days that already have the entry are read, Save waits.
+  const [repeatDays, setRepeatDays] = createSignal<IsoDate[]>([])
+  const [repeatReady, setRepeatReady] = createSignal(true)
   // The entry itself counts toward the batch when it's new.
   const copyLimit = MAX_BATCH_ENTRIES - (target.kind === 'new' ? 1 : 0)
 
   function copiesOf(times: { startedAt: Date; stoppedAt: Date }): EntryCopy[] {
-    if (!copyOpen()) return []
     const date = localDate(times.startedAt.getTime(), props.zone)
     const base = {
       date,
       startedAt: times.startedAt.getTime(),
       length: times.stoppedAt.getTime() - times.startedAt.getTime(),
     }
-    return picked()
+    return repeatDays()
       .filter((d) => d !== date)
       .map((d) => {
         const copy = copyTimes(base, d, props.zone)
@@ -309,7 +326,7 @@ function EntryForm(props: {
     defaultValues: props.draft ?? opening(),
     onSubmit: ({ value }) => {
       const times = saved(value)
-      if (!times) return
+      if (!times || !repeatReady()) return
       const copies = times.stoppedAt ? copiesOf({ ...times, stoppedAt: times.stoppedAt }) : []
       if (copies.length > copyLimit) return
       props.onSave({
@@ -380,7 +397,7 @@ function EntryForm(props: {
   })
 
   function saveLabel() {
-    const count = copyOpen() ? picked().length : 0
+    const count = repeatDays().length
     if (!count) return m.entry_save()
     return target.kind === 'new'
       ? m.entry_save_add({ count: count + 1 })
@@ -567,9 +584,7 @@ function EntryForm(props: {
         )}
       </Show>
       <Show when={!running}>
-        <CopyPanel
-          open={copyOpen()}
-          onOpenChange={setCopyOpen}
+        <RepeatField
           base={base()}
           work={{ description: description(), projectId: projectId() || null }}
           editingId={entry?.id}
@@ -577,10 +592,12 @@ function EntryForm(props: {
           zone={props.zone}
           weekStart={props.weekStart}
           region={props.region}
-          picked={picked()}
-          onPick={setPicked}
           limit={copyLimit}
-          pattern={target.kind === 'new' ? target.copy : undefined}
+          initial={target.kind === 'new' ? target.copy : undefined}
+          onDays={(days, ready) => {
+            setRepeatDays(days)
+            setRepeatReady(ready)
+          }}
         />
       </Show>
       <div class="flex flex-wrap items-center gap-2">
@@ -617,7 +634,7 @@ function EntryForm(props: {
           <Button type="button" variant="outline" size="sm" onClick={() => props.onCancel()}>
             {m.entry_cancel()}
           </Button>
-          <Button type="submit" size="sm">
+          <Button type="submit" size="sm" disabled={!repeatReady()}>
             {saveLabel()}
           </Button>
         </div>
