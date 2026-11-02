@@ -469,18 +469,21 @@ describe('TimerCalendar', () => {
     await userEvent.click(
       within(slotMenu).getByRole('menuitem', { name: 'Paste “Invoice export review” here' }),
     )
-    expect(fn.createEntries).toHaveBeenCalledWith(
-      expect.objectContaining({
-        description: review.description,
-        projectId: project.id,
-        entries: [
-          {
-            id: expect.any(String),
-            startedAt: at('2026-09-29', '14:00'),
-            stoppedAt: at('2026-09-29', '15:30'),
-          },
-        ],
-      }),
+    // The item runs once the menu has closed.
+    await waitFor(() =>
+      expect(fn.createEntries).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: review.description,
+          projectId: project.id,
+          entries: [
+            {
+              id: expect.any(String),
+              startedAt: at('2026-09-29', '14:00'),
+              stoppedAt: at('2026-09-29', '15:30'),
+            },
+          ],
+        }),
+      ),
     )
     await waitFor(() =>
       expect(status()).toHaveTextContent('Pasted “Invoice export review”: Tue 14:00–15:30.'),
@@ -564,16 +567,19 @@ describe('TimerCalendar', () => {
 
   describe('on touch', () => {
     const finger = { button: 0, pointerType: 'touch', pointerId: 2 }
+    // Past the long press, which a block shows as pressed.
+    function holdOn(entry: HTMLElement) {
+      return waitFor(() => expect(entry).toHaveAttribute('data-pressed'), { timeout: 2000 })
+    }
     function hold() {
-      return new Promise((resolve) => setTimeout(resolve, 550))
+      return new Promise((resolve) => setTimeout(resolve, 700))
     }
 
     test("a long press that lifts opens an entry's menu, or empty time's", async () => {
       renderView()
       const entry = await block()
       fireEvent.pointerDown(entry, { ...finger, ...point(0, 9.5) })
-      await hold()
-      expect(entry).toHaveAttribute('data-pressed')
+      await holdOn(entry)
       fireEvent.pointerUp(grid(), { ...finger, ...point(0, 9.5) })
       fireEvent.click(entry)
       expect(await screen.findByRole('menu', { name: 'Entry' })).toBeInTheDocument()
@@ -591,7 +597,7 @@ describe('TimerCalendar', () => {
       renderView()
       const entry = await block()
       fireEvent.pointerDown(entry, { ...finger, ...point(0, 9.5) })
-      await hold()
+      await holdOn(entry)
       fireEvent.pointerMove(entry, { ...finger, ...point(1, 10.6) })
       fireEvent.pointerUp(entry, { ...finger, ...point(1, 10.6) })
       await waitFor(() =>

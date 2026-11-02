@@ -879,33 +879,34 @@ export function TimerCalendar(props: {
           setEditor(null)
         }}
       />
-      <Show when={menu()}>
+      {/* Keyed, so a right-click elsewhere while one is open opens a new menu there. */}
+      <Show when={menu()} keyed>
         {(open) => {
-          function at() {
-            return { x: open().x, y: open().y }
+          // A newer menu may have opened while this one closed.
+          function closed() {
+            if (menu() === open) setMenu(null)
           }
-          const current = open()
-          return 'entry' in current ? (
+          return 'entry' in open ? (
             <PointMenu
-              at={at()}
+              at={open}
               label={m.menu_entry()}
-              items={entryItems(current.entry)}
+              items={entryItems(open.entry)}
               class="w-60"
-              onClose={() => setMenu(null)}
               onClosed={() => {
+                closed()
                 if (!editor() && menuFocus) focusEntry(menuFocus)
                 menuFocus = null
               }}
             />
           ) : (
             <PointMenu
-              at={at()}
-              label={slotTitle(current.start)}
-              title={slotTitle(current.start)}
-              items={slotItems(current.start)}
+              at={open}
+              label={slotTitle(open.start)}
+              title={slotTitle(open.start)}
+              items={slotItems(open.start)}
               hint={slotHint()}
               class="w-72"
-              onClose={() => setMenu(null)}
+              onClosed={closed}
             />
           )
         }}

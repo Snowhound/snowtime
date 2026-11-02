@@ -1,8 +1,10 @@
 // A menu opened at a point on the week grid (prototypes/copy-entries.html, "Context menus"): at
 // the pointer for a right-click or a long press, or under an entry from the keyboard. It is a
-// DropdownMenu anchored to the point; the grid opens it, so its trigger is hidden. Focus goes
-// where `onClosed` puts it.
-import { For, type JSX, Show } from 'solid-js'
+// DropdownMenu anchored to the point; the grid opens it, so its trigger is hidden. It opens
+// when it mounts and runs the picked item once it has closed: an item that opens the entry
+// popover would otherwise have the closing menu's focus land outside the popover, which
+// closes it again. Focus goes where the item or `onClosed` puts it.
+import { For, type JSX, Show, createSignal } from 'solid-js'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,26 +38,25 @@ export function isCopyKey(event: KeyboardEvent) {
 }
 
 export function PointMenu(props: {
-  at: { x: number; y: number } | null
+  at: { x: number; y: number }
   label: string
   // A title over the items, such as the day and time of empty time.
   title?: string
   items: readonly MenuItem[]
   hint?: string
   class?: string
-  onClose: () => void
-  onClosed?: () => void
+  // After it has closed, and after the picked item ran.
+  onClosed: () => void
 }) {
+  const [open, setOpen] = createSignal(true)
+  let picked: (() => void) | undefined
   return (
     <DropdownMenu
-      open={props.at !== null}
-      onOpenChange={(open) => !open && props.onClose()}
+      open={open()}
+      onOpenChange={setOpen}
       placement="bottom-start"
       gutter={2}
-      getAnchorRect={() => {
-        const at = props.at
-        return at ? { x: at.x, y: at.y, width: 0, height: 0 } : undefined
-      }}
+      getAnchorRect={() => ({ x: props.at.x, y: props.at.y, width: 0, height: 0 })}
     >
       {/* The content takes its name from the trigger. */}
       <DropdownMenuTrigger class="hidden" tabIndex={-1} aria-hidden="true">
@@ -65,7 +66,10 @@ export function PointMenu(props: {
         class={props.class}
         onCloseAutoFocus={(event: Event) => {
           event.preventDefault()
-          props.onClosed?.()
+          const run = picked
+          picked = undefined
+          run?.()
+          props.onClosed()
         }}
       >
         <Show when={props.title}>
@@ -84,7 +88,7 @@ export function PointMenu(props: {
                   item.destructive && 'text-destructive focus:text-destructive',
                 )}
                 disabled={item.disabled}
-                onSelect={() => item.onSelect()}
+                onSelect={() => (picked = item.onSelect)}
               >
                 {item.icon}
                 <span class="min-w-0 truncate">{item.label}</span>
