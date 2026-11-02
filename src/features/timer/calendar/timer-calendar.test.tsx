@@ -561,4 +561,65 @@ describe('TimerCalendar', () => {
     expect(fn.updateEntry).not.toHaveBeenCalled()
     expect(status()).toHaveTextContent('Copied “Invoice export review” to Wed 12:00–13:30.')
   })
+
+  describe('on touch', () => {
+    const finger = { button: 0, pointerType: 'touch', pointerId: 2 }
+    function hold() {
+      return new Promise((resolve) => setTimeout(resolve, 550))
+    }
+
+    test("a long press that lifts opens an entry's menu, or empty time's", async () => {
+      renderView()
+      const entry = await block()
+      fireEvent.pointerDown(entry, { ...finger, ...point(0, 9.5) })
+      await hold()
+      expect(entry).toHaveAttribute('data-pressed')
+      fireEvent.pointerUp(grid(), { ...finger, ...point(0, 9.5) })
+      fireEvent.click(entry)
+      expect(await screen.findByRole('menu', { name: 'Entry' })).toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'Edit entry' })).not.toBeInTheDocument()
+      await userEvent.keyboard('{Escape}')
+
+      const tuesday = screen.getByRole('group', { name: /Tuesday/ })
+      fireEvent.pointerDown(tuesday, { ...finger, ...point(1, 15) })
+      await hold()
+      fireEvent.pointerUp(grid(), { ...finger, ...point(1, 15) })
+      expect(await screen.findByRole('menu', { name: 'Tue, Sep 29, 15:00' })).toBeInTheDocument()
+    })
+
+    test('a long press that then drags moves the entry', async () => {
+      renderView()
+      const entry = await block()
+      fireEvent.pointerDown(entry, { ...finger, ...point(0, 9.5) })
+      await hold()
+      fireEvent.pointerMove(entry, { ...finger, ...point(1, 10.6) })
+      fireEvent.pointerUp(entry, { ...finger, ...point(1, 10.6) })
+      await waitFor(() =>
+        expect(fn.updateEntry).toHaveBeenCalledWith({
+          id: review.id,
+          organizationId,
+          startedAt: at('2026-09-29', '10:00'),
+          stoppedAt: at('2026-09-29', '11:30'),
+        }),
+      )
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    })
+
+    test('a touch that moves before the long press scrolls, and a tap edits', async () => {
+      renderView()
+      const entry = await block()
+      fireEvent.pointerDown(entry, { ...finger, ...point(0, 9.5) })
+      fireEvent.pointerMove(entry, { ...finger, ...point(0, 10.5) })
+      await hold()
+      fireEvent.pointerUp(entry, { ...finger, ...point(0, 10.5) })
+      expect(entry).not.toHaveAttribute('data-pressed')
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+      expect(fn.updateEntry).not.toHaveBeenCalled()
+
+      fireEvent.pointerDown(entry, { ...finger, ...point(0, 9.5) })
+      fireEvent.pointerUp(entry, { ...finger, ...point(0, 9.5) })
+      fireEvent.click(entry)
+      expect(await screen.findByRole('dialog', { name: 'Edit entry' })).toBeInTheDocument()
+    })
+  })
 })

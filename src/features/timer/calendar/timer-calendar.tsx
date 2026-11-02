@@ -491,6 +491,11 @@ export function TimerCalendar(props: {
 
   let body: HTMLDivElement | undefined
   let scroller: HTMLDivElement | undefined
+  onMount(() => {
+    const grid = body
+    grid?.addEventListener('touchmove', drag.touchMove, { passive: false })
+    onCleanup(() => grid?.removeEventListener('touchmove', drag.touchMove))
+  })
   const drag = createGridDrag({
     body: () => body,
     zone,
@@ -505,6 +510,7 @@ export function TimerCalendar(props: {
       }
       change(entry, patch, verb)
     },
+    onMenu: openMenu,
     onCopy(entry, range) {
       const text = m.calendar_copied_to({ description: entryLabel(entry), days: daysText([range]) })
       addEntries(entry, [range], text)
@@ -549,6 +555,8 @@ export function TimerCalendar(props: {
     const target = event.target as HTMLElement
     if (!target.closest('[data-entry], [data-date]')) return
     event.preventDefault()
+    // Android's long press fires one too; the press opens the menu itself when it lifts.
+    if (drag.state()?.touch) return
     drag.cancel()
     setEditor(null)
     openMenu(target, event.clientX, event.clientY)
@@ -820,6 +828,11 @@ export function TimerCalendar(props: {
                             drag.state()?.entryId === piece().entry.id
                           }
                           flash={flashIds().has(piece().entry.id)}
+                          pressed={
+                            !!drag.state()?.pressed &&
+                            !drag.state()?.active &&
+                            drag.state()?.entryId === piece().entry.id
+                          }
                           focus={focusId() === piece().entry.id}
                           onFocused={() => setFocusId(null)}
                         />

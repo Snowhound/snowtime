@@ -92,6 +92,13 @@ One entry can be logged on many days, such as a daily standup (task 096,
   length in the page, not the system clipboard. `PointMenu` is a `DropdownMenu` anchored to
   the point with a hidden trigger, because Kobalte's `ContextMenu` opens on a 700 ms timer
   on touch and couldn't tell a long press from one that drags.
+- **Touch**: a tap adds time or edits an entry, and a drag scrolls, as before. A press held
+  for 500 ms without moving outlines the entry; lifting it then opens the context menu, and
+  dragging it moves the entry, or adds time on empty time. A touch that moves before then
+  is a scroll. Once the press is held, a non-passive `touchmove` listener stops the page
+  from scrolling, so the drag reaches the grid (`grid-drag.ts`). Android's own long-press
+  `contextmenu` event is ignored, and `-webkit-touch-callout: none` keeps iOS's callout and
+  text selection off the grid.
 
 ## Date and time fields
 

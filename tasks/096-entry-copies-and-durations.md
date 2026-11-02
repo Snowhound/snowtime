@@ -71,7 +71,7 @@ The second is to set an entry's length by typing a duration. The prototypes are
 - [x] Duplicate, Alt+drag, and the entry and empty-time context menus work as in
       `prototypes/copy-entries.html`, including from the keyboard (Shift+F10, the Menu key,
       ⌘C or Ctrl+C).
-- [ ] On touch, a long press opens the context menu, and a long press then drag moves the
+- [x] On touch, a long press opens the context menu, and a long press then drag moves the
       entry.
 - [x] Conformance tests cover `createEntries` and `deleteEntries`: a batch saves all or
       nothing, the daily limit counts the batch's own entries, the cap, and a retried id.

@@ -738,6 +738,9 @@ summary,
 }
 .cal-day {
   position: relative;
+  /* A long press opens the grid's own menu, not the browser's or a text selection. */
+  -webkit-touch-callout: none;
+  user-select: none;
   border-left-width: 1px;
   height: calc(24 * var(--hour));
   background-image:
@@ -770,6 +773,9 @@ summary,
   border-color: var(--p);
   background-color: color-mix(in oklab, var(--p) 18%, var(--card));
   touch-action: pan-y;
+}
+.cal-block[data-pressed] {
+  @apply ring-ring ring-offset-background shadow-lg ring-2 ring-offset-1;
 }
 .cal-block:hover {
   background-color: color-mix(in oklab, var(--p) 26%, var(--card));
