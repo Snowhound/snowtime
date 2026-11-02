@@ -131,7 +131,8 @@ export interface ReportFilters {
   entries: EntryFilters
 }
 
-// Longest span By day opens for; longer ones open By description.
+// Longest span By day opens for when the list holds more than one person's entries; longer
+// ones open By description.
 const DAY_VIEW_DAYS = 7
 
 export interface EntryFilters {
@@ -246,7 +247,9 @@ function entryFilters(
         to: [addDays(bucket, f.unit === 'week' ? 7 : 1), f.range.to].sort()[0],
       }
     : f.range
-  const view = search.entries ?? (rangeDays(range) > DAY_VIEW_DAYS ? 'description' : 'day')
+  const many = f.access.kind !== 'member' && !f.member && !(row && f.group === 'member')
+  // One person's list opens By day for any range, so it reads as what they did each day.
+  const view = search.entries ?? (many && rangeDays(range) > DAY_VIEW_DAYS ? 'description' : 'day')
   const { tickets: _, ...report } = f.input
   const narrowed = {
     report: { ...report, from: range.from, to: range.to },
@@ -259,6 +262,6 @@ function entryFilters(
     bucket,
     input: { ...narrowed, view },
     totals: row || bucket ? narrowed : null,
-    many: f.access.kind !== 'member' && !f.member && !(row && f.group === 'member'),
+    many,
   }
 }

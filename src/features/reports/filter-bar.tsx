@@ -180,6 +180,16 @@ export function ReportFilterBar(
                 <option value="" selected={!peopleValue()}>
                   {defaultPeople()}
                 </option>
+                <Show when={options().members.find((member) => member.userId === props.userId)}>
+                  {(me) => (
+                    <option
+                      value={`member:${me().userId}`}
+                      selected={peopleValue() === `member:${me().userId}`}
+                    >
+                      {m.reports_you({ name: me().name })}
+                    </option>
+                  )}
+                </Show>
                 <Show when={options().teams.length}>
                   <optgroup label={m.reports_teams()}>
                     <For each={options().teams}>
@@ -195,15 +205,13 @@ export function ReportFilterBar(
                   </optgroup>
                 </Show>
                 <optgroup label={m.reports_members()}>
-                  <For each={options().members}>
+                  <For each={options().members.filter((member) => member.userId !== props.userId)}>
                     {(member) => (
                       <option
                         value={`member:${member.userId}`}
                         selected={peopleValue() === `member:${member.userId}`}
                       >
-                        {member.userId === props.userId
-                          ? m.reports_you({ name: member.name })
-                          : member.name}
+                        {member.name}
                       </option>
                     )}
                   </For>

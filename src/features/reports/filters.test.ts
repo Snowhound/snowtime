@@ -75,26 +75,33 @@ describe('reportFilters.entries', () => {
       unit: 'week',
       bucket: '2026-08-31',
     }
-    const { entries } = reportFilters(search, context(MEMBER))
+    const { entries } = reportFilters(search, context(LEAD))
     expect(entries.bucket).toBe('2026-08-31')
     expect(entries.input.report).toMatchObject({ from: '2026-09-01', to: '2026-09-07' })
     // Six days open By day.
     expect(entries.view).toBe('day')
     // A day that starts no week of the report is dropped.
-    const bad = reportFilters({ ...search, bucket: '2026-09-02' }, context(MEMBER))
+    const bad = reportFilters({ ...search, bucket: '2026-09-02' }, context(LEAD))
     expect(bad.entries.bucket).toBeUndefined()
     expect(bad.entries.view).toBe('description')
   })
 
-  test('opens By day for up to seven days, until the user picks a view', () => {
-    const week = reportFilters({ range: 'this-week' }, context(MEMBER)).entries
+  test('opens By day for up to seven days of more people, until the user picks a view', () => {
+    const week = reportFilters({ range: 'this-week' }, context(LEAD)).entries
     expect(week.view).toBe('day')
-    const month = reportFilters({}, context(MEMBER)).entries
+    const month = reportFilters({}, context(LEAD)).entries
     expect(month).toMatchObject({ view: 'description', input: { view: 'description' } })
-    const day = reportFilters({ bucket: '2026-09-10' }, context(MEMBER)).entries
+    const day = reportFilters({ bucket: '2026-09-10' }, context(LEAD)).entries
     expect(day).toMatchObject({ view: 'day', input: { report: { from: '2026-09-10' } } })
-    const chosen = reportFilters({ entries: 'day' }, context(MEMBER)).entries
+    const chosen = reportFilters({ entries: 'day' }, context(LEAD)).entries
     expect(chosen.view).toBe('day')
+  })
+
+  test('opens By day for any range of one person', () => {
+    expect(reportFilters({}, context(MEMBER)).entries.view).toBe('day')
+    expect(reportFilters({ member: MEMBER }, context(LEAD)).entries.view).toBe('day')
+    const row = reportFilters({ group: 'member', row: MEMBER }, context(LEAD)).entries
+    expect(row.view).toBe('day')
   })
 
   test('narrows to a row of the grouping the user may see', () => {
