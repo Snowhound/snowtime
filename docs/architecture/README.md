@@ -107,7 +107,10 @@ of the code keeps; the rest is by area:
     names its method, path, and input schema, and its handler is one call of its rule,
     `run(c, entries.updateEntry)`. A domain whose calls differ in scope has a router per
     scope, such as the timer's user routes and its organization route. The native
-    backend's Axum routers mirror these files one to one (task 081.06).
+    backend's Axum routers mirror these files one to one (task 081.06). The native backend
+    follows this app at its own pace, which is the point of the setup: a change here ships
+    without the port, and snowtime-native catches up later in work of its own. Until then
+    its route parity and conformance runs show what it lacks.
   - `<domain>.schemas.ts`: the Valibot schemas of the domain's calls, what they take and
     what they send, shared by forms, the API, and the client. They must stay importable
     from the browser. A domain that needs another's schema imports that domain's file.

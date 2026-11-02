@@ -3,7 +3,8 @@
 Finished tasks, one line each. Their full records are in git history: every file named
 here is in commit `256ad96` under `tasks/000-archive/`
 ([browse](https://github.com/Snowhound/snowtime/tree/256ad96/tasks/000-archive)), for example
-`git show 256ad96:tasks/000-archive/084-server-functions-or-api.md`. Refer to a task by its
+`git show 256ad96:tasks/000-archive/084-server-functions-or-api.md`, unless its line names
+another commit, which has the file under `tasks/`. Refer to a task by its
 number ("task 084"); the number stays unique.
 
 - 001: Data model (done; `001-data-model.md`)
@@ -86,3 +87,5 @@ number ("task 084"); the number stays unique.
 - 090: perf:stress fixes from the native proof of concept (done; `090-stress-harness-fixes.md`)
 - 093: Public API with personal API keys (done; `093-public-api`)
 - 095: Validation failures answer a key (done; `095-validation-keys.md`)
+- 096: Entry copies and typed durations (done; `096-entry-copies-and-durations.md` in
+  `1693cbe`; snowtime-native ports `createEntries` and `deleteEntries` at its own pace)

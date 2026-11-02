@@ -77,6 +77,9 @@ Edit their source files at the paths above so both agents use the same instructi
   - its input and output schemas in `<domain>.schemas.ts`, and conformance tests in
     `conformance/`.
 
+  snowtime-native ports the call later, at its own pace, never in the same change or
+  session ("Application rules" in `docs/architecture/README.md`).
+
   A GET only reads; a read with a filter object for input is a POST marked `reads` on its
   route. Only `src/server/auth/` imports Better Auth. Client code imports a domain's
   `*.schemas.ts`, plus `src/server/errors.ts` and `src/server/schemas.ts`. It never imports
