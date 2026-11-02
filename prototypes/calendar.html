@@ -586,7 +586,8 @@
       // --- Dragging -----------------------------------------------------------------------------
       // With a mouse or pen: drag on empty time to add, drag an entry to move it, drag its top or
       // bottom edge to change its start or end. On touch, a tap adds or edits and dragging
-      // scrolls. Times snap to 15 minutes; nothing ends in the future.
+      // scrolls. Times snap to 15 minutes; an entry may end after now, but the running one can't
+      // start after it.
       function slotAt(x, y) {
         const cols = [...document.querySelectorAll('#cal-body .cal-day')]
         const col = cols.find((c) => {
@@ -628,15 +629,14 @@
           let start = Math.min(a, b)
           let end = Math.max(a, b)
           if (end - start < SNAP * MIN) end = start + SNAP * MIN
-          end = Math.min(end, Math.floor(now / (SNAP * MIN)) * SNAP * MIN)
-          return end > start ? { start, end } : { start, end: start, invalid: "Can't add time in the future" }
+          return { start, end }
         }
         const delta = snap(slot.minutes - d.slot.minutes) * MIN
         const days = Math.round((slot.day - d.slot.day) / 86_400_000)
         if (d.mode === 'move') {
           const start = Z.addDays(Z.startOfDay(d.start, zone()), days, zone()) + (d.start - Z.startOfDay(d.start, zone())) + delta
           const end = start + (d.end - d.start)
-          return end > now ? { start, end, invalid: "Can't end in the future" } : { start, end }
+          return { start, end }
         }
         const endOrNow = d.end ?? now
         if (d.mode === 'resize-start') {
@@ -645,7 +645,7 @@
         }
         const endDay = Z.startOfDay(d.end - 1, zone())
         const end = Math.max(timeOn(endDay, snap(minuteOf(d.end, endDay) + delta / MIN)), d.start + SNAP * MIN)
-        return end > now ? { start: d.start, end: Math.floor(now / MIN) * MIN } : { start: d.start, end }
+        return { start: d.start, end }
       }
 
       body.addEventListener('pointermove', (event) => {
@@ -676,12 +676,7 @@
         if (!d.active) {
           if (d.mode === 'create') {
             const start = timeOn(d.slot.day, Math.floor(d.slot.minutes / SNAP) * SNAP)
-            const end = Math.min(start + CLICK_MINUTES * MIN, Math.floor(Date.now() / MIN) * MIN)
-            if (end <= start) {
-              status("You can add time up to now.")
-              return
-            }
-            openNew(start, end)
+            openNew(start, start + CLICK_MINUTES * MIN)
           }
           // A click on an entry opens it through the button's click.
           return
@@ -735,10 +730,6 @@
         } else {
           const shift = step ?? Z.addDays(Z.startOfDay(e.startedAt, zone()), days, zone()) - Z.startOfDay(e.startedAt, zone())
           patch = { startedAt: e.startedAt + shift, stoppedAt: e.stoppedAt + shift }
-        }
-        if ((patch.stoppedAt ?? e.stoppedAt ?? 0) > now) {
-          status(`<span class="text-destructive">Can't end in the future. Nothing changed.</span>`)
-          return
         }
         // The view follows the entry to its day, and to its week past the shown ones.
         const start = patch.startedAt ?? e.startedAt
@@ -832,7 +823,7 @@
       function validate() {
         if (!f('edit-date').value || !f('edit-start').value || (!f('edit-end').disabled && !f('edit-end').value)) return 'Enter a date and times.'
         const { start, end } = formRange()
-        if ((end ?? start) > Date.now()) return end ? "The end can't be in the future." : "The start can't be in the future."
+        if (!end && start > Date.now()) return "The start can't be in the future."
         return null
       }
 
@@ -959,7 +950,7 @@
         const last = [...state.entries].filter((e) => e.stoppedAt <= Date.now()).sort((a, b) => b.stoppedAt - a.stoppedAt)[0]
         // Like the list's Add entry: from the end of today's last entry, for half an hour.
         const start = last && last.stoppedAt >= today() ? last.stoppedAt : Math.floor((Date.now() - HOUR) / (SNAP * MIN)) * SNAP * MIN
-        const end = Math.min(start + CLICK_MINUTES * MIN, Math.floor(Date.now() / MIN) * MIN)
+        const end = start + CLICK_MINUTES * MIN
         const week = Z.startOfWeek(start, zone(), weekStartSetting())
         if (week !== state.week || (narrow.matches && state.day !== Z.startOfDay(start, zone()))) goToWeek(week, Z.startOfDay(start, zone()))
         returnFocus = f('add-entry')

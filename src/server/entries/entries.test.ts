@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { v7 as uuidv7 } from 'uuid'
 import * as v from 'valibot'
 import type { Database } from '~/db'
@@ -13,9 +13,17 @@ import { createProject, deleteProject } from '../projects/projects.server'
 import { failedConstraint } from '../queries.server'
 import type { Scope } from '../scope.server'
 import { as, createSeededDatabase, interleaved, scopeOf } from '../testing'
-import { CreateEntryInput, MAX_ENTRY_HOURS, UpdateEntryInput } from './entries.schemas'
 import {
+  CreateEntriesInput,
+  CreateEntryInput,
+  MAX_BATCH_ENTRIES,
+  MAX_ENTRY_HOURS,
+  UpdateEntryInput,
+} from './entries.schemas'
+import {
+  createEntries,
   createEntry,
+  deleteEntries,
   deleteEntry,
   getFirstEntryStart,
   listEntries,
@@ -247,6 +255,168 @@ describe('createEntry', () => {
     await expect(write).rejects.toMatchObject({ code: 'NOT_FOUND', key: 'project_not_found' })
     const onIt = await db.select().from(timeEntry).where(eq(timeEntry.projectId, project.id))
     expect(onIt).toEqual([])
+  })
+})
+
+describe('createEntries', () => {
+  // Each a day apart, an hour long, starting `daysAhead` days from now.
+  function days(daysAhead: number, count: number) {
+    return Array.from({ length: count }, (_, i) => {
+      const startedAt = new Date(NOW.getTime() + (daysAhead + i) * DAY)
+      return { id: uuidv7(), startedAt, stoppedAt: new Date(startedAt.getTime() + 3_600_000) }
+    })
+  }
+
+  test('saves the work at each time, answering in input order', async () => {
+    const entries = days(400, 3).toReversed()
+    const created = await as(scopes.member, () =>
+      createEntries(db, scopes.member, {
+        description: 'Standup',
+        projectId: P.website,
+        ticket: 'NBW-412',
+        entries,
+      }),
+    )
+    expect(created.map((e) => e.id)).toEqual(entries.map((e) => e.id))
+    for (const entry of created) {
+      expect(entry).toMatchObject({
+        userId: U.member,
+        organizationId: O.northwind,
+        description: 'Standup',
+        projectId: P.website,
+        ticket: 'NBW-412',
+      })
+    }
+  })
+
+  test('saves all or none: a used id or an archived project takes none', async () => {
+    const [first] = await as(scopes.member, () =>
+      createEntries(db, scopes.member, { description: 'Once', entries: days(410, 1) }),
+    )
+    const retried = days(412, 2)
+    await expect(
+      as(scopes.member, () =>
+        createEntries(db, scopes.member, {
+          description: 'Twice',
+          entries: [...retried, { ...retried[0], id: first.id }],
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'CONFLICT', key: 'entry_id_taken' })
+    await expect(
+      as(scopes.engLead, () =>
+        createEntries(db, scopes.engLead, {
+          description: '',
+          projectId: P.legacy,
+          entries: days(414, 2),
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'CONFLICT' })
+    const ids = retried.map((e) => e.id)
+    const saved = await db.select().from(timeEntry).where(inArray(timeEntry.id, ids))
+    expect(saved).toEqual([])
+  })
+
+  test('only admins and owners save them for other members', async () => {
+    const entries = days(420, 2)
+    await expect(
+      as(scopes.lead, () =>
+        createEntries(db, scopes.lead, {
+          description: '',
+          userId: U.member,
+          entries: days(420, 2),
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    const created = await as(scopes.admin, () =>
+      createEntries(db, scopes.admin, { description: '', userId: U.member, entries }),
+    )
+    expect(created.map((e) => e.userId)).toEqual([U.member, U.member])
+  })
+
+  test("the daily limit counts the batch's own entries", async () => {
+    // Clear of the seed and of the other limit tests.
+    const start = new Date(NOW.getTime() + 700 * DAY)
+    await as(scopes.loner, async () => {
+      await db.insert(timeEntry).values(
+        Array.from({ length: limits.entriesPerMemberPerDay - 2 }, (_, i) => ({
+          id: uuidv7(),
+          organizationId: O.northwind,
+          userId: U.loner,
+          startedAt: new Date(start.getTime() + i * 60_000),
+          stoppedAt: new Date(start.getTime() + i * 60_000 + 30_000),
+        })),
+      )
+    })
+    function at(time: number) {
+      return { id: uuidv7(), startedAt: new Date(time), stoppedAt: new Date(time + 1000) }
+    }
+    const late = start.getTime() + 6 * 3_600_000
+    await expect(
+      as(scopes.loner, () =>
+        createEntries(db, scopes.loner, {
+          description: '',
+          entries: [at(late), at(late + 1), at(late + 2)],
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'LIMIT_REACHED', key: 'entry_limit' })
+    const created = await as(scopes.loner, () =>
+      createEntries(db, scopes.loner, {
+        description: '',
+        entries: [at(late), at(late + 1), at(start.getTime() + 3 * DAY)],
+      }),
+    )
+    expect(created).toHaveLength(3)
+  })
+
+  test(`takes 1 to ${MAX_BATCH_ENTRIES} entries, each with valid times`, () => {
+    const one = days(600, 1)
+    expect(v.is(CreateEntriesInput, { entries: one })).toBe(true)
+    expect(v.is(CreateEntriesInput, { entries: [] })).toBe(false)
+    expect(v.is(CreateEntriesInput, { entries: days(600, MAX_BATCH_ENTRIES) })).toBe(true)
+    expect(v.is(CreateEntriesInput, { entries: days(600, MAX_BATCH_ENTRIES + 1) })).toBe(false)
+    const backwards = { ...one[0], stoppedAt: new Date(one[0].startedAt.getTime() - 1) }
+    expect(v.is(CreateEntriesInput, { entries: [backwards] })).toBe(false)
+    const long = {
+      ...one[0],
+      stoppedAt: new Date(one[0].startedAt.getTime() + (MAX_ENTRY_HOURS + 1) * 3_600_000),
+    }
+    expect(v.is(CreateEntriesInput, { entries: [long] })).toBe(false)
+  })
+})
+
+describe('deleteEntries', () => {
+  test("deletes them all, and none when one is missing or not the user's", async () => {
+    function made(scope: Scope, count: number) {
+      return as(scope, () =>
+        createEntries(db, scope, {
+          description: '',
+          entries: Array.from({ length: count }, (_, i) => ({
+            id: uuidv7(),
+            ...past(90 + i),
+          })),
+        }),
+      )
+    }
+    const mine = await made(scopes.member, 2)
+    const theirs = await made(scopes.admin, 1)
+    const ids = mine.map((e) => e.id)
+
+    await expect(
+      as(scopes.member, () => deleteEntries(db, scopes.member, { ids: [...ids, theirs[0].id] })),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(
+      as(scopes.member, () => deleteEntries(db, scopes.member, { ids: [...ids, uuidv7()] })),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND', key: 'entry_not_found' })
+    expect((await listEntries(db, scopes.member, range)).map((e) => e.id)).toEqual(
+      expect.arrayContaining(ids),
+    )
+
+    expect(await as(scopes.member, () => deleteEntries(db, scopes.member, { ids }))).toEqual({
+      ids,
+    })
+    const listed = (await listEntries(db, scopes.member, range)).map((e) => e.id)
+    expect(listed).not.toContain(ids[0])
+    expect(listed).not.toContain(ids[1])
   })
 })
 

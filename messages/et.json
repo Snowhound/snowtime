@@ -53,6 +53,7 @@
   "validation_end_before_start": "Lõpp peab olema pärast algust.",
   "validation_range_end_before_start": "Vahemik peab lõppema pärast algust.",
   "validation_range_too_long": "Vahemik võib olla kõige rohkem {days} päeva.",
+  "validation_too_many_entries": "Korraga kõige rohkem {max} kannet.",
   "validation_member_or_team": "Vali liige või meeskond, mitte mõlemat.",
   "validation_email": "Sisesta kehtiv e-posti aadress.",
   "validation_password_required": "Sisesta parool.",
@@ -461,9 +462,11 @@
   "entry_date": "Kuupäev",
   "entry_start": "Algus",
   "entry_end": "Lõpp",
-  "entry_running_for": "Käib {duration}",
-  "entry_duration": "Kestus {duration}",
-  "entry_duration_next_day": "Kestus {duration} · lõpeb järgmisel päeval",
+  "entry_duration_hint": "Näiteks 1:30, 1 t 30 min, 1,5 või 45 min",
+  "duration_error_empty": "Sisesta kestus, näiteks 1:30 või 45 min.",
+  "duration_error_format": "Kirjuta kestus kujul 1:30, 1 t 30 min, 1,5 või 45 min.",
+  "duration_error_too_short": "Kestus peab olema vähemalt minut.",
+  "duration_error_bare_hours": "{hours} tundi on üle ööpäeva. Minutite jaoks kirjuta {hours} min.",
   "entry_error_missing": "Sisesta kuupäev, algus- ja lõpuaeg.",
   "entry_error_missing_running": "Sisesta kuupäev ja algusaeg.",
   "entry_error_running_future": "Käimasolev kanne ei saa alata tulevikus.",
@@ -489,7 +492,7 @@
   "calendar_weekend": "Nädalavahetus",
   "calendar_weekend_forced": "Nädalavahetusel on aega märgitud, seega on see näha.",
   "calendar_day": "Päev",
-  "calendar_hint": "Lohista lisamiseks · lohista kannet liigutamiseks, servi aegade muutmiseks · Alt+nooled liigutavad valitud kannet",
+  "calendar_hint": "Lohista lisamiseks · lohista kannet liigutamiseks, Alt+lohistus kopeerib · Alt+nooled liigutavad valitud kannet · {copy} ja {paste} kopeerivad ja kleebivad · paremklõpsuga rohkem",
   "calendar_now": "praegu",
   "calendar_entry": "{description}, {project}, {times}, {duration}",
   "calendar_entry_running": "{description}, {project}, {times}, {duration}, käib",
@@ -916,5 +919,87 @@
   "picker_time": "tt:mm",
   "browser_notice_title": "See brauser on aegunud.",
   "browser_notice_body": "Snowtime toetab Chrome'i, Edge'i, Firefoxi ja Safari kahte uusimat versiooni ning osa sellest ei pruugi siin töötada. Uuenda brauserit, et kõik töötaks.",
-  "browser_notice_dismiss": "Sulge"
+  "browser_notice_dismiss": "Sulge",
+  "copy_days": "Päevad, mil kanne kordub",
+  "copy_repeat": "Kordus",
+  "copy_until": "Kuni",
+  "copy_repeat_workday": "Igal tööpäeval",
+  "copy_repeat_day": "Iga päev",
+  "copy_repeat_week": "Iga {weekday}",
+  "copy_repeat_month": "Iga kuu {day} kuupäeval",
+  "copy_summary": [
+    {
+      "declarations": [
+        "input count",
+        "input days",
+        "input times",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} koopia: {days}, {times}",
+        "countPlural=*": "{count} koopiat: {days}, {times}"
+      }
+    }
+  ],
+  "copy_legend": "Klõpsa päeval, et see välja jätta või lisada · ääristatud: see kanne · täpp: juba olemas",
+  "copy_left_out": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Jäi välja {count} päev, kus see juba on.",
+        "countPlural=*": "Jäi välja {count} päeva, kus see juba on."
+      }
+    }
+  ],
+  "copy_none_match": "Kuni {date} ei sobi ükski päev. Klõpsa päeval, et see lisada.",
+  "copy_fix_times": "Paranda enne kuupäev ja kellaajad.",
+  "copy_day_self": "see kanne",
+  "copy_day_has": "see kanne on juba olemas",
+  "copy_day_holiday": "riigipüha",
+  "entry_save_add": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Lisa {count} kanne",
+        "countPlural=*": "Lisa {count} kannet"
+      }
+    }
+  ],
+  "entry_save_and_copy": "Salvesta ja lisa {count}",
+  "entry_duplicate": "Tee koopia",
+  "calendar_days": [
+    {
+      "declarations": ["input count", "input range", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} päev, {range}",
+        "countPlural=*": "{count} päeva, {range}"
+      }
+    }
+  ],
+  "calendar_added_copies": "Lisatud „{description}”: {days}.",
+  "calendar_saved_copies": "Salvestatud „{description}” ja kopeeritud: {days}.",
+  "calendar_copied_to": "Kopeeritud „{description}”: {days}.",
+  "calendar_duplicated": "Tehtud koopia kandest „{description}”. Lohista koopia õigele päevale või liiguta seda Alt+nooleklahvidega.",
+  "calendar_pasted": "Kleebitud „{description}”: {when}.",
+  "calendar_copied": "Kopeeritud „{description}” ({duration}). Osuta kellaajale ja vajuta {keys} või paremklõpsa seal.",
+  "calendar_copy_ghost": "Koopia · {times}",
+  "menu_entry": "Kanne",
+  "menu_edit": "Muuda",
+  "menu_copy": "Kopeeri",
+  "menu_duplicate": "Tee koopia",
+  "menu_copy_days": "Korda…",
+  "menu_add_here": "Lisa kanne siia",
+  "menu_paste_here": "Kleebi „{description}” siia",
+  "menu_paste_here_empty": "Kleebi siia",
+  "menu_paste_workday": "Kleebi igale tööpäevale…",
+  "menu_paste_week": "Kleebi igale nädalapäevale: {weekday}…",
+  "menu_paste_month": "Kleebi iga kuu {day} kuupäevale…",
+  "menu_hint_empty": "Kleepimiseks kopeeri enne kanne: paremklõpsa sellel või vali see ja vajuta {keys}.",
+  "menu_hint": "{duration} · {project}. {keys} kleebib ka kursori alla; kordused avavad kande lisamise, et päevad üle vaadata.",
+  "copy_repeat_none": "Ei kordu",
+  "calendar_paste_point": "Osuta kalendris kellaajale ja vajuta siis kleepimiseks {keys}."
 }

@@ -169,6 +169,14 @@ describe('clickRange and addRange', () => {
       stoppedAt: at('2026-09-29', '11:30'),
     })
   })
+
+  test('Add entry may end after now', () => {
+    const entries = [entry('a', ['2026-09-29', '09:00'], ['2026-09-29', '12:00'])]
+    expect(addRange(entries, zone, now)).toEqual({
+      startedAt: at('2026-09-29', '12:00'),
+      stoppedAt: at('2026-09-29', '12:30'),
+    })
+  })
 })
 
 describe('dragRange', () => {

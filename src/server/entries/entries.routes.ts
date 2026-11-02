@@ -1,7 +1,9 @@
 import { Hono } from 'hono'
 import { input, keys, type OrganizationEnv, run } from '../http.server'
 import {
+  CreateEntriesInput,
   CreateEntryInput,
+  DeleteEntriesInput,
   DeleteEntryInput,
   GetFirstEntryStartInput,
   ListEntriesInput,
@@ -15,5 +17,7 @@ export const entryRoutes = new Hono<OrganizationEnv>()
     run(c, entries.getFirstEntryStart),
   )
   .post('/entries', input(CreateEntryInput), (c) => run(c, entries.createEntry))
+  .post('/entries/batch', input(CreateEntriesInput), (c) => run(c, entries.createEntries))
+  .post('/entries/batch-delete', input(DeleteEntriesInput), (c) => run(c, entries.deleteEntries))
   .patch('/entries/:id', input(UpdateEntryInput), (c) => run(c, entries.updateEntry))
   .delete('/entries/:id', input(DeleteEntryInput), (c) => run(c, entries.deleteEntry))

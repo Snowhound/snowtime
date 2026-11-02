@@ -11,7 +11,9 @@ import { allInOrder, failedConstraint, live } from '../queries.server'
 import { isAdmin, readableUserIds, type Scope } from '../scope.server'
 import { MAX_ENTRY_MS } from './entries.schemas'
 import type {
+  CreateEntriesInput,
   CreateEntryInput,
+  DeleteEntriesInput,
   GetFirstEntryStartInput,
   DeleteEntryInput,
   ListEntriesInput,
@@ -37,7 +39,7 @@ function assertCanWrite(scope: Scope, userId: string) {
 }
 
 // An admin writing another user's entry: that user must be in the organization.
-async function assertMember(db: Database, scope: Scope, userId: string) {
+async function assertMember(db: Executor, scope: Scope, userId: string) {
   const [membership] = await db
     .select({ id: member.id })
     .from(member)
@@ -84,6 +86,50 @@ export async function assertEntryRoom(
   }
 }
 
+// assertEntryRoom for several new entries at once, each counting the others too. One read
+// of the starts from a day before the first to a day after the last.
+async function assertBatchRoom(
+  db: Executor,
+  organizationId: string,
+  userId: string,
+  starts: readonly Date[],
+) {
+  const times = starts.map((s) => s.getTime())
+  const near = await db
+    .select({ startedAt: timeEntry.startedAt })
+    .from(timeEntry)
+    .where(
+      and(
+        live(timeEntry, { organizationId }),
+        eq(timeEntry.userId, userId),
+        gt(timeEntry.startedAt, new Date(Math.min(...times) - day)),
+        lt(timeEntry.startedAt, new Date(Math.max(...times) + day)),
+      ),
+    )
+  const saved = near.map((e) => e.startedAt.getTime())
+  for (const [i, time] of times.entries()) {
+    function within(other: number) {
+      return Math.abs(other - time) < day
+    }
+    const others = times.filter((other, j) => j !== i && within(other)).length
+    if (saved.filter(within).length + others >= limits.entriesPerMemberPerDay) {
+      throw new AppError('LIMIT_REACHED', 'entry_limit')
+    }
+  }
+}
+
+// The constraint errors an insert of manual entries can meet.
+function insertError(error: unknown) {
+  if (failedConstraint(error) === 'time_entry.id') {
+    return new AppError('CONFLICT', 'entry_id_taken')
+  }
+  // Deleted since assertUsableProject found it.
+  if (failedConstraint(error) === 'time_entry_live_project') {
+    return new AppError('NOT_FOUND', 'project_not_found')
+  }
+  return error
+}
+
 export async function createEntry(db: Database, scope: Scope, input: CreateEntryInput) {
   const userId = input.userId ?? scope.userId
   assertCanWrite(scope, userId)
@@ -109,14 +155,49 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
       .returning(entryColumns)
     return entry
   } catch (error) {
-    if (failedConstraint(error) === 'time_entry.id') {
-      throw new AppError('CONFLICT', 'entry_id_taken')
-    }
-    // Deleted since assertUsableProject found it.
-    if (failedConstraint(error) === 'time_entry_live_project') {
-      throw new AppError('NOT_FOUND', 'project_not_found')
-    }
-    throw error
+    throw insertError(error)
+  }
+}
+
+// Entries of the same work at several times, all or none: one transaction holds the checks
+// and the insert. Answers them in input order. A retried call ends on the first id, with
+// entry_id_taken, after the first call saved them all.
+export async function createEntries(db: Database, scope: Scope, input: CreateEntriesInput) {
+  const userId = input.userId ?? scope.userId
+  assertCanWrite(scope, userId)
+  try {
+    const created = await db.transaction(async (tx) => {
+      await allInOrder([
+        userId !== scope.userId && assertMember(tx, scope, userId),
+        input.projectId && assertUsableProject(tx, scope, input.projectId),
+        assertBatchRoom(
+          tx,
+          scope.organizationId,
+          userId,
+          input.entries.map((e) => e.startedAt),
+        ),
+      ])
+      return tx
+        .insert(timeEntry)
+        .values(
+          input.entries.map((e) => ({
+            id: e.id,
+            organizationId: scope.organizationId,
+            userId,
+            projectId: input.projectId ?? null,
+            description: input.description,
+            ticket: input.ticket ?? null,
+            startedAt: e.startedAt,
+            stoppedAt: e.stoppedAt,
+          })),
+        )
+        .returning(entryColumns)
+    })
+    // SQLite returns inserted rows in no set order.
+    const order = new Map(input.entries.map((e, i) => [e.id, i]))
+    return created.sort((a, b) => order.get(a.id)! - order.get(b.id)!)
+  } catch (error) {
+    throw insertError(error)
   }
 }
 
@@ -188,6 +269,25 @@ export async function deleteEntry(db: Database, scope: Scope, input: DeleteEntry
     .set({ sysDeleted: true })
     .where(and(eq(timeEntry.id, entry.id), live(timeEntry, scope)))
   return { id: entry.id }
+}
+
+// Logical deletes of several entries, all or none, as Undo takes back a createEntries. Every
+// one must exist and be the user's to write.
+export async function deleteEntries(db: Database, scope: Scope, input: DeleteEntriesInput) {
+  const ids = [...new Set(input.ids)]
+  return db.transaction(async (tx) => {
+    const found = await tx
+      .select({ id: timeEntry.id, userId: timeEntry.userId })
+      .from(timeEntry)
+      .where(and(inArray(timeEntry.id, ids), live(timeEntry, scope)))
+    if (found.length < ids.length) throw new AppError('NOT_FOUND', 'entry_not_found')
+    for (const entry of found) assertCanWrite(scope, entry.userId)
+    await tx
+      .update(timeEntry)
+      .set({ sysDeleted: true })
+      .where(and(inArray(timeEntry.id, ids), live(timeEntry, scope)))
+    return { ids }
+  })
 }
 
 // Entries overlapping [from, to), newest first, including a running one. Members see their

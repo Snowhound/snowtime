@@ -54,6 +54,8 @@ export function CalendarBlock(props: {
   now: number
   editing: boolean
   dragging: boolean
+  // Held in a long press, which opens its menu on lifting or moves it on dragging.
+  pressed: boolean
   flash: boolean
   // The entry to focus once its block shows, after a key moved it.
   focus: boolean
@@ -124,6 +126,7 @@ export function CalendarBlock(props: {
       // A click on the entry that is open leaves its popover open.
       data-entry-trigger={props.editing ? '' : undefined}
       data-dragging={props.dragging ? '' : undefined}
+      data-pressed={props.pressed ? '' : undefined}
       aria-label={label()}
       style={style()}
     >

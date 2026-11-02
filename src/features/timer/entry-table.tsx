@@ -13,14 +13,13 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
-import { useCopyControl } from '~/lib/display-format'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { DayGroup } from './entries'
 import {
   DateField,
   DescriptionField,
-  EntryDuration,
+  DurationField,
   InlineDescription,
   NextDayMark,
   ProjectField,
@@ -50,7 +49,6 @@ export function EntryTable(
   },
 ) {
   const lazyDay = createLazyDays(() => props.groups)
-  const copyControl = useCopyControl()
   // Rows' heights as rendered, for a day's placeholder until it mounts (lazy-days.ts).
   function rowHeight() {
     return props.compact ? 37 : 57
@@ -70,8 +68,8 @@ export function EntryTable(
           <col class="w-40" />
           <col class="w-40" />
           <col class="w-36" />
-          {/* The duration, with room for the copy button when it shows. */}
-          <col class={copyControl() === 'button' ? 'w-28' : 'w-24'} />
+          {/* The duration field and its copy button. */}
+          <col class="w-28" />
           <col class="w-24" />
         </colgroup>
         <TableHeader>
@@ -208,8 +206,8 @@ function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
             <NextDayMark editor={editor} />
           </div>
         </TableCell>
-        <TableCell class="text-right tabular-nums">
-          <EntryDuration editor={editor} />
+        <TableCell>
+          <DurationField editor={editor} class="flex justify-end" />
         </TableCell>
         <TableCell>
           <EntryActions

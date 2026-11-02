@@ -1,0 +1,1645 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Entry copies and durations</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
+    <script src="seasons.js"></script>
+    <script src="scene.js"></script>
+    <script src="intro.js"></script>
+    <script src="app-frame.js"></script>
+    <script src="app-data.js"></script>
+    <style type="text/tailwindcss">
+      /* One hour is 48 px, so the 15-minute snap is 12 px. */
+      :root {
+        --hour: 48px;
+      }
+      /* The header and the body share their columns; both reserve the scrollbar's gutter so
+         they line up. */
+      .cal-cols {
+        display: grid;
+        grid-template-columns: 3.5rem repeat(var(--days), minmax(0, 1fr));
+        scrollbar-gutter: stable;
+      }
+      .cal-day {
+        @apply relative border-l;
+        height: calc(24 * var(--hour));
+        background-image:
+          linear-gradient(to bottom, var(--border) 1px, transparent 1px),
+          linear-gradient(to bottom, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px);
+        background-size:
+          100% var(--hour),
+          100% var(--hour);
+        background-position:
+          0 0,
+          0 calc(var(--hour) / 2);
+      }
+      .cal-day[data-today] {
+        background-color: color-mix(in oklab, var(--accent) 35%, transparent);
+      }
+      .cal-now {
+        @apply pointer-events-none absolute inset-x-0 z-20 h-0.5 bg-primary;
+      }
+      .cal-now::before {
+        content: '';
+        @apply absolute -left-1 -top-[3px] size-2 rounded-full bg-primary;
+      }
+      /* An entry: a tint of its project's color with a bar in the full color. */
+      .cal-block {
+        @apply absolute z-10 flex flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight text-foreground outline-none select-none;
+        border-color: var(--p);
+        background-color: color-mix(in oklab, var(--p) 18%, var(--card));
+        touch-action: pan-y;
+      }
+      .cal-block:hover {
+        background-color: color-mix(in oklab, var(--p) 26%, var(--card));
+      }
+      .cal-block:focus-visible,
+      .cal-block[data-editing] {
+        @apply ring-2 ring-ring ring-offset-1 ring-offset-background;
+      }
+      /* Up to 20 minutes: one tight line, centered. */
+      .cal-block[data-short] {
+        @apply justify-center py-0 text-[11px] leading-none;
+      }
+      .cal-block[data-muted] {
+        @apply border-dashed;
+      }
+      .cal-block[data-dragging] {
+        @apply opacity-40;
+      }
+      .cal-block[data-running] {
+        background-image: linear-gradient(to bottom, transparent 60%, color-mix(in oklab, var(--p) 22%, transparent));
+      }
+      /* The edges resize the entry with a mouse or pen. */
+      .cal-handle {
+        @apply absolute inset-x-0 z-10 h-1.5 cursor-ns-resize;
+      }
+      @media (pointer: coarse) {
+        .cal-handle {
+          display: none;
+        }
+      }
+      .cal-ghost {
+        @apply pointer-events-none absolute z-30 overflow-hidden rounded-md border-2 border-dashed px-1.5 py-0.5 text-xs font-medium tabular-nums;
+        border-color: var(--p, var(--ring));
+        background-color: color-mix(in oklab, var(--p, var(--ring)) 14%, var(--card));
+      }
+      .cal-ghost[data-invalid] {
+        @apply border-destructive text-destructive;
+      }
+      @keyframes cal-flash {
+        from {
+          box-shadow: 0 0 0 3px var(--ring);
+        }
+      }
+      .cal-flash {
+        animation: cal-flash 1.4s ease-out;
+      }
+      @keyframes cal-pulse {
+        50% {
+          opacity: 0.35;
+        }
+      }
+      .cal-pulse {
+        animation: cal-pulse 1.6s ease-in-out infinite;
+      }
+      .inline-time::-webkit-calendar-picker-indicator {
+        display: none;
+      }
+      /* A day in the copy panel's month. */
+      .copy-day {
+        @apply relative flex h-8 items-center justify-center rounded-md text-sm tabular-nums outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring;
+      }
+      .copy-day[aria-pressed='true'] {
+        @apply bg-primary text-primary-foreground hover:bg-primary/90;
+      }
+      .copy-day[data-off]:not([aria-pressed='true']) {
+        @apply text-muted-foreground;
+      }
+      .copy-day[data-self] {
+        @apply font-semibold ring-2 ring-inset ring-primary;
+      }
+      .copy-day[aria-disabled='true']:not([data-self]) {
+        @apply cursor-not-allowed opacity-40 hover:bg-transparent;
+      }
+      .copy-day[data-today] {
+        @apply underline underline-offset-4;
+      }
+      /* A day that already has this entry at this time. */
+      .copy-day[data-has]::after {
+        content: '';
+        @apply absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full bg-current opacity-70;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body class="bg-muted/40">
+    <div id="prototype-controls">
+      <label for="fixture" class="sr-only">Fixture</label>
+      <select id="fixture" data-ui="select" class="h-9 w-44">
+        <option value="running">Running</option>
+        <option value="idle">Idle</option>
+        <option value="overlaps">Overlaps and midnight</option>
+        <option value="long">Long content</option>
+        <option value="standups">Standups to fill in</option>
+        <option value="empty">Empty</option>
+      </select>
+      <label class="flex items-center gap-2 text-sm" title="Prototype only: saves fail and roll back">
+        <input id="fail-saves" type="checkbox" data-ui="checkbox" />Fail saves
+      </label>
+      <label class="flex items-center gap-2 text-sm" title="Prototype only: the server refuses every write with 503 until this is off">
+        <input id="server-busy" type="checkbox" data-ui="checkbox" />Server busy
+      </label>
+    </div>
+
+    <div id="pending" class="mx-auto max-w-6xl px-4 sm:px-8"></div>
+
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 pt-6 sm:px-8">
+      <h1 class="text-2xl font-semibold tracking-tight">Timer</h1>
+      <div class="flex items-center gap-2">
+        <!-- The view switch leads the actions, set apart from them. -->
+        <div data-ui="toggle-group" role="group" class="mr-2" aria-label="Entries as">
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="list" aria-pressed="false" class="gap-1.5"></button>
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="calendar" aria-pressed="true" data-pressed class="gap-1.5"></button>
+        </div>
+        <button id="add-entry" type="button" data-ui="button" data-variant="outline" class="h-9"></button>
+      </div>
+    </div>
+
+    <main class="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-6 pt-4 sm:px-8">
+      <section id="timer" class="surface flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center" aria-label="Timer">
+        <div class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+          <label for="description" class="sr-only">What are you working on?</label>
+          <input id="description" data-ui="input" type="text" placeholder="What are you working on?" autocomplete="off" class="flex-1" />
+          <label for="project" class="sr-only">Project</label>
+          <select id="project" data-ui="select" class="sm:w-48"></select>
+        </div>
+        <span id="elapsed" class="flex h-9 items-center justify-start px-2 text-lg tabular-nums sm:w-28 sm:justify-end">0:00:00</span>
+        <button id="toggle" data-ui="button" type="button"></button>
+      </section>
+
+      <section data-ui="card" class="gap-0 overflow-hidden py-0" aria-labelledby="week-label">
+        <div class="flex flex-wrap items-center gap-2 border-b px-3 py-2.5 sm:px-4">
+          <div class="flex items-center gap-1">
+            <button type="button" id="prev" data-ui="button" data-variant="outline" data-size="icon" class="size-8"></button>
+            <button type="button" id="next" data-ui="button" data-variant="outline" data-size="icon" class="size-8"></button>
+          </div>
+          <button type="button" id="today" data-ui="button" data-variant="outline" data-size="sm">Today</button>
+          <h2 id="week-label" class="ml-1 font-medium" aria-live="polite"></h2>
+          <div class="ml-auto flex items-center gap-3">
+            <span id="week-total" class="text-sm text-muted-foreground tabular-nums"></span>
+            <button type="button" id="weekend" data-ui="toggle" data-variant="outline" data-size="sm"></button>
+          </div>
+        </div>
+        <!-- Below 640 px, one day at a time, picked from a strip of the week's days. -->
+        <div id="day-strip" class="flex gap-1 overflow-x-auto border-b px-2 py-1.5 sm:hidden" role="group" aria-label="Day"></div>
+        <div id="cal-head" class="cal-cols overflow-y-hidden border-b max-sm:hidden"></div>
+        <div id="cal-scroll" class="h-[max(24rem,min(40rem,calc(100dvh-17rem)))] overflow-y-auto overscroll-contain">
+          <div id="cal-body" class="cal-cols"></div>
+        </div>
+        <div class="flex min-h-10 items-center justify-between gap-3 border-t px-3 py-1.5 text-sm sm:px-4">
+          <p id="cal-status" class="min-w-0 text-muted-foreground" role="status"></p>
+          <p class="hidden shrink-0 text-xs text-muted-foreground md:block">Drag to add · drag an entry to move it, Alt+drag to copy it · ⌘C and ⌘V copy and paste · right-click for more</p>
+        </div>
+      </section>
+    </main>
+
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden">
+      <defs>
+        <symbol id="icon-clipboard-paste" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 14h10" /><path d="M16 4h2a2 2 0 0 1 2 2v1.344" /><path d="m17 18 4-4-4-4" /><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113" /><rect x="8" y="2" width="8" height="4" rx="1" />
+        </symbol>
+        <symbol id="icon-copy-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="15" x2="15" y1="12" y2="18" /><line x1="12" x2="18" y1="15" y2="15" /><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+        </symbol>
+        <symbol id="icon-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m17 2 4 4-4 4" /><path d="M3 11v-1a4 4 0 0 1 4-4h14" /><path d="m7 22-4-4 4-4" /><path d="M21 13v1a4 4 0 0 1-4 4H3" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <!-- Context menus, opened at the pointer by a right-click (a two-finger click on a Mac
+         trackpad), or at the entry by Shift+F10 or the Menu key. -->
+    <div id="entry-menu" popover data-ui="menu" role="menu" aria-label="Entry" class="w-60">
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="edit"></button>
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="copy"></button>
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="duplicate"></button>
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="copy-days"></button>
+      <div data-ui="menu-separator" role="separator"></div>
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="delete" class="text-destructive focus:text-destructive"></button>
+    </div>
+    <div id="slot-menu" popover data-ui="menu" role="menu" aria-labelledby="slot-menu-label" class="w-72">
+      <div id="slot-menu-label" data-ui="menu-label" class="font-medium tabular-nums"></div>
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="add"></button>
+      <div data-ui="menu-separator" role="separator"></div>
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="paste"></button>
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="paste-workday"></button>
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="paste-week"></button>
+      <button type="button" role="menuitem" data-ui="menu-item" data-action="paste-month"></button>
+      <p id="slot-menu-hint" class="px-2 pb-1.5 pt-1 text-xs text-muted-foreground"></p>
+    </div>
+
+    <!-- Opened by the page next to the entry or the new slot, not by a popovertarget button. -->
+    <div id="entry-popover" popover data-ui="popover" role="dialog" aria-labelledby="entry-title" class="max-h-[calc(100dvh-16px)] w-[28rem] max-w-[calc(100vw-1rem)] overflow-y-auto">
+      <form id="entry-form" class="grid gap-4" novalidate>
+        <h2 id="entry-title" class="font-medium leading-none">Add entry</h2>
+        <div class="grid gap-1.5">
+          <label data-ui="label" for="edit-description">Description</label>
+          <input id="edit-description" data-ui="input" type="text" autocomplete="off" placeholder="What did you work on?" />
+        </div>
+        <div class="grid gap-1.5">
+          <label data-ui="label" for="edit-project">Project</label>
+          <select id="edit-project" data-ui="select"></select>
+        </div>
+        <div class="grid gap-1.5">
+          <label data-ui="label" for="edit-date">Date</label>
+          <input id="edit-date" data-ui="input" type="date" required class="sm:w-44" />
+        </div>
+        <div class="-mt-1 grid grid-cols-3 gap-4">
+          <div class="grid gap-1.5">
+            <label data-ui="label" for="edit-start">Start</label>
+            <input id="edit-start" data-ui="input" type="time" required />
+          </div>
+          <div class="grid gap-1.5" id="edit-end-field">
+            <label data-ui="label" for="edit-end">End</label>
+            <input id="edit-end" data-ui="input" type="time" required />
+          </div>
+          <div class="grid gap-1.5">
+            <label data-ui="label" for="edit-duration">Duration</label>
+            <input id="edit-duration" data-ui="input" type="text" autocomplete="off" spellcheck="false" placeholder="1:30" aria-describedby="edit-summary" class="tabular-nums" />
+          </div>
+        </div>
+        <p id="edit-summary" class="-mt-2 text-sm empty:hidden text-muted-foreground" aria-live="polite"></p>
+        <p id="edit-error" data-ui="error-message" class="-mt-3" role="alert" hidden></p>
+
+        <!-- Repeat: a copy on each day a pattern gives after the entry's, up to Until, at the same
+             time. The month previews them; a click takes a day out or adds one. -->
+        <div id="repeat-section" class="-mt-1 grid gap-3">
+          <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
+            <div class="grid min-w-0 flex-1 basis-48 gap-1.5">
+              <label data-ui="label" for="copy-pattern">Repeat</label>
+              <select id="copy-pattern" data-ui="select"></select>
+            </div>
+            <div class="grid gap-1.5" id="copy-until-field" hidden>
+              <label data-ui="label" for="copy-until">Until</label>
+              <input id="copy-until" data-ui="input" type="date" class="w-40" />
+            </div>
+          </div>
+          <div id="copy-panel" class="grid gap-3 rounded-lg border p-3" hidden>
+            <div class="flex items-center justify-between gap-2">
+              <span id="copy-month" class="text-sm font-medium"></span>
+              <div class="flex gap-1">
+                <button type="button" id="copy-prev" data-ui="button" data-variant="ghost" data-size="icon" class="size-7" aria-label="Previous month"></button>
+                <button type="button" id="copy-next" data-ui="button" data-variant="ghost" data-size="icon" class="size-7" aria-label="Next month"></button>
+              </div>
+            </div>
+            <div id="copy-grid" role="group" aria-label="Days the entry repeats on" class="grid grid-cols-7 gap-1"></div>
+            <p id="copy-summary" class="text-sm text-muted-foreground" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="edit-delete" data-ui="button" data-variant="ghost" data-size="sm" class="text-destructive hover:text-destructive"></button>
+          <button type="button" id="edit-duplicate" data-ui="button" data-variant="ghost" data-size="sm"></button>
+          <div class="ml-auto flex gap-2">
+            <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-entry-cancel>Cancel</button>
+            <button type="submit" id="edit-save" data-ui="button" data-size="sm">Save</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      appFrame.mount({ page: 'timer', title: 'Entry copies and durations', scene: true })
+
+      const { escapeHtml, icon } = appFrame
+      const Z = appData.tz
+      const { MIN, HOUR } = appData
+      const SNAP = 15
+      // A click without a drag adds this much.
+      const CLICK_MINUTES = 30
+      const px = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hour'))
+      const narrow = matchMedia('(max-width: 639px)')
+
+      // --- Data ---------------------------------------------------------------------------------
+      const org = appData.organization()
+      const ME = appData.currentUserId
+      const projects = org.projects.map((p) => ({ ...p, color: appData.colorVar(p.color) }))
+      const mine = appData.projectsFor(ME, org.teams, org.projects).map((p) => p.id)
+      const NO_PROJECT = { id: 'none', name: 'No project', color: 'var(--muted-foreground)', muted: true }
+      const project = (id) => (id === 'none' ? NO_PROJECT : projects.find((p) => p.id === id) ?? { id, name: 'Unavailable project', color: 'var(--muted-foreground)', muted: true })
+
+      const zone = () => appFrame.settings.get().timeZone
+      const weekStartSetting = () => appFrame.settings.get().weekStart
+      const state = {
+        fixture: 'running',
+        week: 0, // first day of the shown week
+        day: 0, // below 640 px: the day shown
+        entries: [],
+        running: null,
+        // A new entry's slot while its popover is open: { start, end }.
+        draft: null,
+        editing: null,
+        undo: null,
+        drag: null,
+        // The copied entry: { description, projectId, length }.
+        clipboard: null,
+        // The slot a context menu was opened on: { start, end, color }.
+        menuSlot: null,
+      }
+      let nextId = 1
+
+      // An entry on a day of a week relative to this one (0 is the week's first day).
+      function at(week, day, hour, minutes, description, projectId) {
+        const first = Z.addDays(Z.startOfWeek(Date.now(), zone(), weekStartSetting()), week * 7 + day, zone())
+        const p = Z.zonedParts(first + 12 * HOUR, zone())
+        const startedAt = Z.zonedTime(p.y, p.m, p.d, 0, Math.round(hour * 60), zone())
+        return { id: `e${nextId++}`, description, projectId, startedAt, stoppedAt: startedAt + minutes * MIN }
+      }
+      // The same working days for this week and the two before it; today's later entries and
+      // any day still to come drop out.
+      function workWeek(week, { standup = true } = {}) {
+        return [0, 1, 2, 3, 4].flatMap((d) => [
+          ...(standup ? [at(week, d, 8.5, 25, 'Standup and planning', 'p3')] : []),
+          at(week, d, 9, d % 2 ? 150 : 110, d % 2 ? 'Report time zone boundaries' : 'Timer schema and partial unique index', 'p1'),
+          at(week, d, 11.5 + (d % 3) * 0.25, 75, d === 2 ? 'Sprint demo with the client' : 'Invoice export review', 'p2'),
+          at(week, d, 13.5, d === 4 ? 45 : 120, d === 4 ? '' : 'Stock adjustment import', d === 4 ? 'none' : 'p4'),
+          ...(d === 3 ? [at(week, d, 16, 50, 'Retro', 'p3')] : []),
+        ])
+      }
+      const past = (list) => list.filter((e) => e.stoppedAt <= Date.now())
+      const fixtures = {
+        running: () => ({
+          entries: past([...workWeek(0), ...workWeek(-1), ...workWeek(-2), at(-1, 5, 10, 95, 'Migration dry run', 'p4')]),
+          running: { id: `e${nextId++}`, description: 'Prototype timer layouts', projectId: 'p1', startedAt: Date.now() - 25 * MIN - 12_000 },
+        }),
+        idle: () => ({ entries: fixtures.running().entries, running: null }),
+        overlaps: () => ({
+          entries: past([
+            ...workWeek(0),
+            ...workWeek(-1),
+            // Two entries at once, and a third over both.
+            at(0, 0, 9.25, 60, 'Pair review of the report filters', 'p2'),
+            at(0, 0, 9.5, 30, 'Call with Nordic Logistics', 'p4'),
+            // Five minutes: the shortest block still shows a line.
+            at(0, 0, 12.75, 5, 'Deploy', 'p1'),
+            // Crosses midnight into the next day.
+            at(-1, 2, 22.5, 170, 'Production cutover', 'p4'),
+            // Archived project.
+            at(-1, 1, 16.5, 40, 'Landing page copy fixes', 'p6'),
+          ]),
+          running: null,
+        }),
+        long: () => {
+          const long = 'Workshop with the logistics team about migrating legacy warehouse stock adjustments, including edge cases for partial deliveries'
+          const entries = []
+          for (let week = -1; week <= 0; week++)
+            for (let d = 0; d < 5; d++)
+              for (let i = 0; i < 9; i++) entries.push(at(week, d, 8 + i * 0.75, i % 3 ? 20 : 40, i % 2 ? long : 'Code review', i % 2 ? 'p4' : 'p2'))
+          return { entries: past(entries), running: { id: `e${nextId++}`, description: long, projectId: 'p4', startedAt: Date.now() - 3 * HOUR - 3 * MIN } }
+        },
+        // A month of work with one standup logged, to copy to the other days.
+        standups: () => ({
+          entries: past([...[0, -1, -2, -3, -4].flatMap((w) => workWeek(w, { standup: false })), at(-4, 0, 8.5, 25, 'Standup and planning', 'p3')]),
+          running: null,
+        }),
+        empty: () => ({ entries: [], running: null }),
+      }
+
+      // Estonia's public holidays near the fixtures' dates; the app takes them from the user's
+      // country setting (`holidays:update`).
+      const HOLIDAYS = {
+        '2026-06-23': 'Victory Day',
+        '2026-06-24': 'Midsummer Day',
+        '2026-08-20': 'Restoration of Independence Day',
+        '2026-12-24': 'Christmas Eve',
+        '2026-12-25': 'Christmas Day',
+        '2026-12-26': 'Boxing Day',
+        '2027-01-01': 'New Year’s Day',
+        '2027-02-24': 'Independence Day',
+      }
+
+      // --- Time helpers -------------------------------------------------------------------------
+      const fmt = (opts) => new Intl.DateTimeFormat(undefined, { timeZone: zone(), ...opts })
+      const clock = (t) => fmt({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(t)
+      const hm = (ms) => {
+        const m = Math.round(ms / MIN)
+        return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
+      }
+      const dateValue = (t) => {
+        const p = Z.zonedParts(t, zone())
+        return `${p.y}-${String(p.m).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`
+      }
+      // The instant of a wall-clock minute on a day; minutes may run past midnight.
+      const timeOn = (day, minutes) => {
+        const p = Z.zonedParts(day + 12 * HOUR, zone())
+        return Z.zonedTime(p.y, p.m, p.d, 0, minutes, zone())
+      }
+      const minuteOf = (t, day) => Math.round((t - day) / MIN)
+      const weekday = (day) => Z.zonedParts(day + 12 * HOUR, zone()).weekday
+      const isWeekend = (day) => [0, 6].includes(weekday(day))
+      const today = () => Z.startOfDay(Date.now(), zone())
+      const endOf = (e) => e.stoppedAt ?? Date.now()
+      const allEntries = () => (state.running ? [...state.entries, state.running] : state.entries)
+
+      function weekDays() {
+        return Array.from({ length: 7 }, (_, i) => Z.addDays(state.week, i, zone()))
+      }
+      // The weekend shows when the user turned it on, or when the week has time on it.
+      function weekendHasTime() {
+        return weekDays().filter(isWeekend).some((day) => allEntries().some((e) => e.startedAt < Z.addDays(day, 1, zone()) && endOf(e) > day))
+      }
+      const weekendShown = () => appFrame.settings.get().calendarWeekend || weekendHasTime()
+      function shownDays() {
+        const days = weekDays().filter((d) => weekendShown() || !isWeekend(d))
+        return narrow.matches ? days.filter((d) => d === state.day) : days
+      }
+
+      // An entry's pieces on the shown days, clipped at midnight.
+      function pieces(e, days = shownDays()) {
+        return days.flatMap((day) => {
+          const next = Z.addDays(day, 1, zone())
+          const from = Math.max(e.startedAt, day)
+          const to = Math.min(endOf(e), next)
+          return to > from ? [{ entry: e, day, from, to, first: from === e.startedAt, last: to === endOf(e) }] : []
+        })
+      }
+
+      // Side by side where entries overlap: each cluster of overlapping pieces splits the width.
+      function layout(list) {
+        const sorted = [...list].sort((a, b) => a.from - b.from || b.to - a.to)
+        const out = []
+        let cluster = []
+        let clusterEnd = -Infinity
+        const flush = () => {
+          const columns = []
+          for (const p of cluster) {
+            let c = columns.findIndex((end) => end <= p.from)
+            if (c < 0) c = columns.push(0) - 1
+            columns[c] = p.to
+            p.col = c
+          }
+          cluster.forEach((p) => out.push({ ...p, cols: columns.length }))
+          cluster = []
+        }
+        for (const p of sorted) {
+          if (p.from >= clusterEnd) flush()
+          cluster.push(p)
+          clusterEnd = Math.max(clusterEnd, p.to)
+        }
+        flush()
+        return out
+      }
+
+      // --- Rendering ----------------------------------------------------------------------------
+      function renderHeader() {
+        document.querySelector('[data-view="list"]').innerHTML = `${icon('list')}List`
+        document.querySelector('[data-view="calendar"]').innerHTML = `${icon('calendar-days')}Calendar`
+        document.getElementById('add-entry').innerHTML = `${icon('plus')}Add entry`
+        document.getElementById('prev').innerHTML = icon('chevron-left')
+        document.getElementById('next').innerHTML = icon('chevron-right')
+        document.getElementById('edit-delete').innerHTML = `${icon('trash-2')}Delete`
+        document.getElementById('edit-duplicate').innerHTML = `${icon('copy-plus')}Duplicate`
+        document.getElementById('copy-prev').innerHTML = icon('chevron-left')
+        document.getElementById('copy-next').innerHTML = icon('chevron-right')
+      }
+
+      function renderToolbar() {
+        const days = weekDays()
+        const last = days[6]
+        document.getElementById('week-label').textContent = fmt({ day: 'numeric', month: 'short', year: 'numeric' }).formatRange(days[0], last)
+        document.getElementById('prev').setAttribute('aria-label', 'Previous week')
+        document.getElementById('next').setAttribute('aria-label', 'Next week')
+        const total = allEntries().reduce((sum, e) => sum + pieces(e, days).reduce((s, p) => s + p.to - p.from, 0), 0)
+        document.getElementById('week-total').textContent = total ? `This week: ${hm(total)}` : ''
+        const weekend = document.getElementById('weekend')
+        const forced = weekendHasTime()
+        const on = weekendShown()
+        weekend.innerHTML = 'Weekend'
+        weekend.setAttribute('aria-pressed', String(on))
+        weekend.toggleAttribute('data-pressed', on)
+        weekend.disabled = forced
+        weekend.title = forced ? 'This week has weekend time, so the weekend shows' : ''
+        const current = state.week === Z.startOfWeek(Date.now(), zone(), weekStartSetting())
+        document.getElementById('today').disabled = current && (!narrow.matches || state.day === today())
+      }
+
+      function renderStrip() {
+        const days = weekDays().filter((d) => weekendShown() || !isWeekend(d))
+        document.getElementById('day-strip').innerHTML = days
+          .map((day) => {
+            const total = allEntries().reduce((s, e) => s + pieces(e, [day]).reduce((a, p) => a + p.to - p.from, 0), 0)
+            const pressed = day === state.day
+            return `<button type="button" data-day="${day}" aria-pressed="${pressed}" class="flex min-w-11 flex-1 flex-col items-center rounded-md px-1 py-1 text-xs ${pressed ? 'bg-primary text-primary-foreground' : day === today() ? 'bg-accent' : 'hover:bg-accent'}">
+              <span>${escapeHtml(fmt({ weekday: 'short' }).format(day))}</span>
+              <span class="text-sm font-medium tabular-nums">${fmt({ day: 'numeric' }).format(day)}</span>
+              <span class="tabular-nums ${pressed ? '' : 'text-muted-foreground'}">${total ? hm(total) : '·'}</span>
+            </button>`
+          })
+          .join('')
+      }
+
+      function renderGrid() {
+        const days = shownDays()
+        const now = Date.now()
+        const head = document.getElementById('cal-head')
+        const body = document.getElementById('cal-body')
+        for (const el of [head, body]) el.style.setProperty('--days', days.length)
+        head.innerHTML =
+          `<div></div>` +
+          days
+            .map((day) => {
+              const total = allEntries().reduce((s, e) => s + pieces(e, [day]).reduce((a, p) => a + p.to - p.from, 0), 0)
+              const isToday = day === today()
+              return `<div class="flex items-baseline justify-between gap-1 border-l px-2 py-1.5 ${isToday ? 'bg-accent/60' : ''}">
+                <span class="truncate text-sm ${isToday ? 'font-semibold' : 'font-medium'}">${escapeHtml(fmt({ weekday: 'short', day: 'numeric' }).format(day))}</span>
+                <span class="text-xs text-muted-foreground tabular-nums">${total ? hm(total) : ''}</span>
+              </div>`
+            })
+            .join('')
+        const hours = Array.from({ length: 23 }, (_, i) => i + 1)
+          .map((h) => `<span class="absolute right-2 -translate-y-1/2 text-[11px] text-muted-foreground tabular-nums" style="top: calc(${h} * var(--hour))">${String(h).padStart(2, '0')}:00</span>`)
+          .join('')
+        const unit = px() / 60
+        body.innerHTML =
+          `<div class="relative" aria-hidden="true">${hours}</div>` +
+          days
+            .map((day) => {
+              const next = Z.addDays(day, 1, zone())
+              const nowLine = now >= day && now < next ? `<div class="cal-now" style="top: ${minuteOf(now, day) * unit}px"></div>` : ''
+              const blocks = layout(allEntries().flatMap((e) => pieces(e, [day])))
+                .map((p) => block(p, unit))
+                .join('')
+              const draft = state.draft ? ghosts(state.draft.start, state.draft.end, day, unit, { p: state.draft.color }).replace('class="cal-ghost"', 'class="cal-ghost" data-draft') : ''
+              // Where a paste from the open context menu would go.
+              const target = state.menuSlot ? ghosts(state.menuSlot.start, state.menuSlot.end, day, unit, { p: state.menuSlot.color }).replace('class="cal-ghost"', 'class="cal-ghost" data-draft') : ''
+              return `<div class="cal-day" data-day="${day}" ${day === today() ? 'data-today' : ''} aria-label="${escapeHtml(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(day))}">${blocks}${draft}${target}${nowLine}</div>`
+            })
+            .join('')
+      }
+
+      function block(p, unit) {
+        const e = p.entry
+        const proj = project(e.projectId)
+        const top = minuteOf(p.from, p.day) * unit
+        const height = Math.max(((p.to - p.from) / MIN) * unit, 14) - 2
+        const running = !e.stoppedAt
+        const description = e.description || 'No description'
+        const times = `${clock(e.startedAt)}–${running ? 'now' : clock(e.stoppedAt)}`
+        const label = `${description}, ${proj.name}, ${times}, ${hm(endOf(e) - e.startedAt)}${running ? ', running' : ''}`
+        const lines =
+          height >= 44
+            ? `<span class="line-clamp-2 font-medium ${e.description ? '' : 'italic text-muted-foreground'}">${escapeHtml(description)}</span>
+               <span class="truncate text-muted-foreground">${escapeHtml(proj.name)}</span>
+               <span class="mt-auto truncate text-muted-foreground tabular-nums">${running ? `<span class="cal-pulse mr-1 inline-block size-1.5 rounded-full bg-primary align-middle"></span>` : ''}${times} · ${hm(endOf(e) - e.startedAt)}</span>`
+            : `<span class="truncate"><span class="font-medium ${e.description ? '' : 'italic text-muted-foreground'}">${escapeHtml(description)}</span> <span class="text-muted-foreground tabular-nums">${clock(e.startedAt)}</span></span>`
+        const handles = `${p.first ? `<span class="cal-handle -top-0.5" data-handle="start" aria-hidden="true"></span>` : ''}${p.last && !running ? `<span class="cal-handle -bottom-0.5" data-handle="end" aria-hidden="true"></span>` : ''}`
+        const attrs = [height < 22 && 'data-short', proj.muted && 'data-muted', running && 'data-running', state.editing === e.id && 'data-editing', state.drag?.id === e.id && state.drag.active && 'data-dragging']
+          .filter(Boolean)
+          .join(' ')
+        return `<button type="button" class="cal-block" data-entry="${e.id}" ${attrs} aria-label="${escapeHtml(label)}"
+          style="--p: ${proj.color}; top: ${top + 1}px; height: ${height}px; left: calc(${(p.col / p.cols) * 100}% + 2px); width: calc(${100 / p.cols}% - 4px)">${lines}${handles}</button>`
+      }
+
+      // A dashed outline for a slot being dragged or added, with its times, on one day.
+      function ghosts(start, end, day, unit, { p, invalid, copy } = {}) {
+        const next = Z.addDays(day, 1, zone())
+        const from = Math.max(start, day)
+        const to = Math.min(end, next)
+        if (to <= from) return ''
+        const top = minuteOf(from, day) * unit
+        const height = Math.max(((to - from) / MIN) * unit, 14) - 2
+        const text = invalid ?? `${copy ? 'Copy · ' : ''}${clock(start)}–${clock(end)} · ${hm(end - start)}`
+        return `<div class="cal-ghost" ${invalid ? 'data-invalid' : ''} style="${p ? `--p: ${p};` : ''} top: ${top + 1}px; height: ${height}px; left: 2px; right: 2px">${escapeHtml(text)}</div>`
+      }
+
+      function render() {
+        renderToolbar()
+        renderStrip()
+        renderGrid()
+      }
+
+      // Opens the week at 07:00, or earlier when its first entry starts before.
+      function scrollToMorning() {
+        const starts = allEntries()
+          .flatMap((e) => pieces(e))
+          .map((p) => minuteOf(p.from, p.day))
+        const first = Math.min(7 * 60, ...starts.map((m) => m - 30))
+        // A little above the hour, so its label shows.
+        document.getElementById('cal-scroll').scrollTop = (Math.max(0, first) / 60) * px() - 10
+      }
+
+      // --- Mutations (updateEntry, createEntry, deleteEntry) -----------------------------------
+      const status = (html) => (document.getElementById('cal-status').innerHTML = html)
+
+      // Server busy: a refused change stays on the grid, pending, and the status line offers
+      // "Try again" where Undo would be. The page's alert says the same for every page.
+      const pending = { count: 0, retrying: false }
+      const busy = () => document.getElementById('server-busy').checked
+      function renderPending() {
+        const disabled = pending.retrying ? ' disabled' : ''
+        document.getElementById('pending').innerHTML = pending.count
+          ? `<div data-ui="alert" data-variant="warning" class="mt-6 -mb-2 flex items-center gap-3 py-3 [&>svg]:static [&>svg]:shrink-0 [&>svg+div]:translate-y-0 [&>svg~*]:pl-0">${icon('clock')}<div data-ui="alert-description" class="flex flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <span role="status">Not saved yet: the server is busy. Try again when you’re ready.</span>
+              <button type="button" data-ui="button" data-variant="outline" data-size="sm" class="border-warning/50 text-warning hover:bg-warning/10 hover:text-warning" data-retry${disabled}>Try again</button>
+            </div></div>`
+          : ''
+        if (pending.count)
+          status(`<span class="inline-flex items-center gap-x-2 text-warning"><span class="inline-flex items-center gap-1.5">${icon('clock', 'size-3.5')}Not saved yet: the server is busy.</span><button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-warning" data-retry${disabled}>Try again</button></span>`)
+      }
+      function retryPending() {
+        if (pending.retrying) return
+        pending.retrying = true
+        renderPending()
+        setTimeout(() => {
+          pending.retrying = false
+          if (!busy()) {
+            pending.count = 0
+            status('Saved.')
+          }
+          renderPending()
+        }, 700)
+      }
+
+      function save(apply, undo, message) {
+        if (busy() || pending.count) {
+          apply()
+          state.undo = null
+          pending.count++
+          renderPending()
+          render()
+          return true
+        }
+        if (document.getElementById('fail-saves').checked) {
+          status(`<span class="text-destructive">Couldn't save. The entry is back as it was.</span>`)
+          render()
+          return false
+        }
+        apply()
+        state.undo = undo
+        status(`${escapeHtml(message)}${undo ? ` <button type="button" id="undo" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0">${icon('undo-2')}Undo</button>` : ''}`)
+        render()
+        return true
+      }
+
+      function updateEntry(id, patch, verb = 'Updated') {
+        const e = allEntries().find((x) => x.id === id)
+        const before = { ...e }
+        const ok = save(
+          () => Object.assign(e, patch),
+          () => Object.assign(e, before),
+          `${verb} “${e.description || 'No description'}”: ${fmt({ weekday: 'short' }).format(patch.startedAt ?? e.startedAt)} ${clock(patch.startedAt ?? e.startedAt)}–${e.stoppedAt || patch.stoppedAt ? clock(patch.stoppedAt ?? e.stoppedAt) : 'now'}.`
+        )
+        if (ok) flash(id)
+      }
+
+      function flash(id) {
+        requestAnimationFrame(() => document.querySelectorAll(`[data-entry="${id}"]`).forEach((b) => b.classList.add('cal-flash')))
+      }
+
+      // --- Dragging -----------------------------------------------------------------------------
+      // With a mouse or pen: drag on empty time to add, drag an entry to move it, drag its top or
+      // bottom edge to change its start or end. On touch, a tap adds or edits and dragging
+      // scrolls. Times snap to 15 minutes; an entry may end after now, but the running one can't
+      // start after it.
+      function slotAt(x, y) {
+        const cols = [...document.querySelectorAll('#cal-body .cal-day')]
+        const col = cols.find((c) => {
+          const r = c.getBoundingClientRect()
+          return x >= r.left && x < r.right
+        }) ?? (x < cols[0].getBoundingClientRect().left ? cols[0] : cols.at(-1))
+        const r = col.getBoundingClientRect()
+        const minutes = Math.max(0, Math.min(24 * 60, ((y - r.top) / px()) * 60))
+        return { day: Number(col.dataset.day), minutes }
+      }
+      const snap = (m) => Math.round(m / SNAP) * SNAP
+
+      const body = document.getElementById('cal-body')
+      body.addEventListener('pointerdown', (event) => {
+        // Ctrl+click on a Mac opens the context menu.
+        if (event.button !== 0 || (event.ctrlKey && isMac) || state.draft) return
+        const handle = event.target.closest('[data-handle]')
+        const blockEl = event.target.closest('[data-entry]')
+        const slot = slotAt(event.clientX, event.clientY)
+        const touch = event.pointerType === 'touch'
+        if (blockEl) {
+          const e = allEntries().find((x) => x.id === blockEl.dataset.entry)
+          const mode = handle ? `resize-${handle.dataset.handle}` : 'move'
+          // A running entry keeps its end at now: only its start moves.
+          if (touch || (mode === 'move' && !e.stoppedAt)) return
+          state.drag = { mode, id: e.id, x: event.clientX, y: event.clientY, slot, active: false, start: e.startedAt, end: e.stoppedAt }
+        } else if (event.target.closest('.cal-day')) {
+          state.drag = { mode: 'create', x: event.clientX, y: event.clientY, slot, active: false, touch }
+        } else return
+        // No text selection while dragging; the pointer is captured once the drag starts, so a
+        // plain click still reaches the entry.
+        if (!touch) event.preventDefault()
+      })
+
+      function dragRange(d, slot) {
+        const now = Date.now()
+        if (d.mode === 'create') {
+          const a = timeOn(d.slot.day, snap(d.slot.minutes))
+          const b = timeOn(slot.day === d.slot.day ? slot.day : d.slot.day, snap(slot.minutes))
+          let start = Math.min(a, b)
+          let end = Math.max(a, b)
+          if (end - start < SNAP * MIN) end = start + SNAP * MIN
+          return { start, end }
+        }
+        const delta = snap(slot.minutes - d.slot.minutes) * MIN
+        const days = Math.round((slot.day - d.slot.day) / 86_400_000)
+        if (d.mode === 'move') {
+          const start = Z.addDays(Z.startOfDay(d.start, zone()), days, zone()) + (d.start - Z.startOfDay(d.start, zone())) + delta
+          const end = start + (d.end - d.start)
+          return { start, end }
+        }
+        const endOrNow = d.end ?? now
+        if (d.mode === 'resize-start') {
+          const start = Math.min(timeOn(Z.startOfDay(d.start, zone()), snap(minuteOf(d.start, Z.startOfDay(d.start, zone())) + delta / MIN)), endOrNow - SNAP * MIN)
+          return { start, end: endOrNow }
+        }
+        const endDay = Z.startOfDay(d.end - 1, zone())
+        const end = Math.max(timeOn(endDay, snap(minuteOf(d.end, endDay) + delta / MIN)), d.start + SNAP * MIN)
+        return { start: d.start, end }
+      }
+
+      // Alt (Option on a Mac) held while moving an entry copies it instead, as in desktop
+      // calendars; the original stays put. Pressing or releasing Alt mid-drag switches.
+      body.addEventListener('pointermove', (event) => {
+        const d = state.drag
+        if (!d || d.touch) return
+        if (!d.active && Math.hypot(event.clientX - d.x, event.clientY - d.y) < 4) return
+        if (!d.active) body.setPointerCapture(event.pointerId)
+        d.active = true
+        d.copy = d.mode === 'move' && event.altKey
+        d.range = dragRange(d, slotAt(event.clientX, event.clientY))
+        drawDrag()
+      })
+
+      function drawDrag() {
+        const d = state.drag
+        const unit = px() / 60
+        document.querySelectorAll('#cal-body .cal-ghost:not([data-draft])').forEach((g) => g.remove())
+        const color = d.id ? project(allEntries().find((x) => x.id === d.id).projectId).color : undefined
+        document.querySelectorAll('#cal-body .cal-day').forEach((col) => {
+          col.insertAdjacentHTML('beforeend', ghosts(d.range.start, Math.max(d.range.end, d.range.start + SNAP * MIN), Number(col.dataset.day), unit, { p: color, invalid: d.range.invalid, copy: d.copy }))
+        })
+        body.style.cursor = d.copy ? 'copy' : ''
+        if (d.id) document.querySelectorAll(`[data-entry="${d.id}"]`).forEach((b) => b.toggleAttribute('data-dragging', !d.copy))
+      }
+
+      body.addEventListener('pointerup', (event) => {
+        const d = state.drag
+        state.drag = null
+        body.style.cursor = ''
+        if (!d) return
+        if (!d.active) {
+          if (d.mode === 'create') {
+            const start = timeOn(d.slot.day, Math.floor(d.slot.minutes / SNAP) * SNAP)
+            openNew(start, start + CLICK_MINUTES * MIN)
+          }
+          // A click on an entry opens it through the button's click.
+          return
+        }
+        const { start, end, invalid } = d.range
+        if (invalid) {
+          status(`<span class="text-destructive">${escapeHtml(invalid)}. Nothing changed.</span>`)
+          render()
+        } else if (d.mode === 'create') openNew(start, end)
+        else if (d.copy) {
+          const e = allEntries().find((x) => x.id === d.id)
+          addCopies(e, [{ startedAt: start, stoppedAt: end }])
+        } else {
+          const e = allEntries().find((x) => x.id === d.id)
+          const patch = d.mode === 'resize-start' || !e.stoppedAt ? { startedAt: start } : { startedAt: start, stoppedAt: end }
+          if (patch.startedAt === e.startedAt && (patch.stoppedAt ?? e.stoppedAt) === e.stoppedAt) render()
+          else updateEntry(d.id, patch, d.mode === 'move' ? 'Moved' : 'Changed')
+        }
+        // The click that follows a drag isn't an edit.
+        suppressClick = true
+        setTimeout(() => (suppressClick = false))
+      })
+      body.addEventListener('pointercancel', () => {
+        state.drag = null
+        render()
+      })
+      let suppressClick = false
+
+      body.addEventListener('click', (event) => {
+        const b = event.target.closest('[data-entry]')
+        if (!b || suppressClick) return
+        openEdit(b.dataset.entry, b)
+      })
+
+      // With the keyboard: on a focused entry, Alt+Up and Alt+Down move it by 15 minutes and
+      // Alt+Left and Alt+Right by a day; with Shift, Alt+Up and Alt+Down change its end. The
+      // running entry's start moves; its end stays at now. Focus stays on the entry.
+      body.addEventListener('keydown', (event) => {
+        const b = event.target.closest('[data-entry]')
+        if (b && (isMac ? event.metaKey : event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'c') {
+          const e = allEntries().find((x) => x.id === b.dataset.entry)
+          if (e.stoppedAt) copyEntry(e)
+          return
+        }
+        const step = { ArrowUp: -SNAP * MIN, ArrowDown: SNAP * MIN }[event.key]
+        const days = { ArrowLeft: -1, ArrowRight: 1 }[event.key]
+        if (!b || !event.altKey || (step === undefined && days === undefined)) return
+        // Alt+Left is the browser's Back on Windows and Linux.
+        event.preventDefault()
+        const e = allEntries().find((x) => x.id === b.dataset.entry)
+        const now = Date.now()
+        let patch
+        if (event.shiftKey) {
+          if (!step || !e.stoppedAt) return
+          patch = { stoppedAt: Math.max(e.stoppedAt + step, e.startedAt + SNAP * MIN) }
+        } else if (!e.stoppedAt) {
+          if (!step) return
+          patch = { startedAt: Math.min(e.startedAt + step, now - MIN) }
+        } else {
+          const shift = step ?? Z.addDays(Z.startOfDay(e.startedAt, zone()), days, zone()) - Z.startOfDay(e.startedAt, zone())
+          patch = { startedAt: e.startedAt + shift, stoppedAt: e.stoppedAt + shift }
+        }
+        // The view follows the entry to its day, and to its week past the shown ones.
+        const start = patch.startedAt ?? e.startedAt
+        state.week = Z.startOfWeek(start, zone(), weekStartSetting())
+        state.day = Z.startOfDay(start, zone())
+        updateEntry(e.id, patch, event.shiftKey ? 'Changed' : 'Moved')
+        document.querySelector(`[data-entry="${e.id}"]`)?.focus()
+      })
+
+      // --- The entry popover -------------------------------------------------------------------
+      const popover = document.getElementById('entry-popover')
+      const f = (id) => document.getElementById(id)
+      let returnFocus = null
+      let anchorEl = null
+      // The entry to focus once the popover closes, in place of the one edited (a duplicate).
+      let focusAfterClose = null
+      // The duration field's parse error, while it has one.
+      let durationError = null
+
+      function projectOptions(currentId) {
+        const list = [NO_PROJECT, ...projects.filter((p) => mine.includes(p.id))]
+        if (!list.some((p) => p.id === currentId)) {
+          const current = project(currentId)
+          list.push({ ...current, name: current.archivedAt ? `${current.name} (archived)` : current.name })
+        }
+        return list.map((p) => `<option value="${p.id}"${p.id === currentId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')
+      }
+
+      function fillForm(e, isNew) {
+        f('entry-title').textContent = isNew ? 'Add entry' : e.stoppedAt ? 'Edit entry' : 'Running entry'
+        f('edit-description').value = e.description ?? ''
+        f('edit-project').innerHTML = projectOptions(e.projectId ?? 'none')
+        f('edit-date').value = dateValue(e.startedAt)
+        f('edit-start').value = clock(e.startedAt)
+        f('edit-end').value = e.stoppedAt ? clock(e.stoppedAt) : ''
+        f('edit-end').disabled = !e.stoppedAt
+        f('edit-end-field').hidden = !e.stoppedAt
+        f('edit-duration').value = hm(endOf(e) - e.startedAt)
+        durationError = null
+        f('edit-delete').hidden = isNew || !e.stoppedAt
+        f('edit-duplicate').hidden = isNew || !e.stoppedAt
+        f('edit-error').hidden = true
+        // The running entry has no end to copy.
+        f('repeat-section').hidden = !e.stoppedAt
+        Object.assign(copy, { pattern: 'none', untilEdited: false, removed: new Set(), added: new Set(), focus: null, month: monthOf(Z.startOfDay(e.startedAt, zone())) })
+        f('copy-until').value = ''
+        summarize()
+        renderCopy()
+      }
+
+      // A paste fills in the copied description and project.
+      function openNew(start, end, from = {}) {
+        const last = [...state.entries].filter((e) => e.stoppedAt <= start).sort((a, b) => b.stoppedAt - a.stoppedAt)[0]
+        const projectId = from.projectId ?? last?.projectId ?? 'none'
+        state.draft = { start, end, projectId, color: project(projectId).color }
+        state.editing = null
+        render()
+        fillForm({ description: from.description ?? '', projectId, startedAt: start, stoppedAt: end }, true)
+        show(document.querySelector('#cal-body .cal-ghost[data-draft]'))
+      }
+
+      function openEdit(id, anchor) {
+        const e = allEntries().find((x) => x.id === id)
+        state.editing = id
+        state.draft = null
+        returnFocus = anchor
+        render()
+        fillForm(e, false)
+        show(document.querySelector(`[data-entry="${id}"]`))
+      }
+
+      function show(anchor) {
+        popover.showPopover()
+        anchorEl = anchor
+        place()
+        f('edit-description').focus()
+      }
+
+      // Beside the anchor where there's room, else under it; kept inside the window. Placed
+      // again when the copy panel opens or closes.
+      function place() {
+        const anchor = (anchorEl?.isConnected && anchorEl) || (state.editing && document.querySelector(`[data-entry="${state.editing}"]`)) || document.querySelector('#cal-body .cal-ghost[data-draft]') || f('add-entry')
+        const r = anchor.getBoundingClientRect()
+        const w = popover.offsetWidth
+        const h = popover.offsetHeight
+        let left = r.right + 8
+        let top = r.top
+        if (left + w > innerWidth - 8) left = r.left - 8 - w
+        if (left < 8) {
+          left = Math.max(8, Math.min(r.left, innerWidth - w - 8))
+          top = r.bottom + 8
+        }
+        popover.style.inset = 'auto'
+        popover.style.left = `${left}px`
+        popover.style.top = `${Math.max(8, Math.min(top, innerHeight - h - 8))}px`
+      }
+
+      // --- Duration ---
+      // Start, end, and duration are one range: typing a duration moves the end (the running
+      // entry's start, since its end is now); typing a start or an end recomputes the duration.
+      // A start keeps the end, as the list's rows do.
+      //
+      // Accepted: 1:30, 1h 30m, 1h30, 90m, 90 min, 1.5, 1,5, 1.5h. A bare number is hours.
+      function parseDuration(text) {
+        const t = text.trim().toLowerCase().replace(',', '.')
+        let m
+        let minutes
+        if (!t) return { error: 'Enter a duration, such as 1:30 or 45m.' }
+        if ((m = t.match(/^(\d{1,2}):([0-5]\d)$/))) minutes = +m[1] * 60 + +m[2]
+        else if ((m = t.match(/^(\d+(?:\.\d+)?)\s*h(?:ours?)?\s*(?:(\d+)\s*(?:m(?:in(?:utes?)?)?)?)?$/))) minutes = +m[1] * 60 + +(m[2] ?? 0)
+        else if ((m = t.match(/^(\d+)\s*m(?:in(?:utes?)?)?$/))) minutes = +m[1]
+        else if (/^\d+(?:\.\d+)?$/.test(t)) minutes = +t * 60
+        else return { error: 'Write the duration as 1:30, 1h 30m, 1.5, or 45m.' }
+        minutes = Math.round(minutes)
+        if (minutes < 1) return { error: 'The duration must be at least a minute.' }
+        if (minutes > 24 * 60) return { error: /^\d+$/.test(t) ? `${t} hours is over a day. For minutes, write ${t}m.` : 'An entry can be at most 24 hours.' }
+        return { minutes }
+      }
+      function longDuration(minutes) {
+        const h = Math.floor(minutes / 60)
+        const m = minutes % 60
+        return [h && `${h} h`, m && `${m} min`].filter(Boolean).join(' ')
+      }
+
+      function formStart() {
+        const [y, m, d] = f('edit-date').value.split('-').map(Number)
+        const [sh, sm] = f('edit-start').value.split(':').map(Number)
+        return Z.zonedTime(y, m, d, sh, sm, zone())
+      }
+      // Start and end on the date; an end at or before the start is the next day.
+      function formRange() {
+        const [y, m, d] = f('edit-date').value.split('-').map(Number)
+        const start = formStart()
+        if (f('edit-end').disabled) return { start, end: null }
+        const [eh, em] = f('edit-end').value.split(':').map(Number)
+        let end = Z.zonedTime(y, m, d, eh, em, zone())
+        const nextDay = end <= start
+        if (nextDay) end = Z.zonedTime(y, m, d + 1, eh, em, zone())
+        return { start, end, nextDay }
+      }
+
+      function applyDuration() {
+        const parsed = parseDuration(f('edit-duration').value)
+        durationError = parsed.error ?? null
+        if (parsed.error) return
+        const length = parsed.minutes * MIN
+        if (f('edit-end').disabled) {
+          const start = Math.floor((Date.now() - length) / MIN) * MIN
+          f('edit-date').value = dateValue(start)
+          f('edit-start').value = clock(start)
+        } else if (f('edit-date').value && f('edit-start').value) {
+          f('edit-end').value = clock(formStart() + length)
+        }
+      }
+      function showDuration() {
+        durationError = null
+        if (!f('edit-date').value || !f('edit-start').value) return
+        const running = f('edit-end').disabled
+        if (!running && !f('edit-end').value) return
+        const { start, end } = running ? { start: formStart(), end: Date.now() } : formRange()
+        if (end > start) f('edit-duration').value = hm(end - start)
+      }
+
+      function validate() {
+        if (durationError) return durationError
+        if (!f('edit-date').value || !f('edit-start').value || (!f('edit-end').disabled && !f('edit-end').value)) return 'Enter a date and times.'
+        const { start, end } = formRange()
+        if (!end && start > Date.now()) return "The start can't be in the future."
+        return null
+      }
+
+      // Under the times: how the typed duration reads, and an end on the next day.
+      function summarize() {
+        const parts = []
+        if (document.activeElement === f('edit-duration')) {
+          const parsed = parseDuration(f('edit-duration').value)
+          parts.push(parsed.error ? 'Such as 1:30, 1h 30m, 1.5, or 45m' : longDuration(parsed.minutes))
+        }
+        if (!validate() && formRange().nextDay) parts.push('ending the next day')
+        const text = parts.join(', ')
+        f('edit-summary').textContent = text.charAt(0).toUpperCase() + text.slice(1)
+      }
+      function showError(message) {
+        f('edit-error').hidden = !message
+        f('edit-error').textContent = message ?? ''
+      }
+
+      popover.addEventListener('input', (event) => {
+        const id = event.target.id
+        if (id === 'copy-pattern' || id === 'copy-until') return
+        if (id === 'edit-duration') applyDuration()
+        else if (['edit-date', 'edit-start', 'edit-end'].includes(id)) showDuration()
+        summarize()
+        if (!f('edit-error').hidden) showError(validate())
+        renderCopy()
+      })
+      f('edit-duration').addEventListener('focus', summarize)
+      f('edit-duration').addEventListener('change', () => durationError && showError(durationError))
+      // On leaving the field, the duration reads back as h:mm.
+      f('edit-duration').addEventListener('blur', () => {
+        const parsed = parseDuration(f('edit-duration').value)
+        if (!parsed.error) f('edit-duration').value = hm(parsed.minutes * MIN)
+        summarize()
+      })
+
+      // --- Repeat ---
+      // Repeat leads: a pattern fills the days after the entry's that match it, up to Until, at
+      // once, leaving out the days that already have the entry. The month previews the result;
+      // a click takes a day out or adds one, and those exceptions stay when Until, the pattern,
+      // or the entry's times change, so nothing needs filling again. One-off copies are ⌘C and
+      // ⌘V, Paste here, Duplicate, or Alt+drag.
+      const copy = { pattern: 'none', untilEdited: false, removed: new Set(), added: new Set(), month: 0, focus: null }
+      const PATTERNS = ['none', 'workday', 'day', 'week', 'month']
+      const MAX_ENTRIES = 100
+
+      function monthOf(day) {
+        const p = Z.zonedParts(day + 12 * HOUR, zone())
+        return Z.zonedTime(p.y, p.m, 1, 0, 0, zone())
+      }
+      function addMonths(month, n) {
+        const p = Z.zonedParts(month + 12 * HOUR, zone())
+        return Z.zonedTime(p.y, p.m + n, 1, 0, 0, zone())
+      }
+      function daysBetween(from, to) {
+        const out = []
+        for (let d = from; d <= to; d = Z.addDays(d, 1, zone())) out.push(d)
+        return out
+      }
+      const dayOfMonth = (day) => Z.zonedParts(day + 12 * HOUR, zone()).d
+      function ordinal(n) {
+        const suffix = { one: 'st', two: 'nd', few: 'rd', other: 'th' }[new Intl.PluralRules('en', { type: 'ordinal' }).select(n)]
+        return `${n}${suffix}`
+      }
+      // A pattern's name for a day: "Every Monday", "Every month on the 5th".
+      function patternLabel(kind, day) {
+        if (kind === 'none') return "Doesn't repeat"
+        if (kind === 'workday') return 'Every workday'
+        if (kind === 'day') return 'Every day'
+        if (kind === 'week') return `Every ${fmt({ weekday: 'long' }).format(day + 12 * HOUR)}`
+        return `Every month on the ${ordinal(dayOfMonth(day))}`
+      }
+      // Until starts at the end of the entry's month, or later for the sparser patterns.
+      function defaultUntil(kind, day) {
+        const months = { workday: 0, day: 0, week: 1, month: 5 }[kind]
+        return Z.addDays(addMonths(monthOf(day), months + 1), -1, zone())
+      }
+
+      // The form's entry as a day, a start minute, and a length; null while the form is invalid.
+      function base() {
+        if (f('edit-end').disabled || validate()) return null
+        const { start, end } = formRange()
+        const day = Z.startOfDay(start, zone())
+        return { day, minute: minuteOf(start, day), length: end - start }
+      }
+      function copyRange(b, day) {
+        const start = timeOn(day, b.minute)
+        return { startedAt: start, stoppedAt: start + b.length }
+      }
+      function dayInfo(b, day) {
+        const r = copyRange(b, day)
+        const description = f('edit-description').value.trim()
+        const projectId = f('edit-project').value
+        return {
+          self: day === b.day,
+          has: state.entries.some((e) => e.id !== state.editing && e.startedAt === r.startedAt && e.description === description && e.projectId === projectId),
+          holiday: HOLIDAYS[dateValue(day)],
+          weekend: isWeekend(day),
+        }
+      }
+      const workday = (info) => !info.weekend && !info.holiday
+      function matches(kind, b, day, info) {
+        if (kind === 'workday') return workday(info)
+        if (kind === 'week') return weekday(day) === weekday(b.day)
+        if (kind === 'month') return dayOfMonth(day) === dayOfMonth(b.day)
+        return true
+      }
+      function until(b) {
+        const typed = f('copy-until').value
+        if (copy.untilEdited && typed) return Z.startOfDay(Z.zonedTime(...typed.split('-').map(Number), 12, 0, zone()), zone())
+        return defaultUntil(copy.pattern, b.day)
+      }
+      // The copies: the pattern's days less those clicked out, and the days clicked in. `had`
+      // counts the pattern's days left out because they have the entry.
+      function copyDays(b) {
+        if (copy.pattern === 'none') return { days: [], had: 0, fromPattern: new Set() }
+        let had = 0
+        const fromPattern = new Set(
+          daysBetween(Z.addDays(b.day, 1, zone()), until(b)).filter((d) => {
+            const info = dayInfo(b, d)
+            if (!matches(copy.pattern, b, d, info)) return false
+            if (info.has) had++
+            return !info.has
+          })
+        )
+        const days = new Set([...fromPattern].filter((d) => !copy.removed.has(d)))
+        for (const d of copy.added) if (d !== b.day) days.add(d)
+        return { days: [...days].sort((x, y) => x - y), had, fromPattern }
+      }
+
+      function renderCopy(focusGrid = false) {
+        const b = base()
+        const repeating = copy.pattern !== 'none'
+        const day = b?.day ?? today()
+        f('copy-pattern').innerHTML = PATTERNS.map((k) => `<option value="${k}"${k === copy.pattern ? ' selected' : ''}>${escapeHtml(patternLabel(k, day))}</option>`).join('')
+        f('copy-until-field').hidden = !repeating
+        f('copy-panel').hidden = !repeating
+        if (repeating && b && (!copy.untilEdited || !f('copy-until').value)) f('copy-until').value = dateValue(defaultUntil(copy.pattern, b.day))
+        f('copy-until').min = b ? dateValue(Z.addDays(b.day, 1, zone())) : ''
+        const { days, had } = repeating && b ? copyDays(b) : { days: [], had: 0 }
+        const n = days.length
+        f('edit-save').textContent = n ? (state.draft ? `Add ${n + 1} entries` : `Save and add ${n}`) : 'Save'
+        if (!repeating) return
+        f('copy-month').textContent = fmt({ month: 'long', year: 'numeric' }).format(copy.month + 12 * HOUR)
+        if (!b) {
+          f('copy-grid').innerHTML = ''
+          f('copy-summary').textContent = 'Fix the date and times first.'
+          return
+        }
+        const picked = new Set(days)
+        const hadFocus = focusGrid || f('copy-grid').contains(document.activeElement)
+        const inMonth = (d) => d != null && monthOf(d) === copy.month
+        const focusDay = [copy.focus, days.find(inMonth), b.day].find(inMonth) ?? copy.month
+        const first = Z.startOfWeek(copy.month, zone(), weekStartSetting())
+        const last = Z.addDays(addMonths(copy.month, 1), -1, zone())
+        const cells = daysBetween(first, Z.addDays(Z.startOfWeek(last, zone(), weekStartSetting()), 6, zone()))
+        const head = cells.slice(0, 7).map((d) => `<span class="pb-1 text-center text-xs text-muted-foreground" aria-hidden="true">${escapeHtml(fmt({ weekday: 'narrow' }).format(d + 12 * HOUR))}</span>`)
+        const grid = cells.map((d) => {
+          if (!inMonth(d)) return '<span aria-hidden="true"></span>'
+          const info = dayInfo(b, d)
+          const notes = [info.self && 'this entry', info.has && 'already has this entry', info.holiday].filter(Boolean)
+          const label = `${fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(d + 12 * HOUR)}${notes.length ? `, ${notes.join(', ')}` : ''}`
+          const attrs = [info.self && 'data-self', info.has && 'data-has', (info.weekend || info.holiday) && 'data-off', d === today() && 'data-today', info.self && 'aria-disabled="true"'].filter(Boolean).join(' ')
+          return `<button type="button" class="copy-day" data-copy-day="${d}" aria-pressed="${picked.has(d)}" tabindex="${d === focusDay ? 0 : -1}" aria-label="${escapeHtml(label)}" title="${escapeHtml(notes.join(', '))}" ${attrs}>${fmt({ day: 'numeric' }).format(d + 12 * HOUR)}</button>`
+        })
+        f('copy-grid').innerHTML = [...head, ...grid].join('')
+        if (hadFocus) f('copy-grid').querySelector('[tabindex="0"]')?.focus()
+
+        const dayFmt = fmt({ weekday: 'short', day: 'numeric', month: 'short' })
+        const text = !n
+          ? `No days match up to ${fmt({ day: 'numeric', month: 'short' }).format(until(b) + 12 * HOUR)}. Click a day to add it.`
+          : `${n} ${n === 1 ? 'copy' : 'copies'}: ${n <= 4 ? new Intl.ListFormat('en').format(days.map((d) => dayFmt.format(d + 12 * HOUR))) : fmt({ day: 'numeric', month: 'short' }).formatRange(days[0] + 12 * HOUR, days.at(-1) + 12 * HOUR)}, ${clock(copyRange(b, days[0]).startedAt)}–${clock(copyRange(b, days[0]).stoppedAt)}`
+        const notes = [
+          had && `Left out ${had} ${had === 1 ? 'day that already has' : 'days that already have'} it.`,
+          n + (state.draft ? 1 : 0) > MAX_ENTRIES && `<span class="text-destructive">At most ${MAX_ENTRIES} entries at once.</span>`,
+        ].filter(Boolean)
+        const legend = 'Click a day to take it out or add it · outlined: this entry · dot: already has it'
+        f('copy-summary').innerHTML = `${escapeHtml(text)}${notes.map((note) => `<br>${note.startsWith('<span') ? note : escapeHtml(note)}`).join('')}<span class="mt-1 block text-xs">${legend}</span>`
+      }
+
+      // A pattern applies at once; the preview opens on the entry's month.
+      function setPattern(kind) {
+        copy.pattern = kind
+        copy.untilEdited = false
+        const b = base()
+        if (b) copy.month = monthOf(b.day)
+        renderCopy()
+        place()
+      }
+
+      f('copy-pattern').addEventListener('change', (event) => setPattern(event.currentTarget.value))
+      f('copy-until').addEventListener('input', () => {
+        copy.untilEdited = true
+        renderCopy()
+      })
+      f('copy-prev').addEventListener('click', () => {
+        copy.month = addMonths(copy.month, -1)
+        renderCopy()
+      })
+      f('copy-next').addEventListener('click', () => {
+        copy.month = addMonths(copy.month, 1)
+        renderCopy()
+      })
+      // A click takes a day out of the copies, or adds one the pattern left out.
+      f('copy-grid').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-copy-day]')
+        const b = base()
+        if (!button || !b || button.getAttribute('aria-disabled') === 'true') return
+        const day = Number(button.dataset.copyDay)
+        const { days, fromPattern } = copyDays(b)
+        if (days.includes(day)) {
+          copy.added.delete(day)
+          if (fromPattern.has(day)) copy.removed.add(day)
+        } else {
+          copy.removed.delete(day)
+          if (!fromPattern.has(day)) copy.added.add(day)
+        }
+        copy.focus = day
+        renderCopy(true)
+      })
+      // Arrow keys move through the days, across months; Space or Enter takes a day out or adds it.
+      f('copy-grid').addEventListener('keydown', (event) => {
+        const button = event.target.closest('[data-copy-day]')
+        const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[event.key]
+        if (!button || step === undefined) return
+        event.preventDefault()
+        copy.focus = Z.addDays(Number(button.dataset.copyDay), step, zone())
+        copy.month = monthOf(copy.focus)
+        renderCopy(true)
+      })
+
+      // --- Saving (createEntries, updateEntry) ---
+      function daysText(list) {
+        const starts = list.map((e) => e.startedAt).sort((a, b) => a - b)
+        if (starts.length === 1) return `${fmt({ weekday: 'short', day: 'numeric', month: 'short' }).format(starts[0])} ${clock(starts[0])}–${clock(list[0].stoppedAt)}`
+        return `${starts.length} days, ${fmt({ day: 'numeric', month: 'short' }).formatRange(starts[0], starts.at(-1))}`
+      }
+
+      // One createEntries call for all the copies, so one Undo takes them back.
+      function addCopies(source, ranges, message) {
+        const copies = ranges.map((r) => ({ id: `e${nextId++}`, description: source.description, projectId: source.projectId, ...r }))
+        const ok = save(
+          () => state.entries.push(...copies),
+          () => (state.entries = state.entries.filter((x) => !copies.includes(x))),
+          message ?? `Copied “${source.description || 'No description'}” to ${daysText(copies)}.`
+        )
+        if (ok) copies.forEach((c) => flash(c.id))
+        return ok ? copies : null
+      }
+
+      f('entry-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const error = validate()
+        if (error) return showError(error)
+        const { start, end } = formRange()
+        const fields = { description: f('edit-description').value.trim(), projectId: f('edit-project').value }
+        const b = copy.pattern !== 'none' ? base() : null
+        const ranges = b ? copyDays(b).days.map((d) => copyRange(b, d)) : []
+        if (ranges.length + (state.draft ? 1 : 0) > MAX_ENTRIES) return showError(`At most ${MAX_ENTRIES} entries at once.`)
+        const name = fields.description || 'No description'
+        if (state.draft) {
+          const added = [{ startedAt: start, stoppedAt: end }, ...ranges].map((r) => ({ id: `e${nextId++}`, ...fields, ...r }))
+          state.draft = null
+          const ok = save(
+            () => state.entries.push(...added),
+            () => (state.entries = state.entries.filter((x) => !added.includes(x))),
+            added.length > 1 ? `Added “${name}” on ${daysText(added)}.` : `Added “${name}”: ${daysText(added)}.`
+          )
+          if (ok) added.forEach((x) => flash(x.id))
+        } else if (ranges.length) {
+          const e = state.entries.find((x) => x.id === state.editing)
+          const before = { ...e }
+          const copies = ranges.map((r) => ({ id: `e${nextId++}`, ...fields, ...r }))
+          const ok = save(
+            () => {
+              Object.assign(e, fields, { startedAt: start, stoppedAt: end })
+              state.entries.push(...copies)
+            },
+            () => {
+              Object.assign(e, before)
+              state.entries = state.entries.filter((x) => !copies.includes(x))
+            },
+            `Saved “${name}” and copied it to ${daysText(copies)}.`
+          )
+          if (ok) [e, ...copies].forEach((x) => flash(x.id))
+        } else {
+          updateEntry(state.editing, { ...fields, startedAt: start, ...(end ? { stoppedAt: end } : {}) })
+          if (state.running?.id === state.editing) renderTimer()
+        }
+        popover.hidePopover()
+      })
+      popover.querySelector('[data-entry-cancel]').addEventListener('click', () => popover.hidePopover())
+      f('edit-delete').addEventListener('click', () => {
+        const e = state.entries.find((x) => x.id === state.editing)
+        popover.hidePopover()
+        deleteEntry(e)
+      })
+      // The copy takes focus.
+      f('edit-duplicate').addEventListener('click', () => {
+        const e = state.entries.find((x) => x.id === state.editing)
+        focusAfterClose = duplicateEntry(e)?.[0].id ?? null
+        popover.hidePopover()
+      })
+      popover.addEventListener('toggle', (event) => {
+        if (event.newState !== 'closed') return
+        const focusId = focusAfterClose ?? state.editing
+        focusAfterClose = null
+        state.draft = null
+        state.editing = null
+        render()
+        const target = focusId && document.querySelector(`[data-entry="${focusId}"]`)
+        ;(target ?? returnFocus)?.focus?.()
+        returnFocus = null
+      })
+
+      // --- Context menus: copy and paste ----------------------------------------------------
+      // The copied entry is the page's own clipboard: its description, project, and length.
+      // Paste puts it at the time right-clicked; the repeat items open Add entry there with
+      // the copy panel filled by that pattern, to check before saving.
+      const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
+      const COPY_KEY = isMac ? '⌘C' : 'Ctrl+C'
+      const PASTE_KEY = isMac ? '⌘V' : 'Ctrl+V'
+      const entryMenu = f('entry-menu')
+      const slotMenu = f('slot-menu')
+      // The entry the entry menu is for, and the entry to focus when it closes.
+      let menuEntry = null
+      let menuFocusId = null
+
+      const shortcut = (keys) => `<kbd class="ml-auto pl-3 font-sans text-xs tracking-widest text-muted-foreground">${keys}</kbd>`
+
+      function copyEntry(e) {
+        state.clipboard = { description: e.description, projectId: e.projectId, length: e.stoppedAt - e.startedAt }
+        state.undo = null
+        status(`Copied “${escapeHtml(e.description || 'No description')}” (${hm(e.stoppedAt - e.startedAt)}). Point at a time and press ${PASTE_KEY}, or right-click it.`)
+      }
+      // The copied entry at a time, at once, with Undo; the copy takes focus.
+      function pasteAt(start) {
+        const c = state.clipboard
+        const pasted = addCopies(c, [{ startedAt: start, stoppedAt: start + c.length }], `Pasted “${c.description || 'No description'}”: ${fmt({ weekday: 'short', day: 'numeric', month: 'short' }).format(start)} ${clock(start)}–${clock(start + c.length)}.`)
+        if (pasted) requestAnimationFrame(() => document.querySelector(`[data-entry="${pasted[0].id}"]`)?.focus())
+      }
+
+      // ⌘V or Ctrl+V pastes at the quarter hour under the pointer, as Paste here does. Days
+      // aren't focusable, so the pointer is what says where.
+      let hover = null
+      body.addEventListener('pointermove', (event) => {
+        if (event.pointerType === 'mouse') hover = { x: event.clientX, y: event.clientY }
+      })
+      body.addEventListener('pointerleave', () => (hover = null))
+      document.addEventListener('keydown', (event) => {
+        if (!(isMac ? event.metaKey : event.ctrlKey) || event.altKey || event.key.toLowerCase() !== 'v') return
+        if (event.target.closest?.('input, textarea, select, [contenteditable]') || popover.matches(':popover-open') || !state.clipboard) return
+        event.preventDefault()
+        if (!hover || !document.elementFromPoint(hover.x, hover.y)?.closest('#cal-body .cal-day')) {
+          status(`Point at a time on the calendar, then press ${PASTE_KEY} to paste there.`)
+          return
+        }
+        const slot = slotAt(hover.x, hover.y)
+        pasteAt(timeOn(slot.day, Math.floor(slot.minutes / SNAP) * SNAP))
+      })
+      function deleteEntry(e) {
+        const index = state.entries.indexOf(e)
+        save(
+          () => state.entries.splice(index, 1),
+          () => state.entries.splice(index, 0, e),
+          `Deleted “${e.description || 'No description'}”.`
+        )
+      }
+      // The copy lands beside the original, at the same time, so a drag or Alt+arrows moves
+      // it to its day.
+      function duplicateEntry(e) {
+        return addCopies(e, [{ startedAt: e.startedAt, stoppedAt: e.stoppedAt }], `Duplicated “${e.description || 'No description'}”. Drag the copy to its day, or move it with Alt+arrows.`)
+      }
+
+      // The pointer lands just inside the menu's padding, as with native menus: the right
+      // button's release would otherwise count as a click outside and close it at once.
+      function showMenu(menu, x, y) {
+        menu.showPopover()
+        const w = menu.offsetWidth
+        const h = menu.offsetHeight
+        menu.style.inset = 'auto'
+        menu.style.left = `${Math.max(8, Math.min(x - 3, innerWidth - w - 8))}px`
+        menu.style.top = `${y + h > innerHeight - 8 ? Math.max(8, y - h + 3) : y - 3}px`
+      }
+      function setItems(menu, items, disabled = () => false) {
+        for (const [action, html] of Object.entries(items)) {
+          const item = menu.querySelector(`[data-action="${action}"]`)
+          item.innerHTML = html
+          item.disabled = disabled(action)
+        }
+      }
+
+      function openEntryMenu(e, x, y) {
+        menuEntry = e
+        menuFocusId = e.id
+        setItems(
+          entryMenu,
+          {
+            edit: `${icon('pencil')}Edit`,
+            copy: `${icon('copy')}Copy${shortcut(COPY_KEY)}`,
+            duplicate: `${icon('copy-plus')}Duplicate`,
+            'copy-days': `${icon('repeat')}Repeat…`,
+            delete: `${icon('trash-2')}Delete`,
+          },
+          // The running entry has no end yet to copy.
+          (action) => action !== 'edit' && !e.stoppedAt
+        )
+        showMenu(entryMenu, x, y)
+      }
+
+      function openSlotMenu(start, x, y) {
+        const c = state.clipboard
+        const end = start + (c?.length ?? CLICK_MINUTES * MIN)
+        state.menuSlot = { start, end, color: c ? project(c.projectId).color : undefined }
+        render()
+        const day = Z.startOfDay(start, zone())
+        f('slot-menu-label').textContent = `${fmt({ weekday: 'short', day: 'numeric', month: 'short' }).format(start)}, ${clock(start)}`
+        setItems(
+          slotMenu,
+          {
+            add: `${icon('plus')}Add entry here`,
+            paste: `${icon('clipboard-paste')}<span class="min-w-0 truncate">${c ? `Paste “${escapeHtml(c.description || 'No description')}” here` : 'Paste here'}</span>${shortcut(PASTE_KEY)}`,
+            'paste-workday': `${icon('repeat')}Paste every workday…`,
+            'paste-week': `${icon('repeat')}Paste every ${escapeHtml(fmt({ weekday: 'long' }).format(day + 12 * HOUR))}…`,
+            'paste-month': `${icon('repeat')}Paste on the ${ordinal(dayOfMonth(day))} of every month…`,
+          },
+          (action) => action !== 'add' && !c
+        )
+        f('slot-menu-hint').textContent = !c
+          ? `Copy an entry to paste it: right-click it, or select it and press ${COPY_KEY}.`
+          : `${hm(c.length)} · ${project(c.projectId).name}. ${PASTE_KEY} pastes under the pointer too; the repeats open Add entry to check the days.`
+        showMenu(slotMenu, x, y)
+      }
+
+      // A right-click, a two-finger click on a Mac trackpad, Ctrl+click on a Mac, Shift+F10,
+      // or the Menu key.
+      body.addEventListener('contextmenu', (event) => {
+        const blockEl = event.target.closest('[data-entry]')
+        const dayEl = event.target.closest('.cal-day')
+        if (!blockEl && !dayEl) return
+        event.preventDefault()
+        state.drag = null
+        if (popover.matches(':popover-open')) popover.hidePopover()
+        if (blockEl) {
+          const r = blockEl.getBoundingClientRect()
+          // From the keyboard there's no pointer over the entry: open under it.
+          const pointer = event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom
+          openEntryMenu(allEntries().find((x) => x.id === blockEl.dataset.entry), pointer ? event.clientX : r.left, pointer ? event.clientY : r.bottom + 4)
+        } else {
+          const slot = slotAt(event.clientX, event.clientY)
+          openSlotMenu(timeOn(slot.day, Math.floor(slot.minutes / SNAP) * SNAP), event.clientX, event.clientY)
+        }
+      })
+
+      entryMenu.addEventListener('click', (event) => {
+        const action = event.target.closest('[data-action]')?.dataset.action
+        const e = menuEntry
+        if (!action || !e) return
+        entryMenu.hidePopover()
+        const blockEl = document.querySelector(`[data-entry="${e.id}"]`)
+        if (action === 'edit') openEdit(e.id, blockEl)
+        else if (action === 'copy') copyEntry(e)
+        else if (action === 'duplicate') menuFocusId = duplicateEntry(e)?.[0].id ?? e.id
+        else if (action === 'copy-days') {
+          openEdit(e.id, blockEl)
+          f('copy-pattern').focus()
+        } else if (action === 'delete') {
+          menuFocusId = null
+          deleteEntry(e)
+        }
+      })
+      slotMenu.addEventListener('click', (event) => {
+        const action = event.target.closest('[data-action]')?.dataset.action
+        const slot = state.menuSlot
+        const c = state.clipboard
+        if (!action || !slot) return
+        state.menuSlot = null
+        slotMenu.hidePopover()
+        if (action === 'add') openNew(slot.start, slot.start + CLICK_MINUTES * MIN)
+        else if (action === 'paste') pasteAt(slot.start)
+        else {
+          openNew(slot.start, slot.start + c.length, c)
+          setPattern(action.replace('paste-', ''))
+        }
+      })
+      entryMenu.addEventListener('toggle', (event) => {
+        if (event.newState !== 'closed' || popover.matches(':popover-open')) return
+        const id = menuFocusId
+        menuFocusId = null
+        if (id) requestAnimationFrame(() => document.querySelector(`[data-entry="${id}"]`)?.focus())
+      })
+      slotMenu.addEventListener('toggle', (event) => {
+        if (event.newState !== 'closed' || !state.menuSlot) return
+        state.menuSlot = null
+        render()
+      })
+
+      // --- Timer bar ----------------------------------------------------------------------------
+      function renderTimer() {
+        const r = state.running
+        f('project').innerHTML = projectOptions(r?.projectId ?? 'p1')
+        f('description').value = r?.description ?? f('description').value
+        f('toggle').innerHTML = r ? `${icon('square')}Stop` : `${icon('play')}Start`
+        f('toggle').dataset.variant = r ? 'destructive' : 'default'
+        tick()
+      }
+      function tick() {
+        const ms = state.running ? Date.now() - state.running.startedAt : 0
+        const s = Math.floor(ms / 1000)
+        f('elapsed').textContent = `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+      }
+      f('toggle').addEventListener('click', () => {
+        if (state.running) {
+          const e = { ...state.running, stoppedAt: Date.now() }
+          state.entries.push(e)
+          state.running = null
+          f('description').value = ''
+        } else {
+          state.running = { id: `e${nextId++}`, description: f('description').value.trim(), projectId: f('project').value, startedAt: Date.now() }
+        }
+        renderTimer()
+        render()
+      })
+      for (const [id, key] of [['description', 'description'], ['project', 'projectId']])
+        f(id).addEventListener('change', (event) => {
+          if (!state.running) return
+          state.running[key] = key === 'description' ? event.currentTarget.value.trim() : event.currentTarget.value
+          render()
+        })
+      setInterval(tick, 1000)
+      // The running block and the now line move each half minute, unless something is held.
+      setInterval(() => !state.drag && !popover.matches(':popover-open') && render(), 30_000)
+
+      // --- Controls -----------------------------------------------------------------------------
+      function goToWeek(week, day) {
+        state.week = week
+        state.day = day ?? (narrow.matches ? (week === Z.startOfWeek(Date.now(), zone(), weekStartSetting()) ? today() : week) : state.day)
+        state.undo = null
+        status('')
+        render()
+        scrollToMorning()
+      }
+      f('prev').addEventListener('click', () => goToWeek(Z.addDays(state.week, -7, zone())))
+      f('next').addEventListener('click', () => goToWeek(Z.addDays(state.week, 7, zone())))
+      f('today').addEventListener('click', () => goToWeek(Z.startOfWeek(Date.now(), zone(), weekStartSetting()), today()))
+      f('weekend').addEventListener('click', () => {
+        appFrame.settings.set({ calendarWeekend: !appFrame.settings.get().calendarWeekend })
+        if (!weekendShown() && isWeekend(state.day)) state.day = weekDays().find((d) => !isWeekend(d))
+        render()
+      })
+      f('day-strip').addEventListener('click', (event) => {
+        const b = event.target.closest('[data-day]')
+        if (!b) return
+        state.day = Number(b.dataset.day)
+        render()
+      })
+      f('add-entry').addEventListener('click', () => {
+        const last = [...state.entries].filter((e) => e.stoppedAt <= Date.now()).sort((a, b) => b.stoppedAt - a.stoppedAt)[0]
+        // Like the list's Add entry: from the end of today's last entry, for half an hour.
+        const start = last && last.stoppedAt >= today() ? last.stoppedAt : Math.floor((Date.now() - HOUR) / (SNAP * MIN)) * SNAP * MIN
+        const end = start + CLICK_MINUTES * MIN
+        const week = Z.startOfWeek(start, zone(), weekStartSetting())
+        if (week !== state.week || (narrow.matches && state.day !== Z.startOfDay(start, zone()))) goToWeek(week, Z.startOfDay(start, zone()))
+        returnFocus = f('add-entry')
+        openNew(start, end)
+      })
+      document.querySelectorAll('[data-view]').forEach((b) =>
+        b.addEventListener('click', () => {
+          if (b.dataset.view === 'calendar') return
+          appFrame.settings.set({ timerView: 'list' })
+          location.href = appFrame.link('timer.html#list')
+        })
+      )
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('[data-retry]')) retryPending()
+        if (event.target.closest('#undo') && state.undo) {
+          const undo = state.undo
+          state.undo = null
+          undo()
+          status('Undone.')
+          render()
+        }
+      })
+      f('fixture').addEventListener('change', (event) => loadFixture(event.currentTarget.value))
+      narrow.addEventListener('change', () => {
+        if (!weekDays().includes(state.day)) state.day = state.week
+        render()
+      })
+      appFrame.on('settings', () => {
+        const week = Z.startOfWeek(state.week + 12 * HOUR, zone(), weekStartSetting())
+        if (week !== state.week) goToWeek(week)
+        else render()
+      })
+
+      function loadFixture(name) {
+        state.fixture = name
+        const data = fixtures[name]()
+        state.entries = data.entries
+        state.running = data.running
+        f('description').value = ''
+        renderTimer()
+        goToWeek(Z.startOfWeek(Date.now(), zone(), weekStartSetting()), today())
+      }
+
+      ui.ready.then(() => {
+        renderHeader()
+        loadFixture('running')
+      })
+    </script>
+  </body>
+</html>

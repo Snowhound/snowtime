@@ -20,7 +20,6 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { type WeekStart, addDays } from '~/lib/calendar'
-import { useCopyControl } from '~/lib/display-format'
 import { formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
@@ -29,7 +28,7 @@ import type { DayGroup } from './entries'
 import { entryName } from './entries'
 import {
   DateField,
-  EntryDuration,
+  DurationField,
   InlineDescription,
   NextDayMark,
   ProjectField,
@@ -173,7 +172,6 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
   const editor = createEntryEditor(props)
   const activation = createRowActivation()
   const ref = revealWhenSaved(props)
-  const copyControl = useCopyControl()
   return (
     <li
       ref={(el) => {
@@ -231,14 +229,7 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
           <NextDayMark editor={editor} />
           <ClockRoom />
         </div>
-        <EntryDuration
-          editor={editor}
-          class={cn(
-            'row-start-3 shrink-0 text-right text-sm tabular-nums',
-            // Room for the copy button, the same in every row so the times line up.
-            copyControl() === 'button' ? 'w-22' : 'w-16',
-          )}
-        />
+        <DurationField editor={editor} class="row-start-3 shrink-0 justify-self-end" />
         <div class="col-start-2 row-start-2 justify-self-end">
           <EntryActions
             entry={props.entry}

@@ -25,8 +25,97 @@ the timer bar stays. Its code is in `src/features/timer/calendar/`, with the tim
   between the cached ranges it leaves and enters, so an entry moved into another week shows
   there at once.
 - The entry popover is the list's, with its fields and validation: a running entry can't start
-  in the future, and an end at or before the start means the next day. The calendar opens it beside the slot
-  or the entry, with Delete for a stopped entry.
+  in the future, and an end at or before the start means the next day. Other entries may lie
+  after now. The calendar opens it beside the slot or the entry, with Delete for a stopped
+  entry.
+
+## Typed durations
+
+The entry popover and the list's rows take a typed duration (task 096,
+`prototypes/copy-entries.html`). `src/features/timer/duration-input.ts` parses it: `1:30`,
+`1:30:00`, `1h 30m`, `1h30`, `90m`, `90 min`, `1.5`, `1,5`, and `1.5h`, and the same with
+Estonian units (`1 t 30 min`) in either language. A bare number is hours, as the user asked,
+and one over 24 suggests minutes ("90 hours is over a day. For minutes, write 90m."). An
+entry is at least a minute and at most 24 hours. Only `H:MM:SS` keeps seconds.
+
+- Start, end, and duration are one range. A typed duration keeps the start and moves the
+  end; a typed start or end recomputes the duration. The running entry has no end, so its
+  duration moves the start.
+- A typed duration saves the end at the start plus the duration, to the second, as one
+  `updateEntry`. Escape in a row puts back the duration and the end it moved.
+- The popover rewrites the duration as `1:30` when it is left, and while it has focus the
+  line under the times reads it back ("1h 30m"). A duration that doesn't read shows its
+  error once left or on Save, and stops Save only when it was typed.
+
+## Entry copies
+
+One entry can be logged on many days, such as a daily standup (task 096,
+`prototypes/copy-entries.html`). Repeat covers the usual case, a pattern of days; one-off
+copies are ⌘C and ⌘V, Paste here, Duplicate, and Alt+drag. Every way of copying ends in
+the same save.
+
+- **Repeat leads.** The popover's Repeat field (`src/features/timer/repeat/`) is set to
+  Doesn't repeat. A pattern, named for the entry's day (Every workday, Every day, Every
+  Wednesday, Every month on the 7th), fills its days after the entry's up to Until at once,
+  and the month under it previews them: a click takes a day out or adds one the pattern left
+  out. The field keeps the pattern's days, the days clicked out, and the days clicked in
+  apart, so the exceptions stay when Until, the pattern, or the entry's times change, and
+  nothing needs filling again. Decided on 2026-11-02 after a first build that put a day
+  picker first, with Repeat, Until, and a Fill button under it: filling a pattern is the
+  usual case and picking scattered days the rare one, and Fill was easy to miss.
+- **The popover and the field split the work.** `RepeatField` takes the form's entry as a
+  day, a start, and a length, and hands back the days to copy to; the popover builds each
+  copy's times with `copyTimes` in the user's zone, keeping the wall-clock start, and its
+  Save sends the entry with its copies (`EntryPopoverValues.copies`), which the list and the
+  calendar save. The day math is in `repeat-days.ts`, apart from the component, so it is
+  tested without a DOM.
+- **Every workday** leaves out weekends and the public holidays of the user's country
+  (`userRegion`, `src/lib/holidays/`). Until starts at the end of the entry's month, a month
+  later for a weekday, and six months later for monthly, and reaches at most a year ahead.
+- **"Already has it"**: a day with an entry of the same description and project starting at
+  the copy's minute shows a dot, and the pattern leaves it out and says how many it left
+  out. The field reads the days up to Until with `listEntries` in 90-day chunks, and the
+  shown month for the dots, since the user's other entries in those months aren't loaded
+  otherwise. Save waits until the read is done.
+- **The popover keeps clear of the sticky header**: with the month it can be taller than the
+  room below the header, so Kobalte's top padding is the header's height and the popover
+  scrolls within the height left (`--kb-popper-content-available-height`).
+- **One call, one Undo.** An entry and its copies are one `createEntries`
+  (`POST /organizations/:orgId/entries/batch`): the work's description, ticket, and project
+  once, and up to `MAX_BATCH_ENTRIES` (100) id and times, saved in one transaction. The
+  daily entry limit counts the batch's own entries. Undo is one `deleteEntries`
+  (`POST …/entries/batch-delete`, also all or none), since a hundred single deletes would
+  run into the 120 writes a minute (`writesPerUser`). Saving an edit with copies is
+  `updateEntry` and then `createEntries`, and its Undo puts back both. Both calls are
+  app-only, not opened to API keys. Rejected on 2026-11-02: a list of full entries, more
+  general than copies need, and `createEntry` with extra days, which would put patterns
+  and time zones on the server.
+- **Duplicate** (in an entry's popover and menu) puts a copy at the same time and focuses
+  it, so a drag or Alt+arrows moves it. **Alt+drag** (Option on a Mac) drops a copy where
+  the entry is dropped; the ghost reads "Copy · 12:15–13:30". Both, and Paste here, are a
+  `createEntries` of one, so they undo like the others.
+- **Context menus** on the calendar: on an entry, Edit, Copy (⌘C or Ctrl+C on a focused
+  entry), Duplicate, Repeat… (Edit with Repeat focused), and Delete, of which the running
+  entry has only Edit; on empty time, titled with the day and the quarter hour, Add entry
+  here, Paste here, and Paste every workday, every Wednesday, or on the 7th of every month. A right-click, a
+  two-finger click, Ctrl+click on a Mac, Shift+F10, or the Menu key opens them; from the
+  keyboard, under the entry. The repeats open Add entry with the copied work and Repeat set,
+  so the days are checked before Save; Cancel saves nothing. A menu runs the picked item
+  once it has closed: an item that opens the popover would otherwise have the closing
+  menu's focus land outside the popover, which closes it.
+- **⌘V or Ctrl+V** pastes the copied entry at the quarter hour under the pointer, as Paste
+  here does; days aren't focusable, so the pointer says where. Off the grid it says to point
+  at a time. Copy keeps the work and
+  length in the page, not the system clipboard. `PointMenu` is a `DropdownMenu` anchored to
+  the point with a hidden trigger, because Kobalte's `ContextMenu` opens on a 700 ms timer
+  on touch and couldn't tell a long press from one that drags.
+- **Touch**: a tap adds time or edits an entry, and a drag scrolls, as before. A press held
+  for 500 ms without moving outlines the entry; lifting it then opens the context menu, and
+  dragging it moves the entry, or adds time on empty time. A touch that moves before then
+  is a scroll. Once the press is held, a non-passive `touchmove` listener stops the page
+  from scrolling, so the drag reaches the grid (`grid-drag.ts`). Android's own long-press
+  `contextmenu` event is ignored, and `-webkit-touch-callout: none` keeps iOS's callout and
+  text selection off the grid.
 
 ## Date and time fields
 
@@ -53,8 +142,10 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
 
 ## Copying durations
 
-A click on an entry row's duration or a day's total on the Timer page copies it, for pasting
-into a ticket's work log or an invoice (task 078). Other durations don't copy yet.
+A day's total on the Timer page copies on a click, and an entry row's duration through the
+copy button beside it, for pasting into a ticket's work log or an invoice (task 078). A
+row's duration is a field that takes a typed duration (task 096), so a click on it edits
+it. Reports' totals copy as well.
 
 - `copy_duration_pattern` sets the copied text, per user. In the pattern, `H`, `M`, and `S`
   are hours, minutes, and seconds, and a run of one letter sets the minimum digits: `HH`
@@ -73,12 +164,12 @@ into a ticket's work log or an invoice (task 078). Other durations don't copy ye
   field after a letter or before two (`fieldsInWords`); one letter after is a unit, as in
   `Hh`. A warned pattern still saves.
 - Settings > Preferences groups both settings under Copying durations.
-- `copy_duration_control` picks how a duration copies: a click on the duration (`text`, the
-  default) or a copy button beside it (`button`). From 640 px the button shows only while
-  its row or the duration is hovered or focused, like the rows' other controls. In button
-  mode the list's duration column widens from 64 to 88 px and the table's from 96 to
-  112 px, the same in every row so the times line up. At 1024 px with the summary panel,
-  that narrows the row's description from 67 to 43 px, which was accepted on 2026-10-02.
+- `copy_duration_control` picks how a total copies: a click on the duration (`text`, the
+  default) or a copy button beside it (`button`). Entry rows always use the button
+  (`CopyDuration`'s `control`), whatever the setting, decided on 2026-11-02. From 640 px
+  the button shows only while its row or the duration is hovered or focused, like the
+  rows' other controls. The rows' duration field is 80 px with the button beside it, and
+  the table's duration column is 112 px, the same in every row so the times line up.
 - After a copy, a bubble shows the copied text for two seconds. The bubble sits above an
   entry's duration and left of a day's total, where the day's card would clip it above.
   `prototypes/copy-durations.html` compares it with swapping the text in place, which made

@@ -53,6 +53,7 @@
   "validation_end_before_start": "The end must be after the start.",
   "validation_range_end_before_start": "The range must end after it starts.",
   "validation_range_too_long": "The range can span at most {days} days.",
+  "validation_too_many_entries": "At most {max} entries at once.",
   "validation_member_or_team": "Pick a member or a team, not both.",
   "validation_email": "Enter a valid email address.",
   "validation_password_required": "Enter your password.",
@@ -461,9 +462,11 @@
   "entry_date": "Date",
   "entry_start": "Start",
   "entry_end": "End",
-  "entry_running_for": "Running for {duration}",
-  "entry_duration": "Duration {duration}",
-  "entry_duration_next_day": "Duration {duration} · ends the next day",
+  "entry_duration_hint": "Such as 1:30, 1h 30m, 1.5, or 45m",
+  "duration_error_empty": "Enter a duration, such as 1:30 or 45m.",
+  "duration_error_format": "Write the duration as 1:30, 1h 30m, 1.5, or 45m.",
+  "duration_error_too_short": "The duration must be at least a minute.",
+  "duration_error_bare_hours": "{hours} hours is over a day. For minutes, write {hours}m.",
   "entry_error_missing": "Enter a date, start and end time.",
   "entry_error_missing_running": "Enter a date and start time.",
   "entry_error_running_future": "A running entry can't start in the future.",
@@ -489,7 +492,7 @@
   "calendar_weekend": "Weekend",
   "calendar_weekend_forced": "This week has weekend time, so the weekend shows.",
   "calendar_day": "Day",
-  "calendar_hint": "Drag to add · drag an entry to move it, its edges to change its times · Alt+arrows move a selected entry",
+  "calendar_hint": "Drag to add · drag an entry to move it, Alt+drag to copy it · Alt+arrows move a selected entry · {copy} and {paste} copy and paste · right-click for more",
   "calendar_now": "now",
   "calendar_entry": "{description}, {project}, {times}, {duration}",
   "calendar_entry_running": "{description}, {project}, {times}, {duration}, running",
@@ -916,5 +919,87 @@
   "picker_time": "hh:mm",
   "browser_notice_title": "This browser is out of date.",
   "browser_notice_body": "Snowtime supports the latest two versions of Chrome, Edge, Firefox, and Safari, and parts of it may not work here. Update your browser to use it fully.",
-  "browser_notice_dismiss": "Dismiss"
+  "browser_notice_dismiss": "Dismiss",
+  "copy_days": "Days the entry repeats on",
+  "copy_repeat": "Repeat",
+  "copy_until": "Until",
+  "copy_repeat_workday": "Every workday",
+  "copy_repeat_day": "Every day",
+  "copy_repeat_week": "Every {weekday}",
+  "copy_repeat_month": "Every month on the {day}",
+  "copy_summary": [
+    {
+      "declarations": [
+        "input count",
+        "input days",
+        "input times",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} copy: {days}, {times}",
+        "countPlural=*": "{count} copies: {days}, {times}"
+      }
+    }
+  ],
+  "copy_legend": "Click a day to take it out or add it · outlined: this entry · dot: already has it",
+  "copy_left_out": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Left out {count} day that already has it.",
+        "countPlural=*": "Left out {count} days that already have it."
+      }
+    }
+  ],
+  "copy_none_match": "No days match up to {date}. Click a day to add it.",
+  "copy_fix_times": "Fix the date and times first.",
+  "copy_day_self": "this entry",
+  "copy_day_has": "already has this entry",
+  "copy_day_holiday": "public holiday",
+  "entry_save_add": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Add {count} entry",
+        "countPlural=*": "Add {count} entries"
+      }
+    }
+  ],
+  "entry_save_and_copy": "Save and add {count}",
+  "entry_duplicate": "Duplicate",
+  "calendar_days": [
+    {
+      "declarations": ["input count", "input range", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} day, {range}",
+        "countPlural=*": "{count} days, {range}"
+      }
+    }
+  ],
+  "calendar_added_copies": "Added “{description}” on {days}.",
+  "calendar_saved_copies": "Saved “{description}” and copied it to {days}.",
+  "calendar_copied_to": "Copied “{description}” to {days}.",
+  "calendar_duplicated": "Duplicated “{description}”. Drag the copy to its day, or move it with Alt+arrows.",
+  "calendar_pasted": "Pasted “{description}”: {when}.",
+  "calendar_copied": "Copied “{description}” ({duration}). Point at a time and press {keys}, or right-click it.",
+  "calendar_copy_ghost": "Copy · {times}",
+  "menu_entry": "Entry",
+  "menu_edit": "Edit",
+  "menu_copy": "Copy",
+  "menu_duplicate": "Duplicate",
+  "menu_copy_days": "Repeat…",
+  "menu_add_here": "Add entry here",
+  "menu_paste_here": "Paste “{description}” here",
+  "menu_paste_here_empty": "Paste here",
+  "menu_paste_workday": "Paste every workday…",
+  "menu_paste_week": "Paste every {weekday}…",
+  "menu_paste_month": "Paste on the {day} of every month…",
+  "menu_hint_empty": "Copy an entry to paste it: right-click it, or select it and press {keys}.",
+  "menu_hint": "{duration} · {project}. {keys} pastes under the pointer too; the repeats open Add entry to check the days.",
+  "copy_repeat_none": "Doesn't repeat",
+  "calendar_paste_point": "Point at a time on the calendar, then press {keys} to paste there."
 }

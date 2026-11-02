@@ -738,6 +738,9 @@ summary,
 }
 .cal-day {
   position: relative;
+  /* A long press opens the grid's own menu, not the browser's or a text selection. */
+  -webkit-touch-callout: none;
+  user-select: none;
   border-left-width: 1px;
   height: calc(24 * var(--hour));
   background-image:
@@ -770,6 +773,9 @@ summary,
   border-color: var(--p);
   background-color: color-mix(in oklab, var(--p) 18%, var(--card));
   touch-action: pan-y;
+}
+.cal-block[data-pressed] {
+  @apply ring-ring ring-offset-background shadow-lg ring-2 ring-offset-1;
 }
 .cal-block:hover {
   background-color: color-mix(in oklab, var(--p) 26%, var(--card));
@@ -827,4 +833,28 @@ summary,
 }
 .cal-pulse {
   animation: cal-pulse 1.6s ease-in-out infinite;
+}
+/* A day in the entry popover's copy panel (prototypes/copy-entries.html). */
+.copy-day {
+  @apply hover:bg-accent focus-visible:ring-ring relative flex h-8 items-center justify-center rounded-md text-sm tabular-nums outline-none focus-visible:ring-2;
+}
+.copy-day[aria-pressed='true'] {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90;
+}
+.copy-day[data-off]:not([aria-pressed='true']) {
+  @apply text-muted-foreground;
+}
+.copy-day[data-self] {
+  @apply ring-primary font-semibold ring-2 ring-inset;
+}
+.copy-day[aria-disabled='true']:not([data-self]) {
+  @apply cursor-not-allowed opacity-40 hover:bg-transparent;
+}
+.copy-day[data-today] {
+  @apply underline underline-offset-4;
+}
+/* A day that already has the entry at its time. */
+.copy-day[data-has]::after {
+  content: '';
+  @apply absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full bg-current opacity-70;
 }

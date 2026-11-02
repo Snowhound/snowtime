@@ -211,6 +211,21 @@ function keep(ms: number, original: Date | null | undefined) {
   return exact !== undefined && exact - (exact % 60_000) === ms ? exact : ms
 }
 
+// The start read from a date and a start time in the zone, keeping the `original` seconds as
+// readEntryTimes does; null while either is missing or not a time.
+export function readStart(
+  values: Pick<EntryFormTimes, 'date' | 'start'>,
+  zone: string,
+  original?: EntryTimes,
+) {
+  if (!values.date || !values.start) return null
+  try {
+    return keep(atLocalTime(values.date, values.start, zone), original?.startedAt)
+  } catch {
+    return null
+  }
+}
+
 // Reads the entry popover's date, start, and end (values of date and time inputs) as instants in
 // the zone. A running entry has no end. An end at or before the start means the next day.
 // A running entry can't start in the future. The inputs hold whole minutes, so a time left as it was keeps the seconds of
@@ -225,12 +240,8 @@ export function readEntryTimes(values: EntryFormTimes, options: ReadOptions): En
   if (!values.date || !values.start || (!running && !values.end)) {
     return { error: running ? 'missing_running' : 'missing' }
   }
-  let startedAt: number
-  try {
-    startedAt = keep(atLocalTime(values.date, values.start, zone), original?.startedAt)
-  } catch {
-    return { error: running ? 'missing_running' : 'missing' }
-  }
+  const startedAt = readStart(values, zone, original)
+  if (startedAt === null) return { error: running ? 'missing_running' : 'missing' }
   if (running) {
     if (startedAt > now) return { error: 'running_future' }
     return { startedAt: new Date(startedAt), stoppedAt: null, nextDay: false }
