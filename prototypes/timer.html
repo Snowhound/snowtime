@@ -382,6 +382,23 @@
         const s = String(total % 60).padStart(2, '0')
         return seconds ? `${h}:${m}:${s}` : `${h}:${m}`
       }
+      // A typed duration: 1:30, 1:30:00, 1h 30m, 1h30, 90m, 90 min, 1.5, 1,5, or 1.5h. A bare
+      // number is hours. Returns whole minutes.
+      function parseDuration(text) {
+        const t = text.trim().toLowerCase().replace(',', '.')
+        let m
+        let minutes
+        if (!t) return { error: 'Enter a duration, such as 1:30 or 45m.' }
+        if ((m = t.match(/^(\d{1,2}):([0-5]\d)(?::([0-5]\d))?$/))) minutes = +m[1] * 60 + +m[2] + +(m[3] ?? 0) / 60
+        else if ((m = t.match(/^(\d+(?:\.\d+)?)\s*h(?:ours?)?\s*(?:(\d+)\s*(?:m(?:in(?:utes?)?)?)?)?$/))) minutes = +m[1] * 60 + +(m[2] ?? 0)
+        else if ((m = t.match(/^(\d+)\s*m(?:in(?:utes?)?)?$/))) minutes = +m[1]
+        else if (/^\d+(?:\.\d+)?$/.test(t)) minutes = +t * 60
+        else return { error: 'Write the duration as 1:30, 1h 30m, 1.5, or 45m.' }
+        minutes = Math.round(minutes)
+        if (minutes < 1) return { error: 'The duration must be at least a minute.' }
+        if (minutes > 24 * 60) return { error: /^\d+$/.test(t) ? `${t} hours is over a day. For minutes, write ${t}m.` : 'An entry can be at most 24 hours.' }
+        return { minutes }
+      }
       function dayLabel(t) {
         const diff = Math.round((startOfDay(Date.now()) - startOfDay(t)) / DAY)
         return diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : dayFmt.format(t)
@@ -514,9 +531,14 @@
         return `<span data-next-day="${e.id}" class="w-5 text-xs text-muted-foreground" title="Ends the next day">${!r.error && r.nextDay ? '+1' : ''}</span>`
       }
 
-      function durationCell(e, cls) {
+      // Typing a duration keeps the start and moves the end, as in the entry popover.
+      function durationInput(e, cls) {
         const r = readTimes(e, rowValues(e))
-        return `<span data-duration="${e.id}" class="${cls}">${r.error ? '—' : duration(r.stoppedAt - r.startedAt)}</span>`
+        const err = inline.errors[e.id]
+        const invalid = err?.kind === 'invalid' && err.key === 'duration'
+        const value = draft(e.id, 'duration') ?? (r.error ? '' : duration(r.stoppedAt - r.startedAt))
+        return `<input data-ui="input" type="text" autocomplete="off" spellcheck="false" data-entry="${e.id}" data-key="duration" aria-label="Duration" placeholder="—" value="${escapeHtml(value)}"
+          aria-describedby="error-${e.id}"${invalid ? ' data-invalid aria-invalid="true"' : ''} class="h-8 px-1.5 text-right text-sm tabular-nums ${QUIET} ${cls}" />`
       }
 
       // The date lives in a popover: moving an entry to another day is rare, and a date field would widen every row.
@@ -526,7 +548,7 @@
             aria-label="Date: ${dayFmt.format(e.startedAt)}" title="Move to another day" class="size-8 text-muted-foreground sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">${icon('calendar')}</button>
           <div id="${pop}" popover data-ui="popover" data-align="start" role="dialog" aria-label="Date" class="grid w-60 gap-2">
             <label data-ui="label" for="date-input-${e.id}">Date</label>
-            <input id="date-input-${e.id}" data-ui="input" type="date" required data-date-entry="${e.id}" value="${toDateValue(e.startedAt)}" max="${toDateValue(Date.now())}"
+            <input id="date-input-${e.id}" data-ui="input" type="date" required data-date-entry="${e.id}" value="${toDateValue(e.startedAt)}"
               aria-describedby="date-error-${e.id}" />
             <p id="date-error-${e.id}" data-ui="error-message" role="alert" hidden></p>
             <p class="text-xs text-muted-foreground">Start and end times stay the same.</p>
@@ -564,7 +586,7 @@
               <div class="min-w-0 md:w-36 md:shrink-0">${projectMenu(e)}</div>
             </div>
             <div class="row-start-3 -ml-2 flex shrink-0 items-center gap-1 text-muted-foreground md:ml-0">${datePicker(e)}${timeInput(e, 'start')}<span aria-hidden="true">–</span>${timeInput(e, 'end')}${nextDayMark(e)}</div>
-            ${durationCell(e, 'row-start-3 w-16 shrink-0 text-right text-sm tabular-nums')}
+            ${durationInput(e, 'row-start-3 -mr-1.5 w-20 shrink-0')}
             <div class="col-start-2 row-start-2 justify-self-end">${actions(e)}</div>
           </div>
           ${rowErrorText(e)}
@@ -596,7 +618,7 @@
             <td data-ui="table-cell" class="max-w-0">${projectMenu(e)}</td>
             <td data-ui="table-cell"><div class="flex items-center gap-1">${datePicker(e)}${timeInput(e, 'start')}</div></td>
             <td data-ui="table-cell"><div class="flex items-center gap-1">${timeInput(e, 'end')}${nextDayMark(e)}</div></td>
-            <td data-ui="table-cell" class="text-right tabular-nums">${durationCell(e, '')}</td>
+            <td data-ui="table-cell"><div class="-mr-1.5">${durationInput(e, 'w-full')}</div></td>
             <td data-ui="table-cell">${actions(e)}</td>
           </tr>
           <tr data-ui="table-row" data-error-row="${e.id}" class="hover:bg-transparent"${inline.errors[e.id] ? '' : ' hidden'}><td data-ui="table-cell" colspan="${!settings.wideTimer ? 6 : 7}" class="pt-0">${rowErrorText(e)}</td></tr>`
@@ -909,7 +931,6 @@
         }
         const nextDay = fromValues(date, end) <= startedAt
         const stoppedAt = fromValues(date, end, nextDay ? 1 : 0)
-        if (stoppedAt > now) return { error: "An entry can't end in the future." }
         return { patch: { startedAt, stoppedAt }, summary: `Duration ${duration(stoppedAt - startedAt, false)}${nextDay ? ' · ends the next day' : ''}` }
       }
 
@@ -939,6 +960,12 @@
       function rowValues(e) {
         return { start: draft(e.id, 'start') ?? toTimeValue(e.startedAt), end: draft(e.id, 'end') ?? toTimeValue(e.stoppedAt) }
       }
+      function rowStart(e) {
+        const start = rowValues(e).start
+        if (!start) return null
+        const t = fromValues(toDateValue(e.startedAt), start)
+        return Math.floor(t / MIN) === Math.floor(e.startedAt / MIN) ? e.startedAt : t
+      }
       function readTimes(e, { start, end }, key = 'end') {
         if (!start) return { error: 'Enter a start time.', key: 'start' }
         if (!end) return { error: 'Enter an end time.', key: 'end' }
@@ -947,7 +974,6 @@
         const startedAt = keep(fromValues(date, start), e.startedAt)
         const sameDay = fromValues(date, end)
         const stoppedAt = keep(sameDay <= startedAt ? fromValues(date, end, 1) : sameDay, e.stoppedAt)
-        if (stoppedAt > Date.now()) return { error: "An entry can't end in the future.", key }
         return { startedAt, stoppedAt, nextDay: toDateValue(stoppedAt) !== date }
       }
 
@@ -956,17 +982,22 @@
         const e = find(id)
         if (!e) return
         const err = inline.errors[id]
-        const r = readTimes(e, rowValues(e), err?.key)
-        if (err?.kind === 'invalid') {
+        const r = readTimes(e, rowValues(e), err?.key === 'duration' ? 'end' : err?.key)
+        if (err?.kind === 'invalid' && err.key === 'duration') {
+          const parsed = draft(id, 'duration') === undefined ? {} : parseDuration(draft(id, 'duration'))
+          if (parsed.error) err.message = parsed.error
+          else delete inline.errors[id]
+        } else if (err?.kind === 'invalid') {
           if (r.error) inline.errors[id] = { kind: 'invalid', key: r.key, message: r.error }
           else delete inline.errors[id]
         }
         const now = inline.errors[id]
         const q = (sel) => document.querySelector(sel)
-        if (!q(`[data-duration="${id}"]`)) return
-        q(`[data-duration="${id}"]`).textContent = r.error ? '—' : duration(r.stoppedAt - r.startedAt)
+        const durationField = q(`input[data-entry="${id}"][data-key="duration"]`)
+        if (!durationField) return
+        if (draft(id, 'duration') === undefined && document.activeElement !== durationField) durationField.value = r.error ? '' : duration(r.stoppedAt - r.startedAt)
         q(`[data-next-day="${id}"]`).textContent = !r.error && r.nextDay ? '+1' : ''
-        for (const key of ['start', 'end']) {
+        for (const key of ['start', 'end', 'duration']) {
           const input = q(`input[data-entry="${id}"][data-key="${key}"]`)
           const invalid = now?.kind === 'invalid' && now.key === key
           input.toggleAttribute('data-invalid', invalid)
@@ -1052,8 +1083,29 @@
         saveField(id, patch, keys.length === 2 ? 'times' : keys[0] === 'startedAt' ? 'start time' : 'end time')
       }
 
+      function commitDuration(id) {
+        const text = draft(id, 'duration')
+        if (text === undefined) return
+        const e = find(id)
+        const parsed = parseDuration(text)
+        const startedAt = rowStart(e)
+        if (parsed.error || startedAt === null) {
+          inline.errors[id] = parsed.error ? { kind: 'invalid', key: 'duration', message: parsed.error } : { kind: 'invalid', key: 'start', message: 'Enter a start time.' }
+          refreshRow(id)
+          return
+        }
+        clearDraft(id, 'duration', 'start', 'end')
+        if (inline.errors[id]?.kind === 'invalid') delete inline.errors[id]
+        const patch = {}
+        if (startedAt !== e.startedAt) patch.startedAt = startedAt
+        if (startedAt + parsed.minutes * MIN !== e.stoppedAt) patch.stoppedAt = startedAt + parsed.minutes * MIN
+        if (!Object.keys(patch).length) return refreshRow(id)
+        saveField(id, patch, 'duration')
+      }
+
       function commit(id, key) {
         if (key === 'description') commitDescription(id)
+        else if (key === 'duration') commitDuration(id)
         else commitTime(id, key)
       }
 
@@ -1075,8 +1127,22 @@
       entriesEl.addEventListener('input', (event) => {
         const t = event.target
         if (!t.matches('input[data-entry]')) return
-        inline.drafts[t.dataset.entry] = { ...inline.drafts[t.dataset.entry], [t.dataset.key]: t.value }
-        if (t.dataset.key !== 'description') refreshRow(t.dataset.entry)
+        const id = t.dataset.entry
+        inline.drafts[id] = { ...inline.drafts[id], [t.dataset.key]: t.value }
+        if (t.dataset.key === 'duration') {
+          const parsed = parseDuration(t.value)
+          const startedAt = rowStart(find(id))
+          if (!parsed.error && startedAt !== null) {
+            const end = toTimeValue(startedAt + parsed.minutes * MIN)
+            inline.drafts[id].end = end
+            const endField = document.querySelector(`input[data-entry="${id}"][data-key="end"]`)
+            if (endField) endField.value = end
+          }
+        } else if (t.dataset.key !== 'description') {
+          clearDraft(id, 'duration')
+          if (inline.errors[id]?.key === 'duration') delete inline.errors[id]
+        }
+        if (t.dataset.key !== 'description') refreshRow(id)
         const mirror = document.querySelector(`[data-mirror="${t.dataset.entry}"]`)
         if (mirror && t.dataset.key === 'description') mirror.textContent = t.value || 'No description'
       })
@@ -1096,7 +1162,13 @@
           event.preventDefault()
           const e = find(id)
           clearDraft(id, key)
-          t.value = key === 'description' ? e.description : toTimeValue(key === 'start' ? e.startedAt : e.stoppedAt)
+          if (key === 'duration') {
+            clearDraft(id, 'end')
+            if (inline.errors[id]?.key === 'duration') delete inline.errors[id]
+            const endField = document.querySelector(`input[data-entry="${id}"][data-key="end"]`)
+            if (endField) endField.value = toTimeValue(e.stoppedAt)
+            t.value = duration(e.stoppedAt - e.startedAt)
+          } else t.value = key === 'description' ? e.description : toTimeValue(key === 'start' ? e.startedAt : e.stoppedAt)
           const mirror = key === 'description' && document.querySelector(`[data-mirror="${id}"]`)
           if (mirror) mirror.textContent = e.description || 'No description'
           if (key !== 'description') refreshRow(id)
@@ -1117,7 +1189,6 @@
         d.setFullYear(y, m - 1, day)
         const startedAt = d.getTime()
         const stoppedAt = startedAt + (e.stoppedAt - e.startedAt)
-        if (stoppedAt > Date.now()) return { error: "An entry can't end in the future." }
         return { startedAt, stoppedAt }
       }
       function showDateError(input, error) {

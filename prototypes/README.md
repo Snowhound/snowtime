@@ -800,13 +800,20 @@ Decisions:
 - **Times: start and end inputs, read as in the dialog.** The date is the start's, an end at or
   before the start means the next day, and "+1" marks it. A time in the saved minute keeps the
   saved instant, so seconds survive.
-- **Duration: read-only**, updating as the user types. Start and end already set it, and an
-  editable duration would be a third way to change the end.
+- **Duration: a field like the times** (2026-11-02, task 096; it was read-only). Typing a
+  duration keeps the start and moves the end field at once; typing a start or an end updates
+  the duration. It takes what the entry popover's does (see
+  [copy-entries.html](#copy-entrieshtml--entry-copies-and-durations)), plus the row's own
+  `1:30:00`, and saves on Enter or blur as one `updateEntry`, to the exact second from the
+  start. Escape puts back the duration and the end it moved. In the app the row's duration
+  copies through its copy button, since a click now edits it; day totals still copy on a
+  click (task 096).
 - **Date: a calendar button with a popover**, shown on row hover or focus like the actions. The
   popover has a date input and saves when it closes or on Enter; Escape cancels. The times
   and duration stay, so the entry moves to that day, then the row moves to its new day group
   and flashes. A date field in the row would widen every row for a rare change.
-- **Validation: as in the dialog, per field**: times required, no end in the future. The field
+- **Validation: as in the dialog, per field**: times required, and a duration that reads. An
+  entry may end after now, as in the app; only the running entry can't start after it. The field
   and a line under the row show the error. Nothing saves, and the value stays until fixed or
   Escape, because saving a half-typed time would write a wrong entry. The date popover shows
   its error while open and discards an invalid date on close.
@@ -927,8 +934,8 @@ bar stays on top; the calendar takes the place of the entry list and the summary
   beside the slot with the date and times filled in and the project of the entry before it.
   Add entry opens it for half an hour from the end of today's last entry.
 - **Changing**: drag an entry to move it within or across days; drag its top or bottom edge
-  to change its start or end. A drop that would end in the future shows red and changes
-  nothing. The running entry's start can move; its end stays at now. Each change is one
+  to change its start or end. An entry may end after now, as in the app. The running entry's
+  start can move, though not past now; its end stays at now. Each change is one
   `updateEntry`, and the status line under the grid names it with an **Undo** button,
   because a drag is easy to make by accident.
 - **Editing**: a click, or Enter on a focused block, opens the same popover as Add entry with
@@ -1301,6 +1308,80 @@ The app later added what this page doesn't show: a copy button as an alternative
 the duration (the `copyDurationControl` setting), a field colored by token with a warning
 about a field inside a word, and a fifth example, `H \Hours M \Minutes`.
 `docs/architecture/timer.md`, "Copying durations", describes the app's behavior.
+
+### [copy-entries.html](copy-entries.html) — Entry copies and durations
+
+Decision: how a user logs the same entry on many days, such as a daily standup, and sets an
+entry's length as a duration. Two user requests from 2026-11-02: fill a date range with one
+entry (skipping weekends, or deleting them by hand), or duplicate an entry and move the copies
+between days, which Toggl lacked; and type a duration in hours or minutes when adding an entry,
+in the list or the calendar. One feature covers both ways of copying: picking days in a month,
+where a range and a single duplicate are both just picked days. The page is
+[calendar.html](calendar.html) with these changes; the list's Add entry opens the same popover.
+
+- **Duration field** beside Start and End in the entry popover. Start, end, and duration are
+  one range: typing a duration moves the end, and typing a start or an end recomputes the
+  duration. A start keeps the end, as the list's rows do. For the running entry, which has no
+  end, a duration moves the start ("I started 2 hours ago"). It takes `1:30`, `1h 30m`,
+  `1h30`, `90m`, `90 min`, `1.5`, `1,5`, and `1.5h`; a bare number is hours, as requested. A
+  line under the field reads it back ("1 h 30 min") while it has focus, and leaving the field
+  rewrites it as `1:30`. Over 24 hours is refused, and a bare `90` suggests `90m`. The list's
+  rows take it too ([timer.html](#timerhtml--timer-and-entries)).
+- **Copy to more days**, a disclosure under the times, for a stopped or new entry. It opens a
+  month of days: a click picks or unpicks a day, Shift-click picks the workdays in a range,
+  arrow keys move across months, and Space picks. Under it, **Repeat** (Every workday, Every
+  day, Every Wednesday, Every month on the 7th, named for the entry's day) and **Until** fill
+  the matching days after the entry's, adding to those picked; clicks then adjust them. Until
+  starts at the end of the entry's month, a month later for Every Wednesday, and six months
+  later for monthly. Every workday leaves out weekends and the user's country's public
+  holidays. The entry's own day is outlined, a day that already has the same description,
+  project, and start shows a dot and Repeat leaves it out. Copies may land after now, as any
+  entry may in the app. A line names the copies ("4 copies: Tue 6 Oct, …, 08:30–08:55"), and Save says
+  how many: "Add 5 entries" or "Save and add 4". The copies are one `createEntries` call, so
+  one Undo takes them all back; they are independent entries, not a series.
+- **Context menus**, from a right-click, a two-finger click on a Mac trackpad, Ctrl+click on a
+  Mac, Shift+F10, or the Menu key. On an entry: Edit, Copy (⌘C or Ctrl+C on a focused entry),
+  Duplicate, Copy to more days…, and Delete; the running entry has only Edit. On empty time,
+  titled with the day and the quarter hour clicked: Add entry here, Paste "…" here, and Paste
+  every workday…, every Wednesday…, and on the 7th of every month…. A dashed outline shows
+  where the paste goes, with the copied length. Paste here adds the entry at once, with Undo;
+  the repeats open Add entry at that time with the copied description and project and the
+  copy panel filled by that pattern, so the days are checked before Save. Copy keeps the
+  description, project, and length in the page, not the system clipboard; without one, the
+  paste items are disabled and a line says how to copy. The menu opens with the pointer just
+  inside it, as native menus do, since the right button's release would otherwise close it.
+  On touch the app opens the same menus on a long press; the prototype doesn't emulate it
+  (task 096).
+- **Duplicate** in an entry's popover or menu puts a copy beside the original, at the same
+  time, and focuses it, so a drag or Alt+arrows moves it to its day.
+- **Alt+drag** (Option on a Mac) on an entry copies it to where it's dropped instead of moving
+  it; the ghost reads "Copy · 12:15–13:30". Pressing or releasing Alt mid-drag switches.
+
+Decided on 2026-11-02 (task 096): every copy path stays, since paste is useful on its own;
+they all end in the same day picker and save. The calendar's earlier note kept a long press
+for moving an entry; in the app a long press that lifts opens the menu, and one that drags
+moves the entry.
+
+Open questions:
+
+- Whether the list view gets the same menu on its rows.
+- Paste with ⌘V on a focused day isn't there, since days aren't focusable.
+- Duration words in Estonian (`1 t 30 min`) once the field is translated.
+
+Fixtures: the calendar's, plus **Standups to fill in**: five weeks of work with one standup,
+on the first Monday, to copy to the rest. Holidays are a fixed list of Estonia's for 2026;
+the app takes them from the country setting. Checked on 2026-11-02 with agent-browser in
+Chrome at 1440 px dark and at 850 and 390 px light: filling a month and saving 21 copies, filling
+two months with the Christmas holidays left out (with the Fill buttons this replaced), typed durations and their
+errors, the running entry's duration, Duplicate then Alt+Left, an Alt+drag copy, keyboard
+moves in the day grid, no horizontal page scroll, and no browser errors. Alt was held through
+a synthetic pointer event, so a real Alt+drag still needs a try by hand. The context menus
+were checked the same day at 1440 and 390 px, dark: real right-clicks on an entry and on empty
+time, Copy from the menu and with ⌘C, the menus' arrow keys, Paste every workday and every
+Wednesday through to Save, and Copy to more days from the menu. The list's row duration was
+checked the same day in `timer.html` at 1440 px dark, Bar and Table layouts, and 390 px
+light: typing `45m` and saving, `90` refused with its hint, Escape putting back the end, a
+typed start updating the duration, no horizontal page scroll, and no browser errors.
 
 ## Adding issues to tracker entries
 
