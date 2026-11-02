@@ -204,7 +204,7 @@
         </div>
         <div class="flex min-h-10 items-center justify-between gap-3 border-t px-3 py-1.5 text-sm sm:px-4">
           <p id="cal-status" class="min-w-0 text-muted-foreground" role="status"></p>
-          <p class="hidden shrink-0 text-xs text-muted-foreground md:block">Drag to add · drag an entry to move it, Alt+drag to copy it · right-click to copy and paste</p>
+          <p class="hidden shrink-0 text-xs text-muted-foreground md:block">Drag to add · drag an entry to move it, Alt+drag to copy it · ⌘C and ⌘V copy and paste · right-click for more</p>
         </div>
       </section>
     </main>
@@ -277,9 +277,19 @@
         <p id="edit-summary" class="-mt-2 text-sm empty:hidden text-muted-foreground" aria-live="polite"></p>
         <p id="edit-error" data-ui="error-message" class="-mt-3" role="alert" hidden></p>
 
-        <!-- Copies: one more entry on each picked day, at the same time. -->
-        <div id="copy-section" class="-mt-2 grid gap-2">
-          <button type="button" id="copy-toggle" data-ui="button" data-variant="ghost" data-size="sm" aria-expanded="false" aria-controls="copy-panel" class="-ml-2 justify-self-start"></button>
+        <!-- Repeat: a copy on each day a pattern gives after the entry's, up to Until, at the same
+             time. The month previews them; a click takes a day out or adds one. -->
+        <div id="repeat-section" class="-mt-1 grid gap-3">
+          <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
+            <div class="grid min-w-0 flex-1 basis-48 gap-1.5">
+              <label data-ui="label" for="copy-pattern">Repeat</label>
+              <select id="copy-pattern" data-ui="select"></select>
+            </div>
+            <div class="grid gap-1.5" id="copy-until-field" hidden>
+              <label data-ui="label" for="copy-until">Until</label>
+              <input id="copy-until" data-ui="input" type="date" class="w-40" />
+            </div>
+          </div>
           <div id="copy-panel" class="grid gap-3 rounded-lg border p-3" hidden>
             <div class="flex items-center justify-between gap-2">
               <span id="copy-month" class="text-sm font-medium"></span>
@@ -288,23 +298,8 @@
                 <button type="button" id="copy-next" data-ui="button" data-variant="ghost" data-size="icon" class="size-7" aria-label="Next month"></button>
               </div>
             </div>
-            <div id="copy-grid" role="group" aria-label="Days to copy to" class="grid grid-cols-7 gap-1"></div>
-            <!-- A pattern fills the days from the entry's day to Until; clicks then adjust them. -->
-            <div class="flex flex-wrap items-end gap-2">
-              <div class="grid min-w-0 flex-1 basis-40 gap-1.5">
-                <label data-ui="label" for="copy-pattern" class="text-xs">Repeat</label>
-                <select id="copy-pattern" data-ui="select"></select>
-              </div>
-              <div class="grid gap-1.5">
-                <label data-ui="label" for="copy-until" class="text-xs">Until</label>
-                <input id="copy-until" data-ui="input" type="date" class="w-36" />
-              </div>
-              <button type="button" data-fill="pattern" data-ui="button" data-variant="outline" class="h-9">Fill</button>
-            </div>
-            <div class="flex items-start justify-between gap-2">
-              <p id="copy-summary" class="text-sm text-muted-foreground" aria-live="polite"></p>
-              <button type="button" data-fill="clear" data-ui="button" data-variant="ghost" data-size="sm" class="-mr-1 -mt-1">Clear</button>
-            </div>
+            <div id="copy-grid" role="group" aria-label="Days the entry repeats on" class="grid grid-cols-7 gap-1"></div>
+            <p id="copy-summary" class="text-sm text-muted-foreground" aria-live="polite"></p>
           </div>
         </div>
 
@@ -911,8 +906,9 @@
         f('edit-duplicate').hidden = isNew || !e.stoppedAt
         f('edit-error').hidden = true
         // The running entry has no end to copy.
-        f('copy-section').hidden = !e.stoppedAt
-        Object.assign(copy, { open: false, days: new Set(), anchor: null, focus: null, note: '', month: monthOf(Z.startOfDay(e.startedAt, zone())) })
+        f('repeat-section').hidden = !e.stoppedAt
+        Object.assign(copy, { pattern: 'none', untilEdited: false, removed: new Set(), added: new Set(), focus: null, month: monthOf(Z.startOfDay(e.startedAt, zone())) })
+        f('copy-until').value = ''
         summarize()
         renderCopy()
       }
@@ -1072,13 +1068,15 @@
         summarize()
       })
 
-      // --- Copies ---
-      // The panel picks days in a month; each picked day gets one more entry at the same time
-      // and duration. Repeat fills the days that match a pattern from the entry's day to Until,
-      // adding to those picked, so a click can then take one out or add another. Shift-click
-      // picks the workdays in a range.
-      const copy = { open: false, days: new Set(), month: 0, anchor: null, focus: null, note: '', untilEdited: false }
-      const PATTERNS = ['workday', 'day', 'week', 'month']
+      // --- Repeat ---
+      // Repeat leads: a pattern fills the days after the entry's that match it, up to Until, at
+      // once, leaving out the days that already have the entry. The month previews the result;
+      // a click takes a day out or adds one, and those exceptions stay when Until, the pattern,
+      // or the entry's times change, so nothing needs filling again. One-off copies are ⌘C and
+      // ⌘V, Paste here, Duplicate, or Alt+drag.
+      const copy = { pattern: 'none', untilEdited: false, removed: new Set(), added: new Set(), month: 0, focus: null }
+      const PATTERNS = ['none', 'workday', 'day', 'week', 'month']
+      const MAX_ENTRIES = 100
 
       function monthOf(day) {
         const p = Z.zonedParts(day + 12 * HOUR, zone())
@@ -1100,6 +1098,7 @@
       }
       // A pattern's name for a day: "Every Monday", "Every month on the 5th".
       function patternLabel(kind, day) {
+        if (kind === 'none') return "Doesn't repeat"
         if (kind === 'workday') return 'Every workday'
         if (kind === 'day') return 'Every day'
         if (kind === 'week') return `Every ${fmt({ weekday: 'long' }).format(day + 12 * HOUR)}`
@@ -1133,7 +1132,6 @@
           weekend: isWeekend(day),
         }
       }
-      const pickable = (info) => !info.self
       const workday = (info) => !info.weekend && !info.holiday
       function matches(kind, b, day, info) {
         if (kind === 'workday') return workday(info)
@@ -1141,108 +1139,94 @@
         if (kind === 'month') return dayOfMonth(day) === dayOfMonth(b.day)
         return true
       }
+      function until(b) {
+        const typed = f('copy-until').value
+        if (copy.untilEdited && typed) return Z.startOfDay(Z.zonedTime(...typed.split('-').map(Number), 12, 0, zone()), zone())
+        return defaultUntil(copy.pattern, b.day)
+      }
+      // The copies: the pattern's days less those clicked out, and the days clicked in. `had`
+      // counts the pattern's days left out because they have the entry.
+      function copyDays(b) {
+        if (copy.pattern === 'none') return { days: [], had: 0, fromPattern: new Set() }
+        let had = 0
+        const fromPattern = new Set(
+          daysBetween(Z.addDays(b.day, 1, zone()), until(b)).filter((d) => {
+            const info = dayInfo(b, d)
+            if (!matches(copy.pattern, b, d, info)) return false
+            if (info.has) had++
+            return !info.has
+          })
+        )
+        const days = new Set([...fromPattern].filter((d) => !copy.removed.has(d)))
+        for (const d of copy.added) if (d !== b.day) days.add(d)
+        return { days: [...days].sort((x, y) => x - y), had, fromPattern }
+      }
 
       function renderCopy(focusGrid = false) {
-        const open = copy.open
-        f('copy-toggle').setAttribute('aria-expanded', String(open))
-        f('copy-toggle').innerHTML = `${icon('copy')}Copy to more days${icon('chevron-down', `transition-transform ${open ? 'rotate-180' : ''}`)}`
-        f('copy-panel').hidden = !open
-        const b = open ? base() : null
-        if (b) for (const d of copy.days) if (!pickable(dayInfo(b, d))) copy.days.delete(d)
-        const n = copy.days.size
+        const b = base()
+        const repeating = copy.pattern !== 'none'
+        const day = b?.day ?? today()
+        f('copy-pattern').innerHTML = PATTERNS.map((k) => `<option value="${k}"${k === copy.pattern ? ' selected' : ''}>${escapeHtml(patternLabel(k, day))}</option>`).join('')
+        f('copy-until-field').hidden = !repeating
+        f('copy-panel').hidden = !repeating
+        if (repeating && b && (!copy.untilEdited || !f('copy-until').value)) f('copy-until').value = dateValue(defaultUntil(copy.pattern, b.day))
+        f('copy-until').min = b ? dateValue(Z.addDays(b.day, 1, zone())) : ''
+        const { days, had } = repeating && b ? copyDays(b) : { days: [], had: 0 }
+        const n = days.length
         f('edit-save').textContent = n ? (state.draft ? `Add ${n + 1} entries` : `Save and add ${n}`) : 'Save'
-        if (!open) return
+        if (!repeating) return
         f('copy-month').textContent = fmt({ month: 'long', year: 'numeric' }).format(copy.month + 12 * HOUR)
         if (!b) {
           f('copy-grid').innerHTML = ''
           f('copy-summary').textContent = 'Fix the date and times first.'
           return
         }
-        const pattern = f('copy-pattern').value || 'workday'
-        f('copy-pattern').innerHTML = PATTERNS.map((k) => `<option value="${k}"${k === pattern ? ' selected' : ''}>${escapeHtml(patternLabel(k, b.day))}</option>`).join('')
-        if (!copy.untilEdited || !f('copy-until').value) f('copy-until').value = dateValue(defaultUntil(pattern, b.day))
-
+        const picked = new Set(days)
         const hadFocus = focusGrid || f('copy-grid').contains(document.activeElement)
         const inMonth = (d) => d != null && monthOf(d) === copy.month
-        const picked = [...copy.days].sort((x, y) => x - y)
-        const focusDay = [copy.focus, picked.find(inMonth), b.day].find(inMonth) ?? copy.month
+        const focusDay = [copy.focus, days.find(inMonth), b.day].find(inMonth) ?? copy.month
         const first = Z.startOfWeek(copy.month, zone(), weekStartSetting())
         const last = Z.addDays(addMonths(copy.month, 1), -1, zone())
         const cells = daysBetween(first, Z.addDays(Z.startOfWeek(last, zone(), weekStartSetting()), 6, zone()))
         const head = cells.slice(0, 7).map((d) => `<span class="pb-1 text-center text-xs text-muted-foreground" aria-hidden="true">${escapeHtml(fmt({ weekday: 'narrow' }).format(d + 12 * HOUR))}</span>`)
-        const days = cells.map((d) => {
+        const grid = cells.map((d) => {
           if (!inMonth(d)) return '<span aria-hidden="true"></span>'
           const info = dayInfo(b, d)
           const notes = [info.self && 'this entry', info.has && 'already has this entry', info.holiday].filter(Boolean)
           const label = `${fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(d + 12 * HOUR)}${notes.length ? `, ${notes.join(', ')}` : ''}`
-          const attrs = [info.self && 'data-self', info.has && 'data-has', (info.weekend || info.holiday) && 'data-off', d === today() && 'data-today', !pickable(info) && 'aria-disabled="true"'].filter(Boolean).join(' ')
-          return `<button type="button" class="copy-day" data-copy-day="${d}" aria-pressed="${copy.days.has(d)}" tabindex="${d === focusDay ? 0 : -1}" aria-label="${escapeHtml(label)}" title="${escapeHtml(notes.join(', '))}" ${attrs}>${fmt({ day: 'numeric' }).format(d + 12 * HOUR)}</button>`
+          const attrs = [info.self && 'data-self', info.has && 'data-has', (info.weekend || info.holiday) && 'data-off', d === today() && 'data-today', info.self && 'aria-disabled="true"'].filter(Boolean).join(' ')
+          return `<button type="button" class="copy-day" data-copy-day="${d}" aria-pressed="${picked.has(d)}" tabindex="${d === focusDay ? 0 : -1}" aria-label="${escapeHtml(label)}" title="${escapeHtml(notes.join(', '))}" ${attrs}>${fmt({ day: 'numeric' }).format(d + 12 * HOUR)}</button>`
         })
-        f('copy-grid').innerHTML = [...head, ...days].join('')
+        f('copy-grid').innerHTML = [...head, ...grid].join('')
         if (hadFocus) f('copy-grid').querySelector('[tabindex="0"]')?.focus()
 
         const dayFmt = fmt({ weekday: 'short', day: 'numeric', month: 'short' })
         const text = !n
-          ? 'Pick days, or fill them by a pattern. Shift-click picks the workdays in a range.'
-          : `${n} ${n === 1 ? 'copy' : 'copies'}: ${n <= 4 ? new Intl.ListFormat('en').format(picked.map((d) => dayFmt.format(d + 12 * HOUR))) : fmt({ day: 'numeric', month: 'short' }).formatRange(picked[0] + 12 * HOUR, picked.at(-1) + 12 * HOUR)}, ${clock(copyRange(b, picked[0]).startedAt)}–${clock(copyRange(b, picked[0]).stoppedAt)}`
-        const legend = 'Outlined: this entry · dot: already has it'
-        f('copy-summary').innerHTML = `${escapeHtml(text)}${copy.note ? `<br>${escapeHtml(copy.note)}` : ''}<span class="mt-1 block text-xs">${legend}</span>`
+          ? `No days match up to ${fmt({ day: 'numeric', month: 'short' }).format(until(b) + 12 * HOUR)}. Click a day to add it.`
+          : `${n} ${n === 1 ? 'copy' : 'copies'}: ${n <= 4 ? new Intl.ListFormat('en').format(days.map((d) => dayFmt.format(d + 12 * HOUR))) : fmt({ day: 'numeric', month: 'short' }).formatRange(days[0] + 12 * HOUR, days.at(-1) + 12 * HOUR)}, ${clock(copyRange(b, days[0]).startedAt)}–${clock(copyRange(b, days[0]).stoppedAt)}`
+        const notes = [
+          had && `Left out ${had} ${had === 1 ? 'day that already has' : 'days that already have'} it.`,
+          n + (state.draft ? 1 : 0) > MAX_ENTRIES && `<span class="text-destructive">At most ${MAX_ENTRIES} entries at once.</span>`,
+        ].filter(Boolean)
+        const legend = 'Click a day to take it out or add it · outlined: this entry · dot: already has it'
+        f('copy-summary').innerHTML = `${escapeHtml(text)}${notes.map((note) => `<br>${note.startsWith('<span') ? note : escapeHtml(note)}`).join('')}<span class="mt-1 block text-xs">${legend}</span>`
       }
 
-      function fill(kind) {
-        const b = base()
-        if (!b) return
-        copy.note = ''
-        if (kind === 'clear') {
-          copy.days.clear()
-          return renderCopy()
-        }
-        const pattern = f('copy-pattern').value
-        if (!f('copy-until').value) f('copy-until').value = dateValue(defaultUntil(pattern, b.day))
-        const until = Z.startOfDay(Z.zonedTime(...f('copy-until').value.split('-').map(Number), 12, 0, zone()), zone())
-        let had = 0
-        const added = daysBetween(Z.addDays(b.day, 1, zone()), until).filter((d) => {
-          const info = dayInfo(b, d)
-          if (!matches(pattern, b, d, info)) return false
-          if (info.has) return had++, false
-          return !copy.days.has(d)
-        })
-        added.forEach((d) => copy.days.add(d))
-        copy.month = monthOf(b.day)
-        if (had) copy.note = `Left out ${had} ${had === 1 ? 'day that already has' : 'days that already have'} it.`
-        else if (!added.length) copy.note = `No more days match up to ${fmt({ day: 'numeric', month: 'short' }).format(until + 12 * HOUR)}.`
-        renderCopy()
-      }
-
-      // Opens the panel, and with a pattern, fills it at once.
-      function openCopyPanel(pattern) {
-        copy.open = true
-        copy.days.clear()
-        copy.note = ''
+      // A pattern applies at once; the preview opens on the entry's month.
+      function setPattern(kind) {
+        copy.pattern = kind
         copy.untilEdited = false
         const b = base()
         if (b) copy.month = monthOf(b.day)
-        f('copy-pattern').innerHTML = PATTERNS.map((k) => `<option value="${k}">${k}</option>`).join('')
-        f('copy-pattern').value = pattern ?? 'workday'
-        f('copy-until').value = ''
-        if (pattern) fill('pattern')
-        else renderCopy()
+        renderCopy()
         place()
       }
 
-      f('copy-toggle').addEventListener('click', () => {
-        if (copy.open) {
-          copy.open = false
-          copy.days.clear()
-          renderCopy()
-          place()
-        } else openCopyPanel()
-      })
-      f('copy-pattern').addEventListener('change', () => {
-        copy.untilEdited = false
+      f('copy-pattern').addEventListener('change', (event) => setPattern(event.currentTarget.value))
+      f('copy-until').addEventListener('input', () => {
+        copy.untilEdited = true
         renderCopy()
       })
-      f('copy-until').addEventListener('change', () => (copy.untilEdited = true))
       f('copy-prev').addEventListener('click', () => {
         copy.month = addMonths(copy.month, -1)
         renderCopy()
@@ -1251,28 +1235,24 @@
         copy.month = addMonths(copy.month, 1)
         renderCopy()
       })
-      popover.addEventListener('click', (event) => {
-        const b = event.target.closest('[data-fill]')
-        if (b) fill(b.dataset.fill)
-      })
+      // A click takes a day out of the copies, or adds one the pattern left out.
       f('copy-grid').addEventListener('click', (event) => {
         const button = event.target.closest('[data-copy-day]')
-        if (!button || button.getAttribute('aria-disabled') === 'true') return
-        const day = Number(button.dataset.copyDay)
         const b = base()
-        if (event.shiftKey && copy.anchor != null) {
-          for (const d of daysBetween(Math.min(copy.anchor, day), Math.max(copy.anchor, day))) {
-            const info = dayInfo(b, d)
-            if (pickable(info) && (d === day || workday(info))) copy.days.add(d)
-          }
-        } else if (copy.days.has(day)) copy.days.delete(day)
-        else copy.days.add(day)
-        copy.anchor = day
+        if (!button || !b || button.getAttribute('aria-disabled') === 'true') return
+        const day = Number(button.dataset.copyDay)
+        const { days, fromPattern } = copyDays(b)
+        if (days.includes(day)) {
+          copy.added.delete(day)
+          if (fromPattern.has(day)) copy.removed.add(day)
+        } else {
+          copy.removed.delete(day)
+          if (!fromPattern.has(day)) copy.added.add(day)
+        }
         copy.focus = day
-        copy.note = ''
         renderCopy(true)
       })
-      // Arrow keys move through the days, across months; Space or Enter picks.
+      // Arrow keys move through the days, across months; Space or Enter takes a day out or adds it.
       f('copy-grid').addEventListener('keydown', (event) => {
         const button = event.target.closest('[data-copy-day]')
         const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[event.key]
@@ -1308,8 +1288,9 @@
         if (error) return showError(error)
         const { start, end } = formRange()
         const fields = { description: f('edit-description').value.trim(), projectId: f('edit-project').value }
-        const b = copy.open ? base() : null
-        const ranges = b ? [...copy.days].sort((x, y) => x - y).map((d) => copyRange(b, d)) : []
+        const b = copy.pattern !== 'none' ? base() : null
+        const ranges = b ? copyDays(b).days.map((d) => copyRange(b, d)) : []
+        if (ranges.length + (state.draft ? 1 : 0) > MAX_ENTRIES) return showError(`At most ${MAX_ENTRIES} entries at once.`)
         const name = fields.description || 'No description'
         if (state.draft) {
           const added = [{ startedAt: start, stoppedAt: end }, ...ranges].map((r) => ({ id: `e${nextId++}`, ...fields, ...r }))
@@ -1372,6 +1353,7 @@
       // the copy panel filled by that pattern, to check before saving.
       const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
       const COPY_KEY = isMac ? '⌘C' : 'Ctrl+C'
+      const PASTE_KEY = isMac ? '⌘V' : 'Ctrl+V'
       const entryMenu = f('entry-menu')
       const slotMenu = f('slot-menu')
       // The entry the entry menu is for, and the entry to focus when it closes.
@@ -1383,8 +1365,33 @@
       function copyEntry(e) {
         state.clipboard = { description: e.description, projectId: e.projectId, length: e.stoppedAt - e.startedAt }
         state.undo = null
-        status(`Copied “${escapeHtml(e.description || 'No description')}” (${hm(e.stoppedAt - e.startedAt)}). Right-click a time to paste it.`)
+        status(`Copied “${escapeHtml(e.description || 'No description')}” (${hm(e.stoppedAt - e.startedAt)}). Point at a time and press ${PASTE_KEY}, or right-click it.`)
       }
+      // The copied entry at a time, at once, with Undo; the copy takes focus.
+      function pasteAt(start) {
+        const c = state.clipboard
+        const pasted = addCopies(c, [{ startedAt: start, stoppedAt: start + c.length }], `Pasted “${c.description || 'No description'}”: ${fmt({ weekday: 'short', day: 'numeric', month: 'short' }).format(start)} ${clock(start)}–${clock(start + c.length)}.`)
+        if (pasted) requestAnimationFrame(() => document.querySelector(`[data-entry="${pasted[0].id}"]`)?.focus())
+      }
+
+      // ⌘V or Ctrl+V pastes at the quarter hour under the pointer, as Paste here does. Days
+      // aren't focusable, so the pointer is what says where.
+      let hover = null
+      body.addEventListener('pointermove', (event) => {
+        if (event.pointerType === 'mouse') hover = { x: event.clientX, y: event.clientY }
+      })
+      body.addEventListener('pointerleave', () => (hover = null))
+      document.addEventListener('keydown', (event) => {
+        if (!(isMac ? event.metaKey : event.ctrlKey) || event.altKey || event.key.toLowerCase() !== 'v') return
+        if (event.target.closest?.('input, textarea, select, [contenteditable]') || popover.matches(':popover-open') || !state.clipboard) return
+        event.preventDefault()
+        if (!hover || !document.elementFromPoint(hover.x, hover.y)?.closest('#cal-body .cal-day')) {
+          status(`Point at a time on the calendar, then press ${PASTE_KEY} to paste there.`)
+          return
+        }
+        const slot = slotAt(hover.x, hover.y)
+        pasteAt(timeOn(slot.day, Math.floor(slot.minutes / SNAP) * SNAP))
+      })
       function deleteEntry(e) {
         const index = state.entries.indexOf(e)
         save(
@@ -1426,7 +1433,7 @@
             edit: `${icon('pencil')}Edit`,
             copy: `${icon('copy')}Copy${shortcut(COPY_KEY)}`,
             duplicate: `${icon('copy-plus')}Duplicate`,
-            'copy-days': `${icon('repeat')}Copy to more days…`,
+            'copy-days': `${icon('repeat')}Repeat…`,
             delete: `${icon('trash-2')}Delete`,
           },
           // The running entry has no end yet to copy.
@@ -1446,7 +1453,7 @@
           slotMenu,
           {
             add: `${icon('plus')}Add entry here`,
-            paste: `${icon('clipboard-paste')}<span class="min-w-0 truncate">${c ? `Paste “${escapeHtml(c.description || 'No description')}” here` : 'Paste here'}</span>`,
+            paste: `${icon('clipboard-paste')}<span class="min-w-0 truncate">${c ? `Paste “${escapeHtml(c.description || 'No description')}” here` : 'Paste here'}</span>${shortcut(PASTE_KEY)}`,
             'paste-workday': `${icon('repeat')}Paste every workday…`,
             'paste-week': `${icon('repeat')}Paste every ${escapeHtml(fmt({ weekday: 'long' }).format(day + 12 * HOUR))}…`,
             'paste-month': `${icon('repeat')}Paste on the ${ordinal(dayOfMonth(day))} of every month…`,
@@ -1455,7 +1462,7 @@
         )
         f('slot-menu-hint').textContent = !c
           ? `Copy an entry to paste it: right-click it, or select it and press ${COPY_KEY}.`
-          : `${hm(c.length)} · ${project(c.projectId).name}. The repeats open Add entry to check the days.`
+          : `${hm(c.length)} · ${project(c.projectId).name}. ${PASTE_KEY} pastes under the pointer too; the repeats open Add entry to check the days.`
         showMenu(slotMenu, x, y)
       }
 
@@ -1490,7 +1497,7 @@
         else if (action === 'duplicate') menuFocusId = duplicateEntry(e)?.[0].id ?? e.id
         else if (action === 'copy-days') {
           openEdit(e.id, blockEl)
-          openCopyPanel()
+          f('copy-pattern').focus()
         } else if (action === 'delete') {
           menuFocusId = null
           deleteEntry(e)
@@ -1504,12 +1511,10 @@
         state.menuSlot = null
         slotMenu.hidePopover()
         if (action === 'add') openNew(slot.start, slot.start + CLICK_MINUTES * MIN)
-        else if (action === 'paste') {
-          const pasted = addCopies(c, [{ startedAt: slot.start, stoppedAt: slot.start + c.length }], `Pasted “${c.description || 'No description'}”: ${fmt({ weekday: 'short', day: 'numeric', month: 'short' }).format(slot.start)} ${clock(slot.start)}–${clock(slot.start + c.length)}.`)
-          if (pasted) requestAnimationFrame(() => document.querySelector(`[data-entry="${pasted[0].id}"]`)?.focus())
-        } else {
+        else if (action === 'paste') pasteAt(slot.start)
+        else {
           openNew(slot.start, slot.start + c.length, c)
-          openCopyPanel(action.replace('paste-', ''))
+          setPattern(action.replace('paste-', ''))
         }
       })
       entryMenu.addEventListener('toggle', (event) => {

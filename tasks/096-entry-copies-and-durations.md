@@ -43,6 +43,12 @@ The second is to set an entry's length by typing a duration. The prototypes are
   values back, then calls `deleteEntries`. Duplicate, Paste here, and Alt+drag are a
   `createEntries` of one, so they undo the same way. Past the cap, the copy panel says "At
   most 100 entries at once" and Save doesn't save.
+- **Repeat leads** (2026-11-02, after a first build). Copy to more days becomes a Repeat
+  field under the times, set to Doesn't repeat: a pattern fills its days up to Until at once,
+  with no Fill button, and the month previews them, where a click takes a day out or adds
+  one. ⌘V or Ctrl+V pastes at the quarter hour under the pointer. The entry menu's Copy to
+  more days… becomes Repeat…. `prototypes/copy-entries.html` has it; the app still has the
+  first version until the maintainer has agreed.
 - **snowtime-native follows in its own session** (2026-11-02). This task changes only this
   repository; its route parity and conformance runs will report both routes as missing until
   that session ports them.

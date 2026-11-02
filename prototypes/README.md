@@ -1327,26 +1327,32 @@ where a range and a single duplicate are both just picked days. The page is
   line under the field reads it back ("1 h 30 min") while it has focus, and leaving the field
   rewrites it as `1:30`. Over 24 hours is refused, and a bare `90` suggests `90m`. The list's
   rows take it too ([timer.html](#timerhtml--timer-and-entries)).
-- **Copy to more days**, a disclosure under the times, for a stopped or new entry. It opens a
-  month of days: a click picks or unpicks a day, Shift-click picks the workdays in a range,
-  arrow keys move across months, and Space picks. Under it, **Repeat** (Every workday, Every
-  day, Every Wednesday, Every month on the 7th, named for the entry's day) and **Until** fill
-  the matching days after the entry's, adding to those picked; clicks then adjust them. Until
-  starts at the end of the entry's month, a month later for Every Wednesday, and six months
-  later for monthly. Every workday leaves out weekends and the user's country's public
-  holidays. The entry's own day is outlined, a day that already has the same description,
-  project, and start shows a dot and Repeat leaves it out. Copies may land after now, as any
-  entry may in the app. A line names the copies ("4 copies: Tue 6 Oct, …, 08:30–08:55"), and Save says
-  how many: "Add 5 entries" or "Save and add 4". The copies are one `createEntries` call, so
-  one Undo takes them all back; they are independent entries, not a series.
+- **Repeat**, a field under the times for a stopped or new entry, set to Doesn't repeat. Its
+  patterns are named for the entry's day: Every workday, Every day, Every Wednesday, and
+  Every month on the 7th. Picking one fills the days after the entry's that match it, up to
+  **Until**, at once; Until appears with it and starts at the end of the entry's month, a
+  month later for Every Wednesday, and six months later for monthly. Every workday leaves out
+  weekends and the user's country's public holidays, and every pattern leaves out a day that
+  already has the same description, project, and start ("Left out 1 day that already has
+  it."). The month under them previews the copies: a click takes a day out or adds one the
+  pattern left out, arrow keys move across months, and Space does the same as a click. The
+  entry's own day is outlined and a day that has it shows a dot. Those exceptions stay when
+  Until, the pattern, or the entry's times change, so nothing needs filling again. Copies may
+  land after now, as any entry may in the app. A line names the copies ("19 copies: 4 – 30
+  Nov, 13:00–13:30"), and Save says how many: "Add 20 entries" or "Save and add 19"; past 100
+  entries it says "At most 100 entries at once." and doesn't save. The copies are one
+  `createEntries` call, so one Undo takes them all back; they are independent entries, not a
+  series.
 - **Context menus**, from a right-click, a two-finger click on a Mac trackpad, Ctrl+click on a
   Mac, Shift+F10, or the Menu key. On an entry: Edit, Copy (⌘C or Ctrl+C on a focused entry),
-  Duplicate, Copy to more days…, and Delete; the running entry has only Edit. On empty time,
+  Duplicate, Repeat… (Edit with the Repeat field focused), and Delete; the running entry has
+  only Edit. On empty time,
   titled with the day and the quarter hour clicked: Add entry here, Paste "…" here, and Paste
   every workday…, every Wednesday…, and on the 7th of every month…. A dashed outline shows
-  where the paste goes, with the copied length. Paste here adds the entry at once, with Undo;
-  the repeats open Add entry at that time with the copied description and project and the
-  copy panel filled by that pattern, so the days are checked before Save. Copy keeps the
+  where the paste goes, with the copied length. Paste here adds the entry at once, with Undo,
+  as ⌘V or Ctrl+V does at the quarter hour under the pointer; off the grid, ⌘V says to point
+  at a time. The repeats open Add entry at that time with the copied description and project
+  and Repeat set to that pattern, so the days are checked before Save. Copy keeps the
   description, project, and length in the page, not the system clipboard; without one, the
   paste items are disabled and a line says how to copy. The menu opens with the pointer just
   inside it, as native menus do, since the right button's release would otherwise close it.
@@ -1358,14 +1364,18 @@ where a range and a single duplicate are both just picked days. The page is
   it; the ghost reads "Copy · 12:15–13:30". Pressing or releasing Alt mid-drag switches.
 
 Decided on 2026-11-02 (task 096): every copy path stays, since paste is useful on its own;
-they all end in the same day picker and save. The calendar's earlier note kept a long press
+they all end in the same day picker and save. Revised the same day: Repeat leads, because
+filling a pattern is the usual case and picking scattered days the rare one. The first
+version opened Copy to more days as a disclosure with a month to pick days in, and Repeat,
+Until, and a Fill button under it; Fill wrapped onto its own line at 28rem and was easy to
+miss, and choosing a pattern and Until still did nothing until it was pressed. One-off
+copies are ⌘C and ⌘V, Paste here, Duplicate, and Alt+drag. The calendar's earlier note kept a long press
 for moving an entry; in the app a long press that lifts opens the menu, and one that drags
 moves the entry.
 
 Open questions:
 
 - Whether the list view gets the same menu on its rows.
-- Paste with ⌘V on a focused day isn't there, since days aren't focusable.
 - Duration words in Estonian (`1 t 30 min`) once the field is translated.
 
 Fixtures: the calendar's, plus **Standups to fill in**: five weeks of work with one standup,
@@ -1381,7 +1391,12 @@ time, Copy from the menu and with ⌘C, the menus' arrow keys, Paste every workd
 Wednesday through to Save, and Copy to more days from the menu. The list's row duration was
 checked the same day in `timer.html` at 1440 px dark, Bar and Table layouts, and 390 px
 light: typing `45m` and saving, `90` refused with its hint, Escape putting back the end, a
-typed start updating the duration, no horizontal page scroll, and no browser errors.
+typed start updating the duration, no horizontal page scroll, and no browser errors. Repeat
+was checked the same day at 1440 px dark and 390 px: Every workday filling November at once,
+a day clicked out staying out through a later Until and a switch to Every Tuesday, Doesn't
+repeat hiding the preview, ⌘C and then ⌘V under the pointer, with its hint off the grid,
+Repeat… from the entry menu focusing the field, Paste every Thursday opening the filled
+preview, no horizontal page scroll, and no browser errors.
 
 ## Adding issues to tracker entries
 
