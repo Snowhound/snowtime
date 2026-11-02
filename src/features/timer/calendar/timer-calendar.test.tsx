@@ -626,8 +626,8 @@ describe('TimerCalendar', () => {
       expect(await screen.findByRole('menu', { name: 'Entry' })).toBeInTheDocument()
       expect(screen.queryByRole('dialog', { name: 'Edit entry' })).not.toBeInTheDocument()
       await userEvent.keyboard('{Escape}')
-
-      const tuesday = screen.getByRole('group', { name: /Tuesday/ })
+      // The closed menu hides the rest of the page until its cleanup runs.
+      const tuesday = await screen.findByRole('group', { name: /Tuesday/ })
       fireEvent.pointerDown(tuesday, { ...finger, ...point(1, 15) })
       await hold()
       fireEvent.pointerUp(grid(), { ...finger, ...point(1, 15) })
