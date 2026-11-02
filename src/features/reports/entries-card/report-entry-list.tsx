@@ -48,6 +48,13 @@ export function ReportEntryList(props: {
   function rows(): DescriptionRow[] {
     return entries.data?.pages.flatMap((p) => (p.view === 'description' ? p.rows : [])) ?? []
   }
+  // The Ticket column shows only when a listed entry has a ticket.
+  function dayTickets() {
+    return days().some((day) => day.pieces.some((piece) => piece.ticket))
+  }
+  function rowTickets() {
+    return rows().some((row) => row.ticket)
+  }
   function rowCount() {
     const page = first()
     return page?.view === 'description' ? page.rowCount : 0
@@ -104,6 +111,7 @@ export function ReportEntryList(props: {
                             <EntryRow
                               piece={piece}
                               many={props.filters.many}
+                              tickets={dayTickets()}
                               zone={props.zone}
                               project={project(piece.projectId)}
                               person={nameOf(piece.userId)}
@@ -126,12 +134,13 @@ export function ReportEntryList(props: {
             </Match>
             <Match when={first()?.view === 'description'}>
               <ul>
-                <DescriptionHeader many={props.filters.many} />
+                <DescriptionHeader many={props.filters.many} tickets={rowTickets()} />
                 <For each={rows()}>
                   {(row) => (
                     <DescriptionItem
                       row={row}
                       many={props.filters.many}
+                      tickets={rowTickets()}
                       project={project(row.projectId)}
                       people={peopleLabel(row.userIds, nameOf)}
                     />
@@ -180,15 +189,23 @@ function ProjectLabel(props: { project: Project | undefined; class?: string }) {
   )
 }
 
-// The description, then the ticket, as the timer shows them.
-function DescriptionText(props: { text: string; ticket: string | null; class?: string }) {
+// The description, then the ticket, as the timer shows them. With a Ticket column the ticket
+// shows here only below 640 px, where the columns wrap.
+function DescriptionText(props: {
+  text: string
+  ticket: string | null
+  column: boolean
+  class?: string
+}) {
   return (
     <span class={cn('flex min-w-0 items-center gap-1.5', props.class)}>
       <Show
         when={props.text}
         fallback={
-          <Show when={!props.ticket}>
-            <span class="text-muted-foreground italic">{m.timer_no_description()}</span>
+          <Show when={!props.ticket || props.column}>
+            <span class={cn('text-muted-foreground italic', props.ticket && 'hidden sm:inline')}>
+              {m.timer_no_description()}
+            </span>
           </Show>
         }
       >
@@ -197,12 +214,28 @@ function DescriptionText(props: { text: string; ticket: string | null; class?: s
         </span>
       </Show>
       <Show when={props.ticket}>
-        {(ticket) => (
-          <Badge variant="secondary" class="h-5 min-w-0 shrink-0 px-1.5 font-medium tabular-nums">
-            <span class="truncate">{ticket()}</span>
-          </Badge>
-        )}
+        {(ticket) => <TicketBadge ticket={ticket()} class={cn(props.column && 'sm:hidden')} />}
       </Show>
+    </span>
+  )
+}
+
+function TicketBadge(props: { ticket: string; class?: string }) {
+  return (
+    <Badge
+      variant="secondary"
+      class={cn('h-5 min-w-0 shrink-0 px-1.5 font-medium tabular-nums', props.class)}
+    >
+      <span class="truncate">{props.ticket}</span>
+    </Badge>
+  )
+}
+
+// The Ticket column's cell, from 640 px.
+function TicketCell(props: { ticket: string | null; class?: string }) {
+  return (
+    <span class={cn('hidden min-w-0 sm:flex', props.class)}>
+      <Show when={props.ticket}>{(ticket) => <TicketBadge ticket={ticket()} />}</Show>
     </span>
   )
 }
@@ -212,6 +245,7 @@ function DescriptionText(props: { text: string; ticket: string | null; class?: s
 function EntryRow(props: {
   piece: EntryPiece
   many: boolean
+  tickets: boolean
   zone: string
   project: Project | undefined
   person: string
@@ -236,16 +270,28 @@ function EntryRow(props: {
   return (
     <li
       class={cn(
-        'grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5 border-b px-6 py-2.5 text-sm last:border-b-0 sm:items-center',
-        entryColumns(props.many, copyControl() === 'button'),
-        hourCycle() === 'h12' ? '[--time:11.5rem]' : '[--time:9rem]',
+        'grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5 border-b px-6 py-2.5 text-sm last:border-b-0 sm:grid-cols-(--cols) sm:items-center',
       )}
+      style={{
+        '--cols': columns([
+          hourCycle() === 'h12' ? '11.5rem' : '9rem',
+          'minmax(0,1fr)',
+          props.tickets && TICKET_WIDTH,
+          'minmax(0,12rem)',
+          props.many && 'minmax(0,9rem)',
+          totalWidth(copyControl() === 'button'),
+        ]),
+      }}
     >
       <DescriptionText
         text={props.piece.description}
         ticket={props.piece.ticket}
+        column={props.tickets}
         class="sm:col-start-2 sm:row-start-1"
       />
+      <Show when={props.tickets}>
+        <TicketCell ticket={props.piece.ticket} class="sm:col-start-3 sm:row-start-1" />
+      </Show>
       <span class="col-start-2 row-start-1 text-right font-medium tabular-nums sm:col-start-auto sm:col-end-[-1]">
         <CopyableDuration ms={props.piece.ms} />
       </span>
@@ -267,53 +313,65 @@ function EntryRow(props: {
             </Badge>
           </Show>
         </span>
-        <ProjectLabel project={props.project} class="sm:col-start-3 sm:row-start-1" />
+        <ProjectLabel
+          project={props.project}
+          class={cn('sm:row-start-1', props.tickets ? 'sm:col-start-4' : 'sm:col-start-3')}
+        />
         <Show when={props.many}>
-          <span class="truncate sm:col-start-4 sm:row-start-1">{props.person}</span>
+          <span
+            class={cn(
+              'truncate sm:row-start-1',
+              props.tickets ? 'sm:col-start-5' : 'sm:col-start-4',
+            )}
+          >
+            {props.person}
+          </span>
         </Show>
       </div>
     </li>
   )
 }
 
-// Column widths shared by the By description header and rows, from 640 px.
-// The last column is the total: 3.5rem, or 5.25rem with room for the copy button. The class
-// names are written out whole so Tailwind finds them.
-function entryColumns(many: boolean, copyButton: boolean) {
-  if (many) {
-    return copyButton
-      ? 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_minmax(0,9rem)_5.25rem]'
-      : 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_minmax(0,9rem)_3.5rem]'
-  }
-  return copyButton
-    ? 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_5.25rem]'
-    : 'sm:grid-cols-[var(--time)_minmax(0,1fr)_minmax(0,12rem)_3.5rem]'
+// Column widths from 640 px, set as --cols on each row (and the By description header) so
+// they line up. The last column is the total, with room for the copy button when it shows.
+const TICKET_WIDTH = 'minmax(0,7rem)'
+
+function totalWidth(copyButton: boolean) {
+  return copyButton ? '5.25rem' : '3.5rem'
 }
 
-function descriptionColumns(many: boolean, copyButton: boolean) {
-  if (many) {
-    return copyButton
-      ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,12rem)_4.5rem_3.5rem_5.25rem]'
-      : 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,12rem)_4.5rem_3.5rem_3.5rem]'
-  }
-  return copyButton
-    ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_4.5rem_3.5rem_5.25rem]'
-    : 'sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_4.5rem_3.5rem_3.5rem]'
+function columns(widths: (string | false)[]) {
+  return widths.filter(Boolean).join(' ')
+}
+
+function descriptionColumns(many: boolean, tickets: boolean, copyButton: boolean) {
+  return columns([
+    'minmax(0,1fr)',
+    tickets && TICKET_WIDTH,
+    'minmax(0,12rem)',
+    many && 'minmax(0,12rem)',
+    '4.5rem',
+    '3.5rem',
+    totalWidth(copyButton),
+  ])
 }
 
 // Names the columns once instead of on every row. Screen readers get each row's counts as a
 // sentence instead, so the header is hidden from them.
-function DescriptionHeader(props: { many: boolean }) {
+function DescriptionHeader(props: { many: boolean; tickets: boolean }) {
   const copyControl = useCopyControl()
   return (
     <li
       aria-hidden="true"
-      class={cn(
-        'bg-muted/50 text-muted-foreground hidden gap-x-4 border-b px-6 py-1.5 text-xs font-medium sm:grid',
-        descriptionColumns(props.many, copyControl() === 'button'),
-      )}
+      class="bg-muted/50 text-muted-foreground hidden grid-cols-(--cols) gap-x-4 border-b px-6 py-1.5 text-xs font-medium sm:grid"
+      style={{
+        '--cols': descriptionColumns(props.many, props.tickets, copyControl() === 'button'),
+      }}
     >
       <span>{m.reports_entries_col_description()}</span>
+      <Show when={props.tickets}>
+        <span>{m.reports_group_ticket()}</span>
+      </Show>
       <span>{m.reports_group_project()}</span>
       <Show when={props.many}>
         <span>{m.reports_people()}</span>
@@ -330,33 +388,48 @@ function DescriptionHeader(props: { many: boolean }) {
 function DescriptionItem(props: {
   row: DescriptionRow
   many: boolean
+  tickets: boolean
   project: Project | undefined
   people: string
 }) {
   const copyControl = useCopyControl()
   return (
     <li
-      class={cn(
-        'grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5 border-b px-6 py-2.5 text-sm last:border-b-0 sm:items-center',
-        descriptionColumns(props.many, copyControl() === 'button'),
-      )}
+      class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5 border-b px-6 py-2.5 text-sm last:border-b-0 sm:grid-cols-(--cols) sm:items-center"
+      style={{
+        '--cols': descriptionColumns(props.many, props.tickets, copyControl() === 'button'),
+      }}
     >
       <DescriptionText
         text={props.row.description}
         ticket={props.row.ticket}
+        column={props.tickets}
         class="sm:col-start-1 sm:row-start-1"
       />
+      <Show when={props.tickets}>
+        <TicketCell ticket={props.row.ticket} class="sm:col-start-2 sm:row-start-1" />
+      </Show>
       <span class="col-start-2 row-start-1 text-right font-medium tabular-nums sm:col-start-auto sm:col-end-[-1]">
         <CopyableDuration ms={props.row.total} />
       </span>
       <div class="text-muted-foreground col-span-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 sm:contents">
-        <ProjectLabel project={props.project} class="sm:col-start-2 sm:row-start-1" />
+        <ProjectLabel
+          project={props.project}
+          class={cn('sm:row-start-1', props.tickets ? 'sm:col-start-3' : 'sm:col-start-2')}
+        />
         <span class="sm:sr-only">
           {m.reports_entries_count({ count: props.row.entries })}{' '}
           {m.reports_entries_days({ count: props.row.days })}
         </span>
         <Show when={props.many}>
-          <span class="min-w-0 truncate sm:col-start-3 sm:row-start-1">{props.people}</span>
+          <span
+            class={cn(
+              'min-w-0 truncate sm:row-start-1',
+              props.tickets ? 'sm:col-start-4' : 'sm:col-start-3',
+            )}
+          >
+            {props.people}
+          </span>
         </Show>
         <span
           aria-hidden="true"

@@ -99,6 +99,7 @@ interface Entry {
   userId: string
   projectId: string | null
   description: string
+  ticket?: string
   // Its day and starting hour, UTC; each lasts an hour.
   date: string
   hour: number
@@ -172,7 +173,7 @@ function piecesOf(input: ReportEntryTotalsInput) {
       return {
         ...e,
         entryId: String(i),
-        ticket: null,
+        ticket: e.ticket ?? null,
         from: start,
         to: end,
         startedAt: start,
@@ -192,10 +193,13 @@ function entryTotals(input: ReportEntryTotalsInput) {
 function entries(input: Omit<ReportEntriesInput, 'after'>) {
   const pieces = piecesOf(input)
   if (input.view === 'description') {
-    const rows = new Map<string, { projectId: string | null; description: string; n: number }>()
+    const rows = new Map<
+      string,
+      { projectId: string | null; ticket: string | null; description: string; n: number }
+    >()
     for (const p of pieces) {
-      const key = `${p.projectId}|${p.description}`
-      const r = rows.get(key) ?? { projectId: p.projectId, description: p.description, n: 0 }
+      const key = `${p.projectId}|${p.ticket}|${p.description}`
+      const r = rows.get(key) ?? { ...p, n: 0 }
       r.n++
       rows.set(key, r)
     }
@@ -206,7 +210,7 @@ function entries(input: Omit<ReportEntriesInput, 'after'>) {
       next: null,
       rows: all.map((r) => ({
         projectId: r.projectId,
-        ticket: null,
+        ticket: r.ticket,
         description: r.description,
         total: r.n * HOUR,
         entries: r.n,
@@ -415,7 +419,7 @@ describe('ReportsView', () => {
     await screen.findByRole('table')
     const people = await screen.findByLabelText('People')
     await waitFor(() =>
-      expect(options(people)).toEqual(['Platform', 'Kadri Tamm', 'Max Member (you)']),
+      expect(options(people)).toEqual(['Platform', 'Max Member (you)', 'Kadri Tamm']),
     )
     expect(screen.getByText(/the time of the Platform team, which you lead/)).toBeInTheDocument()
     expect(options(screen.getByLabelText('Group by'))).toEqual([
@@ -453,11 +457,11 @@ describe('ReportsView', () => {
     await waitFor(() =>
       expect(options(people)).toEqual([
         'Everyone',
+        'Max Member (you)',
         'Design',
         'Platform',
         'Kadri Tamm',
         'Liis Mets',
-        'Max Member (you)',
         'Mart Kask',
       ]),
     )
@@ -619,6 +623,19 @@ describe('ReportsView', () => {
     expect(screen.getByLabelText('Range')).toHaveValue('this-month')
   })
 
+  test('through the 5th the report opens on last month, and this month goes in the URL', async () => {
+    vi.setSystemTime(new Date('2026-10-05T09:00:00Z'))
+    const { search } = renderView({})
+    await screen.findByRole('table')
+    expect(lastInput()).toMatchObject({ from: '2026-09-01', to: '2026-10-01' })
+    const preset = screen.getByLabelText('Range')
+    expect(preset).toHaveValue('last-month')
+
+    await userEvent.selectOptions(preset, 'This month')
+    await waitFor(() => expect(lastInput()).toMatchObject({ from: '2026-10-01', to: '2026-11-01' }))
+    expect(search()).toEqual({ range: 'this-month' })
+  })
+
   test('the Entries card lists a week by day, newest first, without a member column', async () => {
     renderView()
     const card = await screen.findByRole('region', { name: 'Entries' })
@@ -651,7 +668,18 @@ describe('ReportsView', () => {
     expect(fn.getReportEntryTotals).not.toHaveBeenCalled()
   })
 
-  test('a month opens By description, and the choice goes in the URL', async () => {
+  test('a month of one person opens By day', async () => {
+    renderView({})
+    const card = await screen.findByRole('region', { name: 'Entries' })
+    expect(await within(card).findAllByRole('heading', { level: 4 })).toHaveLength(2)
+    expect(within(card).getByRole('button', { name: 'By day' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  test('a month of more people opens By description, and the choice goes in the URL', async () => {
+    server.role = 'admin'
     const { search } = renderView({})
     const card = await screen.findByRole('region', { name: 'Entries' })
     expect(await within(card).findByText('2 entries on 2 days')).toBeInTheDocument()
@@ -664,6 +692,22 @@ describe('ReportsView', () => {
     await userEvent.click(within(card).getByRole('button', { name: 'By day' }))
     await waitFor(() => expect(search()).toEqual({ entries: 'day' }))
     expect(await within(card).findAllByRole('heading', { level: 4 })).toHaveLength(2)
+  })
+
+  test('a Ticket column shows only when a listed entry has a ticket', async () => {
+    server.role = 'admin'
+    const { search } = renderView({})
+    const card = await screen.findByRole('region', { name: 'Entries' })
+    expect(await within(card).findByText('Description')).toBeInTheDocument()
+    expect(within(card).queryByText('Ticket')).not.toBeInTheDocument()
+
+    server.entries[0].ticket = 'NBW-412'
+    await userEvent.click(within(card).getByRole('button', { name: 'By day' }))
+    await waitFor(() => expect(search()).toEqual({ entries: 'day' }))
+    await userEvent.click(within(card).getByRole('button', { name: 'By description' }))
+    expect(await within(card).findByText('Ticket')).toBeInTheDocument()
+    // The column's cell, and the chip that replaces it below 640 px.
+    expect(within(card).getAllByText('NBW-412')).toHaveLength(2)
   })
 
   test('By description shows its top rows, and Show all loads the rest', async () => {
@@ -681,7 +725,7 @@ describe('ReportsView', () => {
       const end = offset === 0 ? 2 : all.rows.length
       return { ...all, rows: all.rows.slice(offset, end), next: end < all.rows.length ? end : null }
     })
-    renderView({})
+    renderView({ entries: 'description' })
     const card = await screen.findByRole('region', { name: 'Entries' })
     expect(await within(card).findByText('Beta')).toBeInTheDocument()
     expect(within(card).queryByText('Gamma')).not.toBeInTheDocument()

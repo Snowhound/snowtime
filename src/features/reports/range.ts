@@ -74,8 +74,16 @@ export function pickedRange(a: IsoDate, b: IsoDate): Range | null {
   return rangeDays(range) > MAX_REPORT_DAYS ? null : range
 }
 
+// Through the 5th the report opens on last month, which people are still closing then and
+// which has more in it than a few days of this one.
+const LAST_MONTH_UNTIL_DAY = 5
+
+function defaultPreset(today: IsoDate): Preset {
+  return Number(today.slice(8)) <= LAST_MONTH_UNTIL_DAY ? 'last-month' : 'this-month'
+}
+
 // The range the URL asks for: a preset, or a custom range whose days are valid and in
-// order. Anything else is this month.
+// order. Anything else is the default preset.
 export function resolveRange(
   search: { range?: RangePreset; from?: IsoDate; to?: IsoDate },
   today: IsoDate,
@@ -89,14 +97,15 @@ export function resolveRange(
   } else if (search.range) {
     return { preset: search.range, range: presetRange(search.range, today, weekStart) }
   }
-  return { preset: 'this-month', range: presetRange('this-month', today, weekStart) }
+  const preset = defaultPreset(today)
+  return { preset, range: presetRange(preset, today, weekStart) }
 }
 
-// The search params for a range: only the preset when it is one, and nothing for this
-// month, the default.
+// The search params for a range: only the preset when it is one, and nothing for the
+// default preset.
 export function rangeSearch(range: Range, today: IsoDate, weekStart: WeekStart) {
   const preset = matchPreset(range, today, weekStart)
-  if (preset === 'this-month') return {}
+  if (preset === defaultPreset(today)) return {}
   if (preset !== 'custom') return { range: preset }
   return { range: preset, from: range.from, to: addDays(range.to, -1) }
 }
