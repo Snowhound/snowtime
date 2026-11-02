@@ -65,7 +65,7 @@ The second is to set an entry's length by typing a duration. The prototypes are
 
 ## Acceptance criteria
 
-- [ ] Before building the multi-day paste, the maintainer has seen and agreed how the
+- [x] Before building the multi-day paste, the maintainer has seen and agreed how the
       popover and the copy panel split the work, so the dialog code stays simple.
 - [x] The entry popover and the list's rows take a typed duration (`1:30`, `1h 30m`, `90m`,
       `1.5`, `1,5`; a bare number is hours), with the errors the prototypes show.
