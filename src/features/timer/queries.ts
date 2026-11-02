@@ -1,9 +1,17 @@
 // The timer view's queries and its optimistic mutations. The running timer and the entry
 // lists are separate caches, since the running timer spans organizations; each mutation
 // updates both before the server answers and keeps a refused change pending.
-import { type QueryKey, queryOptions, useMutation, useQueryClient } from '@tanstack/solid-query'
 import {
+  type QueryClient,
+  type QueryKey,
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/solid-query'
+import {
+  createEntries,
   createEntry,
+  deleteEntries,
   deleteEntry,
   getFirstEntryStart,
   listEntries,
@@ -15,7 +23,9 @@ import { cacheUpdate, optimistic, reportsKey } from '~/lib/queries/query'
 import { sessionQuery } from '~/lib/queries/session'
 import { runningTimerQuery } from '~/lib/queries/timer'
 import {
+  type CreateEntriesInput,
   type CreateEntryInput,
+  type DeleteEntriesInput,
   type DeleteEntryInput,
   type Entry,
   MAX_ENTRY_MS,
@@ -219,6 +229,45 @@ export function useDeleteEntry({ organizationId }: Keys) {
   }))
 }
 
+// Entries deleted together, as Undo takes back the copies a createEntries made.
+export function useDeleteEntries({ organizationId }: Keys) {
+  const queryClient = useQueryClient()
+  return useMutation(() => ({
+    mutationFn: (input: DeleteEntriesInput) => deleteEntries({ ...input, organizationId }),
+    ...optimistic(
+      queryClient,
+      [
+        cacheUpdate<Entry[], DeleteEntriesInput>(entriesKey(organizationId), (entries, { ids }) =>
+          entries.filter((e) => !ids.includes(e.id)),
+        ),
+      ],
+      { invalidate: [...settled.invalidate, firstEntryKey(organizationId)] },
+    ),
+  }))
+}
+
+// The entries a create adds to the list cached under `key`.
+function created(
+  queryClient: QueryClient,
+  organizationId: string,
+  input: CreateEntriesInput,
+  key: QueryKey,
+) {
+  const session = queryClient.getQueryData(sessionQuery.queryKey)
+  return input.entries
+    .map((times): Entry => ({
+      id: times.id,
+      organizationId,
+      userId: session?.user.id ?? '',
+      projectId: input.projectId ?? null,
+      description: input.description.trim(),
+      ticket: input.ticket ?? null,
+      startedAt: times.startedAt,
+      stoppedAt: times.stoppedAt,
+    }))
+    .filter((entry) => listed(entry, key))
+}
+
 // A finished entry logged by hand.
 export function useCreateEntry({ organizationId }: Keys) {
   const queryClient = useQueryClient()
@@ -229,24 +278,43 @@ export function useCreateEntry({ organizationId }: Keys) {
       [
         cacheUpdate<Entry[], CreateEntryInput>(
           entriesKey(organizationId),
-          (entries, input, key) => {
-            const session = queryClient.getQueryData(sessionQuery.queryKey)
-            const entry: Entry = {
-              id: input.id,
-              organizationId,
-              userId: session?.user.id ?? '',
-              projectId: input.projectId ?? null,
-              description: input.description.trim(),
-              ticket: input.ticket ?? null,
-              startedAt: input.startedAt,
-              stoppedAt: input.stoppedAt,
-            }
-            if (!listed(entry, key)) return entries
-            return newestFirst([entry, ...entries])
-          },
+          (entries, { id, startedAt, stoppedAt, ...work }, key) =>
+            newestFirst([
+              ...created(
+                queryClient,
+                organizationId,
+                { ...work, entries: [{ id, startedAt, stoppedAt }] },
+                key,
+              ),
+              ...entries,
+            ]),
         ),
         cacheUpdate<Date | null, CreateEntryInput>(firstEntryKey(organizationId), (first, input) =>
           earliest(first, input.startedAt),
+        ),
+      ],
+      settled,
+    ),
+  }))
+}
+
+// Entries of the same work saved together, such as an entry and its copies.
+export function useCreateEntries({ organizationId }: Keys) {
+  const queryClient = useQueryClient()
+  return useMutation(() => ({
+    mutationFn: (input: CreateEntriesInput) => createEntries({ ...input, organizationId }),
+    ...optimistic(
+      queryClient,
+      [
+        cacheUpdate<Entry[], CreateEntriesInput>(
+          entriesKey(organizationId),
+          (entries, input, key) =>
+            newestFirst([...created(queryClient, organizationId, input, key), ...entries]),
+        ),
+        cacheUpdate<Date | null, CreateEntriesInput>(
+          firstEntryKey(organizationId),
+          (first, input) =>
+            input.entries.reduce((sooner, e) => earliest(sooner, e.startedAt), first),
         ),
       ],
       settled,

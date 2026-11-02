@@ -27,6 +27,7 @@ import { addDays, localDate, startOfDay } from '~/lib/calendar'
 import { useFormatHours } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
 import { formatIsoDate } from '~/lib/format'
+import { userRegion } from '~/lib/holidays/region'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
 import { isPendingChange, usePendingChanges } from '~/lib/queries/refusal'
@@ -53,6 +54,7 @@ import {
   type StoppedEntry,
   entriesQuery,
   firstEntryQuery,
+  useCreateEntries,
   useCreateEntry,
   useDeleteEntry,
   useStartTimer,
@@ -172,6 +174,7 @@ export function TimerView(props: {
   const updateEntry = useUpdateEntry(keys)
   const deleteEntry = useDeleteEntry(keys)
   const createEntry = useCreateEntry(keys)
+  const createEntries = useCreateEntries(keys)
 
   const [error, setError] = createSignal<string | null>(null)
   // The entry popover's form and the button it opens under.
@@ -280,16 +283,23 @@ export function TimerView(props: {
     deleteEntry.mutate({ id: entry.id }, options)
   }
 
-  function save(values: EntryPopoverValues) {
+  function save({ copies, ...values }: EntryPopoverValues) {
     const target = editor()?.target
     setEditor(null)
     setError(null)
     if (!target) return
-    if (target.kind === 'new') {
-      createEntry.mutate({ id: newId(), ...values, stoppedAt: values.stoppedAt! }, options)
-    } else {
-      const { stoppedAt: _, ...patch } = values
-      updateEntry.mutate({ id: target.entry.id, ...patch }, options)
+    const { description, ticket, projectId, startedAt, stoppedAt } = values
+    if (target.kind !== 'new') {
+      updateEntry.mutate(
+        { id: target.entry.id, description, ticket, projectId, startedAt },
+        options,
+      )
+    }
+    const added = target.kind === 'new' ? [{ startedAt, stoppedAt: stoppedAt! }, ...copies] : copies
+    if (added.length === 1) createEntry.mutate({ id: newId(), ...values, ...added[0] }, options)
+    else if (added.length > 1) {
+      const entries = added.map((times) => ({ id: newId(), ...times }))
+      createEntries.mutate({ description, ticket, projectId, entries }, options)
     }
   }
 
@@ -537,6 +547,8 @@ export function TimerView(props: {
         projects={projects.data ?? []}
         entries={stopped()}
         issueLinks={props.issueLinks}
+        owner={{ organizationId: props.organizationId, userId: props.userId }}
+        region={userRegion(props.settings)}
         onSave={save}
         onClose={() => setEditor(null)}
       />

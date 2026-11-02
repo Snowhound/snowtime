@@ -47,6 +47,52 @@ entry is at least a minute and at most 24 hours. Only `H:MM:SS` keeps seconds.
   line under the times reads it back ("1h 30m"). A duration that doesn't read shows its
   error once left or on Save, and stops Save only when it was typed.
 
+## Entry copies
+
+One entry can be logged on many days, such as a daily standup (task 096,
+`prototypes/copy-entries.html`). Every way of copying ends in the same day picker and save.
+
+- **The popover and the copy panel split the work.** `CopyPanel`
+  (`src/features/timer/copy-panel/`) is Copy to more days: a month of days to pick, Repeat
+  (Every workday, Every day, Every Wednesday, Every month on the 7th) and Until, and the
+  "already has it" dots. It takes the form's entry as a day, a start, and a length, and
+  hands back the picked days; the popover owns those days and builds each copy's times with
+  `copyTimes` in the user's zone, keeping the wall-clock start. The popover's Save sends the
+  entry with its copies (`EntryPopoverValues.copies`), and the list and the calendar save
+  them. The panel's day math is in `copy-days.ts`, apart from the component, so it is tested
+  without a DOM.
+- **Every workday** leaves out weekends and the public holidays of the user's country
+  (`userRegion`, `src/lib/holidays/`). Until starts at the end of the entry's month, a month
+  later for a weekday, and six months later for monthly, and reaches at most a year ahead.
+- **"Already has it"**: a day with an entry of the same description and project starting at
+  the copy's minute shows a dot, and Repeat leaves it out and says how many it left out. The
+  panel reads the shown month with `listEntries`, and a Fill reads the days up to Until in
+  90-day chunks, since the user's other entries in those months aren't loaded otherwise.
+- **One call, one Undo.** An entry and its copies are one `createEntries`
+  (`POST /organizations/:orgId/entries/batch`): the work's description, ticket, and project
+  once, and up to `MAX_BATCH_ENTRIES` (100) id and times, saved in one transaction. The
+  daily entry limit counts the batch's own entries. Undo is one `deleteEntries`
+  (`POST …/entries/batch-delete`, also all or none), since a hundred single deletes would
+  run into the 120 writes a minute (`writesPerUser`). Saving an edit with copies is
+  `updateEntry` and then `createEntries`, and its Undo puts back both. Both calls are
+  app-only, not opened to API keys. Rejected on 2026-11-02: a list of full entries, more
+  general than copies need, and `createEntry` with extra days, which would put patterns
+  and time zones on the server.
+- **Duplicate** (in an entry's popover and menu) puts a copy at the same time and focuses
+  it, so a drag or Alt+arrows moves it. **Alt+drag** (Option on a Mac) drops a copy where
+  the entry is dropped; the ghost reads "Copy · 12:15–13:30". Both, and Paste here, are a
+  `createEntries` of one, so they undo like the others.
+- **Context menus** on the calendar: on an entry, Edit, Copy (⌘C or Ctrl+C on a focused
+  entry), Duplicate, Copy to more days…, and Delete, of which the running entry has only
+  Edit; on empty time, titled with the day and the quarter hour, Add entry here, Paste here,
+  and Paste every workday, every Wednesday, or on the 7th of every month. A right-click, a
+  two-finger click, Ctrl+click on a Mac, Shift+F10, or the Menu key opens them; from the
+  keyboard, under the entry. The repeats open Add entry with the copied work and the panel
+  filled, so the days are checked before Save; Cancel saves nothing. Copy keeps the work and
+  length in the page, not the system clipboard. `PointMenu` is a `DropdownMenu` anchored to
+  the point with a hidden trigger, because Kobalte's `ContextMenu` opens on a 700 ms timer
+  on touch and couldn't tell a long press from one that drags.
+
 ## Date and time fields
 
 The app's date and time fields are its own components in `src/components/date-time/`, not

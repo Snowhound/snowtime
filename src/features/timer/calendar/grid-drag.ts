@@ -1,6 +1,8 @@
 // Changing time on the week grid with a mouse or pen: dragging on empty time adds, on an entry
-// moves it, and on its top or bottom edge changes its start or end. On touch a tap adds or edits
-// and dragging scrolls. Alt+arrow keys move a focused entry or change its end.
+// moves it, and on its top or bottom edge changes its start or end. Alt (Option on a Mac) held
+// while moving an entry copies it instead, as in desktop calendars; pressing or releasing it
+// mid-drag switches. On touch a tap adds or edits and dragging scrolls. Alt+arrow keys move a
+// focused entry or change its end.
 import { createSignal } from 'solid-js'
 import { m } from '~/paraglide/messages.js'
 import { changedFields } from '../entries'
@@ -46,6 +48,8 @@ interface DragState {
   y: number
   touch: boolean
   active: boolean
+  // Alt is held on a move, which drops a copy.
+  copy: boolean
   range?: DragRange
 }
 
@@ -65,6 +69,8 @@ export function createGridDrag(options: {
     verb: 'moved' | 'changed',
     key: boolean,
   ) => void
+  // An Alt+drag's copy of the entry, where it was dropped.
+  onCopy: (entry: Entry, range: Range) => void
   onStatus: (status: { text: string; error?: boolean }) => void
 }) {
   const [state, setState] = createSignal<DragState | null>(null)
@@ -106,7 +112,15 @@ export function createGridDrag(options: {
     } else if (target.closest('[data-date]')) {
       drag = { kind: 'create', from: slotAt(event.clientX, event.clientY) }
     } else return
-    setState({ drag, entryId, x: event.clientX, y: event.clientY, touch, active: false })
+    setState({
+      drag,
+      entryId,
+      x: event.clientX,
+      y: event.clientY,
+      touch,
+      active: false,
+      copy: false,
+    })
     // No text selection while dragging. The pointer is captured once the drag starts, so a
     // plain click still reaches the entry.
     if (!touch) event.preventDefault()
@@ -124,7 +138,12 @@ export function createGridDrag(options: {
     if (!current.active) options.body()?.setPointerCapture?.(event.pointerId)
     const to = slotAt(event.clientX, event.clientY)
     const range = dragRange(current.drag, to, options.zone(), Date.now())
-    setState({ ...current, active: true, range })
+    setState({
+      ...current,
+      active: true,
+      copy: current.drag.kind === 'move' && event.altKey,
+      range,
+    })
   }
 
   function pointerUp() {
@@ -151,6 +170,10 @@ export function createGridDrag(options: {
     }
     const entry = options.findEntry(current.entryId)
     if (!entry) return
+    if (current.copy) {
+      options.onCopy(entry, range)
+      return
+    }
     const next = { startedAt: new Date(range.startedAt), stoppedAt: new Date(range.stoppedAt) }
     const patch = changedFields(
       entry,
@@ -183,6 +206,7 @@ export function createGridDrag(options: {
 
   return {
     state,
+    slotAt,
     pointerDown,
     pointerMove,
     pointerUp,

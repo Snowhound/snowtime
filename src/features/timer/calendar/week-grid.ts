@@ -22,7 +22,7 @@ export const DAY_MINUTES = 24 * 60
 // The grid snaps to this, and Alt+Up and Alt+Down move by it.
 export const SNAP_MINUTES = 15
 // A click on empty time adds this much: the half-hour cell clicked.
-const CLICK_MINUTES = 30
+export const CLICK_MINUTES = 30
 // A click this close above a half-hour line counts as below it: 4 px at 48 px an hour.
 const CLICK_SLACK_MINUTES = 5
 // The week opens at this minute, or earlier when its first entry starts before.
@@ -172,14 +172,12 @@ export function clickRange(slot: Slot, zone: string): Range {
   return { startedAt, stoppedAt: startedAt + CLICK_MINUTES * MINUTE }
 }
 
-// Add entry's slot: half an hour from the end of today's last entry, or from an hour ago,
-// up to now.
+// Add entry's slot: half an hour from the end of today's last entry, or from an hour ago. It
+// may end after now, as any stopped entry may.
 export function addRange(entries: readonly Span[], zone: string, now: number): Range {
   const last = lastEnded(entries, { before: now, day: { date: localDate(now, zone), zone } })
-  const stoppedAt = floorTo(now, MINUTE)
-  let startedAt = last?.stoppedAt.getTime() ?? floorTo(now - 60 * MINUTE, SNAP_MS)
-  if (stoppedAt - startedAt < MINUTE) startedAt = stoppedAt - CLICK_MINUTES * MINUTE
-  return { startedAt, stoppedAt: Math.min(startedAt + CLICK_MINUTES * MINUTE, stoppedAt) }
+  const startedAt = last?.stoppedAt.getTime() ?? floorTo(now - 60 * MINUTE, SNAP_MS)
+  return { startedAt, stoppedAt: startedAt + CLICK_MINUTES * MINUTE }
 }
 
 // What a drag started: new time from a slot, or an entry moved or resized by an edge.

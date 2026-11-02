@@ -492,7 +492,7 @@
   "calendar_weekend": "Weekend",
   "calendar_weekend_forced": "This week has weekend time, so the weekend shows.",
   "calendar_day": "Day",
-  "calendar_hint": "Drag to add · drag an entry to move it, its edges to change its times · Alt+arrows move a selected entry",
+  "calendar_hint": "Drag to add · drag an entry to move it, Alt+drag to copy it · Alt+arrows move a selected entry · right-click to copy and paste",
   "calendar_now": "now",
   "calendar_entry": "{description}, {project}, {times}, {duration}",
   "calendar_entry_running": "{description}, {project}, {times}, {duration}, running",
@@ -919,5 +919,89 @@
   "picker_time": "hh:mm",
   "browser_notice_title": "This browser is out of date.",
   "browser_notice_body": "Snowtime supports the latest two versions of Chrome, Edge, Firefox, and Safari, and parts of it may not work here. Update your browser to use it fully.",
-  "browser_notice_dismiss": "Dismiss"
+  "browser_notice_dismiss": "Dismiss",
+  "copy_toggle": "Copy to more days",
+  "copy_days": "Days to copy to",
+  "copy_repeat": "Repeat",
+  "copy_until": "Until",
+  "copy_fill": "Fill",
+  "copy_clear": "Clear",
+  "copy_repeat_workday": "Every workday",
+  "copy_repeat_day": "Every day",
+  "copy_repeat_week": "Every {weekday}",
+  "copy_repeat_month": "Every month on the {day}",
+  "copy_pick_hint": "Pick days, or fill them by a pattern. Shift-click picks the workdays in a range.",
+  "copy_summary": [
+    {
+      "declarations": [
+        "input count",
+        "input days",
+        "input times",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} copy: {days}, {times}",
+        "countPlural=*": "{count} copies: {days}, {times}"
+      }
+    }
+  ],
+  "copy_legend": "Outlined: this entry · dot: already has it",
+  "copy_left_out": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Left out {count} day that already has it.",
+        "countPlural=*": "Left out {count} days that already have it."
+      }
+    }
+  ],
+  "copy_none_match": "No more days match up to {date}.",
+  "copy_fix_times": "Fix the date and times first.",
+  "copy_day_self": "this entry",
+  "copy_day_has": "already has this entry",
+  "copy_day_holiday": "public holiday",
+  "entry_save_add": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Add {count} entry",
+        "countPlural=*": "Add {count} entries"
+      }
+    }
+  ],
+  "entry_save_and_copy": "Save and add {count}",
+  "entry_duplicate": "Duplicate",
+  "calendar_days": [
+    {
+      "declarations": ["input count", "input range", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} day, {range}",
+        "countPlural=*": "{count} days, {range}"
+      }
+    }
+  ],
+  "calendar_added_copies": "Added “{description}” on {days}.",
+  "calendar_saved_copies": "Saved “{description}” and copied it to {days}.",
+  "calendar_copied_to": "Copied “{description}” to {days}.",
+  "calendar_duplicated": "Duplicated “{description}”. Drag the copy to its day, or move it with Alt+arrows.",
+  "calendar_pasted": "Pasted “{description}”: {when}.",
+  "calendar_copied": "Copied “{description}” ({duration}). Right-click a time to paste it.",
+  "calendar_copy_ghost": "Copy · {times}",
+  "menu_entry": "Entry",
+  "menu_edit": "Edit",
+  "menu_copy": "Copy",
+  "menu_duplicate": "Duplicate",
+  "menu_copy_days": "Copy to more days…",
+  "menu_add_here": "Add entry here",
+  "menu_paste_here": "Paste “{description}” here",
+  "menu_paste_here_empty": "Paste here",
+  "menu_paste_workday": "Paste every workday…",
+  "menu_paste_week": "Paste every {weekday}…",
+  "menu_paste_month": "Paste on the {day} of every month…",
+  "menu_hint_empty": "Copy an entry to paste it: right-click it, or select it and press {keys}.",
+  "menu_hint": "{duration} · {project}. The repeats open Add entry to check the days."
 }

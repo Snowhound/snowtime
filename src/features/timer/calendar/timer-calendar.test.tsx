@@ -18,8 +18,10 @@ const fn = vi.hoisted(() => ({
   listEntries: vi.fn(),
   getFirstEntryStart: vi.fn(),
   createEntry: vi.fn(),
+  createEntries: vi.fn(),
   updateEntry: vi.fn(),
   deleteEntry: vi.fn(),
+  deleteEntries: vi.fn(),
   listProjects: vi.fn(),
   getAppSession: vi.fn(),
   updateSettings: vi.fn(),
@@ -150,8 +152,24 @@ beforeEach(() => {
     server.entries.push({ organizationId, userId, ticket: null, projectId: null, ...data })
     return data
   })
+  fn.createEntries.mockImplementation(async ({ entries, ...work }) => {
+    const created = entries.map((times: Pick<Entry, 'id' | 'startedAt' | 'stoppedAt'>) => ({
+      organizationId,
+      userId,
+      ticket: null,
+      projectId: null,
+      ...work,
+      ...times,
+    }))
+    server.entries.push(...created)
+    return created
+  })
   fn.deleteEntry.mockImplementation(async (data) => {
     server.entries = server.entries.filter((e) => e.id !== data.id)
+  })
+  fn.deleteEntries.mockImplementation(async ({ ids }) => {
+    server.entries = server.entries.filter((e) => !ids.includes(e.id))
+    return { ids }
   })
   fn.updateSettings.mockImplementation(async (data) => {
     Object.assign(server.settings, data)
@@ -167,6 +185,14 @@ afterEach(() => {
 // A point on the grid: the day's column (0 for Monday) and the time on it.
 function point(day: number, hours: number) {
   return { clientX: day * COLUMN_PX + COLUMN_PX / 2, clientY: hours * HOUR_PX }
+}
+
+// A click on empty time, which opens Add entry there.
+function clickAt(day: number, hours: number) {
+  const pointer = { button: 0, pointerType: 'mouse', ...point(day, hours) }
+  const date = document.querySelectorAll('[data-date]')[day]
+  fireEvent.pointerDown(date, pointer)
+  fireEvent.pointerUp(grid(), pointer)
 }
 
 function grid() {
@@ -340,5 +366,199 @@ describe('TimerCalendar', () => {
         stoppedAt: review.stoppedAt,
       }),
     )
+  })
+
+  test('Copy to more days saves the entry and its copies in one call, which one Undo deletes', async () => {
+    renderView()
+    await block()
+    clickAt(1, 10.25)
+    const popover = await screen.findByRole('dialog', { name: 'Add entry' })
+    await userEvent.type(within(popover).getByLabelText('Description'), 'Standup')
+    await userEvent.click(within(popover).getByRole('button', { name: 'Copy to more days' }))
+    const days = within(popover).getByRole('group', { name: 'Days to copy to' })
+    expect(
+      within(days).getByRole('button', { name: /Tuesday, September 29, this entry/ }),
+    ).toHaveAttribute('aria-disabled', 'true')
+    await userEvent.click(within(days).getByRole('button', { name: 'Monday, September 28' }))
+    await userEvent.click(within(days).getByRole('button', { name: 'Wednesday, September 30' }))
+    expect(
+      within(popover).getByText(/2 copies: Mon, Sep 28 and Wed, Sep 30, 10:00–10:30/),
+    ).toBeInTheDocument()
+    await userEvent.click(within(popover).getByRole('button', { name: 'Add 3 entries' }))
+
+    expect(fn.createEntry).not.toHaveBeenCalled()
+    expect(fn.createEntries).toHaveBeenCalledTimes(1)
+    const input = fn.createEntries.mock.calls[0][0]
+    expect(input).toMatchObject({ organizationId, description: 'Standup', projectId: project.id })
+    expect(input.entries.map((e: Entry) => [e.startedAt, e.stoppedAt])).toEqual([
+      [at('2026-09-29', '10:00'), at('2026-09-29', '10:30')],
+      [at('2026-09-28', '10:00'), at('2026-09-28', '10:30')],
+      [at('2026-09-30', '10:00'), at('2026-09-30', '10:30')],
+    ])
+    expect(status()).toHaveTextContent('Added “Standup” on 3 days')
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(fn.deleteEntries).toHaveBeenCalledWith({
+      organizationId,
+      ids: input.entries.map((e: Entry) => e.id),
+    })
+  })
+
+  test('Repeat fills the workdays up to Until, leaving out a day that has the entry', async () => {
+    server.entries.push({
+      ...review,
+      id: newId(),
+      description: 'Standup',
+      startedAt: at('2026-09-30', '11:00'),
+      stoppedAt: at('2026-09-30', '11:15'),
+    })
+    renderView()
+    await block()
+    clickAt(0, 11.1)
+    const popover = await screen.findByRole('dialog', { name: 'Add entry' })
+    await userEvent.type(within(popover).getByLabelText('Description'), 'Standup')
+    await userEvent.click(within(popover).getByRole('button', { name: 'Copy to more days' }))
+    expect(within(popover).getByLabelText('Repeat')).toHaveValue('workday')
+    expect(within(popover).getByLabelText('Until')).toHaveValue('30.09.2026')
+    await userEvent.click(within(popover).getByRole('button', { name: 'Fill' }))
+    expect(
+      await within(popover).findByText(/Left out 1 day that already has it/),
+    ).toBeInTheDocument()
+    const days = within(popover).getByRole('group', { name: 'Days to copy to' })
+    expect(within(days).getByRole('button', { name: 'Tuesday, September 29' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(
+      within(days).getByRole('button', { name: /Wednesday, September 30, already has this entry/ }),
+    ).toHaveAttribute('aria-pressed', 'false')
+    expect(within(popover).getByRole('button', { name: 'Add 2 entries' })).toBeInTheDocument()
+  })
+
+  test('Duplicate puts a copy at the same time, which Undo deletes', async () => {
+    renderView()
+    await userEvent.click(await block())
+    const popover = await screen.findByRole('dialog', { name: 'Edit entry' })
+    await userEvent.click(within(popover).getByRole('button', { name: 'Duplicate' }))
+    expect(fn.createEntries).toHaveBeenCalledWith({
+      organizationId,
+      description: review.description,
+      ticket: null,
+      projectId: project.id,
+      entries: [
+        { id: expect.any(String), startedAt: review.startedAt, stoppedAt: review.stoppedAt },
+      ],
+    })
+    expect(status()).toHaveTextContent('Duplicated “Invoice export review”.')
+    const [{ id }] = fn.createEntries.mock.calls[0][0].entries
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(fn.deleteEntries).toHaveBeenCalledWith({ organizationId, ids: [id] })
+  })
+
+  test("an entry's menu copies it, and empty time's menu pastes it there", async () => {
+    renderView()
+    fireEvent.contextMenu(await block(), point(0, 9.5))
+    const entryMenu = await screen.findByRole('menu', { name: 'Entry' })
+    await userEvent.click(within(entryMenu).getByRole('menuitem', { name: /^Copy(?! to)/ }))
+    // The open menu hides the rest of the page from screen readers until it has closed.
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Copied “Invoice export review” (1:30).'),
+    )
+
+    fireEvent.contextMenu(screen.getByRole('group', { name: /Tuesday/ }), point(1, 14.1))
+    const slotMenu = await screen.findByRole('menu', { name: 'Tue, Sep 29, 14:00' })
+    await userEvent.click(
+      within(slotMenu).getByRole('menuitem', { name: 'Paste “Invoice export review” here' }),
+    )
+    expect(fn.createEntries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: review.description,
+        projectId: project.id,
+        entries: [
+          {
+            id: expect.any(String),
+            startedAt: at('2026-09-29', '14:00'),
+            stoppedAt: at('2026-09-29', '15:30'),
+          },
+        ],
+      }),
+    )
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Pasted “Invoice export review”: Tue 14:00–15:30.'),
+    )
+  })
+
+  test('⌘C or Ctrl+C copies a focused entry; Paste every workday opens Add entry with the days filled', async () => {
+    renderView()
+    const entry = await block()
+    entry.focus()
+    fireEvent.keyDown(entry, { key: 'c', ctrlKey: true, metaKey: true })
+    expect(status()).toHaveTextContent('Copied “Invoice export review” (1:30).')
+
+    fireEvent.contextMenu(screen.getByRole('group', { name: /Tuesday/ }), point(1, 13))
+    const slotMenu = await screen.findByRole('menu', { name: 'Tue, Sep 29, 13:00' })
+    await userEvent.click(within(slotMenu).getByRole('menuitem', { name: 'Paste every workday…' }))
+    const popover = await screen.findByRole('dialog', { name: 'Add entry' })
+    expect(within(popover).getByLabelText('Description')).toHaveValue('Invoice export review')
+    expect(within(popover).getByLabelText('End')).toHaveValue('14:30')
+    const days = await within(popover).findByRole('group', { name: 'Days to copy to' })
+    await waitFor(() =>
+      expect(within(days).getByRole('button', { name: 'Wednesday, September 30' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      ),
+    )
+    expect(within(popover).getByRole('button', { name: 'Add 2 entries' })).toBeInTheDocument()
+  })
+
+  test("the running entry's menu only edits it, and Shift+F10 opens it under the entry", async () => {
+    fn.getRunningTimer.mockResolvedValue({
+      ...review,
+      id: newId(),
+      description: 'Running work',
+      startedAt: at('2026-09-30', '13:00'),
+      stoppedAt: null,
+      project: null,
+    })
+    renderView()
+    const running = await block(/Running work/)
+    running.focus()
+    // A keyboard's context menu event has no point on the entry.
+    fireEvent.contextMenu(running, { clientX: 0, clientY: 0 })
+    const entryMenu = await screen.findByRole('menu', { name: 'Entry' })
+    expect(within(entryMenu).getByRole('menuitem', { name: 'Edit' })).not.toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+    for (const name of [/^Copy(?! to)/, 'Duplicate', 'Copy to more days…', 'Delete']) {
+      expect(within(entryMenu).getByRole('menuitem', { name })).toHaveAttribute(
+        'aria-disabled',
+        'true',
+      )
+    }
+  })
+
+  test('Alt+drag drops a copy and leaves the entry where it was', async () => {
+    renderView()
+    const entry = await block()
+    const pointer = { button: 0, pointerType: 'mouse', pointerId: 1 }
+    fireEvent.pointerDown(entry, { ...pointer, ...point(0, 9.5) })
+    fireEvent.pointerMove(grid(), { ...pointer, ...point(2, 12.5), altKey: true })
+    expect(screen.getByText('Copy · 12:00–13:30 · 1:30')).toBeInTheDocument()
+    fireEvent.pointerUp(grid(), { ...pointer, ...point(2, 12.5), altKey: true })
+    await waitFor(() =>
+      expect(fn.createEntries).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entries: [
+            {
+              id: expect.any(String),
+              startedAt: at('2026-09-30', '12:00'),
+              stoppedAt: at('2026-09-30', '13:30'),
+            },
+          ],
+        }),
+      ),
+    )
+    expect(fn.updateEntry).not.toHaveBeenCalled()
+    expect(status()).toHaveTextContent('Copied “Invoice export review” to Wed 12:00–13:30.')
   })
 })

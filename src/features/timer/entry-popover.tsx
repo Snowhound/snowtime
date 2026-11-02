@@ -7,7 +7,11 @@
 // ticket is found in the description on blur and Save, and its chip sits at the end of the
 // field. Escape and a click outside keep what was typed into a new entry for the next Add
 // entry; Cancel and Save clear it. A calendar slot keeps nothing: its times come from the grid.
+// Copy to more days (copy-panel/) picks more days for a stopped or new entry, and Save sends
+// the entry with a copy on each of them; a paste opens a slot with the copied work and the
+// panel filled by a pattern.
 import { createForm } from '@tanstack/solid-form'
+import CopyPlusIcon from 'lucide-solid/icons/copy-plus'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { Show, createMemo, createSignal } from 'solid-js'
 import { DatePicker } from '~/components/date-time/date-picker'
@@ -18,8 +22,12 @@ import { Label } from '~/components/ui/label'
 import { Popover, PopoverContent } from '~/components/ui/popover'
 import { type IsoDate, type WeekStart, localDate, localTime } from '~/lib/calendar'
 import { formatHours } from '~/lib/format'
+import type { Region } from '~/lib/holidays/holidays'
 import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
+import { MAX_BATCH_ENTRIES } from '~/server/entries/entries.schemas'
+import { type Pattern, copyTimes } from './copy-panel/copy-days'
+import { CopyPanel } from './copy-panel/copy-panel'
 import { DescriptionCombobox } from './description-combobox'
 import { durationErrorMessage, formatDurationInput, parseDuration } from './duration-input'
 import { type EntryFormError, lastEndToday, readEntryTimes, readStart } from './entries'
@@ -28,17 +36,26 @@ import type { Entry, StoppedEntry } from './queries'
 import { TicketChip } from './ticket-chip'
 import { caretAfterKey, createTicketDraft } from './ticket-draft'
 
-// A calendar slot's times, and the project of the entry before it.
+// A calendar slot's times, and the project of the entry before it; a paste brings the
+// copied entry's description and ticket too.
 interface EntrySlot {
   startedAt: Date
   stoppedAt: Date
   projectId: string | null
+  description?: string
+  ticket?: string | null
 }
 
+// `copy` opens Copy to more days, filled by the pattern when one is given.
 export type EntryPopoverTarget =
-  | { kind: 'new'; slot?: EntrySlot }
+  | { kind: 'new'; slot?: EntrySlot; copy?: Pattern }
   | { kind: 'running'; entry: Entry }
-  | { kind: 'edit'; entry: StoppedEntry }
+  | { kind: 'edit'; entry: StoppedEntry; copy?: true }
+
+interface EntryCopy {
+  startedAt: Date
+  stoppedAt: Date
+}
 
 export interface EntryPopoverValues {
   description: string
@@ -47,6 +64,8 @@ export interface EntryPopoverValues {
   startedAt: Date
   // Null for the running entry.
   stoppedAt: Date | null
+  // A copy of the entry on each day picked under Copy to more days.
+  copies: EntryCopy[]
 }
 
 interface FormValues {
@@ -92,11 +111,16 @@ export function EntryPopover(props: {
   entries: readonly Entry[]
   // The organization's Issue links setting, for the chip.
   issueLinks: string | null
+  // Whose entries the copy panel checks for days that already have the entry.
+  owner: { organizationId: string; userId: string }
+  // Where Every workday finds the public holidays.
+  region: Region
   position?: keyof typeof PLACEMENTS
   // Where focus goes on close, instead of the anchor, which the calendar may have redrawn.
   returnFocus?: () => HTMLElement | null | undefined
   onSave: (values: EntryPopoverValues) => void
   onDelete?: (entry: StoppedEntry) => void
+  onDuplicate?: (entry: StoppedEntry) => void
   onClose: () => void
 }) {
   // The last target and anchor stay while the popover animates closed.
@@ -129,7 +153,7 @@ export function EntryPopover(props: {
       flip={placement().flip}
     >
       <PopoverContent
-        class="w-[28rem] max-w-[calc(100vw-1rem)]"
+        class="max-h-[calc(100dvh-1rem)] w-[28rem] max-w-[calc(100vw-1rem)] overflow-y-auto"
         aria-labelledby="entry-popover-title"
         aria-describedby="entry-popover-description"
         // The buttons that open the popover carry data-entry-trigger, so a click on one while
@@ -164,6 +188,8 @@ export function EntryPopover(props: {
               projects={props.projects}
               entries={props.entries}
               issueLinks={props.issueLinks}
+              owner={props.owner}
+              region={props.region}
               readValues={(read) => (readValues = read)}
               onSave={(values) => {
                 setDraft(null)
@@ -174,6 +200,7 @@ export function EntryPopover(props: {
                 props.onClose()
               }}
               onDelete={props.onDelete}
+              onDuplicate={props.onDuplicate}
             />
           )}
         </Show>
@@ -190,10 +217,13 @@ function EntryForm(props: {
   projects: readonly Project[]
   entries: readonly Entry[]
   issueLinks: string | null
+  owner: { organizationId: string; userId: string }
+  region: Region
   readValues: (read: () => FormValues) => void
   onSave: (values: EntryPopoverValues) => void
   onCancel: () => void
   onDelete?: (entry: StoppedEntry) => void
+  onDuplicate?: (entry: StoppedEntry) => void
 }) {
   // oxlint-disable-next-line solid/reactivity -- the form starts from the target it opened with.
   const target = props.target
@@ -201,6 +231,7 @@ function EntryForm(props: {
   // The times and project the form opens with.
   const opened = entry ?? (target.kind === 'new' ? target.slot : undefined)
   const running = target.kind === 'running'
+  const slot = target.kind === 'new' ? target.slot : undefined
   // oxlint-disable-next-line solid/reactivity -- today as of opening.
   const today = localDate(Date.now(), props.zone)
   // Whether the duration was typed after the times: Save then keeps it to the second, and
@@ -225,8 +256,8 @@ function EntryForm(props: {
   // The values the form opens with, without a draft.
   function opening(): FormValues {
     const values = {
-      description: entry?.description ?? '',
-      ticket: entry?.ticket ?? null,
+      description: entry?.description ?? slot?.description ?? '',
+      ticket: entry?.ticket ?? slot?.ticket ?? null,
       projectId: opened?.projectId ?? '',
       date: localDate(opened?.startedAt.getTime() ?? Date.now(), props.zone),
       start: opened
@@ -238,23 +269,55 @@ function EntryForm(props: {
     return { ...values, duration: durationOf(values) ?? '' }
   }
 
+  // The times Save sends, null while they don't read. A typed duration counts to the second
+  // from the start.
+  function saved(values: FormValues) {
+    const typed = parseDuration(values.duration)
+    if (typed.error && durationTyped()) return null
+    const times = read(values)
+    if (times.error) return null
+    const stoppedAt =
+      times.stoppedAt && typed.ms !== undefined && durationTyped()
+        ? new Date(times.startedAt.getTime() + typed.ms)
+        : times.stoppedAt
+    return { startedAt: times.startedAt, stoppedAt }
+  }
+
+  // Copy to more days, for a stopped or new entry.
+  const [copyOpen, setCopyOpen] = createSignal(!running && !!target.copy)
+  const [picked, setPicked] = createSignal<IsoDate[]>([])
+  // The entry itself counts toward the batch when it's new.
+  const copyLimit = MAX_BATCH_ENTRIES - (target.kind === 'new' ? 1 : 0)
+
+  function copiesOf(times: { startedAt: Date; stoppedAt: Date }): EntryCopy[] {
+    if (!copyOpen()) return []
+    const date = localDate(times.startedAt.getTime(), props.zone)
+    const base = {
+      date,
+      startedAt: times.startedAt.getTime(),
+      length: times.stoppedAt.getTime() - times.startedAt.getTime(),
+    }
+    return picked()
+      .filter((d) => d !== date)
+      .map((d) => {
+        const copy = copyTimes(base, d, props.zone)
+        return { startedAt: new Date(copy.startedAt), stoppedAt: new Date(copy.stoppedAt) }
+      })
+  }
+
   const form = createForm(() => ({
     defaultValues: props.draft ?? opening(),
     onSubmit: ({ value }) => {
-      const typed = parseDuration(value.duration)
-      if (typed.error && durationTyped()) return
-      const times = read(value)
-      if (times.error) return
-      const stoppedAt =
-        times.stoppedAt && typed.ms !== undefined && durationTyped()
-          ? new Date(times.startedAt.getTime() + typed.ms)
-          : times.stoppedAt
+      const times = saved(value)
+      if (!times) return
+      const copies = times.stoppedAt ? copiesOf({ ...times, stoppedAt: times.stoppedAt }) : []
+      if (copies.length > copyLimit) return
       props.onSave({
         description: value.description.trim(),
         ticket: value.ticket,
         projectId: value.projectId || null,
-        startedAt: times.startedAt,
-        stoppedAt,
+        ...times,
+        copies,
       })
     },
   }))
@@ -304,6 +367,25 @@ function EntryForm(props: {
     return error()?.field === 'times'
   }
   const projectId = form.useStore((state) => state.values.projectId)
+  const description = form.useStore((state) => state.values.description)
+  // The entry the copies repeat, while its times read.
+  const base = form.useStore((state) => {
+    const times = running ? null : saved(state.values)
+    if (!times?.stoppedAt) return null
+    return {
+      date: localDate(times.startedAt.getTime(), props.zone),
+      startedAt: times.startedAt.getTime(),
+      length: times.stoppedAt.getTime() - times.startedAt.getTime(),
+    }
+  })
+
+  function saveLabel() {
+    const count = copyOpen() ? picked().length : 0
+    if (!count) return m.entry_save()
+    return target.kind === 'new'
+      ? m.entry_save_add({ count: count + 1 })
+      : m.entry_save_and_copy({ count })
+  }
   const ticket = form.useStore((state) => state.values.ticket)
 
   const ticketDraft = createTicketDraft({
@@ -484,19 +566,51 @@ function EntryForm(props: {
           </p>
         )}
       </Show>
-      <div class="flex items-center gap-2">
-        <Show when={target.kind === 'edit' && props.onDelete && target.entry}>
+      <Show when={!running}>
+        <CopyPanel
+          open={copyOpen()}
+          onOpenChange={setCopyOpen}
+          base={base()}
+          work={{ description: description(), projectId: projectId() || null }}
+          editingId={entry?.id}
+          owner={props.owner}
+          zone={props.zone}
+          weekStart={props.weekStart}
+          region={props.region}
+          picked={picked()}
+          onPick={setPicked}
+          limit={copyLimit}
+          pattern={target.kind === 'new' ? target.copy : undefined}
+        />
+      </Show>
+      <div class="flex flex-wrap items-center gap-2">
+        <Show when={target.kind === 'edit' && target.entry}>
           {(stopped) => (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="text-destructive hover:text-destructive"
-              onClick={() => props.onDelete?.(stopped())}
-            >
-              <TrashIcon aria-hidden="true" />
-              {m.timer_delete()}
-            </Button>
+            <>
+              <Show when={props.onDelete}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  class="text-destructive hover:text-destructive"
+                  onClick={() => props.onDelete?.(stopped())}
+                >
+                  <TrashIcon aria-hidden="true" />
+                  {m.timer_delete()}
+                </Button>
+              </Show>
+              <Show when={props.onDuplicate}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => props.onDuplicate?.(stopped())}
+                >
+                  <CopyPlusIcon aria-hidden="true" />
+                  {m.entry_duplicate()}
+                </Button>
+              </Show>
+            </>
           )}
         </Show>
         <div class="ml-auto flex gap-2">
@@ -504,7 +618,7 @@ function EntryForm(props: {
             {m.entry_cancel()}
           </Button>
           <Button type="submit" size="sm">
-            {m.entry_save()}
+            {saveLabel()}
           </Button>
         </div>
       </div>

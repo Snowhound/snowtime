@@ -20,6 +20,7 @@ const fn = vi.hoisted(() => ({
   listEntries: vi.fn(),
   getFirstEntryStart: vi.fn(),
   createEntry: vi.fn(),
+  createEntries: vi.fn(),
   updateEntry: vi.fn(),
   deleteEntry: vi.fn(),
   listProjects: vi.fn(),
@@ -622,6 +623,54 @@ describe('TimerView', () => {
     expect(fn.updateEntry).toHaveBeenCalledWith(expect.objectContaining({ id: server.running.id }))
     const sent = fn.updateEntry.mock.calls[0][0].startedAt.getTime()
     expect(Math.abs(sent - started)).toBeLessThanOrEqual(60_000)
+  })
+
+  test('Add entry with copies saves them all in one call', async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    fn.createEntries.mockResolvedValue([])
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+    const dialog = await screen.findByRole('dialog')
+    const date = addDays(localDate(Date.now(), zone), -2)
+    fireEvent.input(within(dialog).getByLabelText('Date'), { target: { value: date } })
+    fireEvent.input(within(dialog).getByLabelText('Start'), { target: { value: '08:30' } })
+    fireEvent.input(within(dialog).getByLabelText('Duration'), { target: { value: '25m' } })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Copy to more days' }))
+    const days = within(dialog).getByRole('group', { name: 'Days to copy to' })
+    const next = addDays(date, 1)
+    const label = new Intl.DateTimeFormat('en', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(Date.parse(`${next}T00:00:00Z`))
+    // The next day may be in the month after.
+    if (!within(days).queryByRole('button', { name: label })) {
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Next month' }))
+    }
+    await userEvent.click(within(dialog).getByRole('button', { name: label }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add 2 entries' }))
+
+    expect(fn.createEntry).not.toHaveBeenCalled()
+    expect(fn.createEntries).toHaveBeenCalledWith({
+      organizationId,
+      description: '',
+      ticket: null,
+      projectId: null,
+      entries: [
+        {
+          id: expect.any(String),
+          startedAt: new Date(atLocalTime(date, '08:30', zone)),
+          stoppedAt: new Date(atLocalTime(date, '08:55', zone)),
+        },
+        {
+          id: expect.any(String),
+          startedAt: new Date(atLocalTime(next, '08:30', zone)),
+          stoppedAt: new Date(atLocalTime(next, '08:55', zone)),
+        },
+      ],
+    })
   })
 
   test("the popover refuses a duration that doesn't read", async () => {

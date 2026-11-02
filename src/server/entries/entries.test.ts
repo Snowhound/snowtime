@@ -304,7 +304,11 @@ describe('createEntries', () => {
     ).rejects.toMatchObject({ code: 'CONFLICT', key: 'entry_id_taken' })
     await expect(
       as(scopes.engLead, () =>
-        createEntries(db, scopes.engLead, { projectId: P.legacy, entries: days(414, 2) }),
+        createEntries(db, scopes.engLead, {
+          description: '',
+          projectId: P.legacy,
+          entries: days(414, 2),
+        }),
       ),
     ).rejects.toMatchObject({ code: 'CONFLICT' })
     const ids = retried.map((e) => e.id)
@@ -316,11 +320,15 @@ describe('createEntries', () => {
     const entries = days(420, 2)
     await expect(
       as(scopes.lead, () =>
-        createEntries(db, scopes.lead, { userId: U.member, entries: days(420, 2) }),
+        createEntries(db, scopes.lead, {
+          description: '',
+          userId: U.member,
+          entries: days(420, 2),
+        }),
       ),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' })
     const created = await as(scopes.admin, () =>
-      createEntries(db, scopes.admin, { userId: U.member, entries }),
+      createEntries(db, scopes.admin, { description: '', userId: U.member, entries }),
     )
     expect(created.map((e) => e.userId)).toEqual([U.member, U.member])
   })
@@ -345,11 +353,15 @@ describe('createEntries', () => {
     const late = start.getTime() + 6 * 3_600_000
     await expect(
       as(scopes.loner, () =>
-        createEntries(db, scopes.loner, { entries: [at(late), at(late + 1), at(late + 2)] }),
+        createEntries(db, scopes.loner, {
+          description: '',
+          entries: [at(late), at(late + 1), at(late + 2)],
+        }),
       ),
     ).rejects.toMatchObject({ code: 'LIMIT_REACHED', key: 'entry_limit' })
     const created = await as(scopes.loner, () =>
       createEntries(db, scopes.loner, {
+        description: '',
         entries: [at(late), at(late + 1), at(start.getTime() + 3 * DAY)],
       }),
     )
@@ -377,6 +389,7 @@ describe('deleteEntries', () => {
     function made(scope: Scope, count: number) {
       return as(scope, () =>
         createEntries(db, scope, {
+          description: '',
           entries: Array.from({ length: count }, (_, i) => ({
             id: uuidv7(),
             ...past(90 + i),
