@@ -33,6 +33,7 @@ const validationMessages = {
   validation_time_zone_format: m.validation_time_zone_format,
   validation_time_zone_unknown: m.validation_time_zone_unknown,
   validation_too_long: m.validation_too_long,
+  validation_too_many_entries: m.validation_too_many_entries,
 }
 
 export type ValidationKey = keyof typeof validationMessages

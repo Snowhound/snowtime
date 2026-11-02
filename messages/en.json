@@ -53,6 +53,7 @@
   "validation_end_before_start": "The end must be after the start.",
   "validation_range_end_before_start": "The range must end after it starts.",
   "validation_range_too_long": "The range can span at most {days} days.",
+  "validation_too_many_entries": "At most {max} entries at once.",
   "validation_member_or_team": "Pick a member or a team, not both.",
   "validation_email": "Enter a valid email address.",
   "validation_password_required": "Enter your password.",

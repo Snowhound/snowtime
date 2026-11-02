@@ -93,6 +93,12 @@ describe("another organization's IDs", () => {
         description: 'Moved',
       }),
       deleteEntry: await send('deleteEntry', { organizationId: northwind, id: entry }),
+      deleteEntries: await send('deleteEntries', { organizationId: northwind, ids: [entry] }),
+      createEntriesWithProject: await send('createEntries', {
+        organizationId: northwind,
+        projectId: project,
+        entries: [{ id, startedAt: at(8), stoppedAt: at(9) }],
+      }),
       createEntryWithProject: await send('createEntry', {
         organizationId: northwind,
         id,
@@ -151,6 +157,8 @@ describe("another organization's IDs", () => {
     expect(answers).toEqual({
       updateEntry: notFound('entry_not_found'),
       deleteEntry: notFound('entry_not_found'),
+      deleteEntries: notFound('entry_not_found'),
+      createEntriesWithProject: project404,
       createEntryWithProject: project404,
       startTimerWithProject: project404,
       updateProject: project404,

@@ -53,6 +53,7 @@
   "validation_end_before_start": "Lõpp peab olema pärast algust.",
   "validation_range_end_before_start": "Vahemik peab lõppema pärast algust.",
   "validation_range_too_long": "Vahemik võib olla kõige rohkem {days} päeva.",
+  "validation_too_many_entries": "Korraga kõige rohkem {max} kannet.",
   "validation_member_or_team": "Vali liige või meeskond, mitte mõlemat.",
   "validation_email": "Sisesta kehtiv e-posti aadress.",
   "validation_password_required": "Sisesta parool.",

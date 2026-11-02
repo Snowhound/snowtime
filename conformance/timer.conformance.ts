@@ -212,6 +212,70 @@ describe('entries', () => {
     })
   })
 
+  test('copies are created together, a retry is refused, and they are deleted together', async () => {
+    const entries = [3, 1, 2].map((daysAgo) => {
+      const startedAt = new Date(SEED_NOW.getTime() - daysAgo * 24 * HOUR - 6 * HOUR)
+      return { id: uuidv7(), startedAt, stoppedAt: new Date(startedAt.getTime() + HOUR / 4) }
+    })
+    const created = await admin('createEntries', {
+      organizationId,
+      description: 'Standup',
+      ticket: 'WEB-12',
+      entries,
+    })
+    expect(created.map((e) => e.id)).toEqual(entries.map((e) => e.id))
+    for (const [i, entry] of created.entries()) {
+      expect(entry).toMatchObject({
+        organizationId,
+        description: 'Standup',
+        ticket: 'WEB-12',
+        projectId: null,
+        startedAt: entries[i].startedAt,
+        stoppedAt: entries[i].stoppedAt,
+      })
+    }
+
+    expect(
+      await send('createEntries', { organizationId, description: 'Standup', entries }),
+    ).toEqual({ status: 409, body: refused('CONFLICT', 'entry_id_taken') })
+
+    const ids = entries.map((e) => e.id)
+    expect(await admin('deleteEntries', { organizationId, ids })).toEqual({ ids })
+    expect(await send('deleteEntries', { organizationId, ids })).toEqual({
+      status: 404,
+      body: refused('NOT_FOUND', 'entry_not_found'),
+    })
+  })
+
+  test('a batch is refused whole: too many entries, or past the daily limit', async () => {
+    // A year ahead, clear of the seeded weeks.
+    const day = SEED_NOW.getTime() + 365 * 24 * HOUR
+    function batch(count: number, from = 0) {
+      return Array.from({ length: count }, (_, i) => {
+        const startedAt = new Date(day + (from + i) * 60_000)
+        return { id: uuidv7(), startedAt, stoppedAt: new Date(startedAt.getTime() + 30_000) }
+      })
+    }
+    expect((await send('createEntries', { organizationId, entries: batch(101) })).status).toBe(400)
+
+    // 200 entries within a day is the limit (limits.entriesPerMemberPerDay).
+    const saved = [...(await admin('createEntries', { organizationId, entries: batch(100) }))]
+    saved.push(...(await admin('createEntries', { organizationId, entries: batch(99, 100) })))
+    const over = batch(2, 199)
+    expect(await send('createEntries', { organizationId, entries: over })).toEqual({
+      status: 422,
+      body: refused('LIMIT_REACHED', 'entry_limit'),
+    })
+    expect(await send('deleteEntries', { organizationId, ids: [over[0].id] })).toEqual({
+      status: 404,
+      body: refused('NOT_FOUND', 'entry_not_found'),
+    })
+
+    const ids = saved.map((e) => e.id)
+    await admin('deleteEntries', { organizationId, ids: ids.slice(0, 100) })
+    await admin('deleteEntries', { organizationId, ids: ids.slice(100) })
+  })
+
   test("the user's first entry started before today", async () => {
     const [entry] = await today()
     const first = await admin('getFirstEntryStart', { organizationId, userId: entry.userId })
