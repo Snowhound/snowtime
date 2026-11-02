@@ -1,6 +1,8 @@
 // A duration that copies itself (prototypes/copy-durations.html), formatted from its
 // milliseconds with the copyDurationPattern setting rather than as shown. The
 // copyDurationControl setting picks how: a click on the duration, or a copy button beside it.
+// `control` overrides it where a click on the duration does something else, as on an entry
+// row's duration field.
 // A bubble shows the copied text for a moment, and CopyAnnouncer reads the same aloud.
 import CheckIcon from 'lucide-solid/icons/check'
 import CopyIcon from 'lucide-solid/icons/copy'
@@ -34,11 +36,15 @@ export function CopyDuration(props: {
   label: string
   // Left where a card would clip a bubble above, as in a day's header.
   side?: 'top' | 'left'
+  control?: 'text' | 'button'
   class?: string
   children: JSX.Element
 }) {
   const pattern = useCopyPattern()
-  const control = useCopyControl()
+  const setting = useCopyControl()
+  function control() {
+    return props.control ?? setting()
+  }
   const [copied, setCopied] = createSignal<Copied | null>(null)
   let hide: ReturnType<typeof setTimeout> | undefined
   onCleanup(() => clearTimeout(hide))

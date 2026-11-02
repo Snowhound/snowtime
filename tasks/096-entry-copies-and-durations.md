@@ -25,6 +25,27 @@ The second is to set an entry's length by typing a duration. The prototypes are
 - **Touch**: a long press opens the context menu in the app. The prototype doesn't emulate
   it. The calendar's earlier note reserved a long press for moving an entry; a long press
   that then drags should still move it, and one that lifts without moving opens the menu.
+- **`createEntries` takes the shared fields once** (2026-11-02):
+  `POST /organizations/:orgId/entries/batch` with `userId`, `projectId`, `description`, and
+  `ticket` once and `entries: [{ id, startedAt, stoppedAt }]`, 1 to `MAX_BATCH_ENTRIES`
+  (100). It answers `Entry[]` in input order. One check covers membership and the project,
+  and a batch can't mix users. The client works out each copy's instants in the user's
+  zone, so the server sees no patterns or time zones. Checks and insert run in one
+  transaction. `entriesPerMemberPerDay` counts the batch's own entries, read in one range
+  from the first start minus a day to the last start plus a day. A retry ends in 409
+  `entry_id_taken`, as `createEntry`'s does. The route is app-only, not opened to keys, so
+  it goes in `docs/architecture/timer.md` rather than `docs/api.md`. Rejected: a list of
+  full entries, which is more general than copies need.
+- **Undo uses `deleteEntries`** (2026-11-02): `POST /organizations/:orgId/entries/batch-delete`
+  with `{ ids }` (1 to 100), atomic, the same logical delete, answering the ids. N single
+  deletes would run into `writesPerUser` (120 a minute) partway through an Undo. Saving an
+  existing entry with copies is `updateEntry` then `createEntries`; its Undo writes the old
+  values back, then calls `deleteEntries`. Duplicate, Paste here, and Alt+drag stay one
+  `createEntry`. Past the cap, the copy panel says "At most 100 entries at once" and doesn't
+  save.
+- **snowtime-native follows in its own session** (2026-11-02). This task changes only this
+  repository; its route parity and conformance runs will report both routes as missing until
+  that session ports them.
 
 ## Initial ideas
 
@@ -41,9 +62,9 @@ The second is to set an entry's length by typing a duration. The prototypes are
 
 - [ ] Before building the multi-day paste, the maintainer has seen and agreed how the
       popover and the copy panel split the work, so the dialog code stays simple.
-- [ ] The entry popover and the list's rows take a typed duration (`1:30`, `1h 30m`, `90m`,
+- [x] The entry popover and the list's rows take a typed duration (`1:30`, `1h 30m`, `90m`,
       `1.5`, `1,5`; a bare number is hours), with the errors the prototypes show.
-- [ ] Rows copy their duration with the copy button; day totals still copy on click;
+- [x] Rows copy their duration with the copy button; day totals still copy on click;
       `docs/architecture/timer.md` says so.
 - [ ] The popover's Copy to more days picks days and fills them by Repeat and Until; saving
       creates the entry and its copies in one call that one Undo reverts.
@@ -52,4 +73,5 @@ The second is to set an entry's length by typing a duration. The prototypes are
       ⌘C or Ctrl+C).
 - [ ] On touch, a long press opens the context menu, and a long press then drag moves the
       entry.
-- [ ] Conformance tests cover the create call with copies.
+- [ ] Conformance tests cover `createEntries` and `deleteEntries`: a batch saves all or
+      nothing, the daily limit counts the batch's own entries, the cap, and a retried id.

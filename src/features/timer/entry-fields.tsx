@@ -1,7 +1,8 @@
 // Inline editing of a stopped entry (prototypes/timer.html): the entry rows' description,
-// ticket, project, date, start, and end are fields that read as text until hovered or focused.
-// Their popovers and menus mount only while the row is `active` (row-activation.ts). Each
-// field saves on its own, with only what changed; an error shows under the row.
+// ticket, project, date, start, end, and duration are fields that read as text until hovered
+// or focused. Their popovers and menus mount only while the row is `active`
+// (row-activation.ts). Each field saves on its own, with only what changed; an error shows
+// under the row.
 import CalendarIcon from 'lucide-solid/icons/calendar'
 import { For, Show, createEffect, createMemo, createSignal, createUniqueId, on } from 'solid-js'
 import { CopyDuration } from '~/components/copy-duration'
@@ -27,7 +28,8 @@ import { isPendingChange } from '~/lib/queries/refusal'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
-import { changedFields, readEntryTimes } from './entries'
+import { durationErrorMessage, parseDuration } from './duration-input'
+import { changedFields, readEntryTimes, readStart } from './entries'
 import { IssuePicker } from './issue-picker'
 import { projectChoices } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
@@ -43,6 +45,10 @@ const QUIET =
 // The description is a native input with ui/text-field's classes rather than Kobalte's
 // TextField, whose props proxies every row would repeat.
 const DESCRIPTION_INPUT = `flex w-full rounded-md border bg-transparent py-2 text-sm text-ellipsis ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${QUIET}`
+const DURATION_INPUT = cn(
+  DESCRIPTION_INPUT,
+  'w-20 px-1.5 text-right tabular-nums aria-[invalid=true]:border-error-foreground aria-[invalid=true]:text-error-foreground',
+)
 // Controls that show on row hover or focus from 640 px, like the row's actions.
 export const REVEAL =
   'sm:opacity-0 sm:transition-opacity sm:group-focus-within:opacity-100 sm:group-hover:opacity-100 data-[expanded]:opacity-100'
@@ -50,6 +56,7 @@ export const REVEAL =
 const NO_PROJECT = 'none'
 
 type TimeKey = 'start' | 'end'
+type FieldKey = TimeKey | 'duration'
 
 // The entry's project, or a stand-in for one the user can no longer see; null for none.
 export function entryProject(projects: readonly Project[], id: string | null) {
@@ -60,14 +67,17 @@ export function entryProject(projects: readonly Project[], id: string | null) {
 export type EntryEditor = ReturnType<typeof createEntryEditor>
 
 // The row's unsaved values and errors. Times are read like the entry popover's: on the
-// start's date, with an end at or before the start on the next day.
+// start's date, with an end at or before the start on the next day. A typed duration keeps
+// the start and moves the end.
 export function createEntryEditor(props: { entry: StoppedEntry; zone: string; onSave: SaveEntry }) {
   const errorId = createUniqueId()
   // oxlint-disable-next-line solid/reactivity -- it starts from the saved value; an effect follows it.
   const [description, setDescription] = createSignal(props.entry.description)
   // Typed times not saved yet; an invalid one stays until it is fixed or Escape.
   const [times, setTimes] = createSignal<Partial<Record<TimeKey, string>>>({})
-  const [invalid, setInvalid] = createSignal<TimeKey | null>(null)
+  // The duration as typed, until it is saved or Escape.
+  const [typedDuration, setTypedDuration] = createSignal<string>()
+  const [invalid, setInvalid] = createSignal<FieldKey | null>(null)
   const [failed, setFailed] = createSignal<string | null>(null)
 
   // A saved change or its rollback replaces what the fields show. Only a changed value
@@ -86,7 +96,16 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
   createEffect(
     on(savedDescription, (saved) => draft.reset(saved, props.entry.ticket), { defer: true }),
   )
-  createEffect(on(savedTimes, () => setTimes({}), { defer: true }))
+  createEffect(
+    on(
+      savedTimes,
+      () => {
+        setTimes({})
+        setTypedDuration(undefined)
+      },
+      { defer: true },
+    ),
+  )
 
   // Memos, because the row's fields read these several times and each read goes through Intl.
   const date = createMemo(() => localDate(props.entry.startedAt.getTime(), props.zone))
@@ -112,7 +131,26 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
   // After a failed commit, the error follows the input until it is fixed.
   function shownInvalid() {
     const key = invalid()
-    return key ? timesError(key) : null
+    if (key !== 'duration') return key ? timesError(key) : null
+    const typed = parseDuration(typedDuration() ?? '')
+    return typed.error ? { key, message: durationErrorMessage(typed) } : null
+  }
+
+  function start() {
+    return readStart(values(), props.zone, props.entry)
+  }
+
+  function duration() {
+    const result = read()
+    return result.error ? null : result.stoppedAt.getTime() - result.startedAt.getTime()
+  }
+
+  function resetTime(key: TimeKey) {
+    setTimes((t) => {
+      const rest = { ...t }
+      delete rest[key]
+      return rest
+    })
   }
 
   function save(patch: EntryPatch) {
@@ -164,6 +202,8 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
     },
     setTime(key: TimeKey, value: string) {
       setTimes((t) => ({ ...t, [key]: value }))
+      setTypedDuration(undefined)
+      if (invalid() === 'duration') setInvalid(null)
     },
     invalid() {
       return shownInvalid()?.key ?? null
@@ -182,21 +222,48 @@ export function createEntryEditor(props: { entry: StoppedEntry; zone: string; on
       if (patch) save(patch)
       else setTimes({})
     },
-    resetTime(key: TimeKey) {
-      setTimes((t) => {
-        const rest = { ...t }
-        delete rest[key]
-        return rest
-      })
-    },
+    resetTime,
     commitDate(value: string) {
       if (value === date()) return
       const result = readDate(value)
       if (!('error' in result)) save(result)
     },
-    duration() {
-      const result = read()
-      return result.error ? null : result.stoppedAt.getTime() - result.startedAt.getTime()
+    duration,
+    durationText() {
+      const ms = duration()
+      return typedDuration() ?? (ms === null ? '' : formatClock(ms))
+    },
+    setDuration(text: string) {
+      setTypedDuration(text)
+      const typed = parseDuration(text)
+      const startedAt = start()
+      if (typed.error || startedAt === null) return
+      setTimes((t) => ({ ...t, end: localTime(startedAt + typed.ms, props.zone) }))
+    },
+    // Saves the end at the start plus the duration, to the second.
+    commitDuration() {
+      const text = typedDuration()
+      if (text === undefined) return
+      const typed = parseDuration(text)
+      const startedAt = start()
+      if (typed.error || startedAt === null) {
+        setInvalid(typed.error ? 'duration' : 'start')
+        return
+      }
+      setInvalid(null)
+      const next = { startedAt: new Date(startedAt), stoppedAt: new Date(startedAt + typed.ms) }
+      const patch = changedFields(props.entry, next, ['startedAt', 'stoppedAt'])
+      if (patch) save(patch)
+      else {
+        setTypedDuration(undefined)
+        setTimes({})
+      }
+    },
+    // Escape puts back the duration and the end it moved.
+    resetDuration() {
+      setTypedDuration(undefined)
+      resetTime('end')
+      if (invalid() === 'duration') setInvalid(null)
     },
     nextDay() {
       const result = read()
@@ -543,7 +610,6 @@ export function DateField(props: {
               }}
               weekStart={props.weekStart}
               today={today()}
-              max={today()}
               invalid={!!error()}
               aria-describedby={errorId}
               live
@@ -561,18 +627,35 @@ export function DateField(props: {
   )
 }
 
-// Start and end set it, and it follows them while the user types. A click copies it.
-export function EntryDuration(props: { editor: EntryEditor; class?: string }) {
-  function text() {
+// It follows the start and end while they're typed, and a typed one moves the end; it saves
+// on Enter or blur. A click edits it, so the copy button beside it copies.
+export function DurationField(props: { editor: EntryEditor; class?: string }) {
+  function shown() {
     const ms = props.editor.duration()
     return ms === null ? '—' : formatClock(ms)
   }
   return (
-    <span class={props.class}>
-      <CopyDuration ms={props.editor.duration()} label={text()}>
-        {text()}
-      </CopyDuration>
-    </span>
+    <CopyDuration ms={props.editor.duration()} label={shown()} control="button" class={props.class}>
+      <input
+        type="text"
+        autocomplete="off"
+        spellcheck={false}
+        aria-label={m.timer_duration()}
+        aria-describedby={props.editor.errorId}
+        aria-invalid={props.editor.invalid() === 'duration' || undefined}
+        placeholder="—"
+        value={props.editor.durationText()}
+        class={DURATION_INPUT}
+        onInput={(event) => props.editor.setDuration(event.currentTarget.value)}
+        onBlur={() => props.editor.commitDuration()}
+        onKeyDown={(event) =>
+          commitKeys(
+            () => event.currentTarget.blur(),
+            () => props.editor.resetDuration(),
+          )(event)
+        }
+      />
+    </CopyDuration>
   )
 }
 

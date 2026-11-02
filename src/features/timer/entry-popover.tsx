@@ -2,7 +2,8 @@
 // edits the running entry's start under the timer's clock. The list edits stopped entries in
 // their rows (entry-fields.tsx); the calendar opens this popover beside a new slot or an entry,
 // with Delete (prototypes/calendar.html). Times are read in the user's zone; an end at or
-// before the start means the next day, and a live line shows the resulting duration. The
+// before the start means the next day. Start, end, and duration are one range: a typed
+// duration moves the end, or the running entry's start (duration-input.ts). The
 // ticket is found in the description on blur and Save, and its chip sits at the end of the
 // field. Escape and a click outside keep what was typed into a new entry for the next Add
 // entry; Cancel and Save clear it. A calendar slot keeps nothing: its times come from the grid.
@@ -10,16 +11,18 @@ import { createForm } from '@tanstack/solid-form'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { Show, createMemo, createSignal } from 'solid-js'
 import { DatePicker } from '~/components/date-time/date-picker'
+import { FIELD_CLASS } from '~/components/date-time/field-class'
 import { TimeInput } from '~/components/date-time/time-input'
 import { Button } from '~/components/ui/button'
 import { Label } from '~/components/ui/label'
 import { Popover, PopoverContent } from '~/components/ui/popover'
-import { type IsoDate, type WeekStart, localDate, localTime, runningMs } from '~/lib/calendar'
-import { useFormatHours } from '~/lib/display-format'
+import { type IsoDate, type WeekStart, localDate, localTime } from '~/lib/calendar'
+import { formatHours } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
 import { m } from '~/paraglide/messages.js'
 import { DescriptionCombobox } from './description-combobox'
-import { type EntryFormError, lastEndToday, readEntryTimes } from './entries'
+import { durationErrorMessage, formatDurationInput, parseDuration } from './duration-input'
+import { type EntryFormError, lastEndToday, readEntryTimes, readStart } from './entries'
 import { ProjectSelect } from './project-select'
 import type { Entry, StoppedEntry } from './queries'
 import { TicketChip } from './ticket-chip'
@@ -53,7 +56,11 @@ interface FormValues {
   date: IsoDate
   start: string
   end: string
+  // As typed; it follows the times while they're typed, and moves the end when it is.
+  duration: string
 }
+
+const MINUTE = 60_000
 
 const ERRORS: Record<EntryFormError, () => string> = {
   missing: m.entry_error_missing,
@@ -188,18 +195,36 @@ function EntryForm(props: {
   onCancel: () => void
   onDelete?: (entry: StoppedEntry) => void
 }) {
-  const formatHours = useFormatHours()
   // oxlint-disable-next-line solid/reactivity -- the form starts from the target it opened with.
   const target = props.target
   const entry = target.kind === 'new' ? null : target.entry
   // The times and project the form opens with.
   const opened = entry ?? (target.kind === 'new' ? target.slot : undefined)
   const running = target.kind === 'running'
-  // oxlint-disable-next-line solid/reactivity -- the latest day to pick, as of opening.
+  // oxlint-disable-next-line solid/reactivity -- today as of opening.
   const today = localDate(Date.now(), props.zone)
+  // Whether the duration was typed after the times: Save then keeps it to the second, and
+  // only then does a duration that doesn't read stop it.
+  const [durationTyped, setDurationTyped] = createSignal(false)
+  const [durationFocused, setDurationFocused] = createSignal(false)
+  const [durationLeft, setDurationLeft] = createSignal(false)
 
-  const form = createForm(() => ({
-    defaultValues: props.draft ?? {
+  function read(values: FormValues) {
+    return readEntryTimes(values, { running, zone: props.zone, original: entry ?? undefined })
+  }
+
+  // The times' duration as the field shows it; null while they don't read.
+  function durationOf(values: FormValues) {
+    const result = read(values)
+    if (result.error) return null
+    const end = result.stoppedAt?.getTime() ?? Date.now()
+    const ms = end - result.startedAt.getTime()
+    return ms > 0 ? formatDurationInput(ms) : null
+  }
+
+  // The values the form opens with, without a draft.
+  function opening(): FormValues {
+    const values = {
       description: entry?.description ?? '',
       ticket: entry?.ticket ?? null,
       projectId: opened?.projectId ?? '',
@@ -208,37 +233,76 @@ function EntryForm(props: {
         ? localTime(opened.startedAt.getTime(), props.zone)
         : lastEndToday(props.entries, props.zone),
       end: opened?.stoppedAt ? localTime(opened.stoppedAt.getTime(), props.zone) : '',
-    },
+      duration: '',
+    }
+    return { ...values, duration: durationOf(values) ?? '' }
+  }
+
+  const form = createForm(() => ({
+    defaultValues: props.draft ?? opening(),
     onSubmit: ({ value }) => {
-      const times = readEntryTimes(value, {
-        running,
-        zone: props.zone,
-        original: entry ?? undefined,
-      })
+      const typed = parseDuration(value.duration)
+      if (typed.error && durationTyped()) return
+      const times = read(value)
       if (times.error) return
+      const stoppedAt =
+        times.stoppedAt && typed.ms !== undefined && durationTyped()
+          ? new Date(times.startedAt.getTime() + typed.ms)
+          : times.stoppedAt
       props.onSave({
         description: value.description.trim(),
         ticket: value.ticket,
         projectId: value.projectId || null,
         startedAt: times.startedAt,
-        stoppedAt: times.stoppedAt,
+        stoppedAt,
       })
     },
   }))
+
+  // A typed date or time recomputes the duration.
+  function setTime(key: 'date' | 'start' | 'end', value: string) {
+    form.setFieldValue(key, value)
+    setDurationTyped(false)
+    const duration = durationOf(form.state.values)
+    if (duration !== null) form.setFieldValue('duration', duration)
+  }
+
+  // A typed duration keeps the start and moves the end; the running entry's end is now, so
+  // its start moves.
+  function setDuration(text: string) {
+    form.setFieldValue('duration', text)
+    setDurationTyped(true)
+    const typed = parseDuration(text)
+    if (typed.error) return
+    if (running) {
+      const start = Math.floor((Date.now() - typed.ms) / MINUTE) * MINUTE
+      form.setFieldValue('date', localDate(start, props.zone))
+      form.setFieldValue('start', localTime(start, props.zone))
+      return
+    }
+    const start = readStart(form.state.values, props.zone, entry ?? undefined)
+    if (start !== null) form.setFieldValue('end', localTime(start + typed.ms, props.zone))
+  }
   // oxlint-disable-next-line solid/reactivity -- registers a reader once, for a dismiss.
   props.readValues(() => form.state.values)
-  const times = form.useStore((state) =>
-    readEntryTimes(state.values, { running, zone: props.zone, original: entry ?? undefined }),
-  )
-  // The error shows once saving was tried, then follows the input.
-  const error = form.useStore((state) => {
-    const result = readEntryTimes(state.values, {
-      running,
-      zone: props.zone,
-      original: entry ?? undefined,
-    })
-    return state.submissionAttempts > 0 && result.error ? ERRORS[result.error]() : null
-  })
+  const times = form.useStore((state) => read(state.values))
+  const typed = form.useStore((state) => parseDuration(state.values.duration))
+  const attempted = form.useStore((state) => state.submissionAttempts > 0)
+  // A duration that doesn't read shows its error once the field is left; the times' error
+  // shows once saving was tried. Both then follow the input.
+  function error() {
+    const duration = typed()
+    if (duration.error && durationTyped() && (durationLeft() || attempted())) {
+      return { message: durationErrorMessage(duration), field: 'duration' as const }
+    }
+    const result = times()
+    return attempted() && result.error
+      ? { message: ERRORS[result.error](), field: 'times' as const }
+      : null
+  }
+  function timesInvalid() {
+    return error()?.field === 'times'
+  }
   const projectId = form.useStore((state) => state.values.projectId)
   const ticket = form.useStore((state) => state.values.ticket)
 
@@ -255,14 +319,16 @@ function EntryForm(props: {
     if (turned) caretAfterKey(descriptionInput, turned)
   }
 
+  // Under the times: how the duration being typed reads, and an end on the next day.
   function summary() {
-    const result = times()
-    if (result.error) return ''
-    if (!result.stoppedAt) {
-      return m.entry_running_for({ duration: formatHours(runningMs(result.startedAt, Date.now())) })
+    const parts: string[] = []
+    if (durationFocused()) {
+      const duration = typed()
+      parts.push(duration.error ? m.entry_duration_hint() : formatHours(duration.ms, 'units'))
     }
-    const duration = formatHours(result.stoppedAt.getTime() - result.startedAt.getTime())
-    return result.nextDay ? m.entry_duration_next_day({ duration }) : m.entry_duration({ duration })
+    const result = times()
+    if (!result.error && result.nextDay) parts.push(m.entry_row_next_day())
+    return parts.join(' · ')
   }
 
   return (
@@ -327,25 +393,25 @@ function EntryForm(props: {
           />
         )}
       </form.Field>
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <form.Field name="date">
-          {(field) => (
-            <div class="col-span-2 grid gap-1.5 sm:col-span-1">
-              <Label for="entry-date">{m.entry_date()}</Label>
-              <DatePicker
-                id="entry-date"
-                value={field().state.value}
-                onChange={(value) => field().handleChange(value)}
-                weekStart={props.weekStart}
-                today={today}
-                max={today}
-                invalid={!!error()}
-                live
-                required
-              />
-            </div>
-          )}
-        </form.Field>
+      <form.Field name="date">
+        {(field) => (
+          <div class="grid gap-1.5">
+            <Label for="entry-date">{m.entry_date()}</Label>
+            <DatePicker
+              id="entry-date"
+              class="sm:w-44"
+              value={field().state.value}
+              onChange={(value) => setTime('date', value)}
+              weekStart={props.weekStart}
+              today={today}
+              invalid={timesInvalid()}
+              live
+              required
+            />
+          </div>
+        )}
+      </form.Field>
+      <div class="-mt-1 grid grid-cols-3 gap-4">
         <form.Field name="start">
           {(field) => (
             <div class="grid gap-1.5">
@@ -353,8 +419,8 @@ function EntryForm(props: {
               <TimeInput
                 id="entry-start"
                 value={field().state.value}
-                onChange={(value) => field().handleChange(value)}
-                invalid={!!error()}
+                onChange={(value) => setTime('start', value)}
+                invalid={timesInvalid()}
                 required
               />
             </div>
@@ -368,22 +434,55 @@ function EntryForm(props: {
                 <TimeInput
                   id="entry-end"
                   value={field().state.value}
-                  onChange={(value) => field().handleChange(value)}
-                  invalid={!!error()}
+                  onChange={(value) => setTime('end', value)}
+                  invalid={timesInvalid()}
                   required
                 />
               </div>
             )}
           </form.Field>
         </Show>
+        <form.Field name="duration">
+          {(field) => (
+            <div class="grid gap-1.5">
+              <Label for="entry-duration">{m.timer_duration()}</Label>
+              <input
+                id="entry-duration"
+                type="text"
+                autocomplete="off"
+                spellcheck={false}
+                placeholder="1:30"
+                class={FIELD_CLASS}
+                value={field().state.value}
+                aria-invalid={error()?.field === 'duration' || undefined}
+                aria-describedby="entry-summary"
+                onInput={(event) => setDuration(event.currentTarget.value)}
+                onFocus={() => setDurationFocused(true)}
+                // Left, it reads back as 1:30, or says why it doesn't read.
+                onBlur={() => {
+                  setDurationFocused(false)
+                  const duration = parseDuration(field().state.value)
+                  if (duration.error) setDurationLeft(true)
+                  else form.setFieldValue('duration', formatDurationInput(duration.ms))
+                }}
+              />
+            </div>
+          )}
+        </form.Field>
       </div>
-      <p class="text-muted-foreground -mt-1 text-sm" aria-live="polite">
+      <p
+        id="entry-summary"
+        class="text-muted-foreground -mt-2 text-sm empty:hidden"
+        aria-live="polite"
+      >
         {summary()}
       </p>
       <Show when={error()}>
-        <p role="alert" class="text-destructive -mt-3 text-xs font-medium">
-          {error()}
-        </p>
+        {(shown) => (
+          <p role="alert" class="text-destructive -mt-3 text-xs font-medium">
+            {shown().message}
+          </p>
+        )}
       </Show>
       <div class="flex items-center gap-2">
         <Show when={target.kind === 'edit' && props.onDelete && target.entry}>

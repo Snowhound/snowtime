@@ -331,7 +331,7 @@ describe('TimerView', () => {
 
     const start = screen.getByLabelText('Start')
     fireEvent.input(start, { target: { value: '23:00' } })
-    expect(screen.getByText('11:30:00')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('11:30:00')).toBeInTheDocument()
     expect(screen.getByText('Ends the next day', { selector: '.sr-only' })).toBeInTheDocument()
     fireEvent.blur(start)
 
@@ -344,6 +344,57 @@ describe('TimerView', () => {
         stoppedAt: new Date(atLocalTime(addDays(date, 1), '10:30', zone)),
       }),
     )
+  })
+
+  test('a typed duration moves the end and saves to the second from the start', async () => {
+    server.entries = [entry(2, '09:00', '10:30', 'Invoice export review')]
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    const { id, startedAt } = server.entries[0]
+    fn.updateEntry.mockResolvedValue({})
+
+    const duration = screen.getByLabelText('Duration')
+    expect(duration).toHaveValue('1:30:00')
+    fireEvent.input(duration, { target: { value: '45m' } })
+    expect(screen.getByLabelText('End')).toHaveValue('09:45')
+    fireEvent.blur(duration)
+
+    await waitFor(() =>
+      expect(fn.updateEntry).toHaveBeenCalledWith({
+        organizationId,
+        id,
+        stoppedAt: new Date(startedAt.getTime() + 45 * 60_000),
+      }),
+    )
+  })
+
+  test("a duration that doesn't read stays with its error, and Escape puts back the end", async () => {
+    server.entries = [entry(2, '09:00', '10:30', 'Invoice export review')]
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+
+    const duration = screen.getByLabelText('Duration')
+    fireEvent.input(duration, { target: { value: '2' } })
+    expect(screen.getByLabelText('End')).toHaveValue('11:00')
+    fireEvent.input(duration, { target: { value: '90' } })
+    fireEvent.blur(duration)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '90 hours is over a day. For minutes, write 90m.',
+    )
+    expect(duration).toHaveValue('90')
+    expect(fn.updateEntry).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(duration, { key: 'Escape' })
+    expect(duration).toHaveValue('1:30:00')
+    expect(screen.getByLabelText('End')).toHaveValue('10:30')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  test("a row's duration copies through its copy button, whatever the setting", async () => {
+    server.entries = [entry(2, '09:00', '10:30', 'Invoice export review')]
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    expect(screen.getByRole('button', { name: 'Copy duration 1:30:00' })).toBeInTheDocument()
   })
 
   test('saves a typed time on Enter and leaves the field', async () => {
@@ -518,6 +569,75 @@ describe('TimerView', () => {
       }),
     )
     expect(await screen.findByDisplayValue('Planning')).toBeInTheDocument()
+  })
+
+  test("the popover's duration moves the end, and the end moves the duration", async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    fn.createEntry.mockResolvedValue({})
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+    const dialog = await screen.findByRole('dialog')
+    const date = addDays(localDate(Date.now(), zone), -2)
+    fireEvent.input(within(dialog).getByLabelText('Date'), { target: { value: date } })
+    fireEvent.input(within(dialog).getByLabelText('Start'), { target: { value: '13:00' } })
+    fireEvent.input(within(dialog).getByLabelText('End'), { target: { value: '14:15' } })
+    const duration = within(dialog).getByLabelText('Duration')
+    expect(duration).toHaveValue('1:15')
+
+    fireEvent.focus(duration)
+    fireEvent.input(duration, { target: { value: '1,5' } })
+    expect(within(dialog).getByLabelText('End')).toHaveValue('14:30')
+    expect(within(dialog).getByText('1h 30m')).toBeInTheDocument()
+    fireEvent.blur(duration)
+    expect(duration).toHaveValue('1:30')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+    expect(fn.createEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startedAt: new Date(atLocalTime(date, '13:00', zone)),
+        stoppedAt: new Date(atLocalTime(date, '14:30', zone)),
+      }),
+    )
+  })
+
+  test("the running entry's duration moves its start", async () => {
+    server.running = {
+      ...entry(0, '00:00', '00:01', 'Timer layouts'),
+      startedAt: new Date(Date.now() - 5 * 60_000),
+      stoppedAt: null,
+      project: null,
+    }
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    fn.updateEntry.mockResolvedValue({})
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit start time' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).queryByLabelText('End')).not.toBeInTheDocument()
+    fireEvent.input(within(dialog).getByLabelText('Duration'), { target: { value: '2h' } })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+    const started = Math.floor((Date.now() - 2 * 3_600_000) / 60_000) * 60_000
+    expect(fn.updateEntry).toHaveBeenCalledWith(expect.objectContaining({ id: server.running.id }))
+    const sent = fn.updateEntry.mock.calls[0][0].startedAt.getTime()
+    expect(Math.abs(sent - started)).toBeLessThanOrEqual(60_000)
+  })
+
+  test("the popover refuses a duration that doesn't read", async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add entry' }))
+    const dialog = await screen.findByRole('dialog')
+    const duration = within(dialog).getByLabelText('Duration')
+    fireEvent.input(duration, { target: { value: 'soon' } })
+    fireEvent.blur(duration)
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(
+      'Write the duration as 1:30, 1h 30m, 1.5, or 45m.',
+    )
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }))
+    expect(fn.createEntry).not.toHaveBeenCalled()
   })
 
   test('picking recent work in the timer fills in its project without starting', async () => {

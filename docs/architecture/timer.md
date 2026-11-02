@@ -25,8 +25,27 @@ the timer bar stays. Its code is in `src/features/timer/calendar/`, with the tim
   between the cached ranges it leaves and enters, so an entry moved into another week shows
   there at once.
 - The entry popover is the list's, with its fields and validation: a running entry can't start
-  in the future, and an end at or before the start means the next day. The calendar opens it beside the slot
-  or the entry, with Delete for a stopped entry.
+  in the future, and an end at or before the start means the next day. Other entries may lie
+  after now. The calendar opens it beside the slot or the entry, with Delete for a stopped
+  entry.
+
+## Typed durations
+
+The entry popover and the list's rows take a typed duration (task 096,
+`prototypes/copy-entries.html`). `src/features/timer/duration-input.ts` parses it: `1:30`,
+`1:30:00`, `1h 30m`, `1h30`, `90m`, `90 min`, `1.5`, `1,5`, and `1.5h`, and the same with
+Estonian units (`1 t 30 min`) in either language. A bare number is hours, as the user asked,
+and one over 24 suggests minutes ("90 hours is over a day. For minutes, write 90m."). An
+entry is at least a minute and at most 24 hours. Only `H:MM:SS` keeps seconds.
+
+- Start, end, and duration are one range. A typed duration keeps the start and moves the
+  end; a typed start or end recomputes the duration. The running entry has no end, so its
+  duration moves the start.
+- A typed duration saves the end at the start plus the duration, to the second, as one
+  `updateEntry`. Escape in a row puts back the duration and the end it moved.
+- The popover rewrites the duration as `1:30` when it is left, and while it has focus the
+  line under the times reads it back ("1h 30m"). A duration that doesn't read shows its
+  error once left or on Save, and stops Save only when it was typed.
 
 ## Date and time fields
 
@@ -53,8 +72,10 @@ Chrome, Firefox, and Safari. The prototypes keep the native inputs.
 
 ## Copying durations
 
-A click on an entry row's duration or a day's total on the Timer page copies it, for pasting
-into a ticket's work log or an invoice (task 078). Other durations don't copy yet.
+A day's total on the Timer page copies on a click, and an entry row's duration through the
+copy button beside it, for pasting into a ticket's work log or an invoice (task 078). A
+row's duration is a field that takes a typed duration (task 096), so a click on it edits
+it. Reports' totals copy as well.
 
 - `copy_duration_pattern` sets the copied text, per user. In the pattern, `H`, `M`, and `S`
   are hours, minutes, and seconds, and a run of one letter sets the minimum digits: `HH`
@@ -73,12 +94,12 @@ into a ticket's work log or an invoice (task 078). Other durations don't copy ye
   field after a letter or before two (`fieldsInWords`); one letter after is a unit, as in
   `Hh`. A warned pattern still saves.
 - Settings > Preferences groups both settings under Copying durations.
-- `copy_duration_control` picks how a duration copies: a click on the duration (`text`, the
-  default) or a copy button beside it (`button`). From 640 px the button shows only while
-  its row or the duration is hovered or focused, like the rows' other controls. In button
-  mode the list's duration column widens from 64 to 88 px and the table's from 96 to
-  112 px, the same in every row so the times line up. At 1024 px with the summary panel,
-  that narrows the row's description from 67 to 43 px, which was accepted on 2026-10-02.
+- `copy_duration_control` picks how a total copies: a click on the duration (`text`, the
+  default) or a copy button beside it (`button`). Entry rows always use the button
+  (`CopyDuration`'s `control`), whatever the setting, decided on 2026-11-02. From 640 px
+  the button shows only while its row or the duration is hovered or focused, like the
+  rows' other controls. The rows' duration field is 80 px with the button beside it, and
+  the table's duration column is 112 px, the same in every row so the times line up.
 - After a copy, a bubble shows the copied text for two seconds. The bubble sits above an
   entry's duration and left of a day's total, where the day's card would clip it above.
   `prototypes/copy-durations.html` compares it with swapping the text in place, which made
