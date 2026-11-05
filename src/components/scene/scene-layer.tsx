@@ -41,6 +41,8 @@ type LayerSettings = Pick<
 const PHOTO_FADE = 900
 // How long the glass's copy takes to fade over the live blur or back (.glass in src/styles.css).
 const GLASS_FADE = 800
+// How much more saturated dark glass shows the picture (src/styles.css, "Dark glass").
+const DARK_GLASS_SATURATION = 1.3
 
 // A theme's pictures, oldest first. A new image fades in over the one before, which goes once
 // the fade ends; a sharper file of the same image replaces the top one in place.
@@ -101,8 +103,10 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
   // The glass's copy of the picture on top, keyed by image and theme, and the one the surfaces
   // show. A new picture's copy shows once the picture has faded in; until then the surfaces blur
   // the scene live, so they follow the fade.
-  const copies = new Map<string, Promise<string | null>>()
-  const [glass, setGlass] = createSignal<{ key: string; url: string } | null>(null)
+  const copies = new Map<string, Promise<{ url: string; lightness: number } | null>>()
+  const [glass, setGlass] = createSignal<{ key: string; url: string; lightness: number } | null>(
+    null,
+  )
 
   onMount(() => {
     const root = document.documentElement
@@ -177,14 +181,18 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
       if (!copy) {
         // Loaded when a picture first shows, like the weather renderer, so it's not in the entry.
         copy = import('~/lib/scene/glass').then(({ glassPhoto }) =>
-          glassPhoto(top.src, { width: innerWidth, height: innerHeight }),
+          glassPhoto(
+            top.src,
+            { width: innerWidth, height: innerHeight },
+            theme === 'dark' ? DARK_GLASS_SATURATION : 1,
+          ),
         )
         copies.set(key, copy)
       }
       const faded = new Promise((done) => setTimeout(done, untrack(reducedMotion) ? 0 : PHOTO_FADE))
       void (async () => {
-        const [url] = await Promise.all([copy, faded])
-        if (wanted === key && url) setGlass({ key, url })
+        const [shown] = await Promise.all([copy, faded])
+        if (wanted === key && shown) setGlass({ key, ...shown })
       })()
     })
     // The copy fades in over the live blur, which stops once the copy covers it, and fades out
@@ -204,9 +212,11 @@ export function SceneLayer(props: { settings: LayerSettings; pace: Pace }) {
         if (run !== step) return
         delete frame.dataset.glass
         frame.style.removeProperty('--glass-photo')
+        frame.style.removeProperty('--glass-lightness')
       }
       if (shown) {
         frame.style.setProperty('--glass-photo', `url("${shown.url}")`)
+        frame.style.setProperty('--glass-lightness', shown.lightness.toFixed(1))
         if (instant) return set('on')
         set('under')
         // Styled clear first, so the copy's opacity has a start to fade from.

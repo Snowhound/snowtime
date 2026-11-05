@@ -409,10 +409,23 @@ html[data-intro='pending'] body {
   background-color: var(--glass-color);
   backdrop-filter: var(--glass-blur);
 }
-/* Dark glass takes more of the card color: over a light picture, 70% read too light behind the
-   calendar (prototypes/README.md, calendar.html). */
+/* Dark glass shows more of the picture, dimmed: 40% card color over the scene at 0.6 brightness
+   and 1.3 saturation, but a dark picture is dimmed less, to no darker than 22 (sRGB luma, 0 to
+   255) behind the glass, and the darkest not at all (prototypes/README.md, calendar.html,
+   "Adaptive glass"). The scene layer sets --glass-lightness to the photo's mean lightness
+   (src/lib/scene/glass.ts); behind the glass, the tint mixes in the page color (#0b1622, luma
+   20.5) at about 0.925 of its strength. The copy has the saturation baked in and takes the
+   dimming as a black shade, the same as `brightness()` without a filter; the live blur takes
+   both as filters. Until a copy gives the lightness, the picture counts as light. */
 .dark [data-scene-bg='on'][data-surfaces='glass'] .surface {
-  --glass-color: color-mix(in srgb, var(--card) 75%, transparent);
+  --glass-behind: calc(
+    var(--glass-lightness, 60) * (1 - 0.925 * var(--scene-tint-dark)) + 20.5 * 0.925 *
+      var(--scene-tint-dark)
+  );
+  --glass-dim: clamp(0.6, calc(22 / var(--glass-behind)), 1);
+  --glass-color: color-mix(in srgb, var(--card) 40%, transparent);
+  --glass-shade: rgb(0 0 0 / calc(1 - var(--glass-dim)));
+  --glass-blur: blur(24px) brightness(var(--glass-dim)) saturate(1.3);
 }
 [data-scene-bg='on'] .surface {
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
@@ -522,6 +535,7 @@ html:has(.scene-header) {
   inset: 0;
   background:
     linear-gradient(var(--glass-color), var(--glass-color)),
+    linear-gradient(var(--glass-shade, transparent), var(--glass-shade, transparent)),
     var(--scene-vignette-layer),
     var(--scene-tint-layer),
     var(--glass-photo) center 20% / cover,

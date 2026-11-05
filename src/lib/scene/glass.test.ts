@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { blur } from './glass'
+import { blur, lightness, saturate } from './glass'
 
 function image(width: number, height: number, value: (x: number, y: number) => number) {
   const pixels = new Uint8ClampedArray(width * height * 4)
@@ -31,5 +31,24 @@ describe('blur', () => {
     for (let i = 0; i < pixels.length; i += 4) total += pixels[i]
     expect(total).toBeGreaterThan(230)
     expect(total).toBeLessThan(280)
+  })
+})
+
+describe('lightness', () => {
+  test('is the mean sRGB luma, ignoring alpha', () => {
+    const pixels = new Uint8ClampedArray([255, 255, 255, 0, 0, 0, 0, 255])
+    expect(lightness(pixels)).toBeCloseTo(127.5)
+    expect(lightness(new Uint8ClampedArray([0, 255, 0, 255]))).toBeCloseTo(0.7152 * 255)
+  })
+})
+
+describe('saturate', () => {
+  test("keeps gray and each pixel's luma, and spreads the channels", () => {
+    const pixels = new Uint8ClampedArray([90, 90, 90, 255, 40, 60, 120, 255])
+    const before = lightness(pixels.slice(4))
+    saturate(pixels, 1.3)
+    expect(Array.from(pixels.slice(0, 4))).toEqual([90, 90, 90, 255])
+    expect(lightness(pixels.slice(4))).toBeCloseTo(before, 0)
+    expect(pixels[6] - pixels[4]).toBeGreaterThan(80)
   })
 })
