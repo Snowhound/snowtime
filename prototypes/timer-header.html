@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timer header</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
+    <script src="seasons.js"></script>
+    <script src="scene.js"></script>
+    <script src="intro.js"></script>
+    <script src="app-frame.js"></script>
+    <style type="text/tailwindcss">
+      /* Each element lists the designs it belongs to in `data-show`. */
+      body[data-design='icon'] [data-show]:not([data-show~='icon']),
+      body[data-design='content'] [data-show]:not([data-show~='content']),
+      body[data-design='row'] [data-show]:not([data-show~='row']) {
+        display: none;
+      }
+      /* A leaves the title row room for Add entry's label on a phone. */
+      body[data-design='content'] [data-add-entry] span {
+        display: inline;
+      }
+      /* Log meetings is in the header only in List view; Calendar view has it in its toolbar. */
+      body[data-shown='calendar'] [data-list-only] {
+        display: none;
+      }
+      body[data-shown='list'] #calendar-card,
+      body[data-shown='calendar'] #list-days {
+        display: none;
+      }
+      /* Solid-UI's TooltipContent classes; Kobalte shows it on hover and focus after a delay. */
+      .tip {
+        @apply pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded-md border bg-popover px-3 py-1.5 text-sm whitespace-nowrap text-popover-foreground opacity-0 shadow-md transition-opacity;
+      }
+      .has-tip:hover .tip,
+      .has-tip:focus-visible .tip {
+        @apply opacity-100 delay-500;
+      }
+      .cal-grid {
+        background-image: linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+        background-size: 100% 48px;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body class="bg-muted/40" data-design="content" data-shown="list">
+    <div id="prototype-controls">
+      <label for="design" class="sr-only">Design</label>
+      <select id="design" data-ui="select" class="h-9 w-72">
+        <option value="content">A: View switch above the entries</option>
+        <option value="row">B: Actions on a second row</option>
+        <option value="icon">C: Icons in one row</option>
+      </select>
+      <label for="tagline" class="sr-only">Tagline</label>
+      <select id="tagline" data-ui="select" class="h-9 w-64">
+        <option value="season">Tagline: this season's</option>
+        <option value="long">Tagline: longest English</option>
+        <option value="et">Tagline: longest Estonian</option>
+      </select>
+    </div>
+
+    <!-- The title row. Variants hide what they move elsewhere. -->
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 pt-6 sm:px-8">
+      <h1 class="text-2xl font-semibold tracking-tight">Timer</h1>
+      <div class="flex items-center gap-2" data-show="icon content">
+        <!-- C: the view switch as icons, named by their tooltips. -->
+        <div data-ui="toggle-group" role="group" class="mr-2" aria-label="Entries as" data-show="icon">
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="list" data-icon-only class="has-tip relative" aria-label="List"></button>
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="calendar" data-icon-only class="has-tip relative" aria-label="Calendar"></button>
+        </div>
+        <button type="button" data-ui="button" data-variant="outline" class="h-9 px-3" data-add-entry data-show="icon content" aria-label="Add entry"></button>
+        <!-- C: an icon button with a tooltip. -->
+        <button type="button" data-ui="button" data-variant="outline" data-size="icon" class="has-tip relative size-9" data-log-meetings data-list-only data-show="icon" aria-label="Log meetings" aria-haspopup="dialog">
+          <svg class="prototype-icon" aria-hidden="true"><use href="#icon-calendar-clock" /></svg>
+          <span class="tip" role="tooltip">Log meetings</span>
+        </button>
+        <button type="button" data-ui="button" data-variant="outline" data-size="icon" class="size-9" popovertarget="view-settings" aria-label="View settings">
+          <svg class="prototype-icon" aria-hidden="true"><use href="#icon-settings" /></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- B: the actions on their own row under the title, as Reports has its filters. -->
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 pt-4 sm:px-8" data-show="row">
+      <div data-ui="toggle-group" role="group" aria-label="Entries as">
+        <button type="button" data-ui="toggle" data-variant="outline" data-view="list" class="gap-1.5"></button>
+        <button type="button" data-ui="toggle" data-variant="outline" data-view="calendar" class="gap-1.5"></button>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" data-ui="button" data-variant="outline" class="h-9 px-3" data-add-entry aria-label="Add entry"></button>
+        <button type="button" data-ui="button" data-variant="outline" class="h-9 px-3" data-log-meetings data-list-only aria-label="Log meetings" aria-haspopup="dialog"></button>
+        <button type="button" data-ui="button" data-variant="outline" data-size="icon" class="size-9" popovertarget="view-settings" aria-label="View settings">
+          <svg class="prototype-icon" aria-hidden="true"><use href="#icon-settings" /></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="view-settings" popover data-ui="popover" class="grid gap-2" role="dialog" aria-label="View settings">
+      <p class="text-sm font-medium">View</p>
+      <p class="text-sm text-muted-foreground">Layout, summary, and width, as in timer.html.</p>
+    </div>
+
+    <main class="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-4 pb-6 sm:px-8">
+      <section class="surface flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center" aria-label="Timer">
+        <input data-ui="input" type="text" placeholder="What are you working on?" class="flex-1" />
+        <select data-ui="select" class="sm:w-48"><option>No project</option></select>
+        <span class="flex h-9 items-center px-2 text-lg tabular-nums sm:w-28 sm:justify-end">0:00:00</span>
+        <button data-ui="button" type="button">Start</button>
+      </section>
+
+      <!-- A: the view switch above what it switches, with Log meetings at the other end. -->
+      <div class="-mb-2 flex flex-wrap items-center justify-between gap-2" data-show="content">
+        <div data-ui="toggle-group" role="group" aria-label="Entries as">
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="list" class="gap-1.5"></button>
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="calendar" class="gap-1.5"></button>
+        </div>
+        <button type="button" data-ui="button" data-variant="outline" class="h-9 px-3" data-log-meetings data-list-only aria-haspopup="dialog"></button>
+      </div>
+
+      <div id="list-days" class="flex flex-col gap-6"></div>
+
+      <section id="calendar-card" data-ui="card" class="gap-0 overflow-hidden py-0" aria-labelledby="week-label">
+        <div class="flex flex-wrap items-center gap-2 border-b px-3 py-2.5 sm:px-4">
+          <div class="flex items-center gap-1">
+            <button type="button" data-ui="button" data-variant="outline" data-size="icon" class="size-8" aria-label="Previous week"><svg class="prototype-icon" aria-hidden="true"><use href="#icon-chevron-left" /></svg></button>
+            <button type="button" data-ui="button" data-variant="outline" data-size="icon" class="size-8" aria-label="Next week"><svg class="prototype-icon" aria-hidden="true"><use href="#icon-chevron-right" /></svg></button>
+          </div>
+          <button type="button" data-ui="button" data-variant="outline" data-size="sm">Today</button>
+          <h2 id="week-label" class="ml-1 font-medium">2–8 November 2026</h2>
+          <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <span class="mr-1 text-sm text-muted-foreground tabular-nums">31:20</span>
+            <button type="button" data-ui="toggle" data-variant="outline" data-size="sm">Weekend</button>
+            <button type="button" data-ui="button" data-variant="outline" data-size="sm" data-log-meetings aria-haspopup="dialog"></button>
+          </div>
+        </div>
+        <div class="cal-grid h-80" aria-hidden="true"></div>
+      </section>
+    </main>
+
+    <dialog id="log-dialog" data-ui="dialog" class="max-w-md" aria-labelledby="log-title">
+      <div data-ui="dialog-header">
+        <h2 id="log-title" data-ui="dialog-title">Log meetings</h2>
+        <p data-ui="dialog-description">The dialog itself is in calendar-events.html.</p>
+      </div>
+      <div data-ui="dialog-footer">
+        <form method="dialog"><button data-ui="button">Close</button></form>
+      </div>
+    </dialog>
+
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden">
+      <defs>
+        <symbol id="icon-calendar-clock" viewBox="0 0 24 24"><path d="M16 14v2.2l1.6 1" /><path d="M16 2v3" /><path d="M21 7.338V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h2.338" /><path d="M3 9h5.859" /><path d="M8 2v3" /><circle cx="16" cy="16" r="6" /></symbol>
+      </defs>
+    </svg>
+
+    <script>
+      const DESIGN_KEY = 'snowtime.prototypeTimerHeader'
+      const TAGLINES = {
+        long: ['The month is almost out.', "Your hours shouldn't be."],
+        et: ['Kool algas.', '„Koer sõi kodutöö ära” tööl läbi ei lähe.'],
+      }
+      let taglineChoice = 'season'
+      // The fixture swaps the tagline's text; colors stay the season's.
+      const seasonTagline = seasons.taglineHtml
+      seasons.taglineHtml = (season) => {
+        const html = seasonTagline(season)
+        const lines = TAGLINES[taglineChoice]
+        if (!lines) return html
+        const parts = html.split('</span> ')
+        return (
+          parts[0].replace(/>[^<]*$/, `>${appFrame.escapeHtml(lines[0])}`) +
+          '</span> ' +
+          parts[1].replace(/>[^<]*<\/span>$/, `>${appFrame.escapeHtml(lines[1])}</span>`)
+        )
+      }
+
+      appFrame.mount({ page: 'timer', title: 'Timer header', scene: true })
+      const { icon, escapeHtml } = appFrame
+
+      // Below 640 px the actions beside the view switch show only their icons.
+      document.querySelectorAll('[data-add-entry]').forEach((b) => {
+        b.innerHTML = `${icon('plus')}<span class="max-sm:hidden">Add entry</span>`
+      })
+      document.querySelectorAll('button[data-log-meetings][data-ui="button"]:not([data-size="icon"])').forEach((b) => {
+        const narrow = b.closest('[data-show="row"]') ? 'max-sm:hidden' : ''
+        b.innerHTML = `<svg class="prototype-icon" aria-hidden="true"><use href="#icon-calendar-clock" /></svg><span class="${narrow}">Log meetings</span>`
+      })
+      document.querySelectorAll('[data-view]').forEach((b) => {
+        const v = b.dataset.view
+        const label = v === 'list' ? 'List' : 'Calendar'
+        const text = b.hasAttribute('data-icon-only') ? `<span class="tip" role="tooltip">${label}</span>` : label
+        b.innerHTML = `${icon(v === 'list' ? 'list' : 'calendar-days')}${text}`
+      })
+
+      function rowHtml(time, what, project, duration) {
+        return `<li class="flex items-center gap-3 px-4 py-2.5 text-sm">
+          <span class="min-w-0 flex-1 truncate">${escapeHtml(what)}</span>
+          <span class="text-muted-foreground max-sm:hidden">${escapeHtml(project)}</span>
+          <span class="w-28 text-right text-muted-foreground tabular-nums max-sm:hidden">${time}</span>
+          <span class="w-12 text-right tabular-nums">${duration}</span>
+        </li>`
+      }
+      function meetingHtml(time, what) {
+        return `<li class="flex items-center gap-3 border-l-2 border-dashed border-l-primary/60 px-4 py-2.5 text-sm text-muted-foreground">
+          <svg class="prototype-icon" aria-hidden="true"><use href="#icon-calendar-clock" /></svg>
+          <span class="min-w-0 flex-1 truncate">${escapeHtml(what)}</span>
+          <span class="w-28 text-right tabular-nums max-sm:hidden">${time}</span>
+          <button type="button" data-ui="button" data-variant="outline" data-size="sm">Log</button>
+        </li>`
+      }
+      function dayHtml(label, total, rows) {
+        return `<section data-ui="card" class="gap-0 overflow-hidden py-0">
+          <header class="flex items-center justify-between border-b px-4 py-2.5 text-sm">
+            <h2 class="font-medium">${label}</h2><span class="text-muted-foreground tabular-nums">${total}</span>
+          </header>
+          <ul class="divide-y">${rows.join('')}</ul>
+        </section>`
+      }
+      document.getElementById('list-days').innerHTML =
+        dayHtml('Today', '3:15', [
+          meetingHtml('13:00–13:30', 'Design review'),
+          rowHtml('10:00–12:15', 'Calendar integration', 'Snowtime', '2:15'),
+          rowHtml('09:00–10:00', 'Standup and planning', 'Internal', '1:00'),
+        ]) +
+        dayHtml('Wednesday, 4 November', '7:45', [
+          rowHtml('13:00–17:45', 'Header layout', 'Snowtime', '4:45'),
+          rowHtml('09:00–12:00', 'Customer workshop', 'Northwind', '3:00'),
+        ])
+
+      function setView(view) {
+        document.body.dataset.shown = view
+        document.querySelectorAll('[data-view]').forEach((b) => {
+          const on = b.dataset.view === view
+          b.setAttribute('aria-pressed', on)
+          b.toggleAttribute('data-pressed', on)
+        })
+        replaceTagline()
+      }
+      // The frame re-places the tagline when settings change.
+      function replaceTagline() {
+        appFrame.settings.set({})
+      }
+
+      ui.ready.then(() => {
+        try {
+          const saved = localStorage.getItem(DESIGN_KEY)
+          if (saved) document.getElementById('design').value = saved
+        } catch {}
+        document.body.dataset.design = document.getElementById('design').value
+        setView('list')
+
+        document.getElementById('design').addEventListener('change', (event) => {
+          document.body.dataset.design = event.currentTarget.value
+          try {
+            localStorage.setItem(DESIGN_KEY, event.currentTarget.value)
+          } catch {}
+          replaceTagline()
+        })
+        document.getElementById('tagline').addEventListener('change', (event) => {
+          taglineChoice = event.currentTarget.value
+          replaceTagline()
+        })
+        document.addEventListener('click', (event) => {
+          const view = event.target.closest('[data-view]')
+          if (view) setView(view.dataset.view)
+          if (event.target.closest('[data-log-meetings]')) {
+            document.getElementById('log-dialog').showModal()
+          }
+        })
+      })
+    </script>
+  </body>
+</html>

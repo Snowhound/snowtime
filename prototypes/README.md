@@ -1487,6 +1487,32 @@ on request, and out of office greyed. The popover keeps both **Log** (saves at o
 Undo) and **Edit first** (the entry popover filled in). The hatched and band looks and the
 line per day stay switchable for comparison.
 
+### [timer-header.html](timer-header.html) — Timer header
+
+Decision: where the Timer page's actions go so the tagline stays centered beside the title
+with a calendar connected (task 098). The page is the header, the timer bar, and a stub of
+the list and the calendar; the Log meetings dialog is in
+[calendar-events.html](#calendar-eventshtml--calendar-events). As in the app, Log meetings
+is in the header only in List view; the calendar keeps it in its toolbar.
+
+- **A: View switch above the entries.** The title row keeps Add entry and View settings.
+  List | Calendar moves under the timer bar, above what it switches, with Log meetings at the
+  row's other end in List view.
+- **B: Actions on a second row.** The title row holds only the title and tagline, as on
+  Reports. Under it, List | Calendar on the left; Add entry, Log meetings, and View settings
+  on the right.
+- **C: Icons.** One row, with List | Calendar and Log meetings as icon buttons named by
+  tooltips. The app has no Tooltip component yet.
+
+A fourth design, Log meetings in a menu beside Add entry, was dropped: with the view switch's
+labels, that header crowds the tagline at 1440 px even without Log meetings.
+
+Checked on 2026-11-05 in headless Chrome at 1440 and 390 px with this season's tagline, the
+longest English one, and the longest Estonian one, in both views: A, B, and C keep the tagline
+centered at 1440 px, nothing scrolls sideways at 390 px, and there are no browser errors.
+
+Approved on 2026-11-05: **A**, with the row's spacing following compact rows in the app.
+
 ## Adding issues to tracker entries
 
 `timer.html` and the app have an Add issue link in empty Ticket cells in Wide page, a button at the

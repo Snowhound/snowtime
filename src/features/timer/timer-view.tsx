@@ -540,34 +540,10 @@ export function TimerView(props: {
       <div class="relative flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <PageTitle title={m.nav_timer()} />
         <div class="flex items-center gap-2">
-          {/* The view switch leads the actions, set apart from them. */}
-          <ToggleGroup
-            variant="outline"
-            class="mr-2"
-            aria-label={m.timer_view_as()}
-            value={props.settings.timerView}
-            onChange={(value) =>
-              value &&
-              saveSettings.mutate(
-                { timerView: value as Settings['timerView'] },
-                { onError: showError },
-              )
-            }
-          >
-            <ToggleGroupItem value="list" class="gap-1.5">
-              <ListIcon aria-hidden="true" class="size-4" />
-              {m.timer_view_list()}
-            </ToggleGroupItem>
-            <ToggleGroupItem value="calendar" class="gap-1.5">
-              <CalendarDaysIcon aria-hidden="true" class="size-4" />
-              {m.timer_view_calendar()}
-            </ToggleGroupItem>
-          </ToggleGroup>
           <Button
             variant="secondary"
             class="border-input text-primary h-9 border px-3"
             data-entry-trigger
-            aria-label={m.timer_add_entry()}
             onClick={(event) =>
               calendar()
                 ? calendarControls?.addEntry(event.currentTarget)
@@ -575,21 +551,8 @@ export function TimerView(props: {
             }
           >
             <PlusIcon aria-hidden="true" />
-            {/* With Log meetings beside it, a phone's row fits only the icons. */}
-            <span class={cn(logsMeetings() && 'max-sm:hidden')}>{m.timer_add_entry()}</span>
+            {m.timer_add_entry()}
           </Button>
-          <Show when={logsMeetings()}>
-            <Button
-              variant="outline"
-              class="h-9 px-3"
-              aria-haspopup="dialog"
-              aria-label={m.log_meetings()}
-              onClick={() => setLogRange({ from: today(), to: today() })}
-            >
-              <CalendarClockIcon aria-hidden="true" />
-              <span class="max-sm:hidden">{m.log_meetings()}</span>
-            </Button>
-          </Show>
           <ViewPopover settings={props.settings} onError={showError} />
         </div>
       </div>
@@ -637,6 +600,42 @@ export function TimerView(props: {
             !wide() && 'lg:col-start-1 lg:row-start-2',
           )}
         >
+          {/* The view switch above what it switches, closer to it than the timer is. In
+              Calendar view the calendar's toolbar has Log meetings. */}
+          <div class="-mb-2 flex flex-wrap items-center justify-between gap-2">
+            <ToggleGroup
+              variant="outline"
+              aria-label={m.timer_view_as()}
+              value={props.settings.timerView}
+              onChange={(value) =>
+                value &&
+                saveSettings.mutate(
+                  { timerView: value as Settings['timerView'] },
+                  { onError: showError },
+                )
+              }
+            >
+              <ToggleGroupItem value="list" class="gap-1.5">
+                <ListIcon aria-hidden="true" class="size-4" />
+                {m.timer_view_list()}
+              </ToggleGroupItem>
+              <ToggleGroupItem value="calendar" class="gap-1.5">
+                <CalendarDaysIcon aria-hidden="true" class="size-4" />
+                {m.timer_view_calendar()}
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Show when={logsMeetings()}>
+              <Button
+                variant="outline"
+                class="h-9 px-3"
+                aria-haspopup="dialog"
+                onClick={() => setLogRange({ from: today(), to: today() })}
+              >
+                <CalendarClockIcon aria-hidden="true" />
+                {m.log_meetings()}
+              </Button>
+            </Show>
+          </div>
           <Show
             when={calendar()}
             fallback={
