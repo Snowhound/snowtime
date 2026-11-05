@@ -741,6 +741,10 @@ preselected, the least access). The dialog then shows the full key once, selecte
 several keys (one never used, one that never expires), none, a long name, and expiring and
 expired.
 
+The **Calendars** card, between Profile and API keys, connects Google Calendar and sets each
+calendar's Show and Auto-track and each recurring meeting's project (task 097); see
+[calendar-events.html](#calendar-eventshtml--calendar-events). It has its own fixture select.
+
 Omitted: avatar upload, email change, account deletion (users are anonymized, not deleted), and
 active sessions.
 
@@ -1397,6 +1401,91 @@ a day clicked out staying out through a later Until and a switch to Every Tuesda
 repeat hiding the preview, ⌘C and then ⌘V under the pointer, with its hint off the grid,
 Repeat… from the entry menu focusing the field, Paste every Thursday opening the filled
 preview, no horizontal page scroll, and no browser errors.
+
+### [calendar-events.html](calendar-events.html) — Calendar events
+
+Decision: how a user's Google Calendar meetings show beside their time on the Timer page, and
+how they become entries: one at a time, a day or a range at once, or by auto-track (task 097).
+The page is [copy-entries.html](copy-entries.html) with meetings added; the Calendars card is in
+[settings.html](#settingshtml--settings). The app changed some of this after approval: see
+"Changes after the approved prototype" in
+[task 097.02](../tasks/097-calendar-integration/02-connect-and-log.md).
+
+- **Meetings in the week calendar.** A meeting not logged yet is a block set apart from
+  entries, in one of three looks under "Events" in the prototype bar: **outline**, a dashed
+  frame that shares the width with entries (the default); **hatched**, stripes with a light
+  bar; and **band behind**, the day's full width behind the entries, so a meeting never narrows
+  them. In the band only the label opens the meeting, and the rest of it adds time as empty
+  time does. A meeting is gray until its series has a project, then in that project's color. A
+  repeating meeting has a repeat icon and focus time headphones; a declined meeting is struck through and faded, and one shown as free is faded. With a second
+  calendar, a dot in the calendar's color tells them apart. The header's **Meetings** toggle
+  hides them (`calendarEvents`, a proposed user setting).
+- **Out of office** greys its hours behind the entries, or the whole day when it is all day;
+  entries still sit on top and can be added. A timed one has a label at its top that opens it.
+- **All-day events and working locations** sit in a strip under the day headers, shown only
+  when the week has one. An all-day event (not a working location) logs as a day: **Log as a
+  day** in its popover, or its row in Log meetings, adds an 8 h entry from 09:00 on each day
+  it covers, leaving out weekends and holidays when it covers several. Each day's entry has
+  the event's key plus the date. The fixtures' vacation is all-day out of office, with its
+  meetings declined.
+- **A logged meeting is its entry.** The meeting's block goes, and the entry shows a calendar
+  icon before its times and "From your calendar" in its popover. A meeting under way logs to its
+  scheduled end, and the part after now is hatched. A logged meeting that overlaps the running
+  timer has an orange outline, and the status line says that time counts twice, with **Stop the
+  timer at 15:05**. Nothing stops the timer on its own.
+- **The meeting popover** (click, Enter, or right-click) shows the title and time, the calendar,
+  the user's answer, and whether it repeats. **Project** is this log's; for a series it is
+  **Project for this series**, saved at once as the series rule. A project suggested from the
+  latest entry with the same name is selected, with **Keep it for this series**. In an
+  auto-tracked calendar a series also has an **Auto-track this series** switch, and a note says
+  what auto-track does with the meeting. **Log** (or **Log until 15:55**, or **Log ahead**) saves
+  at once with Undo; **Edit first** opens the entry popover filled in.
+- **Log meetings**, in the toolbar and the list's header, opens a dialog: Today, Yesterday, This
+  week, and Last week, or a From–To range of up to 93 days, listed by day. A meeting starts
+  checked when it has started and auto-track would log it; the others can be checked. Logged
+  meetings show their project and can't be checked, all-day events are listed once per day,
+  unchecked, to log as a day, and working locations aren't listed. Each row has its project, for this log only. One
+  save logs up to 100 as one `createEntries`, with one Undo.
+- **Auto-track** is set in the prototype bar: off, on since Monday, or switched on now. **Return
+  to Snowtime** stands for opening the app or returning to its tab. It logs the auto-tracked
+  calendar's meetings that started since auto-track was switched on, at most 14 days back, that
+  aren't logged or deleted, with the series rule's project, and the status line names them with
+  one Undo. Undo and deleting the entry keep the meeting deleted, so auto-track doesn't log it
+  again; logging it by hand brings it back.
+- **List view** (List in the header), reduced to the last seven days, in two variants under
+  "List": **a line per day** under the day's header ("2 meetings not logged: Standup 09:30, …",
+  with **Log…** opening the dialog for that day), or **rows among entries**, a dashed row per
+  meeting at its time with **Log**. Only meetings that have started and that auto-track would log
+  count.
+- **Not connected**: Connect calendar in the toolbar, to Settings. **Reconnect needed**: an
+  orange notice over the calendar with Reconnect; entries are unaffected.
+
+The Settings card lists Google Calendar with its account, Connect, and Disconnect, confirmed in
+a dialog: entries stay, and meetings whose entries were deleted stay deleted after
+reconnecting. Under it are the account's calendars with **Show** and **Auto-track** switches,
+and while auto-track is on, the organization it logs into and since when, with a note when that
+is another organization. **Recurring meetings in <organization>** lists each series rule with
+its project, an auto-track switch, and remove; a rule on an archived project is marked.
+
+Fixtures: typical week (three weeks back unlogged, last week logged, a standup series with a
+rule, a weekly sync with a suggested project, focus time, a lunch shown as free, a declined town
+hall, a sprint review, an unanswered design crit, an afternoon out of office, working locations,
+and an all-day release freeze), meeting under way (with a timer running since before it),
+overlapping meetings, second calendar, long titles, connected with no events, reconnect needed,
+and not connected. The Calendars card has connected, several calendars, auto-tracks into
+another organization, reconnect needed, not connected, and long content.
+
+Checked on 2026-11-02 with agent-browser in Chrome at 1440, 850, and 390 px, every fixture in
+all three looks and every Calendars fixture: no horizontal page scroll and no browser errors.
+Screenshots covered the popover, the dialog at 1440 and 390 px, both list variants, the band
+with overlapping meetings, auto-track logging a meeting under way over the running timer, and
+390 px in light mode.
+
+Approved on 2026-11-03: the **outline** look, **rows among entries** in the list (now the
+default), meetings **gray** until their series has a project, all-day events logged as a day
+on request, and out of office greyed. The popover keeps both **Log** (saves at once, with
+Undo) and **Edit first** (the entry popover filled in). The hatched and band looks and the
+line per day stay switchable for comparison.
 
 ## Adding issues to tracker entries
 
