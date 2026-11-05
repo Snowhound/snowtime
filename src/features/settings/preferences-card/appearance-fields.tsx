@@ -88,13 +88,13 @@ export function AppearanceFields(props: {
       </div>
       <Switch
         class="flex items-center justify-between gap-4"
-        checked={props.settings.compactRows}
-        onChange={(compactRows) => props.onChange({ compactRows })}
+        checked={props.settings.compactButtons}
+        onChange={(compactButtons) => props.onChange({ compactButtons })}
       >
         <div class="grid gap-1">
-          <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
+          <SwitchLabel>{m.settings_compact_buttons()}</SwitchLabel>
           <SwitchDescription class="text-muted-foreground text-sm">
-            {m.settings_compact_rows_description()}
+            {m.settings_compact_buttons_description()}
           </SwitchDescription>
         </div>
         <SwitchControl>
@@ -103,13 +103,13 @@ export function AppearanceFields(props: {
       </Switch>
       <Switch
         class="flex items-center justify-between gap-4"
-        checked={props.settings.compactButtons}
-        onChange={(compactButtons) => props.onChange({ compactButtons })}
+        checked={props.settings.compactRows}
+        onChange={(compactRows) => props.onChange({ compactRows })}
       >
         <div class="grid gap-1">
-          <SwitchLabel>{m.settings_compact_buttons()}</SwitchLabel>
+          <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
           <SwitchDescription class="text-muted-foreground text-sm">
-            {m.settings_compact_buttons_description()}
+            {m.settings_compact_rows_description()}
           </SwitchDescription>
         </div>
         <SwitchControl>

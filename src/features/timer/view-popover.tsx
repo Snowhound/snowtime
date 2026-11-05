@@ -1,5 +1,5 @@
 // The timer's View popover (prototypes/timer.html): the layout, whether the summary shows (in
-// List view only), whether the rows and the header's buttons are compact, and whether the page
+// List view only), whether the header's buttons and the rows are compact, and whether the page
 // is wide.
 // They are user settings, saved through useUpdateSettings, so they change at once here and on
 // the settings page. The theme is in the header's Appearance popover.
@@ -99,20 +99,20 @@ export function ViewPopover(props: { settings: Settings; onError: (error: unknow
         </Show>
         <Switch
           class="flex items-center justify-between gap-4"
-          checked={props.settings.compactRows}
-          onChange={(compactRows) => update({ compactRows })}
+          checked={props.settings.compactButtons}
+          onChange={(compactButtons) => update({ compactButtons })}
         >
-          <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
+          <SwitchLabel>{m.settings_compact_buttons()}</SwitchLabel>
           <SwitchControl>
             <SwitchThumb />
           </SwitchControl>
         </Switch>
         <Switch
           class="flex items-center justify-between gap-4"
-          checked={props.settings.compactButtons}
-          onChange={(compactButtons) => update({ compactButtons })}
+          checked={props.settings.compactRows}
+          onChange={(compactRows) => update({ compactRows })}
         >
-          <SwitchLabel>{m.settings_compact_buttons()}</SwitchLabel>
+          <SwitchLabel>{m.settings_compact_rows()}</SwitchLabel>
           <SwitchControl>
             <SwitchThumb />
           </SwitchControl>
