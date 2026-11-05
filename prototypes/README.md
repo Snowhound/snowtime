@@ -996,6 +996,19 @@ Decided on 2026-11-05: dark glass goes from 70% to 75% of the card color, and li
 stays at 70%. The darker presets match solid but lose too much of the picture; 75% is a
 compromise for now.
 
+Adaptive glass (2026-11-05, proposed): Deep at 40% showed the picture best, but a fixed
+dimming made dark pictures darker than solid, so the cards sank into them. The Adaptive
+preset sets the glass by picture instead, from each dark photo's mean lightness (a table in
+the prototype; the app would measure its blurred copy in `src/lib/scene/glass.ts`). Behind
+the glass the tint mixes in the page color, about 0.925 of the strength on average. A
+picture no lighter there than the card (#142438, lightness 34) keeps 75% glass; one at least
+1.4 times as light gets 40% and is dimmed until it's about as light as the card, but to no
+less than half; in between both scale. Saturation stays 1, since 1.3 made no visible
+difference behind the darkened blur. Over all 28 pictures at both strengths an empty day
+column measured 28 to 39, against 34 on solid; the 75% glass gave up to 44. Autumn is the
+darkest at 28: its sky is light, but the forest behind the cards is dark, which one number per
+picture can't tell apart.
+
 ### [auth.html](auth.html) — Sign-in flows
 
 Decision: layout of the signed-out screens, and how the sign-in methods in

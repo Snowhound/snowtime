@@ -172,6 +172,7 @@
         <option value="dense">Glass: denser (92%)</option>
         <option value="smoked">Glass: smoked (70%, darker blur)</option>
         <option value="deep">Glass: deep (80%, darker, richer)</option>
+        <option value="adaptive">Glass: adaptive (by picture)</option>
       </select>
       <label class="flex items-center gap-2 text-sm">Card
         <input id="glass-mix" type="range" min="40" max="100" step="1" class="w-24" />
@@ -185,6 +186,7 @@
         <input id="glass-sat" type="range" min="0.5" max="2" step="0.05" class="w-24" />
         <span id="glass-sat-value" class="w-9 tabular-nums"></span>
       </label>
+      <span id="glass-adaptive" class="text-xs text-muted-foreground tabular-nums" hidden></span>
       <label class="flex items-center gap-2 text-sm" title="Prototype only: saves fail and roll back">
         <input id="fail-saves" type="checkbox" data-ui="checkbox" />Fail saves
       </label>
@@ -340,11 +342,38 @@
             document.getElementById(`glass-${key}-value`).textContent = value + unit
           }
         }
+        // Adaptive: each dark photo's mean lightness (sRGB luma, 0 to 255, of the 400 px copy),
+        // which the app would measure from the glass's blurred copy instead. Behind the glass the
+        // scene's tint mixes the page color in, about 0.925 of the strength on average (the tint
+        // runs from 70% to 115% of it, top to bottom). A picture no lighter than the card keeps
+        // 75% glass; one at least 1.4 times as light gets 40% and is dimmed until it's about as
+        // light as the card, but no darker than half; in between, both scale with its lightness.
+        const LIGHTNESS = { 'coast-april': 41, 'coast-august': 32, 'coast-december': 26, 'coast-february': 51, 'coast-january': 45, 'coast-july': 43, 'coast-june': 62, 'coast-march': 34, 'coast-may': 40, 'coast-november': 57, 'coast-october': 27, 'coast-september': 48, 'land-april': 19, 'land-august': 28, 'land-december': 42, 'land-february': 60, 'land-january': 37, 'land-july': 30, 'land-june': 33, 'land-march': 34, 'land-may': 32, 'land-november': 26, 'land-october': 28, 'land-september': 38, 'autumn': 78, 'spring': 69, 'summer': 57, 'winter': 77 }
+        const CARD = 34 // #142438
+        const PAGE = 20.5 // #0b1622
+        const TINT = { full: 0.3, dimmed: 0.55 }
+        function adaptive() {
+          const settings = appFrame.settings.get()
+          const id = scene.imageFor(settings)
+          const tint = 0.925 * TINT[settings.sceneStrength ?? 'dimmed']
+          const behind = LIGHTNESS[id] * (1 - tint) + PAGE * tint
+          const x = Math.min(1, Math.max(0, (behind / CARD - 1) / 0.4))
+          const mix = Math.round(75 - 35 * x)
+          const bright = Math.round((1 - x * (1 - Math.max(0.5, CARD / behind))) * 100) / 100
+          const info = document.getElementById('glass-adaptive')
+          info.textContent = `${id}: photo ${LIGHTNESS[id]}, behind the glass ${Math.round(behind)}, card ${CARD}`
+          return { mix, bright, sat: 1 }
+        }
         function preset() {
-          for (const key of Object.keys(sliders)) document.getElementById(`glass-${key}`).value = PRESETS[glass.value][key]
+          const values = glass.value === 'adaptive' ? adaptive() : PRESETS[glass.value]
+          document.getElementById('glass-adaptive').hidden = glass.value !== 'adaptive'
+          for (const key of Object.keys(sliders)) document.getElementById(`glass-${key}`).value = values[key]
           show()
         }
         glass.addEventListener('change', preset)
+        appFrame.on('settings', () => {
+          if (glass.value === 'adaptive') preset()
+        })
         for (const key of Object.keys(sliders)) document.getElementById(`glass-${key}`).addEventListener('input', show)
         preset()
       }
