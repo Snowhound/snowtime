@@ -996,18 +996,17 @@ Decided on 2026-11-05: dark glass goes from 70% to 75% of the card color, and li
 stays at 70%. The darker presets match solid but lose too much of the picture; 75% is a
 compromise for now.
 
-Adaptive glass (2026-11-05, proposed): Deep at 40% showed the picture best, but a fixed
-dimming made dark pictures darker than solid, so the cards sank into them. The Adaptive
-preset sets the glass by picture instead, from each dark photo's mean lightness (a table in
-the prototype; the app would measure its blurred copy in `src/lib/scene/glass.ts`). Behind
-the glass the tint mixes in the page color, about 0.925 of the strength on average. A
-picture no lighter there than the card (#142438, lightness 34) keeps 75% glass; one at least
-1.4 times as light gets 40% and is dimmed until it's about as light as the card, but to no
-less than half; in between both scale. Saturation stays 1, since 1.3 made no visible
-difference behind the darkened blur. Over all 28 pictures at both strengths an empty day
-column measured 28 to 39, against 34 on solid; the 75% glass gave up to 44. Autumn is the
-darkest at 28: its sky is light, but the forest behind the cards is dark, which one number per
-picture can't tell apart.
+Adaptive glass (2026-11-05, proposed): Deep at 40% (40% card color, the scene behind at 0.6
+brightness and 1.3 saturation) showed the picture best, even on night pictures such as Coast
+July, where its windmill's blades stay visible, although it's darker than solid there. Only on
+the darkest pictures did the cards sink in. The Adaptive preset keeps Deep at 40% but dims a
+dark picture less: it measures the picture behind the glass (in the prototype, a table of each
+dark photo's mean lightness, with the tint mixing in the page color at about 0.925 of the
+strength; the app would measure its blurred copy in `src/lib/scene/glass.ts`) and dims it to
+0.6, but not below lightness 22, what Coast July at Full gets at 0.6. Over all 28 pictures at
+both strengths an empty day column measured 23 to 40, most 24 to 30, against 34 on solid; the
+darkest pictures, such as Countryside April, aren't dimmed at all. Two earlier rules, which
+aimed at solid's lightness and kept dark pictures at 75%, hid the picture more than wanted.
 
 ### [auth.html](auth.html) — Sign-in flows
 
