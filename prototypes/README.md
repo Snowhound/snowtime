@@ -974,15 +974,16 @@ Decided on 2026-09-29:
   status line under the grid says "Not saved yet" in orange with "Try again" where Undo
   would be.
 
-Glass test (2026-11-05, open): a user found the dark glass too light behind the calendar. The
-prototype bar's Glass select and sliders set the card color's share of the glass and, in dark
-mode, a brightness and saturation on the blurred scene behind it. Over the lightest scene
-(winter, full strength) an empty day column measured mean lightness 45 on the current glass
-and 34 on solid. Presets, as winter full / autumn dimmed:
+Glass test (2026-11-05): a user found the dark glass too light behind the calendar. The
+prototype bar picks the theme, background, strength, and surfaces on the page, and its Glass
+select and sliders set, in dark mode, the card color's share of the glass and a brightness
+and saturation on the blurred scene behind it. Over the lightest scene (winter, full
+strength) an empty day column measured mean lightness 45 on the 70% glass and 34 on solid. Presets, as winter full / autumn dimmed:
 
 | Preset  | Card | Brightness | Saturation | Winter full | Autumn dimmed |
 | ------- | ---- | ---------- | ---------- | ----------- | ------------- |
-| Current | 70%  | 1          | 1          | 45          | 35            |
+| Before  | 70%  | 1          | 1          | 45          | 35            |
+| Current | 75%  | 1          | 1          | 43          | 35            |
 | Denser  | 92%  | 1          | 1          | 37          | 34            |
 | Smoked  | 70%  | 0.5        | 1.2        | 35          | 29            |
 | Deep    | 80%  | 0.6        | 1.3        | 36          | 32            |
@@ -990,6 +991,10 @@ and 34 on solid. Presets, as winter full / autumn dimmed:
 
 A fixed brightness darkens dark scenes below solid too; the app's blurred copy of the photo
 (`src/lib/scene/glass.ts`) could instead measure each photo and pick its brightness.
+
+Decided on 2026-11-05: dark glass goes from 70% to 75% of the card color, and light glass
+stays at 70%. The darker presets match solid but lose too much of the picture; 75% is a
+compromise for now.
 
 ### [auth.html](auth.html) — Sign-in flows
 

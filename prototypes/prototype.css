@@ -200,6 +200,9 @@ body[data-scene-bg='on'][data-surfaces='glass'] :is([data-ui='card'], .surface) 
   background-color: color-mix(in srgb, var(--card) 70%, transparent);
   backdrop-filter: blur(24px);
 }
+.dark body[data-scene-bg='on'][data-surfaces='glass'] :is([data-ui='card'], .surface) {
+  background-color: color-mix(in srgb, var(--card) 75%, transparent);
+}
 body[data-scene-bg='on'] :is([data-ui='card'], .surface) {
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
 }

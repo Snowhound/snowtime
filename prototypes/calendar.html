@@ -119,14 +119,14 @@
       .cal-pulse {
         animation: cal-pulse 1.6s ease-in-out infinite;
       }
-      /* Glass test (2026-11-05): how dark the glass is. The sliders set the card color's share
-         and, in dark mode, a brightness and saturation on the blurred scene behind it. */
+      /* Glass test (2026-11-05): how dark the glass is. In dark mode, the sliders set the card
+         color's share and a brightness and saturation on the blurred scene behind it. */
       body {
-        --glass-mix: 70%;
+        --glass-mix: 75%;
         --glass-bright: 1;
         --glass-sat: 1;
       }
-      body[data-scene-bg='on'][data-surfaces='glass'][data-glass] :is([data-ui='card'], .surface) {
+      .dark body[data-scene-bg='on'][data-surfaces='glass'][data-glass] :is([data-ui='card'], .surface) {
         background-color: color-mix(in srgb, var(--card) var(--glass-mix), transparent);
         backdrop-filter: blur(24px);
       }
@@ -149,9 +149,26 @@
         <option value="long">Long content</option>
         <option value="empty">Empty</option>
       </select>
+      <label for="test-theme" class="sr-only">Theme</label>
+      <select id="test-theme" data-ui="select" class="h-9 w-28">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <label for="test-image" class="sr-only">Background</label>
+      <select id="test-image" data-ui="select" class="h-9 w-52"></select>
+      <label for="test-strength" class="sr-only">Strength</label>
+      <select id="test-strength" data-ui="select" class="h-9 w-32">
+        <option value="dimmed">Dimmed</option>
+        <option value="full">Full</option>
+      </select>
+      <label for="test-surfaces" class="sr-only">Surfaces</label>
+      <select id="test-surfaces" data-ui="select" class="h-9 w-28">
+        <option value="glass">Glass</option>
+        <option value="solid">Solid</option>
+      </select>
       <label for="glass" class="sr-only">Glass</label>
       <select id="glass" data-ui="select" class="h-9 w-56">
-        <option value="current">Glass: current (70%)</option>
+        <option value="current">Glass: current (75% dark)</option>
         <option value="dense">Glass: denser (92%)</option>
         <option value="smoked">Glass: smoked (70%, darker blur)</option>
         <option value="deep">Glass: deep (80%, darker, richer)</option>
@@ -269,10 +286,46 @@
     <script>
       appFrame.mount({ page: 'timer', title: 'Timer calendar', scene: true })
 
+      // Glass test: the theme, background, strength, and surfaces on the page, to compare the
+      // glass over each picture without opening the settings.
+      {
+        const months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+        const title = (word) => word[0].toUpperCase() + word.slice(1)
+        const images = [
+          ...['winter', 'spring', 'summer', 'autumn'].map((id) => ['mountains', id, `Mountains: ${title(id)}`]),
+          ...months.map((m) => ['countryside', `land-${m}`, `Countryside: ${title(m)}`]),
+          ...months.map((m) => ['coast', `coast-${m}`, `Coast: ${title(m)}`]),
+        ]
+        const image = document.getElementById('test-image')
+        image.innerHTML = images.map(([c, id, label]) => `<option value="${c}:${id}">${label}</option>`).join('')
+        const fields = {
+          'test-theme': (v) => ({ theme: v }),
+          'test-image': (v) => {
+            const [collection, pin] = v.split(':')
+            return { sceneCollection: collection, scenePin: pin, sceneSeason: collection === 'mountains' ? pin : 'auto', sceneBackground: true }
+          },
+          'test-strength': (v) => ({ sceneStrength: v }),
+          'test-surfaces': (v) => ({ surfaces: v }),
+        }
+        function read() {
+          const s = appFrame.settings.get()
+          document.getElementById('test-theme').value = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+          const pin = s.scenePin ?? (s.sceneSeason in { winter: 1, spring: 1, summer: 1, autumn: 1 } ? s.sceneSeason : null)
+          if (pin) image.value = `${s.sceneCollection ?? 'mountains'}:${pin}`
+          document.getElementById('test-strength').value = s.sceneStrength ?? 'dimmed'
+          document.getElementById('test-surfaces').value = s.surfaces ?? 'glass'
+        }
+        for (const [id, patch] of Object.entries(fields)) {
+          document.getElementById(id).addEventListener('change', (event) => appFrame.settings.set(patch(event.target.value)))
+        }
+        appFrame.on('settings', read)
+        read()
+      }
+
       // Glass test: presets fill the sliders, which set the card's share and the blur's tone.
       {
         const PRESETS = {
-          current: { mix: 70, bright: 1, sat: 1 },
+          current: { mix: 75, bright: 1, sat: 1 },
           dense: { mix: 92, bright: 1, sat: 1 },
           smoked: { mix: 70, bright: 0.5, sat: 1.2 },
           deep: { mix: 80, bright: 0.6, sat: 1.3 },
