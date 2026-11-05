@@ -409,6 +409,11 @@ html[data-intro='pending'] body {
   background-color: var(--glass-color);
   backdrop-filter: var(--glass-blur);
 }
+/* Dark glass takes more of the card color: over a light picture, 70% read too light behind the
+   calendar (prototypes/README.md, calendar.html). */
+.dark [data-scene-bg='on'][data-surfaces='glass'] .surface {
+  --glass-color: color-mix(in srgb, var(--card) 75%, transparent);
+}
 [data-scene-bg='on'] .surface {
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
 }
