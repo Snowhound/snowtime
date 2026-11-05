@@ -169,11 +169,13 @@ Entries share one shape in every answer. A running entry has `stoppedAt: null`.
   "description": "Landing page",
   "ticket": "WEB-12",
   "startedAt": "2026-10-03T07:05:03.642Z",
-  "stoppedAt": null
+  "stoppedAt": null,
+  "calendarEvent": null
 }
 ```
 
-`projectId` and `ticket` can be null. An entry lasts at most 24 hours; a timer left
+`projectId` and `ticket` can be null. `calendarEvent` is the key of the calendar event the
+entry was logged from, or null. An entry lasts at most 24 hours; a timer left
 running longer stops at 24 hours when it is stopped.
 
 ### `GET /api/v1/me`

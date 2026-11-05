@@ -2,21 +2,24 @@ import { useNavigate } from '@tanstack/solid-router'
 import { Show, createSignal, onMount } from 'solid-js'
 import { PageTitle } from '~/components/page-title'
 import { buttonVariants } from '~/components/ui/button'
+import { calendarsQuery } from '~/lib/queries/calendar'
 import { sessionQuery } from '~/lib/queries/session'
 import { signInMethodsQuery } from '~/lib/queries/sign-in-methods'
 import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { ApiKeysCard } from './api-keys-card/api-keys-card'
+import { CalendarsCard } from './calendars-card/calendars-card'
 import { PreferencesCard } from './preferences-card/preferences-card'
 import { ProfileCard } from './profile-card'
 import { linkErrorMessage } from './sign-in-methods-list'
 
 // Preferences come first because they change most often; Profile holds the name and
-// the sign-in methods, and API keys come last (prototypes/settings.html).
+// the sign-in methods, then Calendars, and API keys come last (prototypes/settings.html).
 export function SettingsPage(props: { initialError?: string }) {
   const session = useQuery(() => sessionQuery)
   const methods = useQuery(() => signInMethodsQuery)
+  const calendars = useQuery(() => calendarsQuery)
   const navigate = useNavigate()
 
   // A failed link comes back with ?error=; the message stays, the parameter goes, so a
@@ -62,6 +65,16 @@ export function SettingsPage(props: { initialError?: string }) {
                 {m.settings_profile()}
               </a>
             </li>
+            <Show when={calendars.data?.available}>
+              <li>
+                <a
+                  href="#calendars"
+                  class={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start')}
+                >
+                  {m.settings_calendars()}
+                </a>
+              </li>
+            </Show>
             <li>
               <a
                 href="#api-keys"
@@ -84,6 +97,7 @@ export function SettingsPage(props: { initialError?: string }) {
                 methods={methods.data ?? []}
                 linkError={linkError()}
               />
+              <CalendarsCard timeZone={data().settings?.timeZone ?? 'UTC'} />
               <ApiKeysCard timeZone={data().settings?.timeZone ?? 'UTC'} />
             </div>
           )}

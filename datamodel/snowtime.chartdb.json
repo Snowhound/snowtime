@@ -3178,6 +3178,23 @@
           "scale": null,
           "default": null,
           "comments": "Optional ticket key, such as NBW-412, found in the description when it is committed. One per entry. Format checked in the app."
+        },
+        {
+          "id": "t14f13",
+          "name": "calendar_event",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Key of the calendar event the entry was logged from, such as google:<calendar>:<event>, plus :<date> for an all-day event logged as a day. References no table, so it outlives the connection."
         }
       ],
       "indexes": [
@@ -3249,6 +3266,18 @@
           "createdAt": 1700000000000,
           "isPrimaryKey": false,
           "comments": "Entries for one ticket within a report range."
+        },
+        {
+          "id": "t14i5",
+          "name": "time_entry_user_id_calendar_event_idx",
+          "unique": true,
+          "fieldIds": [
+            "t14f2",
+            "t14f13"
+          ],
+          "createdAt": 1700000000000,
+          "isPrimaryKey": false,
+          "comments": "Partial: WHERE calendar_event IS NOT NULL. An event is logged once per user, across organizations. Covers deleted rows, so a deleted log stays deleted until the user logs the event again."
         }
       ],
       "color": "#59A14F",
@@ -3257,6 +3286,524 @@
       "comments": "A span of tracked time. A row with stopped_at null is the running timer; elapsed time is computed on the client and never written periodically.",
       "order": 14,
       "parentAreaId": "a2"
+    },
+    {
+      "id": "t15",
+      "name": "calendar_connection",
+      "schema": "main",
+      "x": 2676,
+      "y": 64,
+      "fields": [
+        {
+          "id": "t15f0",
+          "name": "id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t15f1",
+          "name": "user_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "ON DELETE CASCADE."
+        },
+        {
+          "id": "t15f2",
+          "name": "provider",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "google. Routes and schemas name no provider."
+        },
+        {
+          "id": "t15f3",
+          "name": "account_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "The provider account id; for Google, the primary calendar id."
+        },
+        {
+          "id": "t15f4",
+          "name": "account_email",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Shown in Settings."
+        },
+        {
+          "id": "t15f5",
+          "name": "access_token",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Encrypted, AES-GCM with a key derived from BETTER_AUTH_SECRET. Never in an API answer."
+        },
+        {
+          "id": "t15f6",
+          "name": "refresh_token",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Encrypted as access_token."
+        },
+        {
+          "id": "t15f7",
+          "name": "access_token_expires_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Epoch ms, UTC. Refreshed a minute before."
+        },
+        {
+          "id": "t15f8",
+          "name": "scope",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Scopes the provider granted."
+        },
+        {
+          "id": "t15f9",
+          "name": "status",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "'connected'",
+          "comments": "connected, or reconnect once the provider refused a refresh."
+        },
+        {
+          "id": "t15f10",
+          "name": "created_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Epoch ms, set by the database."
+        },
+        {
+          "id": "t15f11",
+          "name": "created_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Audit. Acting user, set by the app per request."
+        },
+        {
+          "id": "t15f12",
+          "name": "updated_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Set by the app on update; trigger fallback."
+        },
+        {
+          "id": "t15f13",
+          "name": "updated_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Audit. Acting user of the last change, set by the app."
+        }
+      ],
+      "indexes": [
+        {
+          "id": "t15i0",
+          "name": "calendar_connection_user_id_provider_account_id_idx",
+          "unique": true,
+          "fieldIds": [
+            "t15f1",
+            "t15f2",
+            "t15f3"
+          ],
+          "createdAt": 1700000000000,
+          "isPrimaryKey": false,
+          "comments": "One connection per user and provider account."
+        }
+      ],
+      "color": "#F28E2B",
+      "isView": false,
+      "createdAt": 1700000000000,
+      "comments": "A user link to a calendar provider account, with its own OAuth flow; not a sign-in method. Deleted physically on disconnect, after the token is revoked.",
+      "order": 15,
+      "parentAreaId": "a3"
+    },
+    {
+      "id": "t16",
+      "name": "calendar_source",
+      "schema": "main",
+      "x": 2960,
+      "y": 64,
+      "fields": [
+        {
+          "id": "t16f0",
+          "name": "id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": true,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t16f1",
+          "name": "connection_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "ON DELETE CASCADE."
+        },
+        {
+          "id": "t16f2",
+          "name": "provider_calendar_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "The calendar id at the provider."
+        },
+        {
+          "id": "t16f3",
+          "name": "name",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t16f4",
+          "name": "color",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": null
+        },
+        {
+          "id": "t16f5",
+          "name": "is_primary",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comments": "Boolean. The account primary calendar."
+        },
+        {
+          "id": "t16f6",
+          "name": "shown",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "0",
+          "comments": "Boolean. Its events show in the timer. A new connection shows its primary calendar."
+        },
+        {
+          "id": "t16f7",
+          "name": "auto_track_organization_id",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Null while auto-track is off (subtask 097.04). One organization per calendar. ON DELETE SET NULL."
+        },
+        {
+          "id": "t16f8",
+          "name": "auto_track_since",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": true,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Epoch ms, UTC. When auto-track was switched on."
+        },
+        {
+          "id": "t16f9",
+          "name": "created_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Epoch ms, set by the database."
+        },
+        {
+          "id": "t16f10",
+          "name": "created_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Audit. Acting user, set by the app per request."
+        },
+        {
+          "id": "t16f11",
+          "name": "updated_at",
+          "type": {
+            "id": "integer",
+            "name": "integer"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": "CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)",
+          "comments": "Audit. Set by the app on update; trigger fallback."
+        },
+        {
+          "id": "t16f12",
+          "name": "updated_by",
+          "type": {
+            "id": "text",
+            "name": "text"
+          },
+          "primaryKey": false,
+          "unique": false,
+          "nullable": false,
+          "createdAt": 1700000000000,
+          "characterMaximumLength": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comments": "Audit. Acting user of the last change, set by the app."
+        }
+      ],
+      "indexes": [
+        {
+          "id": "t16i0",
+          "name": "calendar_source_connection_id_provider_calendar_id_idx",
+          "unique": true,
+          "fieldIds": [
+            "t16f1",
+            "t16f2"
+          ],
+          "createdAt": 1700000000000,
+          "isPrimaryKey": false,
+          "comments": "One row per calendar."
+        }
+      ],
+      "color": "#F28E2B",
+      "isView": false,
+      "createdAt": 1700000000000,
+      "comments": "A calendar of a connection. Deleted with its connection.",
+      "order": 16,
+      "parentAreaId": "a3"
     }
   ],
   "relationships": [
@@ -3636,6 +4183,97 @@
       "sourceCardinality": "many",
       "targetCardinality": "one",
       "createdAt": 1700000000000
+    },
+    {
+      "id": "r29",
+      "name": "calendar_connection_user_id_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t15",
+      "targetTableId": "t0",
+      "sourceFieldId": "t15f1",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r30",
+      "name": "calendar_connection_created_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t15",
+      "targetTableId": "t0",
+      "sourceFieldId": "t15f11",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r31",
+      "name": "calendar_connection_updated_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t15",
+      "targetTableId": "t0",
+      "sourceFieldId": "t15f13",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r32",
+      "name": "calendar_source_connection_id_calendar_connection_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t16",
+      "targetTableId": "t15",
+      "sourceFieldId": "t16f1",
+      "targetFieldId": "t15f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r33",
+      "name": "calendar_source_auto_track_organization_id_organization_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t16",
+      "targetTableId": "t6",
+      "sourceFieldId": "t16f7",
+      "targetFieldId": "t6f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r34",
+      "name": "calendar_source_created_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t16",
+      "targetTableId": "t0",
+      "sourceFieldId": "t16f10",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
+    },
+    {
+      "id": "r35",
+      "name": "calendar_source_updated_by_user_id",
+      "sourceSchema": "main",
+      "targetSchema": "main",
+      "sourceTableId": "t16",
+      "targetTableId": "t0",
+      "sourceFieldId": "t16f12",
+      "targetFieldId": "t0f0",
+      "sourceCardinality": "many",
+      "targetCardinality": "one",
+      "createdAt": 1700000000000
     }
   ],
   "areas": [
@@ -3668,6 +4306,16 @@
       "height": 900,
       "color": "#59A14F",
       "order": 2
+    },
+    {
+      "id": "a3",
+      "name": "calendar",
+      "x": 2644,
+      "y": 0,
+      "width": 572,
+      "height": 490,
+      "color": "#F28E2B",
+      "order": 3
     }
   ],
   "createdAt": "2023-11-14T22:13:20.000Z",

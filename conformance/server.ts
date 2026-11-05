@@ -4,6 +4,7 @@
 // TypeScript app and serve it as the perf harnesses do (perf/lib/app.ts).
 import * as auth from '~/lib/api/auth'
 import * as availability from '~/lib/api/availability'
+import * as calendar from '~/lib/api/calendar'
 import * as entries from '~/lib/api/entries'
 import * as projects from '~/lib/api/projects'
 import * as reports from '~/lib/api/reports'
@@ -44,6 +45,7 @@ export async function serverUnderTest(): Promise<ServerUnderTest> {
 const calls = {
   ...auth,
   ...availability,
+  ...calendar,
   ...entries,
   ...projects,
   ...reports,

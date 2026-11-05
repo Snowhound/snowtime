@@ -7,7 +7,7 @@ import { member, timeEntry } from '~/db/schema'
 import { AppError } from '../errors'
 import { limits } from '../limits.server'
 import { assertUsableProject } from '../projects/projects.server'
-import { allInOrder, failedConstraint, live } from '../queries.server'
+import { allInOrder, failedConstraint, live, notDeleted } from '../queries.server'
 import { isAdmin, readableUserIds, type Scope } from '../scope.server'
 import { MAX_ENTRY_MS } from './entries.schemas'
 import type {
@@ -30,6 +30,7 @@ export const entryColumns = {
   ticket: timeEntry.ticket,
   startedAt: timeEntry.startedAt,
   stoppedAt: timeEntry.stoppedAt,
+  calendarEvent: timeEntry.calendarEvent,
 }
 
 function assertCanWrite(scope: Scope, userId: string) {
@@ -119,7 +120,29 @@ async function assertBatchRoom(
 }
 
 // The constraint errors an insert of manual entries can meet.
+// A user logs a calendar event once. A key on a live entry is refused; one on a deleted entry
+// moves to the new entry, since the user asks for it again. The unique index refuses a
+// second tab that logs the same key in between (insertError).
+async function claimCalendarEvents(db: Executor, userId: string, keys: string[]) {
+  if (!keys.length) return
+  if (new Set(keys).size < keys.length) throw new AppError('CONFLICT', 'calendar_event_logged')
+  const where = and(eq(timeEntry.userId, userId), inArray(timeEntry.calendarEvent, keys))
+  const [logged] = await db
+    .select({ id: timeEntry.id })
+    .from(timeEntry)
+    .where(and(where, notDeleted(timeEntry)))
+    .limit(1)
+  if (logged) throw new AppError('CONFLICT', 'calendar_event_logged')
+  await db
+    .update(timeEntry)
+    .set({ calendarEvent: null })
+    .where(and(where, eq(timeEntry.sysDeleted, true)))
+}
+
 function insertError(error: unknown) {
+  if (failedConstraint(error) === 'time_entry.user_id, time_entry.calendar_event') {
+    return new AppError('CONFLICT', 'calendar_event_logged')
+  }
   if (failedConstraint(error) === 'time_entry.id') {
     return new AppError('CONFLICT', 'entry_id_taken')
   }
@@ -140,6 +163,7 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
   ])
 
   try {
+    if (input.calendarEvent) await claimCalendarEvents(db, userId, [input.calendarEvent])
     const [entry] = await db
       .insert(timeEntry)
       .values({
@@ -151,6 +175,7 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
         ticket: input.ticket ?? null,
         startedAt: input.startedAt,
         stoppedAt: input.stoppedAt,
+        calendarEvent: input.calendarEvent ?? null,
       })
       .returning(entryColumns)
     return entry
@@ -160,16 +185,23 @@ export async function createEntry(db: Database, scope: Scope, input: CreateEntry
 }
 
 // Entries of the same work at several times, all or none: one transaction holds the checks
-// and the insert. Answers them in input order. A retried call ends on the first id, with
+// and the insert. An entry's own description, project, ticket, and calendar event replace
+// the call's, as when logging several meetings. Answers them in input order. A retried call ends on the first id, with
 // entry_id_taken, after the first call saved them all.
 export async function createEntries(db: Database, scope: Scope, input: CreateEntriesInput) {
   const userId = input.userId ?? scope.userId
   assertCanWrite(scope, userId)
+  function projectOf(e: CreateEntriesInput['entries'][number]) {
+    return e.projectId === undefined ? input.projectId : e.projectId
+  }
+  const projectIds = [...new Set(input.entries.map(projectOf).filter((id) => !!id))] as string[]
+  const keys = input.entries.flatMap((e) => (e.calendarEvent ? [e.calendarEvent] : []))
   try {
     const created = await db.transaction(async (tx) => {
       await allInOrder([
         userId !== scope.userId && assertMember(tx, scope, userId),
-        input.projectId && assertUsableProject(tx, scope, input.projectId),
+        ...projectIds.map((id) => assertUsableProject(tx, scope, id)),
+        claimCalendarEvents(tx, userId, keys),
         assertBatchRoom(
           tx,
           scope.organizationId,
@@ -184,11 +216,12 @@ export async function createEntries(db: Database, scope: Scope, input: CreateEnt
             id: e.id,
             organizationId: scope.organizationId,
             userId,
-            projectId: input.projectId ?? null,
-            description: input.description,
-            ticket: input.ticket ?? null,
+            projectId: projectOf(e) ?? null,
+            description: e.description ?? input.description,
+            ticket: (e.ticket === undefined ? input.ticket : e.ticket) ?? null,
             startedAt: e.startedAt,
             stoppedAt: e.stoppedAt,
+            calendarEvent: e.calendarEvent ?? null,
           })),
         )
         .returning(entryColumns)

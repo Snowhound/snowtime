@@ -39,6 +39,7 @@ function setup() {
     ticket: null,
     startedAt: new Date(Date.now() - 65_000),
     stoppedAt: null,
+    calendarEvent: null,
     project: null,
   }
   return { queryClient, setTitle, setUserId, running, ...view }

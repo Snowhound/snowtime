@@ -13,6 +13,7 @@ const entry = {
   ticket: null,
   startedAt: new Date('2026-10-07T08:30:00Z'),
   stoppedAt: new Date('2026-10-07T09:00:00Z'),
+  calendarEvent: null,
 } satisfies Entry
 
 test('a pending row shows Not saved over Try again in place of Saved', () => {

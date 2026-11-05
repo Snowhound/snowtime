@@ -332,11 +332,14 @@ entries, including archived and deleted records. It includes the users and audit
 actors those records require, and company users' settings and login accounts.
 Shared users' other company memberships and work are excluded. Verification
 challenges are always excluded from a company import because they cannot be
-reliably assigned to one company. New unknown tables cause company filtering to
+reliably assigned to one company. Calendar connections are excluded too: a user's
+calendar can auto-track into another company, and its tokens are sealed with the source's
+`BETTER_AUTH_SECRET`, so users connect their calendars again. New unknown tables cause company filtering to
 fail until the importer is updated.
 
 Clearing sessions and OAuth tokens defaults to yes. OAuth account links and
-password hashes remain, so users can authenticate again. Passkey cleanup defaults
+password hashes remain, so users can authenticate again. Clearing OAuth tokens also drops
+calendar connections, whose tokens can't be cleared alone. Passkey cleanup defaults
 to yes for a different hostname and no for the same hostname; passkeys tied to the
 old hostname need registration again. Use a new `BETTER_AUTH_SECRET` for this
 instance and clear old sessions. The importer verifies migration hashes, copies

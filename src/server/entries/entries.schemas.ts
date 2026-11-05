@@ -1,4 +1,5 @@
 import * as v from 'valibot'
+import { CalendarEventKey } from '../calendar/calendar.schemas'
 import { Description, Ticket, Timestamp, Uuidv7, keyed } from '../schemas'
 
 // The longest an entry runs. Stopping a timer ends it here at the latest, so the queries of
@@ -31,9 +32,10 @@ const work = {
   ticket: v.optional(Ticket),
 }
 
-// A manual, finished entry.
+// A manual, finished entry. calendarEvent is the key of the calendar event it logs; a user
+// logs each key once.
 export const CreateEntryInput = v.pipe(
-  v.object({ ...work, ...times }),
+  v.object({ ...work, ...times, calendarEvent: v.optional(CalendarEventKey) }),
   v.forward(
     v.partialCheck(
       [['startedAt'], ['stoppedAt']],
@@ -46,8 +48,16 @@ export const CreateEntryInput = v.pipe(
 )
 export type CreateEntryInput = v.InferOutput<typeof CreateEntryInput>
 
+// An entry's own description, project, ticket, or calendar event replace the call's, so
+// one call logs several meetings, each with its own.
 const EntryTimes = v.pipe(
-  v.object(times),
+  v.object({
+    ...times,
+    projectId: v.nullish(Uuidv7),
+    description: v.optional(Description),
+    ticket: v.optional(Ticket),
+    calendarEvent: v.optional(CalendarEventKey),
+  }),
   v.forward(
     v.partialCheck(
       [['startedAt'], ['stoppedAt']],
@@ -130,5 +140,6 @@ export const Entry = v.object({
   ticket: v.nullable(v.string()),
   startedAt: Timestamp,
   stoppedAt: v.nullable(Timestamp),
+  calendarEvent: v.nullable(v.string()),
 })
 export type Entry = v.InferOutput<typeof Entry>

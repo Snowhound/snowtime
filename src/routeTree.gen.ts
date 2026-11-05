@@ -21,6 +21,7 @@ import { Route as OrgProjectsRouteImport } from './routes/$org/projects'
 import { Route as OrgReportsRouteImport } from './routes/$org/reports'
 import { Route as OrgSettingsRouteImport } from './routes/$org/settings'
 import { Route as OrgTimerRouteImport } from './routes/$org/timer'
+import { Route as CalendarCallbackRouteImport } from './routes/calendar.callback'
 import { Route as InvitationIdRouteImport } from './routes/invitation.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiBenchHeapRouteImport } from './routes/api/bench/heap'
@@ -86,6 +87,11 @@ const OrgTimerRoute = OrgTimerRouteImport.update({
   path: '/timer',
   getParentRoute: () => OrgRoute,
 } as any)
+const CalendarCallbackRoute = CalendarCallbackRouteImport.update({
+  id: '/calendar/callback',
+  path: '/calendar/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InvitationIdRoute = InvitationIdRouteImport.update({
   id: '/invitation/$id',
   path: '/invitation/$id',
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/$org/reports': typeof OrgReportsRoute
   '/$org/settings': typeof OrgSettingsRoute
   '/$org/timer': typeof OrgTimerRoute
+  '/calendar/callback': typeof CalendarCallbackRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/$org/reports': typeof OrgReportsRoute
   '/$org/settings': typeof OrgSettingsRoute
   '/$org/timer': typeof OrgTimerRoute
+  '/calendar/callback': typeof CalendarCallbackRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/$org': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/$org/reports': typeof OrgReportsRoute
   '/$org/settings': typeof OrgSettingsRoute
   '/$org/timer': typeof OrgTimerRoute
+  '/calendar/callback': typeof CalendarCallbackRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/$org/reports'
     | '/$org/settings'
     | '/$org/timer'
+    | '/calendar/callback'
     | '/invitation/$id'
     | '/$org/'
     | '/api/auth/$'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/$org/reports'
     | '/$org/settings'
     | '/$org/timer'
+    | '/calendar/callback'
     | '/invitation/$id'
     | '/$org'
     | '/api/auth/$'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/$org/reports'
     | '/$org/settings'
     | '/$org/timer'
+    | '/calendar/callback'
     | '/invitation/$id'
     | '/$org/'
     | '/api/auth/$'
@@ -224,6 +236,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  CalendarCallbackRoute: typeof CalendarCallbackRoute
   InvitationIdRoute: typeof InvitationIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBenchHeapRoute: typeof ApiBenchHeapRoute
@@ -316,6 +329,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof OrgTimerRouteImport
       parentRoute: typeof OrgRoute
     }
+    '/calendar/callback': {
+      id: '/calendar/callback'
+      path: '/calendar/callback'
+      fullPath: '/calendar/callback'
+      preLoaderRoute: typeof CalendarCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invitation/$id': {
       id: '/invitation/$id'
       path: '/invitation/$id'
@@ -374,6 +394,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  CalendarCallbackRoute: CalendarCallbackRoute,
   InvitationIdRoute: InvitationIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBenchHeapRoute: ApiBenchHeapRoute,

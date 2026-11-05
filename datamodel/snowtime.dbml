@@ -274,6 +274,7 @@ Table time_entry [note: 'A span of tracked time. A row with stopped_at null is t
   updated_by text [not null, ref: > user.id, note: 'Audit. Acting user of the last change, set by the app.']
   sys_deleted integer [not null, default: 0, note: 'Audit. Logical delete, CHECK 0 or 1. Deleted rows are excluded everywhere, reports included.']
   ticket text [note: 'Optional ticket key, such as NBW-412, found in the description when it is committed. One per entry. Format checked in the app.']
+  calendar_event text [note: 'Key of the calendar event the entry was logged from, such as google:<calendar>:<event>, plus :<date> for an all-day event logged as a day. References no table, so it outlives the connection.']
 
   indexes {
     user_id [unique, note: 'Partial: WHERE stopped_at IS NULL AND sys_deleted = 0. At most one running timer per user across all organizations.']
@@ -281,6 +282,51 @@ Table time_entry [note: 'A span of tracked time. A row with stopped_at null is t
     (organization_id, started_at, sys_deleted, stopped_at, user_id, project_id, ticket) [note: 'Organization-wide reports by time range.']
     project_id
     (organization_id, ticket, started_at) [note: 'Entries for one ticket within a report range.']
+    (user_id, calendar_event) [unique, note: 'Partial: WHERE calendar_event IS NOT NULL. An event is logged once per user, across organizations. Covers deleted rows, so a deleted log stays deleted until the user logs the event again.']
+  }
+}
+
+// --- Calendar (task 097) ---------------------------------------------------------------
+// A user connects calendar accounts; events are read from the provider and never stored.
+
+Table calendar_connection [note: 'A user link to a calendar provider account, with its own OAuth flow; not a sign-in method. Deleted physically on disconnect, after the token is revoked.'] {
+  id text [pk]
+  user_id text [not null, ref: > user.id, note: 'ON DELETE CASCADE.']
+  provider text [not null, note: 'google. Routes and schemas name no provider.']
+  account_id text [not null, note: 'The provider account id; for Google, the primary calendar id.']
+  account_email text [not null, note: 'Shown in Settings.']
+  access_token text [not null, note: 'Encrypted, AES-GCM with a key derived from BETTER_AUTH_SECRET. Never in an API answer.']
+  refresh_token text [not null, note: 'Encrypted as access_token.']
+  access_token_expires_at integer [not null, note: 'Epoch ms, UTC. Refreshed a minute before.']
+  scope text [not null, note: 'Scopes the provider granted.']
+  status text [not null, default: 'connected', note: 'connected, or reconnect once the provider refused a refresh.']
+  created_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Epoch ms, set by the database.']
+  created_by text [not null, ref: > user.id, note: 'Audit. Acting user, set by the app per request.']
+  updated_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Set by the app on update; trigger fallback.']
+  updated_by text [not null, ref: > user.id, note: 'Audit. Acting user of the last change, set by the app.']
+
+  indexes {
+    (user_id, provider, account_id) [unique, note: 'One connection per user and provider account.']
+  }
+}
+
+Table calendar_source [note: 'A calendar of a connection. Deleted with its connection.'] {
+  id text [pk]
+  connection_id text [not null, ref: > calendar_connection.id, note: 'ON DELETE CASCADE.']
+  provider_calendar_id text [not null, note: 'The calendar id at the provider.']
+  name text [not null]
+  color text
+  is_primary integer [not null, default: 0, note: 'Boolean. The account primary calendar.']
+  shown integer [not null, default: 0, note: 'Boolean. Its events show in the timer. A new connection shows its primary calendar.']
+  auto_track_organization_id text [ref: > organization.id, note: 'Null while auto-track is off (subtask 097.04). One organization per calendar. ON DELETE SET NULL.']
+  auto_track_since integer [note: 'Epoch ms, UTC. When auto-track was switched on.']
+  created_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Epoch ms, set by the database.']
+  created_by text [not null, ref: > user.id, note: 'Audit. Acting user, set by the app per request.']
+  updated_at integer [not null, default: `CAST(ROUND(unixepoch('subsec') * 1000) AS INTEGER)`, note: 'Audit. Set by the app on update; trigger fallback.']
+  updated_by text [not null, ref: > user.id, note: 'Audit. Acting user of the last change, set by the app.']
+
+  indexes {
+    (connection_id, provider_calendar_id) [unique, note: 'One row per calendar.']
   }
 }
 
@@ -306,4 +352,9 @@ TableGroup tracking [color: #59A14F] {
   project
   project_team
   time_entry
+}
+
+TableGroup calendar [color: #F28E2B] {
+  calendar_connection
+  calendar_source
 }

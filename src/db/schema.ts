@@ -16,6 +16,10 @@ import { DEFAULT_COPY_PATTERN } from '~/lib/duration-pattern-settings'
 import { COUNTRIES } from '~/lib/holidays/region'
 import { COLLECTION_IDS, IMAGE_IDS } from '~/lib/scene/images'
 import {
+  CALENDAR_CONNECTION_STATUSES,
+  CALENDAR_PROVIDERS,
+} from '~/server/calendar/calendar.schemas'
+import {
   COPY_DURATION_CONTROLS,
   DATE_FORMATS,
   DURATION_FORMATS,
@@ -468,6 +472,8 @@ export const timeEntry = sqliteTable(
     ...updatedAudit(),
     ...sysDeleted(),
     ticket: text(),
+    // Added by a later migration. The key of the calendar event the entry was logged from.
+    calendarEvent: text('calendar_event'),
   },
   (t) => [
     foreignKey({
@@ -503,6 +509,72 @@ export const timeEntry = sqliteTable(
       t.organizationId,
       t.ticket,
       t.startedAt,
+    ),
+    uniqueIndex('time_entry_user_id_calendar_event_unique')
+      .on(t.userId, t.calendarEvent)
+      .where(sql`calendar_event IS NOT NULL`),
+  ],
+)
+
+// Calendars (task 097) ------------------------------------------------------------------------
+
+export const calendarConnection = sqliteTable(
+  'calendar_connection',
+  {
+    id: text().primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    provider: text({ enum: CALENDAR_PROVIDERS }).notNull(),
+    accountId: text('account_id').notNull(),
+    accountEmail: text('account_email').notNull(),
+    // Encrypted (src/server/calendar/tokens.server.ts).
+    accessToken: text('access_token').notNull(),
+    refreshToken: text('refresh_token').notNull(),
+    accessTokenExpiresAt: timestamp('access_token_expires_at').notNull(),
+    scope: text().notNull(),
+    status: text({ enum: CALENDAR_CONNECTION_STATUSES }).default('connected').notNull(),
+    ...createdAudit(),
+    ...updatedAudit(),
+  },
+  (t) => [
+    uniqueIndex('calendar_connection_user_id_provider_account_id_unique').on(
+      t.userId,
+      t.provider,
+      t.accountId,
+    ),
+  ],
+)
+
+export const calendarSource = sqliteTable(
+  'calendar_source',
+  {
+    id: text().primaryKey(),
+    connectionId: text('connection_id')
+      .notNull()
+      .references(() => calendarConnection.id, { onDelete: 'cascade' }),
+    providerCalendarId: text('provider_calendar_id').notNull(),
+    name: text().notNull(),
+    color: text(),
+    isPrimary: integer('is_primary', { mode: 'boolean' })
+      .default(sql`0`)
+      .notNull(),
+    shown: integer({ mode: 'boolean' })
+      .default(sql`0`)
+      .notNull(),
+    autoTrackOrganizationId: text('auto_track_organization_id').references(() => organization.id, {
+      onDelete: 'set null',
+    }),
+    autoTrackSince: timestamp('auto_track_since'),
+    ...createdAudit(),
+    ...updatedAudit(),
+  },
+  (t) => [
+    check('calendar_source_is_primary', sql`is_primary IN (0, 1)`),
+    check('calendar_source_shown', sql`shown IN (0, 1)`),
+    uniqueIndex('calendar_source_connection_id_provider_calendar_id_unique').on(
+      t.connectionId,
+      t.providerCalendarId,
     ),
   ],
 )

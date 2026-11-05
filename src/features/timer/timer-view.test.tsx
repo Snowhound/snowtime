@@ -115,6 +115,7 @@ function entry(daysAgo: number, start: string, end: string, description: string)
     ticket: null,
     startedAt: new Date(atLocalTime(date, start, zone)),
     stoppedAt: new Date(atLocalTime(date, end, zone)),
+    calendarEvent: null,
   }
 }
 

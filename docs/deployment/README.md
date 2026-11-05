@@ -127,6 +127,23 @@ operator, so a stack someone else runs changes `COMPANY` in
 Copy each provider's client ID and secret. GitHub shows a client secret only once, right
 after you generate it.
 
+### Calendars
+
+Connecting a Google calendar (`../architecture/calendar.md`) uses the Google sign-in client
+with a redirect of its own. The feature is off until `GOOGLE_CLIENT_ID` and
+`GOOGLE_CLIENT_SECRET` are set. In the Google Cloud console:
+
+- Under **Clients**, add the redirect URI `https://<host>/calendar/callback`, plus
+  `http://localhost:3100/calendar/callback` for local development. It is an app page, not
+  an `/api/auth` path.
+- Enable the **Google Calendar API** under **APIs & Services > Library**.
+- Under **Google Auth Platform > Data Access**, add the scopes
+  `https://www.googleapis.com/auth/calendar.calendarlist.readonly` and
+  `https://www.googleapis.com/auth/calendar.events.readonly`.
+- While the app's publishing status is **Testing**, add each user who connects a calendar
+  under **Audience > Test users**. Publishing an app with these scopes needs Google's
+  verification (task 097.05).
+
 ## Check the deployment
 
 - Sign in with each configured provider, and create an organization.

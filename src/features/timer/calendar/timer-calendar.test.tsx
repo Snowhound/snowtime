@@ -110,6 +110,7 @@ const review: Entry = {
   ticket: null,
   startedAt: at('2026-09-28', '09:00'),
   stoppedAt: at('2026-09-28', '10:30'),
+  calendarEvent: null,
 }
 
 function renderView() {

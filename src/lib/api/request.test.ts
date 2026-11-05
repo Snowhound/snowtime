@@ -16,6 +16,7 @@ const entry = {
   ticket: null,
   startedAt: '2026-09-30T06:00:00.000Z',
   stoppedAt: null,
+  calendarEvent: null,
 }
 
 // Answers every request with `body` and records what was asked.
