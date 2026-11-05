@@ -845,6 +845,52 @@ summary,
 .cal-pulse {
   animation: cal-pulse 1.6s ease-in-out infinite;
 }
+/* A calendar meeting not logged yet (prototypes/calendar-events.html, the outline look): a
+   dashed frame that shares the width with entries, gray until its series has a project. */
+.cal-event {
+  --ev: var(--muted-foreground);
+  @apply text-muted-foreground absolute z-10 flex flex-col overflow-hidden rounded-md px-1.5 py-0.5 text-left text-xs leading-tight outline-none select-none;
+  border: 1.5px dashed color-mix(in oklab, var(--ev) 65%, transparent);
+  background-color: color-mix(in oklab, var(--card) 82%, transparent);
+}
+.cal-event:hover {
+  background-color: color-mix(in oklab, var(--ev) 10%, var(--card));
+}
+.cal-event:focus-visible,
+.cal-event[data-open] {
+  @apply ring-ring ring-offset-background ring-2 ring-offset-1;
+}
+.cal-event[data-short] {
+  @apply justify-center py-0 text-[11px] leading-none;
+}
+.cal-event[data-declined] .cal-event-title {
+  @apply line-through;
+}
+.cal-event[data-declined],
+.cal-event[data-free] {
+  opacity: 0.6;
+}
+/* Out of office: its hours greyed behind the entries, which still sit on top and can be added. */
+.cal-away {
+  @apply pointer-events-none absolute inset-x-0;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--muted-foreground) 16%, transparent) 0 1px,
+      transparent 1px 7px
+    ),
+    color-mix(in oklab, var(--muted) 80%, transparent);
+}
+.cal-away-label {
+  @apply bg-card/90 text-muted-foreground hover:text-foreground focus-visible:ring-ring pointer-events-auto absolute top-1 left-1 z-[5] flex max-w-[calc(100%-0.5rem)] items-center gap-1 rounded-sm px-1 py-px text-[11px] outline-none focus-visible:ring-2;
+}
+/* All-day events and working locations, in a strip over the grid. */
+.cal-chip {
+  @apply text-muted-foreground hover:bg-accent focus-visible:ring-ring flex min-w-0 items-center gap-1 rounded-sm border border-dashed px-1.5 py-0.5 text-left text-[11px] leading-tight outline-none focus-visible:ring-2;
+}
+.cal-chip[data-kind='working_location'] {
+  @apply border-transparent;
+}
 /* A day in the entry popover's copy panel (prototypes/copy-entries.html). */
 .copy-day {
   @apply hover:bg-accent focus-visible:ring-ring relative flex h-8 items-center justify-center rounded-md text-sm tabular-nums outline-none focus-visible:ring-2;

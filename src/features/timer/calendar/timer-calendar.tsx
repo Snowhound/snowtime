@@ -6,14 +6,19 @@
 // Each change is one optimistic mutation (../queries.ts), and the status line under the grid
 // names it with an Undo.
 import { keepPreviousData } from '@tanstack/solid-query'
+import { Link } from '@tanstack/solid-router'
+import CalendarClockIcon from 'lucide-solid/icons/calendar-clock'
 import ClipboardPasteIcon from 'lucide-solid/icons/clipboard-paste'
 import CopyIcon from 'lucide-solid/icons/copy'
 import CopyPlusIcon from 'lucide-solid/icons/copy-plus'
 import PencilIcon from 'lucide-solid/icons/pencil'
 import PlusIcon from 'lucide-solid/icons/plus'
+import RefreshCwIcon from 'lucide-solid/icons/refresh-cw'
 import RepeatIcon from 'lucide-solid/icons/repeat'
 import TrashIcon from 'lucide-solid/icons/trash'
 import { For, Show, createEffect, createMemo, createSignal, on, onCleanup, onMount } from 'solid-js'
+import { Alert, AlertDescription } from '~/components/ui/alert'
+import { Button, buttonVariants } from '~/components/ui/button'
 import { Card } from '~/components/ui/card'
 import {
   type IsoDate,
@@ -34,9 +39,21 @@ import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import type { CalendarEvent } from '~/server/calendar/calendar.schemas'
 import type { UpdateEntryInput } from '~/server/entries/entries.schemas'
 import { changedFields, entryLabel, lastEnded } from '../entries'
 import { EntryPopover, type EntryPopoverTarget, type EntryPopoverValues } from '../entry-popover'
+import {
+  AllDayStrip,
+  AwayShade,
+  EventBlock,
+  type MeetingItem,
+  meetingTitle,
+} from '../meetings/event-block'
+import { EventPopover, type EventTarget } from '../meetings/event-popover'
+import { type LogChoice, LogDialog } from '../meetings/log-dialog'
+import { createMeetingState } from '../meetings/meeting-state'
+import { suggestProject, workOf } from '../meetings/meetings'
 import {
   type Entry,
   type RunningTimer,
@@ -57,6 +74,7 @@ import { createOpeningScroll } from './opening-scroll'
 import { type MenuItem, PointMenu, copyKeys, isShortcut, pasteKeys } from './point-menu'
 import {
   CLICK_MINUTES,
+  type Placed,
   type Range,
   SNAP_MINUTES,
   addRange,
@@ -93,6 +111,10 @@ type Menu = { x: number; y: number } & ({ entry: Entry } | { start: number })
 // The entry's values of the fields a patch changes.
 function before(entry: Entry, patch: Patch): Patch {
   return Object.fromEntries(Object.keys(patch).map((key) => [key, entry[key as keyof Patch]]))
+}
+
+function isMeeting(piece: Placed<Entry | MeetingItem>): piece is Placed<MeetingItem> {
+  return 'event' in piece.entry
 }
 
 // What the page's Add entry button does in Calendar view.
@@ -184,7 +206,7 @@ export function TimerCalendar(props: {
   const columns = createMemo(() => (narrow() ? [shownDay()] : dates()))
 
   function keysOn(date: IsoDate) {
-    return (placed().get(date) ?? []).map((p) => p.key)
+    return (laid().get(date) ?? []).map((p) => p.key)
   }
   function totalFor(date: IsoDate) {
     return (placed().get(date) ?? []).reduce((sum, p) => sum + p.to - p.from, 0)
@@ -195,6 +217,76 @@ export function TimerCalendar(props: {
     return total
   }
 
+  // Calendar meetings (task 097.02): the shown calendars' events of the week, beside the
+  // entries. A meeting logged here is its entry, so only unlogged ones are drawn.
+  const region = createMemo(() => userRegion(props.settings))
+  const {
+    connected,
+    entryKeys,
+    stateOf,
+    shownEvents,
+    loggablesOf,
+    sourceOf,
+    dotOf,
+    needsReconnect,
+    refresh: refreshEvents,
+  } = createMeetingState({
+    get organizationId() {
+      return props.organizationId
+    },
+    range,
+    entries,
+    zone,
+    region,
+  })
+  const meetings = createMemo<MeetingItem[]>(() =>
+    shownEvents()
+      .filter((e) => !e.allDay && e.kind !== 'out_of_office' && stateOf(e.key) !== 'here')
+      .map((event) => ({
+        id: `event:${event.key}`,
+        startedAt: event.startedAt,
+        stoppedAt: event.stoppedAt,
+        event,
+      })),
+  )
+  // Entries and meetings share each day's width where they overlap.
+  const laid = createMemo(
+    () =>
+      new Map(
+        days().map((date) => [
+          date,
+          sideBySide<Entry | MeetingItem>([
+            ...piecesOn<Entry | MeetingItem>(entries(), date, zone(), now()),
+            ...piecesOn<Entry | MeetingItem>(meetings(), date, zone(), now()),
+          ]),
+        ]),
+      ),
+  )
+  function awayOn(date: IsoDate) {
+    const away = shownEvents().filter((e) => e.kind === 'out_of_office')
+    return piecesOn(
+      away.map((event) => ({
+        id: event.key,
+        startedAt: event.startedAt,
+        stoppedAt: event.stoppedAt,
+        event,
+      })),
+      date,
+      zone(),
+      now(),
+    )
+  }
+  const allDay = createMemo(() => shownEvents().filter((e) => e.allDay))
+  function allDayOn(date: IsoDate) {
+    const day = { from: startOfDay(date, zone()), to: startOfDay(addDays(date, 1), zone()) }
+    return allDay().filter(
+      (e) => e.startedAt.getTime() < day.to && e.stoppedAt.getTime() > day.from,
+    )
+  }
+  function allLogged(event: CalendarEvent) {
+    const days = loggablesOf(event)
+    return days.length > 0 && days.every((d) => stateOf(d.key) === 'here')
+  }
   function clock(): Intl.DateTimeFormatOptions {
     const cycle = hourCycle()
     return { hour: cycle === 'h23' ? '2-digit' : 'numeric', minute: '2-digit', hourCycle: cycle }
@@ -323,6 +415,47 @@ export function TimerCalendar(props: {
     return ids
   }
 
+  // Meetings logged together in one createEntries, each with its title, project, and key, so
+  // one Undo takes them back.
+  function logMeetings(choices: readonly LogChoice[]) {
+    if (!choices.length) return
+    const entries = choices.map(({ item, projectId }) => ({
+      id: newId(),
+      startedAt: new Date(item.startedAt),
+      stoppedAt: new Date(item.stoppedAt),
+      projectId,
+      ...workOf(item.event),
+      calendarEvent: item.key,
+    }))
+    const ids = entries.map((e) => e.id)
+    createEntries.mutate({ description: '', entries }, { ...handlers, onSettled: refreshEvents })
+    const titles = [...new Set(choices.map((c) => meetingTitle(c.item.event)))]
+    const spans = choices.map(({ item }) => item)
+    setStatus({
+      text:
+        titles.length === 1
+          ? m.meeting_logged_one({ title: titles[0], when: daysText(spans) })
+          : m.meeting_logged_many({ count: choices.length, titles: titles.join(', ') }),
+      undo: () => deleteEntries.mutate({ ids }, { ...handlers, onSettled: refreshEvents }),
+    })
+    flash(...ids)
+  }
+
+  // The meeting popover.
+  const [eventTarget, setEventTarget] = createSignal<EventTarget | null>(null)
+  function openEvent(key: string, anchor: HTMLElement) {
+    const event = shownEvents().find((e) => e.key === key)
+    if (!event) return
+    setEditor(null)
+    setEventTarget({ event, anchor })
+  }
+  function suggest(event: CalendarEvent) {
+    return suggestProject(event, [...props.recent, ...entries()], props.projects)
+  }
+
+  // Log meetings, on today or a list day's range.
+  const [logRange, setLogRange] = createSignal<{ from: IsoDate; to: IsoDate } | null>(null)
+
   // A copy beside the original, at the same time, so a drag or Alt+arrows moves it to its day.
   // It takes focus once it shows.
   function duplicate(entry: StoppedEntry) {
@@ -406,7 +539,7 @@ export function TimerCalendar(props: {
 
   // A new slot takes the project of the entry that ended last before it; a paste that repeats
   // takes the copied work and fills the copy panel by its pattern.
-  function openSlot(slot: Range, button?: HTMLElement, paste?: { work: Work; copy: Pattern }) {
+  function openSlot(slot: Range, button?: HTMLElement, paste?: { work: Work; copy?: Pattern }) {
     const last = lastEnded([...props.recent, ...entries()], { before: slot.startedAt })
     returnTo = () => button
     setEditor({
@@ -506,14 +639,20 @@ export function TimerCalendar(props: {
 
   function remove(entry: StoppedEntry) {
     setEditor(null)
-    deleteEntry.mutate({ id: entry.id }, handlers)
+    // A logged meeting's entry frees the meeting, which shows again once the events are read.
+    const settled = entry.calendarEvent ? { onSettled: refreshEvents } : {}
+    deleteEntry.mutate({ id: entry.id }, { ...handlers, ...settled })
     setStatus({
       text: m.calendar_deleted({ description: entryLabel(entry) }),
-      // A deleted row keeps its id, so the entry comes back as a new one.
+      // A deleted row keeps its id, so the entry comes back as a new one, with the meeting.
       undo: () => {
         const id = newId()
         const { description, ticket, projectId, startedAt, stoppedAt } = entry
-        createEntry.mutate({ id, description, ticket, projectId, startedAt, stoppedAt }, handlers)
+        const calendarEvent = entry.calendarEvent ?? undefined
+        createEntry.mutate(
+          { id, description, ticket, projectId, startedAt, stoppedAt, calendarEvent },
+          { ...handlers, ...settled },
+        )
         flash(id)
       },
     })
@@ -708,6 +847,11 @@ export function TimerCalendar(props: {
   }
 
   function click(event: MouseEvent) {
+    const meeting = (event.target as HTMLElement).closest<HTMLElement>('[data-event]')
+    if (meeting) {
+      openEvent(meeting.dataset.event!, meeting)
+      return
+    }
     const block = (event.target as HTMLElement).closest<HTMLElement>('[data-entry]')
     const entry = block && findEntry(block.dataset.entry)
     if (!entry || drag.suppressesClick() || entry.id === editingId()) return
@@ -800,7 +944,49 @@ export function TimerCalendar(props: {
         onToday={() => goToWeek(thisWeek(), today())}
         onWeekend={(shown) => saveSettings.mutate({ calendarWeekend: shown }, handlers)}
         onDay={setDay}
+        actions={
+          <Show when={connected()}>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-haspopup="dialog"
+              onClick={() => setLogRange({ from: today(), to: today() })}
+            >
+              <CalendarClockIcon aria-hidden="true" />
+              {m.log_meetings()}
+            </Button>
+          </Show>
+        }
       />
+      <Show when={connected() && needsReconnect()}>
+        <Alert
+          variant="warning"
+          class="flex items-center gap-3 rounded-none border-x-0 border-t-0 py-2 [&>svg]:static [&>svg]:shrink-0 [&>svg+div]:translate-y-0 [&>svg~*]:pl-0"
+        >
+          <RefreshCwIcon aria-hidden="true" />
+          <AlertDescription class="flex flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <span>{m.meetings_reconnect()}</span>
+            <Link
+              from="/$org"
+              to="/$org/settings"
+              hash="calendars"
+              class={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-7')}
+            >
+              {m.settings_calendars_reconnect()}
+            </Link>
+          </AlertDescription>
+        </Alert>
+      </Show>
+      <Show when={columns().some((date) => allDayOn(date).length > 0)}>
+        <div
+          onClick={(event) => {
+            const chip = (event.target as HTMLElement).closest<HTMLElement>('[data-event]')
+            if (chip) openEvent(chip.dataset.event!, chip)
+          }}
+        >
+          <AllDayStrip columns={columns()} eventsOn={allDayOn} logged={allLogged} />
+        </div>
+      </Show>
       <div
         ref={scroller}
         class="h-[max(24rem,min(40rem,calc(100dvh-17rem)))] overflow-y-auto overscroll-contain"
@@ -843,34 +1029,62 @@ export function TimerCalendar(props: {
                 data-today={date === today() ? '' : undefined}
                 aria-label={formatIsoDate(date, { weekday: 'long', day: 'numeric', month: 'long' })}
               >
+                <For each={awayOn(date)}>
+                  {(away) => (
+                    <AwayShade
+                      event={away.entry.event}
+                      top={away.top}
+                      bottom={away.bottom}
+                      formatTime={formatTime}
+                    />
+                  )}
+                </For>
                 <For each={keysOn(date)}>
                   {(key) => (
                     <Show
-                      when={placed()
+                      when={laid()
                         .get(date)
                         ?.find((p) => p.key === key)}
                     >
-                      {(piece) => (
-                        <CalendarBlock
-                          piece={piece()}
-                          projects={props.projects}
-                          formatTime={formatTime}
-                          now={now()}
-                          editing={editingId() === piece().entry.id}
-                          dragging={
-                            !!drag.state()?.active &&
-                            !drag.state()?.copy &&
-                            drag.state()?.entryId === piece().entry.id
+                      {(laidPiece) => (
+                        <Show
+                          when={!isMeeting(laidPiece()) && (laidPiece() as Placed<Entry>)}
+                          fallback={
+                            <EventBlock
+                              piece={laidPiece() as Placed<MeetingItem>}
+                              formatTime={formatTime}
+                              now={now()}
+                              open={
+                                eventTarget()?.event.key ===
+                                (laidPiece() as Placed<MeetingItem>).entry.event.key
+                              }
+                              dot={dotOf((laidPiece() as Placed<MeetingItem>).entry.event)}
+                            />
                           }
-                          flash={flashIds().has(piece().entry.id)}
-                          pressed={
-                            !!drag.state()?.pressed &&
-                            !drag.state()?.active &&
-                            drag.state()?.entryId === piece().entry.id
-                          }
-                          focus={focusId() === piece().entry.id}
-                          onFocused={() => setFocusId(null)}
-                        />
+                        >
+                          {(piece) => (
+                            <CalendarBlock
+                              piece={piece()}
+                              projects={props.projects}
+                              formatTime={formatTime}
+                              now={now()}
+                              editing={editingId() === piece().entry.id}
+                              dragging={
+                                !!drag.state()?.active &&
+                                !drag.state()?.copy &&
+                                drag.state()?.entryId === piece().entry.id
+                              }
+                              flash={flashIds().has(piece().entry.id)}
+                              pressed={
+                                !!drag.state()?.pressed &&
+                                !drag.state()?.active &&
+                                drag.state()?.entryId === piece().entry.id
+                              }
+                              focus={focusId() === piece().entry.id}
+                              onFocused={() => setFocusId(null)}
+                            />
+                          )}
+                        </Show>
                       )}
                     </Show>
                   )}
@@ -914,6 +1128,46 @@ export function TimerCalendar(props: {
           setEditor(null)
         }}
       />
+      <EventPopover
+        target={eventTarget()}
+        loggables={loggablesOf}
+        stateOf={stateOf}
+        source={sourceOf}
+        projects={props.projects}
+        zone={zone()}
+        now={now()}
+        runningSince={props.running?.startedAt.getTime() ?? null}
+        formatTime={formatTime}
+        suggest={suggest}
+        onLog={(items, projectId) => {
+          setEventTarget(null)
+          logMeetings(items.map((item) => ({ item, projectId })))
+        }}
+        onClose={() => setEventTarget(null)}
+      />
+      <Show when={logRange()} keyed>
+        {(initial) => (
+          <LogDialog
+            open
+            initial={initial}
+            organizationId={props.organizationId}
+            zone={zone()}
+            region={region()}
+            weekStart={weekStart()}
+            today={today()}
+            now={now()}
+            projects={props.projects}
+            entryKeys={entryKeys()}
+            formatTime={formatTime}
+            suggest={suggest}
+            onLog={(choices) => {
+              setLogRange(null)
+              logMeetings(choices)
+            }}
+            onClose={() => setLogRange(null)}
+          />
+        )}
+      </Show>
       {/* Keyed, so a right-click elsewhere while one is open opens a new menu there. */}
       <Show when={menu()} keyed>
         {(open) => {

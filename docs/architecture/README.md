@@ -11,6 +11,7 @@ of the code keeps; the rest is by area:
   internationalization, error pages, the performance harnesses, and Server-Timing
 - [reports.md](reports.md): report export, entries, views, and ticket keys
 - [timer.md](timer.md): the timer calendar, date and time fields, and user settings
+- [calendar.md](calendar.md): connecting a calendar, its tokens, and logging its events
 - [scene.md](scene.md): the seasonal scene, its glass, weather, and intro
 - [taglines.md](taglines.md): the page tagline and how it picks its lines
 

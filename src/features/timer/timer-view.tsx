@@ -5,9 +5,11 @@
 // timer.
 import { keepPreviousData } from '@tanstack/solid-query'
 import { Link } from '@tanstack/solid-router'
+import CalendarClockIcon from 'lucide-solid/icons/calendar-clock'
 import CalendarDaysIcon from 'lucide-solid/icons/calendar-days'
 import ListIcon from 'lucide-solid/icons/list'
 import PlusIcon from 'lucide-solid/icons/plus'
+import Undo2Icon from 'lucide-solid/icons/undo-2'
 import {
   For,
   Match,
@@ -22,11 +24,12 @@ import {
 import { ErrorAlert } from '~/components/error-alert'
 import { PageTitle } from '~/components/page-title'
 import { Button } from '~/components/ui/button'
+import { Card } from '~/components/ui/card'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
 import { addDays, localDate, startOfDay } from '~/lib/calendar'
-import { useFormatHours } from '~/lib/display-format'
+import { useFormatHours, useHourCycle } from '~/lib/display-format'
 import { errorMessage } from '~/lib/errors'
-import { formatIsoDate } from '~/lib/format'
+import { formatDateTime, formatIsoDate, formatIsoDateRange } from '~/lib/format'
 import { userRegion } from '~/lib/holidays/region'
 import { projectsQuery } from '~/lib/queries/projects'
 import { newId } from '~/lib/queries/query'
@@ -36,6 +39,8 @@ import { runningTimerQuery } from '~/lib/queries/timer'
 import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import type { CalendarEvent } from '~/server/calendar/calendar.schemas'
+import { formatRange } from './calendar/calendar-block'
 import { type CalendarControls, TimerCalendar } from './calendar/timer-calendar'
 import {
   RECENT_DAYS,
@@ -46,9 +51,14 @@ import {
   summarize,
 } from './entries'
 import type { EntryPatch } from './entry-fields'
-import { EmptyState, EntryList } from './entry-list'
+import { EmptyState, EntryList, type ListMeetings } from './entry-list'
 import { EntryPopover, type EntryPopoverTarget, type EntryPopoverValues } from './entry-popover'
 import { EntryTable } from './entry-table'
+import { meetingTitle } from './meetings/event-block'
+import { EventPopover, type EventTarget } from './meetings/event-popover'
+import { type LogChoice, LogDialog } from './meetings/log-dialog'
+import { createMeetingState } from './meetings/meeting-state'
+import { type Loggable, skipReason, suggestProject, timedLog, workOf } from './meetings/meetings'
 import {
   type Entry,
   type StoppedEntry,
@@ -56,6 +66,7 @@ import {
   firstEntryQuery,
   useCreateEntries,
   useCreateEntry,
+  useDeleteEntries,
   useDeleteEntry,
   useStartTimer,
   useStopTimer,
@@ -96,6 +107,8 @@ function EarlierInReports() {
     </For>
   )
 }
+
+const UNDONE_MS = 4000
 
 export function TimerView(props: {
   organizationId: string
@@ -175,6 +188,7 @@ export function TimerView(props: {
   const deleteEntry = useDeleteEntry(keys)
   const createEntry = useCreateEntry(keys)
   const createEntries = useCreateEntries(keys)
+  const deleteEntries = useDeleteEntries(keys)
 
   const [error, setError] = createSignal<string | null>(null)
   // The entry popover's form and the button it opens under.
@@ -199,8 +213,49 @@ export function TimerView(props: {
     (entries.data ?? []).filter((e): e is StoppedEntry => e.stoppedAt !== null),
   )
   const groups = createMemo(() => groupByDay(stopped(), zone()))
+
+  // Calendar meetings (task 097.02): in the Bar and Focus layouts, each meeting of the loaded
+  // days that started and isn't logged is a row among its day's entries.
+  const region = createMemo(() => userRegion(props.settings))
+  const meetingState = createMeetingState({
+    get organizationId() {
+      return props.organizationId
+    },
+    range,
+    entries: stopped,
+    zone,
+    region,
+  })
+  function logsMeetings() {
+    return !calendar() && meetingState.connected()
+  }
+  function listsMeetings() {
+    return !calendar() && layout() !== 'table' && meetingState.connected()
+  }
+  const unlogged = createMemo(() => {
+    const byDay = new Map<string, CalendarEvent[]>()
+    if (!listsMeetings()) return byDay
+    for (const event of meetingState.shownEvents()) {
+      if (skipReason(event) || event.startedAt.getTime() > now()) continue
+      // A meeting whose entry was deleted shows again, as the calendar does, to log anew.
+      const state = meetingState.stateOf(event.key)
+      if (state === 'here' || state === 'elsewhere') continue
+      const date = localDate(event.startedAt.getTime(), zone())
+      byDay.set(date, [...(byDay.get(date) ?? []), event])
+    }
+    return byDay
+  })
+  // Days with an unlogged meeting and no entries show too, with no time.
+  const listGroups = createMemo(() => {
+    const dates = new Set(groups().map((g) => g.date))
+    const empty = [...unlogged().keys()]
+      .filter((date) => !dates.has(date))
+      .map((date) => ({ date, entries: [], total: 0 }))
+    if (!empty.length) return groups()
+    return [...groups(), ...empty].sort((a, b) => b.date.localeCompare(a.date))
+  })
   function shownGroups() {
-    return layout() === 'focus' ? groups().slice(0, FOCUS_DAYS) : groups()
+    return layout() === 'focus' ? listGroups().slice(0, FOCUS_DAYS) : listGroups()
   }
 
   // Earlier time exists when the earliest entry starts before the loaded days.
@@ -280,7 +335,9 @@ export function TimerView(props: {
 
   function remove(entry: Entry) {
     setError(null)
-    deleteEntry.mutate({ id: entry.id }, options)
+    // A logged meeting's entry frees the meeting, whose row shows again once the events are read.
+    const settled = entry.calendarEvent ? { onSettled: meetingState.refresh } : {}
+    deleteEntry.mutate({ id: entry.id }, { ...options, ...settled })
   }
 
   function save({ copies, ...values }: EntryPopoverValues) {
@@ -326,6 +383,116 @@ export function TimerView(props: {
     setSavedIds((ids) => new Set(ids).add(id))
   }
 
+  const hourCycle = useHourCycle()
+  function formatTime(ms: number) {
+    const cycle = hourCycle()
+    return formatDateTime(ms, zone(), {
+      hour: cycle === 'h23' ? '2-digit' : 'numeric',
+      minute: '2-digit',
+      hourCycle: cycle,
+    })
+  }
+  // What the last meeting log did, with its Undo, above the list.
+  const [logged, setLogged] = createSignal<{ text: string; undo?: () => void } | null>(null)
+  // "Undone." goes after a moment; a log's Undo stays until the next log.
+  let undoneTimer: ReturnType<typeof setTimeout> | undefined
+  onCleanup(() => clearTimeout(undoneTimer))
+  function showUndone() {
+    const undone = { text: m.calendar_undone() }
+    setLogged(undone)
+    clearTimeout(undoneTimer)
+    undoneTimer = setTimeout(() => setLogged((now) => (now === undone ? null : now)), UNDONE_MS)
+  }
+  // "Tue 09:00–10:30" for one meeting, "5 days, 6–12 Oct" for an all-day event's days.
+  function loggedText(items: readonly Loggable[]) {
+    const titles = [...new Set(items.map((i) => meetingTitle(i.event)))]
+    if (titles.length > 1) {
+      return m.meeting_logged_many({ count: items.length, titles: titles.join(', ') })
+    }
+    const [first] = items
+    if (items.length === 1) {
+      const weekday = formatDateTime(first.startedAt, zone(), { weekday: 'short' })
+      const when = `${weekday} ${formatRange(formatTime, first.startedAt, first.stoppedAt)}`
+      return m.meeting_logged_one({ title: titles[0], when })
+    }
+    const dates = items.map((i) => localDate(i.startedAt, zone())).sort()
+    const range = formatIsoDateRange(dates[0], dates.at(-1)!, { day: 'numeric', month: 'short' })
+    return m.meeting_logged_one({
+      title: titles[0],
+      when: m.calendar_days({ count: items.length, range }),
+    })
+  }
+  // A meeting logged from its row or popover: its entries' rows show Undo until the next change.
+  const [rowUndo, setRowUndo] = createSignal<{ ids: Set<string>; run: () => void } | null>(null)
+  // Meetings logged together in one createEntries, each with its title, project, and key, so
+  // one Undo takes them back: on the entries' rows, or for the dialog above the list.
+  function logMeetings(choices: readonly LogChoice[], onRows = false) {
+    if (!choices.length) return
+    setError(null)
+    const entries = choices.map(({ item, projectId }) => ({
+      id: newId(),
+      startedAt: new Date(item.startedAt),
+      stoppedAt: new Date(item.stoppedAt),
+      projectId,
+      ...workOf(item.event),
+      calendarEvent: item.key,
+    }))
+    createEntries.mutate(
+      { description: '', entries },
+      {
+        onError: (e) => {
+          setLogged(null)
+          setRowUndo(null)
+          showError(e)
+        },
+        onSuccess: () => entries.forEach((e) => markSaved(e.id)),
+        onSettled: meetingState.refresh,
+      },
+    )
+    const ids = entries.map((e) => e.id)
+    function undo() {
+      deleteEntries.mutate({ ids }, { ...options, onSettled: meetingState.refresh })
+    }
+    if (onRows) {
+      setLogged(null)
+      setRowUndo({
+        ids: new Set(ids),
+        run: () => {
+          setRowUndo(null)
+          undo()
+        },
+      })
+      return
+    }
+    setRowUndo(null)
+    setLogged({
+      text: loggedText(choices.map((c) => c.item)),
+      undo: () => {
+        showUndone()
+        undo()
+      },
+    })
+  }
+  function suggest(event: CalendarEvent) {
+    return suggestProject(event, stopped(), projects.data ?? [])
+  }
+  const [eventTarget, setEventTarget] = createSignal<EventTarget | null>(null)
+  const [logRange, setLogRange] = createSignal<{ from: string; to: string } | null>(null)
+  const listMeetings: ListMeetings = {
+    on: (date) => unlogged().get(date) ?? [],
+    formatTime,
+    onOpen: (event, anchor) => {
+      setEditor(null)
+      setEventTarget({ event, anchor })
+    },
+    now,
+    onLog: (event, untilNow) => {
+      const item = timedLog(event)
+      if (untilNow) item.stoppedAt = Date.now()
+      logMeetings([{ item, projectId: suggest(event) }], true)
+    },
+  }
+
   const listProps = {
     get tickets() {
       return recentTickets(stopped())
@@ -354,10 +521,12 @@ export function TimerView(props: {
     // A row shows its own error, so this one resolves or rejects instead of using the alert.
     onSave: async (entry: Entry, patch: EntryPatch) => {
       setError(null)
+      setRowUndo(null)
       await updateEntry.mutateAsync({ id: entry.id, ...patch })
       markSaved(entry.id)
     },
     justSaved: (id: string) => savedIds().has(id),
+    undo: (id: string) => (rowUndo()?.ids.has(id) ? rowUndo()!.run : undefined),
     pending: (id: string) => pending.has(id),
     onRetry: () => pending.retry(),
     onContinue: (entry: Entry) => start(entry.description, entry.projectId, entry.ticket),
@@ -396,6 +565,7 @@ export function TimerView(props: {
             variant="secondary"
             class="border-input text-primary h-9 border px-3"
             data-entry-trigger
+            aria-label={m.timer_add_entry()}
             onClick={(event) =>
               calendar()
                 ? calendarControls?.addEntry(event.currentTarget)
@@ -403,8 +573,21 @@ export function TimerView(props: {
             }
           >
             <PlusIcon aria-hidden="true" />
-            {m.timer_add_entry()}
+            {/* With Log meetings beside it, a phone's row fits only the icons. */}
+            <span class={cn(logsMeetings() && 'max-sm:hidden')}>{m.timer_add_entry()}</span>
           </Button>
+          <Show when={logsMeetings()}>
+            <Button
+              variant="outline"
+              class="h-9 px-3"
+              aria-haspopup="dialog"
+              aria-label={m.log_meetings()}
+              onClick={() => setLogRange({ from: today(), to: today() })}
+            >
+              <CalendarClockIcon aria-hidden="true" />
+              <span class="max-sm:hidden">{m.log_meetings()}</span>
+            </Button>
+          </Show>
           <ViewPopover settings={props.settings} onError={showError} />
         </div>
       </div>
@@ -464,8 +647,31 @@ export function TimerView(props: {
                   />
                 </Show>
                 <section class="flex min-w-0 flex-col gap-4" aria-label={m.timer_entries()}>
+                  <Show when={logged()}>
+                    {(status) => (
+                      <Card
+                        class="flex min-w-0 flex-wrap items-center justify-center gap-x-2 px-4 py-2.5 text-center text-sm"
+                        role="status"
+                      >
+                        <span>{status().text}</span>
+                        <Show when={status().undo}>
+                          {(undo) => (
+                            <Button
+                              variant="link"
+                              size="sm"
+                              class="h-auto gap-1 p-0"
+                              onClick={() => undo()()}
+                            >
+                              <Undo2Icon aria-hidden="true" />
+                              {m.calendar_undo()}
+                            </Button>
+                          )}
+                        </Show>
+                      </Card>
+                    )}
+                  </Show>
                   <Show when={entries.data}>
-                    <Show when={groups().length > 0} fallback={<EmptyState />}>
+                    <Show when={listGroups().length > 0} fallback={<EmptyState />}>
                       <Switch>
                         <Match when={layout() === 'table'}>
                           <EntryTable groups={groups()} {...listProps} />
@@ -474,6 +680,7 @@ export function TimerView(props: {
                           <EntryList
                             groups={shownGroups()}
                             focus={layout() === 'focus'}
+                            meetings={listsMeetings() ? listMeetings : undefined}
                             {...listProps}
                           />
                         </Match>
@@ -548,10 +755,54 @@ export function TimerView(props: {
         entries={stopped()}
         issueLinks={props.issueLinks}
         owner={{ organizationId: props.organizationId, userId: props.userId }}
-        region={userRegion(props.settings)}
+        region={region()}
         onSave={save}
         onClose={() => setEditor(null)}
       />
+      <EventPopover
+        target={eventTarget()}
+        loggables={meetingState.loggablesOf}
+        stateOf={meetingState.stateOf}
+        source={meetingState.sourceOf}
+        projects={projects.data ?? []}
+        zone={zone()}
+        now={now()}
+        runningSince={running.data?.startedAt.getTime() ?? null}
+        formatTime={formatTime}
+        suggest={suggest}
+        below
+        onLog={(items, projectId) => {
+          setEventTarget(null)
+          logMeetings(
+            items.map((item) => ({ item, projectId })),
+            true,
+          )
+        }}
+        onClose={() => setEventTarget(null)}
+      />
+      <Show when={logRange()} keyed>
+        {(initial) => (
+          <LogDialog
+            open
+            initial={initial}
+            organizationId={props.organizationId}
+            zone={zone()}
+            region={region()}
+            weekStart={props.settings.weekStart}
+            today={today()}
+            now={now()}
+            projects={projects.data ?? []}
+            entryKeys={meetingState.entryKeys()}
+            formatTime={formatTime}
+            suggest={suggest}
+            onLog={(choices) => {
+              setLogRange(null)
+              logMeetings(choices)
+            }}
+            onClose={() => setLogRange(null)}
+          />
+        )}
+      </Show>
     </div>
   )
 }

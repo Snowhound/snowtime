@@ -369,6 +369,19 @@ describe('TimerCalendar', () => {
     )
   })
 
+  test("Undo after deleting a logged meeting's entry brings it back with the meeting", async () => {
+    const key = 'google:anna@snowhound.eu:review'
+    server.entries = [{ ...review, calendarEvent: key }]
+    renderView()
+    await userEvent.click(await block())
+    const popover = await screen.findByRole('dialog', { name: 'Edit entry' })
+    await userEvent.click(within(popover).getByRole('button', { name: 'Delete' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(fn.createEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Invoice export review', calendarEvent: key }),
+    )
+  })
+
   test('Repeat saves the entry and its copies in one call, which one Undo deletes', async () => {
     renderView()
     await block()

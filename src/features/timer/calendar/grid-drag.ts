@@ -134,7 +134,8 @@ export function createGridDrag(options: {
         stoppedAt: entry.stoppedAt?.getTime() ?? null,
       }
       entryId = entry.id
-    } else if (target.closest('[data-date]')) {
+    } else if (target.closest('[data-date]') && !target.closest('[data-event]')) {
+      // A calendar meeting opens its popover instead.
       drag = { kind: 'create', from: slotAt(event.clientX, event.clientY) }
     } else return
     setState({

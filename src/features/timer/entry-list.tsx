@@ -7,6 +7,7 @@ import ClockIcon from 'lucide-solid/icons/clock'
 import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'
 import PlayIcon from 'lucide-solid/icons/play'
 import TrashIcon from 'lucide-solid/icons/trash'
+import Undo2Icon from 'lucide-solid/icons/undo-2'
 import { For, Show, createEffect, on } from 'solid-js'
 import { CopyableDuration } from '~/components/copy-duration'
 import { PlainButton } from '~/components/plain-button'
@@ -24,6 +25,7 @@ import { formatIsoDate } from '~/lib/format'
 import type { Project } from '~/lib/queries/projects'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
+import type { CalendarEvent } from '~/server/calendar/calendar.schemas'
 import type { DayGroup } from './entries'
 import { entryName } from './entries'
 import {
@@ -41,6 +43,7 @@ import {
   createEntryEditor,
 } from './entry-fields'
 import { createLazyDays } from './lazy-days'
+import { MeetingRow } from './meetings/meeting-row'
 import type { Entry, StoppedEntry } from './queries'
 import { createRowActivation } from './row-activation'
 
@@ -69,6 +72,8 @@ export interface EntryRowProps {
   onRetry: () => void
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
+  // The Undo of the change that just added the entry, while it can still be taken back.
+  undo?: (id: string) => (() => void) | undefined
 }
 
 // Brings a row the server just confirmed into view, such as one a new date moved to
@@ -110,11 +115,32 @@ function rowHeight(rows: { compact: boolean; focus?: boolean }) {
   return rows.compact ? 41 : rows.focus ? 57 : 65
 }
 
+// Unlogged meetings, shown as rows among a day's entries.
+export interface ListMeetings {
+  on: (date: string) => readonly CalendarEvent[]
+  formatTime: (ms: number) => string
+  now: () => number
+  onOpen: (event: CalendarEvent, anchor: HTMLElement) => void
+  onLog: (event: CalendarEvent, untilNow?: boolean) => void
+}
+
+// A day's rows newest first: entry ids, and meeting keys prefixed `event:`.
+function rowKeys(group: DayGroup<StoppedEntry> | undefined, meetings: readonly CalendarEvent[]) {
+  if (!meetings.length) return groupIds(group)
+  return [
+    ...(group?.entries.map((e) => ({ key: e.id, at: e.startedAt.getTime() })) ?? []),
+    ...meetings.map((e) => ({ key: `event:${e.key}`, at: e.startedAt.getTime() })),
+  ]
+    .sort((a, b) => b.at - a.at)
+    .map((row) => row.key)
+}
+
 export function EntryList(
   props: EntryRowProps & {
     groups: readonly DayGroup<StoppedEntry>[]
     today: string
     focus?: boolean
+    meetings?: ListMeetings
   },
 ) {
   const lazyDay = createLazyDays(() => props.groups)
@@ -149,14 +175,36 @@ export function EntryList(
                 fallback={<div ref={lazy.placeholder} class="h-(--rows) md:h-(--rows-md)" />}
               >
                 <ul class="divide-y">
-                  <For each={groupIds(group())}>
-                    {(id) => (
-                      <EntryRow
-                        {...props}
-                        entry={group()!.entries.find((e) => e.id === id)!}
-                        focus={props.focus}
-                      />
-                    )}
+                  <For each={rowKeys(group(), props.meetings?.on(date) ?? [])}>
+                    {(key) => {
+                      const meeting = key.startsWith('event:')
+                        ? props.meetings?.on(date).find((e) => `event:${e.key}` === key)
+                        : undefined
+                      return (
+                        <Show
+                          when={meeting}
+                          fallback={
+                            <EntryRow
+                              {...props}
+                              entry={group()!.entries.find((e) => e.id === key)!}
+                              focus={props.focus}
+                            />
+                          }
+                        >
+                          {(event) => (
+                            <MeetingRow
+                              event={event()}
+                              compact={props.compact}
+                              wide={props.wide}
+                              formatTime={props.meetings!.formatTime}
+                              now={props.meetings!.now()}
+                              onOpen={props.meetings!.onOpen}
+                              onLog={props.meetings!.onLog}
+                            />
+                          )}
+                        </Show>
+                      )
+                    }}
                   </For>
                 </ul>
               </Show>
@@ -231,16 +279,31 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
         </div>
         <DurationField editor={editor} class="row-start-3 shrink-0 justify-self-end" />
         <div class="col-start-2 row-start-2 justify-self-end">
-          <EntryActions
-            entry={props.entry}
-            saved={props.justSaved(props.entry.id)}
-            pending={props.pending(props.entry.id)}
-            compact={props.compact}
-            active={activation.active()}
-            onContinue={props.onContinue}
-            onDelete={props.onDelete}
-            onRetry={props.onRetry}
-          />
+          {/* Undo takes the actions' place at their width, so the columns don't move. */}
+          <Show
+            when={props.undo?.(props.entry.id)}
+            fallback={
+              <EntryActions
+                entry={props.entry}
+                saved={props.justSaved(props.entry.id)}
+                pending={props.pending(props.entry.id)}
+                compact={props.compact}
+                active={activation.active()}
+                onContinue={props.onContinue}
+                onDelete={props.onDelete}
+                onRetry={props.onRetry}
+              />
+            }
+          >
+            {(undo) => (
+              <div class={cn('flex justify-end', props.compact ? 'w-17' : 'w-21')}>
+                <Button variant="link" size="sm" class="h-auto gap-1 p-0" onClick={() => undo()()}>
+                  <Undo2Icon aria-hidden="true" />
+                  {m.calendar_undo()}
+                </Button>
+              </div>
+            )}
+          </Show>
         </div>
       </div>
       <RowError editor={editor} />
