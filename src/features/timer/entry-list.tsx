@@ -6,6 +6,7 @@ import CheckIcon from 'lucide-solid/icons/check'
 import ClockIcon from 'lucide-solid/icons/clock'
 import EllipsisVerticalIcon from 'lucide-solid/icons/ellipsis-vertical'
 import PlayIcon from 'lucide-solid/icons/play'
+import RepeatIcon from 'lucide-solid/icons/repeat'
 import TrashIcon from 'lucide-solid/icons/trash'
 import Undo2Icon from 'lucide-solid/icons/undo-2'
 import { For, Show, createEffect, on } from 'solid-js'
@@ -72,6 +73,8 @@ export interface EntryRowProps {
   onRetry: () => void
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
+  // Opens the entry popover at Repeat, by the row.
+  onRepeat: (entry: Entry, anchor: HTMLElement) => void
   // The Undo of the change that just added the entry, while it can still be taken back.
   undo?: (id: string) => (() => void) | undefined
 }
@@ -291,6 +294,7 @@ function EntryRow(props: EntryRowProps & { entry: StoppedEntry; focus?: boolean 
                 active={activation.active()}
                 onContinue={props.onContinue}
                 onDelete={props.onDelete}
+                onRepeat={props.onRepeat}
                 onRetry={props.onRetry}
               />
             }
@@ -323,8 +327,11 @@ export function EntryActions(props: {
   active: boolean
   onContinue: (entry: Entry) => void
   onDelete: (entry: Entry) => void
+  onRepeat: (entry: Entry, anchor: HTMLElement) => void
   onRetry: () => void
 }) {
+  let root: HTMLDivElement | undefined
+  let repeating = false
   function description() {
     return entryName(props.entry)
   }
@@ -341,7 +348,7 @@ export function EntryActions(props: {
     },
   } as const
   return (
-    <div class="relative">
+    <div ref={root} class="relative">
       <div
         class={cn(
           'flex items-center gap-1',
@@ -376,7 +383,21 @@ export function EntryActions(props: {
             <DropdownMenuTrigger as={Button<'button'>} {...more}>
               <EllipsisVerticalIcon aria-hidden="true" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-40">
+            <DropdownMenuContent
+              class="w-40"
+              // Repeat… opens the entry popover once the closing menu has given its trigger the
+              // focus back, which it does after this; taking it from an open popover closes it.
+              onCloseAutoFocus={() => {
+                if (!repeating) return
+                repeating = false
+                const anchor = root!.closest<HTMLElement>('li, tr') ?? root!
+                setTimeout(() => props.onRepeat(props.entry, anchor))
+              }}
+            >
+              <DropdownMenuItem class="gap-2" onSelect={() => (repeating = true)}>
+                <RepeatIcon class="size-4" aria-hidden="true" />
+                {m.menu_copy_days()}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 class="text-destructive focus:text-destructive gap-2"
                 onSelect={() => props.onDelete(props.entry)}

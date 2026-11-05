@@ -279,6 +279,20 @@ describe('TimerView', () => {
     expect(await screen.findByText('No time tracked yet')).toBeInTheDocument()
   })
 
+  test("Repeat… in a row's menu opens the entry popover at Repeat, which stays open", async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    fn.createEntries.mockImplementation(async ({ entries }) => entries)
+
+    await clickInRow('Actions for Invoice export review')
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Repeat…' }))
+    const popover = await screen.findByRole('dialog', { name: 'Edit entry' })
+    // It stays open once the menu has closed.
+    await waitFor(() => expect(screen.queryAllByRole('menu')).toHaveLength(0))
+    expect(popover).toBeInTheDocument()
+    expect(within(popover).getByText('Repeat')).toBeInTheDocument()
+  })
+
   test('saves an edited description on Enter, and Escape restores it', async () => {
     renderView()
     const input = await screen.findByDisplayValue('Invoice export review')

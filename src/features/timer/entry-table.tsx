@@ -218,6 +218,7 @@ function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
             active={activation.active()}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
+            onRepeat={props.onRepeat}
             onRetry={props.onRetry}
           />
         </TableCell>

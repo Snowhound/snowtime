@@ -531,6 +531,8 @@ export function TimerView(props: {
     onRetry: () => pending.retry(),
     onContinue: (entry: Entry) => start(entry.description, entry.projectId, entry.ticket),
     onDelete: remove,
+    onRepeat: (entry: Entry, anchor: HTMLElement) =>
+      setEditor({ target: { kind: 'edit', entry: entry as StoppedEntry, copy: true }, anchor }),
   }
 
   return (

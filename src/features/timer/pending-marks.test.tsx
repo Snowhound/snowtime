@@ -27,6 +27,7 @@ test('a pending row shows Not saved over Try again in place of Saved', () => {
       active={false}
       onContinue={() => {}}
       onDelete={() => {}}
+      onRepeat={() => {}}
       onRetry={onRetry}
     />
   ))
