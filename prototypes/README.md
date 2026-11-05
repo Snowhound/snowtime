@@ -974,6 +974,23 @@ Decided on 2026-09-29:
   status line under the grid says "Not saved yet" in orange with "Try again" where Undo
   would be.
 
+Glass test (2026-11-05, open): a user found the dark glass too light behind the calendar. The
+prototype bar's Glass select and sliders set the card color's share of the glass and, in dark
+mode, a brightness and saturation on the blurred scene behind it. Over the lightest scene
+(winter, full strength) an empty day column measured mean lightness 45 on the current glass
+and 34 on solid. Presets, as winter full / autumn dimmed:
+
+| Preset  | Card | Brightness | Saturation | Winter full | Autumn dimmed |
+| ------- | ---- | ---------- | ---------- | ----------- | ------------- |
+| Current | 70%  | 1          | 1          | 45          | 35            |
+| Denser  | 92%  | 1          | 1          | 37          | 34            |
+| Smoked  | 70%  | 0.5        | 1.2        | 35          | 29            |
+| Deep    | 80%  | 0.6        | 1.3        | 36          | 32            |
+| Solid   |      |            |            | 34          | 34            |
+
+A fixed brightness darkens dark scenes below solid too; the app's blurred copy of the photo
+(`src/lib/scene/glass.ts`) could instead measure each photo and pick its brightness.
+
 ### [auth.html](auth.html) — Sign-in flows
 
 Decision: layout of the signed-out screens, and how the sign-in methods in

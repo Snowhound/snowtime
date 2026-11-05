@@ -119,6 +119,20 @@
       .cal-pulse {
         animation: cal-pulse 1.6s ease-in-out infinite;
       }
+      /* Glass test (2026-11-05): how dark the glass is. The sliders set the card color's share
+         and, in dark mode, a brightness and saturation on the blurred scene behind it. */
+      body {
+        --glass-mix: 70%;
+        --glass-bright: 1;
+        --glass-sat: 1;
+      }
+      body[data-scene-bg='on'][data-surfaces='glass'][data-glass] :is([data-ui='card'], .surface) {
+        background-color: color-mix(in srgb, var(--card) var(--glass-mix), transparent);
+        backdrop-filter: blur(24px);
+      }
+      .dark body[data-scene-bg='on'][data-surfaces='glass'][data-glass] :is([data-ui='card'], .surface) {
+        backdrop-filter: blur(24px) brightness(var(--glass-bright)) saturate(var(--glass-sat));
+      }
       .inline-time::-webkit-calendar-picker-indicator {
         display: none;
       }
@@ -135,6 +149,25 @@
         <option value="long">Long content</option>
         <option value="empty">Empty</option>
       </select>
+      <label for="glass" class="sr-only">Glass</label>
+      <select id="glass" data-ui="select" class="h-9 w-56">
+        <option value="current">Glass: current (70%)</option>
+        <option value="dense">Glass: denser (92%)</option>
+        <option value="smoked">Glass: smoked (70%, darker blur)</option>
+        <option value="deep">Glass: deep (80%, darker, richer)</option>
+      </select>
+      <label class="flex items-center gap-2 text-sm">Card
+        <input id="glass-mix" type="range" min="40" max="100" step="1" class="w-24" />
+        <span id="glass-mix-value" class="w-9 tabular-nums"></span>
+      </label>
+      <label class="flex items-center gap-2 text-sm" title="Dark mode only">Brightness
+        <input id="glass-bright" type="range" min="0.3" max="1" step="0.05" class="w-24" />
+        <span id="glass-bright-value" class="w-9 tabular-nums"></span>
+      </label>
+      <label class="flex items-center gap-2 text-sm" title="Dark mode only">Saturation
+        <input id="glass-sat" type="range" min="0.5" max="2" step="0.05" class="w-24" />
+        <span id="glass-sat-value" class="w-9 tabular-nums"></span>
+      </label>
       <label class="flex items-center gap-2 text-sm" title="Prototype only: saves fail and roll back">
         <input id="fail-saves" type="checkbox" data-ui="checkbox" />Fail saves
       </label>
@@ -235,6 +268,33 @@
 
     <script>
       appFrame.mount({ page: 'timer', title: 'Timer calendar', scene: true })
+
+      // Glass test: presets fill the sliders, which set the card's share and the blur's tone.
+      {
+        const PRESETS = {
+          current: { mix: 70, bright: 1, sat: 1 },
+          dense: { mix: 92, bright: 1, sat: 1 },
+          smoked: { mix: 70, bright: 0.5, sat: 1.2 },
+          deep: { mix: 80, bright: 0.6, sat: 1.3 },
+        }
+        const glass = document.getElementById('glass')
+        const sliders = { mix: '%', bright: '', sat: '' }
+        function show() {
+          document.body.dataset.glass = glass.value
+          for (const [key, unit] of Object.entries(sliders)) {
+            const value = document.getElementById(`glass-${key}`).value
+            document.body.style.setProperty(`--glass-${key}`, value + unit)
+            document.getElementById(`glass-${key}-value`).textContent = value + unit
+          }
+        }
+        function preset() {
+          for (const key of Object.keys(sliders)) document.getElementById(`glass-${key}`).value = PRESETS[glass.value][key]
+          show()
+        }
+        glass.addEventListener('change', preset)
+        for (const key of Object.keys(sliders)) document.getElementById(`glass-${key}`).addEventListener('input', show)
+        preset()
+      }
 
       const { escapeHtml, icon } = appFrame
       const Z = appData.tz
