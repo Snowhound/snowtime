@@ -66,9 +66,10 @@ A meeting's project starts as that of the user's latest loaded entry with the sa
 description, if that project is active; the popover and the dialog let the user change it.
 A meeting under way logs to its scheduled end, or to now with **Log until now** when it
 ended early. Undo sits where the user acted: on the new entry's row after a log from a
-meeting's row or popover in the list, until the next change; in the calendar's status line;
-and, after the Log meetings dialog, in a card above the list. Deleting a logged meeting's
-entry, or undoing its log, reads the events again, so the meeting shows to log anew.
+meeting's row or popover in the list, until the next change; and in the calendar's status
+line, also after the Log meetings dialog, which only the calendar's toolbar opens. Deleting
+a logged meeting's entry, or undoing its log, reads the events again, so the meeting shows
+to log anew.
 
 An all-day event logs only on request, as 8 hours from 09:00 on each day it covers. An
 event that covers several days skips weekends and the user's public holidays. Each day's

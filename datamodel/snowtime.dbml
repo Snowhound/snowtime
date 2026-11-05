@@ -221,6 +221,7 @@ Table user_settings [note: 'Per-user settings, one row per user, shared across o
   time_format text [not null, default: '24h', note: '24h, 12h, default 24h. Clock times and the time picker. Validated in the app, no CHECK.']
   country text [note: 'EE, US, other, or null to guess from time_zone (src/lib/holidays/region.ts). Whose public holidays the taglines skip. Validated in the app, no CHECK.']
   wide_timer integer [not null, default: 0, note: 'Boolean 0/1 (CHECK), default 0. Wide page: the timer page up to 88rem, with a Ticket column in the rows.']
+  compact_buttons integer [not null, default: 0, note: 'Boolean 0/1 (CHECK), default 0. The view switch and Add entry in the Timer page header show as icons, named by tooltips.']
   scene_collection text [not null, default: 'mountains', note: 'mountains (default), coast, countryside: the images the background follows through the year (src/lib/scene/images.ts). Validated in the app, no CHECK.']
   scene_pin text [note: 'An image id in scene_collection, or null to follow the calendar. The season of the image picks the tagline. Validated in the app, no CHECK.']
   timer_view text [not null, default: 'list', note: 'list, calendar, default list. The Timer page shows entries as a list or a week calendar. Validated in the app, no CHECK.']

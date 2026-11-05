@@ -72,6 +72,7 @@ function settings(timerView: Settings['timerView']): Settings {
     showSummary: true,
     compactRows: false,
     wideTimer: false,
+    compactButtons: false,
     timerView,
     calendarWeekend: false,
     appIcon: '02',

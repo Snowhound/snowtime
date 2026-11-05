@@ -1511,7 +1511,9 @@ Checked on 2026-11-05 in headless Chrome at 1440 and 390 px with this season's t
 longest English one, and the longest Estonian one, in both views: A, B, and C keep the tagline
 centered at 1440 px, nothing scrolls sideways at 390 px, and there are no browser errors.
 
-Approved on 2026-11-05: **A**, with the row's spacing following compact rows in the app.
+Decided on 2026-11-05: A was built and then dropped, since the extra row cost more than it
+gained. The app keeps the labelled header, without Log meetings, which only the calendar's
+toolbar opens now, and C is the Compact buttons setting (task 098).
 
 ## Adding issues to tracker entries
 

@@ -6,8 +6,8 @@ import { useQuery } from '~/lib/queries/use-query'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 
-// The timer while its route loads: the timer bar, the view switch, then a day of entries or the
-// calendar, as wide as the view.
+// The timer while its route loads: the timer bar, then a day of entries or the calendar, as
+// wide as the view.
 export function TimerPending() {
   const session = useQuery(() => sessionQuery)
   return (
@@ -24,7 +24,6 @@ export function TimerPending() {
           <Skeleton class="h-9 w-20" />
           <Skeleton class="size-10 rounded-full" />
         </Card>
-        <Skeleton class="h-9 w-48" />
         <Show
           when={session.data?.settings?.timerView !== 'calendar'}
           fallback={<Skeleton class="h-[max(24rem,min(40rem,calc(100dvh-17rem)))] rounded-lg" />}

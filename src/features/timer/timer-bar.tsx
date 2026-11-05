@@ -38,7 +38,7 @@ const LAYOUTS: Record<
     toggle: 'h-12 sm:w-36',
   },
   table: {
-    timer: 'flex flex-col gap-2 sm:flex-row sm:items-center',
+    timer: 'flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center',
     elapsed: 'justify-start text-base sm:w-24 sm:justify-end',
   },
 }
@@ -51,7 +51,7 @@ const COMPACT: typeof LAYOUTS = {
     elapsed: 'h-auto text-4xl sm:text-5xl',
     toggle: 'h-10',
   },
-  table: { timer: '', elapsed: 'h-9' },
+  table: { timer: 'pb-3', elapsed: 'h-9' },
 }
 // Controls the layouts leave at their default height.
 const COMPACT_CONTROL = 'h-9'

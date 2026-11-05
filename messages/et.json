@@ -205,6 +205,8 @@
   "settings_compact_rows_description": "Madalamad read, et ekraanile mahuks rohkem kandeid.",
   "settings_wide_timer": "Lai leht",
   "settings_wide_timer_description": "Rohkem ruumi kirjeldustele ja piletid eraldi veerus.",
+  "settings_compact_buttons": "Kompaktsed nupud",
+  "settings_compact_buttons_description": "Taimeri lehel on nupud Nimekiri, Kalender ja Lisa aeg ainult ikoonid.",
   "appearance_all_settings": "Kõik seaded",
   "scene_title": "Maastik",
   "scene_description": "Vaade sisselogimislehe ja rakenduse taustal.",

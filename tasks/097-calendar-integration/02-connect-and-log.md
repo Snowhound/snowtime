@@ -44,8 +44,9 @@ Decided while testing against a real calendar (2026-11-05); `prototypes/calendar
 still shows the earlier design.
 
 - In the list, Undo after logging one meeting sits on the new entry's row until the next
-  change. After the Log meetings dialog it shows in a centered card above the list, and
-  "Undone." leaves after 4 seconds.
+  change.
+- Log meetings opens only from the calendar's toolbar, where its range makes sense; the
+  list logs a meeting from its row (task 098, 2026-11-05).
 - A meeting under way logs to its scheduled end with plain **Log**; **Log until now**, on its
   row and in its popover, ends it now.
 - A meeting whose entry was deleted shows again as a row in the list, as in the calendar.

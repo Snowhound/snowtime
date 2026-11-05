@@ -205,6 +205,8 @@
   "settings_compact_rows_description": "Shorter entry rows, so more of them fit on the screen.",
   "settings_wide_timer": "Wide page",
   "settings_wide_timer_description": "More room for descriptions, with tickets in their own column.",
+  "settings_compact_buttons": "Compact buttons",
+  "settings_compact_buttons_description": "On the Timer page, List, Calendar, and Add entry show only their icons.",
   "appearance_all_settings": "All settings",
   "scene_title": "Scenery",
   "scene_description": "The scene behind the sign-in page and the app.",

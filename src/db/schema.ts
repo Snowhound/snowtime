@@ -378,6 +378,9 @@ export const userSettings = sqliteTable(
     wideTimer: integer('wide_timer', { mode: 'boolean' })
       .default(sql`0`)
       .notNull(),
+    compactButtons: integer('compact_buttons', { mode: 'boolean' })
+      .default(sql`0`)
+      .notNull(),
     sceneCollection: text('scene_collection', { enum: COLLECTION_IDS })
       .default('mountains')
       .notNull(),
@@ -401,6 +404,7 @@ export const userSettings = sqliteTable(
     check('user_settings_scene_intro', sql`scene_intro IN (0, 1)`),
     check('user_settings_scene_tagline', sql`scene_tagline IN (0, 1)`),
     check('user_settings_wide_timer', sql`wide_timer IN (0, 1)`),
+    check('user_settings_compact_buttons', sql`compact_buttons IN (0, 1)`),
     check('user_settings_calendar_weekend', sql`calendar_weekend IN (0, 1)`),
   ],
 )

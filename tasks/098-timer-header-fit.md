@@ -17,18 +17,23 @@ Add entry and Log meetings already show only their icons to fit.
 
 ## Outcome
 
-Approved on 2026-11-05 in [timer-header.html](../prototypes/timer-header.html), design A:
-the title row keeps Add entry and View settings, and List | Calendar moves under the timer
-bar, above what it switches, with Log meetings at the other end of that row in List view.
-Calendar view keeps Log meetings in its toolbar. The row sits 8 px closer to the entries
-than the timer bar does, so compact rows tighten it too: 24 px above it and 16 px below, or
-16 and 8 px with compact rows.
-Icon buttons alone didn't fit: the view switch's labels crowd the tagline even without Log
-meetings.
+Decided on 2026-11-05. Log meetings left the header: it opens only from the calendar's
+toolbar, where its range makes sense, and the list logs a meeting from its row. The header
+is back to List | Calendar, Add entry, and View settings, with their labels, as before the
+calendar. A new setting, Compact buttons (`compact_buttons`, off by default, in the View
+popover and Settings), shows only their icons, named by tooltips; View settings has a
+tooltip too.
 
-Checked on 2026-11-05 in Chrome against the dev app as Max Member, at 1440 and 390 px. The
-local database has no calendar connection, so a copy of the Log meetings button was put in
-the row to check the connected layout.
+[timer-header.html](../prototypes/timer-header.html) compared three designs. A, the view
+switch on a row above the entries, was built and then dropped: the extra row cost more than
+it gained. C, icons in one row, became the setting.
+
+With labels, a long tagline still drops under the title at 1440 px, as it did before the
+calendar: "Your timer gave up after 24 hours. It's more committed than you." does. Compact
+buttons leaves it about 180 px of room.
+
+Checked on 2026-11-05 in Chrome against the dev app as Max Member, at 1440 and 390 px, with
+and without Compact buttons.
 
 ## Acceptance criteria
 

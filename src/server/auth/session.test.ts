@@ -71,6 +71,7 @@ describe('appSession', () => {
       showSummary: true,
       compactRows: false,
       wideTimer: false,
+      compactButtons: false,
       timerView: 'list',
       calendarWeekend: false,
       appIcon: '02',

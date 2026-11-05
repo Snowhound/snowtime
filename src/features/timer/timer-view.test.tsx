@@ -79,6 +79,7 @@ function defaultSettings(): Settings {
     showSummary: false,
     compactRows: false,
     wideTimer: false,
+    compactButtons: false,
     timerView: 'list',
     calendarWeekend: false,
     appIcon: '02',
@@ -1242,6 +1243,22 @@ describe('ticket keys', () => {
     await userEvent.click(within(await openView()).getByRole('switch', { name: /Wide page/ }))
     expect(fn.updateSettings).toHaveBeenCalledWith({ wideTimer: true })
     expect(await screen.findByRole('columnheader', { name: 'Ticket' })).toBeInTheDocument()
+  })
+
+  test('Compact buttons leaves the header icons, still named', async () => {
+    fn.updateSettings.mockImplementation(async (input: UpdateSettingsInput) => {
+      Object.assign(server.settings, input)
+      return server.settings
+    })
+    renderView()
+    const add = await screen.findByRole('button', { name: 'Add entry' })
+    expect(add).toHaveTextContent('Add entry')
+
+    await userEvent.click(within(await openView()).getByRole('switch', { name: 'Compact buttons' }))
+    expect(fn.updateSettings).toHaveBeenCalledWith({ compactButtons: true })
+    await waitFor(() => expect(add).not.toHaveTextContent('Add entry'))
+    expect(screen.getByRole('button', { name: 'List' })).not.toHaveTextContent('List')
+    expect(screen.getByRole('button', { name: 'Calendar' })).toBeInTheDocument()
   })
 })
 
