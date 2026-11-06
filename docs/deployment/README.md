@@ -140,9 +140,58 @@ with a redirect of its own. The feature is off until `GOOGLE_CLIENT_ID` and
 - Under **Google Auth Platform > Data Access**, add the scopes
   `https://www.googleapis.com/auth/calendar.calendarlist.readonly` and
   `https://www.googleapis.com/auth/calendar.events.readonly`.
-- While the app's publishing status is **Testing**, add each user who connects a calendar
-  under **Audience > Test users**. Publishing an app with these scopes needs Google's
-  verification (task 097.05).
+
+The events scope is sensitive, so who can connect a calendar depends on the app's
+**Audience** settings. Pick one:
+
+| Audience                              | Who can connect                                | What users see                                               |
+| ------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------ |
+| Internal                              | Accounts in your Google Workspace organization | The normal consent screen; no verification needed            |
+| External, **Testing**                 | Up to 100 accounts listed under **Test users** | A warning that the app is in testing; reconnect every 7 days |
+| External, **In production**, verified | Any Google account                             | The normal consent screen                                    |
+| External, in production, not verified | The first 100 accounts                         | An "unverified app" warning they have to click through       |
+
+Choose **Internal** when only your company's Workspace accounts use the deployment. It is
+the only option without a review, but Google sign-in is then limited to the same accounts,
+since sign-in and calendars share the client. In **Testing**, Google expires each refresh
+token after 7 days, so Snowtime asks the user to reconnect each week. Opening the app to
+other accounts without a warning needs verification.
+
+#### Get the app verified
+
+Google reviews an External app before any account outside the test list can grant the
+events scope without a warning. Its page says the review takes up to 10 days
+([Sensitive scope verification][google-sensitive]). Before you submit:
+
+1. Make the pages Google checks public on your host. The home page describes what
+   Snowtime does and links to the privacy policy; a sign-in page alone doesn't count. The
+   privacy policy says what Snowtime reads from a calendar, what it stores, who sees it,
+   and how to disconnect, and it includes Google's Limited Use statement. Snowtime's
+   `/privacy` has this text, naming Snowhound OÜ; change the operator as described above.
+2. Verify the domain of these pages in [Google Search Console][search-console], with a
+   Google account that is an Owner or Editor of the Cloud project. Verify the registrable
+   domain, such as `example.com` for `snowtime.example.com`, which a DNS TXT record does.
+3. Under **Branding**, enter the app name your pages show, a support email, the home page,
+   privacy, and terms URLs, and the domain under **Authorized domains**. Google checks the
+   branding automatically; publish it when it passes. You can't change branding while a
+   review runs.
+4. Record a demo video in English and upload it to YouTube as **Unlisted**. It shows:
+   - starting the connection in Settings, then Google's consent screen with the app's name,
+     and its address bar with your client ID (`client_id=` in the URL);
+   - granting both scopes, and Settings listing the account's calendars;
+   - the Timer page showing meetings in the week calendar, and logging one as an entry;
+   - disconnecting in Settings.
+5. Under **Data Access**, open the verification form. For each scope, say what Snowtime
+   uses it for and why a narrower scope doesn't do: `calendar.calendarlist.readonly` lists
+   the calendars a user picks from, and `calendar.events.readonly` reads the events of the
+   shown calendars to show and log them. Snowtime asks for no write access and no full
+   `calendar.readonly`. Paste the video's link, and submit.
+
+Google answers by email to the project's contacts and may ask for changes. When it
+approves the app, an account outside the test list connects without the warning.
+
+[google-sensitive]: https://developers.google.com/identity/protocols/oauth2/production-readiness/sensitive-scope-verification
+[search-console]: https://search.google.com/search-console
 
 ## Check the deployment
 
