@@ -1,4 +1,4 @@
-// The filter row above the report's views (prototypes/reports.html): range preset, previous and
+// The filter row above the report's views: range preset, previous and
 // next, from and to, People, Project, Group by, and totals per day or week. Members get no
 // People: they see their own time. The fields are sized so the row fits the header's 68rem on
 // one line, which is why Group by is a select rather than tabs. Narrower windows show From and

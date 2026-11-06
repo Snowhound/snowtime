@@ -1,4 +1,4 @@
-// The copyDurationPattern setting (prototypes/copy-durations.html): a pattern field with a live
+// The copyDurationPattern setting: a pattern field with a live
 // preview, a key to its letters, example patterns, and a reset. It saves on blur or Enter; an
 // invalid pattern shows its error and isn't saved, and Escape returns to the saved one.
 import { For, Show, createEffect, createSignal, on } from 'solid-js'

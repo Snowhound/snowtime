@@ -1,8 +1,8 @@
-// The Timer page's week calendar (prototypes/calendar.html; docs/architecture/timer.md, "Timer
+// The Timer page's week calendar (docs/architecture/timer.md, "Timer
 // calendar"): the user's entries of the shown week in their zone. A click or a drag on empty
 // time adds an entry in the entry popover; dragging an entry or its edges, or Alt+arrow keys on
 // it, move it or change its times; a click or Enter edits it. Alt+drag, Duplicate, and the
-// context menus on an entry and on empty time copy and paste it (prototypes/copy-entries.html).
+// context menus on an entry and on empty time copy and paste it.
 // Each change is one optimistic mutation (../queries.ts), and the status line under the grid
 // names it with an Undo.
 import { keepPreviousData } from '@tanstack/solid-query'

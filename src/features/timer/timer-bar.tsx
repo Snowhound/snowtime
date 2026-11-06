@@ -1,4 +1,4 @@
-// The timer (prototypes/timer.html): description with its ticket chip, project, the elapsed
+// The timer: description with its ticket chip, project, the elapsed
 // time, and Start or Stop. While it runs, the fields edit the running entry, and the elapsed
 // time opens its start in the entry popover. The layouts share these controls and differ
 // only in classes.

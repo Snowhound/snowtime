@@ -1,4 +1,4 @@
-// A duration that copies itself (prototypes/copy-durations.html), formatted from its
+// A duration that copies itself, formatted from its
 // milliseconds with the copyDurationPattern setting rather than as shown. The
 // copyDurationControl setting picks how: a click on the duration, or a copy button beside it.
 // `control` overrides it where a click on the duration does something else, as on an entry

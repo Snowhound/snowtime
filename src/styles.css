@@ -430,7 +430,7 @@ html[data-intro='pending'] body {
 [data-scene-bg='on'] .surface {
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
 }
-/* The sign-in card lifts further, as in prototypes/auth.html (shadow-xl). */
+/* The sign-in card lifts further (shadow-xl). */
 [data-scene-bg='on'] .auth-card {
   box-shadow:
     0 20px 25px -5px rgb(0 0 0 / 0.1),
@@ -747,7 +747,7 @@ summary,
   cursor: pointer;
 }
 
-/* The Timer calendar (src/features/timer/calendar/, prototypes/calendar.html). --hour is the
+/* The Timer calendar (src/features/timer/calendar/). --hour is the
    height of an hour, set from HOUR_PX. The header and the body share their columns, and both
    reserve the scrollbar's gutter so they line up. */
 .cal-cols {
@@ -910,7 +910,7 @@ summary,
 .cal-chip[data-kind='working_location'] {
   @apply border-transparent;
 }
-/* A day in the entry popover's copy panel (prototypes/copy-entries.html). */
+/* A day in the entry popover's copy panel. */
 .copy-day {
   @apply hover:bg-accent focus-visible:ring-ring relative flex h-8 items-center justify-center rounded-md text-sm tabular-nums outline-none focus-visible:ring-2;
 }

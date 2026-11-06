@@ -1,4 +1,4 @@
-// The timesheet card's Export menu (prototypes/reports.html): the report for the current
+// The timesheet card's Export menu: the report for the current
 // filters, as XLSX with the entries and the timesheet, or either one as CSV. Entries come
 // first, as the part a client or an invoice needs. The timesheet CSV is the report as shown.
 // The entries load when chosen, a month at a time, together with the report they add up to,

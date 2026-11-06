@@ -3,7 +3,7 @@
 ## Timer calendar
 
 The Timer page shows the user's entries as a list by day or as a week calendar
-(`prototypes/calendar.html`, task 069). The calendar replaces the entry list and the summary;
+(task 069; `prototypes/README.md`, "Timer calendar"). The calendar replaces the entry list and the summary;
 the timer bar stays. Its code is in `src/features/timer/calendar/`, with the time math in
 `week-grid.ts`.
 
@@ -172,8 +172,8 @@ it. Reports' totals copy as well.
   the table's duration column is 112 px, the same in every row so the times line up.
 - After a copy, a bubble shows the copied text for two seconds. The bubble sits above an
   entry's duration and left of a day's total, where the day's card would clip it above.
-  `prototypes/copy-durations.html` compares it with swapping the text in place, which made
-  rows grow.
+  The prototype compared it with swapping the text in place, which made rows grow
+  (`prototypes/README.md`, "Copy durations").
 - `CopyAnnouncer`, one `aria-live="polite"` region, reads the same text aloud, because the
   bubble is `aria-hidden` and doesn't take focus. `AppFrame`, the shell of every signed-in
   page, renders it outside `IntroPage`, which is inert while the intro plays. The

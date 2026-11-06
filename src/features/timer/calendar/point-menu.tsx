@@ -1,4 +1,4 @@
-// A menu opened at a point on the week grid (prototypes/copy-entries.html, "Context menus"): at
+// A menu opened at a point on the week grid: at
 // the pointer for a right-click or a long press, or under an entry from the keyboard. It is a
 // DropdownMenu anchored to the point; the grid opens it, so its trigger is hidden. It opens
 // when it mounts and runs the picked item once it has closed: an item that opens the entry

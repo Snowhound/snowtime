@@ -1,4 +1,4 @@
-// The summary beside the entries (prototypes/timer.html), shown when the user's
+// The summary beside the entries, shown when the user's
 // showSummary setting is on: today and this week, and a bar per project for the week.
 // The totals come from summarize, which counts a running timer up to now.
 import { Index, Show } from 'solid-js'

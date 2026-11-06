@@ -107,6 +107,8 @@ each change in [`src/components/ui/README.md`](../src/components/ui/README.md).
 5. Make the interactions needed to judge the design work; disable out-of-scope actions. Include a
    fixture selector for empty, populated, long-content, and relevant edge states.
 6. Run the checks below, then add a reference entry to this README.
+7. Once the design is built, delete the page and keep in its entry only the decisions that
+   code and docs cite, with the commit that has the page.
 
 When implementing the selected design, markup maps to Solid-UI components one to one
 (`data-ui="card-title"` → `<CardTitle>`); wire behavior with TanStack Query/Form and server
@@ -503,7 +505,13 @@ Gotchas:
 
 ## Prototypes
 
-### [projects.html](projects.html) — Projects
+A prototype page is removed once its design is built, and the app is then the reference. Its
+section stays when it records decisions that code and docs cite. A new prototype starts from
+`calendar-events.html` (the Timer page, with its calendar and list) or `settings.html`.
+
+### Projects
+
+The page, `projects.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how admins and owners create, edit, assign, archive, and delete projects, and what
 members and team leads see of them.
@@ -548,7 +556,9 @@ member, team lead, and admin: no horizontal page overflow, dialog validation and
 the swatches, and no browser errors. axe reports no color-contrast issues since the brand
 tokens (see [Brand font and colors](#brand-font-and-colors)).
 
-### [organization.html](organization.html) — Organization admin
+### Organization admin
+
+The page, `organization.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how admins and owners manage members, invitations, and teams without email.
 
@@ -582,7 +592,9 @@ Omitted: transferring ownership, leaving the organization, and bulk invitations.
 Checked in Chromium at 1440, 850, and 390 px, light and dark, every tab and fixture, as member,
 admin, and owner: no horizontal page overflow, dialogs with validation, and no browser errors.
 
-### [reports.html](reports.html) — Reports
+### Reports
+
+The page, `reports.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how day and week totals by project, team, and member read, for members, team leads,
 and admins. The app had only the Timesheet, first chosen over the other two layouts; now the
@@ -754,7 +766,9 @@ and Escape, and no browser errors. The API keys card was checked on 2026-10-01 i
 (Playwright) the same way, with every key fixture, creating, copying, and revoking a key, and
 focus returning to **Create key** after each dialog.
 
-### [timer.html](timer.html) — Timer and entries
+### Timer and entries
+
+The page, `timer.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: layout of the main tracking view (running timer plus recent entries), and whether
 stopped entries are edited in their row or in a dialog. All three layouts are kept as
@@ -766,7 +780,7 @@ user-selectable options.
   narrow screens.
 
 The **List | Calendar** switch before Add entry opens the week calendar,
-[calendar.html](calendar.html). The settings button opens a **View** popover: layout, whether the summary panel (today / this
+`calendar.html`. The settings button opens a **View** popover: layout, whether the summary panel (today / this
 week, per-project bars) is shown, and Wide page, plus a link to Settings. The theme is in the header's
 Appearance popover.
 These are user settings, saved through the app frame (`user_settings` in the app).
@@ -807,7 +821,7 @@ Decisions:
 - **Duration: a field like the times** (2026-11-02, task 096; it was read-only). Typing a
   duration keeps the start and moves the end field at once; typing a start or an end updates
   the duration. It takes what the entry popover's does (see
-  [copy-entries.html](#copy-entrieshtml--entry-copies-and-durations)), plus the row's own
+  [copy-entries.html](#entry-copies-and-durations)), plus the row's own
   `1:30:00`, and saves on Enter or blur as one `updateEntry`, to the exact second from the
   start. Escape puts back the duration and the end it moved. In the app the row's duration
   copies through its copy button, since a click now edits it; day totals still copy on a
@@ -914,7 +928,9 @@ start, in brackets, mid-sentence, and in pasted links, a key at the start replac
 standards left as text, × turning a chip back into text without it being found again, the
 ticket carried by recent work, links from the Issue links setting, and no browser errors.
 
-### [calendar.html](calendar.html) — Timer calendar
+### Timer calendar
+
+The page, `calendar.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how a user sees and adds their own time as a week calendar (task 069), like
 booking a slot in a clinic's calendar. The Timer page has a **List | Calendar** switch before
@@ -974,7 +990,9 @@ Decided on 2026-09-29:
   status line under the grid says "Not saved yet" in orange with "Try again" where Undo
   would be.
 
-### [auth.html](auth.html) — Sign-in flows
+### Sign-in flows
+
+The page, `auth.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: layout of the signed-out screens, and how the sign-in methods in
 `docs/architecture/auth.md` ("Sign-in methods") appear on them.
@@ -1278,7 +1296,9 @@ horizon, the bands sit where set, the mist leaves the tagline and cards readable
 no browser errors. Screenshots show single frames, so the motion, the gusts, the snow's arc,
 and how visible the day glitter, spray, and dust are need a look on a real screen.
 
-### [copy-durations.html](copy-durations.html) — Copy durations
+### Copy durations
+
+The page, `copy-durations.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how a click on a duration shows what it copied (task 078). The page has the Timer
 page's day cards and table, simplified to the fields around the duration, and the "Copied
@@ -1313,7 +1333,9 @@ the duration (the `copyDurationControl` setting), a field colored by token with 
 about a field inside a word, and a fifth example, `H \Hours M \Minutes`.
 `docs/architecture/timer.md`, "Copying durations", describes the app's behavior.
 
-### [copy-entries.html](copy-entries.html) — Entry copies and durations
+### Entry copies and durations
+
+The page, `copy-entries.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how a user logs the same entry on many days, such as a daily standup, and sets an
 entry's length as a duration. Two user requests from 2026-11-02: fill a date range with one
@@ -1321,7 +1343,7 @@ entry (skipping weekends, or deleting them by hand), or duplicate an entry and m
 between days, which Toggl lacked; and type a duration in hours or minutes when adding an entry,
 in the list or the calendar. One feature covers both ways of copying: picking days in a month,
 where a range and a single duplicate are both just picked days. The page is
-[calendar.html](calendar.html) with these changes; the list's Add entry opens the same popover.
+`calendar.html` with these changes; the list's Add entry opens the same popover.
 
 - **Duration field** beside Start and End in the entry popover. Start, end, and duration are
   one range: typing a duration moves the end, and typing a start or an end recomputes the
@@ -1330,7 +1352,7 @@ where a range and a single duplicate are both just picked days. The page is
   `1h30`, `90m`, `90 min`, `1.5`, `1,5`, and `1.5h`; a bare number is hours, as requested. A
   line under the field reads it back ("1 h 30 min") while it has focus, and leaving the field
   rewrites it as `1:30`. Over 24 hours is refused, and a bare `90` suggests `90m`. The list's
-  rows take it too ([timer.html](#timerhtml--timer-and-entries)).
+  rows take it too ([timer.html](#timer-and-entries)).
 - **Repeat**, a field under the times for a stopped or new entry, set to Doesn't repeat. Its
   patterns are named for the entry's day: Every workday, Every day, Every Wednesday, and
   Every month on the 7th. Picking one fills the days after the entry's that match it, up to
@@ -1406,7 +1428,7 @@ preview, no horizontal page scroll, and no browser errors.
 
 Decision: how a user's Google Calendar meetings show beside their time on the Timer page, and
 how they become entries: one at a time, a day or a range at once, or by auto-track (task 097).
-The page grew from [copy-entries.html](copy-entries.html), but shows entries without editing
+The page grew from `copy-entries.html`, but shows entries without editing
 them; the Calendars card is in [settings.html](#settingshtml--settings).
 
 The app changed some of this after testing against a real calendar (2026-11-05), and the page

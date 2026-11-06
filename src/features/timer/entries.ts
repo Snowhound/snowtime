@@ -1,4 +1,4 @@
-// Time entry rules the timer view applies on the client (prototypes/timer.html): grouping
+// Time entry rules the timer view applies on the client: grouping
 // by day in the user's zone, the recent work and the summary, and reading the entry
 // popover's date and times.
 import {
@@ -130,7 +130,7 @@ export function recentWork<T extends EntryTimes & Work>(entries: readonly T[], l
 }
 
 // Recent work whose ticket and description contain the typed text, for the description
-// fields' suggestions (prototypes/timer.html): newest first, leaving out the work already in
+// fields' suggestions: newest first, leaving out the work already in
 // the fields and work whose project can't be picked any more.
 export function suggestWork<T extends EntryTimes & Work>(
   entries: readonly T[],

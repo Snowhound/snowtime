@@ -118,7 +118,7 @@ of the host's default locale (`LANG` and `LC_*`).
 ## Ticket keys
 
 An entry has at most one ticket key, such as `NBW-412` (task 060, `prototypes/README.md`,
-timer.html, "Ticket keys").
+"Timer and entries").
 
 - Storage: the nullable `time_entry.ticket` column, indexed on
   `(organization_id, ticket, started_at)` for a report's entries of one ticket. One ticket per

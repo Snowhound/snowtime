@@ -1,4 +1,4 @@
-// The day cards of the Bar and Focus layouts (prototypes/timer.html): a card per day,
+// The day cards of the Bar and Focus layouts: a card per day,
 // newest first, with the day's total, and per entry its fields (entry-fields.tsx) and the
 // continue and delete actions. The ticket chip follows the text, or with the Wide page setting
 // has a column of its own. The parts the Table layout shares are exported.

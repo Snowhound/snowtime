@@ -1,5 +1,5 @@
-// A typed duration, for the entry popover's and the rows' duration fields
-// (prototypes/copy-entries.html, "Duration field"): 1:30, 1:30:00, 1h 30m, 1h30, 90m, 90 min,
+// A typed duration, for the entry popover's and the rows' duration fields (prototypes/README.md,
+// "Entry copies and durations"): 1:30, 1:30:00, 1h 30m, 1h30, 90m, 90 min,
 // 1.5, 1,5, and 1.5h, and the same with Estonian units (1 t 30 min). A bare number is hours.
 // Only H:MM:SS keeps seconds; the other forms round to the minute.
 import { m } from '~/paraglide/messages.js'

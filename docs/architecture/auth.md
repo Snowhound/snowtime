@@ -97,7 +97,7 @@ membership or other permissions.
   registered.
 - Email provider when email is added: Brevo (free tier 300 emails a day, EU-based
   company), optional per deployment through env vars (task 016).
-- Sign-up and sign-in screens are prototyped in `prototypes/auth.html`.
+- Sign-up and sign-in screens were prototyped in `prototypes/README.md`, "Sign-in flows".
 - An invitation link is `<app URL>/invitation/<id>`. Better Auth shows an
   invitation only to the invited user's session, but the screen must name the
   organization, team, inviter, and invited address before sign-in, so the reader knows

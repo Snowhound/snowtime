@@ -1,4 +1,4 @@
-// The timesheet grid (prototypes/reports.html, 02 · Timesheet): a row per group and a
+// The timesheet grid: a row per group and a
 // column per day or week, with row and column totals and the current day or week shaded.
 // It scrolls inside its card with the first and last columns sticky. Names and totals are
 // buttons that narrow the Entries card to their row, day or week, or both.

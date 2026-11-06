@@ -8,8 +8,7 @@ import { projectsQuery } from '~/lib/queries/projects'
 import { runningTimerQuery } from '~/lib/queries/timer'
 import { m } from '~/paraglide/messages.js'
 
-// The main tracking view (prototypes/timer.html, Bar layout), or its week calendar
-// (prototypes/calendar.html), which loads the current week.
+// The main tracking view, or its week calendar, which loads the current week.
 export const Route = createFileRoute('/$org/timer')({
   // The view sets its own width, which the Wide page setting widens.
   staticData: { wide: true },

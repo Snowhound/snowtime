@@ -1,4 +1,4 @@
-// The scenery settings (prototypes/app-frame.js, settings.html, and auth.html): the Background
+// The scenery settings (prototypes/app-frame.js and settings.html): the Background
 // switch with Strength and Surfaces under it, Weather, and optionally Intro. The Appearance
 // popover, Settings > Preferences, and the sign-in page's Scenery menu lay them out the same way.
 // Each puts the collection above them in its own way; the sign-in menu's is the Collection

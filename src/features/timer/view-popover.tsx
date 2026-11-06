@@ -1,4 +1,4 @@
-// The timer's View popover (prototypes/timer.html): the layout, whether the summary shows (in
+// The timer's View popover: the layout, whether the summary shows (in
 // List view only), whether the header's buttons and the rows are compact, and whether the page
 // is wide.
 // They are user settings, saved through useUpdateSettings, so they change at once here and on

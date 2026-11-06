@@ -1,4 +1,4 @@
-// The description field of the timer bar and the entry popover (prototypes/timer.html): a
+// The description field of the timer bar and the entry popover: a
 // text field that lists recent work under it, following the WAI-ARIA combobox pattern. The
 // list opens on focus and typing; arrows move through it, Enter or a click picks, and Escape
 // closes only the list. Picking fills in the description, the ticket, and the project; typing

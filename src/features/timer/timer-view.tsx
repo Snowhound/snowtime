@@ -1,4 +1,4 @@
-// The timer view (prototypes/timer.html): the timer, the user's recent entries by day, the
+// The timer view: the timer, the user's recent entries by day, the
 // summary, and the entry popover, in the Bar, Focus, or Table layout; or, with the List |
 // Calendar switch on Calendar, the timer over the week calendar (calendar/timer-calendar.tsx).
 // Every write is optimistic (queries.ts); its error shows under the edited row or above the
