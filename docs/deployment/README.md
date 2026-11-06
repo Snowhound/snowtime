@@ -163,16 +163,17 @@ Google reviews an External app before any account outside the test list can gran
 events scope without a warning. Its page says the review takes up to 10 days
 ([Sensitive scope verification][google-sensitive]). Before you submit:
 
-1. Make the pages Google checks public on your host. The home page describes what
-   Snowtime does and links to the privacy policy; a sign-in page alone doesn't count. The
-   privacy policy says what Snowtime reads from a calendar, what it stores, who sees it,
-   and how to disconnect, and it includes Google's Limited Use statement. Snowtime's
-   `/privacy` has this text, naming Snowhound OÜ; change the operator as described above.
+1. Check the pages Google reviews on your host. The home page must describe the app and
+   link to the privacy policy; a sign-in page alone doesn't count. Snowtime's public
+   `/about` is that page. The privacy policy must say what Snowtime reads from a calendar,
+   what it stores, who sees it, and how to disconnect, and include Google's Limited Use
+   statement, as `/privacy` does. Both name Snowhound OÜ; change the operator as described
+   above.
 2. Verify the domain of these pages in [Google Search Console][search-console], with a
    Google account that is an Owner or Editor of the Cloud project. Verify the registrable
    domain, such as `example.com` for `snowtime.example.com`, which a DNS TXT record does.
-3. Under **Branding**, enter the app name your pages show, a support email, the home page,
-   privacy, and terms URLs, and the domain under **Authorized domains**. Google checks the
+3. Under **Branding**, enter the app name your pages show, a support email, the home page
+   (`https://<host>/about`), privacy, and terms URLs, and the domain under **Authorized domains**. Google checks the
    branding automatically; publish it when it passes. You can't change branding while a
    review runs.
 4. Record a demo video in English and upload it to YouTube as **Unlisted**. It shows:

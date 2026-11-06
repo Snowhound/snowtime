@@ -132,7 +132,7 @@ same change or session.
 ## Acceptance criteria
 
 - [ ] Subtasks 01 to 05 are done
-- [ ] `docs/product.md` lists the calendar integration in scope and Google as its only
+- [x] `docs/product.md` lists the calendar integration in scope and Google as its only
       provider
 - [ ] `docs/architecture/calendar.md` records the decisions above, with the proposed ones
       settled, and `docs/architecture/README.md` links it

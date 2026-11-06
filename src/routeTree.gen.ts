@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrgRouteImport } from './routes/$org'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as CreateOrganizationRouteImport } from './routes/create-organization'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
 const OrgRoute = OrgRouteImport.update({
   id: '/$org',
   path: '/$org',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateOrganizationRoute = CreateOrganizationRouteImport.update({
@@ -116,6 +122,7 @@ const ApiV1SplatRoute = ApiV1SplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$org': typeof OrgRouteWithChildren
+  '/about': typeof AboutRoute
   '/create-organization': typeof CreateOrganizationRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/create-organization': typeof CreateOrganizationRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$org': typeof OrgRouteWithChildren
+  '/about': typeof AboutRoute
   '/create-organization': typeof CreateOrganizationRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$org'
+    | '/about'
     | '/create-organization'
     | '/privacy'
     | '/sign-in'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/create-organization'
     | '/privacy'
     | '/sign-in'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$org'
+    | '/about'
     | '/create-organization'
     | '/privacy'
     | '/sign-in'
@@ -232,6 +244,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   OrgRoute: typeof OrgRouteWithChildren
+  AboutRoute: typeof AboutRoute
   CreateOrganizationRoute: typeof CreateOrganizationRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
@@ -257,6 +270,13 @@ declare module '@tanstack/solid-router' {
       path: '/$org'
       fullPath: '/$org'
       preLoaderRoute: typeof OrgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create-organization': {
@@ -390,6 +410,7 @@ const OrgRouteWithChildren = OrgRoute._addFileChildren(OrgRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OrgRoute: OrgRouteWithChildren,
+  AboutRoute: AboutRoute,
   CreateOrganizationRoute: CreateOrganizationRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,

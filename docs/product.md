@@ -23,13 +23,15 @@ companies can use it too.
 | Projects | Org-level projects, optionally assigned to teams; CRUD                                                                             |
 | Reports  | Totals per day / week / project / team / member, user's zone; their entries, read-only; CSV and XLSX export of a report as shown   |
 | Settings | Time zone, week start, and country, whose public holidays the taglines don't count as missing hours                                |
+| Calendar | Connect a Google calendar, see its meetings beside the entries, and log them as entries; Google is the only provider (task 097)    |
 | API      | Personal API keys and a small `/api/v1` for the timer, projects, and entries, for a Raycast extension and other clients (task 093) |
 
 ## Not in MVP
 
 - Billing, rates, invoicing
 - Tags, clients, custom roles beyond owner / admin / member
-- Integrations beyond the API and its Raycast extension, browser extension, mobile app
+- Integrations beyond the API, its Raycast extension, and Google Calendar; browser extension,
+  mobile app
 - Offline / local-first sync
 - Exports beyond a report as shown and its entries (for example payroll formats or scheduled
   exports)
