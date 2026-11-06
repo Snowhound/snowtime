@@ -108,7 +108,11 @@ webhook URL and permissions, which sign-in doesn't use. In the OAuth App form:
   tokens** can stay on: the app uses GitHub's token only at sign-in and then keeps its
   own session.
 
-Google and Microsoft also list several redirect URLs in one app. For Microsoft account
+Google and Microsoft also list several redirect URLs in one app. Keep `localhost` out of a
+production Google client: Google flags a published client that allows loopback redirects as
+open to impersonation. For local development, create a second Cloud project with its own
+client in **Testing**, with `http://localhost:3100/api/auth/callback/google` and
+`http://localhost:3100/calendar/callback`, and put its ID and secret in `.env.local`. For Microsoft account
 types and `MICROSOFT_TENANT_ID`, see `../architecture/auth.md` ("Sign-in methods").
 
 For Microsoft, also add the `xms_edov` optional claim, which says the account's tenant has
@@ -133,9 +137,8 @@ Connecting a Google calendar (`../architecture/calendar.md`) uses the Google sig
 with a redirect of its own. The feature is off until `GOOGLE_CLIENT_ID` and
 `GOOGLE_CLIENT_SECRET` are set. In the Google Cloud console:
 
-- Under **Clients**, add the redirect URI `https://<host>/calendar/callback`, plus
-  `http://localhost:3100/calendar/callback` for local development. It is an app page, not
-  an `/api/auth` path.
+- Under **Clients**, add the redirect URI `https://<host>/calendar/callback`. It is an app
+  page, not an `/api/auth` path.
 - Enable the **Google Calendar API** under **APIs & Services > Library**.
 - Under **Google Auth Platform > Data Access**, add the scopes
   `https://www.googleapis.com/auth/calendar.calendarlist.readonly` and
