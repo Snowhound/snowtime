@@ -118,7 +118,7 @@
     // Checkbox Control classes on a native <input type="checkbox">: `checked:` replaces
     // `data-[checked]:`, `focus-visible:` replaces `peer-focus-visible:`. ui.js adds the check icon.
     checkbox:
-      'peer size-4 shrink-0 rounded-sm border border-primary ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 checked:border-none checked:bg-primary checked:text-primary-foreground appearance-none m-0',
+      'peer size-4 shrink-0 rounded-sm border border-primary ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 checked:border-none checked:bg-primary checked:text-primary-foreground indeterminate:border-none indeterminate:bg-primary appearance-none m-0',
     progress: 'relative h-2 w-full overflow-hidden rounded-full bg-secondary',
     'progress-fill': 'h-full flex-1 bg-primary transition-all',
   }
@@ -136,9 +136,11 @@
   const chevrons =
     '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 opacity-50"><path d="M8 9l4 -4l4 4" /><path d="M16 15l-4 4l-4 -4" /></svg>'
 
-  // Checkbox and radio item indicators, matching CheckboxControl's and DropdownMenuRadioItem's icons.
+  // Checkbox (checked and indeterminate) and radio item indicators, matching CheckboxControl's and
+  // DropdownMenuRadioItem's icons.
   const checkIcon =
-    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute left-0 top-0 hidden size-4 text-primary-foreground peer-checked:block"><path d="M5 12l5 5l10 -10" /></svg>'
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute left-0 top-0 hidden size-4 text-primary-foreground peer-checked:block peer-indeterminate:hidden"><path d="M5 12l5 5l10 -10" /></svg>' +
+    '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute left-0 top-0 hidden size-4 text-primary-foreground peer-indeterminate:block"><path d="M5 12l14 0" /></svg>'
   const radioIndicator =
     '<span data-ui-indicator aria-hidden="true" class="absolute left-2 flex size-3.5 items-center justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-2 fill-current"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /></svg></span>'
 

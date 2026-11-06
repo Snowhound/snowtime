@@ -495,7 +495,7 @@
       </div>
     </div>
 
-    <!-- Log meetings: today's by default; another range lists older ones. One save is one
+    <!-- Log meetings: this week's by default; another range lists older ones. One save is one
          createEntries, so one Undo takes them back. -->
     <dialog id="log-dialog" data-ui="dialog" class="max-w-2xl" aria-labelledby="log-title" aria-describedby="log-description">
       <form id="log-form" class="grid grid-cols-[minmax(0,1fr)] gap-4" novalidate>
@@ -2287,8 +2287,9 @@
       })
 
       // --- Log meetings --------------------------------------------------------------------------
-      // A range of days, today by default. Each meeting starts checked when auto-track would log
-      // it and it has started; a row's project is the meeting's, for this log only.
+      // A range of days, this week by default. Each meeting starts checked when auto-track would log
+      // it and it has started; a row's project is the meeting's, for this log only. A day's heading
+      // checks or unchecks all its meetings that aren't logged yet.
       const logDialog = f('log-dialog')
       const MAX_RANGE_DAYS = 93
       const picks = new Map() // key → { checked, projectId }, kept while the dialog is open
@@ -2302,7 +2303,7 @@
         if (name === 'last-week') return [Z.addDays(week, -7, zone()), Z.addDays(week, -1, zone())]
         return [t, t]
       }
-      function openLog([from, to] = presetRange('today')) {
+      function openLog([from, to] = presetRange('week')) {
         picks.clear()
         f('log-from').value = dateValue(from)
         f('log-to').value = dateValue(to)
@@ -2339,13 +2340,29 @@
         const tooLong = range && range.days > MAX_RANGE_DAYS
         const list = range && !tooLong ? logRows(range) : []
         const now = Date.now()
+        // Per day, how many rows can still be checked and how many are.
+        const dayCounts = new Map()
+        for (const row of list) {
+          if (isLogged(row.at.key)) continue
+          const day = Z.startOfDay(row.at.startedAt, zone())
+          const c = dayCounts.get(day) ?? { open: 0, checked: 0 }
+          c.open++
+          if (pickOf(row).checked) c.checked++
+          dayCounts.set(day, c)
+        }
         let html = ''
         let lastDay = null
         list.forEach((row, i) => {
           const { e, at } = row
           const day = Z.startOfDay(at.startedAt, zone())
           if (day !== lastDay) {
-            html += `<div class="sticky top-0 z-[1] border-y bg-muted px-3 py-1.5 text-xs font-medium first:border-t-0">${escapeHtml(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(day))}</div>`
+            const label = fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(day)
+            const c = dayCounts.get(day) ?? { open: 0, checked: 0 }
+            const all = c.open > 0 && c.checked === c.open
+            html += `<div class="sticky top-0 z-[1] flex items-center gap-3 border-y bg-muted px-3 py-1.5 text-xs font-medium first:border-t-0">
+              <input type="checkbox" data-ui="checkbox" id="log-day-${day}" data-log-day="${day}" data-some="${c.checked > 0 && !all}" ${all ? 'checked' : ''} ${c.open ? '' : 'disabled'} aria-label="${escapeHtml(`All meetings on ${label}`)}" />
+              <label for="log-day-${day}" class="min-w-0 flex-1">${escapeHtml(label)}</label>
+            </div>`
             lastDay = day
           }
           const logged = state.entries.find((x) => x.calendarEvent === at.key)
@@ -2383,6 +2400,8 @@
         f('log-list').innerHTML =
           html ||
           `<p class="px-4 py-8 text-center text-sm text-muted-foreground">${tooLong ? `Pick at most ${MAX_RANGE_DAYS} days.` : !range ? 'Pick a start and an end, the end on or after the start.' : 'No meetings in these days.'}</p>`
+        // Indeterminate is a property only: some of the day's meetings are checked.
+        f('log-list').querySelectorAll('[data-log-day]').forEach((box) => (box.indeterminate = box.dataset.some === 'true'))
         const chosen = list.filter((r) => !isLogged(r.at.key) && pickOf(r).checked)
         const total = chosen.reduce((s, r) => s + r.at.stoppedAt - r.at.startedAt, 0)
         const over = chosen.length > MAX_ENTRIES
@@ -2405,6 +2424,14 @@
       })
       for (const id of ['log-from', 'log-to']) f(id).addEventListener('input', renderLog)
       f('log-list').addEventListener('change', (event) => {
+        const dayBox = event.target.closest('[data-log-day]')
+        if (dayBox) {
+          const range = logRange()
+          const day = Number(dayBox.dataset.logDay)
+          for (const row of range ? logRows(range) : []) {
+            if (Z.startOfDay(row.at.startedAt, zone()) === day && !isLogged(row.at.key)) pickOf(row).checked = dayBox.checked
+          }
+        }
         const box = event.target.closest('[data-log-key]')
         const select = event.target.closest('[data-log-project]')
         if (box) picks.get(box.dataset.logKey).checked = box.checked
