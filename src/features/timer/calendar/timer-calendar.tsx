@@ -950,7 +950,7 @@ export function TimerCalendar(props: {
               variant="outline"
               size="sm"
               aria-haspopup="dialog"
-              onClick={() => setLogRange({ from: today(), to: today() })}
+              onClick={() => setLogRange({ from: week(), to: addDays(week(), 6) })}
             >
               <CalendarClockIcon aria-hidden="true" />
               {m.log_meetings()}

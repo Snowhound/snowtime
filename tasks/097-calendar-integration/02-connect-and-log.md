@@ -56,6 +56,8 @@ still shows the earlier design.
 - No **Edit first**: the popover only logs, and the entry is edited after, where it lands.
   Editing before logging let the entry move to another date or repeat while it still carried
   the meeting's key, and nothing else in the app edits a row that way.
+- Log meetings opens on the week the calendar shows, and each day's heading has a checkbox
+  that checks or unchecks all of that day's meetings not yet logged (2026-11-06).
 - A meeting suggests the project of the latest loaded entry with its title (097.03 widens
   this to 90 days from the server).
 

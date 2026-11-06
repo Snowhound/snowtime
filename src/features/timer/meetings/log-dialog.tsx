@@ -1,7 +1,8 @@
-// Log meetings (prototypes/calendar-events.html): a range's meetings, today's by default, each
-// with a checkbox and the project it logs to. A meeting starts checked once it has started and
-// auto-track would log it; an all-day event is listed per day, unchecked, to log as a day.
-// One save is one createEntries, at most MAX_BATCH_ENTRIES, with one Undo.
+// Log meetings (prototypes/calendar-events.html): a range's meetings, the calendar's week by
+// default, each with a checkbox and the project it logs to. A meeting starts checked once it has
+// started and auto-track would log it; an all-day event is listed per day, unchecked, to log as a
+// day. A day's heading checks or unchecks all its meetings not yet logged. One save is one
+// createEntries, at most MAX_BATCH_ENTRIES, with one Undo.
 import CheckIcon from 'lucide-solid/icons/check'
 import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import { For, Show, createMemo, createSignal } from 'solid-js'
@@ -88,7 +89,7 @@ export interface LogChoice {
 
 export function LogDialog(props: {
   open: boolean
-  // The range it opens on, today's unless a list day asked for its own.
+  // The range it opens on: the week the calendar shows.
   initial: { from: IsoDate; to: IsoDate }
   organizationId: string
   zone: string
@@ -182,12 +183,24 @@ export function LogDialog(props: {
     props.onLog(chosen().map((item) => ({ item, projectId: pick(item).projectId || null })))
   }
 
+  function dayOf(item: Loggable) {
+    return localDate(item.startedAt, props.zone)
+  }
   // A day's heading above its first row.
   function dayHeading(item: Loggable, index: number) {
-    const date = localDate(item.startedAt, props.zone)
+    const date = dayOf(item)
     const previous = items()[index - 1]
-    if (previous && localDate(previous.startedAt, props.zone) === date) return null
-    return formatIsoDate(date, { weekday: 'long', day: 'numeric', month: 'long' })
+    if (previous && dayOf(previous) === date) return null
+    return { date, label: formatIsoDate(date, { weekday: 'long', day: 'numeric', month: 'long' }) }
+  }
+  function openOn(date: IsoDate) {
+    return items().filter((i) => dayOf(i) === date && selectable(i))
+  }
+  function checkedOn(date: IsoDate) {
+    return openOn(date).filter((i) => pick(i).checked).length
+  }
+  function setDay(date: IsoDate, checked: boolean) {
+    for (const item of openOn(date)) setPick(item, { checked })
   }
 
   return (
@@ -270,11 +283,29 @@ export function LogDialog(props: {
                 return (
                   <>
                     <Show when={dayHeading(item, index())}>
-                      {(heading) => (
-                        <div class="bg-muted sticky top-0 z-[1] border-y px-3 py-1.5 text-xs font-medium first:border-t-0">
-                          {heading()}
-                        </div>
-                      )}
+                      {(heading) => {
+                        const dayId = `log-day-${heading().date}`
+                        function open() {
+                          return openOn(heading().date).length
+                        }
+                        function checked() {
+                          return checkedOn(heading().date)
+                        }
+                        return (
+                          <div class="bg-muted sticky top-0 z-[1] flex items-center gap-3 border-y px-3 py-1.5 text-xs font-medium first:border-t-0">
+                            <Checkbox
+                              id={dayId}
+                              checked={open() > 0 && checked() === open()}
+                              indeterminate={checked() > 0 && checked() < open()}
+                              disabled={!open()}
+                              onChange={(on: boolean) => setDay(heading().date, on)}
+                            />
+                            <Label for={`${dayId}-input`} class="min-w-0 flex-1 text-xs">
+                              {heading().label}
+                            </Label>
+                          </div>
+                        )
+                      }}
                     </Show>
                     <div
                       class="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 [&+&]:border-t"

@@ -495,7 +495,7 @@
       </div>
     </div>
 
-    <!-- Log meetings: this week's by default; another range lists older ones. One save is one
+    <!-- Log meetings: the shown week's by default; another range lists older ones. One save is one
          createEntries, so one Undo takes them back. -->
     <dialog id="log-dialog" data-ui="dialog" class="max-w-2xl" aria-labelledby="log-title" aria-describedby="log-description">
       <form id="log-form" class="grid grid-cols-[minmax(0,1fr)] gap-4" novalidate>
@@ -2287,7 +2287,7 @@
       })
 
       // --- Log meetings --------------------------------------------------------------------------
-      // A range of days, this week by default. Each meeting starts checked when auto-track would log
+      // A range of days, the calendar's week by default. Each meeting starts checked when auto-track would log
       // it and it has started; a row's project is the meeting's, for this log only. A day's heading
       // checks or unchecks all its meetings that aren't logged yet.
       const logDialog = f('log-dialog')
@@ -2303,7 +2303,7 @@
         if (name === 'last-week') return [Z.addDays(week, -7, zone()), Z.addDays(week, -1, zone())]
         return [t, t]
       }
-      function openLog([from, to] = presetRange('week')) {
+      function openLog([from, to] = [state.week, Z.addDays(state.week, 6, zone())]) {
         picks.clear()
         f('log-from').value = dateValue(from)
         f('log-to').value = dateValue(to)
