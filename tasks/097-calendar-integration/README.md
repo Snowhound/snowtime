@@ -13,13 +13,13 @@ provider-neutral, so Outlook or an iCal feed later adds an adapter and no schema
 
 ## Subtasks
 
-| #   | Subtask                                                    | Depends on |
-| --- | ---------------------------------------------------------- | ---------- |
-| 01  | [Prototype](01-prototype.md)                               | —          |
-| 02  | [Connect a calendar and log events](02-connect-and-log.md) | 01         |
-| 03  | [A project per series](03-series-projects.md)              | 02         |
-| 04  | [Auto-track](04-auto-track.md)                             | 03         |
-| 05  | [Google verification](05-google-verification.md)           | 02         |
+| #   | Subtask                                                                        | Depends on |
+| --- | ------------------------------------------------------------------------------ | ---------- |
+| 01  | Prototype (done; `01-prototype.md` in `70a034d`)                               | —          |
+| 02  | Connect a calendar and log events (done; `02-connect-and-log.md` in `70a034d`) | 01         |
+| 03  | [A project per series](03-series-projects.md)                                  | 02         |
+| 04  | [Auto-track](04-auto-track.md)                                                 | 03         |
+| 05  | [Google verification](05-google-verification.md)                               | 02         |
 
 The prototype comes first and is approved before any build: the views matter more than the
 mechanics, and the build follows the approved design. Subtasks 02 to 04 each ship on their
