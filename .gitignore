@@ -15,6 +15,9 @@ __unconfig*
 # Local scratchpad
 temp
 
+# Built from datamodel/snowtime.dbml when viewed (datamodel/README.md)
+datamodel/*.chartdb.json
+
 # Local SQLite databases
 local.db*
 
