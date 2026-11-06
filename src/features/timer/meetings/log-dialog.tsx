@@ -293,13 +293,18 @@ export function LogDialog(props: {
                         }
                         return (
                           <div class="bg-muted sticky top-0 z-[1] flex items-center gap-3 border-y px-3 py-1.5 text-xs font-medium first:border-t-0">
-                            <Checkbox
-                              id={dayId}
-                              checked={open() > 0 && checked() === open()}
-                              indeterminate={checked() > 0 && checked() < open()}
-                              disabled={!open()}
-                              onChange={(on: boolean) => setDay(heading().date, on)}
-                            />
+                            {/* A day with every meeting logged shows a check, as its rows do. */}
+                            <Show
+                              when={open()}
+                              fallback={<CheckIcon class="size-4 shrink-0" aria-hidden="true" />}
+                            >
+                              <Checkbox
+                                id={dayId}
+                                checked={checked() === open()}
+                                indeterminate={checked() > 0 && checked() < open()}
+                                onChange={(on: boolean) => setDay(heading().date, on)}
+                              />
+                            </Show>
                             <Label for={`${dayId}-input`} class="min-w-0 flex-1 text-xs">
                               {heading().label}
                             </Label>

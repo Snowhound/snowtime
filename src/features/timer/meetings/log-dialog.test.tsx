@@ -24,7 +24,7 @@ function meeting(id: string, start: string, end: string, patch: Partial<Calendar
   } satisfies CalendarEvent
 }
 
-function renderDialog() {
+function renderDialog(entryKeys: ReadonlySet<string> = new Set()) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(() => (
     <QueryClientProvider client={queryClient}>
@@ -39,7 +39,7 @@ function renderDialog() {
         now={Date.parse('2026-11-03T15:00:00Z')}
         projects={[]}
         suggest={() => null}
-        entryKeys={new Set()}
+        entryKeys={entryKeys}
         formatTime={(ms) => new Date(ms).toISOString().slice(11, 16)}
         onLog={() => {}}
         onClose={() => {}}
@@ -75,5 +75,13 @@ describe('LogDialog', () => {
     expect(standup).not.toBeChecked()
     expect(review).not.toBeChecked()
     expect(day).not.toBeChecked()
+  })
+
+  test('a day with every meeting logged has no checkbox', async () => {
+    const standup = meeting('Standup', '2026-11-03T07:30:00Z', '2026-11-03T07:45:00Z')
+    api.listCalendarEvents.mockResolvedValue({ events: [standup], logs: [], connections: [] })
+    renderDialog(new Set([standup.key]))
+    expect(await screen.findByText('Standup')).toBeInTheDocument()
+    expect(screen.queryByRole('checkbox')).toBeNull()
   })
 })

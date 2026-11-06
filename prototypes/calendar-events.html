@@ -2289,7 +2289,7 @@
       // --- Log meetings --------------------------------------------------------------------------
       // A range of days, the calendar's week by default. Each meeting starts checked when auto-track would log
       // it and it has started; a row's project is the meeting's, for this log only. A day's heading
-      // checks or unchecks all its meetings that aren't logged yet.
+      // checks or unchecks all its meetings that aren't logged yet; a day with all logged shows a check.
       const logDialog = f('log-dialog')
       const MAX_RANGE_DAYS = 93
       const picks = new Map() // key → { checked, projectId }, kept while the dialog is open
@@ -2360,7 +2360,7 @@
             const c = dayCounts.get(day) ?? { open: 0, checked: 0 }
             const all = c.open > 0 && c.checked === c.open
             html += `<div class="sticky top-0 z-[1] flex items-center gap-3 border-y bg-muted px-3 py-1.5 text-xs font-medium first:border-t-0">
-              <input type="checkbox" data-ui="checkbox" id="log-day-${day}" data-log-day="${day}" data-some="${c.checked > 0 && !all}" ${all ? 'checked' : ''} ${c.open ? '' : 'disabled'} aria-label="${escapeHtml(`All meetings on ${label}`)}" />
+              ${c.open ? `<input type="checkbox" data-ui="checkbox" id="log-day-${day}" data-log-day="${day}" data-some="${c.checked > 0 && !all}" ${all ? 'checked' : ''} aria-label="${escapeHtml(`All meetings on ${label}`)}" />` : icon('check', 'size-4 shrink-0')}
               <label for="log-day-${day}" class="min-w-0 flex-1">${escapeHtml(label)}</label>
             </div>`
             lastDay = day
