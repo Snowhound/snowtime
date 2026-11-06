@@ -695,6 +695,8 @@
   "reports_group_team": "Meeskond",
   "reports_group_member": "Liige",
   "reports_group_ticket": "Pilet",
+  "reports_copy_description": "Kopeeri kirjeldus {text}",
+  "reports_copy_ticket": "Kopeeri pilet {ticket}",
   "reports_totals_per": "Jaotus",
   "reports_unit_day": "Päev",
   "reports_unit_week": "Nädal",

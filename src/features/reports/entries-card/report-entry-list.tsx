@@ -6,6 +6,7 @@ import LoaderCircleIcon from 'lucide-solid/icons/loader-circle'
 import MoonIcon from 'lucide-solid/icons/moon'
 import { For, Match, Show, Switch, createMemo } from 'solid-js'
 import { CopyableDuration } from '~/components/copy-duration'
+import { CopyText } from '~/components/copy-text'
 import { ErrorAlert } from '~/components/error-alert'
 import { ProjectDot } from '~/components/project-dot'
 import { Badge } from '~/components/ui/badge'
@@ -209,9 +210,17 @@ function DescriptionText(props: {
           </Show>
         }
       >
-        <span class="truncate" title={props.text}>
-          {props.text}
-        </span>
+        <CopyText
+          text={props.text}
+          label={m.reports_copy_description({ text: props.text })}
+          side="start"
+          control="text"
+          class="min-w-0"
+        >
+          <span class="block truncate" title={props.text}>
+            {props.text}
+          </span>
+        </CopyText>
       </Show>
       <Show when={props.ticket}>
         {(ticket) => <TicketBadge ticket={ticket()} class={cn(props.column && 'sm:hidden')} />}
@@ -222,12 +231,17 @@ function DescriptionText(props: {
 
 function TicketBadge(props: { ticket: string; class?: string }) {
   return (
-    <Badge
-      variant="secondary"
-      class={cn('h-5 min-w-0 shrink-0 px-1.5 font-medium tabular-nums', props.class)}
+    <CopyText
+      text={props.ticket}
+      label={m.reports_copy_ticket({ ticket: props.ticket })}
+      side="start"
+      control="text"
+      class={cn('min-w-0 shrink-0', props.class)}
     >
-      <span class="truncate">{props.ticket}</span>
-    </Badge>
+      <Badge variant="secondary" class="h-5 max-w-full px-1.5 font-medium tabular-nums">
+        <span class="truncate">{props.ticket}</span>
+      </Badge>
+    </CopyText>
   )
 }
 

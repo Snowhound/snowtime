@@ -710,6 +710,21 @@ describe('ReportsView', () => {
     expect(within(card).getAllByText('NBW-412')).toHaveLength(2)
   })
 
+  test('a click copies an entry’s description or ticket', async () => {
+    const user = userEvent.setup()
+    server.entries[0].ticket = 'NBW-412'
+    renderView({})
+    const card = await screen.findByRole('region', { name: 'Entries' })
+    const ticket = await within(card).findAllByRole('button', { name: 'Copy ticket NBW-412' })
+    await user.click(ticket[0])
+    expect(await navigator.clipboard.readText()).toBe('NBW-412')
+    const description = server.entries[0].description
+    await user.click(
+      within(card).getAllByRole('button', { name: `Copy description ${description}` })[0],
+    )
+    expect(await navigator.clipboard.readText()).toBe(description)
+  })
+
   test('By description shows its top rows, and Show all loads the rest', async () => {
     server.entries = ['Alpha', 'Beta', 'Gamma'].map((description, i) => ({
       userId: me,

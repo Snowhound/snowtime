@@ -695,6 +695,8 @@
   "reports_group_team": "Team",
   "reports_group_member": "Member",
   "reports_group_ticket": "Ticket",
+  "reports_copy_description": "Copy description {text}",
+  "reports_copy_ticket": "Copy ticket {ticket}",
   "reports_totals_per": "Totals per",
   "reports_unit_day": "Day",
   "reports_unit_week": "Week",
