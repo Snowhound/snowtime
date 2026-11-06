@@ -136,7 +136,7 @@ same change or session.
       provider
 - [ ] `docs/architecture/calendar.md` records the decisions above, with the proposed ones
       settled, and `docs/architecture/README.md` links it
-- [ ] The privacy page says what Snowtime reads from a connected calendar, that it stores
+- [x] The privacy page says what Snowtime reads from a connected calendar, that it stores
       no events, and how to disconnect
 
 [toggl]: https://docs.toggl.com/managing-calendar-events
