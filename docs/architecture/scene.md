@@ -109,7 +109,8 @@ collections".
     filters and counts the picture as light.
   - Light glass stays 70% card color with no dimming. A first fix took dark glass to 75%,
     which barely darkened light pictures; Deep at 40% for every picture made night pictures
-    darker than solid. `prototypes/README.md` (calendar.html) has the measurements.
+    darker than solid. The measurements are in `prototypes/README.md` (calendar.html) at commit
+    `70a034d`.
 - Tint (`STRENGTHS` in `src/lib/scene/scene.ts`, `.scene-tint` in `src/styles.css`): a
   vertical gradient of the page color over the image keeps the text readable, covering
   `strength × 70%` at the top and `strength × 115%` at the bottom. Dimmed, the default, is 0.4

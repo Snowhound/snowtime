@@ -201,7 +201,7 @@ body[data-scene-bg='on'][data-surfaces='glass'] :is([data-ui='card'], .surface) 
   backdrop-filter: blur(24px);
 }
 /* Dark glass is 40% card color over the scene at 0.6 brightness; the app dims a dark picture
-   less (calendar.html's Adaptive glass). */
+   less (docs/architecture/scene.md, "Dark glass"). */
 .dark body[data-scene-bg='on'][data-surfaces='glass'] :is([data-ui='card'], .surface) {
   background-color: color-mix(in srgb, var(--card) 40%, transparent);
   backdrop-filter: blur(24px) brightness(0.6) saturate(1.3);

@@ -974,40 +974,6 @@ Decided on 2026-09-29:
   status line under the grid says "Not saved yet" in orange with "Try again" where Undo
   would be.
 
-Glass test (2026-11-05): a user found the dark glass too light behind the calendar. The
-prototype bar picks the theme, background, strength, and surfaces on the page, and its Glass
-select and sliders set, in dark mode, the card color's share of the glass and a brightness
-and saturation on the blurred scene behind it. Over the lightest scene (winter, full
-strength) an empty day column measured mean lightness 45 on the 70% glass and 34 on solid. Presets, as winter full / autumn dimmed:
-
-| Preset  | Card | Brightness | Saturation | Winter full | Autumn dimmed |
-| ------- | ---- | ---------- | ---------- | ----------- | ------------- |
-| Before  | 70%  | 1          | 1          | 45          | 35            |
-| Current | 75%  | 1          | 1          | 43          | 35            |
-| Denser  | 92%  | 1          | 1          | 37          | 34            |
-| Smoked  | 70%  | 0.5        | 1.2        | 35          | 29            |
-| Deep    | 80%  | 0.6        | 1.3        | 36          | 32            |
-| Solid   |      |            |            | 34          | 34            |
-
-A fixed brightness darkens dark scenes below solid too; the app's blurred copy of the photo
-(`src/lib/scene/glass.ts`) could instead measure each photo and pick its brightness.
-
-Dark glass first went from 70% to 75% of the card color, with light glass staying at 70%;
-the adaptive glass below replaced it the same day.
-
-Adaptive glass (2026-11-05, decided and built; `docs/architecture/scene.md`, "Dark glass"):
-Deep at 40% (40% card color, the scene behind at 0.6 brightness and 1.3 saturation) showed
-the picture best, even on night pictures such as Coast July, where its windmill's blades
-stay visible, although it's darker than solid there. Only on the darkest pictures did the
-cards sink in. The Adaptive preset keeps Deep at 40% but dims a dark picture less: it
-measures the picture behind the glass (in the prototype, a table of each dark photo's mean
-lightness, with the tint mixing in the page color at about 0.925 of the strength; the app
-measures its blurred copy in `src/lib/scene/glass.ts`) and dims it to 0.6, but not
-below lightness 22, what Coast July at Full gets at 0.6. Over all 28 pictures at both
-strengths an empty day column measured 23 to 40, most 24 to 30, against 34 on solid; the
-darkest pictures, such as Countryside April, aren't dimmed at all. Two earlier rules, which
-aimed at solid's lightness and kept dark pictures at 75%, hid the picture more than wanted.
-
 ### [auth.html](auth.html) — Sign-in flows
 
 Decision: layout of the signed-out screens, and how the sign-in methods in
@@ -1441,9 +1407,26 @@ preview, no horizontal page scroll, and no browser errors.
 Decision: how a user's Google Calendar meetings show beside their time on the Timer page, and
 how they become entries: one at a time, a day or a range at once, or by auto-track (task 097).
 The page is [copy-entries.html](copy-entries.html) with meetings added; the Calendars card is in
-[settings.html](#settingshtml--settings). The app changed some of this after approval: see
-"Changes after the approved prototype" in
-[task 097.02](../tasks/097-calendar-integration/02-connect-and-log.md).
+[settings.html](#settingshtml--settings).
+
+The app changed some of this after testing against a real calendar (2026-11-05), and the page
+still shows the earlier design:
+
+- In the list, Undo after logging one meeting sits on the new entry's row until the next
+  change.
+- Log meetings opens only from the calendar's toolbar, where its range makes sense; the list
+  logs a meeting from its row (task 098).
+- A meeting under way logs to its scheduled end with plain **Log**; **Log until now**, on its
+  row and in its popover, ends it now.
+- A meeting whose entry was deleted shows again as a row in the list, as in the calendar.
+- In the dialog, a logged meeting shows a check instead of a disabled checkbox.
+- In the list, a meeting's times sit in the entries' Start and End columns, and its popover
+  opens below the row.
+- No **Edit first**: the popover only logs, and the entry is edited after, where it lands.
+  Editing before logging let the entry move to another date or repeat while it still carried
+  the meeting's key, and nothing else in the app edits a row that way.
+- A meeting suggests the project of the latest loaded entry with its title (097.03 widens
+  this to 90 days from the server).
 
 - **Meetings in the week calendar.** A meeting not logged yet is a block set apart from
   entries, in one of three looks under "Events" in the prototype bar: **outline**, a dashed
@@ -1520,34 +1503,6 @@ default), meetings **gray** until their series has a project, all-day events log
 on request, and out of office greyed. The popover keeps both **Log** (saves at once, with
 Undo) and **Edit first** (the entry popover filled in). The hatched and band looks and the
 line per day stay switchable for comparison.
-
-### [timer-header.html](timer-header.html) — Timer header
-
-Decision: where the Timer page's actions go so the tagline stays centered beside the title
-with a calendar connected (task 098). The page is the header, the timer bar, and a stub of
-the list and the calendar; the Log meetings dialog is in
-[calendar-events.html](#calendar-eventshtml--calendar-events). As in the app, Log meetings
-is in the header only in List view; the calendar keeps it in its toolbar.
-
-- **A: View switch above the entries.** The title row keeps Add entry and View settings.
-  List | Calendar moves under the timer bar, above what it switches, with Log meetings at the
-  row's other end in List view.
-- **B: Actions on a second row.** The title row holds only the title and tagline, as on
-  Reports. Under it, List | Calendar on the left; Add entry, Log meetings, and View settings
-  on the right.
-- **C: Icons.** One row, with List | Calendar and Log meetings as icon buttons named by
-  tooltips. The app has no Tooltip component yet.
-
-A fourth design, Log meetings in a menu beside Add entry, was dropped: with the view switch's
-labels, that header crowds the tagline at 1440 px even without Log meetings.
-
-Checked on 2026-11-05 in headless Chrome at 1440 and 390 px with this season's tagline, the
-longest English one, and the longest Estonian one, in both views: A, B, and C keep the tagline
-centered at 1440 px, nothing scrolls sideways at 390 px, and there are no browser errors.
-
-Decided on 2026-11-05: A was built and then dropped, since the extra row cost more than it
-gained. The app keeps the labelled header, without Log meetings, which only the calendar's
-toolbar opens now, and C is the Compact buttons setting (task 098).
 
 ## Adding issues to tracker entries
 
