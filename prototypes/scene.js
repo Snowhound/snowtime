@@ -9,7 +9,7 @@
 // `sceneCollection` and `scenePin` (see Collections below), `sceneBackground`, `sceneStrength` ('full',
 // 'dimmed'), `sceneWeather`, and `sceneIntro` (whether the intro plays on its own; see intro.js),
 // plus the app-wide `surfaces` ('glass', 'solid'): whether cards let a background show through.
-// `scene.settings` reads and writes them for auth.html, which has no frame.
+// `scene.settings` reads and writes them for a page without the frame.
 ;(() => {
   const BASE = '../public/backgrounds/'
   const SETTINGS_KEY = 'snowtime.prototypeSettings'
@@ -397,7 +397,7 @@
     }
     return { collection: DEFAULT_COLLECTION, pin: s.sceneSeason in SEASONS ? s.sceneSeason : null }
   }
-  // The settings patch for a choice. `sceneSeason` stays in step for auth.html's Season select.
+  // The settings patch for a choice. `sceneSeason` stays in step for a Season select.
   function collectionPatch(collection, pin = null) {
     return { sceneCollection: collection, scenePin: pin, sceneSeason: pin in SEASONS ? pin : 'auto' }
   }
@@ -1416,7 +1416,7 @@
   }
 
   // --- Controller ------------------------------------------------------------------------------
-  // `image` is an image id; a season id is also one, so auth.html's `season` still works.
+  // `image` is an image id; a season id is also one, so a `season` still works.
   // `pace` is `{ density, speed }`, each a factor of the sign-in page's weather. `skip` lists effects
   // the scene leaves out of an image's weather, for stars.html, which draws its own stars and aurora.
   function create({ season = 'winter', image: imageId = season, strength = 'full', background = true, weather = true, seasonWeather = false, pace = { density: 1, speed: 1 }, legacy = false, tuning = null, skip = [] } = {}) {

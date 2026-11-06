@@ -1,4 +1,4 @@
-// The Summary view (prototypes/reports.html, Summary): a line with the total, the average per
+// The Summary view: a line with the total, the average per
 // tracked day, and the top project; time per day or week by project, as a chart or a table;
 // and each row's share by the chosen grouping. It reads on a phone, where the timesheet
 // scrolls sideways. A column narrows the Entries card to its day or week, and a row's total to

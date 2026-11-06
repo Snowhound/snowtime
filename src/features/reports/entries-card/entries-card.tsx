@@ -1,4 +1,4 @@
-// The Entries card (prototypes/reports.html): the entries behind the report, or behind the
+// The Entries card: the entries behind the report, or behind the
 // part chosen in one of its views, by day or merged by description. Read-only: only an
 // entry's owner edits it, on the Timer page. The header's count and total come from the
 // report, or for a part of it from a query of their own; the list loads only while open.

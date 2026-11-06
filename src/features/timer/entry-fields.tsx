@@ -1,4 +1,4 @@
-// Inline editing of a stopped entry (prototypes/timer.html): the entry rows' description,
+// Inline editing of a stopped entry: the entry rows' description,
 // ticket, project, date, start, end, and duration are fields that read as text until hovered
 // or focused. Their popovers and menus mount only while the row is `active`
 // (row-activation.ts). Each field saves on its own, with only what changed; an error shows

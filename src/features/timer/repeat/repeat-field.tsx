@@ -1,4 +1,4 @@
-// The entry popover's Repeat (prototypes/copy-entries.html): a pattern fills the days after the
+// The entry popover's Repeat: a pattern fills the days after the
 // entry's that match it, up to Until, at once, leaving out the days that already have the
 // entry, at its time with its description and project. The month under it previews the copies:
 // a click takes a day out or adds one the pattern left out, and arrow keys move across months.

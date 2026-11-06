@@ -95,6 +95,22 @@ collections".
     On a weak GPU (SwiftShader), 60 fps effects draw 50 to 57 fps instead of 12 to 16.
     Culling the weather under the surfaces, the canvas above the page, and a smaller blur each
     saved little. Task 069, subtask 05 has the measurements.
+- Dark glass (2026-11-05): dark surfaces are 40% card color over the scene dimmed to 0.6
+  brightness at 1.3 saturation, so the picture shows through but text stays on a dark
+  surface. A dark picture is dimmed less, to no darker than lightness 22 (sRGB luma, 0 to 255)
+  behind the glass, and the darkest not at all, so the cards don't sink into a night picture.
+  - `glassPhoto` returns the copy's mean lightness with it, and the scene layer sets
+    `--glass-lightness` on the frame. `src/styles.css` works out the picture's lightness
+    behind the glass from it and the tint's strength, and the dimming from that, so a change
+    of Strength needs no new copy.
+  - The copy has the saturation baked in and takes the dimming as a black shade between the
+    card color and the tint, which `brightness()` would equal; a filter on the copy's layer
+    would cost paint on scroll. The live blur, before a copy is ready, takes both as backdrop
+    filters and counts the picture as light.
+  - Light glass stays 70% card color with no dimming. A first fix took dark glass to 75%,
+    which barely darkened light pictures; Deep at 40% for every picture made night pictures
+    darker than solid. The measurements are in `prototypes/README.md` ("Timer calendar") at commit
+    `70a034d`.
 - Tint (`STRENGTHS` in `src/lib/scene/scene.ts`, `.scene-tint` in `src/styles.css`): a
   vertical gradient of the page color over the image keeps the text readable, covering
   `strength × 70%` at the top and `strength × 115%` at the bottom. Dimmed, the default, is 0.4

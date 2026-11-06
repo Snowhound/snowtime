@@ -1,4 +1,4 @@
-// The create and edit dialog (prototypes/projects.html): the name, a color swatch, and the
+// The create and edit dialog: the name, a color swatch, and the
 // teams that may track time on the project. Names are unique among projects that aren't
 // deleted, archived ones included (project_organization_id_name_unique), so a clash with
 // an archived project suggests restoring it.

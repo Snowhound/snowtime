@@ -11,7 +11,7 @@ import { projectsQuery } from '~/lib/queries/projects'
 import { teamsQuery } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
 
-// Day and week totals (prototypes/reports.html, 02 · Timesheet). Bad or missing search
+// Day and week totals. Bad or missing search
 // params fall back to this month by project.
 //
 // The filters aren't loaderDeps on purpose: a filter change then keeps this match, so the

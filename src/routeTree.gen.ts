@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrgRouteImport } from './routes/$org'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as CreateOrganizationRouteImport } from './routes/create-organization'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
@@ -21,6 +22,7 @@ import { Route as OrgProjectsRouteImport } from './routes/$org/projects'
 import { Route as OrgReportsRouteImport } from './routes/$org/reports'
 import { Route as OrgSettingsRouteImport } from './routes/$org/settings'
 import { Route as OrgTimerRouteImport } from './routes/$org/timer'
+import { Route as CalendarCallbackRouteImport } from './routes/calendar.callback'
 import { Route as InvitationIdRouteImport } from './routes/invitation.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiBenchHeapRouteImport } from './routes/api/bench/heap'
@@ -34,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
 const OrgRoute = OrgRouteImport.update({
   id: '/$org',
   path: '/$org',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateOrganizationRoute = CreateOrganizationRouteImport.update({
@@ -86,6 +93,11 @@ const OrgTimerRoute = OrgTimerRouteImport.update({
   path: '/timer',
   getParentRoute: () => OrgRoute,
 } as any)
+const CalendarCallbackRoute = CalendarCallbackRouteImport.update({
+  id: '/calendar/callback',
+  path: '/calendar/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InvitationIdRoute = InvitationIdRouteImport.update({
   id: '/invitation/$id',
   path: '/invitation/$id',
@@ -110,6 +122,7 @@ const ApiV1SplatRoute = ApiV1SplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$org': typeof OrgRouteWithChildren
+  '/about': typeof AboutRoute
   '/create-organization': typeof CreateOrganizationRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
@@ -119,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/$org/reports': typeof OrgReportsRoute
   '/$org/settings': typeof OrgSettingsRoute
   '/$org/timer': typeof OrgTimerRoute
+  '/calendar/callback': typeof CalendarCallbackRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -127,6 +141,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/create-organization': typeof CreateOrganizationRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
@@ -136,6 +151,7 @@ export interface FileRoutesByTo {
   '/$org/reports': typeof OrgReportsRoute
   '/$org/settings': typeof OrgSettingsRoute
   '/$org/timer': typeof OrgTimerRoute
+  '/calendar/callback': typeof CalendarCallbackRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/$org': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -146,6 +162,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$org': typeof OrgRouteWithChildren
+  '/about': typeof AboutRoute
   '/create-organization': typeof CreateOrganizationRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
@@ -155,6 +172,7 @@ export interface FileRoutesById {
   '/$org/reports': typeof OrgReportsRoute
   '/$org/settings': typeof OrgSettingsRoute
   '/$org/timer': typeof OrgTimerRoute
+  '/calendar/callback': typeof CalendarCallbackRoute
   '/invitation/$id': typeof InvitationIdRoute
   '/$org/': typeof OrgIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -166,6 +184,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$org'
+    | '/about'
     | '/create-organization'
     | '/privacy'
     | '/sign-in'
@@ -175,6 +194,7 @@ export interface FileRouteTypes {
     | '/$org/reports'
     | '/$org/settings'
     | '/$org/timer'
+    | '/calendar/callback'
     | '/invitation/$id'
     | '/$org/'
     | '/api/auth/$'
@@ -183,6 +203,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/create-organization'
     | '/privacy'
     | '/sign-in'
@@ -192,6 +213,7 @@ export interface FileRouteTypes {
     | '/$org/reports'
     | '/$org/settings'
     | '/$org/timer'
+    | '/calendar/callback'
     | '/invitation/$id'
     | '/$org'
     | '/api/auth/$'
@@ -201,6 +223,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$org'
+    | '/about'
     | '/create-organization'
     | '/privacy'
     | '/sign-in'
@@ -210,6 +233,7 @@ export interface FileRouteTypes {
     | '/$org/reports'
     | '/$org/settings'
     | '/$org/timer'
+    | '/calendar/callback'
     | '/invitation/$id'
     | '/$org/'
     | '/api/auth/$'
@@ -220,10 +244,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   OrgRoute: typeof OrgRouteWithChildren
+  AboutRoute: typeof AboutRoute
   CreateOrganizationRoute: typeof CreateOrganizationRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  CalendarCallbackRoute: typeof CalendarCallbackRoute
   InvitationIdRoute: typeof InvitationIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBenchHeapRoute: typeof ApiBenchHeapRoute
@@ -244,6 +270,13 @@ declare module '@tanstack/solid-router' {
       path: '/$org'
       fullPath: '/$org'
       preLoaderRoute: typeof OrgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create-organization': {
@@ -316,6 +349,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof OrgTimerRouteImport
       parentRoute: typeof OrgRoute
     }
+    '/calendar/callback': {
+      id: '/calendar/callback'
+      path: '/calendar/callback'
+      fullPath: '/calendar/callback'
+      preLoaderRoute: typeof CalendarCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invitation/$id': {
       id: '/invitation/$id'
       path: '/invitation/$id'
@@ -370,10 +410,12 @@ const OrgRouteWithChildren = OrgRoute._addFileChildren(OrgRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OrgRoute: OrgRouteWithChildren,
+  AboutRoute: AboutRoute,
   CreateOrganizationRoute: CreateOrganizationRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  CalendarCallbackRoute: CalendarCallbackRoute,
   InvitationIdRoute: InvitationIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBenchHeapRoute: ApiBenchHeapRoute,

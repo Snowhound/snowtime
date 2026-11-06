@@ -1,4 +1,4 @@
-// The Organization view (prototypes/organization.html) for admins and owners: Members,
+// The Organization view for admins and owners: Members,
 // Invitations, Teams, and General tabs, the tab kept in the URL. Writes are optimistic
 // (queries.ts); errors show above the tabs, or in the invite dialog while it is open.
 import { useMutationState } from '@tanstack/solid-query'

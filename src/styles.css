@@ -409,10 +409,28 @@ html[data-intro='pending'] body {
   background-color: var(--glass-color);
   backdrop-filter: var(--glass-blur);
 }
+/* Dark glass shows more of the picture, dimmed: 40% card color over the scene at 0.6 brightness
+   and 1.3 saturation, but a dark picture is dimmed less, to no darker than 22 (sRGB luma, 0 to
+   255) behind the glass, and the darkest not at all (docs/architecture/scene.md, "Dark
+   glass"). The scene layer sets --glass-lightness to the photo's mean lightness
+   (src/lib/scene/glass.ts); behind the glass, the tint mixes in the page color (#0b1622, luma
+   20.5) at about 0.925 of its strength. The copy has the saturation baked in and takes the
+   dimming as a black shade, the same as `brightness()` without a filter; the live blur takes
+   both as filters. Until a copy gives the lightness, the picture counts as light. */
+.dark [data-scene-bg='on'][data-surfaces='glass'] .surface {
+  --glass-behind: calc(
+    var(--glass-lightness, 60) * (1 - 0.925 * var(--scene-tint-dark)) + 20.5 * 0.925 *
+      var(--scene-tint-dark)
+  );
+  --glass-dim: clamp(0.6, calc(22 / var(--glass-behind)), 1);
+  --glass-color: color-mix(in srgb, var(--card) 40%, transparent);
+  --glass-shade: rgb(0 0 0 / calc(1 - var(--glass-dim)));
+  --glass-blur: blur(24px) brightness(var(--glass-dim)) saturate(1.3);
+}
 [data-scene-bg='on'] .surface {
   box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.25);
 }
-/* The sign-in card lifts further, as in prototypes/auth.html (shadow-xl). */
+/* The sign-in card lifts further (shadow-xl). */
 [data-scene-bg='on'] .auth-card {
   box-shadow:
     0 20px 25px -5px rgb(0 0 0 / 0.1),
@@ -517,6 +535,7 @@ html:has(.scene-header) {
   inset: 0;
   background:
     linear-gradient(var(--glass-color), var(--glass-color)),
+    linear-gradient(var(--glass-shade, transparent), var(--glass-shade, transparent)),
     var(--scene-vignette-layer),
     var(--scene-tint-layer),
     var(--glass-photo) center 20% / cover,
@@ -728,7 +747,7 @@ summary,
   cursor: pointer;
 }
 
-/* The Timer calendar (src/features/timer/calendar/, prototypes/calendar.html). --hour is the
+/* The Timer calendar (src/features/timer/calendar/). --hour is the
    height of an hour, set from HOUR_PX. The header and the body share their columns, and both
    reserve the scrollbar's gutter so they line up. */
 .cal-cols {
@@ -845,7 +864,53 @@ summary,
 .cal-pulse {
   animation: cal-pulse 1.6s ease-in-out infinite;
 }
-/* A day in the entry popover's copy panel (prototypes/copy-entries.html). */
+/* A calendar meeting not logged yet (prototypes/calendar-events.html, the outline look): a
+   dashed frame that shares the width with entries, gray until its series has a project. */
+.cal-event {
+  --ev: var(--muted-foreground);
+  @apply text-muted-foreground absolute z-10 flex flex-col overflow-hidden rounded-md px-1.5 py-0.5 text-left text-xs leading-tight outline-none select-none;
+  border: 1.5px dashed color-mix(in oklab, var(--ev) 65%, transparent);
+  background-color: color-mix(in oklab, var(--card) 82%, transparent);
+}
+.cal-event:hover {
+  background-color: color-mix(in oklab, var(--ev) 10%, var(--card));
+}
+.cal-event:focus-visible,
+.cal-event[data-open] {
+  @apply ring-ring ring-offset-background ring-2 ring-offset-1;
+}
+.cal-event[data-short] {
+  @apply justify-center py-0 text-[11px] leading-none;
+}
+.cal-event[data-declined] .cal-event-title {
+  @apply line-through;
+}
+.cal-event[data-declined],
+.cal-event[data-free] {
+  opacity: 0.6;
+}
+/* Out of office: its hours greyed behind the entries, which still sit on top and can be added. */
+.cal-away {
+  @apply pointer-events-none absolute inset-x-0;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--muted-foreground) 16%, transparent) 0 1px,
+      transparent 1px 7px
+    ),
+    color-mix(in oklab, var(--muted) 80%, transparent);
+}
+.cal-away-label {
+  @apply bg-card/90 text-muted-foreground hover:text-foreground focus-visible:ring-ring pointer-events-auto absolute top-1 left-1 z-[5] flex max-w-[calc(100%-0.5rem)] items-center gap-1 rounded-sm px-1 py-px text-[11px] outline-none focus-visible:ring-2;
+}
+/* All-day events and working locations, in a strip over the grid. */
+.cal-chip {
+  @apply text-muted-foreground hover:bg-accent focus-visible:ring-ring flex min-w-0 items-center gap-1 rounded-sm border border-dashed px-1.5 py-0.5 text-left text-[11px] leading-tight outline-none focus-visible:ring-2;
+}
+.cal-chip[data-kind='working_location'] {
+  @apply border-transparent;
+}
+/* A day in the entry popover's copy panel. */
 .copy-day {
   @apply hover:bg-accent focus-visible:ring-ring relative flex h-8 items-center justify-center rounded-md text-sm tabular-nums outline-none focus-visible:ring-2;
 }

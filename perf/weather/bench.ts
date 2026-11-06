@@ -91,7 +91,7 @@ async function showGlass(url: string) {
   const copy =
     url && variant !== 'live' && (await glassPhoto(url, { width: innerWidth, height: innerHeight }))
   if (!copy) return
-  frame.style.setProperty('--glass-photo', `url("${copy}")`)
+  frame.style.setProperty('--glass-photo', `url("${copy.url}")`)
   frame.setAttribute('data-glass', 'on')
 }
 

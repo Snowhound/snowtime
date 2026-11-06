@@ -47,6 +47,10 @@ const companyPredicates: Record<string, string> = {
     AND (active_organization_id IS NULL OR active_organization_id = :organizationId)
     AND (active_team_id IS NULL OR active_team_id IN (SELECT id FROM team WHERE organization_id = :organizationId))`,
   verification: '0',
+  // A user's calendar connection can auto-track into another company, and its tokens are
+  // sealed with the source's BETTER_AUTH_SECRET; the user connects again.
+  calendar_connection: '0',
+  calendar_source: '0',
   __drizzle_migrations: '1',
 }
 
@@ -156,6 +160,8 @@ export async function importDatabase(
         if (
           (cleanup.clearSessions && ['session', 'verification'].includes(table.name)) ||
           (cleanup.clearPasskeys && table.name === 'passkey') ||
+          (cleanup.clearProviderTokens &&
+            ['calendar_connection', 'calendar_source'].includes(table.name)) ||
           (organizationId && table.name === 'verification')
         ) {
           counts[table.name] = 0
@@ -284,7 +290,7 @@ export async function chooseImportCleanup(
       different,
     ),
     clearProviderTokens: await yesNo(
-      'Clear stored OAuth tokens while keeping account links?',
+      'Clear stored OAuth tokens while keeping account links? Calendar connections are dropped.',
       true,
     ),
   }

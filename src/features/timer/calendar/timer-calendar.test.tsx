@@ -72,6 +72,7 @@ function settings(timerView: Settings['timerView']): Settings {
     showSummary: true,
     compactRows: false,
     wideTimer: false,
+    compactButtons: false,
     timerView,
     calendarWeekend: false,
     appIcon: '02',
@@ -110,6 +111,7 @@ const review: Entry = {
   ticket: null,
   startedAt: at('2026-09-28', '09:00'),
   stoppedAt: at('2026-09-28', '10:30'),
+  calendarEvent: null,
 }
 
 function renderView() {
@@ -365,6 +367,19 @@ describe('TimerCalendar', () => {
         startedAt: review.startedAt,
         stoppedAt: review.stoppedAt,
       }),
+    )
+  })
+
+  test("Undo after deleting a logged meeting's entry brings it back with the meeting", async () => {
+    const key = 'google:anna@snowhound.eu:review'
+    server.entries = [{ ...review, calendarEvent: key }]
+    renderView()
+    await userEvent.click(await block())
+    const popover = await screen.findByRole('dialog', { name: 'Edit entry' })
+    await userEvent.click(within(popover).getByRole('button', { name: 'Delete' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(fn.createEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Invoice export review', calendarEvent: key }),
     )
   })
 

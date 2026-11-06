@@ -1,4 +1,4 @@
-// The Repeat field's day math (prototypes/copy-entries.html, "Repeat"): which days a pattern
+// The Repeat field's day math: which days a pattern
 // gives up to Until, the preview's month grid, and each copy's times. A copy keeps the entry's
 // wall-clock start and its length, so it stays at 08:30 across a clock change.
 import {

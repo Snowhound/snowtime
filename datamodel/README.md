@@ -4,8 +4,8 @@ The database diagram, generated from the Drizzle schema. Never edit either file 
 
 - [`snowtime.dbml`](snowtime.dbml) comes from `src/db/schema.ts` and
   [`notes.ts`](notes.ts), written by [`generate-dbml.ts`](generate-dbml.ts).
-- [`snowtime.chartdb.json`](snowtime.chartdb.json) comes from the DBML, for
-  [ChartDB](https://chartdb.io), which runs locally in Docker.
+- `snowtime.chartdb.json` comes from the DBML, for [ChartDB](https://chartdb.io), which runs
+  locally in Docker. Git ignores it: `bun run datamodel` builds it when you view the model.
 
 ## Viewing the model
 
@@ -28,7 +28,7 @@ and `db:drift` keeps `schema.ts` in line with them. This folder only documents t
 2. For a new table, add it to a group in `notes.ts`. Add notes for the table and for any
    column whose name and type do not say enough.
 3. `bun run datamodel:generate`. It writes the DBML, then the ChartDB JSON.
-4. Commit both files with the migration. `bun run datamodel:check` fails if the DBML is
+4. Commit the DBML with the migration. `bun run datamodel:check` fails if the DBML is
    out of date.
 
 The generator takes columns, types, defaults, keys, indexes and references from

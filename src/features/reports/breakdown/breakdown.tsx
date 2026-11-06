@@ -1,4 +1,4 @@
-// The Breakdown view (prototypes/reports.html, Breakdown): who worked on what, as a two-level
+// The Breakdown view: who worked on what, as a two-level
 // outline with share bars and the first three groups open. It totals the whole range. A
 // top-level total narrows the Entries card to its row; the second level doesn't narrow, since
 // the card filters by one grouping.

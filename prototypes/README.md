@@ -107,6 +107,8 @@ each change in [`src/components/ui/README.md`](../src/components/ui/README.md).
 5. Make the interactions needed to judge the design work; disable out-of-scope actions. Include a
    fixture selector for empty, populated, long-content, and relevant edge states.
 6. Run the checks below, then add a reference entry to this README.
+7. Once the design is built, delete the page and keep in its entry only the decisions that
+   code and docs cite, with the commit that has the page.
 
 When implementing the selected design, markup maps to Solid-UI components one to one
 (`data-ui="card-title"` → `<CardTitle>`); wire behavior with TanStack Query/Form and server
@@ -503,7 +505,13 @@ Gotchas:
 
 ## Prototypes
 
-### [projects.html](projects.html) — Projects
+A prototype page is removed once its design is built, and the app is then the reference. Its
+section stays when it records decisions that code and docs cite. A new prototype starts from
+`calendar-events.html` (the Timer page, with its calendar and list) or `settings.html`.
+
+### Projects
+
+The page, `projects.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how admins and owners create, edit, assign, archive, and delete projects, and what
 members and team leads see of them.
@@ -548,7 +556,9 @@ member, team lead, and admin: no horizontal page overflow, dialog validation and
 the swatches, and no browser errors. axe reports no color-contrast issues since the brand
 tokens (see [Brand font and colors](#brand-font-and-colors)).
 
-### [organization.html](organization.html) — Organization admin
+### Organization admin
+
+The page, `organization.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how admins and owners manage members, invitations, and teams without email.
 
@@ -582,7 +592,9 @@ Omitted: transferring ownership, leaving the organization, and bulk invitations.
 Checked in Chromium at 1440, 850, and 390 px, light and dark, every tab and fixture, as member,
 admin, and owner: no horizontal page overflow, dialogs with validation, and no browser errors.
 
-### [reports.html](reports.html) — Reports
+### Reports
+
+The page, `reports.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how day and week totals by project, team, and member read, for members, team leads,
 and admins. The app had only the Timesheet, first chosen over the other two layouts; now the
@@ -741,6 +753,10 @@ preselected, the least access). The dialog then shows the full key once, selecte
 several keys (one never used, one that never expires), none, a long name, and expiring and
 expired.
 
+The **Calendars** card, between Profile and API keys, connects Google Calendar and sets each
+calendar's Show and Auto-track and each recurring meeting's project (task 097); see
+[calendar-events.html](#calendar-eventshtml--calendar-events). It has its own fixture select.
+
 Omitted: avatar upload, email change, account deletion (users are anonymized, not deleted), and
 active sessions.
 
@@ -750,7 +766,9 @@ and Escape, and no browser errors. The API keys card was checked on 2026-10-01 i
 (Playwright) the same way, with every key fixture, creating, copying, and revoking a key, and
 focus returning to **Create key** after each dialog.
 
-### [timer.html](timer.html) — Timer and entries
+### Timer and entries
+
+The page, `timer.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: layout of the main tracking view (running timer plus recent entries), and whether
 stopped entries are edited in their row or in a dialog. All three layouts are kept as
@@ -762,7 +780,7 @@ user-selectable options.
   narrow screens.
 
 The **List | Calendar** switch before Add entry opens the week calendar,
-[calendar.html](calendar.html). The settings button opens a **View** popover: layout, whether the summary panel (today / this
+`calendar.html`. The settings button opens a **View** popover: layout, whether the summary panel (today / this
 week, per-project bars) is shown, and Wide page, plus a link to Settings. The theme is in the header's
 Appearance popover.
 These are user settings, saved through the app frame (`user_settings` in the app).
@@ -803,7 +821,7 @@ Decisions:
 - **Duration: a field like the times** (2026-11-02, task 096; it was read-only). Typing a
   duration keeps the start and moves the end field at once; typing a start or an end updates
   the duration. It takes what the entry popover's does (see
-  [copy-entries.html](#copy-entrieshtml--entry-copies-and-durations)), plus the row's own
+  [copy-entries.html](#entry-copies-and-durations)), plus the row's own
   `1:30:00`, and saves on Enter or blur as one `updateEntry`, to the exact second from the
   start. Escape puts back the duration and the end it moved. In the app the row's duration
   copies through its copy button, since a click now edits it; day totals still copy on a
@@ -910,7 +928,9 @@ start, in brackets, mid-sentence, and in pasted links, a key at the start replac
 standards left as text, × turning a chip back into text without it being found again, the
 ticket carried by recent work, links from the Issue links setting, and no browser errors.
 
-### [calendar.html](calendar.html) — Timer calendar
+### Timer calendar
+
+The page, `calendar.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how a user sees and adds their own time as a week calendar (task 069), like
 booking a slot in a clinic's calendar. The Timer page has a **List | Calendar** switch before
@@ -970,7 +990,9 @@ Decided on 2026-09-29:
   status line under the grid says "Not saved yet" in orange with "Try again" where Undo
   would be.
 
-### [auth.html](auth.html) — Sign-in flows
+### Sign-in flows
+
+The page, `auth.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: layout of the signed-out screens, and how the sign-in methods in
 `docs/architecture/auth.md` ("Sign-in methods") appear on them.
@@ -1274,7 +1296,9 @@ horizon, the bands sit where set, the mist leaves the tagline and cards readable
 no browser errors. Screenshots show single frames, so the motion, the gusts, the snow's arc,
 and how visible the day glitter, spray, and dust are need a look on a real screen.
 
-### [copy-durations.html](copy-durations.html) — Copy durations
+### Copy durations
+
+The page, `copy-durations.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how a click on a duration shows what it copied (task 078). The page has the Timer
 page's day cards and table, simplified to the fields around the duration, and the "Copied
@@ -1309,7 +1333,9 @@ the duration (the `copyDurationControl` setting), a field colored by token with 
 about a field inside a word, and a fifth example, `H \Hours M \Minutes`.
 `docs/architecture/timer.md`, "Copying durations", describes the app's behavior.
 
-### [copy-entries.html](copy-entries.html) — Entry copies and durations
+### Entry copies and durations
+
+The page, `copy-entries.html`, was removed once built; it is in commit `70572a1`.
 
 Decision: how a user logs the same entry on many days, such as a daily standup, and sets an
 entry's length as a duration. Two user requests from 2026-11-02: fill a date range with one
@@ -1317,7 +1343,7 @@ entry (skipping weekends, or deleting them by hand), or duplicate an entry and m
 between days, which Toggl lacked; and type a duration in hours or minutes when adding an entry,
 in the list or the calendar. One feature covers both ways of copying: picking days in a month,
 where a range and a single duplicate are both just picked days. The page is
-[calendar.html](calendar.html) with these changes; the list's Add entry opens the same popover.
+`calendar.html` with these changes; the list's Add entry opens the same popover.
 
 - **Duration field** beside Start and End in the entry popover. Start, end, and duration are
   one range: typing a duration moves the end, and typing a start or an end recomputes the
@@ -1326,7 +1352,7 @@ where a range and a single duplicate are both just picked days. The page is
   `1h30`, `90m`, `90 min`, `1.5`, `1,5`, and `1.5h`; a bare number is hours, as requested. A
   line under the field reads it back ("1 h 30 min") while it has focus, and leaving the field
   rewrites it as `1:30`. Over 24 hours is refused, and a bare `90` suggests `90m`. The list's
-  rows take it too ([timer.html](#timerhtml--timer-and-entries)).
+  rows take it too ([timer.html](#timer-and-entries)).
 - **Repeat**, a field under the times for a stopped or new entry, set to Doesn't repeat. Its
   patterns are named for the entry's day: Every workday, Every day, Every Wednesday, and
   Every month on the 7th. Picking one fills the days after the entry's that match it, up to
@@ -1397,6 +1423,96 @@ a day clicked out staying out through a later Until and a switch to Every Tuesda
 repeat hiding the preview, ⌘C and then ⌘V under the pointer, with its hint off the grid,
 Repeat… from the entry menu focusing the field, Paste every Thursday opening the filled
 preview, no horizontal page scroll, and no browser errors.
+
+### [calendar-events.html](calendar-events.html) — Calendar events
+
+Decision: how a user's Google Calendar meetings show beside their time on the Timer page, and
+how they become entries: one at a time, a day or a range at once, or by auto-track (task 097).
+The page grew from `copy-entries.html`, but shows entries without editing
+them; the Calendars card is in [settings.html](#settingshtml--settings).
+
+The app changed some of this after testing against a real calendar (2026-11-05), and the page
+still shows the earlier design:
+
+- In the list, Undo after logging one meeting sits on the new entry's row until the next
+  change.
+- Log meetings opens only from the calendar's toolbar, where its range makes sense; the list
+  logs a meeting from its row (task 098).
+- A meeting under way logs to its scheduled end with plain **Log**; **Log until now**, on its
+  row and in its popover, ends it now.
+- A meeting whose entry was deleted shows again as a row in the list, as in the calendar.
+- In the dialog, a logged meeting shows a check instead of a disabled checkbox.
+- In the list, a meeting's times sit in the entries' Start and End columns, and its popover
+  opens below the row.
+- A meeting suggests the project of the latest loaded entry with its title (097.03 widens
+  this to 90 days from the server).
+
+- **Meetings in the week calendar.** A meeting not logged yet is a dashed frame that shares
+  the day's width with entries. A meeting is gray until its series has a project, then in that project's color. A
+  repeating meeting has a repeat icon and focus time headphones; a declined meeting is struck through and faded, and one shown as free is faded. With a second
+  calendar, a dot in the calendar's color tells them apart. The header's **Meetings** toggle
+  hides them (`calendarEvents`, a proposed user setting).
+- **Out of office** greys its hours behind the entries, or the whole day when it is all day;
+  entries still sit on top. A timed one has a label at its top that opens it.
+- **All-day events and working locations** sit in a strip under the day headers, shown only
+  when the week has one. An all-day event (not a working location) logs as a day: **Log as a
+  day** in its popover, or its row in Log meetings, adds an 8 h entry from 09:00 on each day
+  it covers, leaving out weekends and holidays when it covers several. Each day's entry has
+  the event's key plus the date. The fixtures' vacation is all-day out of office, with its
+  meetings declined.
+- **A logged meeting is its entry.** The meeting's block goes, and the entry shows a calendar
+  icon before its times and "From your calendar" in its popover. A meeting under way logs to its
+  scheduled end, and the part after now is hatched. A logged meeting that overlaps the running
+  timer has an orange outline, and the status line says that time counts twice, with **Stop the
+  timer at 15:05**. Nothing stops the timer on its own.
+- **The meeting popover** (click, Enter, or right-click) shows the title and time, the calendar,
+  the user's answer, and whether it repeats. **Project** is this log's; for a series it is
+  **Project for this series**, saved at once as the series rule. A project suggested from the
+  latest entry with the same name is selected, with **Keep it for this series**. In an
+  auto-tracked calendar a series also has an **Auto-track this series** switch, and a note says
+  what auto-track does with the meeting. **Log** (or **Log until 15:55**, or **Log ahead**) saves
+  at once with Undo, and the entry is edited after, where it lands.
+- **Log meetings**, in the toolbar and the list's header, opens a dialog on the week the
+  calendar shows: Today, Yesterday, This week, and Last week, or a From–To range of up to 93
+  days, listed by day. A meeting starts checked when it has started and auto-track would log
+  it; the others can be checked. Each day's heading has a checkbox that checks or unchecks
+  the day's meetings not yet logged, and a check when they all are. Logged
+  meetings show their project and can't be checked, all-day events are listed once per day,
+  unchecked, to log as a day, and working locations aren't listed. Each row has its project, for this log only. One
+  save logs up to 100 as one `createEntries`, with one Undo.
+- **Auto-track** is set in the prototype bar: off, on since Monday, or switched on now. **Return
+  to Snowtime** stands for opening the app or returning to its tab. It logs the auto-tracked
+  calendar's meetings that started since auto-track was switched on, at most 14 days back, that
+  aren't logged or deleted, with the series rule's project, and the status line names them with
+  one Undo. Undo and deleting the entry keep the meeting deleted, so auto-track doesn't log it
+  again; logging it by hand brings it back.
+- **List view** (List in the header), reduced to the last seven days: a dashed row per meeting
+  at its time, among the entries, with **Log**. Only meetings that have started and that auto-track would log
+  count.
+- **Not connected**: Connect calendar in the toolbar, to Settings. **Reconnect needed**: an
+  orange notice over the calendar with Reconnect; entries are unaffected.
+
+The Settings card lists Google Calendar with its account, Connect, and Disconnect, confirmed in
+a dialog: entries stay, and meetings whose entries were deleted stay deleted after
+reconnecting. Under it are the account's calendars with **Show** and **Auto-track** switches,
+and while auto-track is on, the organization it logs into and since when, with a note when that
+is another organization. **Recurring meetings in <organization>** lists each series rule with
+its project, an auto-track switch, and remove; a rule on an archived project is marked.
+
+Fixtures: typical week (three weeks back unlogged, last week logged, a standup series with a
+rule, a weekly sync with a suggested project, focus time, a lunch shown as free, a declined town
+hall, a sprint review, an unanswered design crit, an afternoon out of office, working locations,
+and an all-day release freeze), meeting under way (with a timer running since before it),
+overlapping meetings, second calendar, long titles, connected with no events, reconnect needed,
+and not connected. The Calendars card has connected, several calendars, auto-tracks into
+another organization, reconnect needed, not connected, and long content.
+
+Approved on 2026-11-03: the dashed **outline** look over hatched stripes and a band behind
+the entries, a row per meeting in the list over a line per day, meetings **gray** until their
+series has a project, all-day events logged as a day on request, and out of office greyed.
+The rejected looks, and the entry editing the page grew from, were removed on 2026-11-06; they
+are in commit `70a034d`. Checked then with agent-browser in Chrome at 1400 px: every fixture,
+the popover, Log, the dialog, the list's rows, and auto-track, with no browser errors.
 
 ## Adding issues to tracker entries
 

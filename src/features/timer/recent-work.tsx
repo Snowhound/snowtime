@@ -1,4 +1,4 @@
-// The Focus layout's "Continue recent" chips (prototypes/timer.html): the newest distinct
+// The Focus layout's "Continue recent" chips: the newest distinct
 // work (recentWork), each starting a timer with its description, ticket, and project.
 import PlayIcon from 'lucide-solid/icons/play'
 import { For, Show } from 'solid-js'

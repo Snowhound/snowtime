@@ -1,5 +1,5 @@
 // App icon concepts from design/brand-assets/ (task 029) and the browser favicon. The choice is the
-// `appIcon` user setting; app-frame.js stores it, and auth.html, which has no frame, reads it here.
+// `appIcon` user setting; app-frame.js stores it, and a page without the frame reads it here.
 // Load in <head> before app-frame.js, so the favicon is set before the page renders.
 //
 // Inside the app, pages show the bare mark (`marks/`, a light-page and a dark-page version) with no

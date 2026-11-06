@@ -7,7 +7,7 @@ import { isAdmin } from '~/lib/queries/session'
 import { teamsQuery } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
 
-// Project list and management (prototypes/projects.html).
+// Project list and management.
 export const Route = createFileRoute('/$org/projects')({
   loader: async ({ context }) => {
     const { queryClient, session, organization } = context

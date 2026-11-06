@@ -1,5 +1,5 @@
 // The report's filters: the URL's search params, and what each role may choose
-// (prototypes/README.md, reports.html). Members see their own time by project or ticket; team
+// (prototypes/README.md, "Reports"). Members see their own time by project or ticket; team
 // leads their led teams and those teams' members; admins and owners everyone. Anyone can narrow
 // the report to one project. getReport enforces
 // the same rules, so options outside them are dropped here rather than sent and refused.

@@ -128,6 +128,7 @@ export async function getRunningTimer(db: Database, userId: string) {
       ticket: true,
       startedAt: true,
       stoppedAt: true,
+      calendarEvent: true,
     },
     with: { project: { columns: { id: true, name: true, color: true } } },
   })

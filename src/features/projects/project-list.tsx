@@ -1,4 +1,4 @@
-// One tab's projects (prototypes/projects.html): color, name, teams, and time this month,
+// One tab's projects: color, name, teams, and time this month,
 // with an actions menu for admins and owners. Rows stack below 768 px.
 import ArchiveIcon from 'lucide-solid/icons/archive'
 import ArchiveRestoreIcon from 'lucide-solid/icons/archive-restore'

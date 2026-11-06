@@ -1,4 +1,4 @@
-// The Table layout's entries (prototypes/timer.html): one dense table with a subtotal row
+// The Table layout's entries: one dense table with a subtotal row
 // per day, newest first, and the entry fields (entry-fields.tsx) in the cells. The ticket chip
 // follows the text, or with the Wide page setting has a column of its own. It scrolls
 // horizontally inside its border on narrow screens. Compact rows pad their cells less.
@@ -218,6 +218,7 @@ function EntryTableRow(props: EntryRowProps & { entry: StoppedEntry }) {
             active={activation.active()}
             onContinue={props.onContinue}
             onDelete={props.onDelete}
+            onRepeat={props.onRepeat}
             onRetry={props.onRetry}
           />
         </TableCell>

@@ -89,3 +89,5 @@ number ("task 084"); the number stays unique.
 - 095: Validation failures answer a key (done; `095-validation-keys.md`)
 - 096: Entry copies and typed durations (done; `096-entry-copies-and-durations.md` in
   `1693cbe`; snowtime-native ports `createEntries` and `deleteEntries` at its own pace)
+- 098: Fit the Timer page header (done; the labelled header stays, Compact buttons shows
+  icons; `098-timer-header-fit.md` in `70a034d`)

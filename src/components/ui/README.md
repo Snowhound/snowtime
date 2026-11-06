@@ -10,7 +10,7 @@ Copies not listed are unchanged apart from formatting and import order: `avatar`
 
 ## Shared changes
 
-- **Mount point.** `Dialog`, `DropdownMenu`, `Popover`, and `Select` portals mount in
+- **Mount point.** `Dialog`, `DropdownMenu`, `Popover`, `Select`, and `Tooltip` portals mount in
   `layerRoot()` (`src/lib/layers.ts`) instead of the body, so they stack with the app frame's
   sticky header.
 - **Stacking.** `DropdownMenuContent`, `DropdownMenuSubContent`, `PopoverContent`, and

@@ -1,4 +1,4 @@
-// Provider marks for the sign-in buttons, as in prototypes/auth.html: Google and Microsoft
+// Provider marks for the sign-in buttons: Google and Microsoft
 // from gilbarbara/logos (@iconify-json/logos 1.2.14), GitHub from simple-icons 16.32.0, both
 // CC0 1.0. The marks remain trademarks of their owners and appear only on their buttons.
 

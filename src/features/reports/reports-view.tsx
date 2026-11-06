@@ -1,4 +1,4 @@
-// The Reports page (prototypes/reports.html): one report of day or week totals by project,
+// The Reports page: one report of day or week totals by project,
 // ticket, team or member, in three views as tabs: Timesheet, Summary, and Breakdown. The
 // filters and the view live in the URL, so a report reloads and shares; each change
 // navigates, and the page reads them back from the search params.

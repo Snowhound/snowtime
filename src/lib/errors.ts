@@ -41,6 +41,13 @@ const errorText: Record<AppErrorKey, () => string> = {
   database_unavailable: m.error_database_unavailable,
   api_key_not_found: m.error_api_key_not_found,
   api_key_limit: m.error_api_key_limit,
+  calendar_unavailable: m.error_calendar_unavailable,
+  calendar_provider_unavailable: m.error_calendar_provider_unavailable,
+  calendar_state_invalid: m.error_calendar_state_invalid,
+  calendar_scopes_missing: m.error_calendar_scopes_missing,
+  calendar_connection_not_found: m.error_calendar_connection_not_found,
+  calendar_source_not_found: m.error_calendar_source_not_found,
+  calendar_event_logged: m.error_calendar_event_logged,
 }
 
 // Refusals from Better Auth's client calls, by the code its error carries (unwrap in

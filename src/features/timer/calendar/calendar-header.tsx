@@ -2,7 +2,7 @@
 // days with their totals, as a strip to pick one below 640 px and as column headings above.
 import ChevronLeftIcon from 'lucide-solid/icons/chevron-left'
 import ChevronRightIcon from 'lucide-solid/icons/chevron-right'
-import { For, Show } from 'solid-js'
+import { For, type JSX, Show } from 'solid-js'
 import { Button } from '~/components/ui/button'
 import { Toggle } from '~/components/ui/toggle'
 import { type IsoDate, addDays } from '~/lib/calendar'
@@ -38,6 +38,8 @@ export function CalendarHeader(props: {
   onToday: () => void
   onWeekend: (shown: boolean) => void
   onDay: (date: IsoDate) => void
+  // Buttons beside the Weekend toggle, such as Log meetings.
+  actions?: JSX.Element
 }) {
   const formatHours = useFormatHours()
 
@@ -91,6 +93,7 @@ export function CalendarHeader(props: {
               <span class="tabular-nums">{formatHours(props.total)}</span>
             </span>
           </Show>
+          {props.actions}
           <Toggle
             variant="outline"
             size="sm"

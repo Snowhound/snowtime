@@ -1,0 +1,1586 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Calendar events</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <script src="prototype-theme.js"></script>
+    <script src="ui.js"></script>
+    <script src="app-icon.js"></script>
+    <script src="seasons.js"></script>
+    <script src="scene.js"></script>
+    <script src="intro.js"></script>
+    <script src="app-frame.js"></script>
+    <script src="app-data.js"></script>
+    <style type="text/tailwindcss">
+      /* One hour is 48 px, so the 15-minute snap is 12 px. */
+      :root {
+        --hour: 48px;
+      }
+      /* The header and the body share their columns; both reserve the scrollbar's gutter so
+         they line up. */
+      .cal-cols {
+        display: grid;
+        grid-template-columns: 3.5rem repeat(var(--days), minmax(0, 1fr));
+        scrollbar-gutter: stable;
+      }
+      .cal-day {
+        @apply relative border-l;
+        height: calc(24 * var(--hour));
+        background-image:
+          linear-gradient(to bottom, var(--border) 1px, transparent 1px),
+          linear-gradient(to bottom, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px);
+        background-size:
+          100% var(--hour),
+          100% var(--hour);
+        background-position:
+          0 0,
+          0 calc(var(--hour) / 2);
+      }
+      .cal-day[data-today] {
+        background-color: color-mix(in oklab, var(--accent) 35%, transparent);
+      }
+      .cal-now {
+        @apply pointer-events-none absolute inset-x-0 z-20 h-0.5 bg-primary;
+      }
+      .cal-now::before {
+        content: '';
+        @apply absolute -left-1 -top-[3px] size-2 rounded-full bg-primary;
+      }
+      /* An entry: a tint of its project's color with a bar in the full color. */
+      .cal-block {
+        @apply absolute z-10 flex flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight text-foreground outline-none select-none;
+        border-color: var(--p);
+        background-color: color-mix(in oklab, var(--p) 18%, var(--card));
+        touch-action: pan-y;
+      }
+      .cal-block:hover {
+        background-color: color-mix(in oklab, var(--p) 26%, var(--card));
+      }
+      .cal-block:focus-visible {
+        @apply ring-2 ring-ring ring-offset-1 ring-offset-background;
+      }
+      /* Up to 20 minutes: one tight line, centered. */
+      .cal-block[data-short] {
+        @apply justify-center py-0 text-[11px] leading-none;
+      }
+      .cal-block[data-muted] {
+        @apply border-dashed;
+      }
+      .cal-block[data-running] {
+        background-image: linear-gradient(to bottom, transparent 60%, color-mix(in oklab, var(--p) 22%, transparent));
+      }
+      @keyframes cal-flash {
+        from {
+          box-shadow: 0 0 0 3px var(--ring);
+        }
+      }
+      .cal-flash {
+        animation: cal-flash 1.4s ease-out;
+      }
+      @keyframes cal-pulse {
+        50% {
+          opacity: 0.35;
+        }
+      }
+      .cal-pulse {
+        animation: cal-pulse 1.6s ease-in-out infinite;
+      }
+      /* A calendar event not logged yet: planned time, drawn apart from entries. --ev is its
+         series' project color once the series has one, else a neutral one. */
+      .cal-event {
+        --ev: var(--muted-foreground);
+        @apply absolute z-10 flex flex-col overflow-hidden rounded-md px-1.5 py-0.5 text-left text-xs leading-tight text-muted-foreground outline-none select-none;
+        touch-action: pan-y;
+      }
+      .cal-event[data-project] {
+        @apply text-foreground;
+      }
+      .cal-event:focus-visible,
+      .cal-event[data-open] {
+        @apply ring-2 ring-ring ring-offset-1 ring-offset-background;
+      }
+      .cal-event[data-short] {
+        @apply justify-center py-0 text-[11px] leading-none;
+      }
+      .cal-event[data-declined] .cal-event-title {
+        @apply line-through;
+      }
+      .cal-event[data-declined],
+      .cal-event[data-free] {
+        opacity: 0.6;
+      }
+      /* A dashed frame over the grid, sharing the width with entries. */
+      .cal-event[data-event] {
+        border: 1.5px dashed color-mix(in oklab, var(--ev) 65%, transparent);
+        background-color: color-mix(in oklab, var(--card) 82%, transparent);
+      }
+      .cal-event[data-event]:hover {
+        background-color: color-mix(in oklab, var(--ev) 10%, var(--card));
+      }
+      /* The part of an entry still to come: an ongoing meeting logged to its scheduled end. */
+      .cal-future {
+        @apply pointer-events-none absolute inset-x-0 bottom-0;
+        background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--card) 70%, transparent) 0 4px, transparent 4px 8px);
+      }
+      /* A logged meeting that overlaps the running timer: that time counts twice. */
+      .cal-block[data-overlap] {
+        box-shadow: inset 0 0 0 1.5px var(--warning);
+      }
+      /* Out of office: the hours greyed behind the entries, which still sit on top and can be added. */
+      .cal-away {
+        @apply pointer-events-none absolute inset-x-0;
+        background:
+          repeating-linear-gradient(135deg, color-mix(in oklab, var(--muted-foreground) 16%, transparent) 0 1px, transparent 1px 7px),
+          color-mix(in oklab, var(--muted) 80%, transparent);
+      }
+      .cal-away-label {
+        @apply pointer-events-auto absolute top-1 left-1 flex max-w-[calc(100%-0.5rem)] items-center gap-1 rounded-sm bg-card/90 px-1 py-px text-[11px] text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring;
+      }
+      .cal-allday {
+        @apply flex min-w-0 flex-col gap-0.5 border-l p-1;
+      }
+      .cal-chip {
+        @apply flex min-w-0 items-center gap-1 rounded-sm border border-dashed px-1.5 py-0.5 text-left text-[11px] leading-tight text-muted-foreground outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring;
+      }
+      .cal-chip[data-kind='working_location'] {
+        @apply border-transparent;
+      }
+    </style>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body class="bg-muted/40">
+    <div id="prototype-controls">
+      <label for="fixture" class="sr-only">Fixture</label>
+      <select id="fixture" data-ui="select" class="h-9 w-52">
+        <option value="typical">Typical week</option>
+        <option value="ongoing">Meeting under way</option>
+        <option value="overlapping">Overlapping meetings</option>
+        <option value="second">Second calendar</option>
+        <option value="long">Long titles</option>
+        <option value="quiet">Connected, no events</option>
+        <option value="reconnect">Reconnect needed</option>
+        <option value="disconnected">Not connected</option>
+      </select>
+      <label for="autotrack" class="sr-only">Auto-track</label>
+      <select id="autotrack" data-ui="select" class="h-9 w-60" title="Prototype only: the Work calendar's Auto-track switch in Settings">
+        <option value="off">Auto-track: off</option>
+        <option value="week">Auto-track: on since Monday</option>
+        <option value="now">Auto-track: switched on now</option>
+      </select>
+      <button type="button" id="return" data-ui="button" data-variant="outline" class="h-9" title="Prototype only: what happens when the user opens Snowtime or returns to its tab">Return to Snowtime</button>
+      <label class="flex items-center gap-2 text-sm" title="Prototype only: saves fail and roll back">
+        <input id="fail-saves" type="checkbox" data-ui="checkbox" />Fail saves
+      </label>
+      <label class="flex items-center gap-2 text-sm" title="Prototype only: the server refuses every write with 503 until this is off">
+        <input id="server-busy" type="checkbox" data-ui="checkbox" />Server busy
+      </label>
+    </div>
+
+    <div id="pending" class="mx-auto max-w-6xl px-4 sm:px-8"></div>
+
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 pt-6 sm:px-8">
+      <h1 class="text-2xl font-semibold tracking-tight">Timer</h1>
+      <div class="flex items-center gap-2">
+        <!-- The view switch leads the actions, set apart from them. -->
+        <div data-ui="toggle-group" role="group" class="mr-2" aria-label="Entries as">
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="list" aria-pressed="false" class="gap-1.5"></button>
+          <button type="button" data-ui="toggle" data-variant="outline" data-view="calendar" aria-pressed="true" data-pressed class="gap-1.5"></button>
+        </div>
+        <button id="add-entry" type="button" data-ui="button" data-variant="outline" class="h-9"></button>
+      </div>
+    </div>
+
+    <main class="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-6 pt-4 sm:px-8">
+      <section id="timer" class="surface flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center" aria-label="Timer">
+        <div class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+          <label for="description" class="sr-only">What are you working on?</label>
+          <input id="description" data-ui="input" type="text" placeholder="What are you working on?" autocomplete="off" class="flex-1" />
+          <label for="project" class="sr-only">Project</label>
+          <select id="project" data-ui="select" class="sm:w-48"></select>
+        </div>
+        <span id="elapsed" class="flex h-9 items-center justify-start px-2 text-lg tabular-nums sm:w-28 sm:justify-end">0:00:00</span>
+        <button id="toggle" data-ui="button" type="button"></button>
+      </section>
+
+      <section id="calendar-card" data-ui="card" class="gap-0 overflow-hidden py-0" aria-labelledby="week-label">
+        <div class="flex flex-wrap items-center gap-2 border-b px-3 py-2.5 sm:px-4">
+          <div class="flex items-center gap-1">
+            <button type="button" id="prev" data-ui="button" data-variant="outline" data-size="icon" class="size-8"></button>
+            <button type="button" id="next" data-ui="button" data-variant="outline" data-size="icon" class="size-8"></button>
+          </div>
+          <button type="button" id="today" data-ui="button" data-variant="outline" data-size="sm">Today</button>
+          <h2 id="week-label" class="ml-1 font-medium" aria-live="polite"></h2>
+          <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <span id="week-total" class="mr-1 text-sm text-muted-foreground tabular-nums"></span>
+            <button type="button" id="weekend" data-ui="toggle" data-variant="outline" data-size="sm"></button>
+            <button type="button" id="events-toggle" data-ui="toggle" data-variant="outline" data-size="sm" class="gap-1.5"></button>
+            <button type="button" data-log-meetings data-ui="button" data-variant="outline" data-size="sm" aria-haspopup="dialog"></button>
+            <a href="settings.html#calendars" data-connect-calendar data-ui="button" data-variant="outline" data-size="sm"></a>
+          </div>
+        </div>
+        <div data-calendar-notice class="border-b px-3 py-2.5 empty:hidden sm:px-4"></div>
+        <!-- Below 640 px, one day at a time, picked from a strip of the week's days. -->
+        <div id="day-strip" class="flex gap-1 overflow-x-auto border-b px-2 py-1.5 sm:hidden" role="group" aria-label="Day"></div>
+        <div id="cal-head" class="cal-cols overflow-y-hidden border-b max-sm:hidden"></div>
+        <div id="cal-allday" class="cal-cols overflow-y-hidden border-b" hidden></div>
+        <div id="cal-scroll" class="h-[max(24rem,min(40rem,calc(100dvh-17rem)))] overflow-y-auto overscroll-contain">
+          <div id="cal-body" class="cal-cols"></div>
+        </div>
+        <div class="flex min-h-10 items-center justify-between gap-3 border-t px-3 py-1.5 text-sm sm:px-4">
+          <p id="cal-status" data-status class="min-w-0 text-muted-foreground" role="status"></p>
+          <p class="hidden shrink-0 text-xs text-muted-foreground md:block">Drag to add · click a meeting to log it · right-click for more</p>
+        </div>
+      </section>
+
+      <!-- The list view, reduced to what the meetings change: day headers, entries, and the
+           day's meetings not logged yet. -->
+      <section id="list-card" data-ui="card" class="gap-0 overflow-hidden py-0" aria-labelledby="list-label" hidden>
+        <div class="flex flex-wrap items-center gap-2 border-b px-3 py-2.5 sm:px-4">
+          <h2 id="list-label" class="font-medium">Recent days</h2>
+          <div class="ml-auto flex items-center gap-2">
+            <button type="button" data-log-meetings data-ui="button" data-variant="outline" data-size="sm" aria-haspopup="dialog"></button>
+            <a href="settings.html#calendars" data-connect-calendar data-ui="button" data-variant="outline" data-size="sm"></a>
+          </div>
+        </div>
+        <div data-calendar-notice class="border-b px-3 py-2.5 empty:hidden sm:px-4"></div>
+        <div id="list-days"></div>
+        <div class="flex min-h-10 items-center border-t px-3 py-1.5 text-sm sm:px-4">
+          <p data-status class="min-w-0 text-muted-foreground" role="status"></p>
+        </div>
+      </section>
+    </main>
+
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden">
+      <defs>
+        <symbol id="icon-clipboard-paste" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 14h10" /><path d="M16 4h2a2 2 0 0 1 2 2v1.344" /><path d="m17 18 4-4-4-4" /><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113" /><rect x="8" y="2" width="8" height="4" rx="1" />
+        </symbol>
+        <symbol id="icon-copy-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="15" x2="15" y1="12" y2="18" /><line x1="12" x2="18" y1="15" y2="15" /><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+        </symbol>
+        <symbol id="icon-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m17 2 4 4-4 4" /><path d="M3 11v-1a4 4 0 0 1 4-4h14" /><path d="m7 22-4-4 4-4" /><path d="M21 13v1a4 4 0 0 1-4 4H3" />
+        </symbol>
+        <symbol id="icon-calendar-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v3" /><path d="M16 2v3" /><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="m9 15 2 2 4-4" />
+        </symbol>
+        <symbol id="icon-calendar-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 14v2.2l1.6 1" /><path d="M16 2v3" /><path d="M21 7.338V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h2.338" /><path d="M3 9h5.859" /><path d="M8 2v3" /><circle cx="16" cy="16" r="6" />
+        </symbol>
+        <symbol id="icon-map-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" />
+        </symbol>
+        <symbol id="icon-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+        </symbol>
+        <symbol id="icon-headphones" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" />
+        </symbol>
+        <symbol id="icon-triangle-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" />
+        </symbol>
+        <symbol id="icon-refresh-cw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <!-- A calendar event: what it is, whether auto-track logs it, and its series' project.
+         Log saves it at once; Edit first opens the entry popover filled in. -->
+    <div id="event-popover" popover data-ui="popover" role="dialog" aria-labelledby="event-title" aria-describedby="event-when" class="max-h-[calc(100dvh-16px)] w-[24rem] max-w-[calc(100vw-1rem)] overflow-y-auto">
+      <div class="grid gap-4">
+        <div class="grid gap-1.5">
+          <h2 id="event-title" class="font-medium leading-snug break-words"></h2>
+          <p id="event-when" class="text-sm text-muted-foreground tabular-nums"></p>
+        </div>
+        <ul id="event-facts" class="grid gap-1.5 text-sm"></ul>
+        <div id="event-project-field" class="grid gap-1.5">
+          <label data-ui="label" for="event-project">Project</label>
+          <select id="event-project" data-ui="select"></select>
+          <p id="event-project-hint" class="text-xs text-muted-foreground empty:hidden"></p>
+        </div>
+        <div id="event-series" class="grid gap-3 rounded-lg border p-3">
+          <div class="flex items-start justify-between gap-3">
+            <div class="grid gap-0.5">
+              <span data-ui="label" id="event-series-label">Auto-track this series</span>
+              <span id="event-series-hint" class="text-xs text-muted-foreground"></span>
+            </div>
+            <button id="event-series-track" type="button" role="switch" aria-checked="true" aria-labelledby="event-series-label" aria-describedby="event-series-hint" data-ui="switch"><span data-ui="switch-thumb"></span></button>
+          </div>
+        </div>
+        <p id="event-note" class="text-sm text-muted-foreground empty:hidden"></p>
+        <div id="event-actions" class="flex flex-wrap items-center justify-end gap-2">
+          <button type="button" id="event-log" data-ui="button" data-size="sm"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log meetings: the shown week's by default; another range lists older ones. One save is one
+         createEntries, so one Undo takes them back. -->
+    <dialog id="log-dialog" data-ui="dialog" class="max-w-2xl" aria-labelledby="log-title" aria-describedby="log-description">
+      <form id="log-form" class="grid grid-cols-[minmax(0,1fr)] gap-4" novalidate>
+        <div data-ui="dialog-header">
+          <h2 id="log-title" data-ui="dialog-title">Log meetings</h2>
+          <p id="log-description" data-ui="dialog-description">Checked meetings become entries, with the project shown. Meetings that haven’t started, and those you declined, start unchecked. An all-day event logs as 8 h from 09:00 when you check it.</p>
+        </div>
+        <div class="flex flex-wrap items-end gap-3">
+          <div data-ui="toggle-group" role="group" aria-label="Range" id="log-presets" class="flex-wrap">
+            <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-preset="today">Today</button>
+            <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-preset="yesterday">Yesterday</button>
+            <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-preset="week">This week</button>
+            <button type="button" data-ui="toggle" data-variant="outline" data-size="sm" data-preset="last-week">Last week</button>
+          </div>
+          <div class="flex items-end gap-2">
+            <div class="grid gap-1.5">
+              <label data-ui="label" for="log-from">From</label>
+              <input id="log-from" data-ui="input" type="date" class="w-40" />
+            </div>
+            <div class="grid gap-1.5">
+              <label data-ui="label" for="log-to">To</label>
+              <input id="log-to" data-ui="input" type="date" class="w-40" />
+            </div>
+          </div>
+        </div>
+        <div id="log-list" class="max-h-[min(28rem,50dvh)] overflow-y-auto rounded-md border" role="group" aria-label="Meetings"></div>
+        <p id="log-summary" class="text-sm text-muted-foreground" aria-live="polite"></p>
+        <div data-ui="dialog-footer" class="gap-2">
+          <button type="button" data-ui="button" data-variant="outline" data-log-cancel>Cancel</button>
+          <button type="submit" id="log-save" data-ui="button"></button>
+        </div>
+      </form>
+    </dialog>
+
+    <script>
+      appFrame.mount({ page: 'timer', title: 'Calendar events', scene: true })
+
+      const { escapeHtml, icon } = appFrame
+      const Z = appData.tz
+      const { MIN, HOUR } = appData
+      const px = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hour'))
+      const narrow = matchMedia('(max-width: 639px)')
+
+      // --- Data ---------------------------------------------------------------------------------
+      const org = appData.organization()
+      const ME = appData.currentUserId
+      const projects = org.projects.map((p) => ({ ...p, color: appData.colorVar(p.color) }))
+      const mine = appData.projectsFor(ME, org.teams, org.projects).map((p) => p.id)
+      const NO_PROJECT = { id: 'none', name: 'No project', color: 'var(--muted-foreground)', muted: true }
+      const project = (id) => (id === 'none' ? NO_PROJECT : projects.find((p) => p.id === id) ?? { id, name: 'Unavailable project', color: 'var(--muted-foreground)', muted: true })
+
+      const zone = () => appFrame.settings.get().timeZone
+      const weekStartSetting = () => appFrame.settings.get().weekStart
+      const state = {
+        fixture: 'typical',
+        view: 'calendar', // 'calendar' | 'list'
+        // The calendar connection: 'connected', 'reconnect' (the provider refused a token
+        // refresh), or 'none'; its calendars; their events, as the server passes them through;
+        // and the series rules in this organization, by series key.
+        connection: 'connected',
+        calendars: [],
+        events: [],
+        rules: {},
+        // Keys of meetings whose entry was deleted: the row keeps its key, so auto-track leaves them.
+        deletedKeys: new Set(),
+        // The Work calendar's auto_track_since, or null while auto-track is off.
+        autoTrackSince: null,
+        lastSync: 0,
+        openEvent: null,
+        week: 0, // first day of the shown week
+        day: 0, // below 640 px: the day shown
+        entries: [],
+        running: null,
+        undo: null,
+      }
+      let nextId = 1
+
+      // An entry on a day of a week relative to this one (0 is the week's first day).
+      function at(week, day, hour, minutes, description, projectId) {
+        const first = Z.addDays(Z.startOfWeek(Date.now(), zone(), weekStartSetting()), week * 7 + day, zone())
+        const p = Z.zonedParts(first + 12 * HOUR, zone())
+        const startedAt = Z.zonedTime(p.y, p.m, p.d, 0, Math.round(hour * 60), zone())
+        return { id: `e${nextId++}`, description, projectId, startedAt, stoppedAt: startedAt + minutes * MIN }
+      }
+      // Work between the meetings, the same each week; today's later entries and any day still
+      // to come drop out.
+      function workDays(week) {
+        return [0, 1, 2, 3, 4].flatMap((d) => [
+          at(week, d, 8.5, 60, 'Timer schema and partial unique index', 'p1'),
+          at(week, d, 9.75, d === 1 ? 75 : 120, d % 2 ? 'Report time zone boundaries' : 'Invoice export review', d % 2 ? 'p1' : 'p2'),
+          at(week, d, d === 2 ? 13 : 12.25, d === 4 ? 30 : 90, 'Stock adjustment import', 'p4'),
+          ...(d !== 4 ? [at(week, d, d === 1 ? 15.25 : 15, 75, 'Code review', 'p1')] : []),
+        ])
+      }
+      const past = (list) => list.filter((e) => e.stoppedAt <= Date.now())
+
+      // --- Calendar data ------------------------------------------------------------------------
+      // What the server's adapter hands over: one shape for every provider, with keys built from
+      // the provider's ids (google:<calendarId>:<eventId>, and google:<calendarId>:<seriesId>).
+      const WORK = { id: 'anna@snowhound.eu', name: 'anna@snowhound.eu', color: '#039be5', shown: true, autoTrack: true }
+      const NORDIC = { id: 'nordic-logistics', name: 'Nordic Logistics – project', color: '#33b679', shown: true, autoTrack: false }
+      function ev(week, day, hour, minutes, title, { calendar = WORK.id, series, ...rest } = {}) {
+        const { startedAt, stoppedAt } = at(week, day, hour, minutes, '', 'none')
+        const id = series ? `${series}_${startedAt}` : `ev${nextId++}`
+        return { key: `google:${calendar}:${id}`, seriesKey: series ? `google:${calendar}:${series}` : null, sourceId: calendar, title, startedAt, stoppedAt, allDay: false, free: false, response: 'accepted', kind: 'event', ...rest }
+      }
+      function allDayEvent(week, day, title, rest = {}, days = 1) {
+        const e = ev(week, day, 0, 0, title, rest)
+        return { ...e, allDay: true, stoppedAt: Z.addDays(e.startedAt, days, zone()) }
+      }
+      // A week of meetings: a daily standup with a project rule, a weekly sync, focus time, a
+      // lunch shown as free, a declined town hall, a review, an unanswered invitation, an
+      // afternoon out of office, and working locations as all-day events.
+      function meetings(week) {
+        return [
+          ...[0, 1, 2, 3, 4].map((d) => ev(week, d, 9.5, 15, 'Standup', { series: 'standup', response: 'organizer' })),
+          ev(week, 1, 11, 60, 'Nordic Logistics weekly sync', { series: 'nordic-sync' }),
+          ev(week, 1, 13, 120, 'Focus time', { kind: 'focus_time', response: 'organizer' }),
+          ev(week, 2, 12, 60, 'Lunch', { free: true, response: 'organizer' }),
+          ev(week, 2, 15, 60, 'Town hall', { series: 'town-hall', response: 'declined' }),
+          ev(week, 3, 14, 60, 'Sprint review', { series: 'sprint-review' }),
+          ev(week, 4, 10, 45, 'Design crit: report filters', { response: 'none' }),
+          ev(week, 4, 13, 240, 'Out of office', { kind: 'out_of_office', response: 'organizer' }),
+          ...[0, 1, 2, 3].map((d) => allDayEvent(week, d, 'Office', { kind: 'working_location' })),
+          allDayEvent(week, 4, 'Home', { kind: 'working_location' }),
+          ...(week === 0 ? [allDayEvent(week, 2, 'Release freeze')] : []),
+        ]
+      }
+      // Meetings logged as entries, as auto-track or the user did before: those auto-track
+      // would log, with the series rule's project.
+      function loggedAs(events, rules) {
+        return events
+          .filter((e) => e.stoppedAt <= Date.now() && !skipReason(e))
+          .map((e) => ({ id: `e${nextId++}`, description: e.title, projectId: rules[e.seriesKey]?.projectId ?? (e.seriesKey === 'google:anna@snowhound.eu:nordic-sync' ? 'p4' : 'none'), startedAt: e.startedAt, stoppedAt: e.stoppedAt, calendarEvent: e.key }))
+      }
+      const thisWeekDay = () => Math.round((today() - Z.startOfWeek(Date.now(), zone(), weekStartSetting())) / 86_400_000)
+
+      // The typical week: three weeks back unlogged, last week logged, this week and next planned.
+      function typical({ extra = [], calendars = [WORK], rename } = {}) {
+        const rules = { [`google:${WORK.id}:standup`]: { projectId: 'p3', autoTrack: true, title: 'Standup' } }
+        // Vacation as all-day out of office: a past Monday, and next Thursday and Friday. Its
+        // meetings are declined, as Google declines them for the user.
+        const away = [allDayEvent(-2, 0, 'Vacation', { kind: 'out_of_office', response: 'organizer' }), allDayEvent(1, 3, 'Vacation', { kind: 'out_of_office', response: 'organizer' }, 2)]
+        const during = (t) => away.some((a) => t >= a.startedAt && t < a.stoppedAt)
+        let events = [-3, -2, -1, 0, 1]
+          .flatMap(meetings)
+          .concat(extra)
+          .filter((e) => e.allDay || e.kind !== 'out_of_office' || !during(e.startedAt))
+          .map((e) => (!e.allDay && e.kind === 'event' && during(e.startedAt) ? { ...e, response: 'declined' } : e))
+          .concat(away)
+        if (rename) events = events.map((e) => ({ ...e, title: rename(e) }))
+        const week = Z.startOfWeek(Date.now(), zone(), weekStartSetting())
+        const lastWeek = events.filter((e) => e.startedAt < week && e.startedAt >= Z.addDays(week, -7, zone()))
+        return {
+          connection: 'connected',
+          calendars: calendars.map((c) => ({ ...c })),
+          events,
+          rules,
+          entries: past([...workDays(-3), ...workDays(-2), ...workDays(-1), ...workDays(0)])
+            .filter((e) => !during(e.startedAt))
+            .concat(loggedAs(lastWeek, rules)),
+          running: null,
+        }
+      }
+      const fixtures = {
+        typical: () => typical(),
+        // A meeting started 20 minutes ago, while a timer started before it still runs.
+        ongoing: () => {
+          const start = Math.floor((Date.now() - 20 * MIN) / (5 * MIN)) * 5 * MIN
+          const d = typical()
+          const meeting = { ...ev(0, thisWeekDay(), 0, 0, 'Sprint planning with Nordic Logistics', { series: 'planning' }), startedAt: start, stoppedAt: start + 50 * MIN }
+          const running = { id: `e${nextId++}`, description: 'Report time zone boundaries', projectId: 'p1', startedAt: start - 50 * MIN }
+          return { ...d, events: d.events.filter((e) => e.allDay || e.stoppedAt <= running.startedAt || e.startedAt >= meeting.stoppedAt).concat(meeting), entries: d.entries.filter((e) => e.stoppedAt <= running.startedAt), running }
+        },
+        overlapping: () =>
+          typical({
+            extra: [
+              ev(0, thisWeekDay(), 14, 60, 'Architecture review'),
+              ev(0, thisWeekDay(), 14.25, 30, 'Interview: backend developer'),
+              ev(0, thisWeekDay(), 14.5, 60, 'Customer call: Põhjamaade Logistika'),
+            ],
+          }),
+        second: () =>
+          typical({
+            calendars: [WORK, NORDIC],
+            extra: [-1, 0, 1].flatMap((w) => [
+              ev(w, 0, 16.5, 30, 'Nordic Logistics standup', { calendar: NORDIC.id, series: 'n-standup' }),
+              ev(w, 2, 10, 90, 'Warehouse migration: cutover rehearsal', { calendar: NORDIC.id }),
+              ev(w, 3, 11, 60, 'Stock adjustment demo', { calendar: NORDIC.id, series: 'n-demo', response: 'tentative' }),
+            ]),
+          }),
+        long: () =>
+          typical({
+            calendars: [{ ...WORK, name: 'annabel-katariina.von.loewenstein-wertheim-rosenberg@pohjamaade-logistika-konsortsium.eu' }],
+            rename: (e) =>
+              ({
+                'Nordic Logistics weekly sync': 'Nordic Logistics weekly sync about the warehouse management system migration, stock adjustments, and partial deliveries',
+                'Sprint review': 'Sprint review and planning for the supply chain visibility platform with the Põhjamaade Logistika team',
+                'Design crit: report filters': 'Design critique: report filters, saved views, and the accessibility audit findings for the self-service portal',
+              })[e.title] ?? e.title,
+          }),
+        quiet: () => ({ ...typical(), events: [], rules: {} }),
+        reconnect: () => ({ ...typical(), connection: 'reconnect' }),
+        disconnected: () => ({ ...typical(), connection: 'none', calendars: [], events: [], rules: {} }),
+      }
+
+      // Estonia's public holidays near the fixtures' dates; the app takes them from the user's
+      // country setting (`holidays:update`).
+      const HOLIDAYS = {
+        '2026-06-23': 'Victory Day',
+        '2026-06-24': 'Midsummer Day',
+        '2026-08-20': 'Restoration of Independence Day',
+        '2026-12-24': 'Christmas Eve',
+        '2026-12-25': 'Christmas Day',
+        '2026-12-26': 'Boxing Day',
+        '2027-01-01': 'New Year’s Day',
+        '2027-02-24': 'Independence Day',
+      }
+
+      // --- Time helpers -------------------------------------------------------------------------
+      const fmt = (opts) => new Intl.DateTimeFormat(undefined, { timeZone: zone(), ...opts })
+      const clock = (t) => fmt({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(t)
+      const hm = (ms) => {
+        const m = Math.round(ms / MIN)
+        return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
+      }
+      const dateValue = (t) => {
+        const p = Z.zonedParts(t, zone())
+        return `${p.y}-${String(p.m).padStart(2, '0')}-${String(p.d).padStart(2, '0')}`
+      }
+      // The instant of a wall-clock minute on a day; minutes may run past midnight.
+      const timeOn = (day, minutes) => {
+        const p = Z.zonedParts(day + 12 * HOUR, zone())
+        return Z.zonedTime(p.y, p.m, p.d, 0, minutes, zone())
+      }
+      const minuteOf = (t, day) => Math.round((t - day) / MIN)
+      const weekday = (day) => Z.zonedParts(day + 12 * HOUR, zone()).weekday
+      const isWeekend = (day) => [0, 6].includes(weekday(day))
+      const today = () => Z.startOfDay(Date.now(), zone())
+      const endOf = (e) => e.stoppedAt ?? Date.now()
+      const allEntries = () => (state.running ? [...state.entries, state.running] : state.entries)
+
+      function weekDays() {
+        return Array.from({ length: 7 }, (_, i) => Z.addDays(state.week, i, zone()))
+      }
+      // The weekend shows when the user turned it on, or when the week has time on it.
+      function weekendHasTime() {
+        return weekDays().filter(isWeekend).some((day) => allEntries().some((e) => e.startedAt < Z.addDays(day, 1, zone()) && endOf(e) > day))
+      }
+      const weekendShown = () => appFrame.settings.get().calendarWeekend || weekendHasTime()
+      function shownDays() {
+        const days = weekDays().filter((d) => weekendShown() || !isWeekend(d))
+        return narrow.matches ? days.filter((d) => d === state.day) : days
+      }
+
+      // An entry's pieces on the shown days, clipped at midnight.
+      function pieces(e, days = shownDays()) {
+        return days.flatMap((day) => {
+          const next = Z.addDays(day, 1, zone())
+          const from = Math.max(e.startedAt, day)
+          const to = Math.min(endOf(e), next)
+          return to > from ? [{ entry: e, day, from, to, first: from === e.startedAt, last: to === endOf(e) }] : []
+        })
+      }
+
+      // Side by side where entries overlap: each cluster of overlapping pieces splits the width.
+      function layout(list) {
+        const sorted = [...list].sort((a, b) => a.from - b.from || b.to - a.to)
+        const out = []
+        let cluster = []
+        let clusterEnd = -Infinity
+        const flush = () => {
+          const columns = []
+          for (const p of cluster) {
+            let c = columns.findIndex((end) => end <= p.from)
+            if (c < 0) c = columns.push(0) - 1
+            columns[c] = p.to
+            p.col = c
+          }
+          cluster.forEach((p) => out.push({ ...p, cols: columns.length }))
+          cluster = []
+        }
+        for (const p of sorted) {
+          if (p.from >= clusterEnd) flush()
+          cluster.push(p)
+          clusterEnd = Math.max(clusterEnd, p.to)
+        }
+        flush()
+        return out
+      }
+
+      // --- Rendering ----------------------------------------------------------------------------
+      function renderHeader() {
+        document.querySelector('[data-view="list"]').innerHTML = `${icon('list')}List`
+        document.querySelector('[data-view="calendar"]').innerHTML = `${icon('calendar-days')}Calendar`
+        document.getElementById('add-entry').innerHTML = `${icon('plus')}Add entry`
+        document.getElementById('prev').innerHTML = icon('chevron-left')
+        document.getElementById('next').innerHTML = icon('chevron-right')
+      }
+
+      function renderToolbar() {
+        const days = weekDays()
+        const last = days[6]
+        document.getElementById('week-label').textContent = fmt({ day: 'numeric', month: 'short', year: 'numeric' }).formatRange(days[0], last)
+        document.getElementById('prev').setAttribute('aria-label', 'Previous week')
+        document.getElementById('next').setAttribute('aria-label', 'Next week')
+        const total = allEntries().reduce((sum, e) => sum + pieces(e, days).reduce((s, p) => s + p.to - p.from, 0), 0)
+        document.getElementById('week-total').textContent = total ? `This week: ${hm(total)}` : ''
+        const weekend = document.getElementById('weekend')
+        const forced = weekendHasTime()
+        const on = weekendShown()
+        weekend.innerHTML = 'Weekend'
+        weekend.setAttribute('aria-pressed', String(on))
+        weekend.toggleAttribute('data-pressed', on)
+        weekend.disabled = forced
+        weekend.title = forced ? 'This week has weekend time, so the weekend shows' : ''
+        const current = state.week === Z.startOfWeek(Date.now(), zone(), weekStartSetting())
+        document.getElementById('today').disabled = current && (!narrow.matches || state.day === today())
+      }
+
+      function renderStrip() {
+        const days = weekDays().filter((d) => weekendShown() || !isWeekend(d))
+        document.getElementById('day-strip').innerHTML = days
+          .map((day) => {
+            const total = allEntries().reduce((s, e) => s + pieces(e, [day]).reduce((a, p) => a + p.to - p.from, 0), 0)
+            const pressed = day === state.day
+            return `<button type="button" data-day="${day}" aria-pressed="${pressed}" class="flex min-w-11 flex-1 flex-col items-center rounded-md px-1 py-1 text-xs ${pressed ? 'bg-primary text-primary-foreground' : day === today() ? 'bg-accent' : 'hover:bg-accent'}">
+              <span>${escapeHtml(fmt({ weekday: 'short' }).format(day))}</span>
+              <span class="text-sm font-medium tabular-nums">${fmt({ day: 'numeric' }).format(day)}</span>
+              <span class="tabular-nums ${pressed ? '' : 'text-muted-foreground'}">${total ? hm(total) : '·'}</span>
+            </button>`
+          })
+          .join('')
+      }
+
+      function renderGrid() {
+        const days = shownDays()
+        const now = Date.now()
+        const head = document.getElementById('cal-head')
+        const body = document.getElementById('cal-body')
+        for (const el of [head, body]) el.style.setProperty('--days', days.length)
+        head.innerHTML =
+          `<div></div>` +
+          days
+            .map((day) => {
+              const total = allEntries().reduce((s, e) => s + pieces(e, [day]).reduce((a, p) => a + p.to - p.from, 0), 0)
+              const isToday = day === today()
+              return `<div class="flex items-baseline justify-between gap-1 border-l px-2 py-1.5 ${isToday ? 'bg-accent/60' : ''}">
+                <span class="truncate text-sm ${isToday ? 'font-semibold' : 'font-medium'}">${escapeHtml(fmt({ weekday: 'short', day: 'numeric' }).format(day))}</span>
+                <span class="text-xs text-muted-foreground tabular-nums">${total ? hm(total) : ''}</span>
+              </div>`
+            })
+            .join('')
+        const hours = Array.from({ length: 23 }, (_, i) => i + 1)
+          .map((h) => `<span class="absolute right-2 -translate-y-1/2 text-[11px] text-muted-foreground tabular-nums" style="top: calc(${h} * var(--hour))">${String(h).padStart(2, '0')}:00</span>`)
+          .join('')
+        const unit = px() / 60
+        body.innerHTML =
+          `<div class="relative" aria-hidden="true">${hours}</div>` +
+          days
+            .map((day) => {
+              const next = Z.addDays(day, 1, zone())
+              const nowLine = now >= day && now < next ? `<div class="cal-now" style="top: ${minuteOf(now, day) * unit}px"></div>` : ''
+              const eventPieces = shownEvents()
+                .filter((e) => !e.allDay && e.kind !== 'out_of_office')
+                .flatMap((e) => pieces(e, [day]).map((p) => ({ ...p, entry: null, event: e })))
+              const blocks =
+                layout([...allEntries().flatMap((e) => pieces(e, [day])), ...eventPieces])
+                  .map((p) => (p.event ? eventBlock(p, unit) : block(p, unit)))
+                  .join('')
+              return `<div class="cal-day" data-day="${day}" ${day === today() ? 'data-today' : ''} aria-label="${escapeHtml(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(day))}">${awayOn(day, unit)}${blocks}${nowLine}</div>`
+            })
+            .join('')
+        renderAllDay(days)
+      }
+
+      function block(p, unit) {
+        const e = p.entry
+        const proj = project(e.projectId)
+        const top = minuteOf(p.from, p.day) * unit
+        const height = Math.max(((p.to - p.from) / MIN) * unit, 14) - 2
+        const running = !e.stoppedAt
+        const now = Date.now()
+        const description = e.description || 'No description'
+        const times = `${clock(e.startedAt)}–${running ? 'now' : clock(e.stoppedAt)}`
+        // A logged meeting under way ends at its scheduled end: the part after now is still to come.
+        const underWay = !running && e.startedAt <= now && e.stoppedAt > now
+        const overlap = timerOverlap(e)
+        const mark = e.calendarEvent ? icon('calendar-check', 'mr-0.5 inline size-3 -translate-y-px') : ''
+        const label = `${description}, ${proj.name}, ${times}, ${hm(endOf(e) - e.startedAt)}${running ? ', running' : ''}${e.calendarEvent ? ', from your calendar' : ''}${underWay ? ', under way' : ''}${overlap ? ', overlaps the running timer' : ''}`
+        const lines =
+          height >= 44
+            ? `<span class="line-clamp-2 font-medium ${e.description ? '' : 'italic text-muted-foreground'}">${escapeHtml(description)}</span>
+               <span class="truncate text-muted-foreground">${escapeHtml(proj.name)}</span>
+               <span class="mt-auto truncate text-muted-foreground tabular-nums">${running || underWay ? `<span class="cal-pulse mr-1 inline-block size-1.5 rounded-full bg-primary align-middle"></span>` : ''}${mark}${times} · ${hm(endOf(e) - e.startedAt)}</span>`
+            : `<span class="truncate">${mark}<span class="font-medium ${e.description ? '' : 'italic text-muted-foreground'}">${escapeHtml(description)}</span> <span class="text-muted-foreground tabular-nums">${clock(e.startedAt)}</span></span>`
+        const future = underWay && p.to > now ? `<span class="cal-future" style="top: ${Math.max(0, minuteOf(now, p.day) * unit - top - 1)}px" aria-hidden="true"></span>` : ''
+        const attrs = [height < 22 && 'data-short', proj.muted && 'data-muted', running && 'data-running', overlap && 'data-overlap']
+          .filter(Boolean)
+          .join(' ')
+        return `<button type="button" class="cal-block" data-entry="${e.id}" ${attrs} aria-label="${escapeHtml(label)}"
+          style="--p: ${proj.color}; top: ${top + 1}px; height: ${height}px; left: calc(${(p.col / p.cols) * 100}% + 2px); width: calc(${100 / p.cols}% - 4px)">${lines}${future}</button>`
+      }
+
+      // A meeting not logged yet. Its color is its series' project once the series has one.
+      function eventBlock(p, unit) {
+        const e = p.event
+        const proj = eventProject(e)
+        const ruled = proj.source === 'rule'
+        const now = Date.now()
+        const top = minuteOf(p.from, p.day) * unit
+        const height = Math.max(((p.to - p.from) / MIN) * unit, 14) - 2
+        const underWay = e.startedAt <= now && e.stoppedAt > now
+        const times = `${clock(e.startedAt)}–${clock(e.stoppedAt)}`
+        const note = e.response === 'declined' ? 'Declined' : e.free ? 'Free' : e.response === 'none' ? 'Not answered' : underWay ? 'Under way' : ''
+        const kindIcon = { focus_time: 'headphones', out_of_office: 'plane' }[e.kind] ?? (e.seriesKey ? 'repeat' : null)
+        const cal = calendarOf(e)
+        const dot = state.calendars.length > 1 ? `<span class="inline-block size-1.5 shrink-0 rounded-full" style="background: ${cal.color}"></span>` : ''
+        const lead = `${dot}${kindIcon ? icon(kindIcon, 'size-3 shrink-0 opacity-75') : ''}`
+        const title = `<span class="cal-event-title font-medium">${escapeHtml(e.title)}</span>`
+        const label = `Meeting, not logged: ${e.title}, ${times}${note ? `, ${note.toLowerCase()}` : ''}${ruled ? `, ${project(proj.id).name}` : ''}${cal && state.calendars.length > 1 ? `, ${cal.name}` : ''}`
+        const lines =
+          height >= 44
+            ? `<span class="flex min-w-0 items-start gap-1">${lead ? `<span class="flex h-[1.25em] items-center gap-1">${lead}</span>` : ''}<span class="line-clamp-2">${title}</span></span>
+               ${ruled ? `<span class="truncate">${escapeHtml(project(proj.id).name)}</span>` : ''}
+               <span class="mt-auto truncate tabular-nums">${underWay ? `<span class="cal-pulse mr-1 inline-block size-1.5 rounded-full bg-primary align-middle"></span>` : ''}${times}${note ? ` · ${note}` : ''}</span>`
+            : `<span class="flex min-w-0 items-center gap-1">${lead}<span class="truncate">${title} <span class="tabular-nums">${clock(e.startedAt)}</span></span></span>`
+        const attrs = [height < 22 && 'data-short', ruled && 'data-project', e.response === 'declined' && 'data-declined', e.free && 'data-free', state.openEvent === e.key && 'data-open'].filter(Boolean).join(' ')
+        return `<button type="button" class="cal-event" data-event="${escapeHtml(e.key)}" ${attrs} aria-label="${escapeHtml(label)}" aria-haspopup="dialog"
+          style="${ruled ? `--ev: ${project(proj.id).color};` : ''} top: ${top + 1}px; height: ${height}px; left: calc(${(p.col / p.cols) * 100}% + 2px); width: calc(${100 / p.cols}% - 4px)">${lines}</button>`
+      }
+
+      // Out of office greys its hours, or the whole day; a timed one has a label that opens it. An
+      // all-day one opens from its chip in the strip.
+      function awayOn(day, unit) {
+        const next = Z.addDays(day, 1, zone())
+        return state.events
+          .filter((e) => e.kind === 'out_of_office' && calendarOf(e)?.shown && state.connection === 'connected' && eventsOn() && e.startedAt < next && e.stoppedAt > day)
+          .map((e) => {
+            const from = Math.max(e.startedAt, day)
+            const to = Math.min(e.stoppedAt, next)
+            const label = e.allDay
+              ? ''
+              : `<button type="button" class="cal-away-label" data-event="${escapeHtml(e.key)}" aria-haspopup="dialog" aria-label="${escapeHtml(`Out of office, ${clock(e.startedAt)}–${clock(e.stoppedAt)}`)}">${icon('plane', 'size-3 shrink-0')}<span class="truncate">${escapeHtml(e.title)} · ${clock(e.startedAt)}–${clock(e.stoppedAt)}</span></button>`
+            return `<div class="cal-away" style="top: ${minuteOf(from, day) * unit}px; height: ${((to - from) / MIN) * unit}px">${label}</div>`
+          })
+          .join('')
+      }
+
+      // All-day events and working locations, in a strip over the grid while any day has one.
+      function renderAllDay(days) {
+        const el = document.getElementById('cal-allday')
+        const list = shownEvents().filter((e) => e.allDay)
+        const perDay = days.map((day) => list.filter((e) => e.startedAt < Z.addDays(day, 1, zone()) && e.stoppedAt > day))
+        el.hidden = !perDay.some((l) => l.length)
+        el.style.setProperty('--days', days.length)
+        el.innerHTML =
+          `<div class="px-1 py-1.5 text-right text-[11px] leading-tight text-muted-foreground">All day</div>` +
+          perDay
+            .map(
+              (l) =>
+                `<div class="cal-allday">${l
+                  .map(
+                    (e) =>
+                      `<button type="button" class="cal-chip" data-event="${escapeHtml(e.key)}" data-kind="${e.kind}" aria-haspopup="dialog" aria-label="${escapeHtml(`${e.title}, ${e.kind === 'working_location' ? 'working location' : e.kind === 'out_of_office' ? 'out of office all day' : 'all day'}${dayLogsDone(e) ? ', logged' : ''}`)}">${{ working_location: icon('map-pin', 'size-3 shrink-0'), out_of_office: icon('plane', 'size-3 shrink-0') }[e.kind] ?? ''}<span class="truncate">${escapeHtml(e.title)}</span>${dayLogsDone(e) ? icon('calendar-check', 'ml-auto size-3 shrink-0') : ''}</button>`
+                  )
+                  .join('')}</div>`
+            )
+            .join('')
+      }
+
+      // A dashed outline for a slot being dragged or added, with its times, on one day.
+      function render() {
+        const list = state.view === 'list'
+        document.getElementById('calendar-card').hidden = list
+        document.getElementById('list-card').hidden = !list
+        renderCalendarChrome()
+        if (list) return renderList()
+        renderToolbar()
+        renderStrip()
+        renderGrid()
+      }
+
+      // What both views show of the connection: Log meetings, the Meetings toggle, Connect
+      // calendar, and the reconnect notice.
+      function renderCalendarChrome() {
+        const connected = state.connection === 'connected'
+        document.querySelectorAll('[data-log-meetings]').forEach((b) => {
+          b.innerHTML = `${icon('calendar-check')}Log meetings`
+          b.hidden = !connected
+        })
+        document.querySelectorAll('[data-connect-calendar]').forEach((a) => {
+          a.innerHTML = `${icon('calendar')}Connect calendar`
+          a.hidden = state.connection !== 'none'
+        })
+        const toggle = document.getElementById('events-toggle')
+        toggle.innerHTML = `${icon('calendar-days')}Meetings`
+        toggle.hidden = !connected
+        toggle.setAttribute('aria-pressed', String(eventsOn()))
+        toggle.toggleAttribute('data-pressed', eventsOn())
+        toggle.title = eventsOn() ? 'Hide your calendar’s meetings' : 'Show your calendar’s meetings'
+        const notice =
+          state.connection === 'reconnect'
+            ? `<div data-ui="alert" data-variant="warning" class="flex items-center gap-3 py-2.5 [&>svg]:static [&>svg]:shrink-0 [&>svg+div]:translate-y-0 [&>svg~*]:pl-0">${icon('refresh-cw')}<div data-ui="alert-description" class="flex flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <span>Google Calendar stopped letting Snowtime read your meetings, so they aren’t shown or auto-tracked. Your entries aren’t affected.</span>
+                <button type="button" data-ui="button" data-variant="outline" data-size="sm" class="border-warning/50 text-warning hover:bg-warning/10 hover:text-warning" data-reconnect>Reconnect</button>
+              </div></div>`
+            : ''
+        document.querySelectorAll('[data-calendar-notice]').forEach((el) => (el.innerHTML = notice))
+      }
+
+      // Opens the week at 07:00, or earlier when its first entry starts before.
+      function scrollToMorning() {
+        const starts = allEntries()
+          .flatMap((e) => pieces(e))
+          .map((p) => minuteOf(p.from, p.day))
+        const first = Math.min(7 * 60, ...starts.map((m) => m - 30))
+        // A little above the hour, so its label shows.
+        document.getElementById('cal-scroll').scrollTop = (Math.max(0, first) / 60) * px() - 10
+      }
+
+      // --- Mutations (createEntries, deleteEntry) ------------------------------------------------
+      const status = (html) => document.querySelectorAll('[data-status]').forEach((el) => (el.innerHTML = html))
+
+      // Server busy: a refused change stays on the grid, pending, and the status line offers
+      // "Try again" where Undo would be. The page's alert says the same for every page.
+      const pending = { count: 0, retrying: false }
+      const busy = () => document.getElementById('server-busy').checked
+      function renderPending() {
+        const disabled = pending.retrying ? ' disabled' : ''
+        document.getElementById('pending').innerHTML = pending.count
+          ? `<div data-ui="alert" data-variant="warning" class="mt-6 -mb-2 flex items-center gap-3 py-3 [&>svg]:static [&>svg]:shrink-0 [&>svg+div]:translate-y-0 [&>svg~*]:pl-0">${icon('clock')}<div data-ui="alert-description" class="flex flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <span role="status">Not saved yet: the server is busy. Try again when you’re ready.</span>
+              <button type="button" data-ui="button" data-variant="outline" data-size="sm" class="border-warning/50 text-warning hover:bg-warning/10 hover:text-warning" data-retry${disabled}>Try again</button>
+            </div></div>`
+          : ''
+        if (pending.count)
+          status(`<span class="inline-flex items-center gap-x-2 text-warning"><span class="inline-flex items-center gap-1.5">${icon('clock', 'size-3.5')}Not saved yet: the server is busy.</span><button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-warning" data-retry${disabled}>Try again</button></span>`)
+      }
+      function retryPending() {
+        if (pending.retrying) return
+        pending.retrying = true
+        renderPending()
+        setTimeout(() => {
+          pending.retrying = false
+          if (!busy()) {
+            pending.count = 0
+            status('Saved.')
+          }
+          renderPending()
+        }, 700)
+      }
+
+      function save(apply, undo, message) {
+        if (busy() || pending.count) {
+          apply()
+          state.undo = null
+          pending.count++
+          renderPending()
+          render()
+          return true
+        }
+        if (document.getElementById('fail-saves').checked) {
+          status(`<span class="text-destructive">Couldn't save. The entry is back as it was.</span>`)
+          render()
+          return false
+        }
+        apply()
+        state.undo = undo
+        status(`${escapeHtml(message)}${undo ? ` <button type="button" data-undo data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0">${icon('undo-2')}Undo</button>` : ''}`)
+        render()
+        return true
+      }
+
+      function flash(id) {
+        requestAnimationFrame(() => document.querySelectorAll(`[data-entry="${id}"]`).forEach((b) => b.classList.add('cal-flash')))
+      }
+
+      // --- Opening meetings ----------------------------------------------------------------------
+      // Entries are shown, not edited, here: copy-entries.html had the editing this page grew from.
+      const f = (id) => document.getElementById(id)
+      const body = document.getElementById('cal-body')
+      body.addEventListener('click', (event) => {
+        const meeting = event.target.closest('[data-event]')
+        if (meeting) openEvent(meeting.dataset.event, meeting)
+      })
+      f('cal-allday').addEventListener('click', (event) => {
+        const chip = event.target.closest('[data-event]')
+        if (chip) openEvent(chip.dataset.event, chip)
+      })
+
+      function projectOptions(currentId) {
+        const list = [NO_PROJECT, ...projects.filter((p) => mine.includes(p.id))]
+        if (!list.some((p) => p.id === currentId)) {
+          const current = project(currentId)
+          list.push({ ...current, name: current.archivedAt ? `${current.name} (archived)` : current.name })
+        }
+        return list.map((p) => `<option value="${p.id}"${p.id === currentId ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('')
+      }
+
+      const MAX_ENTRIES = 100
+      function daysText(list) {
+        const starts = list.map((e) => e.startedAt).sort((a, b) => a - b)
+        if (starts.length === 1) return `${fmt({ weekday: 'short', day: 'numeric', month: 'short' }).format(starts[0])} ${clock(starts[0])}–${clock(list[0].stoppedAt)}`
+        return `${starts.length} days, ${fmt({ day: 'numeric', month: 'short' }).formatRange(starts[0], starts.at(-1))}`
+      }
+
+      // --- Meetings -----------------------------------------------------------------------------
+      const eventsOn = () => appFrame.settings.get().calendarEvents !== false
+      const findEvent = (key) => state.events.find((e) => e.key === key)
+      const calendarOf = (e) => state.calendars.find((c) => c.id === e.sourceId)
+      const isLogged = (key) => state.entries.some((x) => x.calendarEvent === key)
+      // The meetings drawn: the shown calendars' events not logged yet, while connected.
+      function shownEvents() {
+        if (state.connection !== 'connected' || !eventsOn()) return []
+        return state.events.filter((e) => calendarOf(e)?.shown && !isLogged(e.key))
+      }
+      // Auto-track is on for a calendar of the event (the Work calendar in the prototype).
+      const autoTracked = (e) => !!state.autoTrackSince && !!calendarOf(e)?.autoTrack
+      // An all-day event logs as a day: 8 h from 09:00, one entry per day it covers, leaving out
+      // weekends and holidays when it covers several. Each day's entry has its own key, the
+      // event's key and the date, so the unique key still holds.
+      const DAY_START = 9 * 60
+      const DAY_LENGTH = 8 * 60
+      function dayLogs(e) {
+        const days = []
+        for (let d = Z.startOfDay(e.startedAt, zone()); d < e.stoppedAt; d = Z.addDays(d, 1, zone())) days.push(d)
+        const work = days.length > 1 ? days.filter((d) => !isWeekend(d) && !HOLIDAYS[dateValue(d)]) : days
+        return work.map((day) => ({ key: `${e.key}:${dateValue(day)}`, day, startedAt: timeOn(day, DAY_START), stoppedAt: timeOn(day, DAY_START + DAY_LENGTH) }))
+      }
+      const dayLogsDone = (e) => e.allDay && e.kind !== 'working_location' && dayLogs(e).every((d) => isLogged(d.key))
+      // Why auto-track leaves an event out, or null when it logs it. Unanswered invitations count.
+      function skipReason(e) {
+        if (e.kind === 'working_location') return 'it’s a working location'
+        if (e.allDay) return 'it’s an all-day event'
+        if (e.kind === 'out_of_office') return 'you’re out of office'
+        if (e.kind === 'focus_time') return 'it’s focus time, not a meeting'
+        if (e.response === 'declined') return 'you declined it'
+        if (e.free) return 'it’s shown as free'
+        if (e.seriesKey && state.rules[e.seriesKey]?.autoTrack === false) return 'you turned it off for this series'
+        return null
+      }
+      // The project a meeting logs to: its series rule's, else a suggestion from the latest entry
+      // with the same description in 90 days. Auto-track uses only the rule's.
+      function eventProject(e) {
+        const rule = e.seriesKey && state.rules[e.seriesKey]
+        if (rule?.projectId && rule.projectId !== 'none') {
+          const p = project(rule.projectId)
+          return p.archivedAt || p.muted ? { id: 'none', source: 'archived', name: p.name } : { id: rule.projectId, source: 'rule' }
+        }
+        const since = Date.now() - 90 * 24 * HOUR
+        const last = state.entries.filter((x) => x.description === e.title && x.projectId !== 'none' && x.startedAt >= since).sort((a, b) => b.startedAt - a.startedAt)[0]
+        return last ? { id: last.projectId, source: 'suggestion' } : { id: 'none', source: 'none' }
+      }
+      // A logged meeting the running timer runs through, so that time counts twice.
+      function timerOverlap(e) {
+        const r = state.running
+        return !!(e.calendarEvent && r && e.stoppedAt && e.startedAt < Date.now() && e.stoppedAt > r.startedAt)
+      }
+      const count = (n, one, many) => `${n} ${n === 1 ? one : many}`
+      function names(list) {
+        const quoted = list.map((x) => `“${x}”`)
+        return quoted.length <= 3 ? new Intl.ListFormat('en').format(quoted) : `${quoted.slice(0, 2).join(', ')}, and ${quoted.length - 2} more`
+      }
+
+      // One createEntries for the meetings, each entry carrying its meeting's key, so one Undo
+      // takes them back. Undo deletes them, which keeps them deleted for auto-track too.
+      function logEvents(items, { auto = false } = {}) {
+        const added = items.map(({ event: e, projectId, at = e }) => ({ id: `e${nextId++}`, description: e.title, projectId, startedAt: at.startedAt, stoppedAt: at.stoppedAt, calendarEvent: at.key }))
+        const keys = added.map((x) => x.calendarEvent)
+        const wereDeleted = keys.filter((k) => state.deletedKeys.has(k))
+        const n = added.length
+        const titles = [...new Set(added.map((x) => x.description))]
+        const what = items.some((x) => x.event.allDay) ? count(n, 'entry', 'entries') : count(n, 'meeting', 'meetings')
+        const message = auto
+          ? `Logged ${count(n, 'meeting', 'meetings')} from your calendar: ${names(titles)}.`
+          : n === 1 || titles.length === 1
+            ? `Logged “${added[0].description}”: ${daysText(added)}.`
+            : `Logged ${what}: ${names(titles)}.`
+        const ok = save(
+          () => {
+            state.entries.push(...added)
+            wereDeleted.forEach((k) => state.deletedKeys.delete(k))
+          },
+          () => {
+            state.entries = state.entries.filter((x) => !added.includes(x))
+            keys.forEach((k) => state.deletedKeys.add(k))
+          },
+          message
+        )
+        if (!ok) return null
+        added.forEach((x) => flash(x.id))
+        const overlap = added.find(timerOverlap)
+        if (overlap) warnOverlap(overlap)
+        return added
+      }
+
+      // The running timer is left alone; the status line says what overlaps and offers to stop
+      // the timer where the meeting starts.
+      function warnOverlap(e) {
+        if (!timerOverlap(e)) return
+        const canStop = e.startedAt > state.running.startedAt
+        const html = `<span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-warning">${icon('triangle-alert', 'size-3.5 shrink-0')}<span>“${escapeHtml(e.description)}” overlaps your running timer, so that time counts twice.</span>${
+          canStop ? `<button type="button" data-ui="button" data-variant="link" data-size="sm" class="h-auto p-0 text-warning" data-stop-at="${e.startedAt}">Stop the timer at ${clock(e.startedAt)}</button>` : ''
+        }</span>`
+        document.querySelectorAll('[data-status]').forEach((el) => el.insertAdjacentHTML('beforeend', html))
+      }
+      function stopTimerAt(at) {
+        const r = state.running
+        if (!r) return
+        const stopped = { ...r, stoppedAt: at }
+        save(
+          () => {
+            state.entries.push(stopped)
+            state.running = null
+          },
+          () => {
+            state.entries = state.entries.filter((x) => x !== stopped)
+            state.running = r
+          },
+          `Stopped “${r.description || 'No description'}” at ${clock(at)}.`
+        )
+        renderTimer()
+      }
+
+      // Auto-track: when the user opens Snowtime or returns to it, log the auto-tracked
+      // calendars' meetings that have started since auto-track was switched on, at most 14 days
+      // back, that aren't logged or deleted. Returns how many it logged.
+      function syncCalendar() {
+        state.lastSync = Date.now()
+        if (state.connection !== 'connected' || !state.autoTrackSince) return 0
+        const now = Date.now()
+        const from = Math.max(state.autoTrackSince, now - 14 * 24 * HOUR)
+        const due = state.events
+          .filter((e) => autoTracked(e) && e.startedAt >= from && e.startedAt <= now && !skipReason(e) && !isLogged(e.key) && !state.deletedKeys.has(e.key))
+          .sort((a, b) => a.startedAt - b.startedAt)
+        if (!due.length) return 0
+        return logEvents(
+          due.map((e) => {
+            const p = eventProject(e)
+            return { event: e, projectId: p.source === 'rule' ? p.id : 'none' }
+          }),
+          { auto: true }
+        )?.length ?? 0
+      }
+
+      // --- The event popover -------------------------------------------------------------------
+      const eventPopover = f('event-popover')
+      let eventAnchor = null
+
+      function openEvent(key, anchor) {
+        state.openEvent = key
+        eventAnchor = anchor
+        render()
+        fillEvent(findEvent(key))
+        eventPopover.showPopover()
+        placeEvent()
+        ;(f('event-actions').hidden ? f('event-title') : f('event-log')).focus?.()
+      }
+
+      const RESPONSES = {
+        organizer: ['check', 'You organize it'],
+        accepted: ['check', 'You accepted'],
+        tentative: ['circle-alert', 'You said maybe'],
+        none: ['circle-alert', 'You haven’t answered'],
+        declined: ['x', 'You declined'],
+      }
+      function fillEvent(e) {
+        const now = Date.now()
+        const cal = calendarOf(e)
+        const underWay = !e.allDay && e.startedAt <= now && e.stoppedAt > now
+        const upcoming = e.startedAt > now
+        const proj = eventProject(e)
+        const series = !!e.seriesKey && !e.allDay
+        const pending = e.allDay ? dayLogs(e).filter((d) => !isLogged(d.key)) : []
+        const loggable = !e.allDay || (e.kind !== 'working_location' && pending.length > 0)
+        f('event-title').textContent = e.title
+        const lastDay = Z.addDays(e.stoppedAt, -1, zone())
+        f('event-when').textContent = e.allDay
+          ? `${lastDay > e.startedAt ? fmt({ weekday: 'short', day: 'numeric', month: 'short' }).formatRange(e.startedAt, lastDay) : fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(e.startedAt)} · all day`
+          : `${fmt({ weekday: 'short', day: 'numeric', month: 'short' }).format(e.startedAt)}, ${clock(e.startedAt)}–${clock(e.stoppedAt)} · ${hm(e.stoppedAt - e.startedAt)}${underWay ? ' · under way' : ''}`
+        const kind = { focus_time: ['headphones', 'Focus time'], out_of_office: ['plane', 'Out of office'], working_location: ['map-pin', 'Working location'] }[e.kind]
+        const fact = (name, text) => `<li class="flex min-w-0 items-center gap-2 text-muted-foreground">${icon(name, 'size-4 shrink-0')}<span class="min-w-0 truncate">${text}</span></li>`
+        f('event-facts').innerHTML = [
+          fact('calendar', `<span class="mr-1.5 inline-block size-2 rounded-full align-middle" style="background: ${cal.color}"></span>${escapeHtml(cal.name)}`),
+          kind && fact(...kind),
+          !e.allDay && e.kind === 'event' && fact(...RESPONSES[e.response]),
+          e.free && fact('info', 'Shown as free'),
+          series && fact('repeat', 'Repeats'),
+        ]
+          .filter(Boolean)
+          .join('')
+
+        // The project: for a series, its rule, saved at once; for a one-off, this log's.
+        f('event-project-field').hidden = !loggable
+        document.querySelector('label[for="event-project"]').textContent = series ? 'Project for this series' : 'Project'
+        f('event-project').innerHTML = projectOptions(proj.id)
+        // A suggestion is already selected, so keeping it for the series is its own action.
+        const keep = `<button type="button" data-keep-project class="font-medium text-foreground underline underline-offset-4">Keep it for this series</button>`
+        f('event-project-hint').innerHTML =
+          proj.source === 'rule'
+            ? 'Every meeting in this series logs to it. Entries already logged keep theirs.'
+            : proj.source === 'archived'
+              ? `${escapeHtml(proj.name)} is archived, so this series logs without a project. Pick another one.`
+              : proj.source === 'suggestion'
+                ? series
+                  ? `From your last entry with this name. ${keep}`
+                  : 'From your last entry with this name.'
+                : series
+                  ? 'Pick one, and every meeting in this series logs to it.'
+                  : ''
+
+        // Auto-track for the series, when its calendar has auto-track on.
+        const rule = state.rules[e.seriesKey]
+        f('event-series').hidden = !series || !autoTracked(e) || !loggable
+        const trackSeries = rule?.autoTrack !== false
+        for (const n of [f('event-series-track'), f('event-series-track').firstElementChild]) n.toggleAttribute('data-checked', trackSeries)
+        f('event-series-track').setAttribute('aria-checked', String(trackSeries))
+        f('event-series-hint').textContent = trackSeries ? 'Each meeting logs as it starts.' : 'Its meetings stay planned until you log them.'
+
+        const reason = skipReason(e)
+        const daysLogged = e.allDay ? dayLogs(e).length - pending.length : 0
+        f('event-note').textContent = e.allDay
+          ? e.kind === 'working_location'
+            ? ''
+            : !pending.length
+              ? `Logged as ${count(daysLogged, 'day', 'days')}.`
+              : `Logs ${DAY_LENGTH / 60} h from ${clock(pending[0].startedAt)}${pending.length > 1 ? ` on each of ${count(pending.length, 'workday', 'workdays')}` : ''}${daysLogged ? `; ${count(daysLogged, 'day is', 'days are')} logged already` : ''}. Move or resize it after.`
+          : state.deletedKeys.has(e.key)
+            ? 'You deleted its entry, so auto-track leaves it. Log it again if you need it.'
+            : underWay && state.running && state.running.startedAt < e.stoppedAt
+              ? `Your timer is running through this meeting, so logging it counts that time twice.`
+              : autoTracked(e) && reason && !(series && rule?.autoTrack === false)
+                ? `Auto-track leaves it out: ${reason}.`
+                : autoTracked(e) && !reason && upcoming
+                  ? `Auto-track logs it when it starts, at ${clock(e.startedAt)}.`
+                  : autoTracked(e) && !reason && e.startedAt < state.autoTrackSince
+                    ? 'It started before auto-track was on. Log it here, or from Log meetings.'
+                    : ''
+        f('event-actions').hidden = !loggable
+        f('event-log').textContent = e.allDay ? (pending.length > 1 ? `Log ${count(pending.length, 'day', 'days')}` : 'Log as a day') : underWay ? `Log until ${clock(e.stoppedAt)}` : upcoming ? 'Log ahead' : 'Log'
+      }
+
+      // Beside the meeting where there's room, else under it; kept inside the window.
+      function placeEvent() {
+        const anchor = (state.openEvent && document.querySelector(`[data-event="${CSS.escape(state.openEvent)}"]`)) || (eventAnchor?.isConnected && eventAnchor)
+        if (!anchor) return
+        const r = anchor.getBoundingClientRect()
+        const w = eventPopover.offsetWidth
+        const h = eventPopover.offsetHeight
+        let left = r.right + 8
+        let top = r.top
+        if (left + w > innerWidth - 8) left = r.left - 8 - w
+        if (left < 8) {
+          left = Math.max(8, Math.min(r.left, innerWidth - w - 8))
+          top = r.bottom + 8
+        }
+        eventPopover.style.inset = 'auto'
+        eventPopover.style.left = `${left}px`
+        eventPopover.style.top = `${Math.max(8, Math.min(top, innerHeight - h - 8))}px`
+      }
+
+      function setRule(e, patch, message) {
+        state.rules[e.seriesKey] = { projectId: 'none', autoTrack: true, title: e.title, ...state.rules[e.seriesKey], ...patch }
+        state.undo = null
+        status(escapeHtml(message))
+        render()
+        fillEvent(e)
+      }
+      f('event-project').addEventListener('change', (event) => {
+        const e = findEvent(state.openEvent)
+        if (!e.seriesKey) return
+        const id = event.currentTarget.value
+        setRule(e, { projectId: id }, id === 'none' ? `Meetings in “${e.title}” log without a project now.` : `Meetings in “${e.title}” log to ${project(id).name} now.`)
+      })
+      f('event-project-hint').addEventListener('click', (event) => {
+        if (!event.target.closest('[data-keep-project]')) return
+        const e = findEvent(state.openEvent)
+        const id = f('event-project').value
+        setRule(e, { projectId: id }, `Meetings in “${e.title}” log to ${project(id).name} now.`)
+        f('event-project').focus()
+      })
+      f('event-series-track').addEventListener('change', () => {
+        const e = findEvent(state.openEvent)
+        const on = f('event-series-track').getAttribute('aria-checked') === 'true'
+        setRule(e, { autoTrack: on }, on ? `Auto-track logs “${e.title}” again.` : `Auto-track leaves “${e.title}” out from now on.`)
+      })
+      f('event-log').addEventListener('click', () => {
+        const e = findEvent(state.openEvent)
+        const projectId = f('event-project').value
+        eventPopover.hidePopover()
+        logEvents(e.allDay ? dayLogs(e).filter((d) => !isLogged(d.key)).map((at) => ({ event: e, projectId, at })) : [{ event: e, projectId }])
+      })
+      eventPopover.addEventListener('toggle', (event) => {
+        if (event.newState !== 'closed') return
+        const key = state.openEvent
+        state.openEvent = null
+        render()
+        // Focus returns to the meeting, or to its entry once logged.
+        const logged = state.entries.find((x) => x.calendarEvent === key)
+        const target = document.querySelector(logged ? `[data-entry="${logged.id}"]` : `[data-event="${CSS.escape(key)}"]`)
+        target?.focus()
+      })
+
+      // --- Log meetings --------------------------------------------------------------------------
+      // A range of days, the calendar's week by default. Each meeting starts checked when auto-track would log
+      // it and it has started; a row's project is the meeting's, for this log only. A day's heading
+      // checks or unchecks all its meetings that aren't logged yet; a day with all logged shows a check.
+      const logDialog = f('log-dialog')
+      const MAX_RANGE_DAYS = 93
+      const picks = new Map() // key → { checked, projectId }, kept while the dialog is open
+      const dateOf = (value) => Z.startOfDay(Z.zonedTime(...value.split('-').map(Number), 12, 0, zone()), zone())
+
+      function presetRange(name) {
+        const t = today()
+        const week = Z.startOfWeek(t, zone(), weekStartSetting())
+        if (name === 'yesterday') return [Z.addDays(t, -1, zone()), Z.addDays(t, -1, zone())]
+        if (name === 'week') return [week, Z.addDays(week, 6, zone())]
+        if (name === 'last-week') return [Z.addDays(week, -7, zone()), Z.addDays(week, -1, zone())]
+        return [t, t]
+      }
+      function openLog([from, to] = [state.week, Z.addDays(state.week, 6, zone())]) {
+        picks.clear()
+        f('log-from').value = dateValue(from)
+        f('log-to').value = dateValue(to)
+        renderLog()
+        logDialog.showModal()
+      }
+      function logRange() {
+        if (!f('log-from').value || !f('log-to').value) return null
+        const from = dateOf(f('log-from').value)
+        const to = dateOf(f('log-to').value)
+        return to < from ? null : { from, to, days: Math.round((to - from) / 86_400_000) + 1 }
+      }
+      // The range's rows: a meeting each, and an all-day event once per day it logs as.
+      function logRows(range) {
+        const end = Z.addDays(range.to, 1, zone())
+        const dayOf = (r) => Z.startOfDay(r.at.startedAt, zone())
+        return state.events
+          .filter((e) => calendarOf(e)?.shown && e.kind !== 'working_location' && e.startedAt < end && e.stoppedAt > range.from)
+          .flatMap((e) => (e.allDay ? dayLogs(e).filter((d) => d.day >= range.from && d.day < end).map((at) => ({ e, at })) : e.startedAt >= range.from ? [{ e, at: e }] : []))
+          .sort((a, b) => dayOf(a) - dayOf(b) || b.e.allDay - a.e.allDay || a.at.startedAt - b.at.startedAt)
+      }
+      function pickOf({ e, at }) {
+        if (!picks.has(at.key)) picks.set(at.key, { checked: !e.allDay && e.startedAt <= Date.now() && !skipReason(e) && !isLogged(at.key) && !state.deletedKeys.has(at.key), projectId: eventProject(e).id })
+        return picks.get(at.key)
+      }
+      function renderLog() {
+        const range = logRange()
+        document.querySelectorAll('#log-presets [data-preset]').forEach((b) => {
+          const [from, to] = presetRange(b.dataset.preset)
+          const on = !!range && range.from === from && range.to === to
+          b.setAttribute('aria-pressed', String(on))
+          b.toggleAttribute('data-pressed', on)
+        })
+        const tooLong = range && range.days > MAX_RANGE_DAYS
+        const list = range && !tooLong ? logRows(range) : []
+        const now = Date.now()
+        // Per day, how many rows can still be checked and how many are.
+        const dayCounts = new Map()
+        for (const row of list) {
+          if (isLogged(row.at.key)) continue
+          const day = Z.startOfDay(row.at.startedAt, zone())
+          const c = dayCounts.get(day) ?? { open: 0, checked: 0 }
+          c.open++
+          if (pickOf(row).checked) c.checked++
+          dayCounts.set(day, c)
+        }
+        let html = ''
+        let lastDay = null
+        list.forEach((row, i) => {
+          const { e, at } = row
+          const day = Z.startOfDay(at.startedAt, zone())
+          if (day !== lastDay) {
+            const label = fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(day)
+            const c = dayCounts.get(day) ?? { open: 0, checked: 0 }
+            const all = c.open > 0 && c.checked === c.open
+            html += `<div class="sticky top-0 z-[1] flex items-center gap-3 border-y bg-muted px-3 py-1.5 text-xs font-medium first:border-t-0">
+              ${c.open ? `<input type="checkbox" data-ui="checkbox" id="log-day-${day}" data-log-day="${day}" data-some="${c.checked > 0 && !all}" ${all ? 'checked' : ''} aria-label="${escapeHtml(`All meetings on ${label}`)}" />` : icon('check', 'size-4 shrink-0')}
+              <label for="log-day-${day}" class="min-w-0 flex-1">${escapeHtml(label)}</label>
+            </div>`
+            lastDay = day
+          }
+          const logged = state.entries.find((x) => x.calendarEvent === at.key)
+          const pick = pickOf(row)
+          const reason = skipReason(e)
+          const notes = [
+            e.seriesKey && !e.allDay && 'Repeats',
+            state.calendars.length > 1 && calendarOf(e).name,
+            logged
+              ? 'Logged'
+              : e.allDay
+                ? `${e.kind === 'out_of_office' ? 'Out of office, l' : 'L'}ogs ${clock(at.startedAt)}–${clock(at.stoppedAt)}`
+                : e.startedAt > now
+                  ? 'Hasn’t started'
+                  : state.deletedKeys.has(e.key)
+                    ? 'Its entry was deleted'
+                    : reason && reason.replace(/^it’s /, '').replace(/^you /, 'You ').replace(/^./, (c) => c.toUpperCase()),
+          ].filter(Boolean)
+          const id = `log-${i}`
+          const disabled = !!logged
+          const proj = logged ? project(logged.projectId) : null
+          html += `<div class="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 ${disabled ? 'text-muted-foreground' : ''} [&+&]:border-t">
+            <input type="checkbox" data-ui="checkbox" id="${id}" data-log-key="${escapeHtml(at.key)}" ${pick.checked && !disabled ? 'checked' : ''} ${disabled ? 'disabled' : ''} />
+            <label for="${id}" class="grid min-w-0 flex-1 basis-56 gap-0.5 text-sm">
+              <span class="flex min-w-0 items-baseline gap-3"><span class="w-[5.75rem] shrink-0 tabular-nums text-muted-foreground">${e.allDay ? 'All day' : `${clock(e.startedAt)}–${clock(e.stoppedAt)}`}</span><span class="min-w-0 truncate font-medium ${e.response === 'declined' ? 'line-through' : ''}">${escapeHtml(e.title)}</span></span>
+              ${notes.length ? `<span class="pl-[6.5rem] text-xs text-muted-foreground">${escapeHtml(notes.join(' · '))}</span>` : ''}
+            </label>
+            ${
+              logged
+                ? `<span class="flex w-full min-w-0 items-center gap-1.5 text-sm sm:w-48">${icon('calendar-check', 'size-3.5 shrink-0')}<span class="truncate">${escapeHtml(proj.name)}</span></span>`
+                : `<select data-ui="select" data-log-project="${escapeHtml(at.key)}" class="w-full sm:w-48" aria-label="${escapeHtml(`Project for ${e.title}`)}">${projectOptions(pick.projectId)}</select>`
+            }
+          </div>`
+        })
+        f('log-list').innerHTML =
+          html ||
+          `<p class="px-4 py-8 text-center text-sm text-muted-foreground">${tooLong ? `Pick at most ${MAX_RANGE_DAYS} days.` : !range ? 'Pick a start and an end, the end on or after the start.' : 'No meetings in these days.'}</p>`
+        // Indeterminate is a property only: some of the day's meetings are checked.
+        f('log-list').querySelectorAll('[data-log-day]').forEach((box) => (box.indeterminate = box.dataset.some === 'true'))
+        const chosen = list.filter((r) => !isLogged(r.at.key) && pickOf(r).checked)
+        const total = chosen.reduce((s, r) => s + r.at.stoppedAt - r.at.startedAt, 0)
+        const over = chosen.length > MAX_ENTRIES
+        const what = chosen.some((r) => r.e.allDay) ? count(chosen.length, 'entry', 'entries') : count(chosen.length, 'meeting', 'meetings')
+        f('log-summary').innerHTML = chosen.length
+          ? `${escapeHtml(what)} checked, ${hm(total)} in all.${over ? ` <span class="text-destructive">At most ${MAX_ENTRIES} at once: uncheck some, or log a shorter range first.</span>` : ''}`
+          : list.length
+            ? 'No meetings checked.'
+            : ''
+        f('log-save').textContent = chosen.length ? `Log ${what}` : 'Log meetings'
+        f('log-save').disabled = !chosen.length || over
+      }
+      f('log-presets').addEventListener('click', (event) => {
+        const b = event.target.closest('[data-preset]')
+        if (!b) return
+        const [from, to] = presetRange(b.dataset.preset)
+        f('log-from').value = dateValue(from)
+        f('log-to').value = dateValue(to)
+        renderLog()
+      })
+      for (const id of ['log-from', 'log-to']) f(id).addEventListener('input', renderLog)
+      f('log-list').addEventListener('change', (event) => {
+        const dayBox = event.target.closest('[data-log-day]')
+        if (dayBox) {
+          const range = logRange()
+          const day = Number(dayBox.dataset.logDay)
+          for (const row of range ? logRows(range) : []) {
+            if (Z.startOfDay(row.at.startedAt, zone()) === day && !isLogged(row.at.key)) pickOf(row).checked = dayBox.checked
+          }
+        }
+        const box = event.target.closest('[data-log-key]')
+        const select = event.target.closest('[data-log-project]')
+        if (box) picks.get(box.dataset.logKey).checked = box.checked
+        if (select) picks.get(select.dataset.logProject).projectId = select.value
+        renderLog()
+      })
+      f('log-form').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const range = logRange()
+        if (!range) return
+        const items = logRows(range)
+          .filter((r) => !isLogged(r.at.key) && pickOf(r).checked)
+          .map((r) => ({ event: r.e, at: r.at, projectId: picks.get(r.at.key).projectId }))
+        logDialog.close()
+        logEvents(items)
+      })
+      logDialog.querySelector('[data-log-cancel]').addEventListener('click', () => logDialog.close())
+      let logOpener = null
+      document.addEventListener('click', (event) => {
+        const b = event.target.closest('[data-log-meetings]')
+        if (!b) return
+        logOpener = b
+        openLog()
+      })
+      logDialog.addEventListener('close', () => logOpener?.focus())
+
+      // --- List view ---------------------------------------------------------------------------
+      // Reduced to the last seven days: their entries, and the meetings that started and auto-track
+      // would log but nobody has. "A line per day" sums them up under the day's header; "rows
+      // among entries" puts each where it happened, with Log.
+      function missingOn(day) {
+        const next = Z.addDays(day, 1, zone())
+        const now = Date.now()
+        return shownEvents().filter((e) => !e.allDay && e.startedAt >= day && e.startedAt < next && e.startedAt <= now && !skipReason(e) && !state.deletedKeys.has(e.key))
+      }
+      function entryRow(e) {
+        const proj = project(e.projectId)
+        const underWay = e.startedAt <= Date.now() && e.stoppedAt > Date.now()
+        return `<button type="button" data-entry="${e.id}" class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0.5 px-4 py-2.5 text-left text-sm outline-none hover:bg-accent/50 focus-visible:bg-accent sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_auto]">
+          <span class="min-w-0 truncate font-medium ${e.description ? '' : 'italic text-muted-foreground'}">${escapeHtml(e.description || 'No description')}</span>
+          <span class="flex min-w-0 items-center gap-1.5 text-muted-foreground max-sm:col-start-1 max-sm:row-start-2"><span class="size-2 shrink-0 rounded-full" style="background: ${proj.color}"></span><span class="truncate">${escapeHtml(proj.name)}</span></span>
+          <span class="flex items-center justify-end gap-2 tabular-nums text-muted-foreground max-sm:row-span-2">${e.calendarEvent ? icon('calendar-check', 'size-3.5') : ''}${clock(e.startedAt)}–${clock(e.stoppedAt)}${underWay ? ' (to come)' : ''}<span class="w-11 text-right font-medium text-foreground">${hm(e.stoppedAt - e.startedAt)}</span></span>
+        </button>`
+      }
+      function missingRow(e) {
+        return `<div class="flex items-center gap-3 border-y border-dashed bg-muted/30 px-4 py-2 text-sm">
+          <button type="button" data-event="${escapeHtml(e.key)}" aria-haspopup="dialog" class="flex min-w-0 flex-1 items-center gap-1.5 text-left text-muted-foreground outline-none hover:text-foreground focus-visible:underline">${icon(e.seriesKey ? 'repeat' : 'calendar', 'size-3.5 shrink-0')}<span class="truncate">${escapeHtml(e.title)}</span><span class="shrink-0 text-xs">· not logged</span></button>
+          <span class="shrink-0 tabular-nums text-muted-foreground">${clock(e.startedAt)}–${clock(e.stoppedAt)}</span>
+          <button type="button" data-ui="button" data-variant="outline" data-size="sm" class="h-7 shrink-0" data-log-event="${escapeHtml(e.key)}">Log</button>
+        </div>`
+      }
+      function renderList() {
+        const html = Array.from({ length: 7 }, (_, i) => Z.addDays(today(), -i, zone()))
+          .map((day) => {
+            const next = Z.addDays(day, 1, zone())
+            const entries = state.entries.filter((e) => e.startedAt >= day && e.startedAt < next)
+            const missing = missingOn(day)
+            if (!entries.length && !missing.length) return ''
+            const total = entries.reduce((s, e) => s + e.stoppedAt - e.startedAt, 0)
+            const head = `<div class="flex items-baseline justify-between gap-3 border-b bg-muted/40 px-4 py-2"><h3 class="text-sm font-medium">${escapeHtml(day === today() ? 'Today' : fmt({ weekday: 'long', day: 'numeric', month: 'short' }).format(day))}</h3><span class="text-sm tabular-nums text-muted-foreground">${hm(total)}</span></div>`
+            const items = [...entries.map((e) => ({ t: e.startedAt, html: entryRow(e) })), ...missing.map((e) => ({ t: e.startedAt, html: missingRow(e) }))].sort((a, b) => b.t - a.t)
+            return `<section class="border-b last:border-b-0">${head}<div class="divide-y">${items.map((x) => x.html).join('')}</div></section>`
+          })
+          .join('')
+        f('list-days').innerHTML = html || '<p class="px-4 py-10 text-center text-sm text-muted-foreground">No time in the last seven days.</p>'
+      }
+      f('list-days').addEventListener('click', (event) => {
+        const entryEl = event.target.closest('[data-entry]')
+        const eventEl = event.target.closest('[data-event]')
+        const logOne = event.target.closest('[data-log-event]')
+        if (eventEl && !entryEl) openEvent(eventEl.dataset.event, eventEl)
+        else if (logOne) {
+          const e = findEvent(logOne.dataset.logEvent)
+          logEvents([{ event: e, projectId: eventProject(e).id }])
+        }
+      })
+
+      // --- Timer bar ----------------------------------------------------------------------------
+      function renderTimer() {
+        const r = state.running
+        f('project').innerHTML = projectOptions(r?.projectId ?? 'p1')
+        f('description').value = r?.description ?? f('description').value
+        f('toggle').innerHTML = r ? `${icon('square')}Stop` : `${icon('play')}Start`
+        f('toggle').dataset.variant = r ? 'destructive' : 'default'
+        tick()
+      }
+      function tick() {
+        const ms = state.running ? Date.now() - state.running.startedAt : 0
+        const s = Math.floor(ms / 1000)
+        f('elapsed').textContent = `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+      }
+      f('toggle').addEventListener('click', () => {
+        if (state.running) {
+          const e = { ...state.running, stoppedAt: Date.now() }
+          state.entries.push(e)
+          state.running = null
+          f('description').value = ''
+        } else {
+          state.running = { id: `e${nextId++}`, description: f('description').value.trim(), projectId: f('project').value, startedAt: Date.now() }
+        }
+        renderTimer()
+        render()
+      })
+      for (const [id, key] of [['description', 'description'], ['project', 'projectId']])
+        f(id).addEventListener('change', (event) => {
+          if (!state.running) return
+          state.running[key] = key === 'description' ? event.currentTarget.value.trim() : event.currentTarget.value
+          render()
+        })
+      setInterval(tick, 1000)
+      // The running block and the now line move each half minute, unless a popover is open.
+      setInterval(() => !eventPopover.matches(':popover-open') && render(), 30_000)
+
+      // --- Controls -----------------------------------------------------------------------------
+      function goToWeek(week, day) {
+        state.week = week
+        state.day = day ?? (narrow.matches ? (week === Z.startOfWeek(Date.now(), zone(), weekStartSetting()) ? today() : week) : state.day)
+        state.undo = null
+        status('')
+        render()
+        scrollToMorning()
+      }
+      f('prev').addEventListener('click', () => goToWeek(Z.addDays(state.week, -7, zone())))
+      f('next').addEventListener('click', () => goToWeek(Z.addDays(state.week, 7, zone())))
+      f('today').addEventListener('click', () => goToWeek(Z.startOfWeek(Date.now(), zone(), weekStartSetting()), today()))
+      f('weekend').addEventListener('click', () => {
+        appFrame.settings.set({ calendarWeekend: !appFrame.settings.get().calendarWeekend })
+        if (!weekendShown() && isWeekend(state.day)) state.day = weekDays().find((d) => !isWeekend(d))
+        render()
+      })
+      f('day-strip').addEventListener('click', (event) => {
+        const b = event.target.closest('[data-day]')
+        if (!b) return
+        state.day = Number(b.dataset.day)
+        render()
+      })
+      // The list view here is a reduced one, to show where the day's meetings go.
+      document.querySelectorAll('[data-view]').forEach((b) =>
+        b.addEventListener('click', () => {
+          state.view = b.dataset.view
+          document.querySelectorAll('[data-view]').forEach((x) => {
+            x.setAttribute('aria-pressed', String(x === b))
+            x.toggleAttribute('data-pressed', x === b)
+          })
+          render()
+          if (state.view === 'calendar') scrollToMorning()
+        })
+      )
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('[data-retry]')) retryPending()
+        if (event.target.closest('[data-reconnect]')) {
+          // Simulated: the OAuth flow runs again and comes back connected.
+          state.connection = 'connected'
+          status('Reconnected Google Calendar. Your meetings are back.')
+          render()
+          syncCalendar()
+        }
+        const stop = event.target.closest('[data-stop-at]')
+        if (stop) stopTimerAt(Number(stop.dataset.stopAt))
+        if (event.target.closest('[data-undo]') && state.undo) {
+          const undo = state.undo
+          state.undo = null
+          undo()
+          status('Undone.')
+          render()
+        }
+      })
+      f('fixture').addEventListener('change', (event) => loadFixture(event.currentTarget.value))
+      narrow.addEventListener('change', () => {
+        if (!weekDays().includes(state.day)) state.day = state.week
+        render()
+      })
+      appFrame.on('settings', () => {
+        const week = Z.startOfWeek(state.week + 12 * HOUR, zone(), weekStartSetting())
+        if (week !== state.week) goToWeek(week)
+        else render()
+      })
+
+      function loadFixture(name) {
+        state.fixture = name
+        const data = fixtures[name]()
+        Object.assign(state, { entries: data.entries, running: data.running, connection: data.connection, calendars: data.calendars, events: data.events, rules: data.rules, deletedKeys: new Set() })
+        f('description').value = ''
+        renderTimer()
+        goToWeek(Z.startOfWeek(Date.now(), zone(), weekStartSetting()), today())
+        syncCalendar()
+      }
+
+      // Prototype controls for the calendar.
+      function setAutoTrack(value) {
+        state.autoTrackSince = value === 'off' ? null : value === 'week' ? Z.startOfWeek(Date.now(), zone(), weekStartSetting()) : Date.now()
+        render()
+      }
+      f('autotrack').addEventListener('change', (event) => {
+        setAutoTrack(event.currentTarget.value)
+        if (!syncCalendar()) status(state.autoTrackSince ? 'Auto-track is on. It logs meetings from here on as they start.' : 'Auto-track is off. Meetings stay planned until you log them.')
+      })
+      f('return').addEventListener('click', () => {
+        if (syncCalendar()) return
+        status(state.connection !== 'connected' ? 'The calendar isn’t connected, so nothing was logged.' : state.autoTrackSince ? 'Nothing new to log from your calendar.' : 'Auto-track is off, so nothing was logged.')
+      })
+      // In the app: on returning to the tab, at most once in 5 minutes.
+      addEventListener('focus', () => Date.now() - state.lastSync > 5 * MIN && syncCalendar())
+      f('events-toggle').addEventListener('click', () => {
+        appFrame.settings.set({ calendarEvents: !eventsOn() })
+        render()
+      })
+
+      ui.ready.then(() => {
+        renderHeader()
+        setAutoTrack(f('autotrack').value)
+        loadFixture('typical')
+      })
+    </script>
+  </body>
+</html>

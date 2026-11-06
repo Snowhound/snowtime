@@ -10,6 +10,7 @@ import {
   publicAuthRoutes,
 } from './auth/auth.routes'
 import { availabilityRoutes } from './availability/availability.routes'
+import { calendarRoutes, organizationCalendarRoutes } from './calendar/calendar.routes'
 import { entryRoutes } from './entries/entries.routes'
 import { known, organization, refused, signedIn } from './http.server'
 import { projectRoutes } from './projects/projects.routes'
@@ -33,10 +34,12 @@ export const api = new Hono()
   .route('/', settingsRoutes)
   .route('/', accountRoutes)
   .route('/', invitationRoutes)
+  .route('/', calendarRoutes)
   .use(`${inOrganization}/*`, organization)
   .route(inOrganization, organizationRoutes)
   .route(inOrganization, organizationTimerRoutes)
   .route(inOrganization, entryRoutes)
+  .route(inOrganization, organizationCalendarRoutes)
   .route(inOrganization, projectRoutes)
   .route(inOrganization, reportRoutes)
   .route(inOrganization, teamRoutes)

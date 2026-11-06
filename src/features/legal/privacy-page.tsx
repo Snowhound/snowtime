@@ -4,7 +4,7 @@ import { COMPANY, ContactEmail, LegalLayout } from './legal-layout'
 
 // Change the date with any change to the text below. The policy states what the app does, so
 // a change to what it stores, where, or for how long updates it too.
-const UPDATED = '2026-10-03'
+const UPDATED = '2026-11-06'
 
 export function PrivacyPage() {
   return (
@@ -58,6 +58,10 @@ function PrivacyEn() {
         </li>
         <li>Time entries: the descriptions, projects, and start and stop times you record.</li>
         <li>
+          Calendar: if you connect a Google calendar, what we read from it and keep is described
+          under "Google Calendar" below.
+        </li>
+        <li>
           Technical data: our hosting provider records requests, including IP addresses, in
           short-lived logs, and we count requests per IP address and account to limit abuse.
         </li>
@@ -80,6 +84,55 @@ function PrivacyEn() {
           6(1)(c)).
         </li>
       </ul>
+
+      <h2>Google Calendar</h2>
+      <p>
+        When you connect a Google account in Settings, Snowtime asks Google for read-only access to
+        the list of your calendars and to their events. Snowtime can't create, change, or delete
+        anything in your calendar.
+      </p>
+      <ul>
+        <li>
+          What we read: each calendar's name, color, and identifier, and for the events in the dates
+          you view, their title, start and end time, whether they last all day, whether they show
+          you as free, the recurring series they belong to, their type (such as out of office), and
+          your answer to the invitation. We don't read descriptions, locations, attachments, or the
+          other guests.
+        </li>
+        <li>
+          How we use it: to show your meetings beside your time on the Timer page, and to log a
+          meeting as a time entry when you ask. A logged entry takes the meeting's title as its
+          description and the meeting's start and end times.
+        </li>
+        <li>
+          What we store: the connected account's email address; the tokens Google issues, encrypted;
+          your calendars' names, colors, and identifiers, and which ones you chose to show; and on
+          each entry you log from a meeting, the meeting's identifier, so it isn't logged twice. We
+          don't store your events: Snowtime reads them from Google when you open the Timer page, and
+          your browser keeps them only while the page is open.
+        </li>
+        <li>
+          Who sees it: only you see your calendar's events. An entry you log from a meeting is like
+          any entry you record, seen by the people your organization allows. We don't share, sell,
+          or transfer data from your Google account to anyone else, use it for advertising, or use
+          it to train AI models. People at {COMPANY.name} don't read it, unless you ask us to for
+          support, or security or the law requires it.
+        </li>
+        <li>
+          Disconnecting: in Settings, under Calendars, choose Disconnect. We revoke Snowtime's
+          access at Google and delete the connection, its tokens, and your calendars' details;
+          entries you logged stay. You can also remove Snowtime's access in your Google Account at{' '}
+          <a href="https://myaccount.google.com/connections">myaccount.google.com/connections</a>.
+        </li>
+      </ul>
+      <p>
+        Snowtime's use and transfer to any other app of information received from Google APIs will
+        adhere to the{' '}
+        <a href="https://developers.google.com/terms/api-services-user-data-policy">
+          Google API Services User Data Policy
+        </a>
+        , including the Limited Use requirements.
+      </p>
 
       <h2>Who can see your data</h2>
       <ul>
@@ -114,6 +167,7 @@ function PrivacyEn() {
       <ul>
         <li>Account, settings, organizations, and entries: while your account exists.</li>
         <li>Sessions: until you sign out, or about 30 days after you last use them.</li>
+        <li>Calendar connection: until you disconnect it or delete your account.</li>
         <li>
           Rate-limit counters: a few minutes. Logs: a short period set by the hosting provider.
         </li>
@@ -132,9 +186,9 @@ function PrivacyEn() {
       <p>
         Snowtime has no delete button yet. Email <ContactEmail /> from your account's email address,
         and we'll delete the account within one month. We replace your name, email address, and
-        picture, and remove your sessions, passkeys, API keys, and sign-in connections. Time entries
-        you recorded in an organization stay in its records but no longer identify you. Before you
-        ask, you can export your entries from Reports as CSV or XLSX.
+        picture, and remove your sessions, passkeys, API keys, sign-in connections, and calendar
+        connections. Time entries you recorded in an organization stay in its records but no longer
+        identify you. Before you ask, you can export your entries from Reports as CSV or XLSX.
       </p>
 
       <h2>Cookies and browser storage</h2>
@@ -241,6 +295,10 @@ function PrivacyEt() {
         </li>
         <li>Ajakanded: salvestatud kirjeldused, projektid ning algus- ja lõpuajad.</li>
         <li>
+          Kalender: kui ühendad Google'i kalendri, on allpool jaotises „Google'i kalender“
+          kirjeldatud, mida me sellest loeme ja säilitame.
+        </li>
+        <li>
           Tehnilised andmed: majutusteenuse pakkuja salvestab päringud koos IP-aadressidega
           lühiajalistesse logidesse ning loendame päringuid IP-aadressi ja konto lõikes, et teenuse
           kuritarvitamist tõkestada.
@@ -267,6 +325,57 @@ function PrivacyEt() {
           vastamiseks (artikli 6 lõike 1 punkt c).
         </li>
       </ul>
+
+      <h2>Google'i kalender</h2>
+      <p>
+        Kui ühendad seadetes Google'i konto, küsib Snowtime Google'ilt ainult lugemisõigust sinu
+        kalendrite loendile ja nende sündmustele. Snowtime ei saa sinu kalendris midagi luua, muuta
+        ega kustutada.
+      </p>
+      <ul>
+        <li>
+          Mida me loeme: iga kalendri nime, värvi ja tunnuse ning vaadatud kuupäevade sündmuste
+          pealkirja, algus- ja lõpuaja, kas sündmus kestab terve päeva, kas see näitab sind vabana,
+          millisesse korduvate sündmuste sarja see kuulub, selle liigi (näiteks kontorist väljas) ja
+          sinu vastuse kutsele. Me ei loe sündmuste kirjeldusi, asukohti, manuseid ega teisi
+          külalisi.
+        </li>
+        <li>
+          Milleks me seda kasutame: et näidata sinu koosolekuid Taimeri lehel sinu aja kõrval ja
+          salvestada koosolek sinu soovil ajakandena. Salvestatud kanne saab kirjelduseks koosoleku
+          pealkirja ning koosoleku algus- ja lõpuaja.
+        </li>
+        <li>
+          Mida me säilitame: ühendatud konto e-posti aadressi; Google'i väljastatud pääsutõendid
+          krüpteeritult; sinu kalendrite nimed, värvid ja tunnused ning selle, milliseid neist
+          näidata valisid; ning igal koosolekust salvestatud kandel koosoleku tunnuse, et seda ei
+          salvestataks kaks korda. Sündmusi me ei säilita: Snowtime loeb need Google'ilt, kui avad
+          Taimeri lehe, ja sinu brauser hoiab neid ainult seni, kuni leht on avatud.
+        </li>
+        <li>
+          Kes seda näeb: sinu kalendri sündmusi näed ainult sina. Koosolekust salvestatud kanne on
+          nagu iga teine sinu kanne ja seda näevad need, kellele sinu organisatsioon on selleks
+          õiguse andnud. Me ei jaga, müü ega edasta sinu Google'i konto andmeid kellelegi teisele,
+          ei kasuta neid reklaamiks ega tehisintellekti mudelite treenimiseks. {COMPANY.name}
+          inimesed neid ei loe, välja arvatud siis, kui palud seda kasutajatoe jaoks või kui
+          turvalisus või seadus seda nõuab.
+        </li>
+        <li>
+          Ühenduse katkestamine: vali seadetes jaotises Kalendrid „Katkesta ühendus“. Tühistame
+          Snowtime'i ligipääsu Google'is ning kustutame ühenduse, selle pääsutõendid ja sinu
+          kalendrite andmed; salvestatud kanded jäävad alles. Snowtime'i ligipääsu saad eemaldada ka
+          oma Google'i kontol aadressil{' '}
+          <a href="https://myaccount.google.com/connections">myaccount.google.com/connections</a>.
+        </li>
+      </ul>
+      <p>
+        Snowtime kasutab Google'i API-dest saadud teavet ja edastab seda teistele rakendustele
+        kooskõlas{' '}
+        <a href="https://developers.google.com/terms/api-services-user-data-policy">
+          Google API Services User Data Policy
+        </a>{' '}
+        nõuetega, sealhulgas piiratud kasutuse (Limited Use) nõuetega.
+      </p>
 
       <h2>Kes sinu andmeid näeb</h2>
       <ul>
@@ -303,6 +412,7 @@ function PrivacyEt() {
       <ul>
         <li>Konto, seaded, organisatsioonid ja kanded: kuni konto kustutamiseni.</li>
         <li>Seansid: kuni väljalogimiseni või ligikaudu 30 päeva pärast viimast tegevust.</li>
+        <li>Kalendriühendus: kuni katkestad ühenduse või kustutad konto.</li>
         <li>
           Päringuloendurid: mõni minut. Logid: lühiajaliselt, vastavalt majutusteenuse pakkuja
           tingimustele.
@@ -322,10 +432,10 @@ function PrivacyEt() {
       <p>
         Snowtime'is pole veel kustutamisnuppu. Kirjuta oma konto e-posti aadressilt aadressile{' '}
         <ContactEmail /> ja kustutame konto ühe kuu jooksul. Anonümiseerime või eemaldame sinu nime,
-        e-posti aadressi ja profiilipildi ning kustutame seansid, pääsuvõtmed, API-võtmed ja
-        sisselogimisühendused. Organisatsioonis salvestatud ajakanded jäävad selle andmete hulka,
-        kuid ei ole enam sinuga seostatavad. Enne konto sulgemist saad soovi korral oma kanded
-        aruannete vaates CSV- või XLSX-failina alla laadida.
+        e-posti aadressi ja profiilipildi ning kustutame seansid, pääsuvõtmed, API-võtmed,
+        sisselogimisühendused ja kalendriühendused. Organisatsioonis salvestatud ajakanded jäävad
+        selle andmete hulka, kuid ei ole enam sinuga seostatavad. Enne konto sulgemist saad soovi
+        korral oma kanded aruannete vaates CSV- või XLSX-failina alla laadida.
       </p>
 
       <h2>Küpsised ja brauseri salvestusruum</h2>

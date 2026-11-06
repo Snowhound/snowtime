@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { addDays, atLocalTime, localDate } from '~/lib/calendar'
 import { newId } from '~/lib/queries/query'
 import type { Settings } from '~/lib/queries/settings'
+import type { CalendarEvent } from '~/server/calendar/calendar.schemas'
 import { AppError } from '~/server/errors'
 import type { UpdateSettingsInput } from '~/server/settings/settings.schemas'
 import type { Entry, RunningTimer } from './queries'
@@ -23,11 +24,15 @@ const fn = vi.hoisted(() => ({
   createEntries: vi.fn(),
   updateEntry: vi.fn(),
   deleteEntry: vi.fn(),
+  deleteEntries: vi.fn(),
   listProjects: vi.fn(),
   getAppSession: vi.fn(),
   updateSettings: vi.fn(),
+  getCalendars: vi.fn(),
+  listCalendarEvents: vi.fn(),
 }))
 vi.mock('~/lib/api/auth', () => fn)
+vi.mock('~/lib/api/calendar', () => fn)
 vi.mock('~/lib/api/entries', () => fn)
 vi.mock('~/lib/api/projects', () => fn)
 vi.mock('~/lib/api/settings', () => fn)
@@ -74,6 +79,7 @@ function defaultSettings(): Settings {
     showSummary: false,
     compactRows: false,
     wideTimer: false,
+    compactButtons: false,
     timerView: 'list',
     calendarWeekend: false,
     appIcon: '02',
@@ -115,6 +121,7 @@ function entry(daysAgo: number, start: string, end: string, description: string)
     ticket: null,
     startedAt: new Date(atLocalTime(date, start, zone)),
     stoppedAt: new Date(atLocalTime(date, end, zone)),
+    calendarEvent: null,
   }
 }
 
@@ -172,6 +179,7 @@ beforeEach(() => {
     return starts.length ? new Date(Math.min(...starts)) : null
   })
   fn.listProjects.mockResolvedValue([snowtime])
+  fn.getCalendars.mockResolvedValue({ available: false, connections: [] })
 })
 
 afterEach(() => {
@@ -270,6 +278,20 @@ describe('TimerView', () => {
     expect(fn.deleteEntry).toHaveBeenCalledWith({ organizationId, id: expect.any(String) })
     expect(screen.queryByDisplayValue('Invoice export review')).not.toBeInTheDocument()
     expect(await screen.findByText('No time tracked yet')).toBeInTheDocument()
+  })
+
+  test("Repeat… in a row's menu opens the entry popover at Repeat, which stays open", async () => {
+    renderView()
+    await screen.findByDisplayValue('Invoice export review')
+    fn.createEntries.mockImplementation(async ({ entries }) => entries)
+
+    await clickInRow('Actions for Invoice export review')
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Repeat…' }))
+    const popover = await screen.findByRole('dialog', { name: 'Edit entry' })
+    // It stays open once the menu has closed.
+    await waitFor(() => expect(screen.queryAllByRole('menu')).toHaveLength(0))
+    expect(popover).toBeInTheDocument()
+    expect(within(popover).getByText('Repeat')).toBeInTheDocument()
   })
 
   test('saves an edited description on Enter, and Escape restores it', async () => {
@@ -1221,5 +1243,170 @@ describe('ticket keys', () => {
     await userEvent.click(within(await openView()).getByRole('switch', { name: /Wide page/ }))
     expect(fn.updateSettings).toHaveBeenCalledWith({ wideTimer: true })
     expect(await screen.findByRole('columnheader', { name: 'Ticket' })).toBeInTheDocument()
+  })
+
+  test('Compact buttons leaves the header icons, still named', async () => {
+    fn.updateSettings.mockImplementation(async (input: UpdateSettingsInput) => {
+      Object.assign(server.settings, input)
+      return server.settings
+    })
+    renderView()
+    const add = await screen.findByRole('button', { name: 'Add entry' })
+    expect(add).toHaveTextContent('Add entry')
+
+    await userEvent.click(within(await openView()).getByRole('switch', { name: 'Compact buttons' }))
+    expect(fn.updateSettings).toHaveBeenCalledWith({ compactButtons: true })
+    await waitFor(() => expect(add).not.toHaveTextContent('Add entry'))
+    expect(screen.getByRole('button', { name: 'List' })).not.toHaveTextContent('List')
+    expect(screen.getByRole('button', { name: 'Calendar' })).toBeInTheDocument()
+  })
+})
+
+describe('meetings in the list', () => {
+  const sourceId = newId()
+  const connectionId = newId()
+  // The server's calendar: its events, and the keys of entries the user deleted.
+  let events: CalendarEvent[]
+  let deletedKeys: string[]
+
+  function meeting(title: string, startedAt: number, stoppedAt: number): CalendarEvent {
+    return {
+      key: `google:anna@snowhound.eu:${title.replaceAll(' ', '-')}`,
+      seriesKey: null,
+      sourceId,
+      title,
+      startedAt: new Date(startedAt),
+      stoppedAt: new Date(stoppedAt),
+      allDay: false,
+      free: false,
+      response: 'accepted',
+      kind: 'event',
+    }
+  }
+
+  // Yesterday at the times, in the test zone.
+  function yesterday(time: string) {
+    return atLocalTime(addDays(localDate(Date.now(), zone), -1), time, zone)
+  }
+
+  function row(title: string) {
+    return screen.findByRole('button', { name: new RegExp(`^Meeting, not logged: ${title}`) })
+  }
+
+  beforeEach(() => {
+    events = []
+    deletedKeys = []
+    fn.getCalendars.mockResolvedValue({
+      available: true,
+      connections: [
+        {
+          id: connectionId,
+          provider: 'google',
+          accountEmail: 'anna@snowhound.eu',
+          status: 'connected',
+          connectedAt: new Date(),
+          sources: [{ id: sourceId, name: 'Anna', color: null, primary: true, shown: true }],
+        },
+      ],
+    })
+    fn.listCalendarEvents.mockImplementation(async () => ({
+      events: events.map((e) => ({ ...e })),
+      logs: [
+        ...server.entries.flatMap((e) =>
+          e.calendarEvent
+            ? [{ calendarEvent: e.calendarEvent, entryId: e.id, organizationId, deleted: false }]
+            : [],
+        ),
+        ...deletedKeys.map((key) => ({
+          calendarEvent: key,
+          entryId: newId(),
+          organizationId,
+          deleted: true,
+        })),
+      ],
+      connections: [{ id: connectionId, status: 'connected' }],
+    }))
+    fn.createEntries.mockImplementation(async ({ entries, ...work }) => {
+      const created = entries.map((each: Partial<Entry>) => ({
+        organizationId,
+        userId,
+        ticket: null,
+        projectId: null,
+        calendarEvent: null,
+        ...work,
+        ...each,
+      }))
+      server.entries.push(...created)
+      return created
+    })
+    function remove(ids: string[]) {
+      for (const e of server.entries) {
+        if (ids.includes(e.id) && e.calendarEvent) deletedKeys.push(e.calendarEvent)
+      }
+      server.entries = server.entries.filter((e) => !ids.includes(e.id))
+    }
+    fn.deleteEntries.mockImplementation(async ({ ids }) => {
+      remove(ids)
+      return { ids }
+    })
+    fn.deleteEntry.mockImplementation(async ({ id }) => remove([id]))
+  })
+
+  test("Log takes the project of the title's latest entry, and the row's Undo brings the meeting back", async () => {
+    const standup = meeting('Invoice export review', yesterday('13:00'), yesterday('13:30'))
+    events = [standup]
+    renderView()
+    await row('Invoice export review')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Log Invoice export review' }))
+    expect(fn.createEntries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entries: [
+          expect.objectContaining({
+            description: 'Invoice export review',
+            projectId: snowtime.id,
+            calendarEvent: standup.key,
+            startedAt: standup.startedAt,
+            stoppedAt: standup.stoppedAt,
+          }),
+        ],
+      }),
+    )
+    const [{ id }] = fn.createEntries.mock.calls[0][0].entries
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Undo' }))
+    expect(fn.deleteEntries).toHaveBeenCalledWith({ organizationId, ids: [id] })
+    // The deleted entry frees the meeting, which shows again to log anew.
+    expect(await row('Invoice export review')).toBeInTheDocument()
+  })
+
+  test('a meeting under way logs until now from its row', async () => {
+    const now = Date.now()
+    const review = meeting('Design review', now - 10 * 60_000, now + 20 * 60_000)
+    events = [review]
+    renderView()
+    await row('Design review')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Log until now' }))
+    const [logged] = fn.createEntries.mock.calls[0][0].entries
+    expect(logged.startedAt).toEqual(review.startedAt)
+    expect(logged.stoppedAt.getTime()).toBeGreaterThanOrEqual(now)
+    expect(logged.stoppedAt.getTime()).toBeLessThan(review.stoppedAt.getTime())
+  })
+
+  test("deleting a logged meeting's entry shows the meeting again", async () => {
+    const sync = meeting('Weekly sync', yesterday('15:00'), yesterday('15:30'))
+    events = [sync]
+    server.entries.push({
+      ...entry(1, '15:00', '15:30', 'Weekly sync'),
+      calendarEvent: sync.key,
+    })
+    renderView()
+    await screen.findByDisplayValue('Weekly sync')
+    expect(screen.queryByRole('button', { name: /^Meeting, not logged/ })).toBeNull()
+
+    await clickInRow('Actions for Weekly sync')
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }))
+    expect(await row('Weekly sync')).toBeInTheDocument()
   })
 })

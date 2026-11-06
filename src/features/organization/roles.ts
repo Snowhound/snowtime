@@ -1,4 +1,4 @@
-// Who may change whom (prototypes/README.md, organization.html). Owners change any role;
+// Who may change whom (prototypes/README.md, "Organization admin"). Owners change any role;
 // admins manage members and admins but not owners, and can't grant owner; nobody changes
 // their own role; the last owner can't be demoted or removed. Better Auth's organization
 // plugin refuses most of this itself, so the view hides or disables what it would refuse.

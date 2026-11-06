@@ -83,6 +83,7 @@ describe('timer mutations', () => {
       ticket: null,
       startedAt,
       stoppedAt: null,
+      calendarEvent: null,
     }
     const range = { from: now - 48 * HOUR, to: now + HOUR }
     queryClient.setQueryData(entriesQuery(organizationId, userId, range).queryKey, [running])
@@ -129,6 +130,7 @@ test('a refused stop keeps its original optimistic time across an independent re
       ticket: null,
       startedAt: new Date(now - HOUR),
       stoppedAt: null,
+      calendarEvent: null,
     }
     queryClient.setQueryData(entriesQuery(organizationId, userId, today).queryKey, [running])
     fn.stopTimer.mockRejectedValue({ status: 503, retryAfter: '2' })

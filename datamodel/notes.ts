@@ -46,6 +46,15 @@ export const groups: Group[] = [
     ],
     tables: ['user_settings', 'project', 'project_team', 'time_entry'],
   },
+  {
+    name: 'calendar',
+    color: '#F28E2B',
+    title: 'Calendar (task 097)',
+    comment: [
+      'A user connects calendar accounts; events are read from the provider and never stored.',
+    ],
+    tables: ['calendar_connection', 'calendar_source'],
+  },
 ]
 
 // Notes for the audit columns of every app-owned table (those with created_by). A table's
@@ -210,6 +219,8 @@ export const tables: Record<string, TableNotes> = {
         'EE, US, other, or null to guess from time_zone (src/lib/holidays/region.ts). Whose public holidays the taglines skip. Validated in the app, no CHECK.',
       wide_timer:
         'Boolean 0/1 (CHECK), default 0. Wide page: the timer page up to 88rem, with a Ticket column in the rows.',
+      compact_buttons:
+        'Boolean 0/1 (CHECK), default 0. The view switch and Add entry in the Timer page header show as icons, named by tooltips.',
       timer_view:
         'list, calendar, default list. The Timer page shows entries as a list or a week calendar. Validated in the app, no CHECK.',
       calendar_weekend:
@@ -250,6 +261,8 @@ export const tables: Record<string, TableNotes> = {
       stopped_at: 'Epoch ms, UTC. CHECK stopped_at > started_at. Null while running.',
       ticket:
         'Optional ticket key, such as NBW-412, found in the description when it is committed. One per entry. Format checked in the app.',
+      calendar_event:
+        'Key of the calendar event the entry was logged from, such as google:<calendar>:<event>, plus :<date> for an all-day event logged as a day. References no table, so it outlives the connection.',
     },
     indexes: {
       time_entry_one_running: 'At most one running timer per user across all organizations.',
@@ -257,6 +270,40 @@ export const tables: Record<string, TableNotes> = {
       time_entry_organization_id_started_at_idx: 'Organization-wide reports by time range.',
       time_entry_organization_id_ticket_started_at_idx:
         'Entries for one ticket within a report range.',
+      time_entry_user_id_calendar_event_unique:
+        'An event is logged once per user, across organizations. Covers deleted rows, so a deleted log stays deleted until the user logs the event again.',
+    },
+  },
+  calendar_connection: {
+    note: 'A user link to a calendar provider account, with its own OAuth flow; not a sign-in method. Deleted physically on disconnect, after the token is revoked.',
+    columns: {
+      provider: 'google. Routes and schemas name no provider.',
+      account_id: 'The provider account id; for Google, the primary calendar id.',
+      account_email: 'Shown in Settings.',
+      access_token:
+        'Encrypted, AES-GCM with a key derived from BETTER_AUTH_SECRET. Never in an API answer.',
+      refresh_token: 'Encrypted as access_token.',
+      access_token_expires_at: 'Epoch ms, UTC. Refreshed a minute before.',
+      scope: 'Scopes the provider granted.',
+      status: 'connected, or reconnect once the provider refused a refresh.',
+    },
+    indexes: {
+      calendar_connection_user_id_provider_account_id_unique:
+        'One connection per user and provider account.',
+    },
+  },
+  calendar_source: {
+    note: 'A calendar of a connection. Deleted with its connection.',
+    columns: {
+      provider_calendar_id: 'The calendar id at the provider.',
+      shown: 'Boolean. Its events show in the timer. A new connection shows its primary calendar.',
+      is_primary: 'Boolean. The account primary calendar.',
+      auto_track_organization_id:
+        'Null while auto-track is off (subtask 097.04). One organization per calendar.',
+      auto_track_since: 'Epoch ms, UTC. When auto-track was switched on.',
+    },
+    indexes: {
+      calendar_source_connection_id_provider_calendar_id_unique: 'One row per calendar.',
     },
   },
 }

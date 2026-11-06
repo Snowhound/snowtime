@@ -7,7 +7,7 @@ import { projectsQuery } from '~/lib/queries/projects'
 import { teamsQuery } from '~/lib/queries/teams'
 import { m } from '~/paraglide/messages.js'
 
-// Members, invitations, teams, and the organization's name (prototypes/organization.html).
+// Members, invitations, teams, and the organization's name.
 // Admins and owners only: members and team leads get a no-access message, and the
 // navigation hides the page from them.
 export const Route = createFileRoute('/$org/organization')({

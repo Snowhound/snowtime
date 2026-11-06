@@ -1,7 +1,7 @@
-// The entry popover (prototypes/timer.html): logs a past entry by hand under Add entry, or
+// The entry popover: logs a past entry by hand under Add entry, or
 // edits the running entry's start under the timer's clock. The list edits stopped entries in
 // their rows (entry-fields.tsx); the calendar opens this popover beside a new slot or an entry,
-// with Delete (prototypes/calendar.html). Times are read in the user's zone; an end at or
+// with Delete. Times are read in the user's zone; an end at or
 // before the start means the next day. Start, end, and duration are one range: a typed
 // duration moves the end, or the running entry's start (duration-input.ts). The
 // ticket is found in the description on blur and Save, and its chip sits at the end of the

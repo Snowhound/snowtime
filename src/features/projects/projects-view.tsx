@@ -1,4 +1,4 @@
-// The Projects view (prototypes/projects.html): Active and Archived tabs with a name search,
+// The Projects view: Active and Archived tabs with a name search,
 // sorted by name. Admins and owners see every project with the organization's time this
 // month and manage them; members and team leads see the projects open to them, with their
 // own time, and no actions. Writes are optimistic (queries.ts); errors show above the list.

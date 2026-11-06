@@ -1,5 +1,6 @@
-// The timer's View popover (prototypes/timer.html): the layout, whether the summary shows (in
-// List view only), whether the rows are compact, and whether the page is wide.
+// The timer's View popover: the layout, whether the summary shows (in
+// List view only), whether the header's buttons and the rows are compact, and whether the page
+// is wide.
 // They are user settings, saved through useUpdateSettings, so they change at once here and on
 // the settings page. The theme is in the header's Appearance popover.
 import { Link } from '@tanstack/solid-router'
@@ -16,6 +17,7 @@ import {
   SwitchThumb,
 } from '~/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group'
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { type Settings, useUpdateSettings } from '~/lib/queries/settings'
 import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
@@ -37,15 +39,24 @@ export function ViewPopover(props: { settings: Settings; onError: (error: unknow
 
   return (
     <Popover placement="bottom-end" open={open()} onOpenChange={setOpen}>
-      <PopoverTrigger
-        as={Button<'button'>}
-        variant="outline"
-        size="icon"
-        class="size-9"
-        aria-label={m.timer_view_settings()}
-      >
-        <SettingsIcon aria-hidden="true" />
-      </PopoverTrigger>
+      {/* The tooltip's trigger renders the popover's, so one button has both. */}
+      <Tooltip>
+        <TooltipTrigger
+          as={(tooltipProps: object) => (
+            <PopoverTrigger
+              as={Button<'button'>}
+              variant="outline"
+              size="icon"
+              class="size-9"
+              aria-label={m.timer_view_settings()}
+              {...tooltipProps}
+            >
+              <SettingsIcon aria-hidden="true" />
+            </PopoverTrigger>
+          )}
+        />
+        <TooltipContent>{m.timer_view_settings()}</TooltipContent>
+      </Tooltip>
       <PopoverContent
         class="grid gap-4"
         aria-labelledby="view-settings-title"
@@ -86,6 +97,16 @@ export function ViewPopover(props: { settings: Settings; onError: (error: unknow
             </SwitchControl>
           </Switch>
         </Show>
+        <Switch
+          class="flex items-center justify-between gap-4"
+          checked={props.settings.compactButtons}
+          onChange={(compactButtons) => update({ compactButtons })}
+        >
+          <SwitchLabel>{m.settings_compact_buttons()}</SwitchLabel>
+          <SwitchControl>
+            <SwitchThumb />
+          </SwitchControl>
+        </Switch>
         <Switch
           class="flex items-center justify-between gap-4"
           checked={props.settings.compactRows}

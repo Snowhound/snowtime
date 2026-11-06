@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/solid-router'
-import type { JSX } from 'solid-js'
+import { type JSX, Show } from 'solid-js'
 import { AppMark } from '~/components/app-mark'
 import { LegalLinks } from '~/components/legal-links'
 import { appIcon } from '~/lib/app-icon'
@@ -23,17 +23,17 @@ export function ContactEmail() {
   return <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>
 }
 
-// A legal document's page: public, signed in or not, with plain prose instead of the
+// A legal document's or the about page: public, signed in or not, with plain prose instead of the
 // seasonal scene so it stays easy to read. The content styles its elements through the
 // article's descendant classes.
-export function LegalLayout(props: { title: string; updated: string; children: JSX.Element }) {
+export function LegalLayout(props: { title: string; updated?: string; children: JSX.Element }) {
   const session = useQuery(() => sessionQuery)
   function appIconId() {
     return appIcon(session.data?.settings?.appIcon ?? deviceSettings()?.appIcon).id
   }
   function updated() {
     const date = new Intl.DateTimeFormat(getLocale(), { dateStyle: 'long', timeZone: 'UTC' })
-    return date.format(new Date(props.updated))
+    return props.updated ? date.format(new Date(props.updated)) : null
   }
 
   return (
@@ -48,7 +48,9 @@ export function LegalLayout(props: { title: string; updated: string; children: J
         </Link>
         <article class="text-sm leading-6 [&_a]:underline [&_a]:underline-offset-4 [&_h2]:mt-8 [&_h2]:text-base [&_h2]:font-semibold [&_li]:mt-1 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul_ul]:mt-1">
           <h1 class="text-2xl font-semibold tracking-tight">{props.title}</h1>
-          <p class="text-muted-foreground">{m.legal_updated({ date: updated() })}</p>
+          <Show when={updated()}>
+            {(date) => <p class="text-muted-foreground">{m.legal_updated({ date: date() })}</p>}
+          </Show>
           {props.children}
         </article>
         <LegalLinks class="border-t pt-6" />

@@ -3,7 +3,7 @@
 ## Timer calendar
 
 The Timer page shows the user's entries as a list by day or as a week calendar
-(`prototypes/calendar.html`, task 069). The calendar replaces the entry list and the summary;
+(task 069; `prototypes/README.md`, "Timer calendar"). The calendar replaces the entry list and the summary;
 the timer bar stays. Its code is in `src/features/timer/calendar/`, with the time math in
 `week-grid.ts`.
 
@@ -172,8 +172,8 @@ it. Reports' totals copy as well.
   the table's duration column is 112 px, the same in every row so the times line up.
 - After a copy, a bubble shows the copied text for two seconds. The bubble sits above an
   entry's duration and left of a day's total, where the day's card would clip it above.
-  `prototypes/copy-durations.html` compares it with swapping the text in place, which made
-  rows grow.
+  The prototype compared it with swapping the text in place, which made rows grow
+  (`prototypes/README.md`, "Copy durations").
 - `CopyAnnouncer`, one `aria-live="polite"` region, reads the same text aloud, because the
   bubble is `aria-hidden` and doesn't take focus. `AppFrame`, the shell of every signed-in
   page, renders it outside `IntroPage`, which is inert while the intro plays. The
@@ -204,9 +204,9 @@ it. Reports' totals copy as well.
 
 - All of a user's settings live in `user_settings`, one row per user, so they follow the
   user across devices: time zone, week start, language (`locale`), theme, timer layout,
-  whether the summary shows, compact entry rows (`compact_rows`), the Wide page setting
-  (`wide_timer`), the Timer page's view and the calendar's weekend (`timer_view`,
-  `calendar_weekend`; see "Timer calendar"), the app icon
+  whether the summary shows, compact entry rows (`compact_rows`), compact header buttons
+  (`compact_buttons`), the Wide page setting (`wide_timer`), the Timer page's view and the
+  calendar's weekend (`timer_view`, `calendar_weekend`; see "Timer calendar"), the app icon
   (`app_icon`, the header mark and favicon), the seasonal scene (`scene_collection`,
   `scene_pin`, `scene_background`, `scene_strength`, `surfaces`, `scene_weather`, `scene_intro`,
   `scene_tagline`), and
@@ -238,8 +238,11 @@ it. Reports' totals copy as well.
   passes it to Paraglide, which sets the cookie, and renders the page again.
 - The app validates the text values (`src/server/settings/settings.schemas.ts`); their columns
   have no `CHECK`, so adding a value needs no table rebuild. The booleans (`show_summary`,
-  `compact_rows`, `wide_timer`, `calendar_weekend`, and the scene's switches) keep the usual
-  0/1 `CHECK`.
+  `compact_rows`, `compact_buttons`, `wide_timer`, `calendar_weekend`, and the scene's switches)
+  keep the usual 0/1 `CHECK`.
+- Compact buttons (`compact_buttons`, off by default) shows only the icons of the Timer
+  header's List, Calendar, and Add entry, with tooltips that name them. Off, they keep their
+  labels.
 - Wide page (`wide_timer`, off by default) widens the Timer page from the header's width to
   88rem and puts the timer across the summary column, so rows have room for a Ticket column.
   Off, the page keeps the header's width and each row's chip sits at the end of its

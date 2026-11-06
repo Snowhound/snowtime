@@ -1,5 +1,5 @@
 import { type Accessor, createEffect, createMemo, createSignal, on } from 'solid-js'
-// The settings signed-out pages use, kept in this browser's localStorage (prototypes/auth.html):
+// The settings signed-out pages use, kept in this browser's localStorage:
 // the theme, the app icon, and the scene. Signed in, the account's settings apply, and the root
 // copies them here, so the sign-in page opens as the last user left it. Changes on a signed-out
 // page stay on the device. Storage can be missing or blocked, so every access is guarded.

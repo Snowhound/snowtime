@@ -1,4 +1,4 @@
-// Summary's chart (prototypes/reports.html, Summary): time per day or week in columns stacked
+// Summary's chart: time per day or week in columns stacked
 // by project, drawn to its container's width. A column lists its projects in a tooltip on
 // hover and focus, and narrows the Entries card to its day or week.
 import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-js'

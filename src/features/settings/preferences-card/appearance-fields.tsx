@@ -88,6 +88,21 @@ export function AppearanceFields(props: {
       </div>
       <Switch
         class="flex items-center justify-between gap-4"
+        checked={props.settings.compactButtons}
+        onChange={(compactButtons) => props.onChange({ compactButtons })}
+      >
+        <div class="grid gap-1">
+          <SwitchLabel>{m.settings_compact_buttons()}</SwitchLabel>
+          <SwitchDescription class="text-muted-foreground text-sm">
+            {m.settings_compact_buttons_description()}
+          </SwitchDescription>
+        </div>
+        <SwitchControl>
+          <SwitchThumb />
+        </SwitchControl>
+      </Switch>
+      <Switch
+        class="flex items-center justify-between gap-4"
         checked={props.settings.compactRows}
         onChange={(compactRows) => props.onChange({ compactRows })}
       >

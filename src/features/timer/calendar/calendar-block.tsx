@@ -1,5 +1,5 @@
-// An entry's piece on a calendar day, and the dashed outline of a slot being added or dragged
-// (prototypes/calendar.html). Tall blocks show the description, the project, and the times
+// An entry's piece on a calendar day, and the dashed outline of a slot being added or dragged.
+// Tall blocks show the description, the project, and the times
 // with the duration; short ones one line with the start.
 import { Show, createEffect } from 'solid-js'
 import { projectColor } from '~/lib/colors'

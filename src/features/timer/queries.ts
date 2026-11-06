@@ -139,6 +139,7 @@ export function useStartTimer({ organizationId }: Keys) {
               ticket: input.ticket ?? null,
               startedAt: new Date(now),
               stoppedAt: null,
+              calendarEvent: null,
               project: null,
             }
           },
@@ -255,15 +256,16 @@ function created(
 ) {
   const session = queryClient.getQueryData(sessionQuery.queryKey)
   return input.entries
-    .map((times): Entry => ({
-      id: times.id,
+    .map((e): Entry => ({
+      id: e.id,
       organizationId,
       userId: session?.user.id ?? '',
-      projectId: input.projectId ?? null,
-      description: input.description.trim(),
-      ticket: input.ticket ?? null,
-      startedAt: times.startedAt,
-      stoppedAt: times.stoppedAt,
+      projectId: (e.projectId === undefined ? input.projectId : e.projectId) ?? null,
+      description: (e.description ?? input.description).trim(),
+      ticket: (e.ticket === undefined ? input.ticket : e.ticket) ?? null,
+      startedAt: e.startedAt,
+      stoppedAt: e.stoppedAt,
+      calendarEvent: e.calendarEvent ?? null,
     }))
     .filter((entry) => listed(entry, key))
 }
@@ -278,12 +280,12 @@ export function useCreateEntry({ organizationId }: Keys) {
       [
         cacheUpdate<Entry[], CreateEntryInput>(
           entriesKey(organizationId),
-          (entries, { id, startedAt, stoppedAt, ...work }, key) =>
+          (entries, { id, startedAt, stoppedAt, calendarEvent, ...work }, key) =>
             newestFirst([
               ...created(
                 queryClient,
                 organizationId,
-                { ...work, entries: [{ id, startedAt, stoppedAt }] },
+                { ...work, entries: [{ id, startedAt, stoppedAt, calendarEvent }] },
                 key,
               ),
               ...entries,

@@ -1,4 +1,4 @@
-// The week calendar's time math (prototypes/calendar.html): each entry's pieces on the days
+// The week calendar's time math: each entry's pieces on the days
 // it touches, side by side where they overlap, and the times a click, a drag, or an Alt+arrow
 // key gives, in the user's zone. Positions are wall-clock minutes from the day's midnight, so
 // the hour lines stay right on the days clocks change.

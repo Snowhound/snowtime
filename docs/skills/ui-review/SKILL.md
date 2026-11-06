@@ -34,7 +34,7 @@ belonging to other work.
 Prototype HTML under `prototypes/` opens directly from disk:
 
 ```bash
-agent-browser open "file://$PWD/prototypes/timer.html"
+agent-browser open "file://$PWD/prototypes/calendar-events.html"
 ```
 
 CDN dependencies (Tailwind browser runtime, tailwind-merge) need internet access. Follow

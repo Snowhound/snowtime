@@ -57,6 +57,15 @@ export const errorMessages = {
   database_unavailable: 'Snowtime is down for maintenance. Try again in a few minutes.',
   api_key_not_found: 'API key not found.',
   api_key_limit: 'You have too many API keys. Revoke unused ones first.',
+  calendar_unavailable: "Calendars aren't set up on this Snowtime.",
+  calendar_provider_unavailable: "Your calendar didn't answer. Try again in a moment.",
+  calendar_state_invalid:
+    'Connecting the calendar took too long or was started elsewhere. Connect again.',
+  calendar_scopes_missing:
+    'Snowtime needs to see your calendars and their events. Connect again and allow both.',
+  calendar_connection_not_found: 'Calendar connection not found.',
+  calendar_source_not_found: 'Calendar not found.',
+  calendar_event_logged: "You've already logged this meeting.",
 } as const
 
 export type AppErrorKey = keyof typeof errorMessages

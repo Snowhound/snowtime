@@ -43,10 +43,33 @@ export function blur(pixels: Uint8ClampedArray, width: number, height: number, s
   }
 }
 
+// The mean lightness of RGBA pixels: sRGB luma, 0 to 255. Dark glass dims a picture by it
+// (src/styles.css, "Dark glass").
+export function lightness(pixels: Uint8ClampedArray) {
+  let total = 0
+  for (let i = 0; i < pixels.length; i += 4) {
+    total += 0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]
+  }
+  return total / (pixels.length / 4)
+}
+
+// Scales RGBA pixels' saturation in place, keeping each pixel's luma, as CSS `saturate()` does.
+export function saturate(pixels: Uint8ClampedArray, amount: number) {
+  for (let i = 0; i < pixels.length; i += 4) {
+    const luma = 0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]
+    for (let c = 0; c < 3; c++) pixels[i + c] = luma + amount * (pixels[i + c] - luma)
+  }
+}
+
 // The photo at `url` blurred for the glass on a screen of this size, where it covers the screen as
-// .scene-photo-image does, as a data URL, which the content security policy allows for images.
+// .scene-photo-image does, as a data URL, which the content security policy allows for images,
+// with its mean lightness. `saturation` scales the copy's saturation after the lightness is taken.
 // Null if the photo doesn't decode.
-export async function glassPhoto(url: string, screen: { width: number; height: number }) {
+export async function glassPhoto(
+  url: string,
+  screen: { width: number; height: number },
+  saturation = 1,
+) {
   const image = new Image()
   image.src = url
   try {
@@ -64,6 +87,8 @@ export async function glassPhoto(url: string, screen: { width: number; height: n
   const shown = Math.max(screen.width, screen.height * aspect)
   const data = context.getImageData(0, 0, canvas.width, canvas.height)
   blur(data.data, canvas.width, canvas.height, (RADIUS * WIDTH) / shown)
+  const light = lightness(data.data)
+  if (saturation !== 1) saturate(data.data, saturation)
   context.putImageData(data, 0, 0)
-  return canvas.toDataURL('image/jpeg', 0.9)
+  return { url: canvas.toDataURL('image/jpeg', 0.9), lightness: light }
 }

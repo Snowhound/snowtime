@@ -1,4 +1,4 @@
-// An entry's ticket key as a chip (prototypes/timer.html, "Ticket keys"). With the
+// An entry's ticket key as a chip. With the
 // organization's Issue links setting, the key links to the issue in a new tab. The × turns
 // the key back into text.
 import XIcon from 'lucide-solid/icons/x'

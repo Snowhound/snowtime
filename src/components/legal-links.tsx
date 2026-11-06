@@ -3,7 +3,7 @@ import { cn } from '~/lib/utils'
 import { m } from '~/paraglide/messages.js'
 import { Glass } from './scene/glass'
 
-// Links to the privacy policy and terms, under the signed-out screens' card and at the foot
+// Links to the about page, the privacy policy, and the terms, under the signed-out screens' card and at the foot
 // of the legal pages.
 export function LegalLinks(props: { class?: string }) {
   return (
@@ -15,6 +15,7 @@ export function LegalLinks(props: { class?: string }) {
       aria-label={m.legal_links()}
     >
       <Glass />
+      <Link to="/about">{m.about_link()}</Link>
       <Link to="/privacy">{m.legal_privacy_title()}</Link>
       <Link to="/terms">{m.legal_terms_title()}</Link>
     </nav>

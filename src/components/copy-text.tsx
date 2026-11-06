@@ -1,4 +1,4 @@
-// Text that copies itself (prototypes/copy-durations.html). The copyDurationControl setting
+// Text that copies itself. The copyDurationControl setting
 // picks how: a click on the text, or a copy button beside it. `control` overrides it, where a
 // click on the text does something else or where a button would crowd the text.
 // A bubble shows the copied text for a moment, and CopyAnnouncer reads the same aloud.

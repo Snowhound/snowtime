@@ -1,6 +1,6 @@
 // Fictional Snowhound organization shared by the signed-in prototypes: members, teams, projects,
 // and generated time entries, plus time zone helpers. Every call returns fresh copies, so pages can
-// change their local state freely. Names match auth.html and timer.html.
+// change their local state freely.
 ;(() => {
   const MIN = 60_000
   const HOUR = 3_600_000
@@ -41,7 +41,7 @@
     { id: 't-client', name: 'Client services', members: [['u-mari', 'lead'], ['u-toomas', 'member'], ['u-kadri', 'member']] },
   ]
 
-  // Same ids and names as timer.html. `teams` is project_team; empty means the whole organization.
+  // `teams` is project_team; empty means the whole organization.
   const PROJECTS = [
     { id: 'p1', name: 'Snowtime', color: '#3b82b8', teams: ['t-platform'], archivedAt: null },
     { id: 'p2', name: 'Client portal', color: '#1f9e8a', teams: ['t-client', 't-design'], archivedAt: null },

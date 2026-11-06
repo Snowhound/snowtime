@@ -102,7 +102,7 @@
     sceneWeather: true,
     sceneIntro: true, // play the intro on the sign-in page's first visit and once a season in the app
     appIcon: appIcon.DEFAULT, // '01' to '12', see app-icon.js
-    copyDurationPattern: 'H:MM:SS', // user_settings.copy_duration_pattern; see copy-durations.html
+    copyDurationPattern: 'H:MM:SS', // user_settings.copy_duration_pattern
   }
   const darkQuery = matchMedia('(prefers-color-scheme: dark)')
   const readSettings = () => {
@@ -195,11 +195,12 @@
   let role = ROLES.some((r) => r.id === params.get('role')) ? params.get('role') : 'admin'
   let orgId = organizations.some((o) => o.id === params.get('org')) ? params.get('org') : 'snowhound'
 
+  // Reports, Projects, and Organization have no prototype page now; their links stay on this one.
   const NAV = [
-    { page: 'timer', href: 'timer.html', label: 'Timer', icon: 'timer' },
-    { page: 'reports', href: 'reports.html', label: 'Reports', icon: 'chart-column' },
-    { page: 'projects', href: 'projects.html', label: 'Projects', icon: 'folder-kanban' },
-    { page: 'organization', href: 'organization.html', label: 'Organization', icon: 'building-2', admin: true },
+    { page: 'timer', href: 'calendar-events.html', label: 'Timer', icon: 'timer' },
+    { page: 'reports', href: '', label: 'Reports', icon: 'chart-column' },
+    { page: 'projects', href: '', label: 'Projects', icon: 'folder-kanban' },
+    { page: 'organization', href: '', label: 'Organization', icon: 'building-2', admin: true },
   ]
   const isAdmin = () => role === 'admin' || role === 'owner'
   // Links keep the prototype role and organization; a hash (e.g. #profile) stays at the end.
@@ -317,7 +318,7 @@
     const header = document.getElementById('app-header')
     header.innerHTML = `
       <div class="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:gap-2 sm:px-8">
-        <a href="${link('timer.html')}" data-frame-link="timer.html" class="mr-1 flex shrink-0 items-center gap-2 rounded-md text-base font-bold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        <a href="${link('calendar-events.html')}" data-frame-link="calendar-events.html" class="mr-1 flex shrink-0 items-center gap-2 rounded-md text-base font-bold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label="Snowtime home">
           ${appIconImg('small', 'size-7')}<span class="hidden sm:inline md:hidden lg:inline">Snowtime</span>
         </a>
@@ -362,7 +363,7 @@
             </div>
           </div>
           <div data-ui="menu-separator" role="separator"></div>
-          <a href="auth.html" role="menuitem" data-ui="menu-item">${icon('log-out')}Sign out</a>
+          <a href="#" role="menuitem" data-ui="menu-item">${icon('log-out')}Sign out</a>
         </div>
       </div>
       <nav class="flex gap-1 border-t px-2 py-1.5 md:hidden" aria-label="Main">${navLinks(true)}</nav>`
